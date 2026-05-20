@@ -48,6 +48,15 @@ android {
             includeAndroidResources = true
         }
     }
+
+    // Expose protocol/ on the test classpath so ProtocolRoundTripTest can load
+    // schema.json and the example payloads as resources. The .md files in
+    // protocol/ ride along harmlessly; the test only loads .json files.
+    sourceSets {
+        test {
+            resources.srcDirs += "${rootDir}/../protocol"
+        }
+    }
 }
 
 // jsonschema2pojo — generates Java POJOs from protocol/schema.json.

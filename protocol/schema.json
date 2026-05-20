@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://paree.nl/climbpro/schema/v1/payload.json",
+  "title": "ClimbPayload",
+  "description": "Wire-format envelope sent from the Android companion app to the Garmin Connect IQ datafield. Canonical source — Java POJOs are generated from this file. Monkey C classes are hand-mirrored and kept honest by the protocol round-trip tests on both sides.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "mode", "climbs"],
+  "properties": {
+    "v": {
+      "description": "Schema version. Increment on breaking changes; consumers reject payloads with an unknown version.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 255
+    },
+    "mode": {
+      "description": "Watch operating mode for this payload. 'route' = follow a single route; 'radius' = catalog of nearby climbs anchored by start coordinate.",
+      "type": "string",
+      "enum": ["route", "radius"]
+    },
+    "routeId": {
+      "description": "Stable identifier for the route (route mode only). Phone uses this to detect changed payloads on re-sync.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "name": {
+      "description": "Optional user-supplied display name for the route. Only included when it fits the byte budget; watch falls back to a derived label otherwise.",
+      "type": "string",
+      "maxLength": 32
+    },
+    "climbs": {
+      "description": "Ordered list of climbs. In route mode: ordered by startDistance along the route. In radius mode: ordered by phone-side proximity to last known location (closest first).",
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 64,
+      "items": { "$ref": "#/definitions/Climb" }
+    }
+  },
+  "definitions": {
+    "Climb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length", "elevationGain", "avgGradient", "segments"],
+      "properties": {
+        "startDistance": {
+          "description": "Route mode: cumulative distance along the route (meters) where the climb begins.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "endDistance": {
+          "description": "Route mode: cumulative distance along the route (meters) where the climb ends.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "startLat": {
+          "description": "Radius mode: latitude of the climb start (decimal degrees, WGS84).",
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0
+        },
+        "startLon": {
+          "description": "Radius mode: longitude of the climb start (decimal degrees, WGS84).",
+          "type": "number",
+          "minimum": -180.0,
+          "maximum": 180.0
+        },
+        "length": {
+          "description": "Climb length in meters. Domain rule: a climb has length >= 800.",
+          "type": "integer",
+          "minimum": 800
+        },
+        "elevationGain": {
+          "description": "Total elevation gain across the climb in meters (rounded).",
+          "type": "integer",
+          "minimum": 0
+        },
+        "avgGradient": {
+          "description": "Average gradient as fixed-point: percent x 10. e.g. 7.2% is encoded as 72. Domain rule: avgGradient >= 30 (i.e. >= 3.0%).",
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 1000
+        },
+        "name": {
+          "description": "Optional user-supplied display name for the climb. Same budget rules as the route name.",
+          "type": "string",
+          "maxLength": 32
+        },
+        "segments": {
+          "description": "8%-of-climb-length segments covering the full climb. Count is typically 12 or 13.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/definitions/Segment" }
+        }
+      }
+    },
+    "Segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distance", "elevationGain", "gradient", "colorIndex"],
+      "properties": {
+        "distance": {
+          "description": "Segment length in meters.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "elevationGain": {
+          "description": "Segment elevation gain in meters (can be negative on very mild segments that dip slightly within an overall climb).",
+          "type": "integer"
+        },
+        "gradient": {
+          "description": "Segment average gradient as fixed-point: percent x 10. May be negative for dips within a climb.",
+          "type": "integer",
+          "minimum": -200,
+          "maximum": 1000
+        },
+        "colorIndex": {
+          "description": "Color category derived from gradient. See protocol/colors.md for the cutoff table.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        }
+      }
+    }
+  }
+}
