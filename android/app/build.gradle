@@ -1,0 +1,110 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jsonschema2pojo'
+}
+
+android {
+    namespace 'nl.paree.climbpro'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'nl.paree.climbpro'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0'
+
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+
+        // Strava OAuth — read from local.properties (untracked).
+        // Add to local.properties:
+        //   strava.client.id=<your-client-id>
+        //   strava.client.secret=<your-client-secret>
+        def stravaClientId = project.findProperty('strava.client.id') ?: ''
+        def stravaClientSecret = project.findProperty('strava.client.secret') ?: ''
+        buildConfigField 'String', 'STRAVA_CLIENT_ID', "\"${stravaClientId}\""
+        buildConfigField 'String', 'STRAVA_CLIENT_SECRET', "\"${stravaClientSecret}\""
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+// jsonschema2pojo — generates Java POJOs from protocol/schema.json.
+// Source of truth is ../../protocol/schema.json. Never edit generated sources by hand.
+jsonSchema2Pojo {
+    source = files("${rootDir}/../protocol/schema.json")
+    targetDirectory = file("${project.buildDir}/generated/source/jsonschema2pojo/main")
+    targetPackage = 'nl.paree.climbpro.protocol'
+    sourceType = 'jsonschema'
+    generateBuilders = true
+    useLongIntegers = false
+    includeAdditionalProperties = false
+    includeJsr303Annotations = false
+    initializeCollections = true
+    serializable = false
+}
+
+// Skip codegen task if the schema file does not yet exist (Phase 0 scaffold state).
+tasks.named('generateJsonSchema2Pojo').configure {
+    onlyIf { file("${rootDir}/../protocol/schema.json").exists() }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.12.0'
+
+    // Lifecycle / MVVM
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.8.4'
+
+    // Background work
+    implementation 'androidx.work:work-runtime:2.9.1'
+
+    // Encrypted preferences (for Strava refresh token)
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    // OAuth
+    implementation 'net.openid:appauth:0.11.1'
+
+    // HTTP / JSON
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-jackson:2.11.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.17.2'
+
+    // Garmin Connect IQ Mobile SDK is added manually as a .aar — see SETUP.md.
+    // implementation files('libs/ciq-mobile-sdk.aar')
+
+    // Tests
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.12.0'
+    testImplementation 'com.networknt:json-schema-validator:1.5.1'
+    testImplementation 'androidx.test:core:1.6.1'
+    testImplementation 'org.robolectric:robolectric:4.13'
+
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}

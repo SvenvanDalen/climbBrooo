@@ -1,0 +1,7 @@
+# Connect IQ Jungle (build) file for the ClimbPro datafield.
+# See: https://developer.garmin.com/connect-iq/reference-guides/jungle-reference/
+
+project.manifest = manifest.xml
+
+base.sourcePath = source
+base.resourcePath = resources

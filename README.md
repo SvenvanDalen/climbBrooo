@@ -1,0 +1,62 @@
+# Android App Sven — ClimbPro for Forerunner 255 Music
+
+Custom ClimbPro-style climb analysis and visualization for the Garmin Forerunner 255 Music. Heavy route analysis runs on an Android companion app; the watch displays only compact, precomputed climb data.
+
+> **Status**: design phase. The repository currently contains only specifications and design documents — no source code yet.
+
+## Documentation
+
+1. **[Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md)** — read first. Module structure, data flow, design contract.
+2. **[CLAUDE.md](CLAUDE.md)** — operating instructions for AI-assisted development sessions; lists the non-negotiable domain rules.
+3. **[Idea.md](Idea.md)** — original product specification (climb detection rules, payload format, edge cases).
+4. **[Documentation/SETUP.md](Documentation/SETUP.md)** — local toolchain setup (Android Studio, Connect IQ SDK, Strava API).
+5. **[Documentation/ClaudePlans/](Documentation/ClaudePlans/)** — historical and current implementation plans.
+
+## What it does
+
+- Detects climbs (≥ 800 m, ≥ 3% avg gradient) in Strava routes and imported GPX/FIT files.
+- Splits each climb into segments of 8% of the climb length, color-coded by gradient.
+- Syncs compact climb data to a Garmin Forerunner 255 Music via the Connect IQ Communications API.
+- On the watch: shows current climb profile with live progress, plus a preview of the next climb.
+- Triggers a vibration and tone when the rider approaches a climb start.
+
+Everything works offline during the activity. The phone is only needed for sync, not during the ride.
+
+## User features
+
+- Select a route to follow from the synced library.
+- **Radius mode** — no fixed route; the watch alerts on any known climb within a configurable radius of the current GPS position.
+- Rename routes and climbs; names survive resync.
+- Add custom notes/tags to routes for personal context.
+- Show live route/climb data on the watch.
+- Start navigation to the selected route.
+- Import a single climb or route from a GPX file.
+
+## Components
+
+| Component | Tech | Role |
+|-----------|------|------|
+| Android companion app | Java, MVVM, Repository, WorkManager | Route parsing, climb detection, segmentation, Strava integration, sync orchestration |
+| Garmin datafield | Monkey C, Connect IQ SDK | Render current/next climb, match GPS to route, fire alerts |
+| Shared protocol | JSON Schema (canonical) → generated Java POJOs + hand-written Monkey C classes | Single source of truth for wire format and domain constants |
+
+See `ARCHITECTURE.md` for the full breakdown.
+
+## Build & run
+
+Phase 0 scaffolding is in place but the toolchain needs to be installed locally before anything builds. See **[Documentation/SETUP.md](Documentation/SETUP.md)** for the step-by-step (Android Studio + Connect IQ SDK + Strava API registration).
+
+Once SETUP.md is complete:
+
+```powershell
+# Android
+cd android
+.\gradlew.bat assembleDebug
+.\gradlew.bat test
+
+# Garmin datafield
+cd garmin
+monkeyc -o ClimbPro.prg -f monkey.jungle -y developer_key -d fr255m
+```
+
+Target device: **Garmin Forerunner 255 Music**. Other devices are out of scope for v1.

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<drawables>
+    <!-- Datafield apps don't render a launcher icon, so none is declared here.
+         Add a bitmap entry if/when this app becomes a watch-app or widget. -->
+</drawables>

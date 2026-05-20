@@ -1,0 +1,8 @@
+# Copy to android/local.properties (which is gitignored) and fill in.
+# Android Studio populates sdk.dir automatically on first sync.
+
+sdk.dir=C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
+
+# Strava API client — register at https://www.strava.com/settings/api
+strava.client.id=
+strava.client.secret=

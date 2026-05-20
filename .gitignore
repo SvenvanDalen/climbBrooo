@@ -1,0 +1,53 @@
+# ============================================================================
+# Android / Gradle
+# ============================================================================
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+android/local.properties
+android/**/*.iml
+android/.idea/
+android/app/release/
+
+# Generated sources from jsonschema2pojo
+android/app/build/generated/
+
+# Keystore
+*.jks
+*.keystore
+
+# ============================================================================
+# IDE
+# ============================================================================
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# ============================================================================
+# Claude Code — local session state
+# ============================================================================
+.claude/settings.local.json
+.claude/cache/
+.claude/projects/
+
+# ============================================================================
+# Garmin Connect IQ
+# ============================================================================
+garmin/bin/
+garmin/iq/
+garmin/*.prg
+garmin/*.prg.debug.xml
+garmin/developer_key
+garmin/developer_key.der
+
+# ============================================================================
+# Secrets — never commit
+# ============================================================================
+**/local.properties
+**/secrets.properties
+**/*.developer_key
+strava-client-secret*
