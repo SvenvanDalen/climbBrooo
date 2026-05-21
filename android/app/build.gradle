@@ -1,6 +1,14 @@
+import org.jsonschema2pojo.DefaultGenerationConfig
+import org.jsonschema2pojo.GenerationConfig
+import org.jsonschema2pojo.Jackson2Annotator
+import org.jsonschema2pojo.SchemaGenerator
+import org.jsonschema2pojo.SchemaMapper
+import org.jsonschema2pojo.SchemaStore
+import org.jsonschema2pojo.rules.RuleFactory
+import com.sun.codemodel.JCodeModel
+
 plugins {
     id 'com.android.application'
-    id 'org.jsonschema2pojo'
 }
 
 android {
@@ -24,6 +32,9 @@ android {
         def stravaClientSecret = project.findProperty('strava.client.secret') ?: ''
         buildConfigField 'String', 'STRAVA_CLIENT_ID', "\"${stravaClientId}\""
         buildConfigField 'String', 'STRAVA_CLIENT_SECRET', "\"${stravaClientSecret}\""
+        manifestPlaceholders = [
+                appAuthRedirectScheme: "climbpro"
+        ]
     }
 
     buildFeatures {
@@ -59,24 +70,69 @@ android {
     }
 }
 
-// jsonschema2pojo — generates Java POJOs from protocol/schema.json.
+// jsonschema2pojo codegen — generates Java POJOs from protocol/schema.json.
 // Source of truth is ../../protocol/schema.json. Never edit generated sources by hand.
-jsonSchema2Pojo {
-    source = files("${rootDir}/../protocol/schema.json")
-    targetDirectory = file("${project.buildDir}/generated/source/jsonschema2pojo/main")
-    targetPackage = 'nl.paree.climbpro.protocol'
-    sourceType = 'jsonschema'
-    generateBuilders = true
-    useLongIntegers = false
-    includeAdditionalProperties = false
-    includeJsr303Annotations = false
-    initializeCollections = true
-    serializable = false
+//
+// We invoke jsonschema2pojo's Java API directly instead of using the Gradle plugin,
+// because the plugin (1.2.1) is incompatible with AGP 8.x.
+//
+// jsonschema2pojo derives the root class name from the source file's base name
+// (schema.json → Schema, ClimbPayload.json → ClimbPayload). We copy the canonical
+// schema.json to a temp file named ClimbPayload.json so the generated root class
+// matches what the rest of the code expects.
+def schemaFile = file("${rootDir}/../protocol/schema.json")
+def generatedSrcDir = file("${project.buildDir}/generated/source/jsonschema2pojo/main")
+def schemaStageDir = file("${project.buildDir}/tmp/jsonschema2pojo-stage")
+def stagedSchemaFile = new File(schemaStageDir, 'ClimbPayload.json')
+
+tasks.register('generateProtocolPojos') {
+    inputs.file(schemaFile).optional()
+    outputs.dir(generatedSrcDir)
+    onlyIf { schemaFile.exists() }
+    doLast {
+        schemaStageDir.mkdirs()
+        generatedSrcDir.mkdirs()
+
+        // Copy schema.json → ClimbPayload.json so the generated root class is
+        // named ClimbPayload instead of Schema.
+        stagedSchemaFile.text = schemaFile.text
+
+        GenerationConfig config = new DefaultGenerationConfig() {
+            @Override boolean isGenerateBuilders() { true }
+            @Override boolean isUseLongIntegers() { false }
+            @Override boolean isIncludeAdditionalProperties() { false }
+            @Override boolean isIncludeJsr303Annotations() { false }
+            @Override boolean isInitializeCollections() { true }
+            @Override boolean isIncludeHashcodeAndEquals() { true }
+            @Override boolean isIncludeToString() { true }
+            @Override org.jsonschema2pojo.SourceType getSourceType() { org.jsonschema2pojo.SourceType.JSONSCHEMA }
+        }
+        SchemaMapper mapper = new SchemaMapper(
+                new RuleFactory(config, new Jackson2Annotator(config), new SchemaStore()),
+                new SchemaGenerator())
+        JCodeModel codeModel = new JCodeModel()
+        mapper.generate(codeModel, 'ClimbPayload', 'nl.paree.climbpro.protocol', stagedSchemaFile.toURI().toURL())
+        codeModel.build(generatedSrcDir)
+    }
 }
 
-// Skip codegen task if the schema file does not yet exist (Phase 0 scaffold state).
-tasks.named('generateJsonSchema2Pojo').configure {
-    onlyIf { file("${rootDir}/../protocol/schema.json").exists() }
+// Wire the codegen task into application variants (debug / release app compilation).
+android.applicationVariants.configureEach { variant ->
+    variant.registerJavaGeneratingTask(
+            tasks.named('generateProtocolPojos').get(),
+            generatedSrcDir)
+}
+
+// Wire the codegen task into unit-test compilation.
+// registerJavaGeneratingTask only covers app variants; we must add the generated
+// source dir to the test source set and declare the task dependency explicitly so
+// that compileDebugUnitTestJavaWithJavac (and the release equivalent) can see
+// ClimbPayload and friends.
+android.sourceSets.test.java.srcDirs += generatedSrcDir
+tasks.whenTaskAdded { task ->
+    if (task.name ==~ /compile.*UnitTest.*JavaWithJavac/) {
+        task.dependsOn('generateProtocolPojos')
+    }
 }
 
 dependencies {

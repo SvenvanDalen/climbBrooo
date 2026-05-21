@@ -4,5 +4,5 @@
 sdk.dir=C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
 
 # Strava API client — register at https://www.strava.com/settings/api
-strava.client.id=
-strava.client.secret=
+strava.client.id=247761
+strava.client.secret=c348add32a1389ff2637f79fb83129dabfcad7c4

@@ -1,9 +1,22 @@
 // Top-level build file
 // See app/build.gradle for module-level configuration.
 
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        // Used by app/build.gradle's generateProtocolPojos task to invoke
+        // jsonschema2pojo programmatically. We do NOT apply the jsonschema2pojo
+        // Gradle plugin — its Android integration is broken on AGP 8.x
+        // (it accesses appPlugin.extension which no longer exists).
+        classpath 'org.jsonschema2pojo:jsonschema2pojo-core:1.2.1'
+    }
+}
+
 plugins {
     id 'com.android.application' version '8.5.2' apply false
-    id 'org.jsonschema2pojo' version '1.2.1' apply false
 }
 
 tasks.register('clean', Delete) {
