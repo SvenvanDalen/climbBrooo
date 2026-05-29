@@ -28,8 +28,13 @@ android {
         // Add to local.properties:
         //   strava.client.id=<your-client-id>
         //   strava.client.secret=<your-client-secret>
-        def stravaClientId = project.findProperty('strava.client.id') ?: ''
-        def stravaClientSecret = project.findProperty('strava.client.secret') ?: ''
+        def localProps = new Properties()
+        def localPropsFile = rootProject.file('local.properties')
+        if (localPropsFile.exists()) {
+            localProps.load(new FileInputStream(localPropsFile))
+        }
+        def stravaClientId = localProps.getProperty('strava.client.id', '')
+        def stravaClientSecret = localProps.getProperty('strava.client.secret', '')
         buildConfigField 'String', 'STRAVA_CLIENT_ID', "\"${stravaClientId}\""
         buildConfigField 'String', 'STRAVA_CLIENT_SECRET', "\"${stravaClientSecret}\""
         manifestPlaceholders = [

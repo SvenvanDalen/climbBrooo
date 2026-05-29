@@ -9,8 +9,10 @@ import androidx.lifecycle.ViewModelProvider;
 import net.openid.appauth.AuthorizationException;
 import net.openid.appauth.AuthorizationResponse;
 import net.openid.appauth.AuthorizationService;
+import net.openid.appauth.ClientSecretPost;
 import net.openid.appauth.TokenRequest;
 
+import nl.paree.climbpro.BuildConfig;
 import nl.paree.climbpro.databinding.ActivityStravaAuthCallbackBinding;
 
 /**
@@ -57,7 +59,8 @@ public final class StravaAuthCallbackActivity extends AppCompatActivity {
         binding.statusText.setText("Exchanging tokens…");
 
         TokenRequest tokenReq = resp.createTokenExchangeRequest();
-        authService.performTokenRequest(tokenReq, (tokenResponse, tokenEx) -> {
+        ClientSecretPost clientAuth = new ClientSecretPost(BuildConfig.STRAVA_CLIENT_SECRET);
+        authService.performTokenRequest(tokenReq, clientAuth, (tokenResponse, tokenEx) -> {
             if (tokenEx != null) {
                 viewModel.onAuthError(tokenEx.getMessage());
             } else if (tokenResponse != null) {

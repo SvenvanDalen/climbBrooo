@@ -3,6 +3,7 @@ package nl.paree.climbpro.ui.strava;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,11 +46,21 @@ public final class StravaAuthActivity extends AppCompatActivity {
     }
 
     private void startAuth() {
-        AuthorizationRequest req = viewModel.buildAuthRequest();
-        Intent completionIntent = new Intent(this, StravaAuthCallbackActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, completionIntent,
-                PendingIntent.FLAG_MUTABLE);
-        authService.performAuthorizationRequest(req, pi);
+        try {
+            AuthorizationRequest req = viewModel.buildAuthRequest();
+            Log.d("StravaAuth", "Auth request built, client_id=" + req.clientId);
+            Intent completionIntent = new Intent(this, StravaAuthCallbackActivity.class);
+            PendingIntent completionPi = PendingIntent.getActivity(this, 0, completionIntent,
+                    PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            Intent cancelIntent = new Intent(this, StravaAuthActivity.class);
+            cancelIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent cancelPi = PendingIntent.getActivity(this, 1, cancelIntent,
+                    PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            authService.performAuthorizationRequest(req, completionPi, cancelPi);
+        } catch (Exception e) {
+            Log.e("StravaAuth", "Failed to start auth", e);
+            Toast.makeText(this, "Auth launch failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override

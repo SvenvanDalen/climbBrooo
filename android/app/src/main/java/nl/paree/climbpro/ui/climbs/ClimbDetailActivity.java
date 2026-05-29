@@ -55,6 +55,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             binding.climbStats.setText(String.format(
                     "%d m total · %.1f%% avg gradient · %d m elevation gain",
                     climb.length, climb.avgGradient * 100, climb.elevationGain));
+            binding.climbProfile.setSegments(climb.segments);
             adapter.setItems(climb.segments);
         });
 

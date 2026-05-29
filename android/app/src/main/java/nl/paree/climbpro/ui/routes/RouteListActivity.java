@@ -39,8 +39,8 @@ import java.util.concurrent.Executors;
 public final class RouteListActivity extends AppCompatActivity {
 
     private ActivityRouteListBinding binding;
-    private RouteListViewModel       viewModel;
-    private RouteListAdapter         adapter;
+    private RouteListViewModel viewModel;
+    private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
     private final ActivityResultLauncher<String[]> gpxPicker =
@@ -69,7 +69,7 @@ public final class RouteListActivity extends AppCompatActivity {
             public void onRouteLongClick(nl.paree.climbpro.data.route.RouteCatalogEntry entry) {
                 String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
                 new AlertDialog.Builder(RouteListActivity.this)
-                        .setTitle("Delete "" + name + ""?")
+                        .setTitle("Delete \"" + name + "\"?")
                         .setMessage("This cannot be undone.")
                         .setPositiveButton("Delete", (d, w) -> viewModel.deleteRoute(entry.routeId))
                         .setNegativeButton("Cancel", null)

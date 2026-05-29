@@ -22,7 +22,7 @@ import java.util.List;
 public final class ClimbDetector {
 
     /** Maximum downhill gap (metres elevation) allowed within a single climb. */
-    private static final double DOWNHILL_TOLERANCE_M = 10.0;
+    private static final double DOWNHILL_TOLERANCE_M = 20.0;
 
     private ClimbDetector() {}
 

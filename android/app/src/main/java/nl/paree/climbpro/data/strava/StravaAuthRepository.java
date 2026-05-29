@@ -10,6 +10,7 @@ import net.openid.appauth.AuthState;
 import net.openid.appauth.AuthorizationRequest;
 import net.openid.appauth.AuthorizationService;
 import net.openid.appauth.AuthorizationServiceConfiguration;
+import net.openid.appauth.ClientSecretPost;
 import net.openid.appauth.ResponseTypeValues;
 
 import org.json.JSONException;
@@ -75,7 +76,8 @@ public final class StravaAuthRepository {
         final Object lock = new Object();
 
         AuthorizationService service = new AuthorizationService(context);
-        authState.performActionWithFreshTokens(service, (accessToken, idToken, ex) -> {
+        ClientSecretPost clientAuth = new ClientSecretPost(BuildConfig.STRAVA_CLIENT_SECRET);
+        authState.performActionWithFreshTokens(service, clientAuth, (accessToken, idToken, ex) -> {
             synchronized (lock) {
                 if (ex != null) {
                     error[0] = ex;

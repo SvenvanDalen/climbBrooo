@@ -46,8 +46,16 @@
 
         <activity
             android:name=".ui.strava.StravaAuthCallbackActivity"
+            android:exported="false"/>
+
+        <!-- AppAuth's own manifest declares RedirectUriReceiverActivity with
+             scheme="${appAuthRedirectScheme}" (set to "climbpro" in build.gradle).
+             We override it here to add host+path specificity for the callback URI. -->
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
             android:exported="true"
-            android:launchMode="singleTask">
+            tools:node="replace"
+            xmlns:tools="http://schemas.android.com/tools">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
