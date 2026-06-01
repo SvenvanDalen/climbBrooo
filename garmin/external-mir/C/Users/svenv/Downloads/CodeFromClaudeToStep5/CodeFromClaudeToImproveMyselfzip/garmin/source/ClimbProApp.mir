@@ -1,0 +1,521 @@
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 1; @symbol_usingdef<0> = [Toybox,1,6,12]; @symbol_usingdef<1> = [Application,1,13,24]; @symbol_usingAlias = [App,1,28,31]; ]
+using Toybox.Application as :App;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 2; @symbol_usingdef<0> = [Toybox,2,6,12]; @symbol_usingdef<1> = [Communications,2,13,27]; @symbol_usingAlias = [Comm,2,31,35]; ]
+using Toybox.Communications as :Comm;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 3; @symbol_usingdef<0> = [Toybox,3,6,12]; @symbol_usingdef<1> = [System,3,13,19]; @symbol_usingAlias = [Sys,3,23,26]; ]
+using Toybox.System as :Sys;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 4; @symbol_usingdef<0> = [Toybox,4,6,12]; @symbol_usingdef<1> = [WatchUi,4,13,20]; @symbol_usingAlias = [Ui,4,24,26]; ]
+using Toybox.WatchUi as :Ui;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 10; @symbol_classdef = [ClimbProApp,10,6,17]; @symbol_extends<0> = [App,10,26,29]; @symbol_extends<1> = [AppBase,10,30,37]; ]
+class ClimbProApp extends App.AppBase {
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 10; ]
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 10; ]
+    static
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 12; @position = 8; @symbol_vardef = [climbData,12,8,17]; ]
+    var climbData;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 13; @position = 15; @symbol_vardef = [msgCallback,13,15,26]; ]
+    protected
+    var msgCallback;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 15; @symbol_functiondef = [initialize,15,13,23]; ]
+    function initialize() as Void {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_15_26_17_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 16 8 ]
+        symbol [ AppBase %tmp.2 16 8 15 ];
+        %tmp.2 = getv ? :AppBase;
+        symbol [ initialize %tmp.3 16 16 26 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_15_26_17_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 19; @symbol_functiondef = [onStart,19,13,20]; @symbol_param<0> = [state,19,21,26]; ]
+    function onStart(state) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_19_28_166_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 20 8 ]
+        symbol [ ClimbData %tmp.4 20 24 33 ];
+        %tmp.4 = getv ? :ClimbData;
+        %tmp.1 = newc %tmp.4 ();
+        symbol [ climbData ? 20 8 17 ];
+        putv self :climbData %tmp.1;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 21 8 ]
+        symbol [ climbData %tmp.6 21 8 17 ];
+        %tmp.6 = getv ? :climbData;
+        symbol [ initialize %tmp.7 21 18 28 ];
+        %tmp.7 = getv function %tmp.6 :initialize;
+        invoke %tmp.6 %tmp.7();
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 23 8 ]
+        symbol [ PhoneMessageCallback %tmp.11 23 26 46 ];
+        %tmp.11 = getv ? :PhoneMessageCallback;
+        %tmp.8 = newc %tmp.11 ();
+        symbol [ msgCallback ? 23 8 19 ];
+        putv self :msgCallback %tmp.8;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 24 8 ]
+        symbol [ Comm %tmp.12 24 8 12 ];
+        %tmp.12 = getm $.Toybox.Communications;
+        symbol [ registerForPhoneAppMessages %tmp.13 24 13 40 ];
+        %tmp.13 = getv function %tmp.12 :registerForPhoneAppMessages;
+        %tmp.14 = self;
+        symbol [ method %tmp.15 24 41 47 ];
+        %tmp.15 = getv function %tmp.14 :method;
+        %tmp.17 = const :onPhoneMessage;
+        symbol [ onPhoneMessage %tmp.17 24 49 63 const ];
+        %tmp.18 = invoke %tmp.14 %tmp.15(%tmp.17);
+        invoke %tmp.12 %tmp.13(%tmp.18);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 26 8 ]
+        symbol [ Sys %tmp.19 26 8 11 ];
+        %tmp.19 = getm $.Toybox.System;
+        symbol [ println %tmp.20 26 12 19 ];
+        %tmp.20 = getv function %tmp.19 :println;
+        %tmp.21 = "ClimbPro: started, listening for phone messages";
+        invoke %tmp.19 %tmp.20(%tmp.21);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 32 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_19_28_166_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_19_28_166_4_stop" ]
+        %fakeMsg.1 = local;
+        symbol [ fakeMsg %fakeMsg.1 32 12 19 ];
+        %tmp.22 = newd 5;
+        %tmp.23 = "v";
+        %tmp.24 = 1;
+        %tmp.25 = dup %tmp.22;
+        %tmp.26 = aputv %tmp.25 %tmp.23 %tmp.24;
+        %tmp.27 = "mode";
+        %tmp.28 = "route";
+        %tmp.29 = dup %tmp.26;
+        %tmp.30 = aputv %tmp.29 %tmp.27 %tmp.28;
+        %tmp.31 = "routeId";
+        %tmp.32 = "dev";
+        %tmp.33 = dup %tmp.30;
+        %tmp.34 = aputv %tmp.33 %tmp.31 %tmp.32;
+        %tmp.35 = "name";
+        %tmp.36 = "Dev Route";
+        %tmp.37 = dup %tmp.34;
+        %tmp.38 = aputv %tmp.37 %tmp.35 %tmp.36;
+        %tmp.39 = "climbs";
+        %tmp.40 = newa 1;
+        %tmp.41 = newd 7;
+        %tmp.42 = "startDistance";
+        %tmp.43 = 500;
+        %tmp.44 = dup %tmp.41;
+        %tmp.45 = aputv %tmp.44 %tmp.42 %tmp.43;
+        %tmp.46 = "endDistance";
+        %tmp.47 = 16500;
+        %tmp.48 = dup %tmp.45;
+        %tmp.49 = aputv %tmp.48 %tmp.46 %tmp.47;
+        %tmp.50 = "length";
+        %tmp.51 = 16000;
+        %tmp.52 = dup %tmp.49;
+        %tmp.53 = aputv %tmp.52 %tmp.50 %tmp.51;
+        %tmp.54 = "elevationGain";
+        %tmp.55 = 720;
+        %tmp.56 = dup %tmp.53;
+        %tmp.57 = aputv %tmp.56 %tmp.54 %tmp.55;
+        %tmp.58 = "avgGradient";
+        %tmp.59 = 72;
+        %tmp.60 = dup %tmp.57;
+        %tmp.61 = aputv %tmp.60 %tmp.58 %tmp.59;
+        %tmp.62 = "name";
+        %tmp.63 = "Mega Alpine Test Climb";
+        %tmp.64 = dup %tmp.61;
+        %tmp.65 = aputv %tmp.64 %tmp.62 %tmp.63;
+        %tmp.66 = "segments";
+        %tmp.67 = newa 16;
+        %tmp.68 = newd 4;
+        %tmp.69 = "distance";
+        %tmp.70 = 500;
+        %tmp.71 = dup %tmp.68;
+        %tmp.72 = aputv %tmp.71 %tmp.69 %tmp.70;
+        %tmp.73 = "elevationGain";
+        %tmp.74 = 10;
+        %tmp.75 = dup %tmp.72;
+        %tmp.76 = aputv %tmp.75 %tmp.73 %tmp.74;
+        %tmp.77 = "gradient";
+        %tmp.78 = 20;
+        %tmp.79 = dup %tmp.76;
+        %tmp.80 = aputv %tmp.79 %tmp.77 %tmp.78;
+        %tmp.81 = "colorIndex";
+        %tmp.82 = 0;
+        %tmp.83 = dup %tmp.80;
+        %tmp.84 = aputv %tmp.83 %tmp.81 %tmp.82;
+        %tmp.85 = dup %tmp.67;
+        %tmp.86 = aputv %tmp.85 0 %tmp.84;
+        %tmp.87 = newd 4;
+        %tmp.88 = "distance";
+        %tmp.89 = 500;
+        %tmp.90 = dup %tmp.87;
+        %tmp.91 = aputv %tmp.90 %tmp.88 %tmp.89;
+        %tmp.92 = "elevationGain";
+        %tmp.93 = 20;
+        %tmp.94 = dup %tmp.91;
+        %tmp.95 = aputv %tmp.94 %tmp.92 %tmp.93;
+        %tmp.96 = "gradient";
+        %tmp.97 = 50;
+        %tmp.98 = dup %tmp.95;
+        %tmp.99 = aputv %tmp.98 %tmp.96 %tmp.97;
+        %tmp.100 = "colorIndex";
+        %tmp.101 = 1;
+        %tmp.102 = dup %tmp.99;
+        %tmp.103 = aputv %tmp.102 %tmp.100 %tmp.101;
+        %tmp.104 = dup %tmp.86;
+        %tmp.105 = aputv %tmp.104 1 %tmp.103;
+        %tmp.106 = newd 4;
+        %tmp.107 = "distance";
+        %tmp.108 = 500;
+        %tmp.109 = dup %tmp.106;
+        %tmp.110 = aputv %tmp.109 %tmp.107 %tmp.108;
+        %tmp.111 = "elevationGain";
+        %tmp.112 = 50;
+        %tmp.113 = dup %tmp.110;
+        %tmp.114 = aputv %tmp.113 %tmp.111 %tmp.112;
+        %tmp.115 = "gradient";
+        %tmp.116 = 83;
+        %tmp.117 = dup %tmp.114;
+        %tmp.118 = aputv %tmp.117 %tmp.115 %tmp.116;
+        %tmp.119 = "colorIndex";
+        %tmp.120 = 3;
+        %tmp.121 = dup %tmp.118;
+        %tmp.122 = aputv %tmp.121 %tmp.119 %tmp.120;
+        %tmp.123 = dup %tmp.105;
+        %tmp.124 = aputv %tmp.123 2 %tmp.122;
+        %tmp.125 = newd 4;
+        %tmp.126 = "distance";
+        %tmp.127 = 500;
+        %tmp.128 = dup %tmp.125;
+        %tmp.129 = aputv %tmp.128 %tmp.126 %tmp.127;
+        %tmp.130 = "elevationGain";
+        %tmp.131 = 60;
+        %tmp.132 = dup %tmp.129;
+        %tmp.133 = aputv %tmp.132 %tmp.130 %tmp.131;
+        %tmp.134 = "gradient";
+        %tmp.135 = 133;
+        %tmp.136 = dup %tmp.133;
+        %tmp.137 = aputv %tmp.136 %tmp.134 %tmp.135;
+        %tmp.138 = "colorIndex";
+        %tmp.139 = 5;
+        %tmp.140 = dup %tmp.137;
+        %tmp.141 = aputv %tmp.140 %tmp.138 %tmp.139;
+        %tmp.142 = dup %tmp.124;
+        %tmp.143 = aputv %tmp.142 3 %tmp.141;
+        %tmp.144 = newd 4;
+        %tmp.145 = "distance";
+        %tmp.146 = 500;
+        %tmp.147 = dup %tmp.144;
+        %tmp.148 = aputv %tmp.147 %tmp.145 %tmp.146;
+        %tmp.149 = "elevationGain";
+        %tmp.150 = 30;
+        %tmp.151 = dup %tmp.148;
+        %tmp.152 = aputv %tmp.151 %tmp.149 %tmp.150;
+        %tmp.153 = "gradient";
+        %tmp.154 = 43;
+        %tmp.155 = dup %tmp.152;
+        %tmp.156 = aputv %tmp.155 %tmp.153 %tmp.154;
+        %tmp.157 = "colorIndex";
+        %tmp.158 = 1;
+        %tmp.159 = dup %tmp.156;
+        %tmp.160 = aputv %tmp.159 %tmp.157 %tmp.158;
+        %tmp.161 = dup %tmp.143;
+        %tmp.162 = aputv %tmp.161 4 %tmp.160;
+        %tmp.163 = newd 4;
+        %tmp.164 = "distance";
+        %tmp.165 = 500;
+        %tmp.166 = dup %tmp.163;
+        %tmp.167 = aputv %tmp.166 %tmp.164 %tmp.165;
+        %tmp.168 = "elevationGain";
+        %tmp.169 = 55;
+        %tmp.170 = dup %tmp.167;
+        %tmp.171 = aputv %tmp.170 %tmp.168 %tmp.169;
+        %tmp.172 = "gradient";
+        %tmp.173 = 110;
+        %tmp.174 = dup %tmp.171;
+        %tmp.175 = aputv %tmp.174 %tmp.172 %tmp.173;
+        %tmp.176 = "colorIndex";
+        %tmp.177 = 4;
+        %tmp.178 = dup %tmp.175;
+        %tmp.179 = aputv %tmp.178 %tmp.176 %tmp.177;
+        %tmp.180 = dup %tmp.162;
+        %tmp.181 = aputv %tmp.180 5 %tmp.179;
+        %tmp.182 = newd 4;
+        %tmp.183 = "distance";
+        %tmp.184 = 500;
+        %tmp.185 = dup %tmp.182;
+        %tmp.186 = aputv %tmp.185 %tmp.183 %tmp.184;
+        %tmp.187 = "elevationGain";
+        %tmp.188 = 5;
+        %tmp.189 = dup %tmp.186;
+        %tmp.190 = aputv %tmp.189 %tmp.187 %tmp.188;
+        %tmp.191 = "gradient";
+        %tmp.192 = 17;
+        %tmp.193 = dup %tmp.190;
+        %tmp.194 = aputv %tmp.193 %tmp.191 %tmp.192;
+        %tmp.195 = "colorIndex";
+        %tmp.196 = 0;
+        %tmp.197 = dup %tmp.194;
+        %tmp.198 = aputv %tmp.197 %tmp.195 %tmp.196;
+        %tmp.199 = dup %tmp.181;
+        %tmp.200 = aputv %tmp.199 6 %tmp.198;
+        %tmp.201 = newd 4;
+        %tmp.202 = "distance";
+        %tmp.203 = 500;
+        %tmp.204 = dup %tmp.201;
+        %tmp.205 = aputv %tmp.204 %tmp.202 %tmp.203;
+        %tmp.206 = "elevationGain";
+        %tmp.207 = 70;
+        %tmp.208 = dup %tmp.205;
+        %tmp.209 = aputv %tmp.208 %tmp.206 %tmp.207;
+        %tmp.210 = "gradient";
+        %tmp.211 = 108;
+        %tmp.212 = dup %tmp.209;
+        %tmp.213 = aputv %tmp.212 %tmp.210 %tmp.211;
+        %tmp.214 = "colorIndex";
+        %tmp.215 = 4;
+        %tmp.216 = dup %tmp.213;
+        %tmp.217 = aputv %tmp.216 %tmp.214 %tmp.215;
+        %tmp.218 = dup %tmp.200;
+        %tmp.219 = aputv %tmp.218 7 %tmp.217;
+        %tmp.220 = newd 4;
+        %tmp.221 = "distance";
+        %tmp.222 = 500;
+        %tmp.223 = dup %tmp.220;
+        %tmp.224 = aputv %tmp.223 %tmp.221 %tmp.222;
+        %tmp.225 = "elevationGain";
+        %tmp.226 = 80;
+        %tmp.227 = dup %tmp.224;
+        %tmp.228 = aputv %tmp.227 %tmp.225 %tmp.226;
+        %tmp.229 = "gradient";
+        %tmp.230 = 145;
+        %tmp.231 = dup %tmp.228;
+        %tmp.232 = aputv %tmp.231 %tmp.229 %tmp.230;
+        %tmp.233 = "colorIndex";
+        %tmp.234 = 5;
+        %tmp.235 = dup %tmp.232;
+        %tmp.236 = aputv %tmp.235 %tmp.233 %tmp.234;
+        %tmp.237 = dup %tmp.219;
+        %tmp.238 = aputv %tmp.237 8 %tmp.236;
+        %tmp.239 = newd 4;
+        %tmp.240 = "distance";
+        %tmp.241 = 500;
+        %tmp.242 = dup %tmp.239;
+        %tmp.243 = aputv %tmp.242 %tmp.240 %tmp.241;
+        %tmp.244 = "elevationGain";
+        %tmp.245 = 25;
+        %tmp.246 = dup %tmp.243;
+        %tmp.247 = aputv %tmp.246 %tmp.244 %tmp.245;
+        %tmp.248 = "gradient";
+        %tmp.249 = 56;
+        %tmp.250 = dup %tmp.247;
+        %tmp.251 = aputv %tmp.250 %tmp.248 %tmp.249;
+        %tmp.252 = "colorIndex";
+        %tmp.253 = 2;
+        %tmp.254 = dup %tmp.251;
+        %tmp.255 = aputv %tmp.254 %tmp.252 %tmp.253;
+        %tmp.256 = dup %tmp.238;
+        %tmp.257 = aputv %tmp.256 9 %tmp.255;
+        %tmp.258 = newd 4;
+        %tmp.259 = "distance";
+        %tmp.260 = 500;
+        %tmp.261 = dup %tmp.258;
+        %tmp.262 = aputv %tmp.261 %tmp.259 %tmp.260;
+        %tmp.263 = "elevationGain";
+        %tmp.264 = 15;
+        %tmp.265 = dup %tmp.262;
+        %tmp.266 = aputv %tmp.265 %tmp.263 %tmp.264;
+        %tmp.267 = "gradient";
+        %tmp.268 = 30;
+        %tmp.269 = dup %tmp.266;
+        %tmp.270 = aputv %tmp.269 %tmp.267 %tmp.268;
+        %tmp.271 = "colorIndex";
+        %tmp.272 = 0;
+        %tmp.273 = dup %tmp.270;
+        %tmp.274 = aputv %tmp.273 %tmp.271 %tmp.272;
+        %tmp.275 = dup %tmp.257;
+        %tmp.276 = aputv %tmp.275 10 %tmp.274;
+        %tmp.277 = newd 4;
+        %tmp.278 = "distance";
+        %tmp.279 = 500;
+        %tmp.280 = dup %tmp.277;
+        %tmp.281 = aputv %tmp.280 %tmp.278 %tmp.279;
+        %tmp.282 = "elevationGain";
+        %tmp.283 = 90;
+        %tmp.284 = dup %tmp.281;
+        %tmp.285 = aputv %tmp.284 %tmp.282 %tmp.283;
+        %tmp.286 = "gradient";
+        %tmp.287 = 129;
+        %tmp.288 = dup %tmp.285;
+        %tmp.289 = aputv %tmp.288 %tmp.286 %tmp.287;
+        %tmp.290 = "colorIndex";
+        %tmp.291 = 5;
+        %tmp.292 = dup %tmp.289;
+        %tmp.293 = aputv %tmp.292 %tmp.290 %tmp.291;
+        %tmp.294 = dup %tmp.276;
+        %tmp.295 = aputv %tmp.294 11 %tmp.293;
+        %tmp.296 = newd 4;
+        %tmp.297 = "distance";
+        %tmp.298 = 500;
+        %tmp.299 = dup %tmp.296;
+        %tmp.300 = aputv %tmp.299 %tmp.297 %tmp.298;
+        %tmp.301 = "elevationGain";
+        %tmp.302 = 40;
+        %tmp.303 = dup %tmp.300;
+        %tmp.304 = aputv %tmp.303 %tmp.301 %tmp.302;
+        %tmp.305 = "gradient";
+        %tmp.306 = 73;
+        %tmp.307 = dup %tmp.304;
+        %tmp.308 = aputv %tmp.307 %tmp.305 %tmp.306;
+        %tmp.309 = "colorIndex";
+        %tmp.310 = 3;
+        %tmp.311 = dup %tmp.308;
+        %tmp.312 = aputv %tmp.311 %tmp.309 %tmp.310;
+        %tmp.313 = dup %tmp.295;
+        %tmp.314 = aputv %tmp.313 12 %tmp.312;
+        %tmp.315 = newd 4;
+        %tmp.316 = "distance";
+        %tmp.317 = 500;
+        %tmp.318 = dup %tmp.315;
+        %tmp.319 = aputv %tmp.318 %tmp.316 %tmp.317;
+        %tmp.320 = "elevationGain";
+        %tmp.321 = 50;
+        %tmp.322 = dup %tmp.319;
+        %tmp.323 = aputv %tmp.322 %tmp.320 %tmp.321;
+        %tmp.324 = "gradient";
+        %tmp.325 = 91;
+        %tmp.326 = dup %tmp.323;
+        %tmp.327 = aputv %tmp.326 %tmp.324 %tmp.325;
+        %tmp.328 = "colorIndex";
+        %tmp.329 = 3;
+        %tmp.330 = dup %tmp.327;
+        %tmp.331 = aputv %tmp.330 %tmp.328 %tmp.329;
+        %tmp.332 = dup %tmp.314;
+        %tmp.333 = aputv %tmp.332 13 %tmp.331;
+        %tmp.334 = newd 4;
+        %tmp.335 = "distance";
+        %tmp.336 = 500;
+        %tmp.337 = dup %tmp.334;
+        %tmp.338 = aputv %tmp.337 %tmp.335 %tmp.336;
+        %tmp.339 = "elevationGain";
+        %tmp.340 = 22;
+        %tmp.341 = dup %tmp.338;
+        %tmp.342 = aputv %tmp.341 %tmp.339 %tmp.340;
+        %tmp.343 = "gradient";
+        %tmp.344 = 34;
+        %tmp.345 = dup %tmp.342;
+        %tmp.346 = aputv %tmp.345 %tmp.343 %tmp.344;
+        %tmp.347 = "colorIndex";
+        %tmp.348 = 0;
+        %tmp.349 = dup %tmp.346;
+        %tmp.350 = aputv %tmp.349 %tmp.347 %tmp.348;
+        %tmp.351 = dup %tmp.333;
+        %tmp.352 = aputv %tmp.351 14 %tmp.350;
+        %tmp.353 = newd 4;
+        %tmp.354 = "distance";
+        %tmp.355 = 500;
+        %tmp.356 = dup %tmp.353;
+        %tmp.357 = aputv %tmp.356 %tmp.354 %tmp.355;
+        %tmp.358 = "elevationGain";
+        %tmp.359 = 120;
+        %tmp.360 = dup %tmp.357;
+        %tmp.361 = aputv %tmp.360 %tmp.358 %tmp.359;
+        %tmp.362 = "gradient";
+        %tmp.363 = 133;
+        %tmp.364 = dup %tmp.361;
+        %tmp.365 = aputv %tmp.364 %tmp.362 %tmp.363;
+        %tmp.366 = "colorIndex";
+        %tmp.367 = 5;
+        %tmp.368 = dup %tmp.365;
+        %tmp.369 = aputv %tmp.368 %tmp.366 %tmp.367;
+        %tmp.370 = dup %tmp.352;
+        %tmp.371 = aputv %tmp.370 15 %tmp.369;
+        %tmp.372 = dup %tmp.65;
+        %tmp.373 = aputv %tmp.372 %tmp.66 %tmp.371;
+        %tmp.374 = dup %tmp.40;
+        %tmp.375 = aputv %tmp.374 0 %tmp.373;
+        %tmp.376 = dup %tmp.38;
+        %tmp.377 = aputv %tmp.376 %tmp.39 %tmp.375;
+        lputv %fakeMsg.1 %tmp.377;
+        symbol [ fakeMsg %fakeMsg.1 32 12 19 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 165 8 ]
+        symbol [ msgCallback %tmp.379 165 8 19 ];
+        %tmp.379 = getv ? :msgCallback;
+        symbol [ onMessage %tmp.380 165 20 29 ];
+        %tmp.380 = getv function %tmp.379 :onMessage;
+        %tmp.381 = lgetv %fakeMsg.1;
+        symbol [ fakeMsg %tmp.381 165 30 37 ];
+        invoke %tmp.379 %tmp.380(%tmp.381);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_19_28_166_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 168; @symbol_functiondef = [onPhoneMessage,168,13,27]; @symbol_param<0> = [msg,168,28,31]; @symbol_param<0>_type<0> = [Comm,168,35,39]; @symbol_param<0>_type<1> = [PhoneAppMessage,168,40,55]; ]
+    function onPhoneMessage(msg as Comm.PhoneAppMessage) as Void {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_168_65_173_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 169 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_8_172_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_12_169_39_begin:
+        %tmp.1 = lgetv %msg;
+        symbol [ msg %tmp.1 169 12 15 ];
+        %tmp.2 = null;
+        %tmp.3 = ne %tmp.1 %tmp.2;
+        bf %tmp.3 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_8_172_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_27_169_39_true:
+        %tmp.4 = lgetv %msg;
+        symbol [ msg %tmp.4 169 27 30 ];
+        %tmp.5 = as %tmp.4 { (!Null) };
+        symbol [ data %tmp.6 169 31 35 ];
+        %tmp.6 = getv %tmp.5 :data;
+        %tmp.7 = null;
+        %tmp.8 = ne %tmp.6 %tmp.7;
+        push %tmp.8;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_27_169_39_end:
+        %tmp.9 = phi [%tmp.3 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_12_169_39_begin] [%tmp.8 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_27_169_39_true] [%tmp.9 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_27_169_39_end];
+        bf %tmp.9 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_8_172_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_8_172_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_45_172_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 170 12 ]
+        symbol [ msgCallback %tmp.11 170 12 23 ];
+        %tmp.11 = getv ? :msgCallback;
+        symbol [ onMessage %tmp.12 170 24 33 ];
+        %tmp.12 = getv function %tmp.11 :onMessage;
+        %tmp.13 = lgetv %msg;
+        symbol [ msg %tmp.13 170 34 37 ];
+        %tmp.14 = as %tmp.13 { (!Null) };
+        symbol [ data %tmp.15 170 38 42 ];
+        %tmp.15 = getv %tmp.14 :data;
+        invoke %tmp.11 %tmp.12(%tmp.15);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 171 12 ]
+        symbol [ Ui %tmp.16 171 12 14 ];
+        %tmp.16 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.17 171 15 28 ];
+        %tmp.17 = getv function %tmp.16 :requestUpdate;
+        invoke %tmp.16 %tmp.17();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_45_172_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_8_172_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_169_8_172_8_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_168_65_173_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 175; @symbol_functiondef = [onStop,175,13,19]; @symbol_param<0> = [state,175,20,25]; ]
+    function onStop(state) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_175_27_177_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 176 8 ]
+        symbol [ Sys %tmp.1 176 8 11 ];
+        %tmp.1 = getm $.Toybox.System;
+        symbol [ println %tmp.2 176 12 19 ];
+        %tmp.2 = getv function %tmp.1 :println;
+        %tmp.3 = "ClimbPro: stopped";
+        invoke %tmp.1 %tmp.2(%tmp.3);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_175_27_177_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 179; @symbol_functiondef = [getInitialView,179,13,27]; ]
+    function getInitialView() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_179_30_181_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc" 180 8 ]
+        %tmp.1 = newa 1;
+        symbol [ ClimbProView %tmp.5 180 21 33 ];
+        %tmp.5 = getv ? :ClimbProView;
+        %tmp.2 = newc %tmp.5 ();
+        %tmp.6 = dup %tmp.1;
+        %tmp.7 = aputv %tmp.6 0 %tmp.2;
+        ret %tmp.7;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_ClimbProApp_mc_179_30_181_4_stop:
+    }
+}
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\ClimbProApp.mc"; @line = 1; ]
+<init> {
+}
