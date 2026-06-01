@@ -10,8 +10,9 @@
 
     <item
         android:id="@+id/action_strava"
+        android:iconTint="#F27100"
         android:title="Strava"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_settings"

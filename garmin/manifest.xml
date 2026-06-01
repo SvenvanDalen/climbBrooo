@@ -1,20 +1,11 @@
 <?xml version="1.0"?>
-<!--
-
-  Garmin Connect IQ manifest for the ClimbPro datafield.
-
-  - App type: datafield (renders into a data field slot on the watch).
-  - Target: Forerunner 255 Music (product id `fr255m`).
-  - The iq:application id below is a placeholder UUID-style identifier. Replace
-    with a freshly generated one before publishing (`monkeyc --new-id`).
-
--->
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
     <iq:application
         entry="ClimbProApp"
         type="datafield"
         name="@Strings.AppName"
         id="0123456789abcdef0123456789abcdef"
+        launcherIcon="@Drawables.LauncherIcon"
         minApiLevel="3.2.0">
 
         <iq:products>

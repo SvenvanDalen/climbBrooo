@@ -14,17 +14,59 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
 
+/**
+ * Activity that displays detailed information about a single climb
+ * within a selected route.
+ *
+ * <p>This screen shows:
+ * <ul>
+ *     <li>The climb name</li>
+ *     <li>Total distance</li>
+ *     <li>Average gradient</li>
+ *     <li>Elevation gain</li>
+ *     <li>A visual climb profile</li>
+ *     <li>A list of climb segments</li>
+ * </ul>
+ *
+ * <p>The activity receives a route ID and climb index through intent extras
+ * and loads the corresponding climb via {@link ClimbDetailViewModel}.
+ *
+ * <p>Users can also rename the climb using the rename dialog.
+ */
 public final class ClimbDetailActivity extends AppCompatActivity {
 
-    private static final String EXTRA_ROUTE_ID    = "route_id";
+    /**
+     * Intent extra key for the route ID.
+     */
+    private static final String EXTRA_ROUTE_ID = "route_id";
+
+    /**
+     * Intent extra key for the climb index within the route.
+     */
     private static final String EXTRA_CLIMB_INDEX = "climb_index";
 
     private ActivityClimbDetailBinding binding;
-    private ClimbDetailViewModel       viewModel;
-    private ClimbSegmentAdapter        adapter;
-    private String                     routeId;
-    private int                        climbIndex;
+    private ClimbDetailViewModel viewModel;
+    private ClimbSegmentAdapter adapter;
 
+    /**
+     * ID of the currently selected route.
+     */
+    private String routeId;
+
+    /**
+     * Index of the selected climb inside the route.
+     */
+    private int climbIndex;
+
+    /**
+     * Creates an intent used to open this activity.
+     *
+     * @param ctx        Context used to create the intent
+     * @param routeId    Unique route identifier
+     * @param climbIndex Index of the climb inside the route
+     * @return Configured intent for launching this activity
+     */
     public static Intent intentFor(Context ctx, String routeId, int climbIndex) {
         Intent i = new Intent(ctx, ClimbDetailActivity.class);
         i.putExtra(EXTRA_ROUTE_ID, routeId);
@@ -32,56 +74,112 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         return i;
     }
 
+    /**
+     * Initializes the UI, toolbar, RecyclerView, ViewModel observers,
+     * and loads the requested climb.
+     *
+     * @param savedInstanceState Previously saved instance state
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding     = ActivityClimbDetailBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-        setSupportActionBar(binding.toolbar);
-        if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        routeId    = getIntent().getStringExtra(EXTRA_ROUTE_ID);
+        binding = ActivityClimbDetailBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        setSupportActionBar(binding.toolbar);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
+        routeId = getIntent().getStringExtra(EXTRA_ROUTE_ID);
         climbIndex = getIntent().getIntExtra(EXTRA_CLIMB_INDEX, 0);
-        viewModel  = new ViewModelProvider(this).get(ClimbDetailViewModel.class);
-        adapter    = new ClimbSegmentAdapter();
+
+        viewModel = new ViewModelProvider(this).get(ClimbDetailViewModel.class);
+        adapter = new ClimbSegmentAdapter();
 
         binding.segmentsRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.segmentsRecycler.setAdapter(adapter);
 
+        /*
+         * Observe climb data updates and refresh the UI whenever
+         * the selected climb changes.
+         */
         viewModel.climb().observe(this, climb -> {
             if (climb == null) return;
-            String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
-            binding.toolbar.setTitle(name != null ? name : "Climb " + (climbIndex + 1));
+
+            String name = climb.userDisplayName != null
+                    ? climb.userDisplayName
+                    : climb.name;
+
+            binding.toolbar.setTitle(
+                    name != null ? name : "Climb " + (climbIndex + 1)
+            );
+
             binding.climbStats.setText(String.format(
                     "%d m total · %.1f%% avg gradient · %d m elevation gain",
-                    climb.length, climb.avgGradient * 100, climb.elevationGain));
+                    climb.length,
+                    climb.avgGradient * 100,
+                    climb.elevationGain
+            ));
+
             binding.climbProfile.setSegments(climb.segments);
             adapter.setItems(climb.segments);
         });
 
+        /*
+         * Show errors from the ViewModel as toast messages.
+         */
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
+        /*
+         * Open rename dialog when the rename button is pressed.
+         */
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
 
+        /*
+         * Load the requested climb from the ViewModel.
+         */
         viewModel.loadClimb(routeId, climbIndex);
     }
 
+    /**
+     * Handles toolbar back button presses.
+     *
+     * @param item Selected menu item
+     * @return True if handled, otherwise default behavior
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) { finish(); return true; }
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Displays a dialog allowing the user to rename the current climb.
+     *
+     * <p>The entered name is passed to the ViewModel which stores
+     * the custom climb name.
+     */
     private void showRenameDialog() {
         EditText input = new EditText(this);
         input.setHint("Climb name");
+
         new AlertDialog.Builder(this)
                 .setTitle("Rename climb")
                 .setView(input)
                 .setPositiveButton("Save", (d, w) ->
-                        viewModel.renameClimb(routeId, climbIndex,
-                                input.getText().toString().trim()))
+                        viewModel.renameClimb(
+                                routeId,
+                                climbIndex,
+                                input.getText().toString().trim()
+                        ))
                 .setNegativeButton("Cancel", null)
                 .show();
     }

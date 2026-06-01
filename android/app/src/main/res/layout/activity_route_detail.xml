@@ -8,16 +8,19 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+            android:background="#02FCCA"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:backgroundTint="#02FCCA"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -29,40 +32,40 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
                 android:text="Notes"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp"/>
+                android:textStyle="bold" />
 
             <EditText
                 android:id="@+id/notes_edit"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
+                android:background="@android:drawable/edit_text"
                 android:gravity="top|start"
                 android:hint="Add notes about this route…"
-                android:inputType="textMultiLine"
-                android:background="@android:drawable/edit_text"/>
+                android:inputType="textMultiLine" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btn_rename"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_marginEnd="4dp"
-                    android:text="Rename"/>
+                    android:layout_weight="1"
+                    android:text="Rename" />
 
                 <Button
                     android:id="@+id/btn_save_notes"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_marginStart="4dp"
-                    android:text="Save notes"/>
+                    android:layout_weight="1"
+                    android:text="Save notes" />
 
             </LinearLayout>
 
@@ -71,29 +74,29 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Select for watch"/>
+                android:text="Select for watch" />
 
             <Button
                 android:id="@+id/btn_share_to_garmin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Open in Garmin Connect"/>
+                android:text="Open in Garmin Connect" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Climbs"
-                android:textStyle="bold"
-                android:textSize="16sp"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="8dp"
+                android:text="Climbs"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/climbs_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"/>
+                android:nestedScrollingEnabled="false" />
 
         </LinearLayout>
     </ScrollView>
