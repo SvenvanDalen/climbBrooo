@@ -45,6 +45,7 @@ class ClimbData {
     var segElevGain;      // segment elevation gain (m)
     var segGradient;      // segment gradient fixed-point (pct×10)
     var segColor;         // color index 0-5
+    var segSurf;          // surface type per segment: 0=asphalt 1=gravel 2=dirt 3=cobble 4=mixed 5=unknown
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -69,6 +70,7 @@ class ClimbData {
         segElevGain = new [MAX_CLIMBS];
         segGradient = new [MAX_CLIMBS];
         segColor = new [MAX_CLIMBS];
+        segSurf = new [MAX_CLIMBS];
 
         for (var i = 0; i < MAX_CLIMBS; i++) {
             climbStartDist[i] = 0;
@@ -85,11 +87,13 @@ class ClimbData {
             segElevGain[i] = new [MAX_SEGMENTS];
             segGradient[i] = new [MAX_SEGMENTS];
             segColor[i] = new [MAX_SEGMENTS];
+            segSurf[i] = new [MAX_SEGMENTS];
             for (var s = 0; s < MAX_SEGMENTS; s++) {
                 segDist[i][s] = 0;
                 segElevGain[i][s] = 0;
                 segGradient[i][s] = 0;
                 segColor[i][s] = 0;
+                segSurf[i][s] = 5; // UNKNOWN
             }
         }
 
