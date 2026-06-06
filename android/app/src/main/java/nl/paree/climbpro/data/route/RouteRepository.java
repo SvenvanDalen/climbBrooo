@@ -298,6 +298,7 @@ public final class RouteRepository {
         route.lastModifiedMs = System.currentTimeMillis();
 
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
     }
 
     /**

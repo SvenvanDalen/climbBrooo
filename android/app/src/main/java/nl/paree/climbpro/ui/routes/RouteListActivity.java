@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.routes;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -187,7 +188,9 @@ public final class RouteListActivity extends AppCompatActivity {
                                 repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        Log.w("RouteListActivity", "Surface type detection failed: " + e.getMessage());
+                    }
                 }
                 runOnUiThread(() -> {
                     viewModel.loadRoutes();

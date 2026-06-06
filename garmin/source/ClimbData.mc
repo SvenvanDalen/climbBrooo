@@ -31,7 +31,7 @@ class ClimbData {
     var climbStartLon;    // radius mode: start longitude
 
     // Calibration point arrays — populated by CommListener when it parses the "calib" key
-    // from the v2 payload. checkCalibration() is a no-op until CommListener wires these up.
+    // from the v3 payload. checkCalibration() is a no-op until CommListener wires these up.
     // (indexed [climb][calib_point])
     var calibCount;   // calibration points per climb
     var calibDist;    // distance from climb start (m)
