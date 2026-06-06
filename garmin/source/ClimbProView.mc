@@ -26,7 +26,16 @@ class ClimbProView extends Ui.DataField {
         0xAA0000,  // 5: dark red (10%+)
     ];
 
-    
+    // Surface type color palette (indices match SurfaceType constants)
+    hidden const SURFACE_COLORS = [
+        0x404040,  // 0: ASPHALT   — dark grey
+        0xC8A050,  // 1: GRAVEL    — sandy yellow
+        0x8B4513,  // 2: DIRT      — brown
+        0x909090,  // 3: COBBLESTONE — medium grey
+        0x9060C0,  // 4: MIXED     — purple
+    ];
+
+
     // Alert state (prevent re-trigger)
     hidden var alertedClimbIndex = -1;
     hidden var lastActiveClimb = -1;
@@ -126,6 +135,9 @@ class ClimbProView extends Ui.DataField {
             w - 8,
             profileHeight.toNumber()
         );
+
+        // Surface bar: 5px tall, 2px below the gradient profile bottom
+        drawSurfaceBar(dc, data, ci, 4, profileBottom.toNumber() + 2, w - 8);
 
         // =========================
         // PROGRESS MARKER
@@ -350,6 +362,40 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_LAP);
+        }
+    }
+
+    hidden function surfaceColor(surfType) {
+        if (surfType >= 0 && surfType < SURFACE_COLORS.size()) {
+            return SURFACE_COLORS[surfType];
+        }
+        return -1; // UNKNOWN — caller checks for -1 to skip drawing
+    }
+
+    // Draws a 5px-tall bar directly below the gradient profile.
+    // barX/barY: top-left corner of the bar (barY = profile bottom + 2).
+    // barWidth: same pixel width as the gradient profile.
+    // Skips drawing entirely if all segments are UNKNOWN (surfType == 5).
+    hidden function drawSurfaceBar(dc, data, ci, barX, barY, barWidth) {
+        var segCnt = data.segCount[ci];
+        if (segCnt <= 0) { return; }
+
+        var allUnknown = true;
+        for (var s = 0; s < segCnt; s++) {
+            if (data.segSurf[ci][s] != 5) { allUnknown = false; break; }
+        }
+        if (allUnknown) { return; }
+
+        var segW = barWidth / segCnt;
+        if (segW < 1) { segW = 1; }
+
+        for (var s = 0; s < segCnt; s++) {
+            var color = surfaceColor(data.segSurf[ci][s]);
+            if (color == -1) { continue; } // UNKNOWN — leave transparent
+            dc.setColor(color, Gfx.COLOR_TRANSPARENT);
+            var x = barX + s * segW;
+            var w = (s == segCnt - 1) ? (barX + barWidth - x) : segW; // fill remainder on last
+            dc.fillRectangle(x, barY, w, 5);
         }
     }
 }
