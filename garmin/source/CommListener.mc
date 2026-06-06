@@ -47,7 +47,7 @@ class PhoneMessageCallback {
         }
 
         var version = msg.get("v");
-        if (version == null || version != 1) {
+        if (version == null || version != 2) {
             Sys.println("CommListener: unsupported version " + version);
             return;
         }
@@ -58,9 +58,8 @@ class PhoneMessageCallback {
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {
-            data.climbCount = climbs.size();
-            // Store up to MAX_CLIMBS
             var max = data.MAX_CLIMBS < climbs.size() ? data.MAX_CLIMBS : climbs.size();
+            data.climbCount = max;
             for (var i = 0; i < max; i++) {
                 parseClimb(data, i, climbs[i]);
             }
@@ -69,6 +68,7 @@ class PhoneMessageCallback {
         }
 
         data.payloadReceived = true;
+        for (var i = 0; i < data.climbCount; i++) { data.calibIdx[i] = 0; }
         Sys.println("CommListener: payload parsed, " + data.climbCount + " climbs");
     }
 
@@ -77,50 +77,51 @@ class PhoneMessageCallback {
             return;
         }
 
-        data.climbStartDist[idx] = getInt(climbDict, "startDistance", 0);
-        data.climbEndDist[idx] = getInt(climbDict, "endDistance", 0);
-        data.climbLength[idx] = getInt(climbDict, "length", 0);
-        data.climbElevGain[idx] = getInt(climbDict, "elevationGain", 0);
-        data.climbAvgGrad[idx] = getInt(climbDict, "avgGradient", 0);
-        data.climbName[idx] = climbDict.get("name");
+        // Short keys (v2 format)
+        data.climbStartDist[idx] = getInt(climbDict, "sd",  0);
+        data.climbEndDist[idx]   = getInt(climbDict, "ed",  0);
+        data.climbLength[idx]    = getInt(climbDict, "len", 0);
+        data.climbElevGain[idx]  = getInt(climbDict, "eg",  0);
+        data.climbAvgGrad[idx]   = getInt(climbDict, "ag",  0);
+        data.climbName[idx]      = climbDict.get("n");
 
-        // Radius mode coordinates
-        var lat = climbDict.get("startLat");
-        var lon = climbDict.get("startLon");
-        if (lat != null && lat instanceof Toybox.Lang.Float) {
-            data.climbStartLat[idx] = lat;
-        } else if (lat != null && lat instanceof Toybox.Lang.Number) {
-            data.climbStartLat[idx] = (lat as Toybox.Lang.Number).toFloat();
-        } else {
-            data.climbStartLat[idx] = 0.0;
-        }
-        if (lon != null && lon instanceof Toybox.Lang.Float) {
-            data.climbStartLon[idx] = lon;
-        } else if (lon != null && lon instanceof Toybox.Lang.Number) {
-            data.climbStartLon[idx] = (lon as Toybox.Lang.Number).toFloat();
-        } else {
-            data.climbStartLon[idx] = 0.0;
-        }
+        // Radius mode: lat/lon as ints (degrees × 100000)
+        var slatInt = climbDict.get("slat");
+        var slonInt = climbDict.get("slon");
+        data.climbStartLat[idx] = (slatInt != null && slatInt instanceof Toybox.Lang.Number)
+            ? (slatInt as Toybox.Lang.Number).toFloat() / 100000.0f : 0.0f;
+        data.climbStartLon[idx] = (slonInt != null && slonInt instanceof Toybox.Lang.Number)
+            ? (slonInt as Toybox.Lang.Number).toFloat() / 100000.0f : 0.0f;
 
-        // Parse segments
-        var segs = climbDict.get("segments");
-        if (segs != null && segs instanceof Toybox.Lang.Array) {
-            var segCount = segs.size();
-            if (segCount > data.MAX_SEGMENTS) {
-                segCount = data.MAX_SEGMENTS;
-            }
+        // Flat segs array: [dist, elevGain, gradient, colorIndex, ...] 4 ints × segCount
+        var segs = climbDict.get("segs");
+        if (segs != null && segs instanceof Toybox.Lang.Array && segs.size() >= 4) {
+            var segCount = segs.size() / 4;
+            if (segCount > data.MAX_SEGMENTS) { segCount = data.MAX_SEGMENTS; }
             data.segCount[idx] = segCount;
             for (var s = 0; s < segCount; s++) {
-                var seg = segs[s];
-                if (seg != null && seg instanceof Toybox.Lang.Dictionary) {
-                    data.segDist[idx][s] = getInt(seg, "distance", 0);
-                    data.segElevGain[idx][s] = getInt(seg, "elevationGain", 0);
-                    data.segGradient[idx][s] = getInt(seg, "gradient", 0);
-                    data.segColor[idx][s] = getInt(seg, "colorIndex", 0);
-                }
+                data.segDist[idx][s]     = segs[s * 4];
+                data.segElevGain[idx][s] = segs[s * 4 + 1];
+                data.segGradient[idx][s] = segs[s * 4 + 2];
+                data.segColor[idx][s]    = segs[s * 4 + 3];
             }
         } else {
             data.segCount[idx] = 0;
+        }
+
+        // Flat calib array: [distFromStart, latInt, lonInt, ...] 3 ints × calibCount
+        var calib = climbDict.get("calib");
+        if (calib != null && calib instanceof Toybox.Lang.Array && calib.size() >= 3) {
+            var calibCount = calib.size() / 3;
+            if (calibCount > data.MAX_CALIB) { calibCount = data.MAX_CALIB; }
+            data.calibCount[idx] = calibCount;
+            for (var k = 0; k < calibCount; k++) {
+                data.calibDist[idx][k] = calib[k * 3];
+                data.calibLat[idx][k]  = (calib[k * 3 + 1] as Toybox.Lang.Number).toFloat() / 100000.0f;
+                data.calibLon[idx][k]  = (calib[k * 3 + 2] as Toybox.Lang.Number).toFloat() / 100000.0f;
+            }
+        } else {
+            data.calibCount[idx] = 0;
         }
     }
 
