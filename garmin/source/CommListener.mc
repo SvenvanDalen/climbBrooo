@@ -47,7 +47,7 @@ class PhoneMessageCallback {
         }
 
         var version = msg.get("v");
-        if (version == null || version != 2) {
+        if (version == null || version != 3) {
             Sys.println("CommListener: unsupported version " + version);
             return;
         }
@@ -77,7 +77,7 @@ class PhoneMessageCallback {
             return;
         }
 
-        // Short keys (v2 format)
+        // Short keys (v3 format)
         data.climbStartDist[idx] = getInt(climbDict, "sd",  0);
         data.climbEndDist[idx]   = getInt(climbDict, "ed",  0);
         data.climbLength[idx]    = getInt(climbDict, "len", 0);
@@ -122,6 +122,27 @@ class PhoneMessageCallback {
             }
         } else {
             data.calibCount[idx] = 0;
+        }
+
+        // Optional surf array: [surfaceType, ...] one int per segment (parallel to segs)
+        var surf = climbDict.get("surf");
+        if (surf != null && surf instanceof Toybox.Lang.Array) {
+            var surfSize = surf.size();
+            var segCnt = data.segCount[idx];
+            for (var s = 0; s < segCnt && s < surfSize; s++) {
+                var sv = surf[s];
+                if (sv instanceof Toybox.Lang.Number) {
+                    var si = sv.toNumber();
+                    data.segSurf[idx][s] = (si >= 0 && si <= 5) ? si : 5;
+                } else {
+                    data.segSurf[idx][s] = 5;
+                }
+            }
+        } else {
+            // surf absent — all segments unknown
+            for (var s = 0; s < data.segCount[idx]; s++) {
+                data.segSurf[idx][s] = 5;
+            }
         }
     }
 
