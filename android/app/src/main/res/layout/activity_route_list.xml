@@ -14,6 +14,69 @@
             android:layout_height="?attr/actionBarSize"
             android:title="@string/app_name"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_surface"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_all"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alle"
+                    android:checked="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_asphalt"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Asfalt"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_gravel"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gravel"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_dirt"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Onverhard"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_cobblestone"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kasseien"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_mixed"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mixed"/>
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView

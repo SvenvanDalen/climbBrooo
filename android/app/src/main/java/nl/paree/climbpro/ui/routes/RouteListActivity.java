@@ -81,6 +81,25 @@ public final class RouteListActivity extends AppCompatActivity {
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
+        binding.chipAll.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(-1);
+        });
+        binding.chipAsphalt.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.ASPHALT);
+        });
+        binding.chipGravel.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.GRAVEL);
+        });
+        binding.chipDirt.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.DIRT);
+        });
+        binding.chipCobblestone.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.COBBLESTONE);
+        });
+        binding.chipMixed.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.MIXED);
+        });
+
         binding.fab.setOnClickListener(v -> showImportDialog());
     }
 
