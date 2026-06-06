@@ -20,6 +20,7 @@ import org.osmdroid.views.overlay.Polyline;
 
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
 
 import java.util.ArrayList;
@@ -136,24 +137,45 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         routeLine.setWidth(4f);
         routeLine.setPoints(allPoints);
 
-        // Climb segment — orange highlight
-        List<GeoPoint> climbPoints = new ArrayList<>();
-        for (int i = 0; i < loadedRoute.distances.length; i++) {
-            if (loadedRoute.distances[i] >= loadedClimb.startDistance
-                    && loadedRoute.distances[i] <= loadedClimb.endDistance) {
-                climbPoints.add(new GeoPoint(loadedRoute.lats[i], loadedRoute.lons[i]));
-            }
-        }
-        Polyline climbLine = new Polyline();
-        climbLine.setColor(Color.parseColor("#FF8C00")); // orange
-        climbLine.setWidth(7f);
-        climbLine.setPoints(climbPoints);
-
         binding.mapView.getOverlays().clear();
         binding.mapView.getOverlays().add(routeLine);
-        binding.mapView.getOverlays().add(climbLine);
 
-        List<GeoPoint> zoomTarget = climbPoints.isEmpty() ? allPoints : climbPoints;
+        // Per-segment colored polylines on the climb portion
+        List<GeoPoint> allClimbPoints = new ArrayList<>();
+        GeoPoint prevSegLastPoint = null;
+        double segBoundary = loadedClimb.startDistance;
+
+        if (loadedClimb.segments != null) {
+            for (StoredSegment seg : loadedClimb.segments) {
+                double segStart = segBoundary;
+                double segEnd   = segBoundary + seg.distance;
+
+                List<GeoPoint> segPoints = new ArrayList<>();
+                if (prevSegLastPoint != null) segPoints.add(prevSegLastPoint);
+
+                for (int i = 0; i < loadedRoute.distances.length; i++) {
+                    if (loadedRoute.distances[i] >= segStart
+                            && loadedRoute.distances[i] <= segEnd) {
+                        GeoPoint p = new GeoPoint(loadedRoute.lats[i], loadedRoute.lons[i]);
+                        segPoints.add(p);
+                        allClimbPoints.add(p);
+                    }
+                }
+
+                if (segPoints.size() >= 2) {
+                    Polyline segLine = new Polyline();
+                    segLine.setColor(SegmentColorPalette.toColor(seg.colorIndex));
+                    segLine.setWidth(7f);
+                    segLine.setPoints(segPoints);
+                    binding.mapView.getOverlays().add(segLine);
+                    prevSegLastPoint = segPoints.get(segPoints.size() - 1);
+                }
+
+                segBoundary = segEnd;
+            }
+        }
+
+        List<GeoPoint> zoomTarget = allClimbPoints.isEmpty() ? allPoints : allClimbPoints;
         BoundingBox box = BoundingBox.fromGeoPoints(zoomTarget);
         binding.mapView.post(() -> binding.mapView.zoomToBoundingBox(box, true, 80));
         binding.mapView.invalidate();
