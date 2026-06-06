@@ -117,6 +117,22 @@ public final class StravaRoutesRepository {
             routeRepo.saveRoute(stored, simplified, climbs);
             Log.i(TAG, "Saved route " + routeId + " with " + climbs.size() + " climbs");
 
+            // Wire surface type detection from Strava sub_type
+            int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
+                    .detectFromStravaSubType(dto.subType);
+            if (detectedSurface != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                try {
+                    StoredRoute saved = routeRepo.loadRoute(routeId);
+                    if (saved.climbs != null) {
+                        for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                            routeRepo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
+                        }
+                    }
+                } catch (IOException e2) {
+                    Log.w(TAG, "Surface type wiring failed for " + routeId, e2);
+                }
+            }
+
         } catch (GpxParseException e) {
             Log.e(TAG, "GPX parse error for route " + routeId + ": " + e.getMessage());
         } catch (IOException e) {

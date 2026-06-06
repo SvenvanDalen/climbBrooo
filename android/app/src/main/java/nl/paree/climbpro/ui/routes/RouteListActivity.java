@@ -147,6 +147,8 @@ public final class RouteListActivity extends AppCompatActivity {
                 List<RoutePoint> smoothed  = ElevationSmoother.smooth(withDist, 5);
                 List<RoutePoint> simple    = RouteSimplifier.simplify(smoothed, 5.0);
                 List<Climb>      climbs    = ClimbDetector.detect(simple);
+                int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
+                        .detectFromGpxBytes(bytes);
 
                 String routeId = "gpx_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
                 StoredRoute stored = new StoredRoute();
@@ -156,6 +158,17 @@ public final class RouteListActivity extends AppCompatActivity {
                 stored.sourceHash   = sha256(bytes);
 
                 new RouteRepository(this).saveRoute(stored, simple, climbs);
+                if (detectedSurface != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                    RouteRepository repo = new RouteRepository(this);
+                    try {
+                        StoredRoute saved = repo.loadRoute(routeId);
+                        if (saved.climbs != null) {
+                            for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                                repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
                 runOnUiThread(() -> {
                     viewModel.loadRoutes();
                     Toast.makeText(this,

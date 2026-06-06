@@ -23,4 +23,7 @@ public final class StravaRouteDto {
 
     @JsonProperty("updated_at")
     public String updatedAt;
+
+    @JsonProperty("sub_type")
+    public int subType;
 }

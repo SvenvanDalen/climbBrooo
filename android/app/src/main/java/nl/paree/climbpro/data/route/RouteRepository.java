@@ -264,6 +264,24 @@ public final class RouteRepository {
             }
             e.climbStartCoords = coords;
         }
+
+        // Compute deduplicated set of non-UNKNOWN surface types across all segments
+        java.util.TreeSet<Integer> surfaceSet = new java.util.TreeSet<>();
+        if (route.climbs != null) {
+            for (StoredClimb sc : route.climbs) {
+                if (sc.segments != null) {
+                    for (StoredSegment ss : sc.segments) {
+                        if (ss.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                            surfaceSet.add(ss.surfaceType);
+                        }
+                    }
+                }
+            }
+        }
+        if (!surfaceSet.isEmpty()) {
+            e.surfaceTypes = surfaceSet.stream().mapToInt(Integer::intValue).toArray();
+        }
+
         return e;
     }
 
@@ -295,6 +313,45 @@ public final class RouteRepository {
         route.lastModifiedMs = System.currentTimeMillis();
 
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+    }
+
+    /**
+     * Sets the surface type of a single segment and updates the catalog's surfaceTypes index.
+     */
+    public void setSegmentSurfaceType(String routeId, int climbIndex, int segmentIndex,
+                                       int surfaceType) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex >= route.climbs.size()) {
+            throw new IOException("Climb index out of range: " + climbIndex);
+        }
+        StoredClimb sc = route.climbs.get(climbIndex);
+        if (sc.segments == null || segmentIndex >= sc.segments.size()) {
+            throw new IOException("Segment index out of range: " + segmentIndex);
+        }
+        sc.segments.get(segmentIndex).surfaceType = surfaceType;
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
+     * Sets the surface type of every segment in one climb, then updates the catalog.
+     */
+    public void setBulkClimbSurfaceType(String routeId, int climbIndex,
+                                         int surfaceType) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex >= route.climbs.size()) {
+            throw new IOException("Climb index out of range: " + climbIndex);
+        }
+        StoredClimb sc = route.climbs.get(climbIndex);
+        if (sc.segments != null) {
+            for (StoredSegment seg : sc.segments) {
+                seg.surfaceType = surfaceType;
+            }
+        }
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
     }
 
     /**
@@ -349,6 +406,33 @@ public final class RouteRepository {
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    private void rebuildCatalogSurfaceTypes(String routeId, StoredRoute route) throws IOException {
+        java.util.TreeSet<Integer> surfaceSet = new java.util.TreeSet<>();
+        if (route.climbs != null) {
+            for (StoredClimb sc : route.climbs) {
+                if (sc.segments != null) {
+                    for (StoredSegment ss : sc.segments) {
+                        if (ss.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                            surfaceSet.add(ss.surfaceType);
+                        }
+                    }
+                }
+            }
+        }
+        int[] types = surfaceSet.isEmpty() ? null
+                : surfaceSet.stream().mapToInt(Integer::intValue).toArray();
+
+        List<RouteCatalogEntry> catalog = loadCatalog();
+        for (RouteCatalogEntry e : catalog) {
+            if (e.routeId.equals(routeId)) {
+                e.surfaceTypes   = types;
+                e.lastModifiedMs = route.lastModifiedMs;
+                break;
+            }
+        }
+        saveCatalog(catalog);
     }
 
     private void migrateIfNeeded() {
