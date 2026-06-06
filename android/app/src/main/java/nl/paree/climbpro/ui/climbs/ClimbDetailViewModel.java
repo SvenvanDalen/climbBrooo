@@ -74,6 +74,30 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    public void setSurfaceType(String routeId, int climbIndex, int segmentIndex, int surfaceType) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setSegmentSurfaceType(routeId, climbIndex, segmentIndex, surfaceType);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    public void setBulkSurfaceType(String routeId, int climbIndex, int surfaceType) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setBulkClimbSurfaceType(routeId, climbIndex, surfaceType);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     @Override
     protected void onCleared() { executor.shutdown(); }
 }

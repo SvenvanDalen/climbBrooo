@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +18,31 @@ import java.util.List;
 public final class ClimbSegmentAdapter
         extends RecyclerView.Adapter<ClimbSegmentAdapter.ViewHolder> {
 
+    public interface OnSegmentLongClickListener {
+        void onSegmentLongClick(int position, StoredSegment segment);
+    }
+
     private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
 
+    // Surface badge background colors (match SurfaceType constants)
+    private static final int[] SURFACE_BG = {
+        0xFF404040, // ASPHALT — dark grey
+        0xFFC8A050, // GRAVEL  — sandy yellow
+        0xFF8B4513, // DIRT    — brown
+        0xFF909090, // COBBLESTONE — medium grey
+        0xFF9060C0, // MIXED   — purple
+    };
+
     private List<StoredSegment> items = new ArrayList<>();
+    private OnSegmentLongClickListener longClickListener;
 
     public void setItems(List<StoredSegment> list) {
         items = list != null ? list : new ArrayList<>();
         notifyDataSetChanged();
+    }
+
+    public void setOnSegmentLongClickListener(OnSegmentLongClickListener l) {
+        longClickListener = l;
     }
 
     @NonNull
@@ -41,6 +60,27 @@ public final class ClimbSegmentAdapter
         h.distView.setText(s.distance + " m");
         int ci = Math.max(0, Math.min(5, s.colorIndex));
         h.colorBar.setBackgroundColor(SEGMENT_COLORS[ci]);
+
+        // Surface badge
+        String label = SurfaceType.label(s.surfaceType);
+        if (label != null) {
+            h.surfaceBadge.setVisibility(View.VISIBLE);
+            h.surfaceBadge.setText(label);
+            int st = SurfaceType.fromInt(s.surfaceType);
+            if (st < SURFACE_BG.length) {
+                h.surfaceBadge.setBackgroundColor(SURFACE_BG[st]);
+            }
+        } else {
+            h.surfaceBadge.setVisibility(View.INVISIBLE);
+        }
+
+        // Long-press
+        h.itemView.setOnLongClickListener(v -> {
+            if (longClickListener != null) {
+                longClickListener.onSegmentLongClick(position, s);
+            }
+            return true;
+        });
     }
 
     @Override
@@ -50,11 +90,13 @@ public final class ClimbSegmentAdapter
         TextView gradientView;
         TextView distView;
         View     colorBar;
+        TextView surfaceBadge;
         ViewHolder(View v) {
             super(v);
-            gradientView = v.findViewById(R.id.segment_gradient);
-            distView     = v.findViewById(R.id.segment_distance);
-            colorBar     = v.findViewById(R.id.segment_color_bar);
+            gradientView  = v.findViewById(R.id.segment_gradient);
+            distView      = v.findViewById(R.id.segment_distance);
+            colorBar      = v.findViewById(R.id.segment_color_bar);
+            surfaceBadge  = v.findViewById(R.id.segment_surface_badge);
         }
     }
 }

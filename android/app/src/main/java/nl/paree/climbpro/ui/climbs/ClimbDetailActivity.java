@@ -5,8 +5,12 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
+
+import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -98,6 +102,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
+
+        setupBulkSurfaceSetter();
+
+        adapter.setOnSegmentLongClickListener((position, segment) ->
+                showSegmentSurfaceDialog(position, segment));
 
         viewModel.loadClimb(routeId, climbIndex);
     }
@@ -206,6 +215,46 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .setView(picker)
                 .setPositiveButton("Herbereken", (dialog, which) ->
                         viewModel.reSegment(routeId, climbIndex, picker.getValue()))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    private void setupBulkSurfaceSetter() {
+        String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed"};
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, typeLabels);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        binding.spinnerSurfaceType.setAdapter(spinnerAdapter);
+
+        binding.btnBulkSurface.setOnClickListener(v -> {
+            int selected = binding.spinnerSurfaceType.getSelectedItemPosition();
+            if (loadedClimb != null && loadedClimb.segments != null && !loadedClimb.segments.isEmpty()) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Alle segmenten instellen?")
+                        .setMessage("Dit overschrijft alle individuele instellingen voor deze klim.")
+                        .setPositiveButton("Toepassen", (d, w) ->
+                                viewModel.setBulkSurfaceType(routeId, climbIndex, selected))
+                        .setNegativeButton("Annuleer", null)
+                        .show();
+            }
+        });
+    }
+
+    private void showSegmentSurfaceDialog(int segmentIndex, nl.paree.climbpro.data.route.StoredSegment segment) {
+        String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed", "Onbekend"};
+        int current = SurfaceType.fromInt(segment.surfaceType);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Oppervlak voor segment " + (segmentIndex + 1))
+                .setSingleChoiceItems(typeLabels, current, null)
+                .setPositiveButton("Opslaan", (dialog, which) -> {
+                    android.widget.ListView lv =
+                            ((AlertDialog) dialog).getListView();
+                    int chosen = lv.getCheckedItemPosition();
+                    if (chosen >= 0 && chosen <= 5) {
+                        viewModel.setSurfaceType(routeId, climbIndex, segmentIndex, chosen);
+                    }
+                })
                 .setNegativeButton("Annuleer", null)
                 .show();
     }
