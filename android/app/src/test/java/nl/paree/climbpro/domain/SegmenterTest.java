@@ -43,6 +43,16 @@ public class SegmenterTest {
     }
 
     @Test
+    public void segmentCountIsAlways16ForVariousLengths() {
+        for (int len : new int[]{800, 1200, 2000, 5000, 10000}) {
+            List<RoutePoint> climb = buildClimb(len, 0.05);
+            List<Segment> segs = Segmenter.segment(climb);
+            assertEquals("expect " + ClimbConstants.SEGMENT_COUNT + " segments for " + len + "m climb",
+                    ClimbConstants.SEGMENT_COUNT, segs.size());
+        }
+    }
+
+    @Test
     public void segmentsHavePositiveDistances() {
         List<RoutePoint> climb = buildClimb(1500, 0.05);
         List<Segment> segs = Segmenter.segment(climb);
