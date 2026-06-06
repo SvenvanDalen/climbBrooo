@@ -29,4 +29,7 @@ public final class RouteCatalogEntry {
 
     public long importedAtMs;
     public long lastModifiedMs;
+
+    /** Deduplicated set of non-UNKNOWN SurfaceType indices across all segments of all climbs. */
+    public int[] surfaceTypes;
 }
