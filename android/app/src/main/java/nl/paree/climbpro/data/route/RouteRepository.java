@@ -7,8 +7,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import nl.paree.climbpro.domain.climb.Climb;
+import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.route.RoutePoint;
+import nl.paree.climbpro.domain.segment.CalibrationPoint;
 import nl.paree.climbpro.domain.segment.Segment;
+import nl.paree.climbpro.domain.segment.Segmenter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -270,7 +273,7 @@ public final class RouteRepository {
 
     /**
      * Re-segments one climb in a stored route using the given segment count.
-     * Pass {@code newSegmentCount <= 0} to fall back to {@link nl.paree.climbpro.domain.climb.ClimbConstants#SEGMENT_COUNT}.
+     * Pass {@code newSegmentCount <= 0} to fall back to {@link ClimbConstants#SEGMENT_COUNT}.
      */
     public void reSegmentClimb(String routeId, int climbIndex, int newSegmentCount) throws IOException {
         StoredRoute route = loadRoute(routeId);
@@ -282,12 +285,12 @@ public final class RouteRepository {
         List<RoutePoint> climbPts = extractClimbPoints(route, sc);
 
         int count = newSegmentCount > 0 ? newSegmentCount
-                                        : nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_COUNT;
+                                        : ClimbConstants.SEGMENT_COUNT;
 
         sc.segments          = toStoredSegments(
-                nl.paree.climbpro.domain.segment.Segmenter.segment(climbPts, count));
+                Segmenter.segment(climbPts, count));
         sc.calibrationPoints = toStoredCalibPoints(
-                nl.paree.climbpro.domain.segment.Segmenter.calibrationPoints(climbPts));
+                Segmenter.calibrationPoints(climbPts)); // uses SEGMENT_COUNT spacing; acceptable for custom counts
         sc.segmentCount      = count;
         route.lastModifiedMs = System.currentTimeMillis();
 
@@ -313,10 +316,9 @@ public final class RouteRepository {
         return pts;
     }
 
-    private static List<StoredSegment> toStoredSegments(
-            List<nl.paree.climbpro.domain.segment.Segment> segs) {
+    private static List<StoredSegment> toStoredSegments(List<Segment> segs) {
         List<StoredSegment> out = new ArrayList<>(segs.size());
-        for (nl.paree.climbpro.domain.segment.Segment s : segs) {
+        for (Segment s : segs) {
             StoredSegment ss = new StoredSegment();
             ss.distance      = s.distance;
             ss.elevationGain = s.elevationGain;
@@ -327,10 +329,9 @@ public final class RouteRepository {
         return out;
     }
 
-    private static List<StoredCalibrationPoint> toStoredCalibPoints(
-            List<nl.paree.climbpro.domain.segment.CalibrationPoint> cps) {
+    private static List<StoredCalibrationPoint> toStoredCalibPoints(List<CalibrationPoint> cps) {
         List<StoredCalibrationPoint> out = new ArrayList<>(cps.size());
-        for (nl.paree.climbpro.domain.segment.CalibrationPoint cp : cps) {
+        for (CalibrationPoint cp : cps) {
             StoredCalibrationPoint scp = new StoredCalibrationPoint();
             scp.distanceFromClimbStart = cp.distanceFromClimbStart;
             scp.lat                    = cp.lat;
@@ -354,7 +355,7 @@ public final class RouteRepository {
         android.content.SharedPreferences prefs =
                 context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE);
         int stored = prefs.getInt(PREF_SEGMENT_VERSION, 0);
-        if (stored == nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_VERSION) return;
+        if (stored == ClimbConstants.SEGMENT_VERSION) return;
 
         File[] files = routesDir.listFiles();
         if (files != null) {
@@ -363,9 +364,9 @@ public final class RouteRepository {
         if (catalogFile.exists()) catalogFile.delete();
 
         prefs.edit()
-             .putInt(PREF_SEGMENT_VERSION, nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_VERSION)
+             .putInt(PREF_SEGMENT_VERSION, ClimbConstants.SEGMENT_VERSION)
              .apply();
         Log.i(TAG, "Route migration: cleared all routes (segment format v"
-                + nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_VERSION + ")");
+                + ClimbConstants.SEGMENT_VERSION + ")");
     }
 }
