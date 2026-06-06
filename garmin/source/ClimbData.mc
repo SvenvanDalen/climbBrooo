@@ -1,4 +1,5 @@
 using Toybox.System as Sys;
+using Toybox.Math as Math;
 
 /**
  * Flat data store for all climb/segment data received from the phone.
@@ -8,8 +9,9 @@ using Toybox.System as Sys;
 class ClimbData {
 
     // Limits
-    const MAX_CLIMBS = 8;
+    const MAX_CLIMBS = 16;
     const MAX_SEGMENTS = 20;
+    const MAX_CALIB = 16;
 
     // Payload state
     var payloadReceived = false;
@@ -27,6 +29,13 @@ class ClimbData {
     var climbName;        // display name (String or null)
     var climbStartLat;    // radius mode: start latitude
     var climbStartLon;    // radius mode: start longitude
+
+    // Calibration point arrays (indexed [climb][calib_point])
+    var calibCount;   // calibration points per climb
+    var calibDist;    // distance from climb start (m)
+    var calibLat;     // latitude (Float)
+    var calibLon;     // longitude (Float)
+    var calibIdx;     // next calibration point index to check (reset on payload)
 
     // Segment-level arrays (indexed [climb][segment])
     var segCount;         // segments per climb
@@ -80,6 +89,25 @@ class ClimbData {
                 segColor[i][s] = 0;
             }
         }
+
+        calibCount = new [MAX_CLIMBS];
+        calibDist  = new [MAX_CLIMBS];
+        calibLat   = new [MAX_CLIMBS];
+        calibLon   = new [MAX_CLIMBS];
+        calibIdx   = new [MAX_CLIMBS];
+
+        for (var i = 0; i < MAX_CLIMBS; i++) {
+            calibCount[i] = 0;
+            calibIdx[i]   = 0;
+            calibDist[i]  = new [MAX_CALIB];
+            calibLat[i]   = new [MAX_CALIB];
+            calibLon[i]   = new [MAX_CALIB];
+            for (var k = 0; k < MAX_CALIB; k++) {
+                calibDist[i][k] = 0;
+                calibLat[i][k]  = 0.0f;
+                calibLon[i][k]  = 0.0f;
+            }
+        }
     }
 
     /**
@@ -129,5 +157,40 @@ class ClimbData {
                 return;
             }
         }
+    }
+
+    // Call on each GPS update when activeClimbIndex >= 0.
+    // Resets progressInClimb when within 30 m of the next calibration point.
+    function checkCalibration(lat, lon) {
+        if (activeClimbIndex < 0) { return; }
+        var ci = activeClimbIndex;
+        var k  = calibIdx[ci];
+        if (k >= calibCount[ci]) { return; }
+
+        var dlat = lat - calibLat[ci][k];
+        var dlon = lon - calibLon[ci][k];
+        // Rough distance in metres: flat-Earth approx
+        var cosLat = Math.cos(lat * Math.PI / 180.0f);
+        var dm = Math.sqrt((dlat * 111111.0f) * (dlat * 111111.0f)
+                         + (dlon * 111111.0f * cosLat) * (dlon * 111111.0f * cosLat));
+        if (dm < 30.0f) {
+            progressInClimb = calibDist[ci][k];
+            calibIdx[ci] = k + 1;
+            updateCurrentSegment();
+        }
+    }
+
+    hidden function updateCurrentSegment() {
+        var ci = activeClimbIndex;
+        if (ci < 0) { return; }
+        var cumDist = 0;
+        for (var s = 0; s < segCount[ci]; s++) {
+            cumDist += segDist[ci][s];
+            if (progressInClimb <= cumDist) {
+                activeSegmentIndex = s;
+                return;
+            }
+        }
+        activeSegmentIndex = segCount[ci] - 1;
     }
 }
