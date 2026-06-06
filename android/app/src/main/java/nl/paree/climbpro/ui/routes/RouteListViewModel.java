@@ -10,7 +10,6 @@ import androidx.lifecycle.MutableLiveData;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
-import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.service.SyncScheduler;
 
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public final class RouteListViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean>                 loading     = new MutableLiveData<>(false);
 
     /** -1 = show all; 0–4 = filter by SurfaceType constant */
-    private int activeSurfaceFilter = -1;
+    private volatile int activeSurfaceFilter = -1;
 
     public RouteListViewModel(@NonNull Application app) {
         super(app);

@@ -23,6 +23,7 @@ import nl.paree.climbpro.domain.route.ElevationSmoother;
 import nl.paree.climbpro.domain.route.RouteSimplifier;
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
+import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
@@ -85,19 +86,19 @@ public final class RouteListActivity extends AppCompatActivity {
             if (checked) viewModel.setSurfaceFilter(-1);
         });
         binding.chipAsphalt.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.ASPHALT);
+            if (checked) viewModel.setSurfaceFilter(SurfaceType.ASPHALT);
         });
         binding.chipGravel.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.GRAVEL);
+            if (checked) viewModel.setSurfaceFilter(SurfaceType.GRAVEL);
         });
         binding.chipDirt.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.DIRT);
+            if (checked) viewModel.setSurfaceFilter(SurfaceType.DIRT);
         });
         binding.chipCobblestone.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.COBBLESTONE);
+            if (checked) viewModel.setSurfaceFilter(SurfaceType.COBBLESTONE);
         });
         binding.chipMixed.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(nl.paree.climbpro.domain.segment.SurfaceType.MIXED);
+            if (checked) viewModel.setSurfaceFilter(SurfaceType.MIXED);
         });
 
         binding.fab.setOnClickListener(v -> showImportDialog());
@@ -177,7 +178,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 stored.sourceHash   = sha256(bytes);
 
                 new RouteRepository(this).saveRoute(stored, simple, climbs);
-                if (detectedSurface != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                if (detectedSurface != SurfaceType.UNKNOWN) {
                     RouteRepository repo = new RouteRepository(this);
                     try {
                         StoredRoute saved = repo.loadRoute(routeId);
