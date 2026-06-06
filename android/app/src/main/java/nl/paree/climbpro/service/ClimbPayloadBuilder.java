@@ -1,116 +1,110 @@
 package nl.paree.climbpro.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import nl.paree.climbpro.data.route.StoredCalibrationPoint;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
-import nl.paree.climbpro.protocol.Climb;
-import nl.paree.climbpro.protocol.ClimbPayload;
-import nl.paree.climbpro.protocol.Segment;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Converts a {@link StoredRoute} + list of {@link StoredClimb}s into the wire-format
- * {@link ClimbPayload} and serialises it to JSON bytes.
+ * Serialises a {@link StoredRoute} to the compact wire-format payload (version 2).
  *
- * Encoding rules:
- *   - distances in metres, integers
- *   - gradients as fixed-point: percent × 10, rounded half-away-from-zero
- *   - color indices 0–5
+ * Format:
+ *   {v:2, mode:"route", routeId:"...", climbs:[
+ *     {sd:N, ed:N, len:N, eg:N, ag:N, n:"...",
+ *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
+ *      calib:[dist,latInt,lonInt, ...]}                  // 3 ints × calibCount (optional)
+ *   ]}
+ *
+ * latInt/lonInt = degrees × 100000 (integer).
+ * gradient = fraction × 100 × 10 (fixed-point pct×10).
  */
 public final class ClimbPayloadBuilder {
 
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private final ObjectMapper mapper;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
-    /**
-     * Build a route-follow payload.
-     */
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
-        ClimbPayload payload = new ClimbPayload();
-        payload.setV(SCHEMA_VERSION);
-        payload.setMode(ClimbPayload.Mode.ROUTE);
-        payload.setRouteId(route.routeId);
-
-        String displayName = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (displayName != null && displayName.length() <= 32) {
-            payload.setName(displayName);
-        }
-
-        payload.setClimbs(convertClimbs(route.climbs, false));
-        return serialise(payload);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("v",       SCHEMA_VERSION);
+        payload.put("mode",    "route");
+        payload.put("routeId", route.routeId);
+        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+        if (name != null && name.length() <= 32) payload.put("name", name);
+        payload.put("climbs",  buildClimbs(route.climbs, false));
+        return mapper.writeValueAsBytes(payload);
     }
 
-    /**
-     * Build a radius-mode payload from a cross-route list of climbs.
-     */
     public byte[] buildRadiusPayload(List<StoredClimb> climbs) throws IOException {
-        ClimbPayload payload = new ClimbPayload();
-        payload.setV(SCHEMA_VERSION);
-        payload.setMode(ClimbPayload.Mode.RADIUS);
-        payload.setClimbs(convertClimbs(climbs, true));
-        return serialise(payload);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("v",      SCHEMA_VERSION);
+        payload.put("mode",   "radius");
+        payload.put("climbs", buildClimbs(climbs, true));
+        return mapper.writeValueAsBytes(payload);
     }
 
-    // -------------------------------------------------------------------------
-
-    private List<Climb> convertClimbs(List<StoredClimb> source, boolean radiusMode) {
-        if (source == null) return new ArrayList<>();
-        List<Climb> out = new ArrayList<>(source.size());
-        for (StoredClimb sc : source) {
-            Climb c = new Climb();
-            c.setLength(sc.length);
-            c.setElevationGain(sc.elevationGain);
-            c.setAvgGradient(toFixedPoint(sc.avgGradient));
-
-            if (!radiusMode) {
-                c.setStartDistance(sc.startDistance);
-                c.setEndDistance(sc.endDistance);
+    private List<Map<String, Object>> buildClimbs(List<StoredClimb> src, boolean radius) {
+        if (src == null) return new ArrayList<>();
+        List<Map<String, Object>> out = new ArrayList<>(src.size());
+        for (StoredClimb sc : src) {
+            Map<String, Object> c = new LinkedHashMap<>();
+            if (!radius) {
+                c.put("sd", sc.startDistance);
+                c.put("ed", sc.endDistance);
             } else {
-                if (!Double.isNaN(sc.startLat) && !Double.isNaN(sc.startLon)) {
-                    c.setStartLat(sc.startLat);
-                    c.setStartLon(sc.startLon);
-                }
+                c.put("slat", Math.round(sc.startLat * 100000));
+                c.put("slon", Math.round(sc.startLon * 100000));
             }
-
+            c.put("len", sc.length);
+            c.put("eg",  sc.elevationGain);
+            c.put("ag",  toFixedPoint(sc.avgGradient));
             String name = sc.userDisplayName != null ? sc.userDisplayName : sc.name;
-            if (name != null && name.length() <= 32) c.setName(name);
-
-            c.setSegments(convertSegments(sc.segments));
+            if (name != null && name.length() <= 32) c.put("n", name);
+            c.put("segs", buildSegs(sc.segments));
+            if (sc.calibrationPoints != null && !sc.calibrationPoints.isEmpty()) {
+                c.put("calib", buildCalib(sc.calibrationPoints));
+            }
             out.add(c);
         }
         return out;
     }
 
-    private List<Segment> convertSegments(List<StoredSegment> source) {
-        if (source == null) return new ArrayList<>();
-        List<Segment> out = new ArrayList<>(source.size());
-        for (StoredSegment ss : source) {
-            Segment s = new Segment();
-            s.setDistance(ss.distance);
-            s.setElevationGain(ss.elevationGain);
-            s.setGradient(toFixedPoint(ss.gradient));
-            s.setColorIndex(ss.colorIndex);
-            out.add(s);
+    private static int[] buildSegs(List<StoredSegment> segs) {
+        if (segs == null) return new int[0];
+        int[] arr = new int[segs.size() * 4];
+        for (int i = 0; i < segs.size(); i++) {
+            StoredSegment s = segs.get(i);
+            arr[i * 4]     = s.distance;
+            arr[i * 4 + 1] = s.elevationGain;
+            arr[i * 4 + 2] = toFixedPoint(s.gradient);
+            arr[i * 4 + 3] = s.colorIndex;
         }
-        return out;
+        return arr;
     }
 
-    /** gradient fraction → fixed-point (percent × 10), rounded half-away-from-zero. */
+    private static int[] buildCalib(List<StoredCalibrationPoint> pts) {
+        int[] arr = new int[pts.size() * 3];
+        for (int i = 0; i < pts.size(); i++) {
+            StoredCalibrationPoint p = pts.get(i);
+            arr[i * 3]     = p.distanceFromClimbStart;
+            arr[i * 3 + 1] = (int) Math.round(p.lat * 100000);
+            arr[i * 3 + 2] = (int) Math.round(p.lon * 100000);
+        }
+        return arr;
+    }
+
     private static int toFixedPoint(double gradientFraction) {
         double pct = gradientFraction * 100.0;
         return (int) (pct >= 0 ? Math.floor(pct * 10 + 0.5) : Math.ceil(pct * 10 - 0.5));
-    }
-
-    private byte[] serialise(ClimbPayload payload) throws IOException {
-        return mapper.writeValueAsBytes(payload);
     }
 }
