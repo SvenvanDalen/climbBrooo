@@ -109,7 +109,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
     }
 
     private void drawRoute(StoredRoute route) {
-        if (route.lats == null || route.lats.length == 0) return;
+        if (route.lats == null || route.lons == null
+                || route.lats.length == 0 || route.lons.length < route.lats.length) return;
 
         List<GeoPoint> points = new ArrayList<>(route.lats.length);
         for (int i = 0; i < route.lats.length; i++) {
