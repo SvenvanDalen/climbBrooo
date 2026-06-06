@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Splits a climb's route points into segments, each representing exactly
- * {@link ClimbConstants#SEGMENT_FRACTION} of the total climb length.
- * The last segment covers any tail that doesn't fill a full slice.
+ * Splits a climb's route points into exactly {@link ClimbConstants#SEGMENT_COUNT} segments.
+ * Each segment represents the same distance; the last segment may be smaller due to rounding.
  *
  * Invariant: sum(segment.distance) == climb.length (within 1 m rounding).
  */
@@ -29,7 +28,7 @@ public final class Segmenter {
         double totalLength = last.distance - first.distance;
         if (totalLength <= 0) return new ArrayList<>();
 
-        double segmentLength = totalLength * ClimbConstants.SEGMENT_FRACTION;
+        double segmentLength = totalLength / ClimbConstants.SEGMENT_COUNT;
         List<Segment> segments = new ArrayList<>();
 
         double segStart = first.distance;

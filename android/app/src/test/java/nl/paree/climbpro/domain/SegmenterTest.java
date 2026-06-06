@@ -34,11 +34,11 @@ public class SegmenterTest {
     }
 
     @Test
-    public void segmentCountIsCorrectFor8PctFraction() {
+    public void segmentCountIsFixed() {
         List<RoutePoint> climb = buildClimb(2000, 0.072);
         List<Segment> segs = Segmenter.segment(climb);
-        // 1 / 0.08 = 12.5, so expect 12 or 13 segments
-        assertTrue("expect 12 or 13 segments", segs.size() == 12 || segs.size() == 13);
+        // SEGMENT_COUNT = 16, so always expect exactly 16 segments
+        assertEquals("expect exactly 16 segments", 16, segs.size());
     }
 
     @Test
