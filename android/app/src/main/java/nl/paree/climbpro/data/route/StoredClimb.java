@@ -20,4 +20,5 @@ public final class StoredClimb {
     public String name;
     public String userDisplayName;
     public List<StoredSegment> segments;
+    public List<StoredCalibrationPoint> calibrationPoints; // null on routes stored before version 2
 }

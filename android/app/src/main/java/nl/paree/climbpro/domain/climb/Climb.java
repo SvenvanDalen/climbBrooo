@@ -1,6 +1,7 @@
 package nl.paree.climbpro.domain.climb;
 
 import nl.paree.climbpro.domain.segment.Segment;
+import nl.paree.climbpro.domain.segment.CalibrationPoint;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +23,7 @@ public final class Climb {
     public final double startLon;
     public final String name;
     public final List<Segment> segments;
+    public final List<CalibrationPoint> calibrationPoints;
 
     private Climb(Builder b) {
         this.startDistance = b.startDistance;
@@ -33,6 +35,7 @@ public final class Climb {
         this.startLon = b.startLon;
         this.name = b.name;
         this.segments = Collections.unmodifiableList(b.segments);
+        this.calibrationPoints = Collections.unmodifiableList(b.calibrationPoints);
     }
 
     public boolean hasCoordinates() {
@@ -53,6 +56,7 @@ public final class Climb {
         private double startLon = Double.NaN;
         private String name;
         private List<Segment> segments = Collections.emptyList();
+        private List<CalibrationPoint> calibrationPoints = Collections.emptyList();
 
         public Builder startDistance(int v) { this.startDistance = v; return this; }
         public Builder endDistance(int v) { this.endDistance = v; return this; }
@@ -63,6 +67,7 @@ public final class Climb {
         public Builder startLon(double v) { this.startLon = v; return this; }
         public Builder name(String v) { this.name = v; return this; }
         public Builder segments(List<Segment> v) { this.segments = v; return this; }
+        public Builder calibrationPoints(List<CalibrationPoint> v) { this.calibrationPoints = v; return this; }
         public Climb build() { return new Climb(this); }
     }
 

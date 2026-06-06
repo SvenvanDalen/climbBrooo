@@ -2,8 +2,10 @@ package nl.paree.climbpro.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.paree.climbpro.data.route.StoredCalibrationPoint;
+import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
 import org.junit.Test;
+import java.util.Collections;
 import static org.junit.Assert.*;
 
 public class CalibrationPointTest {
@@ -38,5 +40,19 @@ public class CalibrationPointTest {
         String json = "{\"distanceFromClimbStart\":100,\"lat\":52.0,\"lon\":4.0,\"future\":\"ignored\"}";
         StoredCalibrationPoint p = mapper.readValue(json, StoredCalibrationPoint.class);
         assertEquals(100, p.distanceFromClimbStart);
+    }
+
+    @Test
+    public void climbBuilderAcceptsCalibrationPoints() {
+        CalibrationPoint cp = new CalibrationPoint(500, 51.5, 5.0);
+        Climb c = Climb.builder()
+                .length(1000)
+                .elevationGain(50)
+                .avgGradient(0.05)
+                .segments(Collections.emptyList())
+                .calibrationPoints(Collections.singletonList(cp))
+                .build();
+        assertEquals(1, c.calibrationPoints.size());
+        assertEquals(500, c.calibrationPoints.get(0).distanceFromClimbStart);
     }
 }
