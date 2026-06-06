@@ -4,13 +4,13 @@ using Toybox.Math as Math;
 /**
  * Flat data store for all climb/segment data received from the phone.
  * Uses parallel arrays to minimize object allocation on the watch.
- * Memory budget: ~4KB for 8 climbs × 16 segments.
+ * Memory budget: ~4KB for 16 climbs × 16 segments.
  */
 class ClimbData {
 
     // Limits
     const MAX_CLIMBS = 16;
-    const MAX_SEGMENTS = 20;
+    const MAX_SEGMENTS = 16;
     const MAX_CALIB = 16;
 
     // Payload state
@@ -30,7 +30,9 @@ class ClimbData {
     var climbStartLat;    // radius mode: start latitude
     var climbStartLon;    // radius mode: start longitude
 
-    // Calibration point arrays (indexed [climb][calib_point])
+    // Calibration point arrays — populated by CommListener when it parses the "calib" key
+    // from the v2 payload. checkCalibration() is a no-op until CommListener wires these up.
+    // (indexed [climb][calib_point])
     var calibCount;   // calibration points per climb
     var calibDist;    // distance from climb start (m)
     var calibLat;     // latitude (Float)
@@ -50,6 +52,7 @@ class ClimbData {
     var progressInClimb = 0;       // meters into the active climb
     var distToNextClimb = -1;      // meters to the next climb start (-1 = unknown)
     var nextClimbIndex = -1;       // index of next upcoming climb
+    var lastElapsedDistance = 0;  // last GPS elapsed distance passed to updateProgress
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -115,6 +118,7 @@ class ClimbData {
      * Updates activeClimbIndex, activeSegmentIndex, progressInClimb, distToNextClimb.
      */
     function updateProgress(elapsedDistance) {
+        lastElapsedDistance = elapsedDistance;
         if (!payloadReceived || mode == null || !mode.equals("route")) {
             return;
         }
@@ -174,7 +178,10 @@ class ClimbData {
         var dm = Math.sqrt((dlat * 111111.0f) * (dlat * 111111.0f)
                          + (dlon * 111111.0f * cosLat) * (dlon * 111111.0f * cosLat));
         if (dm < 30.0f) {
-            progressInClimb = calibDist[ci][k];
+            // Shift climbStartDist so the NEXT updateProgress() call produces the correct progress.
+            // GPS says we are at lastElapsedDistance; we know we're really at calibDist[ci][k].
+            climbStartDist[ci] = lastElapsedDistance - calibDist[ci][k];
+            progressInClimb    = calibDist[ci][k];
             calibIdx[ci] = k + 1;
             updateCurrentSegment();
         }
