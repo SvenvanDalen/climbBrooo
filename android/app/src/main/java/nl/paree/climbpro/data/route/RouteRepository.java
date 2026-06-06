@@ -265,22 +265,7 @@ public final class RouteRepository {
             e.climbStartCoords = coords;
         }
 
-        // Compute deduplicated set of non-UNKNOWN surface types across all segments
-        java.util.TreeSet<Integer> surfaceSet = new java.util.TreeSet<>();
-        if (route.climbs != null) {
-            for (StoredClimb sc : route.climbs) {
-                if (sc.segments != null) {
-                    for (StoredSegment ss : sc.segments) {
-                        if (ss.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
-                            surfaceSet.add(ss.surfaceType);
-                        }
-                    }
-                }
-            }
-        }
-        if (!surfaceSet.isEmpty()) {
-            e.surfaceTypes = surfaceSet.stream().mapToInt(Integer::intValue).toArray();
-        }
+        e.surfaceTypes = computeSurfaceTypes(route);
 
         return e;
     }
@@ -344,10 +329,12 @@ public final class RouteRepository {
             throw new IOException("Climb index out of range: " + climbIndex);
         }
         StoredClimb sc = route.climbs.get(climbIndex);
-        if (sc.segments != null) {
-            for (StoredSegment seg : sc.segments) {
-                seg.surfaceType = surfaceType;
-            }
+        if (sc.segments == null) {
+            Log.w(TAG, "setBulkClimbSurfaceType: climb " + climbIndex + " has no segments");
+            return;
+        }
+        for (StoredSegment seg : sc.segments) {
+            seg.surfaceType = surfaceType;
         }
         route.lastModifiedMs = System.currentTimeMillis();
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
@@ -398,17 +385,7 @@ public final class RouteRepository {
         return out;
     }
 
-    private static double haversine(double lat1, double lon1, double lat2, double lon2) {
-        final double R = 6_371_000.0;
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    private void rebuildCatalogSurfaceTypes(String routeId, StoredRoute route) throws IOException {
+    private static int[] computeSurfaceTypes(StoredRoute route) {
         java.util.TreeSet<Integer> surfaceSet = new java.util.TreeSet<>();
         if (route.climbs != null) {
             for (StoredClimb sc : route.climbs) {
@@ -421,16 +398,35 @@ public final class RouteRepository {
                 }
             }
         }
-        int[] types = surfaceSet.isEmpty() ? null
+        return surfaceSet.isEmpty() ? null
                 : surfaceSet.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    private static double haversine(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6_371_000.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    private void rebuildCatalogSurfaceTypes(String routeId, StoredRoute route) throws IOException {
+        int[] types = computeSurfaceTypes(route);
 
         List<RouteCatalogEntry> catalog = loadCatalog();
+        boolean found = false;
         for (RouteCatalogEntry e : catalog) {
             if (e.routeId.equals(routeId)) {
                 e.surfaceTypes   = types;
                 e.lastModifiedMs = route.lastModifiedMs;
+                found = true;
                 break;
             }
+        }
+        if (!found) {
+            Log.w(TAG, "rebuildCatalogSurfaceTypes: route not found in catalog: " + routeId);
         }
         saveCatalog(catalog);
     }
