@@ -25,14 +25,7 @@ import nl.paree.climbpro.data.route.StoredSegment;
  */
 public final class ClimbProfileView extends View {
 
-    private static final int[] SEGMENT_COLORS = {
-            Color.parseColor("#4CAF50"),  // 0 green (0-2%)
-            Color.parseColor("#8BC34A"),  // 1 light green (2-4%)
-            Color.parseColor("#FFEB3B"),  // 2 yellow (4-6%)
-            Color.parseColor("#FF9800"),  // 3 orange (6-8%)
-            Color.parseColor("#FF5722"),  // 4 dark orange (8-10%)
-            Color.parseColor("#F44336"),  // 5 red (10%+)
-    };
+    private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
 
     private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint outlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);

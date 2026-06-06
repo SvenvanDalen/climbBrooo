@@ -18,14 +18,7 @@ import java.util.List;
 public final class ClimbSegmentAdapter
         extends RecyclerView.Adapter<ClimbSegmentAdapter.ViewHolder> {
 
-    private static final int[] SEGMENT_COLORS = {
-            Color.parseColor("#FFFF99"),  // 0 light yellow
-            Color.parseColor("#FFFF00"),  // 1 yellow
-            Color.parseColor("#FFD700"),  // 2 dark yellow
-            Color.parseColor("#FF8C00"),  // 3 orange
-            Color.parseColor("#FF4500"),  // 4 dark orange
-            Color.parseColor("#FF0000"),  // 5 red
-    };
+    private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
 
     private List<StoredSegment> items = new ArrayList<>();
 
