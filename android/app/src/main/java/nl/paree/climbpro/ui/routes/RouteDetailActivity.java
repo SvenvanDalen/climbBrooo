@@ -2,9 +2,9 @@ package nl.paree.climbpro.ui.routes;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -13,10 +13,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import nl.paree.climbpro.R;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.BoundingBox;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.overlay.Polyline;
+
+import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 import nl.paree.climbpro.ui.climbs.ClimbListAdapter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class RouteDetailActivity extends AppCompatActivity {
 
@@ -41,6 +49,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        binding.mapView.setTileSource(TileSourceFactory.MAPNIK);
+        binding.mapView.setMultiTouchControls(true);
+        binding.mapView.getController().setZoom(13.0);
+
         routeId   = getIntent().getStringExtra(EXTRA_ROUTE_ID);
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
         adapter   = new ClimbListAdapter();
@@ -57,6 +69,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.toolbar.setTitle(name != null ? name : route.routeId);
             binding.notesEdit.setText(route.notes != null ? route.notes : "");
             adapter.setItems(route.climbs);
+            drawRoute(route);
         });
 
         viewModel.error().observe(this,
@@ -78,9 +91,42 @@ public final class RouteDetailActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        binding.mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        binding.mapView.onPause();
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) { finish(); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void drawRoute(StoredRoute route) {
+        if (route.lats == null || route.lats.length == 0) return;
+
+        List<GeoPoint> points = new ArrayList<>(route.lats.length);
+        for (int i = 0; i < route.lats.length; i++) {
+            points.add(new GeoPoint(route.lats[i], route.lons[i]));
+        }
+
+        Polyline polyline = new Polyline();
+        polyline.setColor(Color.BLUE);
+        polyline.setWidth(5f);
+        polyline.setPoints(points);
+
+        binding.mapView.getOverlays().clear();
+        binding.mapView.getOverlays().add(polyline);
+
+        BoundingBox box = BoundingBox.fromGeoPoints(points);
+        binding.mapView.post(() -> binding.mapView.zoomToBoundingBox(box, true, 50));
+        binding.mapView.invalidate();
     }
 
     private void showRenameDialog() {
@@ -100,10 +146,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
         Intent share = new Intent(Intent.ACTION_SEND);
         share.setType("application/gpx+xml");
         share.putExtra(Intent.EXTRA_SUBJECT, "ClimbPro route");
-        // Prefer Garmin Connect if installed
         share.setPackage("com.garmin.android.apps.connectmobile");
         if (getPackageManager().resolveActivity(share, 0) == null) {
-            share.setPackage(null); // fall back to chooser
+            share.setPackage(null);
         }
         startActivity(Intent.createChooser(share, "Open in Garmin Connect"));
     }
