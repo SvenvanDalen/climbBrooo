@@ -264,6 +264,82 @@ public final class RouteRepository {
         return e;
     }
 
+    // -------------------------------------------------------------------------
+    // Re-segmentation
+    // -------------------------------------------------------------------------
+
+    /**
+     * Re-segments one climb in a stored route using the given segment count.
+     * Pass {@code newSegmentCount <= 0} to fall back to {@link nl.paree.climbpro.domain.climb.ClimbConstants#SEGMENT_COUNT}.
+     */
+    public void reSegmentClimb(String routeId, int climbIndex, int newSegmentCount) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex >= route.climbs.size()) {
+            throw new IOException("Climb index out of range: " + climbIndex);
+        }
+
+        StoredClimb sc = route.climbs.get(climbIndex);
+        List<RoutePoint> climbPts = extractClimbPoints(route, sc);
+
+        int count = newSegmentCount > 0 ? newSegmentCount
+                                        : nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_COUNT;
+
+        sc.segments          = toStoredSegments(
+                nl.paree.climbpro.domain.segment.Segmenter.segment(climbPts, count));
+        sc.calibrationPoints = toStoredCalibPoints(
+                nl.paree.climbpro.domain.segment.Segmenter.calibrationPoints(climbPts));
+        sc.segmentCount      = count;
+        route.lastModifiedMs = System.currentTimeMillis();
+
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+    }
+
+    /**
+     * Extracts the sub-list of RoutePoints that belong to the given climb,
+     * using the route's parallel arrays and the climb's startDistance/endDistance.
+     */
+    private static List<RoutePoint> extractClimbPoints(StoredRoute route, StoredClimb sc) {
+        List<RoutePoint> pts = new ArrayList<>();
+        if (route.lats == null || route.lats.length == 0) return pts;
+
+        int n = route.lats.length;
+        for (int i = 0; i < n; i++) {
+            double d = route.distances[i];
+            if (d >= sc.startDistance && d <= sc.endDistance) {
+                pts.add(new RoutePoint(route.lats[i], route.lons[i],
+                        route.elevations[i], route.distances[i]));
+            }
+        }
+        return pts;
+    }
+
+    private static List<StoredSegment> toStoredSegments(
+            List<nl.paree.climbpro.domain.segment.Segment> segs) {
+        List<StoredSegment> out = new ArrayList<>(segs.size());
+        for (nl.paree.climbpro.domain.segment.Segment s : segs) {
+            StoredSegment ss = new StoredSegment();
+            ss.distance      = s.distance;
+            ss.elevationGain = s.elevationGain;
+            ss.gradient      = s.gradient;
+            ss.colorIndex    = s.colorIndex;
+            out.add(ss);
+        }
+        return out;
+    }
+
+    private static List<StoredCalibrationPoint> toStoredCalibPoints(
+            List<nl.paree.climbpro.domain.segment.CalibrationPoint> cps) {
+        List<StoredCalibrationPoint> out = new ArrayList<>(cps.size());
+        for (nl.paree.climbpro.domain.segment.CalibrationPoint cp : cps) {
+            StoredCalibrationPoint scp = new StoredCalibrationPoint();
+            scp.distanceFromClimbStart = cp.distanceFromClimbStart;
+            scp.lat                    = cp.lat;
+            scp.lon                    = cp.lon;
+            out.add(scp);
+        }
+        return out;
+    }
+
     private static double haversine(double lat1, double lon1, double lat2, double lon2) {
         final double R = 6_371_000.0;
         double dLat = Math.toRadians(lat2 - lat1);

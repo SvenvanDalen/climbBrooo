@@ -59,6 +59,18 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    public void reSegment(String routeId, int climbIndex, int newSegmentCount) {
+        executor.execute(() -> {
+            try {
+                routeRepo.reSegmentClimb(routeId, climbIndex, newSegmentCount);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Herberekening mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     @Override
     protected void onCleared() { executor.shutdown(); }
 }
