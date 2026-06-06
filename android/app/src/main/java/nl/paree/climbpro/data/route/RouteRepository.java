@@ -32,18 +32,23 @@ public final class RouteRepository {
     private static final String TAG = "RouteRepository";
     private static final String CATALOG_FILE = "catalog.json";
     private static final String ROUTES_DIR   = "routes";
+    private static final String PREFS_NAME           = "route_repo";
+    private static final String PREF_SEGMENT_VERSION = "segment_version";
 
+    private final Context context;
     private final File routesDir;
     private final File catalogFile;
     private final ObjectMapper mapper;
 
     public RouteRepository(Context context) {
-        File base = context.getFilesDir();
-        this.routesDir   = new File(base, ROUTES_DIR);
-        this.catalogFile = new File(base, CATALOG_FILE);
+        this.context  = context.getApplicationContext();
+        File base     = this.context.getFilesDir();
+        this.routesDir    = new File(base, ROUTES_DIR);
+        this.catalogFile  = new File(base, CATALOG_FILE);
         this.mapper = new ObjectMapper()
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         routesDir.mkdirs();
+        migrateIfNeeded();
     }
 
     // -------------------------------------------------------------------------
@@ -267,5 +272,24 @@ public final class RouteRepository {
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    private void migrateIfNeeded() {
+        android.content.SharedPreferences prefs =
+                context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE);
+        int stored = prefs.getInt(PREF_SEGMENT_VERSION, 0);
+        if (stored == nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_VERSION) return;
+
+        File[] files = routesDir.listFiles();
+        if (files != null) {
+            for (File f : files) f.delete();
+        }
+        if (catalogFile.exists()) catalogFile.delete();
+
+        prefs.edit()
+             .putInt(PREF_SEGMENT_VERSION, nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_VERSION)
+             .apply();
+        Log.i(TAG, "Route migration: cleared all routes (segment format v"
+                + nl.paree.climbpro.domain.climb.ClimbConstants.SEGMENT_VERSION + ")");
     }
 }
