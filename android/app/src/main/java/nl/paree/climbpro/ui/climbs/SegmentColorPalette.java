@@ -30,10 +30,11 @@ public final class SegmentColorPalette {
      * Returns the Android color int for the given gradient color index.
      * Clamps the index to the valid range [0, 5].
      *
-     * @param colorIndex the gradient color index (0–5)
-     * @return the Android color int
+     * @param colorIndex 0–5 from {@link nl.paree.climbpro.domain.segment.GradientColor}; see class Javadoc for the full mapping.
+     * @return Android color int, clamped to the valid range
+     * @see #COLORS
      */
     public static int toColor(int colorIndex) {
-        return COLORS[Math.max(0, Math.min(5, colorIndex))];
+        return COLORS[Math.max(0, Math.min(COLORS.length - 1, colorIndex))];
     }
 }
