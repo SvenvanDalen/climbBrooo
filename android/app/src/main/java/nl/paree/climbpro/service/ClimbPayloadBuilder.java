@@ -41,7 +41,11 @@ public final class ClimbPayloadBuilder {
         payload.put("routeId", route.routeId);
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);
-        payload.put("climbs",  buildClimbs(route.climbs, false));
+        List<Map<String, Object>> climbs = new ArrayList<>();
+        if (route.climbs != null) {
+            for (StoredClimb sc : route.climbs) climbs.add(buildRouteClimb(sc));
+        }
+        payload.put("climbs", climbs);
         return mapper.writeValueAsBytes(payload);
     }
 
@@ -49,34 +53,40 @@ public final class ClimbPayloadBuilder {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",      SCHEMA_VERSION);
         payload.put("mode",   "radius");
-        payload.put("climbs", buildClimbs(climbs, true));
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (climbs != null) {
+            for (StoredClimb sc : climbs) out.add(buildRadiusClimb(sc));
+        }
+        payload.put("climbs", out);
         return mapper.writeValueAsBytes(payload);
     }
 
-    private List<Map<String, Object>> buildClimbs(List<StoredClimb> src, boolean radius) {
-        if (src == null) return new ArrayList<>();
-        List<Map<String, Object>> out = new ArrayList<>(src.size());
-        for (StoredClimb sc : src) {
-            Map<String, Object> c = new LinkedHashMap<>();
-            if (!radius) {
-                c.put("sd", sc.startDistance);
-                c.put("ed", sc.endDistance);
-            } else {
-                c.put("slat", Math.round(sc.startLat * 100000));
-                c.put("slon", Math.round(sc.startLon * 100000));
-            }
-            c.put("len", sc.length);
-            c.put("eg",  sc.elevationGain);
-            c.put("ag",  toFixedPoint(sc.avgGradient));
-            String name = sc.userDisplayName != null ? sc.userDisplayName : sc.name;
-            if (name != null && name.length() <= 32) c.put("n", name);
-            c.put("segs", buildSegs(sc.segments));
-            if (sc.calibrationPoints != null && !sc.calibrationPoints.isEmpty()) {
-                c.put("calib", buildCalib(sc.calibrationPoints));
-            }
-            out.add(c);
+    private Map<String, Object> buildRouteClimb(StoredClimb sc) {
+        Map<String, Object> c = new LinkedHashMap<>();
+        c.put("sd", sc.startDistance);
+        c.put("ed", sc.endDistance);
+        addCommonClimbFields(c, sc);
+        return c;
+    }
+
+    private Map<String, Object> buildRadiusClimb(StoredClimb sc) {
+        Map<String, Object> c = new LinkedHashMap<>();
+        c.put("slat", Math.round(sc.startLat * 100000));
+        c.put("slon", Math.round(sc.startLon * 100000));
+        addCommonClimbFields(c, sc);
+        return c;
+    }
+
+    private void addCommonClimbFields(Map<String, Object> c, StoredClimb sc) {
+        c.put("len", sc.length);
+        c.put("eg",  sc.elevationGain);
+        c.put("ag",  toFixedPoint(sc.avgGradient));
+        String name = sc.userDisplayName != null ? sc.userDisplayName : sc.name;
+        if (name != null && name.length() <= 32) c.put("n", name);
+        c.put("segs", buildSegs(sc.segments));
+        if (sc.calibrationPoints != null && !sc.calibrationPoints.isEmpty()) {
+            c.put("calib", buildCalib(sc.calibrationPoints));
         }
-        return out;
     }
 
     private static int[] buildSegs(List<StoredSegment> segs) {
@@ -93,6 +103,7 @@ public final class ClimbPayloadBuilder {
     }
 
     private static int[] buildCalib(List<StoredCalibrationPoint> pts) {
+        if (pts == null) return new int[0];
         int[] arr = new int[pts.size() * 3];
         for (int i = 0; i < pts.size(); i++) {
             StoredCalibrationPoint p = pts.get(i);

@@ -12,6 +12,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,12 +62,9 @@ public class ProtocolRoundTripTest {
         );
     }
 
+    @Ignore("v1 POJO round-trip not applicable to v2 format; update protocol/examples/ in follow-up")
     @Test
     public void exampleRoundTripsThroughGeneratedPojo() throws Exception {
-        // ClimbPayloadBuilder now produces v2 format (HashMap-based, not POJOs).
-        // Schema validation is done by exampleValidatesAgainstSchema().
-        // TODO: update protocol/examples/ to v2 format in a follow-up task.
-        assertTrue("v2 format tested in ClimbPayloadBuilderTest", true);
     }
 
     private static JsonSchema loadSchema() {

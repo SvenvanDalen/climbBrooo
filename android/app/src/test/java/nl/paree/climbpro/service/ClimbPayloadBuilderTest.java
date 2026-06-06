@@ -106,4 +106,29 @@ public class ClimbPayloadBuilderTest {
         assertTrue("len key exists", climb.has("len"));
         assertFalse("startDistance key gone", climb.has("startDistance"));
     }
+
+    @Test
+    public void radiusPayloadModeIsRadius() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute src = buildRoute();
+        byte[] payload = b.buildRadiusPayload(src.climbs);
+        JsonNode root = mapper.readTree(payload);
+        assertEquals("radius", root.get("mode").asText());
+    }
+
+    @Test
+    public void radiusPayloadUsesLatLonKeysNotDistanceKeys() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute src = buildRoute();
+        // Populate startLat/startLon on the climb (radius mode uses these)
+        src.climbs.get(0).startLat = 51.5;
+        src.climbs.get(0).startLon = 5.1;
+        JsonNode climb = mapper.readTree(b.buildRadiusPayload(src.climbs)).get("climbs").get(0);
+        assertTrue("slat key exists", climb.has("slat"));
+        assertTrue("slon key exists", climb.has("slon"));
+        assertFalse("sd key absent in radius mode", climb.has("sd"));
+        assertFalse("ed key absent in radius mode", climb.has("ed"));
+    }
 }
