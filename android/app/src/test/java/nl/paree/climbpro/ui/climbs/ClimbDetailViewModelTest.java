@@ -20,8 +20,6 @@ import nl.paree.climbpro.domain.climb.ClimbConstants;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -56,12 +54,8 @@ public class ClimbDetailViewModelTest {
         new ObjectMapper().writeValue(new File(dir, "r1.json"), route);
 
         ClimbDetailViewModel vm = new ClimbDetailViewModel(app);
-        CountDownLatch latch = new CountDownLatch(1);
         final StoredRoute[] received = {null};
-        vm.route().observeForever(r -> {
-            received[0] = r;
-            latch.countDown();
-        });
+        vm.route().observeForever(r -> received[0] = r);
 
         vm.loadClimb("r1", 0);
 
