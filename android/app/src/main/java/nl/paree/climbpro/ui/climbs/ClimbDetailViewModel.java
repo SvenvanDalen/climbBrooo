@@ -20,6 +20,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredClimb> climb = new MutableLiveData<>();
+    private final MutableLiveData<StoredRoute> route = new MutableLiveData<>();
     private final MutableLiveData<String>      error = new MutableLiveData<>();
     private final MutableLiveData<Boolean>     saved = new MutableLiveData<>(false);
 
@@ -29,15 +30,17 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     public LiveData<StoredClimb> climb() { return climb; }
+    public LiveData<StoredRoute> route() { return route; }
     public LiveData<String>      error() { return error; }
     public LiveData<Boolean>     saved() { return saved; }
 
     public void loadClimb(String routeId, int climbIndex) {
         executor.execute(() -> {
             try {
-                StoredRoute route = routeRepo.loadRoute(routeId);
-                if (route.climbs != null && climbIndex < route.climbs.size()) {
-                    climb.postValue(route.climbs.get(climbIndex));
+                StoredRoute r = routeRepo.loadRoute(routeId);
+                route.postValue(r);
+                if (r.climbs != null && climbIndex < r.climbs.size()) {
+                    climb.postValue(r.climbs.get(climbIndex));
                 } else {
                     error.postValue("Climb not found");
                 }
