@@ -13,13 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Serialises a {@link StoredRoute} to the compact wire-format payload (version 2).
+ * Serialises a {@link StoredRoute} to the compact wire-format payload (version 3).
  *
  * Format:
- *   {v:2, mode:"route", routeId:"...", climbs:[
+ *   {v:3, mode:"route", routeId:"...", climbs:[
  *     {sd:N, ed:N, len:N, eg:N, ag:N, n:"...",
  *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
- *      calib:[dist,latInt,lonInt, ...]}                  // 3 ints × calibCount (optional)
+ *      calib:[dist,latInt,lonInt, ...],                 // 3 ints × calibCount (optional)
+ *      surf:[surfType, ...]}                             // 1 int × segCount (optional, omitted if all UNKNOWN)
  *   ]}
  *
  * latInt/lonInt = degrees × 100000 (integer).
@@ -27,7 +28,7 @@ import java.util.Map;
  */
 public final class ClimbPayloadBuilder {
 
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
     private final ObjectMapper mapper;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
@@ -87,6 +88,8 @@ public final class ClimbPayloadBuilder {
         if (sc.calibrationPoints != null && !sc.calibrationPoints.isEmpty()) {
             c.put("calib", buildCalib(sc.calibrationPoints));
         }
+        int[] surf = buildSurf(sc.segments);
+        if (surf != null) c.put("surf", surf);
     }
 
     private static int[] buildSegs(List<StoredSegment> segs) {
@@ -110,6 +113,23 @@ public final class ClimbPayloadBuilder {
             arr[i * 3]     = p.distanceFromClimbStart;
             arr[i * 3 + 1] = (int) Math.round(p.lat * 100000);
             arr[i * 3 + 2] = (int) Math.round(p.lon * 100000);
+        }
+        return arr;
+    }
+
+    private static int[] buildSurf(List<StoredSegment> segs) {
+        if (segs == null || segs.isEmpty()) return null;
+        boolean allUnknown = true;
+        for (StoredSegment s : segs) {
+            if (s.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                allUnknown = false;
+                break;
+            }
+        }
+        if (allUnknown) return null;
+        int[] arr = new int[segs.size()];
+        for (int i = 0; i < segs.size(); i++) {
+            arr[i] = nl.paree.climbpro.domain.segment.SurfaceType.fromInt(segs.get(i).surfaceType);
         }
         return arr;
     }

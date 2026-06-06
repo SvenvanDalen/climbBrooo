@@ -47,11 +47,11 @@ public class ClimbPayloadBuilderTest {
     }
 
     @Test
-    public void payloadVersionIs2() throws Exception {
+    public void payloadVersionIs3() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
         JsonNode root = mapper.readTree(b.buildRoutePayload(buildRoute()));
-        assertEquals(2, root.get("v").asInt());
+        assertEquals(3, root.get("v").asInt());
     }
 
     @Test
@@ -130,5 +130,42 @@ public class ClimbPayloadBuilderTest {
         assertTrue("slon key exists", climb.has("slon"));
         assertFalse("sd key absent in radius mode", climb.has("sd"));
         assertFalse("ed key absent in radius mode", climb.has("ed"));
+    }
+
+    @Test
+    public void surfArrayOmittedWhenAllUnknown() throws Exception {
+        // buildRoute() creates segments with surfaceType = 5 (UNKNOWN default)
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        JsonNode climb = mapper.readTree(b.buildRoutePayload(buildRoute()))
+                .get("climbs").get(0);
+        assertFalse("surf must be absent when all segments are UNKNOWN", climb.has("surf"));
+    }
+
+    @Test
+    public void surfArrayPresentWhenAtLeastOneNonUnknown() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute route = buildRoute();
+        route.climbs.get(0).segments.get(0).surfaceType = 1; // GRAVEL
+        JsonNode surf = mapper.readTree(b.buildRoutePayload(route))
+                .get("climbs").get(0).get("surf");
+        assertNotNull("surf must exist when at least one segment is non-UNKNOWN", surf);
+        assertTrue("surf is array", surf.isArray());
+        assertEquals("surf has 16 elements (one per segment)", 16, surf.size());
+        assertEquals("first segment = GRAVEL (1)", 1, surf.get(0).asInt());
+        assertEquals("second segment = UNKNOWN (5)", 5, surf.get(1).asInt());
+    }
+
+    @Test
+    public void surfArrayRadiusModeAlsoEmitted() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute src = buildRoute();
+        src.climbs.get(0).segments.get(3).surfaceType = 2; // DIRT
+        JsonNode surf = mapper.readTree(b.buildRadiusPayload(src.climbs))
+                .get("climbs").get(0).get("surf");
+        assertNotNull(surf);
+        assertEquals(2, surf.get(3).asInt());
     }
 }
