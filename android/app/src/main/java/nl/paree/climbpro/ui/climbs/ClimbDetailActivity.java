@@ -121,9 +121,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     private void tryDrawMap() {
         if (loadedRoute == null || loadedClimb == null) return;
-        if (loadedRoute.lats == null || loadedRoute.lons == null
+        if (loadedRoute.lats == null || loadedRoute.lons == null || loadedRoute.distances == null
                 || loadedRoute.lats.length == 0
-                || loadedRoute.lons.length < loadedRoute.lats.length) return;
+                || loadedRoute.lons.length < loadedRoute.lats.length
+                || loadedRoute.distances.length < loadedRoute.lats.length) return;
 
         // Full route — gray background
         List<GeoPoint> allPoints = new ArrayList<>(loadedRoute.lats.length);
