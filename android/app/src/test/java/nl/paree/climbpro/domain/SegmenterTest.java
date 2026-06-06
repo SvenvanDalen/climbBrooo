@@ -1,5 +1,6 @@
 package nl.paree.climbpro.domain;
 
+import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.Segment;
 import nl.paree.climbpro.domain.segment.Segmenter;
@@ -38,7 +39,7 @@ public class SegmenterTest {
         List<RoutePoint> climb = buildClimb(2000, 0.072);
         List<Segment> segs = Segmenter.segment(climb);
         // SEGMENT_COUNT = 16, so always expect exactly 16 segments
-        assertEquals("expect exactly 16 segments", 16, segs.size());
+        assertEquals("expect exactly " + ClimbConstants.SEGMENT_COUNT + " segments", ClimbConstants.SEGMENT_COUNT, segs.size());
     }
 
     @Test
