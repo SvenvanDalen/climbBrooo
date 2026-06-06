@@ -140,6 +140,20 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
 
         /*
+         * Open re-segment dialog when the re-segment button is pressed.
+         */
+        binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
+
+        /*
+         * Show a confirmation toast whenever the ViewModel reports a successful save.
+         */
+        viewModel.saved().observe(this, isSaved -> {
+            if (Boolean.TRUE.equals(isSaved)) {
+                Toast.makeText(this, "Opgeslagen", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        /*
          * Load the requested climb from the ViewModel.
          */
         viewModel.loadClimb(routeId, climbIndex);
@@ -181,6 +195,28 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                                 input.getText().toString().trim()
                         ))
                 .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Displays a NumberPicker dialog allowing the user to choose how many
+     * segments the current climb should be divided into, then triggers
+     * re-segmentation via the ViewModel.
+     */
+    private void showReSegmentDialog() {
+        android.widget.NumberPicker picker = new android.widget.NumberPicker(this);
+        picker.setMinValue(4);
+        picker.setMaxValue(32);
+        nl.paree.climbpro.data.route.StoredClimb current = viewModel.climb().getValue();
+        int defaultCount = (current != null && current.segmentCount > 0) ? current.segmentCount : 16;
+        picker.setValue(defaultCount);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Segmenten per klim")
+                .setView(picker)
+                .setPositiveButton("Herbereken", (dialog, which) ->
+                        viewModel.reSegment(routeId, climbIndex, picker.getValue()))
+                .setNegativeButton("Annuleer", null)
                 .show();
     }
 }
