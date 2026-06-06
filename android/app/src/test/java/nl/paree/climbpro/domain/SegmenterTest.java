@@ -116,4 +116,21 @@ public class SegmenterTest {
             assertEquals("lon is 5.0", 5.0, cp.lon, 1e-6);
         }
     }
+
+    @Test
+    public void segmentOverloadReturnsRequestedCount() {
+        List<RoutePoint> climb = buildClimb(2000, 0.05);
+        assertEquals(8,  Segmenter.segment(climb, 8).size());
+        assertEquals(12, Segmenter.segment(climb, 12).size());
+        assertEquals(20, Segmenter.segment(climb, 20).size());
+    }
+
+    @Test
+    public void segmentOverloadSumEqualsClimbLength() {
+        List<RoutePoint> climb = buildClimb(3000, 0.06);
+        List<Segment> segs = Segmenter.segment(climb, 8);
+        int total = 0;
+        for (Segment s : segs) total += s.distance;
+        assertEquals("sum = climb length for 8 segments", 3000, total, 2);
+    }
 }

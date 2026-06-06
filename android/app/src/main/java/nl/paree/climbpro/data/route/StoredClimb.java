@@ -21,4 +21,5 @@ public final class StoredClimb {
     public String userDisplayName;
     public List<StoredSegment> segments;
     public List<StoredCalibrationPoint> calibrationPoints; // null on routes stored before version 2
+    public int segmentCount = 0; // 0 means use ClimbConstants.SEGMENT_COUNT (for old stored routes)
 }

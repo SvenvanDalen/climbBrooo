@@ -65,6 +65,48 @@ public final class Segmenter {
         return segments;
     }
 
+    /**
+     * Splits a climb into exactly {@code segmentCount} segments.
+     * Identical logic to {@link #segment(List)} but with a custom count.
+     */
+    public static List<Segment> segment(List<RoutePoint> climbPoints, int segmentCount) {
+        if (climbPoints == null || climbPoints.size() < 2) return new ArrayList<>();
+
+        RoutePoint first = climbPoints.get(0);
+        RoutePoint last  = climbPoints.get(climbPoints.size() - 1);
+        double totalLength = last.distance - first.distance;
+        if (totalLength <= 0) return new ArrayList<>();
+
+        double segmentLength = totalLength / segmentCount;
+        List<Segment> segments = new ArrayList<>(segmentCount);
+
+        double segStart    = first.distance;
+        double segStartEle = first.elevation;
+        int ptIdx = 1;
+
+        while (segStart < last.distance - 0.5) {
+            double segEnd = Math.min(segStart + segmentLength, last.distance);
+
+            while (ptIdx < climbPoints.size() - 1
+                    && climbPoints.get(ptIdx).distance < segEnd) {
+                ptIdx++;
+            }
+
+            double endEle  = interpolateElevation(climbPoints, ptIdx, segEnd);
+            double dist    = segEnd - segStart;
+            double eleGain = endEle - segStartEle;
+            double grad    = dist > 0 ? eleGain / dist : 0;
+            int color      = GradientColor.forGradient(grad);
+
+            segments.add(new Segment((int) Math.round(dist), (int) Math.round(eleGain), grad, color));
+
+            segStart    = segEnd;
+            segStartEle = endEle;
+        }
+
+        return segments;
+    }
+
     private static double interpolateElevation(
             List<RoutePoint> pts, int idx, double targetDist) {
         if (idx <= 0) return pts.get(0).elevation;
