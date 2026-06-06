@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.segment;
 
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.route.RoutePoint;
+import nl.paree.climbpro.domain.segment.CalibrationPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,5 +77,50 @@ public final class Segmenter {
         double t = (targetDist - a.distance) / span;
         t = Math.max(0, Math.min(1, t));
         return a.elevation + t * (b.elevation - a.elevation);
+    }
+
+    /**
+     * Returns GPS calibration points for a climb — a subset of segment-end positions
+     * at least {@link ClimbConstants#CALIBRATION_MIN_DISTANCE_M} apart.
+     * The final segment end is always included regardless of distance.
+     */
+    public static List<CalibrationPoint> calibrationPoints(List<RoutePoint> climbPoints) {
+        if (climbPoints == null || climbPoints.size() < 2) return new ArrayList<>();
+
+        RoutePoint first = climbPoints.get(0);
+        RoutePoint last  = climbPoints.get(climbPoints.size() - 1);
+        double totalLength = last.distance - first.distance;
+        if (totalLength <= 0) return new ArrayList<>();
+
+        double segmentLength = totalLength / ClimbConstants.SEGMENT_COUNT;
+        List<CalibrationPoint> result = new ArrayList<>();
+        double lastCalibRelDist = 0;
+
+        for (int i = 0; i < ClimbConstants.SEGMENT_COUNT; i++) {
+            double relEnd = Math.min((i + 1) * segmentLength, totalLength);
+            boolean isLast = (i == ClimbConstants.SEGMENT_COUNT - 1);
+
+            if (relEnd - lastCalibRelDist >= ClimbConstants.CALIBRATION_MIN_DISTANCE_M || isLast) {
+                double[] latLon = interpolateLatLon(climbPoints, first.distance + relEnd);
+                result.add(new CalibrationPoint((int) Math.round(relEnd), latLon[0], latLon[1]));
+                lastCalibRelDist = relEnd;
+            }
+        }
+        return result;
+    }
+
+    private static double[] interpolateLatLon(List<RoutePoint> pts, double targetDist) {
+        for (int i = 1; i < pts.size(); i++) {
+            RoutePoint a = pts.get(i - 1);
+            RoutePoint b = pts.get(i);
+            if (b.distance >= targetDist) {
+                double span = b.distance - a.distance;
+                if (span <= 0) return new double[]{a.lat, a.lon};
+                double t = Math.max(0, Math.min(1, (targetDist - a.distance) / span));
+                return new double[]{a.lat + t * (b.lat - a.lat), a.lon + t * (b.lon - a.lon)};
+            }
+        }
+        RoutePoint last = pts.get(pts.size() - 1);
+        return new double[]{last.lat, last.lon};
     }
 }
