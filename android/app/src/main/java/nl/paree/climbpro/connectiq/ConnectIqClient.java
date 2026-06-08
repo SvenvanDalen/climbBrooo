@@ -43,7 +43,7 @@ public final class ConnectIqClient {
 
     private volatile IQDevice device;
     private volatile boolean connected;
-    private WatchRequestHandler requestHandler;
+    private volatile WatchRequestHandler requestHandler;
 
     public ConnectIqClient(Context context) {
         this.context = context.getApplicationContext();
@@ -58,8 +58,15 @@ public final class ConnectIqClient {
         this.requestHandler = requestHandler;
     }
 
-    /** Discover the paired Forerunner 255 Music and connect. Idempotent-ish. */
+    /**
+     * Discover the paired Forerunner 255 Music and connect. Safe to call more
+     * than once: a second call while already connecting/connected is a no-op,
+     * so the SDK is never initialized twice.
+     */
     public void connect() {
+        if (connected || stateLd.getValue() == ConnectIqState.CONNECTING) {
+            return;
+        }
         stateLd.postValue(ConnectIqState.CONNECTING);
         connectIQ.initialize(context, /* autoUI= */ true, new ConnectIQ.ConnectIQListener() {
             @Override public void onSdkReady() { handleSdkReady(); }
@@ -125,13 +132,14 @@ public final class ConnectIqClient {
 
     /** Fire-and-forget send of a Map (serialised to a Dictionary by the SDK). */
     public boolean sendMessage(Map<String, Object> message) {
-        if (!isConnected()) {
+        final IQDevice d = device;
+        if (!connected || d == null) {
             Log.w(TAG, "sendMessage: not connected");
             return false;
         }
         try {
             stateLd.postValue(ConnectIqState.SENDING);
-            connectIQ.sendMessage(device, iqApp, message, (dev, app, status) -> {
+            connectIQ.sendMessage(d, iqApp, message, (dev, app, status) -> {
                 if (status != ConnectIQ.IQMessageStatus.SUCCESS) {
                     Log.e(TAG, "sendMessage status: " + status);
                 }
@@ -160,7 +168,8 @@ public final class ConnectIqClient {
      * when the watch acknowledges SUCCESS within {@code timeoutMs}.
      */
     public boolean sendPayloadBlocking(byte[] payload, long timeoutMs) {
-        if (!isConnected()) {
+        final IQDevice d = device;
+        if (!connected || d == null) {
             Log.w(TAG, "sendPayloadBlocking: not connected");
             return false;
         }
@@ -174,7 +183,7 @@ public final class ConnectIqClient {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<ConnectIQ.IQMessageStatus> result = new AtomicReference<>();
         try {
-            connectIQ.sendMessage(device, iqApp, message, (dev, app, status) -> {
+            connectIQ.sendMessage(d, iqApp, message, (dev, app, status) -> {
                 result.set(status);
                 latch.countDown();
             });
