@@ -6,6 +6,7 @@ class ClimbDetailView extends Ui.View {
 
     hidden var climbIndex;
     hidden var drawer;
+    hidden var climbSaved = null;
 
     function initialize(ci) {
         View.initialize();
@@ -45,6 +46,15 @@ class ClimbDetailView extends Ui.View {
             data.climbElevGain[ci] + "m", Gfx.TEXT_JUSTIFY_CENTER);
         dc.drawText(w - 24, statsY, Gfx.FONT_XTINY,
             (grad / 10) + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
+
+        var rId = data.routeId;
+        if (rId != null) {
+            if (climbSaved == null) { refreshClimbSaved(); }
+            dc.setColor(climbSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, h - 8, Gfx.FONT_XTINY,
+                climbSaved ? "SELECT: Remove" : "SELECT: Save",
+                Gfx.TEXT_JUSTIFY_CENTER);
+        }
     }
 
     hidden function formatDist(meters) {
@@ -53,11 +63,48 @@ class ClimbDetailView extends Ui.View {
         }
         return meters + "m";
     }
+
+    function refreshClimbSaved() {
+        var data = App.getApp().climbData;
+        var rId = data.routeId;
+        if (rId != null) {
+            climbSaved = StorageManager.isClimbSaved(rId, climbIndex);
+        } else {
+            climbSaved = false;
+        }
+    }
+
+    function toggleSave() {
+        var data = App.getApp().climbData;
+        var rId = data.routeId;
+        if (rId == null) { return; }
+        if (StorageManager.isClimbSaved(rId, climbIndex)) {
+            StorageManager.deleteClimb(rId, climbIndex);
+        } else {
+            var payload = App.getApp().lastReceivedPayload;
+            if (payload != null) {
+                var climbs = payload.get("climbs");
+                if (climbs instanceof Toybox.Lang.Array && climbIndex < climbs.size()) {
+                    StorageManager.saveClimb(rId, climbIndex, climbs[climbIndex]);
+                }
+            }
+        }
+        refreshClimbSaved();
+    }
 }
 
 class ClimbDetailDelegate extends Ui.BehaviorDelegate {
 
     function initialize() { BehaviorDelegate.initialize(); }
+
+    function onSelect() {
+        var view = Ui.getCurrentView()[0];
+        if (view instanceof ClimbDetailView) {
+            view.toggleSave();
+            Ui.requestUpdate();
+        }
+        return true;
+    }
 
     function onBack() {
         Ui.popView(Ui.SLIDE_RIGHT);
