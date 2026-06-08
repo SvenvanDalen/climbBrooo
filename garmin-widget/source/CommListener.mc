@@ -28,19 +28,32 @@ class PhoneMessageCallback {
             return;
         }
 
-        var data = App.getApp().climbData;
-        if (data == null) {
+        // Dispatch on optional type field
+        var msgType = msg.get("type");
+        if (msgType instanceof Toybox.Lang.String) {
+            if (msgType.equals("ROUTE_LIST")) {
+                handleRouteList(msg);
+            } else {
+                Sys.println("CommListener: unknown type: " + msgType);
+            }
             return;
         }
 
+        // No type → v3 route payload
         var version = msg.get("v");
         if (version == null || version != 3) {
             Sys.println("CommListener: unsupported version " + version);
             return;
         }
 
-        data.mode = msg.get("mode");
-        data.routeId = msg.get("routeId");
+        // Save raw payload so views can persist it to storage
+        App.getApp().lastReceivedPayload = msg;
+
+        var data = App.getApp().climbData;
+        if (data == null) { return; }
+
+        data.mode      = msg.get("mode");
+        data.routeId   = msg.get("routeId");
         data.routeName = msg.get("name");
 
         var climbs = msg.get("climbs");
@@ -56,7 +69,13 @@ class PhoneMessageCallback {
 
         data.payloadReceived = true;
         for (var i = 0; i < data.climbCount; i++) { data.calibIdx[i] = 0; }
-        Sys.println("CommListener: payload parsed, " + data.climbCount + " climbs");
+        Sys.println("CommListener: v3 parsed, " + data.climbCount + " climbs");
+    }
+
+    hidden function handleRouteList(msg) {
+        var index = App.getApp().phoneRouteIndex;
+        if (index == null) { return; }
+        index.populate(msg.get("routes"));
     }
 
     hidden function parseClimb(data, idx, climbDict) {
