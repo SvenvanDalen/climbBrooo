@@ -1,37 +1,84 @@
 using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Application as App;
+using Toybox.Communications as Comm;
 
 class ClimbListView extends Ui.View {
 
     var selectedIndex = 0;
+    hidden var routeId;
+    hidden var sourceType;
+    hidden var loading;
+    hidden var loadError;
 
-    function initialize() { View.initialize(); }
+    function initialize(aRouteId, aSourceType) {
+        View.initialize();
+        routeId    = aRouteId;
+        sourceType = aSourceType;
+        loading    = false;
+        loadError  = false;
+
+        if (aSourceType.equals("phone")) {
+            loading = true;
+            App.getApp().climbData.payloadReceived = false;
+            Comm.transmit({ "type" => "LOAD_ROUTE", "id" => aRouteId }, null, new CommListener());
+        } else if (aSourceType.equals("saved_route")) {
+            var payload = StorageManager.loadRoute(aRouteId);
+            if (payload != null) {
+                App.getApp().processMessage(payload);
+            } else {
+                loadError = true;
+            }
+        }
+    }
+
+    function getRouteId() { return routeId; }
 
     function onUpdate(dc) {
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_BLACK);
         dc.clear();
 
         var w = dc.getWidth();
-        var data = App.getApp().climbData;
+        var h = dc.getHeight();
+
+        if (loading) {
+            if (App.getApp().climbData.payloadReceived) {
+                loading = false;
+            } else {
+                dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(w / 2, h / 2, Gfx.FONT_SMALL,
+                    "Loading...",
+                    Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
+                return;
+            }
+        }
+
+        if (loadError) {
+            dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, h / 2, Gfx.FONT_SMALL,
+                "Load failed",
+                Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
+            return;
+        }
+
+        var data       = App.getApp().climbData;
+        var totalItems = data.climbCount + 1;  // last item = save/delete action
 
         dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 6, Gfx.FONT_XTINY,
-            "Climbs (" + (selectedIndex + 1) + "/" + data.climbCount + ")",
+            "Climbs (" + (selectedIndex + 1) + "/" + totalItems + ")",
             Gfx.TEXT_JUSTIFY_CENTER);
 
         var startIdx = selectedIndex - 1;
         if (startIdx < 0) { startIdx = 0; }
-        if (startIdx + 4 > data.climbCount) { startIdx = data.climbCount - 4; }
+        if (startIdx + 4 > totalItems) { startIdx = totalItems - 4; }
         if (startIdx < 0) { startIdx = 0; }
 
-        var itemH = 36;
+        var itemH   = 36;
         var listTop = 30;
 
-        for (var i = startIdx; i < data.climbCount && i < startIdx + 4; i++) {
+        for (var i = startIdx; i < totalItems && i < startIdx + 4; i++) {
             var yPos = listTop + (i - startIdx) * itemH;
-            var name = data.climbName[i];
-            if (name == null) { name = "Climb " + (i + 1); }
 
             if (i == selectedIndex) {
                 dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_TRANSPARENT);
@@ -41,13 +88,23 @@ class ClimbListView extends Ui.View {
                 dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
             }
 
-            dc.drawText(w / 2, yPos + 4, Gfx.FONT_XTINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+            if (i < data.climbCount) {
+                var name = data.climbName[i];
+                if (name == null) { name = "Climb " + (i + 1); }
+                dc.drawText(w / 2, yPos + 4, Gfx.FONT_XTINY, name, Gfx.TEXT_JUSTIFY_CENTER);
 
-            var grad = data.climbAvgGrad[i];
-            var gradFrac = grad % 10;
-            if (gradFrac < 0) { gradFrac = -gradFrac; }
-            var gradStr = (grad / 10) + "." + gradFrac + "%  " + formatDist(data.climbLength[i]);
-            dc.drawText(w / 2, yPos + 20, Gfx.FONT_XTINY, gradStr, Gfx.TEXT_JUSTIFY_CENTER);
+                var grad     = data.climbAvgGrad[i];
+                var gradFrac = grad % 10;
+                if (gradFrac < 0) { gradFrac = -gradFrac; }
+                var gradStr  = (grad / 10) + "." + gradFrac + "%  " + formatDist(data.climbLength[i]);
+                dc.drawText(w / 2, yPos + 20, Gfx.FONT_XTINY, gradStr, Gfx.TEXT_JUSTIFY_CENTER);
+            } else {
+                var isSaved = StorageManager.isRouteSaved(routeId);
+                var label   = isSaved ? "Delete route" : "Save route";
+                var color   = isSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN;
+                dc.setColor(i == selectedIndex ? Gfx.COLOR_WHITE : color, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(w / 2, yPos + 14, Gfx.FONT_XTINY, label, Gfx.TEXT_JUSTIFY_CENTER);
+            }
         }
     }
 
@@ -66,9 +123,12 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
     function onNextPage() {
         var view = Ui.getCurrentView()[0];
         var data = App.getApp().climbData;
-        if (view instanceof ClimbListView && view.selectedIndex < data.climbCount - 1) {
-            view.selectedIndex++;
-            Ui.requestUpdate();
+        if (view instanceof ClimbListView) {
+            var total = data.climbCount + 1;
+            if (view.selectedIndex < total - 1) {
+                view.selectedIndex++;
+                Ui.requestUpdate();
+            }
         }
         return true;
     }
@@ -84,7 +144,22 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
 
     function onSelect() {
         var view = Ui.getCurrentView()[0];
-        if (view instanceof ClimbListView) {
+        if (!(view instanceof ClimbListView)) { return true; }
+
+        var data = App.getApp().climbData;
+
+        if (view.selectedIndex == data.climbCount) {
+            var routeId = view.getRouteId();
+            if (StorageManager.isRouteSaved(routeId)) {
+                StorageManager.deleteRoute(routeId);
+            } else {
+                var payload = App.getApp().lastReceivedPayload;
+                if (payload != null) {
+                    StorageManager.saveRoute(routeId, payload);
+                }
+            }
+            Ui.requestUpdate();
+        } else {
             Ui.pushView(
                 new ClimbDetailView(view.selectedIndex),
                 new ClimbDetailDelegate(),
