@@ -22,7 +22,11 @@ module StorageManager {
 
     function saveRoute(routeId, payloadDict) {
         var ids = getSavedRouteIds();
-        if (!isRouteSaved(routeId)) { ids.add(routeId); }
+        var found = false;
+        for (var i = 0; i < ids.size(); i++) {
+            if (ids[i].equals(routeId)) { found = true; break; }
+        }
+        if (!found) { ids.add(routeId); }
         Storage.setValue("saved_route_ids", ids);
         Storage.setValue("route_" + routeId, payloadDict);
     }
