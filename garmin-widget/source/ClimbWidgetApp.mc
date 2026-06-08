@@ -38,6 +38,6 @@ class ClimbWidgetApp extends App.AppBase {
     function onStop(state) {}
 
     function getInitialView() {
-        return [new RouteView(), new RouteDelegate()];
+        return [new RouteListView(), new RouteListDelegate()];
     }
 }
