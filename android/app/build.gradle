@@ -170,8 +170,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.17.2'
 
-    // Garmin Connect IQ Mobile SDK is added manually as a .aar — see SETUP.md.
-    // implementation files('libs/ciq-mobile-sdk.aar')
+    // Garmin Connect IQ Mobile SDK (binary AAR committed under app/libs/).
+    implementation files('libs/ciq-mobile-sdk.aar')
 
     // UI — RecyclerView and Preference (used by SettingsViewModel / SettingsActivity)
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
