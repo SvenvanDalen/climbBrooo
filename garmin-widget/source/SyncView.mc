@@ -22,7 +22,7 @@ class SyncView extends Ui.View {
         if (timer != null) { timer.stop(); timer = null; }
     }
 
-    function onTimeout() {
+    function onTimeout() as Void {
         if (!switched) {
             switched = true;
             Ui.switchToView(new RouteListView(), new RouteListDelegate(), Ui.SLIDE_LEFT);
