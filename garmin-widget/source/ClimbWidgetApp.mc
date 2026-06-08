@@ -6,6 +6,8 @@ using Toybox.System as Sys;
 class ClimbWidgetApp extends App.AppBase {
 
     var climbData;
+    var phoneRouteIndex;
+    var lastReceivedPayload;
     hidden var msgCallback;
 
     function initialize() {
@@ -13,9 +15,10 @@ class ClimbWidgetApp extends App.AppBase {
     }
 
     function onStart(state) {
-        climbData = new ClimbData();
+        climbData        = new ClimbData();
         climbData.initialize();
-        msgCallback = new PhoneMessageCallback();
+        phoneRouteIndex  = new PhoneRouteIndex();
+        msgCallback      = new PhoneMessageCallback();
         Comm.registerForPhoneAppMessages(method(:onPhoneMessage));
         Sys.println("ClimbWidget: started");
     }
@@ -25,6 +28,11 @@ class ClimbWidgetApp extends App.AppBase {
             msgCallback.onMessage(msg.data);
             Ui.requestUpdate();
         }
+    }
+
+    function processMessage(msg) {
+        msgCallback.onMessage(msg);
+        Ui.requestUpdate();
     }
 
     function onStop(state) {}
