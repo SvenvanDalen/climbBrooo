@@ -16,6 +16,13 @@ class RouteListView extends Ui.View {
         refreshData();
     }
 
+    function onShow() {
+        refreshData();
+        if (selectedIndex >= getTotalCount() && getTotalCount() > 0) {
+            selectedIndex = getTotalCount() - 1;
+        }
+    }
+
     function refreshData() {
         var app        = App.getApp();
         var phoneIndex = app.phoneRouteIndex;
@@ -52,9 +59,13 @@ class RouteListView extends Ui.View {
         var total = getTotalCount();
 
         dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, 4, Gfx.FONT_XTINY,
-            "Routes (" + (selectedIndex + 1) + "/" + total + ")",
-            Gfx.TEXT_JUSTIFY_CENTER);
+        if (total > 0) {
+            dc.drawText(w / 2, 4, Gfx.FONT_XTINY,
+                "Routes (" + (selectedIndex + 1) + "/" + total + ")",
+                Gfx.TEXT_JUSTIFY_CENTER);
+        } else {
+            dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "Routes", Gfx.TEXT_JUSTIFY_CENTER);
+        }
 
         if (total == 0) {
             dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
@@ -177,6 +188,7 @@ class RouteListDelegate extends Ui.BehaviorDelegate {
         if (parts == null) { return; }
         var routeId  = parts[0];
         var climbIdx = parts[1].toNumber();
+        if (climbIdx == null) { return; }
         var climbDict = StorageManager.loadClimb(routeId, climbIdx);
         if (climbDict == null) { return; }
         var fakePayload = {
