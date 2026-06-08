@@ -62,6 +62,10 @@ android {
     testOptions {
         unitTests {
             includeAndroidResources = true
+            // Allow android.util.Log (and other Android stubs) to return
+            // default values (0/false/null) in JVM unit tests instead of
+            // throwing "not mocked" RuntimeExceptions.
+            returnDefaultValues = true
         }
     }
 

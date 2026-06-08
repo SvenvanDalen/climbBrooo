@@ -6,6 +6,10 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+
 /**
  * Wrapper around the Garmin Connect IQ Mobile SDK.
  *
@@ -51,6 +55,20 @@ public final class ConnectIqClient {
     public boolean sendPayload(byte[] payload) {
         Log.w(TAG, "Garmin CIQ SDK not linked — sendPayload() is a no-op.");
         return false;
+    }
+
+    public boolean sendMessage(Map<String, Object> message) {
+        try {
+            byte[] bytes = new ObjectMapper().writeValueAsBytes(message);
+            return sendPayload(bytes);
+        } catch (Exception e) {
+            Log.e(TAG, "sendMessage serialization failed", e);
+            return false;
+        }
+    }
+
+    public void setWatchRequestHandler(WatchRequestHandler requestHandler) {
+        Log.w(TAG, "setWatchRequestHandler: CIQ SDK not linked — incoming watch messages will be ignored.");
     }
 
     public void disconnect() {
