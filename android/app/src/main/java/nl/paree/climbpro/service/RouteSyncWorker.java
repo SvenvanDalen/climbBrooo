@@ -56,7 +56,20 @@ public final class RouteSyncWorker extends Worker {
         StravaAuthRepository authRepo    = new StravaAuthRepository(ctx);
         ObjectMapper         mapper      = new ObjectMapper();
         ClimbPayloadBuilder  payloadBuilder = new ClimbPayloadBuilder(mapper);
-        ConnectIqClient      ciqClient    = new ConnectIqClient(ctx);
+        ConnectIqClient      ciqClient    =
+                ((nl.paree.climbpro.ClimbProApplication) ctx).connectIqClient();
+
+        // The CIQ connection is async; give it a moment if the app just started.
+        for (int i = 0; i < 20 && !ciqClient.isConnected(); i++) {
+            try { Thread.sleep(250); } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Result.retry();
+            }
+        }
+        if (!ciqClient.isConnected()) {
+            Log.w(TAG, "Watch not connected — will retry");
+            return Result.retry();
+        }
 
         // Step 1: pull Strava routes (if signed in)
         if (authRepo.isAuthorised()) {
@@ -113,9 +126,9 @@ public final class RouteSyncWorker extends Worker {
                 }
             }
 
-            boolean sent = ciqClient.sendPayload(payload);
+            boolean sent = ciqClient.sendPayloadBlocking(payload, 10_000);
             if (!sent) {
-                Log.w(TAG, "Send failed — will retry");
+                Log.w(TAG, "Send failed or not acknowledged — will retry");
                 return Result.retry();
             }
 
