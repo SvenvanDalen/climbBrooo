@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add surface type annotation (asfalt/gravel/onverhard/kasseien/mixed) to flat segments — the non-climb stretches between climbs on a route — with the same per-item picker already used for climb segments.
+**Goal:** Add surface type annotation (asfalt/gravel/onverhard/kasseien/mixed) to flat segments — the non-climb stretches between climbs on a route — with a surface type picker and map zoom so the user can see where each flat section is.
 
-**Architecture:** Every gap between detected climbs (and before the first / after the last climb) becomes a `StoredFlatSegment` stored inside `StoredRoute`. `RouteDetailActivity` shows climbs and flat segments interleaved in one RecyclerView. Surface type is set by long-pressing a flat row, exactly like long-pressing a segment in ClimbDetail. No protocol or watch changes.
+**Architecture:** Every gap between detected climbs (and before the first / after the last climb) becomes a `StoredFlatSegment` (with start/end distances and lat/lon coordinates) stored inside `StoredRoute`. `RouteDetailActivity` shows climbs and flat segments interleaved in one RecyclerView. Short tap on a flat row zooms the map to that section; long press opens the surface type picker. No protocol or watch changes.
 
 **Tech Stack:** Java, Android MVVM (AndroidViewModel + LiveData), RecyclerView multi-type adapter, Jackson (via existing `ObjectMapper` in `RouteRepository`), JUnit 4 unit tests.
 
@@ -79,10 +79,14 @@ import nl.paree.climbpro.domain.segment.SurfaceType;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class StoredFlatSegment {
-    public int startDistance;
-    public int endDistance;
-    public int length;
-    public int surfaceType = SurfaceType.UNKNOWN;
+    public int    startDistance;
+    public int    endDistance;
+    public int    length;
+    public int    surfaceType = SurfaceType.UNKNOWN;
+    public double startLat    = Double.NaN;
+    public double startLon    = Double.NaN;
+    public double endLat      = Double.NaN;
+    public double endLon      = Double.NaN;
 }
 ```
 
@@ -363,7 +367,9 @@ import java.util.HashMap;
                 : 0;
         List<FlatSegment> flatDomain = FlatSegmentDetector.detect(
                 routeLength, climbs != null ? climbs : Collections.emptyList());
-        route.flatSegments = toStoredFlatSegments(flatDomain, loadPreviousFlatSegments(route.routeId));
+        List<RoutePoint> pts = points != null ? points : Collections.emptyList();
+        route.flatSegments = toStoredFlatSegments(flatDomain, pts,
+                loadPreviousFlatSegments(route.routeId));
 ```
 
 **2c. Add `loadPreviousFlatSegments` helper** after the `routeFile()` helper method:
@@ -385,7 +391,8 @@ import java.util.HashMap;
 
 ```java
     private static List<StoredFlatSegment> toStoredFlatSegments(
-            List<FlatSegment> flat, List<StoredFlatSegment> previous) {
+            List<FlatSegment> flat, List<RoutePoint> points,
+            List<StoredFlatSegment> previous) {
         Map<Integer, Integer> prevSurface = new HashMap<>();
         for (StoredFlatSegment prev : previous) {
             if (prev.surfaceType != SurfaceType.UNKNOWN) {
@@ -399,9 +406,27 @@ import java.util.HashMap;
             sfs.endDistance   = fs.endDistance;
             sfs.length        = fs.length;
             sfs.surfaceType   = prevSurface.getOrDefault(fs.startDistance, SurfaceType.UNKNOWN);
+            double[] startCoord = nearestCoord(points, fs.startDistance);
+            double[] endCoord   = nearestCoord(points, fs.endDistance);
+            sfs.startLat = startCoord[0];
+            sfs.startLon = startCoord[1];
+            sfs.endLat   = endCoord[0];
+            sfs.endLon   = endCoord[1];
             result.add(sfs);
         }
         return result;
+    }
+
+    /** Returns {lat, lon} of the point in pts whose distance is closest to targetM. */
+    private static double[] nearestCoord(List<RoutePoint> pts, int targetM) {
+        if (pts.isEmpty()) return new double[]{Double.NaN, Double.NaN};
+        RoutePoint best = pts.get(0);
+        double bestDiff = Math.abs(best.distance - targetM);
+        for (RoutePoint p : pts) {
+            double diff = Math.abs(p.distance - targetM);
+            if (diff < bestDiff) { bestDiff = diff; best = p; }
+        }
+        return new double[]{best.lat, best.lon};
     }
 ```
 
@@ -562,12 +587,17 @@ public final class RouteDetailAdapter
         void onClimbClick(StoredClimb climb, int climbIndex);
     }
 
+    public interface OnFlatClickListener {
+        void onFlatClick(StoredFlatSegment flat);
+    }
+
     public interface OnFlatLongClickListener {
         void onFlatLongClick(StoredFlatSegment flat);
     }
 
     private List<Object> items = new ArrayList<>();
-    private OnClimbClickListener  climbClickListener;
+    private OnClimbClickListener    climbClickListener;
+    private OnFlatClickListener     flatClickListener;
     private OnFlatLongClickListener flatLongClickListener;
 
     public void setItems(List<Object> list) {
@@ -575,7 +605,8 @@ public final class RouteDetailAdapter
         notifyDataSetChanged();
     }
 
-    public void setOnClimbClickListener(OnClimbClickListener l)   { climbClickListener = l; }
+    public void setOnClimbClickListener(OnClimbClickListener l)       { climbClickListener = l; }
+    public void setOnFlatClickListener(OnFlatClickListener l)         { flatClickListener = l; }
     public void setOnFlatLongClickListener(OnFlatLongClickListener l) { flatLongClickListener = l; }
 
     @Override
@@ -615,6 +646,9 @@ public final class RouteDetailAdapter
             h.surfaceBadge.setVisibility(View.INVISIBLE);
         }
 
+        h.itemView.setOnClickListener(v -> {
+            if (flatClickListener != null) flatClickListener.onFlatClick(flat);
+        });
         h.itemView.setOnLongClickListener(v -> {
             if (flatLongClickListener != null) flatLongClickListener.onFlatLongClick(flat);
             return true;
@@ -892,6 +926,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         adapter.setOnClimbClickListener((climb, index) ->
                 startActivity(ClimbDetailActivity.intentFor(this, routeId, index)));
+        adapter.setOnFlatClickListener(this::zoomToFlat);
         adapter.setOnFlatLongClickListener(this::showFlatSurfaceDialog);
 
         viewModel.route().observe(this, route -> {
@@ -973,6 +1008,15 @@ public final class RouteDetailActivity extends AppCompatActivity {
                         viewModel.renameRoute(routeId, input.getText().toString().trim()))
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void zoomToFlat(StoredFlatSegment flat) {
+        if (Double.isNaN(flat.startLat) || Double.isNaN(flat.endLat)) return;
+        List<GeoPoint> pts = new ArrayList<>();
+        pts.add(new GeoPoint(flat.startLat, flat.startLon));
+        pts.add(new GeoPoint(flat.endLat,   flat.endLon));
+        BoundingBox box = BoundingBox.fromGeoPoints(pts);
+        binding.mapView.post(() -> binding.mapView.zoomToBoundingBox(box, true, 80));
     }
 
     private void showFlatSurfaceDialog(StoredFlatSegment flat) {

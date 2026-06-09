@@ -58,8 +58,14 @@ public class StoredFlatSegment {
     public int endDistance;
     public int length;
     public int surfaceType = 5; // SurfaceType.UNKNOWN
+    public double startLat = Double.NaN;
+    public double startLon = Double.NaN;
+    public double endLat   = Double.NaN;
+    public double endLon   = Double.NaN;
 }
 ```
+
+Coordinates are extracted from the route point arrays when the route is saved (`RouteRepository.saveRoute()`). They are always set — NaN only when the route has no point data, which should not happen in practice.
 
 ### StoredRoute changes
 
@@ -120,9 +126,12 @@ The route detail screen currently shows a list of climbs. Replace it with an int
 **Flat segment row** shows:
 - Distance (km, one decimal)
 - Surface badge: `[A]`, `[G]`, `[D]`, `[K]`, `[M]` — or no badge if UNKNOWN
-- Overflow menu (⋮) or long-press → surface type picker
 
-**Surface type picker**: same BottomSheetDialog used in ClimbDetail:
+**Interactions:**
+- **Short tap** → zooms the route map to that flat segment's bounding box (startLat/startLon to endLat/endLon), highlighting it in green on the map.
+- **Long press** → surface type picker dialog.
+
+**Surface type picker**: same AlertDialog with single-choice list used in ClimbDetail:
 ```
 Oppervlaktype voor vlak segment
 ○ Asfalt
