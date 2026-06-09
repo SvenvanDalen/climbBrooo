@@ -44,9 +44,14 @@ public final class StravaRoutesRepository {
     private final StravaApiClient      api;
 
     public StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo) {
+        this(auth, routeRepo, buildRetrofit().create(StravaApiClient.class));
+    }
+
+    /** Test-injecteerbare variant — geef een (mock) StravaApiClient mee. */
+    StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo, StravaApiClient api) {
         this.auth      = auth;
         this.routeRepo = routeRepo;
-        this.api       = buildRetrofit().create(StravaApiClient.class);
+        this.api       = api;
     }
 
     /**
@@ -55,7 +60,7 @@ public final class StravaRoutesRepository {
      *
      * @throws IOException if the network is unreachable or auth fails
      */
-    public void syncRoutes() throws IOException {
+    public int syncRoutes() throws IOException {
         String token = "Bearer " + auth.getAccessToken();
         List<StravaRouteDto> routes = new ArrayList<>();
         int page = 1;
@@ -68,12 +73,15 @@ public final class StravaRoutesRepository {
         }
         Log.i(TAG, "Found " + routes.size() + " Strava routes");
 
+        int changed = 0;
         for (StravaRouteDto dto : routes) {
-            processRoute(token, dto);
+            if (processRoute(token, dto)) changed++;
         }
+        Log.i(TAG, "Strava sync: " + changed + " route(s) created/updated");
+        return changed;
     }
 
-    private void processRoute(String token, StravaRouteDto dto) {
+    private boolean processRoute(String token, StravaRouteDto dto) {
         String routeId = "strava_" + dto.id;
         String hash    = sha256(dto.updatedAt + "_" + dto.distance);
 
@@ -83,14 +91,14 @@ public final class StravaRoutesRepository {
 
             if (existing != null && hash.equals(existing.sourceHash)) {
                 Log.d(TAG, "Route " + routeId + " unchanged, skipping");
-                return;
+                return false;
             }
 
             Response<okhttp3.ResponseBody> gpxResp =
                     api.exportGpx(token, dto.id).execute();
             if (!gpxResp.isSuccessful() || gpxResp.body() == null) {
                 Log.e(TAG, "Failed to download GPX for " + routeId);
-                return;
+                return false;
             }
 
             byte[] gpxBytes = gpxResp.body().bytes();
@@ -133,10 +141,14 @@ public final class StravaRoutesRepository {
                 }
             }
 
+            return true;
+
         } catch (GpxParseException e) {
             Log.e(TAG, "GPX parse error for route " + routeId + ": " + e.getMessage());
+            return false;
         } catch (IOException e) {
             Log.e(TAG, "I/O error processing route " + routeId, e);
+            return false;
         }
     }
 
