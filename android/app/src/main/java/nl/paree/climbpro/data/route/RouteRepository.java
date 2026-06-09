@@ -10,8 +10,11 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
+import nl.paree.climbpro.domain.segment.FlatSegment;
+import nl.paree.climbpro.domain.segment.FlatSegmentDetector;
 import nl.paree.climbpro.domain.segment.Segment;
 import nl.paree.climbpro.domain.segment.Segmenter;
+import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +23,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * JSON-file persistence for routes.
@@ -83,6 +88,14 @@ public final class RouteRepository {
         route.elevations = toDoubleArray(points, "ele");
         route.distances  = toDoubleArray(points, "dist");
         route.climbs     = toStoredClimbs(climbs);
+        int routeLength = (points != null && !points.isEmpty())
+                ? (int) Math.round(points.get(points.size() - 1).distance)
+                : 0;
+        List<FlatSegment> flatDomain = FlatSegmentDetector.detect(
+                routeLength, climbs != null ? climbs : Collections.emptyList());
+        List<RoutePoint> pts = points != null ? points : Collections.emptyList();
+        route.flatSegments = toStoredFlatSegments(flatDomain, pts,
+                loadPreviousFlatSegments(route.routeId));
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -178,6 +191,17 @@ public final class RouteRepository {
         return new File(routesDir, routeId + ".json");
     }
 
+    private List<StoredFlatSegment> loadPreviousFlatSegments(String routeId) {
+        File f = routeFile(routeId);
+        if (!f.exists()) return Collections.emptyList();
+        try (FileInputStream in = new FileInputStream(f)) {
+            StoredRoute existing = mapper.readValue(in, StoredRoute.class);
+            return existing.flatSegments != null ? existing.flatSegments : Collections.emptyList();
+        } catch (IOException e) {
+            return Collections.emptyList();
+        }
+    }
+
     private static void writeAtomic(File target, byte[] data) throws IOException {
         File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
         try (FileOutputStream out = new FileOutputStream(tmp)) {
@@ -229,6 +253,45 @@ public final class RouteRepository {
             out.add(sc);
         }
         return out;
+    }
+
+    private static List<StoredFlatSegment> toStoredFlatSegments(
+            List<FlatSegment> flat, List<RoutePoint> points,
+            List<StoredFlatSegment> previous) {
+        Map<Integer, Integer> prevSurface = new HashMap<>();
+        for (StoredFlatSegment prev : previous) {
+            if (prev.surfaceType != SurfaceType.UNKNOWN) {
+                prevSurface.put(prev.startDistance, prev.surfaceType);
+            }
+        }
+        List<StoredFlatSegment> result = new ArrayList<>(flat.size());
+        for (FlatSegment fs : flat) {
+            StoredFlatSegment sfs = new StoredFlatSegment();
+            sfs.startDistance = fs.startDistance;
+            sfs.endDistance   = fs.endDistance;
+            sfs.length        = fs.length;
+            sfs.surfaceType   = prevSurface.getOrDefault(fs.startDistance, SurfaceType.UNKNOWN);
+            double[] startCoord = nearestCoord(points, fs.startDistance);
+            double[] endCoord   = nearestCoord(points, fs.endDistance);
+            sfs.startLat = startCoord[0];
+            sfs.startLon = startCoord[1];
+            sfs.endLat   = endCoord[0];
+            sfs.endLon   = endCoord[1];
+            result.add(sfs);
+        }
+        return result;
+    }
+
+    /** Returns {lat, lon} of the point in pts whose distance is closest to targetM. */
+    private static double[] nearestCoord(List<RoutePoint> pts, int targetM) {
+        if (pts.isEmpty()) return new double[]{Double.NaN, Double.NaN};
+        RoutePoint best = pts.get(0);
+        double bestDiff = Math.abs(best.distance - targetM);
+        for (RoutePoint p : pts) {
+            double diff = Math.abs(p.distance - targetM);
+            if (diff < bestDiff) { bestDiff = diff; best = p; }
+        }
+        return new double[]{best.lat, best.lon};
     }
 
     private static RouteCatalogEntry toCatalogEntry(
@@ -343,6 +406,26 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets the surface type of a flat segment identified by its startDistance,
+     * then updates the catalog.
+     */
+    public void setFlatSegmentSurfaceType(String routeId, int startDistance,
+                                           int surfaceType) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.flatSegments != null) {
+            for (StoredFlatSegment sf : route.flatSegments) {
+                if (sf.startDistance == startDistance) {
+                    sf.surfaceType = surfaceType;
+                    break;
+                }
+            }
+        }
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
      * Extracts the sub-list of RoutePoints that belong to the given climb,
      * using the route's parallel arrays and the climb's startDistance/endDistance.
      */
@@ -396,6 +479,13 @@ public final class RouteRepository {
                             surfaceSet.add(ss.surfaceType);
                         }
                     }
+                }
+            }
+        }
+        if (route.flatSegments != null) {
+            for (StoredFlatSegment sf : route.flatSegments) {
+                if (sf.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                    surfaceSet.add(sf.surfaceType);
                 }
             }
         }
