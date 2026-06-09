@@ -23,6 +23,9 @@ public final class StoredRoute {
     /** Flat (non-climb) stretches between climbs, in route order. */
     public List<StoredFlatSegment> flatSegments;
 
+    /** User-defined surface overrides for arbitrary route stretches, sorted by startDistance. */
+    public List<StoredSurfaceSection> surfaceSections;
+
     public long importedAtMs;
     public long lastModifiedMs;
 }
