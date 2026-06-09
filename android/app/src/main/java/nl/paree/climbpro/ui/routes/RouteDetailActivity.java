@@ -162,11 +162,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
     }
 
     private void showFlatSurfaceDialog(StoredFlatSegment flat) {
-        String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed", "Onbekend"};
         int current = SurfaceType.fromInt(flat.surfaceType);
         new AlertDialog.Builder(this)
                 .setTitle("Oppervlak voor vlak segment")
-                .setSingleChoiceItems(typeLabels, current, null)
+                .setSingleChoiceItems(SURFACE_LABELS_NL, current, null)
                 .setPositiveButton("Opslaan", (dialog, which) -> {
                     android.widget.ListView lv = ((AlertDialog) dialog).getListView();
                     int chosen = lv.getCheckedItemPosition();

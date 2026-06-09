@@ -222,13 +222,18 @@ public final class RouteRepository {
             out.getFD().sync();
         }
         try {
-            java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-            // Fall back to non-atomic replace when ATOMIC_MOVE is not supported by the filesystem.
-            java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            try {
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                // Fall back to non-atomic replace when ATOMIC_MOVE is not supported by the filesystem.
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException moveFailed) {
+            tmp.delete(); // best-effort cleanup so a failed write leaves no orphan .tmp
+            throw moveFailed;
         }
     }
 
