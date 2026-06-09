@@ -12,6 +12,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 
@@ -30,6 +31,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<List<Object>> routeItems = new MutableLiveData<>();
     private final MutableLiveData<String>       error      = new MutableLiveData<>();
     private final MutableLiveData<Boolean>      saved      = new MutableLiveData<>(false);
+    private final MutableLiveData<List<StoredSurfaceSection>> surfaceSections = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
@@ -40,6 +42,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<Object>> routeItems() { return routeItems; }
     public LiveData<String>       error()      { return error; }
     public LiveData<Boolean>      saved()      { return saved; }
+    public LiveData<List<StoredSurfaceSection>> surfaceSections() { return surfaceSections; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -47,6 +50,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 route.postValue(r);
                 routeItems.postValue(buildRouteItems(r));
+                surfaceSections.postValue(
+                        r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
             } catch (Exception e) {
                 error.postValue("Could not load route: " + e.getMessage());
             }
@@ -93,6 +98,35 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 loadRoute(routeId);
             } catch (Exception e) {
                 error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Adds a user-defined surface override for an arbitrary stretch (phone-only). */
+    public void addSurfaceSection(String routeId, int startDistance, int endDistance,
+                                  int surfaceType) {
+        executor.execute(() -> {
+            try {
+                routeRepo.addSurfaceSection(routeId, startDistance, endDistance, surfaceType);
+                loadRoute(routeId);
+                saved.postValue(true);
+            } catch (IllegalArgumentException e) {
+                error.postValue("Ongeldig stuk: " + e.getMessage());
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Removes the surface section at the given index (phone-only). */
+    public void deleteSurfaceSection(String routeId, int index) {
+        executor.execute(() -> {
+            try {
+                routeRepo.deleteSurfaceSection(routeId, index);
+                loadRoute(routeId);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Verwijderen mislukt: " + e.getMessage());
             }
         });
     }
