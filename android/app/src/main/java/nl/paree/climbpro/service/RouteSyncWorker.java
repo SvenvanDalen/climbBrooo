@@ -40,6 +40,10 @@ public final class RouteSyncWorker extends Worker {
     public  static final String PREF_LAST_LAT = "last_lat";
     public  static final String PREF_LAST_LON = "last_lon";
 
+    public  static final String KEY_PULL_DONE  = "pull_done";
+    public  static final String KEY_CHANGED    = "routes_changed";
+    public  static final String KEY_WATCH_SENT = "watch_sent";
+
     private static final int DEFAULT_RADIUS_M = 30_000;
 
     public RouteSyncWorker(@NonNull Context context, @NonNull WorkerParameters params) {
@@ -51,100 +55,126 @@ public final class RouteSyncWorker extends Worker {
     public Result doWork() {
         Context ctx = getApplicationContext();
 
-        RouteRepository     routeRepo    = new RouteRepository(ctx);
-        SyncStateRepository syncStateRepo = new SyncStateRepository(ctx);
-        StravaAuthRepository authRepo    = new StravaAuthRepository(ctx);
-        ObjectMapper         mapper      = new ObjectMapper();
-        ClimbPayloadBuilder  payloadBuilder = new ClimbPayloadBuilder(mapper);
-        ConnectIqClient      ciqClient    =
+        RouteRepository      routeRepo      = new RouteRepository(ctx);
+        SyncStateRepository  syncStateRepo  = new SyncStateRepository(ctx);
+        StravaAuthRepository authRepo        = new StravaAuthRepository(ctx);
+        ObjectMapper         mapper          = new ObjectMapper();
+        ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper);
+        ConnectIqClient      ciqClient       =
                 ((nl.paree.climbpro.ClimbProApplication) ctx).connectIqClient();
+        SharedPreferences    prefs           = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-        // The CIQ connection is async; give it a moment if the app just started.
-        for (int i = 0; i < 20 && !ciqClient.isConnected(); i++) {
-            try { Thread.sleep(250); } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return Result.retry();
+        boolean authorised = authRepo.isAuthorised();
+
+        SyncOrchestrator.RouteSource pull = () ->
+                authorised
+                        ? new StravaRoutesRepository(authRepo, routeRepo).syncRoutes()
+                        : 0;
+
+        SyncOrchestrator.WatchSender sender = new SyncOrchestrator.WatchSender() {
+            @Override public boolean awaitConnected(long timeoutMs) {
+                long deadline = System.currentTimeMillis() + timeoutMs;
+                while (!ciqClient.isConnected() && System.currentTimeMillis() < deadline) {
+                    try { Thread.sleep(250); } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                }
+                return ciqClient.isConnected();
             }
-        }
-        if (!ciqClient.isConnected()) {
-            Log.w(TAG, "Watch not connected — will retry");
+            @Override public boolean send(byte[] payload, long ms) {
+                return ciqClient.sendPayloadBlocking(payload, ms);
+            }
+        };
+
+        SyncOrchestrator.PayloadJob job = buildPayloadJob(
+                prefs, routeRepo, syncStateRepo, payloadBuilder);
+
+        SyncOrchestrator orchestrator = new SyncOrchestrator(
+                authorised, pull, sender, job,
+                /* connectTimeoutMs */ 5_000, /* sendTimeoutMs */ 10_000);
+
+        SyncOrchestrator.Result r = orchestrator.run((changed, ok) ->
+                setProgressAsync(new androidx.work.Data.Builder()
+                        .putBoolean(KEY_PULL_DONE, true)
+                        .putInt(KEY_CHANGED, changed)
+                        .build()));
+
+        androidx.work.Data output = new androidx.work.Data.Builder()
+                .putBoolean(KEY_PULL_DONE, true)
+                .putInt(KEY_CHANGED, r.routesChanged)
+                .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
+                .build();
+
+        boolean shouldRetry = (r.pullAttempted && !r.pullSucceeded)
+                || (r.sendAttempted && !r.sendSucceeded);
+        if (shouldRetry) {
+            Log.w(TAG, "Sync incomplete — will retry (pull=" + r.pullSucceeded
+                    + ", sendAttempted=" + r.sendAttempted + ", sent=" + r.sendSucceeded + ")");
             return Result.retry();
         }
+        return Result.success(output);
+    }
 
-        // Step 1: pull Strava routes (if signed in)
-        if (authRepo.isAuthorised()) {
-            try {
-                new StravaRoutesRepository(authRepo, routeRepo).syncRoutes();
-            } catch (IOException e) {
-                Log.e(TAG, "Strava sync failed", e);
-                // Not fatal — we may still be able to send cached data to the watch.
-            }
-        }
+    /**
+     * Builds the appropriate {@link SyncOrchestrator.PayloadJob} for the active mode.
+     * {@link SyncOrchestrator.PayloadJob#build()} returns {@code null} when there is
+     * nothing to send (no route selected, or unchanged).
+     */
+    private SyncOrchestrator.PayloadJob buildPayloadJob(
+            SharedPreferences prefs, RouteRepository routeRepo,
+            SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder) {
 
-        // Step 2: build and send payload
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
-        try {
-            byte[] payload;
-
-            if (MODE_RADIUS.equals(mode)) {
-                double lat = Double.longBitsToDouble(
-                        prefs.getLong(PREF_LAST_LAT, Double.doubleToLongBits(0)));
-                double lon = Double.longBitsToDouble(
-                        prefs.getLong(PREF_LAST_LON, Double.doubleToLongBits(0)));
-                double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
-
-                RadiusModeAssembler assembler =
-                        new RadiusModeAssembler(routeRepo, payloadBuilder);
-                payload = assembler.assemble(lat, lon, radiusM);
-
-                if (assembler.wasTruncated()) {
-                    Log.w(TAG, "Radius payload was truncated — some climbs omitted");
+        if (MODE_RADIUS.equals(mode)) {
+            return new SyncOrchestrator.PayloadJob() {
+                @Override public byte[] build() throws IOException {
+                    double lat = Double.longBitsToDouble(
+                            prefs.getLong(PREF_LAST_LAT, Double.doubleToLongBits(0)));
+                    double lon = Double.longBitsToDouble(
+                            prefs.getLong(PREF_LAST_LON, Double.doubleToLongBits(0)));
+                    double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
+                    RadiusModeAssembler assembler =
+                            new RadiusModeAssembler(routeRepo, payloadBuilder);
+                    byte[] payload = assembler.assemble(lat, lon, radiusM);
+                    if (assembler.wasTruncated()) {
+                        Log.w(TAG, "Radius payload was truncated — some climbs omitted");
+                    }
+                    return payload;
                 }
-            } else {
+                @Override public void onSent() { /* radius mode has no per-route sync state */ }
+            };
+        }
+
+        return new SyncOrchestrator.PayloadJob() {
+            @Override public byte[] build() throws IOException {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId == null) {
-                    Log.i(TAG, "No active route selected — nothing to sync");
-                    return Result.success();
+                    Log.i(TAG, "No active route selected — nothing to send");
+                    return null;
                 }
-
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && route.sourceHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged, no re-sync needed");
-                    return Result.success();
+                    return null;
                 }
-
-                payload = payloadBuilder.buildRoutePayload(route);
-
+                byte[] payload = payloadBuilder.buildRoutePayload(route);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
-                    Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes");
-                    return Result.failure();
+                    Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
+                    return null;
                 }
+                return payload;
             }
-
-            boolean sent = ciqClient.sendPayloadBlocking(payload, 10_000);
-            if (!sent) {
-                Log.w(TAG, "Send failed or not acknowledged — will retry");
-                return Result.retry();
-            }
-
-            if (!MODE_RADIUS.equals(mode)) {
+            @Override public void onSent() throws IOException {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
                     syncStateRepo.markSynced(routeId, route.sourceHash);
                 }
             }
-
-            return Result.success();
-
-        } catch (IOException e) {
-            Log.e(TAG, "Payload build/send failed", e);
-            return Result.retry();
-        }
+        };
     }
 }
