@@ -208,9 +208,14 @@ public final class RouteRepository {
             out.write(data);
             out.getFD().sync();
         }
-        if (!tmp.renameTo(target)) {
-            tmp.delete();
-            throw new IOException("Atomic rename failed for " + target);
+        try {
+            java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            // Fall back to non-atomic replace when ATOMIC_MOVE is not supported by the filesystem.
+            java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -280,6 +285,12 @@ public final class RouteRepository {
             result.add(sfs);
         }
         return result;
+    }
+
+    /** Total route length in metres = the largest cumulative distance, or 0 if unknown. */
+    private static int routeLengthMeters(StoredRoute route) {
+        if (route.distances == null || route.distances.length == 0) return 0;
+        return (int) Math.round(route.distances[route.distances.length - 1]);
     }
 
     /** Returns {lat, lon} of the point in pts whose distance is closest to targetM. */
@@ -432,6 +443,46 @@ public final class RouteRepository {
     }
 
     /**
+     * Adds a user-defined surface override for an arbitrary route stretch.
+     * Distances are integer metres. The surface type is clamped to a legal value.
+     * The list is kept sorted by startDistance. Overlaps with existing sections are
+     * allowed (phone-only display); the most-recently-added section wins visually.
+     *
+     * @throws IllegalArgumentException if start &lt; 0, end &lt;= start, or end &gt; route length.
+     */
+    public void addSurfaceSection(String routeId, int startDistance, int endDistance,
+                                  int surfaceType) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        int routeLength = routeLengthMeters(route);
+        if (startDistance < 0) {
+            throw new IllegalArgumentException("startDistance must be >= 0: " + startDistance);
+        }
+        if (endDistance <= startDistance) {
+            throw new IllegalArgumentException(
+                    "endDistance must be > startDistance: " + startDistance + ".." + endDistance);
+        }
+        if (routeLength > 0 && endDistance > routeLength) {
+            throw new IllegalArgumentException(
+                    "endDistance " + endDistance + " exceeds route length " + routeLength);
+        }
+
+        StoredSurfaceSection section = new StoredSurfaceSection();
+        section.startDistance = startDistance;
+        section.endDistance   = endDistance;
+        section.surfaceType   = SurfaceType.fromInt(surfaceType);
+
+        if (route.surfaceSections == null) {
+            route.surfaceSections = new ArrayList<>();
+        }
+        route.surfaceSections.add(section);
+        route.surfaceSections.sort((a, b) -> Integer.compare(a.startDistance, b.startDistance));
+
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
      * Extracts the sub-list of RoutePoints that belong to the given climb,
      * using the route's parallel arrays and the climb's startDistance/endDistance.
      */
@@ -495,6 +546,13 @@ public final class RouteRepository {
                 }
             }
         }
+        if (route.surfaceSections != null) {
+            for (StoredSurfaceSection ss : route.surfaceSections) {
+                if (ss.surfaceType != SurfaceType.UNKNOWN) {
+                    surfaceSet.add(ss.surfaceType);
+                }
+            }
+        }
         return surfaceSet.isEmpty() ? null
                 : surfaceSet.stream().mapToInt(Integer::intValue).toArray();
     }
@@ -523,7 +581,19 @@ public final class RouteRepository {
             }
         }
         if (!found) {
-            Log.w(TAG, "rebuildCatalogSurfaceTypes: route not found in catalog: " + routeId);
+            // Route exists on disk but has no catalog entry — create a minimal one so that
+            // surface-type queries work correctly without requiring a full saveRoute() call.
+            RouteCatalogEntry stub = new RouteCatalogEntry();
+            stub.routeId        = routeId;
+            stub.name           = route.name;
+            stub.userDisplayName = route.userDisplayName;
+            stub.sourceHash     = route.sourceHash;
+            stub.climbCount     = route.climbs != null ? route.climbs.size() : 0;
+            stub.notes          = route.notes;
+            stub.importedAtMs   = route.importedAtMs;
+            stub.lastModifiedMs = route.lastModifiedMs;
+            stub.surfaceTypes   = types;
+            catalog.add(stub);
         }
         saveCatalog(catalog);
     }
