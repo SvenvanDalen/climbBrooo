@@ -31,6 +31,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private static final String EXTRA_ROUTE_ID = "route_id";
 
+    /** Dutch surface labels, index = SurfaceType constant (0..5). */
+    private static final String[] SURFACE_LABELS_NL =
+            {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed", "Onbekend"};
+
     private ActivityRouteDetailBinding binding;
     private RouteDetailViewModel        viewModel;
     private RouteDetailAdapter          adapter;
@@ -90,6 +94,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
         });
         binding.btnShareToGarmin.setOnClickListener(v -> shareToGarminConnect());
+        binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
 
         viewModel.loadRoute(routeId);
     }
@@ -171,6 +176,98 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Annuleer", null)
                 .show();
+    }
+
+    private void showSurfaceSectionsManager() {
+        java.util.List<nl.paree.climbpro.data.route.StoredSurfaceSection> sections =
+                viewModel.surfaceSections().getValue();
+        if (sections == null) sections = java.util.Collections.emptyList();
+
+        final java.util.List<nl.paree.climbpro.data.route.StoredSurfaceSection> current = sections;
+        String[] rows;
+        if (current.isEmpty()) {
+            rows = new String[]{"(nog geen stukken)"};
+        } else {
+            rows = new String[current.size()];
+            for (int i = 0; i < current.size(); i++) {
+                nl.paree.climbpro.data.route.StoredSurfaceSection s = current.get(i);
+                rows[i] = String.format("%.1f–%.1f km · %s",
+                        s.startDistance / 1000.0, s.endDistance / 1000.0,
+                        SURFACE_LABELS_NL[SurfaceType.fromInt(s.surfaceType)]);
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Ondergrond-stukken")
+                .setItems(rows, (dialog, which) -> {
+                    if (!current.isEmpty()) confirmDeleteSection(which);
+                })
+                .setPositiveButton("Toevoegen", (d, w) -> showAddSurfaceSectionDialog())
+                .setNegativeButton("Sluiten", null)
+                .show();
+    }
+
+    private void confirmDeleteSection(int index) {
+        new AlertDialog.Builder(this)
+                .setTitle("Stuk verwijderen?")
+                .setPositiveButton("Verwijder", (d, w) ->
+                        viewModel.deleteSurfaceSection(routeId, index))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    private void showAddSurfaceSectionDialog() {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad, pad, pad);
+
+        final android.widget.EditText startKm = new android.widget.EditText(this);
+        startKm.setHint("Start (km)");
+        startKm.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
+                | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        layout.addView(startKm);
+
+        final android.widget.EditText endKm = new android.widget.EditText(this);
+        endKm.setHint("Eind (km)");
+        endKm.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
+                | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        layout.addView(endKm);
+
+        // Surface picker excludes "Onbekend" (index 0..4 only).
+        final android.widget.Spinner surface = new android.widget.Spinner(this);
+        String[] choices = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed"};
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, choices);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(adapter);
+        layout.addView(surface);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Nieuw ondergrond-stuk")
+                .setView(layout)
+                .setPositiveButton("Toevoegen", (dialog, which) -> {
+                    Integer startM = parseKmToMeters(startKm.getText().toString());
+                    Integer endM   = parseKmToMeters(endKm.getText().toString());
+                    if (startM == null || endM == null) {
+                        Toast.makeText(this, "Vul start en eind in km in", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.addSurfaceSection(routeId, startM, endM,
+                            surface.getSelectedItemPosition());
+                })
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    /** Parses a kilometre string (e.g. "1.5") to integer metres, or null if blank/invalid. */
+    private static Integer parseKmToMeters(String text) {
+        if (text == null || text.trim().isEmpty()) return null;
+        try {
+            return (int) Math.round(Double.parseDouble(text.trim()) * 1000.0);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void shareToGarminConnect() {
