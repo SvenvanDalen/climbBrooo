@@ -1,0 +1,1407 @@
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 1; @symbol_usingdef<0> = [Toybox,1,6,12]; @symbol_usingdef<1> = [WatchUi,1,13,20]; @symbol_usingAlias = [Ui,1,24,26]; ]
+using Toybox.WatchUi as :Ui;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 2; @symbol_usingdef<0> = [Toybox,2,6,12]; @symbol_usingdef<1> = [Graphics,2,13,21]; @symbol_usingAlias = [Gfx,2,25,28]; ]
+using Toybox.Graphics as :Gfx;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 3; @symbol_usingdef<0> = [Toybox,3,6,12]; @symbol_usingdef<1> = [Application,3,13,24]; @symbol_usingAlias = [App,3,28,31]; ]
+using Toybox.Application as :App;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 4; @symbol_usingdef<0> = [Toybox,4,6,12]; @symbol_usingdef<1> = [Communications,4,13,27]; @symbol_usingAlias = [Comm,4,31,35]; ]
+using Toybox.Communications as :Comm;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 6; @symbol_classdef = [ClimbListView,6,6,19]; @symbol_extends<0> = [Ui,6,28,30]; @symbol_extends<1> = [View,6,31,35]; ]
+class ClimbListView extends Ui.View {
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 6; ]
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 6; ]
+    static
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 8; @position = 8; @symbol_vardef = [selectedIndex,8,8,21]; ]
+    var selectedIndex = 0;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 9; @position = 15; @symbol_vardef = [routeId,9,15,22]; ]
+    protected
+    var routeId;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 10; @position = 15; @symbol_vardef = [sourceType,10,15,25]; ]
+    protected
+    var sourceType;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 11; @position = 15; @symbol_vardef = [loading,11,15,22]; ]
+    protected
+    var loading;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 12; @position = 15; @symbol_vardef = [loadError,12,15,24]; ]
+    protected
+    var loadError;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 13; @position = 15; @symbol_vardef = [routeSaved,13,15,25]; ]
+    protected
+    var routeSaved = null;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 15; @symbol_functiondef = [initialize,15,13,23]; @symbol_param<0> = [aRouteId,15,24,32]; @symbol_param<1> = [aSourceType,15,34,45]; ]
+    function initialize(aRouteId, aSourceType) as Void {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_15_47_35_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 16 8 ]
+        symbol [ View %tmp.2 16 8 12 ];
+        %tmp.2 = getv ? :View;
+        symbol [ initialize %tmp.3 16 13 23 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 17 8 ]
+        %tmp.4 = lgetv %aRouteId;
+        symbol [ aRouteId %tmp.4 17 21 29 ];
+        symbol [ routeId ? 17 8 15 ];
+        putv self :routeId %tmp.4;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 18 8 ]
+        %tmp.5 = lgetv %aSourceType;
+        symbol [ aSourceType %tmp.5 18 21 32 ];
+        symbol [ sourceType ? 18 8 18 ];
+        putv self :sourceType %tmp.5;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 19 8 ]
+        %tmp.6 = false;
+        symbol [ loading ? 19 8 15 ];
+        putv self :loading %tmp.6;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 20 8 ]
+        %tmp.7 = false;
+        symbol [ loadError ? 20 8 17 ];
+        putv self :loadError %tmp.7;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 22 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_8_34_8_if_stmt:
+        %tmp.8 = lgetv %aSourceType;
+        symbol [ aSourceType %tmp.8 22 12 23 ];
+        symbol [ equals %tmp.9 22 24 30 ];
+        %tmp.9 = getv function %tmp.8 :equals;
+        %tmp.10 = "phone";
+        %tmp.11 = invoke %tmp.8 %tmp.9(%tmp.10);
+        bf %tmp.11 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_8_34_8_if_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_8_34_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_41_26_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 23 12 ]
+        %tmp.12 = true;
+        symbol [ loading ? 23 12 19 ];
+        putv self :loading %tmp.12;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 24 12 ]
+        symbol [ App %tmp.13 24 12 15 ];
+        %tmp.13 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.14 24 16 22 ];
+        %tmp.14 = getv function %tmp.13 :getApp;
+        %tmp.15 = invoke %tmp.13 %tmp.14();
+        symbol [ climbData %tmp.16 24 25 34 ];
+        %tmp.16 = getv %tmp.15 :climbData;
+        %tmp.17 = false;
+        symbol [ payloadReceived ? 24 35 50 ];
+        putv %tmp.16 :payloadReceived %tmp.17;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 25 12 ]
+        symbol [ Comm %tmp.18 25 12 16 ];
+        %tmp.18 = getm $.Toybox.Communications;
+        symbol [ transmit %tmp.19 25 17 25 ];
+        %tmp.19 = getv function %tmp.18 :transmit;
+        %tmp.20 = newd 2;
+        %tmp.21 = "type";
+        %tmp.22 = "LOAD_ROUTE";
+        %tmp.23 = dup %tmp.20;
+        %tmp.24 = aputv %tmp.23 %tmp.21 %tmp.22;
+        %tmp.25 = "id";
+        %tmp.26 = lgetv %aRouteId;
+        symbol [ aRouteId %tmp.26 25 60 68 ];
+        %tmp.27 = dup %tmp.24;
+        %tmp.28 = aputv %tmp.27 %tmp.25 %tmp.26;
+        %tmp.29 = null;
+        symbol [ CommListener %tmp.33 25 82 94 ];
+        %tmp.33 = getv ? :CommListener;
+        %tmp.30 = newc %tmp.33 ();
+        invoke %tmp.18 %tmp.19(%tmp.28, %tmp.29, %tmp.30);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_41_26_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_8_34_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_8_34_8_if_false:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 26 15 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_15_34_8_if_stmt:
+        %tmp.34 = lgetv %aSourceType;
+        symbol [ aSourceType %tmp.34 26 19 30 ];
+        symbol [ equals %tmp.35 26 31 37 ];
+        %tmp.35 = getv function %tmp.34 :equals;
+        %tmp.36 = "saved_route";
+        %tmp.37 = invoke %tmp.34 %tmp.35(%tmp.36);
+        bf %tmp.37 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_15_34_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_15_34_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_54_34_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 27 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_54_34_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_54_34_8_stop" ]
+        %payload.1 = local;
+        symbol [ payload %payload.1 27 16 23 ];
+        symbol [ StorageManager %tmp.39 27 26 40 ];
+        %tmp.39 = getv ? :StorageManager;
+        symbol [ loadRoute %tmp.40 27 41 50 ];
+        %tmp.40 = getv function %tmp.39 :loadRoute;
+        %tmp.41 = lgetv %aRouteId;
+        symbol [ aRouteId %tmp.41 27 51 59 ];
+        %tmp.42 = invoke %tmp.39 %tmp.40(%tmp.41);
+        lputv %payload.1 %tmp.42;
+        symbol [ payload %payload.1 27 16 23 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 28 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_12_33_12_if_stmt:
+        %tmp.43 = lgetv %payload.1;
+        symbol [ payload %tmp.43 28 16 23 ];
+        %tmp.44 = null;
+        %tmp.45 = ne %tmp.43 %tmp.44;
+        bf %tmp.45 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_12_33_12_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_12_33_12_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_33_31_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 29 16 ]
+        symbol [ App %tmp.46 29 16 19 ];
+        %tmp.46 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.47 29 20 26 ];
+        %tmp.47 = getv function %tmp.46 :getApp;
+        %tmp.48 = invoke %tmp.46 %tmp.47();
+        symbol [ processMessage %tmp.49 29 29 43 ];
+        %tmp.49 = getv function %tmp.48 :processMessage;
+        %tmp.50 = lgetv %payload.1;
+        symbol [ payload %tmp.50 29 44 51 ];
+        %tmp.51 = as %tmp.50 { (!Null) };
+        invoke %tmp.48 %tmp.49(%tmp.51);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 30 16 ]
+        symbol [ App %tmp.52 30 16 19 ];
+        %tmp.52 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.53 30 20 26 ];
+        %tmp.53 = getv function %tmp.52 :getApp;
+        %tmp.54 = invoke %tmp.52 %tmp.53();
+        %tmp.55 = lgetv %payload.1;
+        symbol [ payload %tmp.55 30 51 58 ];
+        %tmp.56 = as %tmp.55 { (!Null) };
+        symbol [ lastReceivedPayload ? 30 29 48 ];
+        putv %tmp.54 :lastReceivedPayload %tmp.56;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_33_31_12_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_12_33_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_12_33_12_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_31_19_33_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 32 16 ]
+        %tmp.57 = true;
+        symbol [ loadError ? 32 16 25 ];
+        putv self :loadError %tmp.57;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_31_19_33_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_28_12_33_12_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_54_34_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_15_34_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_26_15_34_8_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_22_8_34_8_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_15_47_35_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 37; @symbol_functiondef = [getRouteId,37,13,23]; ]
+    function getRouteId() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_37_26_37_44_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 37 28 ]
+        symbol [ routeId %tmp.2 37 35 42 ];
+        %tmp.2 = getv ? :routeId;
+        ret %tmp.2;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_37_26_37_44_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 39; @symbol_functiondef = [onUpdate,39,13,21]; @symbol_param<0> = [dc,39,22,24]; ]
+    function onUpdate(dc) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 40 8 ]
+        %tmp.1 = lgetv %dc;
+        symbol [ dc %tmp.1 40 8 10 ];
+        symbol [ setColor %tmp.2 40 11 19 ];
+        %tmp.2 = getv function %tmp.1 :setColor;
+        symbol [ Gfx %tmp.3 40 20 23 ];
+        %tmp.3 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.4 40 24 35 ];
+        %tmp.4 = getv %tmp.3 :COLOR_BLACK;
+        symbol [ Gfx %tmp.5 40 37 40 ];
+        %tmp.5 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.6 40 41 52 ];
+        %tmp.6 = getv %tmp.5 :COLOR_BLACK;
+        invoke %tmp.1 %tmp.2(%tmp.4, %tmp.6);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 41 8 ]
+        %tmp.7 = lgetv %dc;
+        symbol [ dc %tmp.7 41 8 10 ];
+        symbol [ clear %tmp.8 41 11 16 ];
+        %tmp.8 = getv function %tmp.7 :clear;
+        invoke %tmp.7 %tmp.8();
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 43 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %w.1 = local;
+        symbol [ w %w.1 43 12 13 ];
+        %tmp.9 = lgetv %dc;
+        symbol [ dc %tmp.9 43 16 18 ];
+        symbol [ getWidth %tmp.10 43 19 27 ];
+        %tmp.10 = getv function %tmp.9 :getWidth;
+        %tmp.11 = invoke %tmp.9 %tmp.10();
+        lputv %w.1 %tmp.11;
+        symbol [ w %w.1 43 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 44 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %h.2 = local;
+        symbol [ h %h.2 44 12 13 ];
+        %tmp.12 = lgetv %dc;
+        symbol [ dc %tmp.12 44 16 18 ];
+        symbol [ getHeight %tmp.13 44 19 28 ];
+        %tmp.13 = getv function %tmp.12 :getHeight;
+        %tmp.14 = invoke %tmp.12 %tmp.13();
+        lputv %h.2 %tmp.14;
+        symbol [ h %h.2 44 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 46 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_8_56_8_if_stmt:
+        symbol [ loading %tmp.16 46 12 19 ];
+        %tmp.16 = getv ? :loading;
+        bf %tmp.16 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_8_56_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_8_56_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_21_56_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 47 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_12_55_12_if_stmt:
+        symbol [ App %tmp.17 47 16 19 ];
+        %tmp.17 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.18 47 20 26 ];
+        %tmp.18 = getv function %tmp.17 :getApp;
+        %tmp.19 = invoke %tmp.17 %tmp.18();
+        symbol [ climbData %tmp.20 47 29 38 ];
+        %tmp.20 = getv %tmp.19 :climbData;
+        symbol [ payloadReceived %tmp.21 47 39 54 ];
+        %tmp.21 = getv %tmp.20 :payloadReceived;
+        bf %tmp.21 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_12_55_12_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_12_55_12_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_56_49_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 48 16 ]
+        %tmp.22 = false;
+        symbol [ loading ? 48 16 23 ];
+        putv self :loading %tmp.22;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_56_49_12_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_12_55_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_12_55_12_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_49_19_55_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 50 16 ]
+        %tmp.23 = lgetv %dc;
+        symbol [ dc %tmp.23 50 16 18 ];
+        symbol [ setColor %tmp.24 50 19 27 ];
+        %tmp.24 = getv function %tmp.23 :setColor;
+        symbol [ Gfx %tmp.25 50 28 31 ];
+        %tmp.25 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.26 50 32 43 ];
+        %tmp.26 = getv %tmp.25 :COLOR_WHITE;
+        symbol [ Gfx %tmp.27 50 45 48 ];
+        %tmp.27 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.28 50 49 66 ];
+        %tmp.28 = getv %tmp.27 :COLOR_TRANSPARENT;
+        invoke %tmp.23 %tmp.24(%tmp.26, %tmp.28);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 51 16 ]
+        %tmp.29 = lgetv %dc;
+        symbol [ dc %tmp.29 51 16 18 ];
+        symbol [ drawText %tmp.30 51 19 27 ];
+        %tmp.30 = getv function %tmp.29 :drawText;
+        %tmp.31 = lgetv %w.1;
+        symbol [ w %tmp.31 51 28 29 ];
+        %tmp.32 = 2;
+        %tmp.33 = div %tmp.31 %tmp.32;
+        %tmp.34 = lgetv %h.2;
+        symbol [ h %tmp.34 51 35 36 ];
+        %tmp.35 = 2;
+        %tmp.36 = div %tmp.34 %tmp.35;
+        symbol [ Gfx %tmp.37 51 42 45 ];
+        %tmp.37 = getm $.Toybox.Graphics;
+        symbol [ FONT_SMALL %tmp.38 51 46 56 ];
+        %tmp.38 = getv %tmp.37 :FONT_SMALL;
+        %tmp.39 = "Loading...";
+        symbol [ Gfx %tmp.40 53 20 23 ];
+        %tmp.40 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.41 53 24 43 ];
+        %tmp.41 = getv %tmp.40 :TEXT_JUSTIFY_CENTER;
+        symbol [ Gfx %tmp.42 53 46 49 ];
+        %tmp.42 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_VCENTER %tmp.43 53 50 70 ];
+        %tmp.43 = getv %tmp.42 :TEXT_JUSTIFY_VCENTER;
+        %tmp.44 = bitor %tmp.41 %tmp.43;
+        invoke %tmp.29 %tmp.30(%tmp.33, %tmp.36, %tmp.38, %tmp.39, %tmp.44);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 54 16 ]
+        ret ?;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_49_19_55_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_47_12_55_12_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_21_56_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_8_56_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_46_8_56_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 58 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_8_64_8_if_stmt:
+        symbol [ loadError %tmp.46 58 12 21 ];
+        %tmp.46 = getv ? :loadError;
+        bf %tmp.46 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_8_64_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_8_64_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_23_64_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 59 12 ]
+        %tmp.47 = lgetv %dc;
+        symbol [ dc %tmp.47 59 12 14 ];
+        symbol [ setColor %tmp.48 59 15 23 ];
+        %tmp.48 = getv function %tmp.47 :setColor;
+        symbol [ Gfx %tmp.49 59 24 27 ];
+        %tmp.49 = getm $.Toybox.Graphics;
+        symbol [ COLOR_RED %tmp.50 59 28 37 ];
+        %tmp.50 = getv %tmp.49 :COLOR_RED;
+        symbol [ Gfx %tmp.51 59 39 42 ];
+        %tmp.51 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.52 59 43 60 ];
+        %tmp.52 = getv %tmp.51 :COLOR_TRANSPARENT;
+        invoke %tmp.47 %tmp.48(%tmp.50, %tmp.52);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 60 12 ]
+        %tmp.53 = lgetv %dc;
+        symbol [ dc %tmp.53 60 12 14 ];
+        symbol [ drawText %tmp.54 60 15 23 ];
+        %tmp.54 = getv function %tmp.53 :drawText;
+        %tmp.55 = lgetv %w.1;
+        symbol [ w %tmp.55 60 24 25 ];
+        %tmp.56 = 2;
+        %tmp.57 = div %tmp.55 %tmp.56;
+        %tmp.58 = lgetv %h.2;
+        symbol [ h %tmp.58 60 31 32 ];
+        %tmp.59 = 2;
+        %tmp.60 = div %tmp.58 %tmp.59;
+        symbol [ Gfx %tmp.61 60 38 41 ];
+        %tmp.61 = getm $.Toybox.Graphics;
+        symbol [ FONT_SMALL %tmp.62 60 42 52 ];
+        %tmp.62 = getv %tmp.61 :FONT_SMALL;
+        %tmp.63 = "Load failed";
+        symbol [ Gfx %tmp.64 62 16 19 ];
+        %tmp.64 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.65 62 20 39 ];
+        %tmp.65 = getv %tmp.64 :TEXT_JUSTIFY_CENTER;
+        symbol [ Gfx %tmp.66 62 42 45 ];
+        %tmp.66 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_VCENTER %tmp.67 62 46 66 ];
+        %tmp.67 = getv %tmp.66 :TEXT_JUSTIFY_VCENTER;
+        %tmp.68 = bitor %tmp.65 %tmp.67;
+        invoke %tmp.53 %tmp.54(%tmp.57, %tmp.60, %tmp.62, %tmp.63, %tmp.68);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 63 12 ]
+        ret ?;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_23_64_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_8_64_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_58_8_64_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 66 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %data.3 = local;
+        symbol [ data %data.3 66 12 16 ];
+        symbol [ App %tmp.69 66 25 28 ];
+        %tmp.69 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.70 66 29 35 ];
+        %tmp.70 = getv function %tmp.69 :getApp;
+        %tmp.71 = invoke %tmp.69 %tmp.70();
+        symbol [ climbData %tmp.72 66 38 47 ];
+        %tmp.72 = getv %tmp.71 :climbData;
+        lputv %data.3 %tmp.72;
+        symbol [ data %data.3 66 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 67 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %totalItems.4 = local;
+        symbol [ totalItems %totalItems.4 67 12 22 ];
+        %tmp.73 = lgetv %data.3;
+        symbol [ data %tmp.73 67 25 29 ];
+        symbol [ climbCount %tmp.74 67 30 40 ];
+        %tmp.74 = getv %tmp.73 :climbCount;
+        %tmp.75 = 1;
+        %tmp.76 = add %tmp.74 %tmp.75;
+        lputv %totalItems.4 %tmp.76;
+        symbol [ totalItems %totalItems.4 67 12 22 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 69 8 ]
+        %tmp.77 = lgetv %dc;
+        symbol [ dc %tmp.77 69 8 10 ];
+        symbol [ setColor %tmp.78 69 11 19 ];
+        %tmp.78 = getv function %tmp.77 :setColor;
+        symbol [ Gfx %tmp.79 69 20 23 ];
+        %tmp.79 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.80 69 24 37 ];
+        %tmp.80 = getv %tmp.79 :COLOR_LT_GRAY;
+        symbol [ Gfx %tmp.81 69 39 42 ];
+        %tmp.81 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.82 69 43 60 ];
+        %tmp.82 = getv %tmp.81 :COLOR_TRANSPARENT;
+        invoke %tmp.77 %tmp.78(%tmp.80, %tmp.82);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 70 8 ]
+        %tmp.83 = lgetv %dc;
+        symbol [ dc %tmp.83 70 8 10 ];
+        symbol [ drawText %tmp.84 70 11 19 ];
+        %tmp.84 = getv function %tmp.83 :drawText;
+        %tmp.85 = lgetv %w.1;
+        symbol [ w %tmp.85 70 20 21 ];
+        %tmp.86 = 2;
+        %tmp.87 = div %tmp.85 %tmp.86;
+        %tmp.88 = 6;
+        symbol [ Gfx %tmp.89 70 30 33 ];
+        %tmp.89 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.90 70 34 44 ];
+        %tmp.90 = getv %tmp.89 :FONT_XTINY;
+        %tmp.91 = "Climbs (";
+        symbol [ selectedIndex %tmp.93 71 26 39 ];
+        %tmp.93 = getv ? :selectedIndex;
+        %tmp.94 = 1;
+        %tmp.95 = add %tmp.93 %tmp.94;
+        %tmp.96 = add %tmp.91 %tmp.95;
+        %tmp.97 = "/";
+        %tmp.98 = add %tmp.96 %tmp.97;
+        %tmp.99 = lgetv %totalItems.4;
+        symbol [ totalItems %tmp.99 71 53 63 ];
+        %tmp.100 = add %tmp.98 %tmp.99;
+        %tmp.101 = ")";
+        %tmp.102 = add %tmp.100 %tmp.101;
+        symbol [ Gfx %tmp.103 72 12 15 ];
+        %tmp.103 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.104 72 16 35 ];
+        %tmp.104 = getv %tmp.103 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.83 %tmp.84(%tmp.87, %tmp.88, %tmp.90, %tmp.102, %tmp.104);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 74 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %startIdx.5 = local;
+        symbol [ startIdx %startIdx.5 74 12 20 ];
+        symbol [ selectedIndex %tmp.106 74 23 36 ];
+        %tmp.106 = getv ? :selectedIndex;
+        %tmp.107 = 1;
+        %tmp.108 = sub %tmp.106 %tmp.107;
+        lputv %startIdx.5 %tmp.108;
+        symbol [ startIdx %startIdx.5 74 12 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 75 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_8_75_42_if_stmt:
+        %tmp.109 = lgetv %startIdx.5;
+        symbol [ startIdx %tmp.109 75 12 20 ];
+        %tmp.110 = 0;
+        %tmp.111 = lt %tmp.109 %tmp.110;
+        bf %tmp.111 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_8_75_42_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_8_75_42_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_26_75_42_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 75 28 ]
+        %tmp.112 = 0;
+        lputv %startIdx.5 %tmp.112;
+        symbol [ startIdx %startIdx.5 75 28 36 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_26_75_42_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_8_75_42_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_75_8_75_42_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 76 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_8_76_68_if_stmt:
+        %tmp.113 = lgetv %startIdx.5;
+        symbol [ startIdx %tmp.113 76 12 20 ];
+        %tmp.114 = 4;
+        %tmp.115 = add %tmp.113 %tmp.114;
+        %tmp.116 = lgetv %totalItems.4;
+        symbol [ totalItems %tmp.116 76 27 37 ];
+        %tmp.117 = gt %tmp.115 %tmp.116;
+        bf %tmp.117 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_8_76_68_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_8_76_68_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_39_76_68_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 76 41 ]
+        %tmp.118 = lgetv %totalItems.4;
+        symbol [ totalItems %tmp.118 76 52 62 ];
+        %tmp.119 = 4;
+        %tmp.120 = sub %tmp.118 %tmp.119;
+        lputv %startIdx.5 %tmp.120;
+        symbol [ startIdx %startIdx.5 76 41 49 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_39_76_68_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_8_76_68_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_76_8_76_68_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 77 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_8_77_42_if_stmt:
+        %tmp.121 = lgetv %startIdx.5;
+        symbol [ startIdx %tmp.121 77 12 20 ];
+        %tmp.122 = 0;
+        %tmp.123 = lt %tmp.121 %tmp.122;
+        bf %tmp.123 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_8_77_42_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_8_77_42_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_26_77_42_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 77 28 ]
+        %tmp.124 = 0;
+        lputv %startIdx.5 %tmp.124;
+        symbol [ startIdx %startIdx.5 77 28 36 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_26_77_42_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_8_77_42_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_77_8_77_42_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 79 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %itemH.6 = local;
+        symbol [ itemH %itemH.6 79 12 17 ];
+        %tmp.125 = 36;
+        lputv %itemH.6 %tmp.125;
+        symbol [ itemH %itemH.6 79 12 17 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 80 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop" ]
+        %listTop.7 = local;
+        symbol [ listTop %listTop.7 80 12 19 ];
+        %tmp.126 = 30;
+        lputv %listTop.7 %tmp.126;
+        symbol [ listTop %listTop.7 80 12 19 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 82 8 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_end" ]
+        %i.8 = local;
+        symbol [ i %i.8 82 17 18 ];
+        %tmp.127 = lgetv %startIdx.5;
+        symbol [ startIdx %tmp.127 82 21 29 ];
+        lputv %i.8 %tmp.127;
+        symbol [ i %i.8 82 17 18 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_test:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_31_82_64_begin:
+        %tmp.128 = lgetv %i.8;
+        symbol [ i %tmp.128 82 31 32 ];
+        %tmp.129 = lgetv %totalItems.4;
+        symbol [ totalItems %tmp.129 82 35 45 ];
+        %tmp.130 = lt %tmp.128 %tmp.129;
+        %tmp.131 = dup %tmp.130;
+        bf %tmp.131 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_49_82_64_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_49_82_64_true:
+        %tmp.132 = lgetv %i.8;
+        symbol [ i %tmp.132 82 49 50 ];
+        %tmp.133 = lgetv %startIdx.5;
+        symbol [ startIdx %tmp.133 82 53 61 ];
+        %tmp.134 = 4;
+        %tmp.135 = add %tmp.133 %tmp.134;
+        %tmp.136 = lt %tmp.132 %tmp.135;
+        %tmp.137 = and %tmp.130 %tmp.136;
+        push %tmp.137;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_49_82_64_end:
+        %tmp.138 = phi [%tmp.131 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_31_82_64_begin] [%tmp.137 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_49_82_64_true] [%tmp.138 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_49_82_64_end];
+        bf %tmp.138 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_72_111_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 83 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_72_111_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_72_111_8_stop" ]
+        %yPos.9 = local;
+        symbol [ yPos %yPos.9 83 16 20 ];
+        %tmp.139 = lgetv %listTop.7;
+        symbol [ listTop %tmp.139 83 23 30 ];
+        %tmp.140 = lgetv %i.8;
+        symbol [ i %tmp.140 83 34 35 ];
+        %tmp.141 = lgetv %startIdx.5;
+        symbol [ startIdx %tmp.141 83 38 46 ];
+        %tmp.142 = sub %tmp.140 %tmp.141;
+        %tmp.143 = lgetv %itemH.6;
+        symbol [ itemH %tmp.143 83 50 55 ];
+        %tmp.144 = mul %tmp.142 %tmp.143;
+        %tmp.145 = add %tmp.139 %tmp.144;
+        lputv %yPos.9 %tmp.145;
+        symbol [ yPos %yPos.9 83 16 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 85 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_12_91_12_if_stmt:
+        %tmp.146 = lgetv %i.8;
+        symbol [ i %tmp.146 85 16 17 ];
+        symbol [ selectedIndex %tmp.148 85 21 34 ];
+        %tmp.148 = getv ? :selectedIndex;
+        %tmp.149 = eq %tmp.146 %tmp.148;
+        bf %tmp.149 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_12_91_12_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_12_91_12_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_36_89_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 86 16 ]
+        %tmp.150 = lgetv %dc;
+        symbol [ dc %tmp.150 86 16 18 ];
+        symbol [ setColor %tmp.151 86 19 27 ];
+        %tmp.151 = getv function %tmp.150 :setColor;
+        symbol [ Gfx %tmp.152 86 28 31 ];
+        %tmp.152 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLUE %tmp.153 86 32 42 ];
+        %tmp.153 = getv %tmp.152 :COLOR_BLUE;
+        symbol [ Gfx %tmp.154 86 44 47 ];
+        %tmp.154 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.155 86 48 65 ];
+        %tmp.155 = getv %tmp.154 :COLOR_TRANSPARENT;
+        invoke %tmp.150 %tmp.151(%tmp.153, %tmp.155);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 87 16 ]
+        %tmp.156 = lgetv %dc;
+        symbol [ dc %tmp.156 87 16 18 ];
+        symbol [ fillRectangle %tmp.157 87 19 32 ];
+        %tmp.157 = getv function %tmp.156 :fillRectangle;
+        %tmp.158 = 10;
+        %tmp.159 = lgetv %yPos.9;
+        symbol [ yPos %tmp.159 87 37 41 ];
+        %tmp.160 = 2;
+        %tmp.161 = sub %tmp.159 %tmp.160;
+        %tmp.162 = lgetv %w.1;
+        symbol [ w %tmp.162 87 47 48 ];
+        %tmp.163 = 20;
+        %tmp.164 = sub %tmp.162 %tmp.163;
+        %tmp.165 = lgetv %itemH.6;
+        symbol [ itemH %tmp.165 87 55 60 ];
+        %tmp.166 = 4;
+        %tmp.167 = sub %tmp.165 %tmp.166;
+        invoke %tmp.156 %tmp.157(%tmp.158, %tmp.161, %tmp.164, %tmp.167);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 88 16 ]
+        %tmp.168 = lgetv %dc;
+        symbol [ dc %tmp.168 88 16 18 ];
+        symbol [ setColor %tmp.169 88 19 27 ];
+        %tmp.169 = getv function %tmp.168 :setColor;
+        symbol [ Gfx %tmp.170 88 28 31 ];
+        %tmp.170 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.171 88 32 43 ];
+        %tmp.171 = getv %tmp.170 :COLOR_WHITE;
+        symbol [ Gfx %tmp.172 88 45 48 ];
+        %tmp.172 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.173 88 49 66 ];
+        %tmp.173 = getv %tmp.172 :COLOR_TRANSPARENT;
+        invoke %tmp.168 %tmp.169(%tmp.171, %tmp.173);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_36_89_12_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_12_91_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_12_91_12_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_89_19_91_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 90 16 ]
+        %tmp.174 = lgetv %dc;
+        symbol [ dc %tmp.174 90 16 18 ];
+        symbol [ setColor %tmp.175 90 19 27 ];
+        %tmp.175 = getv function %tmp.174 :setColor;
+        symbol [ Gfx %tmp.176 90 28 31 ];
+        %tmp.176 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.177 90 32 45 ];
+        %tmp.177 = getv %tmp.176 :COLOR_LT_GRAY;
+        symbol [ Gfx %tmp.178 90 47 50 ];
+        %tmp.178 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.179 90 51 68 ];
+        %tmp.179 = getv %tmp.178 :COLOR_TRANSPARENT;
+        invoke %tmp.174 %tmp.175(%tmp.177, %tmp.179);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_89_19_91_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_85_12_91_12_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 93 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_12_110_12_if_stmt:
+        %tmp.180 = lgetv %i.8;
+        symbol [ i %tmp.180 93 16 17 ];
+        %tmp.181 = lgetv %data.3;
+        symbol [ data %tmp.181 93 20 24 ];
+        symbol [ climbCount %tmp.182 93 25 35 ];
+        %tmp.182 = getv %tmp.181 :climbCount;
+        %tmp.183 = lt %tmp.180 %tmp.182;
+        bf %tmp.183 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_12_110_12_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_12_110_12_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 94 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_stop" ]
+        %name.10 = local;
+        symbol [ name %name.10 94 20 24 ];
+        %tmp.184 = lgetv %data.3;
+        symbol [ data %tmp.184 94 27 31 ];
+        symbol [ climbName %tmp.185 94 32 41 ];
+        %tmp.185 = getv %tmp.184 :climbName;
+        %tmp.186 = lgetv %i.8;
+        symbol [ i %tmp.186 94 42 43 ];
+        %tmp.187 = agetv %tmp.185 %tmp.186;
+        lputv %name.10 %tmp.187;
+        symbol [ name %name.10 94 20 24 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 95 16 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_16_95_63_if_stmt:
+        %tmp.188 = lgetv %name.10;
+        symbol [ name %tmp.188 95 20 24 ];
+        %tmp.189 = null;
+        %tmp.190 = eq %tmp.188 %tmp.189;
+        bf %tmp.190 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_16_95_63_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_16_95_63_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_34_95_63_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 95 36 ]
+        %tmp.191 = "Climb ";
+        %tmp.192 = lgetv %i.8;
+        symbol [ i %tmp.192 95 55 56 ];
+        %tmp.193 = 1;
+        %tmp.194 = add %tmp.192 %tmp.193;
+        %tmp.195 = add %tmp.191 %tmp.194;
+        lputv %name.10 %tmp.195;
+        symbol [ name %name.10 95 36 40 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_34_95_63_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_16_95_63_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_95_16_95_63_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 96 16 ]
+        %tmp.196 = lgetv %dc;
+        symbol [ dc %tmp.196 96 16 18 ];
+        symbol [ drawText %tmp.197 96 19 27 ];
+        %tmp.197 = getv function %tmp.196 :drawText;
+        %tmp.198 = lgetv %w.1;
+        symbol [ w %tmp.198 96 28 29 ];
+        %tmp.199 = 2;
+        %tmp.200 = div %tmp.198 %tmp.199;
+        %tmp.201 = lgetv %yPos.9;
+        symbol [ yPos %tmp.201 96 35 39 ];
+        %tmp.202 = 4;
+        %tmp.203 = add %tmp.201 %tmp.202;
+        symbol [ Gfx %tmp.204 96 45 48 ];
+        %tmp.204 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.205 96 49 59 ];
+        %tmp.205 = getv %tmp.204 :FONT_XTINY;
+        %tmp.206 = lgetv %name.10;
+        symbol [ name %tmp.206 96 61 65 ];
+        symbol [ Gfx %tmp.207 96 67 70 ];
+        %tmp.207 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.208 96 71 90 ];
+        %tmp.208 = getv %tmp.207 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.196 %tmp.197(%tmp.200, %tmp.203, %tmp.205, %tmp.206, %tmp.208);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 98 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_stop" ]
+        %grad.11 = local;
+        symbol [ grad %grad.11 98 20 24 ];
+        %tmp.209 = lgetv %data.3;
+        symbol [ data %tmp.209 98 31 35 ];
+        symbol [ climbAvgGrad %tmp.210 98 36 48 ];
+        %tmp.210 = getv %tmp.209 :climbAvgGrad;
+        %tmp.211 = lgetv %i.8;
+        symbol [ i %tmp.211 98 49 50 ];
+        %tmp.212 = agetv %tmp.210 %tmp.211;
+        lputv %grad.11 %tmp.212;
+        symbol [ grad %grad.11 98 20 24 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 99 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_stop" ]
+        %absGrad.12 = local;
+        symbol [ absGrad %absGrad.12 99 20 27 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_begin:
+        %tmp.213 = lgetv %grad.11;
+        symbol [ grad %tmp.213 99 31 35 ];
+        %tmp.214 = 0;
+        %tmp.215 = lt %tmp.213 %tmp.214;
+        bf %tmp.215 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_true:
+        %tmp.216 = lgetv %grad.11;
+        symbol [ grad %tmp.216 99 43 47 ];
+        %tmp.217 = sub 0 %tmp.216;
+        push %tmp.217;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_else_false:
+        %tmp.218 = lgetv %grad.11;
+        symbol [ grad %tmp.218 99 50 54 ];
+        push %tmp.218;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_end:
+        %tmp.219 = phi [%tmp.215 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_begin] [%tmp.217 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_true] [%tmp.218 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_else_false] [%tmp.219 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_99_31_99_50_end];
+        lputv %absGrad.12 %tmp.219;
+        symbol [ absGrad %absGrad.12 99 20 27 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 100 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_stop" ]
+        %sign.13 = local;
+        symbol [ sign %sign.13 100 20 24 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_begin:
+        %tmp.220 = lgetv %grad.11;
+        symbol [ grad %tmp.220 100 31 35 ];
+        %tmp.221 = 0;
+        %tmp.222 = lt %tmp.220 %tmp.221;
+        bf %tmp.222 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_true:
+        %tmp.223 = "-";
+        push %tmp.223;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_else_false:
+        %tmp.224 = "";
+        push %tmp.224;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_end:
+        %tmp.225 = phi [%tmp.222 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_begin] [%tmp.223 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_true] [%tmp.224 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_else_false] [%tmp.225 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_100_31_100_48_end];
+        lputv %sign.13 %tmp.225;
+        symbol [ sign %sign.13 100 20 24 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 101 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_stop" ]
+        %gradStr.14 = local;
+        symbol [ gradStr %gradStr.14 101 20 27 ];
+        %tmp.226 = lgetv %sign.13;
+        symbol [ sign %tmp.226 101 31 35 ];
+        %tmp.227 = lgetv %absGrad.12;
+        symbol [ absGrad %tmp.227 101 39 46 ];
+        %tmp.228 = 10;
+        %tmp.229 = div %tmp.227 %tmp.228;
+        %tmp.230 = add %tmp.226 %tmp.229;
+        %tmp.231 = ".";
+        %tmp.232 = add %tmp.230 %tmp.231;
+        %tmp.233 = lgetv %absGrad.12;
+        symbol [ absGrad %tmp.233 101 62 69 ];
+        %tmp.234 = 10;
+        %tmp.235 = mod %tmp.233 %tmp.234;
+        %tmp.236 = add %tmp.232 %tmp.235;
+        %tmp.237 = "%  ";
+        %tmp.238 = add %tmp.236 %tmp.237;
+        %tmp.239 = self;
+        symbol [ formatDist %tmp.240 101 86 96 ];
+        %tmp.240 = getv function %tmp.239 :formatDist;
+        %tmp.241 = lgetv %data.3;
+        symbol [ data %tmp.241 101 97 101 ];
+        symbol [ climbLength %tmp.242 101 102 113 ];
+        %tmp.242 = getv %tmp.241 :climbLength;
+        %tmp.243 = lgetv %i.8;
+        symbol [ i %tmp.243 101 114 115 ];
+        %tmp.244 = agetv %tmp.242 %tmp.243;
+        %tmp.245 = invoke %tmp.239 %tmp.240(%tmp.244);
+        %tmp.246 = add %tmp.238 %tmp.245;
+        lputv %gradStr.14 %tmp.246;
+        symbol [ gradStr %gradStr.14 101 20 27 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 102 16 ]
+        %tmp.247 = lgetv %dc;
+        symbol [ dc %tmp.247 102 16 18 ];
+        symbol [ drawText %tmp.248 102 19 27 ];
+        %tmp.248 = getv function %tmp.247 :drawText;
+        %tmp.249 = lgetv %w.1;
+        symbol [ w %tmp.249 102 28 29 ];
+        %tmp.250 = 2;
+        %tmp.251 = div %tmp.249 %tmp.250;
+        %tmp.252 = lgetv %yPos.9;
+        symbol [ yPos %tmp.252 102 35 39 ];
+        %tmp.253 = 20;
+        %tmp.254 = add %tmp.252 %tmp.253;
+        symbol [ Gfx %tmp.255 102 46 49 ];
+        %tmp.255 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.256 102 50 60 ];
+        %tmp.256 = getv %tmp.255 :FONT_XTINY;
+        %tmp.257 = lgetv %gradStr.14;
+        symbol [ gradStr %tmp.257 102 62 69 ];
+        symbol [ Gfx %tmp.258 102 71 74 ];
+        %tmp.258 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.259 102 75 94 ];
+        %tmp.259 = getv %tmp.258 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.247 %tmp.248(%tmp.251, %tmp.254, %tmp.256, %tmp.257, %tmp.259);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_37_103_12_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_12_110_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_12_110_12_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 104 16 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_16_104_63_if_stmt:
+        symbol [ routeSaved %tmp.261 104 20 30 ];
+        %tmp.261 = getv ? :routeSaved;
+        %tmp.262 = null;
+        %tmp.263 = eq %tmp.261 %tmp.262;
+        bf %tmp.263 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_16_104_63_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_16_104_63_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_40_104_63_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 104 42 ]
+        %tmp.264 = self;
+        symbol [ refreshRouteSaved %tmp.265 104 42 59 ];
+        %tmp.265 = getv function %tmp.264 :refreshRouteSaved;
+        invoke %tmp.264 %tmp.265();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_40_104_63_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_16_104_63_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_104_16_104_63_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 105 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_stop" ]
+        %isSaved.15 = local;
+        symbol [ isSaved %isSaved.15 105 20 27 ];
+        symbol [ routeSaved %tmp.267 105 30 40 ];
+        %tmp.267 = getv ? :routeSaved;
+        lputv %isSaved.15 %tmp.267;
+        symbol [ isSaved %isSaved.15 105 20 27 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 106 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_stop" ]
+        %label.16 = local;
+        symbol [ label %label.16 106 20 25 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_begin:
+        %tmp.268 = lgetv %isSaved.15;
+        symbol [ isSaved %tmp.268 106 30 37 ];
+        bf %tmp.268 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_true:
+        %tmp.269 = "Delete route";
+        push %tmp.269;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_else_false:
+        %tmp.270 = "Save route";
+        push %tmp.270;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_end:
+        %tmp.271 = phi [%tmp.268 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_begin] [%tmp.269 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_true] [%tmp.270 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_else_false] [%tmp.271 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_106_30_106_57_end];
+        lputv %label.16 %tmp.271;
+        symbol [ label %label.16 106 20 25 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 107 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_stop" ]
+        %color.17 = local;
+        symbol [ color %color.17 107 20 25 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_begin:
+        %tmp.272 = lgetv %isSaved.15;
+        symbol [ isSaved %tmp.272 107 30 37 ];
+        bf %tmp.272 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_true:
+        symbol [ Gfx %tmp.273 107 40 43 ];
+        %tmp.273 = getm $.Toybox.Graphics;
+        symbol [ COLOR_RED %tmp.274 107 44 53 ];
+        %tmp.274 = getv %tmp.273 :COLOR_RED;
+        push %tmp.274;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_else_false:
+        symbol [ Gfx %tmp.275 107 56 59 ];
+        %tmp.275 = getm $.Toybox.Graphics;
+        symbol [ COLOR_GREEN %tmp.276 107 60 71 ];
+        %tmp.276 = getv %tmp.275 :COLOR_GREEN;
+        push %tmp.276;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_end:
+        %tmp.277 = phi [%tmp.272 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_begin] [%tmp.274 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_true] [%tmp.276 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_else_false] [%tmp.277 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_107_30_107_60_end];
+        lputv %color.17 %tmp.277;
+        symbol [ color %color.17 107 20 25 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 108 16 ]
+        %tmp.278 = lgetv %dc;
+        symbol [ dc %tmp.278 108 16 18 ];
+        symbol [ setColor %tmp.279 108 19 27 ];
+        %tmp.279 = getv function %tmp.278 :setColor;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_begin:
+        %tmp.280 = lgetv %i.8;
+        symbol [ i %tmp.280 108 28 29 ];
+        symbol [ selectedIndex %tmp.282 108 33 46 ];
+        %tmp.282 = getv ? :selectedIndex;
+        %tmp.283 = eq %tmp.280 %tmp.282;
+        bf %tmp.283 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_true:
+        symbol [ Gfx %tmp.284 108 49 52 ];
+        %tmp.284 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.285 108 53 64 ];
+        %tmp.285 = getv %tmp.284 :COLOR_WHITE;
+        push %tmp.285;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_else_false:
+        %tmp.286 = lgetv %color.17;
+        symbol [ color %tmp.286 108 67 72 ];
+        push %tmp.286;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_end:
+        %tmp.287 = phi [%tmp.283 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_begin] [%tmp.285 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_true] [%tmp.286 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_else_false] [%tmp.287 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_108_28_108_67_end];
+        symbol [ Gfx %tmp.288 108 74 77 ];
+        %tmp.288 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.289 108 78 95 ];
+        %tmp.289 = getv %tmp.288 :COLOR_TRANSPARENT;
+        invoke %tmp.278 %tmp.279(%tmp.287, %tmp.289);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 109 16 ]
+        %tmp.290 = lgetv %dc;
+        symbol [ dc %tmp.290 109 16 18 ];
+        symbol [ drawText %tmp.291 109 19 27 ];
+        %tmp.291 = getv function %tmp.290 :drawText;
+        %tmp.292 = lgetv %w.1;
+        symbol [ w %tmp.292 109 28 29 ];
+        %tmp.293 = 2;
+        %tmp.294 = div %tmp.292 %tmp.293;
+        %tmp.295 = lgetv %yPos.9;
+        symbol [ yPos %tmp.295 109 35 39 ];
+        %tmp.296 = 14;
+        %tmp.297 = add %tmp.295 %tmp.296;
+        symbol [ Gfx %tmp.298 109 46 49 ];
+        %tmp.298 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.299 109 50 60 ];
+        %tmp.299 = getv %tmp.298 :FONT_XTINY;
+        %tmp.300 = lgetv %label.16;
+        symbol [ label %tmp.300 109 62 67 ];
+        symbol [ Gfx %tmp.301 109 69 72 ];
+        %tmp.301 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.302 109 73 92 ];
+        %tmp.302 = getv %tmp.301 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.290 %tmp.291(%tmp.294, %tmp.297, %tmp.299, %tmp.300, %tmp.302);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_103_19_110_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_93_12_110_12_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_72_111_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 82 ]
+        %tmp.305 = lgetv %i.8;
+        symbol [ i %tmp.305 82 67 68 ];
+        %tmp.306 = add %tmp.305 1;
+        lputv %i.8 %tmp.306;
+        symbol [ i %i.8 82 67 68 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_82_8_111_8_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_39_26_112_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 114; @symbol_functiondef = [refreshRouteSaved,114,13,30]; ]
+    function refreshRouteSaved() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_114_33_116_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 115 8 ]
+        symbol [ StorageManager %tmp.2 115 21 35 ];
+        %tmp.2 = getv ? :StorageManager;
+        symbol [ isRouteSaved %tmp.3 115 36 48 ];
+        %tmp.3 = getv function %tmp.2 :isRouteSaved;
+        symbol [ routeId %tmp.5 115 49 56 ];
+        %tmp.5 = getv ? :routeId;
+        %tmp.6 = invoke %tmp.2 %tmp.3(%tmp.5);
+        symbol [ routeSaved ? 115 8 18 ];
+        putv self :routeSaved %tmp.6;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_114_33_116_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 118; @symbol_functiondef = [formatDist,118,20,30]; @symbol_param<0> = [meters,118,31,37]; ]
+    protected
+    function formatDist(meters) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_118_39_123_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 119 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_8_121_8_if_stmt:
+        %tmp.1 = lgetv %meters;
+        symbol [ meters %tmp.1 119 12 18 ];
+        %tmp.2 = 1000;
+        %tmp.3 = gte %tmp.1 %tmp.2;
+        bf %tmp.3 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_8_121_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_8_121_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_28_121_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 120 12 ]
+        %tmp.4 = lgetv %meters;
+        symbol [ meters %tmp.4 120 20 26 ];
+        %tmp.5 = 1000;
+        %tmp.6 = div %tmp.4 %tmp.5;
+        %tmp.7 = ".";
+        %tmp.8 = add %tmp.6 %tmp.7;
+        %tmp.9 = lgetv %meters;
+        symbol [ meters %tmp.9 120 45 51 ];
+        %tmp.10 = 1000;
+        %tmp.11 = mod %tmp.9 %tmp.10;
+        %tmp.12 = 100;
+        %tmp.13 = div %tmp.11 %tmp.12;
+        %tmp.14 = add %tmp.8 %tmp.13;
+        %tmp.15 = "km";
+        %tmp.16 = add %tmp.14 %tmp.15;
+        ret %tmp.16;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_28_121_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_8_121_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_119_8_121_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 122 8 ]
+        %tmp.17 = lgetv %meters;
+        symbol [ meters %tmp.17 122 15 21 ];
+        %tmp.18 = "m";
+        %tmp.19 = add %tmp.17 %tmp.18;
+        ret %tmp.19;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_118_39_123_4_stop:
+    }
+}
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 126; @symbol_classdef = [ClimbListDelegate,126,6,23]; @symbol_extends<0> = [Ui,126,32,34]; @symbol_extends<1> = [BehaviorDelegate,126,35,51]; ]
+class ClimbListDelegate extends Ui.BehaviorDelegate {
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 126; ]
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 126; ]
+    static
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 128; @symbol_functiondef = [initialize,128,13,23]; ]
+    function initialize() as Void {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_128_26_128_59_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 128 28 ]
+        symbol [ BehaviorDelegate %tmp.2 128 28 44 ];
+        %tmp.2 = getv ? :BehaviorDelegate;
+        symbol [ initialize %tmp.3 128 45 55 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_128_26_128_59_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 130; @symbol_functiondef = [onNextPage,130,13,23]; ]
+    function onNextPage() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_130_26_141_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 131 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_130_26_141_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_130_26_141_4_stop" ]
+        %view.1 = local;
+        symbol [ view %view.1 131 12 16 ];
+        symbol [ Ui %tmp.1 131 19 21 ];
+        %tmp.1 = getm $.Toybox.WatchUi;
+        symbol [ getCurrentView %tmp.2 131 22 36 ];
+        %tmp.2 = getv function %tmp.1 :getCurrentView;
+        %tmp.3 = invoke %tmp.1 %tmp.2();
+        %tmp.4 = 0;
+        %tmp.5 = agetv %tmp.3 %tmp.4;
+        lputv %view.1 %tmp.5;
+        symbol [ view %view.1 131 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 132 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_130_26_141_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_130_26_141_4_stop" ]
+        %data.2 = local;
+        symbol [ data %data.2 132 12 16 ];
+        symbol [ App %tmp.6 132 19 22 ];
+        %tmp.6 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.7 132 23 29 ];
+        %tmp.7 = getv function %tmp.6 :getApp;
+        %tmp.8 = invoke %tmp.6 %tmp.7();
+        symbol [ climbData %tmp.9 132 32 41 ];
+        %tmp.9 = getv %tmp.8 :climbData;
+        lputv %data.2 %tmp.9;
+        symbol [ data %data.2 132 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 133 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_8_139_8_if_stmt:
+        %tmp.10 = lgetv %view.1;
+        symbol [ view %tmp.10 133 12 16 ];
+        symbol [ ClimbListView %tmp.12 133 28 41 ];
+        %tmp.12 = getv ? :ClimbListView;
+        %tmp.13 = isa %tmp.10 %tmp.12;
+        bf %tmp.13 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_8_139_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_8_139_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_43_139_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 134 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_43_139_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_43_139_8_stop" ]
+        %total.3 = local;
+        symbol [ total %total.3 134 16 21 ];
+        %tmp.14 = lgetv %data.2;
+        symbol [ data %tmp.14 134 24 28 ];
+        symbol [ climbCount %tmp.15 134 29 39 ];
+        %tmp.15 = getv %tmp.14 :climbCount;
+        %tmp.16 = 1;
+        %tmp.17 = add %tmp.15 %tmp.16;
+        lputv %total.3 %tmp.17;
+        symbol [ total %total.3 134 16 21 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 135 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_12_138_12_if_stmt:
+        %tmp.18 = lgetv %view.1;
+        symbol [ view %tmp.18 135 16 20 ];
+        %tmp.19 = as %tmp.18 { (ClimbListView) };
+        symbol [ selectedIndex %tmp.20 135 21 34 ];
+        %tmp.20 = getv %tmp.19 :selectedIndex;
+        %tmp.21 = lgetv %total.3;
+        symbol [ total %tmp.21 135 37 42 ];
+        %tmp.22 = 1;
+        %tmp.23 = sub %tmp.21 %tmp.22;
+        %tmp.24 = lt %tmp.20 %tmp.23;
+        bf %tmp.24 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_12_138_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_12_138_12_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_48_138_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 136 16 ]
+        %tmp.25 = lgetv %view.1;
+        symbol [ view %tmp.25 136 16 20 ];
+        %tmp.26 = as %tmp.25 { (ClimbListView) };
+        %tmp.29 = lgetv %view.1;
+        symbol [ view %tmp.29 136 16 20 ];
+        %tmp.30 = as %tmp.29 { (ClimbListView) };
+        symbol [ selectedIndex %tmp.31 136 21 34 ];
+        %tmp.31 = getv %tmp.30 :selectedIndex;
+        %tmp.32 = add %tmp.31 1;
+        symbol [ selectedIndex ? 136 21 34 ];
+        putv %tmp.26 :selectedIndex dup %tmp.32;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 137 16 ]
+        symbol [ Ui %tmp.33 137 16 18 ];
+        %tmp.33 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.34 137 19 32 ];
+        %tmp.34 = getv function %tmp.33 :requestUpdate;
+        invoke %tmp.33 %tmp.34();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_48_138_12_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_12_138_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_135_12_138_12_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_43_139_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_8_139_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_133_8_139_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 140 8 ]
+        %tmp.35 = true;
+        ret %tmp.35;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_130_26_141_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 143; @symbol_functiondef = [onPreviousPage,143,13,27]; ]
+    function onPreviousPage() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_143_30_150_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 144 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_143_30_150_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_143_30_150_4_stop" ]
+        %view.1 = local;
+        symbol [ view %view.1 144 12 16 ];
+        symbol [ Ui %tmp.1 144 19 21 ];
+        %tmp.1 = getm $.Toybox.WatchUi;
+        symbol [ getCurrentView %tmp.2 144 22 36 ];
+        %tmp.2 = getv function %tmp.1 :getCurrentView;
+        %tmp.3 = invoke %tmp.1 %tmp.2();
+        %tmp.4 = 0;
+        %tmp.5 = agetv %tmp.3 %tmp.4;
+        lputv %view.1 %tmp.5;
+        symbol [ view %view.1 144 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 145 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_8_148_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_12_145_66_begin:
+        %tmp.6 = lgetv %view.1;
+        symbol [ view %tmp.6 145 12 16 ];
+        symbol [ ClimbListView %tmp.8 145 28 41 ];
+        %tmp.8 = getv ? :ClimbListView;
+        %tmp.9 = isa %tmp.6 %tmp.8;
+        bf %tmp.9 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_8_148_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_45_145_66_true:
+        %tmp.10 = lgetv %view.1;
+        symbol [ view %tmp.10 145 45 49 ];
+        %tmp.11 = as %tmp.10 { (ClimbListView) };
+        symbol [ selectedIndex %tmp.12 145 50 63 ];
+        %tmp.12 = getv %tmp.11 :selectedIndex;
+        %tmp.13 = 0;
+        %tmp.14 = gt %tmp.12 %tmp.13;
+        push %tmp.14;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_45_145_66_end:
+        %tmp.15 = phi [%tmp.9 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_12_145_66_begin] [%tmp.14 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_45_145_66_true] [%tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_45_145_66_end];
+        bf %tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_8_148_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_8_148_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_69_148_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 146 12 ]
+        %tmp.16 = lgetv %view.1;
+        symbol [ view %tmp.16 146 12 16 ];
+        %tmp.17 = as %tmp.16 { (ClimbListView) };
+        %tmp.20 = lgetv %view.1;
+        symbol [ view %tmp.20 146 12 16 ];
+        %tmp.21 = as %tmp.20 { (ClimbListView) };
+        symbol [ selectedIndex %tmp.22 146 17 30 ];
+        %tmp.22 = getv %tmp.21 :selectedIndex;
+        %tmp.23 = sub %tmp.22 1;
+        symbol [ selectedIndex ? 146 17 30 ];
+        putv %tmp.17 :selectedIndex dup %tmp.23;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 147 12 ]
+        symbol [ Ui %tmp.24 147 12 14 ];
+        %tmp.24 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.25 147 15 28 ];
+        %tmp.25 = getv function %tmp.24 :requestUpdate;
+        invoke %tmp.24 %tmp.25();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_69_148_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_8_148_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_145_8_148_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 149 8 ]
+        %tmp.26 = true;
+        ret %tmp.26;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_143_30_150_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 152; @symbol_functiondef = [onSelect,152,13,21]; ]
+    function onSelect() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_152_24_178_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 153 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_152_24_178_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_152_24_178_4_stop" ]
+        %view.1 = local;
+        symbol [ view %view.1 153 12 16 ];
+        symbol [ Ui %tmp.1 153 19 21 ];
+        %tmp.1 = getm $.Toybox.WatchUi;
+        symbol [ getCurrentView %tmp.2 153 22 36 ];
+        %tmp.2 = getv function %tmp.1 :getCurrentView;
+        %tmp.3 = invoke %tmp.1 %tmp.2();
+        %tmp.4 = 0;
+        %tmp.5 = agetv %tmp.3 %tmp.4;
+        lputv %view.1 %tmp.5;
+        symbol [ view %view.1 153 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 154 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_8_154_61_if_stmt:
+        %tmp.6 = lgetv %view.1;
+        symbol [ view %tmp.6 154 14 18 ];
+        symbol [ ClimbListView %tmp.8 154 30 43 ];
+        %tmp.8 = getv ? :ClimbListView;
+        %tmp.9 = isa %tmp.6 %tmp.8;
+        %tmp.10 = not %tmp.9;
+        bf %tmp.10 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_8_154_61_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_8_154_61_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_46_154_61_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 154 48 ]
+        %tmp.11 = true;
+        ret %tmp.11;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_46_154_61_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_8_154_61_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_154_8_154_61_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 156 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_152_24_178_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_152_24_178_4_stop" ]
+        %data.2 = local;
+        symbol [ data %data.2 156 12 16 ];
+        symbol [ App %tmp.12 156 19 22 ];
+        %tmp.12 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.13 156 23 29 ];
+        %tmp.13 = getv function %tmp.12 :getApp;
+        %tmp.14 = invoke %tmp.12 %tmp.13();
+        symbol [ climbData %tmp.15 156 32 41 ];
+        %tmp.15 = getv %tmp.14 :climbData;
+        lputv %data.2 %tmp.15;
+        symbol [ data %data.2 156 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 158 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_8_176_8_if_stmt:
+        %tmp.16 = lgetv %view.1;
+        symbol [ view %tmp.16 158 12 16 ];
+        symbol [ selectedIndex %tmp.17 158 17 30 ];
+        %tmp.17 = getv %tmp.16 :selectedIndex;
+        %tmp.18 = lgetv %data.2;
+        symbol [ data %tmp.18 158 34 38 ];
+        symbol [ climbCount %tmp.19 158 39 49 ];
+        %tmp.19 = getv %tmp.18 :climbCount;
+        %tmp.20 = eq %tmp.17 %tmp.19;
+        bf %tmp.20 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_8_176_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_8_176_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_51_170_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 159 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_51_170_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_51_170_8_stop" ]
+        %routeId.3 = local;
+        symbol [ routeId %routeId.3 159 16 23 ];
+        %tmp.21 = lgetv %view.1;
+        symbol [ view %tmp.21 159 26 30 ];
+        symbol [ getRouteId %tmp.22 159 31 41 ];
+        %tmp.22 = getv function %tmp.21 :getRouteId;
+        %tmp.23 = invoke %tmp.21 %tmp.22();
+        lputv %routeId.3 %tmp.23;
+        symbol [ routeId %routeId.3 159 16 23 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 160 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_12_167_12_if_stmt:
+        symbol [ StorageManager %tmp.25 160 16 30 ];
+        %tmp.25 = getv ? :StorageManager;
+        symbol [ isRouteSaved %tmp.26 160 31 43 ];
+        %tmp.26 = getv function %tmp.25 :isRouteSaved;
+        %tmp.27 = lgetv %routeId.3;
+        symbol [ routeId %tmp.27 160 44 51 ];
+        %tmp.28 = invoke %tmp.25 %tmp.26(%tmp.27);
+        bf %tmp.28 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_12_167_12_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_12_167_12_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_54_162_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 161 16 ]
+        symbol [ StorageManager %tmp.30 161 16 30 ];
+        %tmp.30 = getv ? :StorageManager;
+        symbol [ deleteRoute %tmp.31 161 31 42 ];
+        %tmp.31 = getv function %tmp.30 :deleteRoute;
+        %tmp.32 = lgetv %routeId.3;
+        symbol [ routeId %tmp.32 161 43 50 ];
+        invoke %tmp.30 %tmp.31(%tmp.32);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_54_162_12_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_12_167_12_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_12_167_12_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_162_19_167_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 163 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_162_19_167_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_162_19_167_12_stop" ]
+        %payload.4 = local;
+        symbol [ payload %payload.4 163 20 27 ];
+        symbol [ App %tmp.33 163 30 33 ];
+        %tmp.33 = getm $.Toybox.Application;
+        symbol [ getApp %tmp.34 163 34 40 ];
+        %tmp.34 = getv function %tmp.33 :getApp;
+        %tmp.35 = invoke %tmp.33 %tmp.34();
+        symbol [ lastReceivedPayload %tmp.36 163 43 62 ];
+        %tmp.36 = getv %tmp.35 :lastReceivedPayload;
+        lputv %payload.4 %tmp.36;
+        symbol [ payload %payload.4 163 20 27 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 164 16 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_16_166_16_if_stmt:
+        %tmp.37 = lgetv %payload.4;
+        symbol [ payload %tmp.37 164 20 27 ];
+        %tmp.38 = null;
+        %tmp.39 = ne %tmp.37 %tmp.38;
+        bf %tmp.39 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_16_166_16_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_16_166_16_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_37_166_16_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 165 20 ]
+        symbol [ StorageManager %tmp.41 165 20 34 ];
+        %tmp.41 = getv ? :StorageManager;
+        symbol [ saveRoute %tmp.42 165 35 44 ];
+        %tmp.42 = getv function %tmp.41 :saveRoute;
+        %tmp.43 = lgetv %routeId.3;
+        symbol [ routeId %tmp.43 165 45 52 ];
+        %tmp.44 = lgetv %payload.4;
+        symbol [ payload %tmp.44 165 54 61 ];
+        %tmp.45 = as %tmp.44 { (!Null) };
+        invoke %tmp.41 %tmp.42(%tmp.43, %tmp.45);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_37_166_16_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_16_166_16_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_164_16_166_16_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_162_19_167_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_160_12_167_12_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 168 12 ]
+        %tmp.46 = lgetv %view.1;
+        symbol [ view %tmp.46 168 12 16 ];
+        symbol [ refreshRouteSaved %tmp.47 168 17 34 ];
+        %tmp.47 = getv function %tmp.46 :refreshRouteSaved;
+        invoke %tmp.46 %tmp.47();
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 169 12 ]
+        symbol [ Ui %tmp.48 169 12 14 ];
+        %tmp.48 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.49 169 15 28 ];
+        %tmp.49 = getv function %tmp.48 :requestUpdate;
+        invoke %tmp.48 %tmp.49();
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_51_170_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_8_176_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_8_176_8_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_170_15_176_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 171 12 ]
+        symbol [ Ui %tmp.50 171 12 14 ];
+        %tmp.50 = getm $.Toybox.WatchUi;
+        symbol [ pushView %tmp.51 171 15 23 ];
+        %tmp.51 = getv function %tmp.50 :pushView;
+        symbol [ ClimbDetailView %tmp.55 172 20 35 ];
+        %tmp.55 = getv ? :ClimbDetailView;
+        %tmp.56 = lgetv %view.1;
+        symbol [ view %tmp.56 172 36 40 ];
+        symbol [ selectedIndex %tmp.57 172 41 54 ];
+        %tmp.57 = getv %tmp.56 :selectedIndex;
+        %tmp.52 = newc %tmp.55 (%tmp.57);
+        symbol [ ClimbDetailDelegate %tmp.61 173 20 39 ];
+        %tmp.61 = getv ? :ClimbDetailDelegate;
+        %tmp.58 = newc %tmp.61 ();
+        symbol [ Ui %tmp.62 174 16 18 ];
+        %tmp.62 = getm $.Toybox.WatchUi;
+        symbol [ SLIDE_LEFT %tmp.63 174 19 29 ];
+        %tmp.63 = getv %tmp.62 :SLIDE_LEFT;
+        invoke %tmp.50 %tmp.51(%tmp.52, %tmp.58, %tmp.63);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_170_15_176_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_158_8_176_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 177 8 ]
+        %tmp.64 = true;
+        ret %tmp.64;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_152_24_178_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 180; @symbol_functiondef = [onBack,180,13,19]; ]
+    function onBack() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_180_22_183_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 181 8 ]
+        symbol [ Ui %tmp.1 181 8 10 ];
+        %tmp.1 = getm $.Toybox.WatchUi;
+        symbol [ popView %tmp.2 181 11 18 ];
+        %tmp.2 = getv function %tmp.1 :popView;
+        symbol [ Ui %tmp.3 181 19 21 ];
+        %tmp.3 = getm $.Toybox.WatchUi;
+        symbol [ SLIDE_RIGHT %tmp.4 181 22 33 ];
+        %tmp.4 = getv %tmp.3 :SLIDE_RIGHT;
+        invoke %tmp.1 %tmp.2(%tmp.4);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc" 182 8 ]
+        %tmp.5 = true;
+        ret %tmp.5;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ClimbListView_mc_180_22_183_4_stop:
+    }
+}
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ClimbListView.mc"; @line = 1; ]
+<init> {
+}

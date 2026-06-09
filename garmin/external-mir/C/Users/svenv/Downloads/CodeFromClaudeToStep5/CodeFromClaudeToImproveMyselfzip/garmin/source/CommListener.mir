@@ -153,7 +153,7 @@ C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_
         %tmp.30 = lgetv %version.2;
         symbol [ version %tmp.30 50 31 38 ];
         %tmp.31 = as %tmp.30 { (!Null) };
-        %tmp.32 = 1;
+        %tmp.32 = 3;
         %tmp.33 = ne %tmp.31 %tmp.32;
         push %tmp.33;
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_50_31_50_42_end:
@@ -222,13 +222,13 @@ C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_
         lputv %climbs.3 %tmp.58;
         symbol [ climbs %climbs.3 59 12 18 ];
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 60 8 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_stmt:
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_12_60_60_begin:
         %tmp.59 = lgetv %climbs.3;
         symbol [ climbs %tmp.59 60 12 18 ];
         %tmp.60 = null;
         %tmp.61 = ne %tmp.59 %tmp.60;
-        bf %tmp.61 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_else_false;
+        bf %tmp.61 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_else_false;
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_30_60_60_true:
         %tmp.62 = lgetv %climbs.3;
         symbol [ climbs %tmp.62 60 30 36 ];
@@ -243,137 +243,172 @@ C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_
         push %tmp.68;
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_30_60_60_end:
         %tmp.69 = phi [%tmp.61 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_12_60_60_begin] [%tmp.68 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_30_60_60_true] [%tmp.69 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_30_60_60_end];
-        bf %tmp.69 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_67_8_start:
+        bf %tmp.69 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_66_8_start:
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 61 12 ]
-        %tmp.70 = lgetv %data.1;
-        symbol [ data %tmp.70 61 12 16 ];
-        %tmp.71 = lgetv %climbs.3;
-        symbol [ climbs %tmp.71 61 30 36 ];
-        %tmp.72 = as %tmp.71 { (Toybox.Lang.Array) && (!Null) };
-        symbol [ size %tmp.73 61 37 41 ];
-        %tmp.73 = getv function %tmp.72 :size;
-        %tmp.74 = invoke %tmp.72 %tmp.73();
-        symbol [ climbCount ? 61 17 27 ];
-        putv %tmp.70 :climbCount %tmp.74;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 63 12 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_67_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_67_8_stop" ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_66_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_66_8_stop" ]
         %max.4 = local;
-        symbol [ max %max.4 63 16 19 ];
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_begin:
-        %tmp.75 = lgetv %data.1;
-        symbol [ data %tmp.75 63 22 26 ];
-        symbol [ MAX_CLIMBS %tmp.76 63 27 37 ];
-        %tmp.76 = getv %tmp.75 :MAX_CLIMBS;
-        %tmp.77 = lgetv %climbs.3;
-        symbol [ climbs %tmp.77 63 40 46 ];
-        %tmp.78 = as %tmp.77 { (Toybox.Lang.Array) && (!Null) };
-        symbol [ size %tmp.79 63 47 51 ];
-        %tmp.79 = getv function %tmp.78 :size;
-        %tmp.80 = invoke %tmp.78 %tmp.79();
-        %tmp.81 = lt %tmp.76 %tmp.80;
-        bf %tmp.81 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_true:
-        %tmp.82 = lgetv %data.1;
-        symbol [ data %tmp.82 63 56 60 ];
-        symbol [ MAX_CLIMBS %tmp.83 63 61 71 ];
-        %tmp.83 = getv %tmp.82 :MAX_CLIMBS;
-        push %tmp.83;
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_else_false:
-        %tmp.84 = lgetv %climbs.3;
-        symbol [ climbs %tmp.84 63 74 80 ];
-        %tmp.85 = as %tmp.84 { (Toybox.Lang.Array) && (!Null) };
-        symbol [ size %tmp.86 63 81 85 ];
-        %tmp.86 = getv function %tmp.85 :size;
-        %tmp.87 = invoke %tmp.85 %tmp.86();
-        push %tmp.87;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_end:
-        %tmp.88 = phi [%tmp.81 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_begin] [%tmp.83 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_true] [%tmp.87 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_else_false] [%tmp.88 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_22_63_86_end];
-        lputv %max.4 %tmp.88;
-        symbol [ max %max.4 63 16 19 ];
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 64 12 ]
-        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_init:
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_end" ]
+        symbol [ max %max.4 61 16 19 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_begin:
+        %tmp.70 = lgetv %data.1;
+        symbol [ data %tmp.70 61 22 26 ];
+        symbol [ MAX_CLIMBS %tmp.71 61 27 37 ];
+        %tmp.71 = getv %tmp.70 :MAX_CLIMBS;
+        %tmp.72 = lgetv %climbs.3;
+        symbol [ climbs %tmp.72 61 40 46 ];
+        %tmp.73 = as %tmp.72 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.74 61 47 51 ];
+        %tmp.74 = getv function %tmp.73 :size;
+        %tmp.75 = invoke %tmp.73 %tmp.74();
+        %tmp.76 = lt %tmp.71 %tmp.75;
+        bf %tmp.76 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_true:
+        %tmp.77 = lgetv %data.1;
+        symbol [ data %tmp.77 61 56 60 ];
+        symbol [ MAX_CLIMBS %tmp.78 61 61 71 ];
+        %tmp.78 = getv %tmp.77 :MAX_CLIMBS;
+        push %tmp.78;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_else_false:
+        %tmp.79 = lgetv %climbs.3;
+        symbol [ climbs %tmp.79 61 74 80 ];
+        %tmp.80 = as %tmp.79 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.81 61 81 85 ];
+        %tmp.81 = getv function %tmp.80 :size;
+        %tmp.82 = invoke %tmp.80 %tmp.81();
+        push %tmp.82;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_end:
+        %tmp.83 = phi [%tmp.76 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_begin] [%tmp.78 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_true] [%tmp.82 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_else_false] [%tmp.83 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_61_22_61_86_end];
+        lputv %max.4 %tmp.83;
+        symbol [ max %max.4 61 16 19 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 62 12 ]
+        %tmp.84 = lgetv %data.1;
+        symbol [ data %tmp.84 62 12 16 ];
+        %tmp.85 = lgetv %max.4;
+        symbol [ max %tmp.85 62 30 33 ];
+        symbol [ climbCount ? 62 17 27 ];
+        putv %tmp.84 :climbCount %tmp.85;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 63 12 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_end" ]
         %i.5 = local;
-        symbol [ i %i.5 64 21 22 ];
-        %tmp.89 = 0;
-        lputv %i.5 %tmp.89;
-        symbol [ i %i.5 64 21 22 ];
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_test:
-        %tmp.90 = lgetv %i.5;
-        symbol [ i %tmp.90 64 28 29 ];
-        %tmp.91 = lgetv %max.4;
-        symbol [ max %tmp.91 64 32 35 ];
-        %tmp.92 = lt %tmp.90 %tmp.91;
-        bf %tmp.92 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_begin:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_42_66_12_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 65 16 ]
-        %tmp.93 = self;
-        symbol [ parseClimb %tmp.94 65 16 26 ];
-        %tmp.94 = getv function %tmp.93 :parseClimb;
-        %tmp.95 = lgetv %data.1;
-        symbol [ data %tmp.95 65 27 31 ];
+        symbol [ i %i.5 63 21 22 ];
+        %tmp.86 = 0;
+        lputv %i.5 %tmp.86;
+        symbol [ i %i.5 63 21 22 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_test:
+        %tmp.87 = lgetv %i.5;
+        symbol [ i %tmp.87 63 28 29 ];
+        %tmp.88 = lgetv %max.4;
+        symbol [ max %tmp.88 63 32 35 ];
+        %tmp.89 = lt %tmp.87 %tmp.88;
+        bf %tmp.89 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_42_65_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 64 16 ]
+        %tmp.90 = self;
+        symbol [ parseClimb %tmp.91 64 16 26 ];
+        %tmp.91 = getv function %tmp.90 :parseClimb;
+        %tmp.92 = lgetv %data.1;
+        symbol [ data %tmp.92 64 27 31 ];
+        %tmp.93 = lgetv %i.5;
+        symbol [ i %tmp.93 64 33 34 ];
+        %tmp.94 = lgetv %climbs.3;
+        symbol [ climbs %tmp.94 64 36 42 ];
+        %tmp.95 = as %tmp.94 { (Toybox.Lang.Array) && (!Null) };
         %tmp.96 = lgetv %i.5;
-        symbol [ i %tmp.96 65 33 34 ];
-        %tmp.97 = lgetv %climbs.3;
-        symbol [ climbs %tmp.97 65 36 42 ];
-        %tmp.98 = as %tmp.97 { (Toybox.Lang.Array) && (!Null) };
-        %tmp.99 = lgetv %i.5;
-        symbol [ i %tmp.99 65 43 44 ];
-        %tmp.100 = agetv %tmp.98 %tmp.99;
-        invoke %tmp.93 %tmp.94(%tmp.95, %tmp.96, %tmp.100);
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_42_66_12_stop:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_incr:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 64 ]
-        %tmp.103 = lgetv %i.5;
-        symbol [ i %tmp.103 64 37 38 ];
-        %tmp.104 = add %tmp.103 1;
-        lputv %i.5 %tmp.104;
-        symbol [ i %i.5 64 37 38 ];
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_test;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_64_12_66_12_for_end:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_67_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_else_false:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_67_15_69_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 68 12 ]
-        %tmp.105 = lgetv %data.1;
-        symbol [ data %tmp.105 68 12 16 ];
-        %tmp.106 = 0;
-        symbol [ climbCount ? 68 17 27 ];
-        putv %tmp.105 :climbCount %tmp.106;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_67_15_69_8_stop:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_69_8_if_end:
+        symbol [ i %tmp.96 64 43 44 ];
+        %tmp.97 = agetv %tmp.95 %tmp.96;
+        invoke %tmp.90 %tmp.91(%tmp.92, %tmp.93, %tmp.97);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_42_65_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 63 ]
+        %tmp.100 = lgetv %i.5;
+        symbol [ i %tmp.100 63 37 38 ];
+        %tmp.101 = add %tmp.100 1;
+        lputv %i.5 %tmp.101;
+        symbol [ i %i.5 63 37 38 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_63_12_65_12_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_67_66_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_66_15_68_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 67 12 ]
+        %tmp.102 = lgetv %data.1;
+        symbol [ data %tmp.102 67 12 16 ];
+        %tmp.103 = 0;
+        symbol [ climbCount ? 67 17 27 ];
+        putv %tmp.102 :climbCount %tmp.103;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_66_15_68_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_60_8_68_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 70 8 ]
+        %tmp.104 = lgetv %data.1;
+        symbol [ data %tmp.104 70 8 12 ];
+        %tmp.105 = true;
+        symbol [ payloadReceived ? 70 13 28 ];
+        putv %tmp.104 :payloadReceived %tmp.105;
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 71 8 ]
-        %tmp.107 = lgetv %data.1;
-        symbol [ data %tmp.107 71 8 12 ];
-        %tmp.108 = true;
-        symbol [ payloadReceived ? 71 13 28 ];
-        putv %tmp.107 :payloadReceived %tmp.108;
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_end" ]
+        %i.6 = local;
+        symbol [ i %i.6 71 17 18 ];
+        %tmp.106 = 0;
+        lputv %i.6 %tmp.106;
+        symbol [ i %i.6 71 17 18 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_test:
+        %tmp.107 = lgetv %i.6;
+        symbol [ i %tmp.107 71 24 25 ];
+        %tmp.108 = lgetv %data.1;
+        symbol [ data %tmp.108 71 28 32 ];
+        symbol [ climbCount %tmp.109 71 33 43 ];
+        %tmp.109 = getv %tmp.108 :climbCount;
+        %tmp.110 = lt %tmp.107 %tmp.109;
+        bf %tmp.110 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_50_71_74_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 71 52 ]
+        %tmp.111 = lgetv %data.1;
+        symbol [ data %tmp.111 71 52 56 ];
+        symbol [ calibIdx %tmp.112 71 57 65 ];
+        %tmp.112 = getv %tmp.111 :calibIdx;
+        %tmp.113 = 0;
+        %tmp.114 = lgetv %i.6;
+        symbol [ i %tmp.114 71 66 67 ];
+        aputv %tmp.112 %tmp.114 %tmp.113;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_50_71_74_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 71 ]
+        %tmp.117 = lgetv %i.6;
+        symbol [ i %tmp.117 71 45 46 ];
+        %tmp.118 = add %tmp.117 1;
+        lputv %i.6 %tmp.118;
+        symbol [ i %i.6 71 45 46 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_71_8_71_74_for_end:
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 72 8 ]
-        symbol [ Sys %tmp.109 72 8 11 ];
-        %tmp.109 = getm $.Toybox.System;
-        symbol [ println %tmp.110 72 12 19 ];
-        %tmp.110 = getv function %tmp.109 :println;
-        %tmp.111 = "CommListener: payload parsed, ";
-        %tmp.112 = lgetv %data.1;
-        symbol [ data %tmp.112 72 55 59 ];
-        symbol [ climbCount %tmp.113 72 60 70 ];
-        %tmp.113 = getv %tmp.112 :climbCount;
-        %tmp.114 = add %tmp.111 %tmp.113;
-        %tmp.115 = " climbs";
-        %tmp.116 = add %tmp.114 %tmp.115;
-        invoke %tmp.109 %tmp.110(%tmp.116);
+        symbol [ Sys %tmp.119 72 8 11 ];
+        %tmp.119 = getm $.Toybox.System;
+        symbol [ println %tmp.120 72 12 19 ];
+        %tmp.120 = getv function %tmp.119 :println;
+        %tmp.121 = "CommListener: payload parsed, ";
+        %tmp.122 = lgetv %data.1;
+        symbol [ data %tmp.122 72 55 59 ];
+        symbol [ climbCount %tmp.123 72 60 70 ];
+        %tmp.123 = getv %tmp.122 :climbCount;
+        %tmp.124 = add %tmp.121 %tmp.123;
+        %tmp.125 = " climbs";
+        %tmp.126 = add %tmp.124 %tmp.125;
+        invoke %tmp.119 %tmp.120(%tmp.126);
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_38_28_73_4_stop:
     }
     [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc"; @line = 75; @symbol_functiondef = [parseClimb,75,20,30]; @symbol_param<0> = [data,75,31,35]; @symbol_param<1> = [idx,75,37,40]; @symbol_param<2> = [climbDict,75,42,51]; ]
     protected
     function parseClimb(data, idx, climbDict) {
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_start:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_start:
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 76 8 ]
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_76_8_78_8_if_stmt:
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_76_12_76_78_begin:
@@ -405,623 +440,969 @@ C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_76_81_78_8_stop:
         goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_76_8_78_8_if_end;
 C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_76_8_78_8_if_end:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 80 8 ]
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 81 8 ]
         %tmp.13 = lgetv %data;
-        symbol [ data %tmp.13 80 8 12 ];
-        symbol [ climbStartDist %tmp.14 80 13 27 ];
+        symbol [ data %tmp.13 81 8 12 ];
+        symbol [ climbStartDist %tmp.14 81 13 27 ];
         %tmp.14 = getv %tmp.13 :climbStartDist;
         %tmp.15 = self;
-        symbol [ getInt %tmp.16 80 35 41 ];
+        symbol [ getInt %tmp.16 81 35 41 ];
         %tmp.16 = getv function %tmp.15 :getInt;
         %tmp.17 = lgetv %climbDict;
-        symbol [ climbDict %tmp.17 80 42 51 ];
-        %tmp.18 = "startDistance";
+        symbol [ climbDict %tmp.17 81 42 51 ];
+        %tmp.18 = "sd";
         %tmp.19 = 0;
         %tmp.20 = invoke %tmp.15 %tmp.16(%tmp.17, %tmp.18, %tmp.19);
         %tmp.21 = lgetv %idx;
-        symbol [ idx %tmp.21 80 28 31 ];
+        symbol [ idx %tmp.21 81 28 31 ];
         aputv %tmp.14 %tmp.21 %tmp.20;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 81 8 ]
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 82 8 ]
         %tmp.22 = lgetv %data;
-        symbol [ data %tmp.22 81 8 12 ];
-        symbol [ climbEndDist %tmp.23 81 13 25 ];
+        symbol [ data %tmp.22 82 8 12 ];
+        symbol [ climbEndDist %tmp.23 82 13 25 ];
         %tmp.23 = getv %tmp.22 :climbEndDist;
         %tmp.24 = self;
-        symbol [ getInt %tmp.25 81 33 39 ];
+        symbol [ getInt %tmp.25 82 35 41 ];
         %tmp.25 = getv function %tmp.24 :getInt;
         %tmp.26 = lgetv %climbDict;
-        symbol [ climbDict %tmp.26 81 40 49 ];
-        %tmp.27 = "endDistance";
+        symbol [ climbDict %tmp.26 82 42 51 ];
+        %tmp.27 = "ed";
         %tmp.28 = 0;
         %tmp.29 = invoke %tmp.24 %tmp.25(%tmp.26, %tmp.27, %tmp.28);
         %tmp.30 = lgetv %idx;
-        symbol [ idx %tmp.30 81 26 29 ];
+        symbol [ idx %tmp.30 82 26 29 ];
         aputv %tmp.23 %tmp.30 %tmp.29;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 82 8 ]
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 83 8 ]
         %tmp.31 = lgetv %data;
-        symbol [ data %tmp.31 82 8 12 ];
-        symbol [ climbLength %tmp.32 82 13 24 ];
+        symbol [ data %tmp.31 83 8 12 ];
+        symbol [ climbLength %tmp.32 83 13 24 ];
         %tmp.32 = getv %tmp.31 :climbLength;
         %tmp.33 = self;
-        symbol [ getInt %tmp.34 82 32 38 ];
+        symbol [ getInt %tmp.34 83 35 41 ];
         %tmp.34 = getv function %tmp.33 :getInt;
         %tmp.35 = lgetv %climbDict;
-        symbol [ climbDict %tmp.35 82 39 48 ];
-        %tmp.36 = "length";
+        symbol [ climbDict %tmp.35 83 42 51 ];
+        %tmp.36 = "len";
         %tmp.37 = 0;
         %tmp.38 = invoke %tmp.33 %tmp.34(%tmp.35, %tmp.36, %tmp.37);
         %tmp.39 = lgetv %idx;
-        symbol [ idx %tmp.39 82 25 28 ];
+        symbol [ idx %tmp.39 83 25 28 ];
         aputv %tmp.32 %tmp.39 %tmp.38;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 83 8 ]
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 84 8 ]
         %tmp.40 = lgetv %data;
-        symbol [ data %tmp.40 83 8 12 ];
-        symbol [ climbElevGain %tmp.41 83 13 26 ];
+        symbol [ data %tmp.40 84 8 12 ];
+        symbol [ climbElevGain %tmp.41 84 13 26 ];
         %tmp.41 = getv %tmp.40 :climbElevGain;
         %tmp.42 = self;
-        symbol [ getInt %tmp.43 83 34 40 ];
+        symbol [ getInt %tmp.43 84 35 41 ];
         %tmp.43 = getv function %tmp.42 :getInt;
         %tmp.44 = lgetv %climbDict;
-        symbol [ climbDict %tmp.44 83 41 50 ];
-        %tmp.45 = "elevationGain";
+        symbol [ climbDict %tmp.44 84 42 51 ];
+        %tmp.45 = "eg";
         %tmp.46 = 0;
         %tmp.47 = invoke %tmp.42 %tmp.43(%tmp.44, %tmp.45, %tmp.46);
         %tmp.48 = lgetv %idx;
-        symbol [ idx %tmp.48 83 27 30 ];
+        symbol [ idx %tmp.48 84 27 30 ];
         aputv %tmp.41 %tmp.48 %tmp.47;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 84 8 ]
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 85 8 ]
         %tmp.49 = lgetv %data;
-        symbol [ data %tmp.49 84 8 12 ];
-        symbol [ climbAvgGrad %tmp.50 84 13 25 ];
+        symbol [ data %tmp.49 85 8 12 ];
+        symbol [ climbAvgGrad %tmp.50 85 13 25 ];
         %tmp.50 = getv %tmp.49 :climbAvgGrad;
         %tmp.51 = self;
-        symbol [ getInt %tmp.52 84 33 39 ];
+        symbol [ getInt %tmp.52 85 35 41 ];
         %tmp.52 = getv function %tmp.51 :getInt;
         %tmp.53 = lgetv %climbDict;
-        symbol [ climbDict %tmp.53 84 40 49 ];
-        %tmp.54 = "avgGradient";
+        symbol [ climbDict %tmp.53 85 42 51 ];
+        %tmp.54 = "ag";
         %tmp.55 = 0;
         %tmp.56 = invoke %tmp.51 %tmp.52(%tmp.53, %tmp.54, %tmp.55);
         %tmp.57 = lgetv %idx;
-        symbol [ idx %tmp.57 84 26 29 ];
+        symbol [ idx %tmp.57 85 26 29 ];
         aputv %tmp.50 %tmp.57 %tmp.56;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 85 8 ]
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 86 8 ]
         %tmp.58 = lgetv %data;
-        symbol [ data %tmp.58 85 8 12 ];
-        symbol [ climbName %tmp.59 85 13 22 ];
+        symbol [ data %tmp.58 86 8 12 ];
+        symbol [ climbName %tmp.59 86 13 22 ];
         %tmp.59 = getv %tmp.58 :climbName;
         %tmp.60 = lgetv %climbDict;
-        symbol [ climbDict %tmp.60 85 30 39 ];
-        symbol [ get %tmp.61 85 40 43 ];
+        symbol [ climbDict %tmp.60 86 35 44 ];
+        symbol [ get %tmp.61 86 45 48 ];
         %tmp.61 = getv function %tmp.60 :get;
-        %tmp.62 = "name";
+        %tmp.62 = "n";
         %tmp.63 = invoke %tmp.60 %tmp.61(%tmp.62);
         %tmp.64 = lgetv %idx;
-        symbol [ idx %tmp.64 85 23 26 ];
+        symbol [ idx %tmp.64 86 23 26 ];
         aputv %tmp.59 %tmp.64 %tmp.63;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 88 8 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_stop" ]
-        %lat.1 = local;
-        symbol [ lat %lat.1 88 12 15 ];
-        %tmp.65 = lgetv %climbDict;
-        symbol [ climbDict %tmp.65 88 18 27 ];
-        symbol [ get %tmp.66 88 28 31 ];
-        %tmp.66 = getv function %tmp.65 :get;
-        %tmp.67 = "startLat";
-        %tmp.68 = invoke %tmp.65 %tmp.66(%tmp.67);
-        lputv %lat.1 %tmp.68;
-        symbol [ lat %lat.1 88 12 15 ];
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 89 8 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_stop" ]
-        %lon.2 = local;
-        symbol [ lon %lon.2 89 12 15 ];
-        %tmp.69 = lgetv %climbDict;
-        symbol [ climbDict %tmp.69 89 18 27 ];
-        symbol [ get %tmp.70 89 28 31 ];
-        %tmp.70 = getv function %tmp.69 :get;
-        %tmp.71 = "startLon";
-        %tmp.72 = invoke %tmp.69 %tmp.70(%tmp.71);
-        lputv %lon.2 %tmp.72;
-        symbol [ lon %lon.2 89 12 15 ];
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_stop" ]
+        %slatInt.1 = local;
+        symbol [ slatInt %slatInt.1 89 12 19 ];
+        %tmp.65 = lgetv %climbDict;
+        symbol [ climbDict %tmp.65 89 22 31 ];
+        symbol [ get %tmp.66 89 32 35 ];
+        %tmp.66 = getv function %tmp.65 :get;
+        %tmp.67 = "slat";
+        %tmp.68 = invoke %tmp.65 %tmp.66(%tmp.67);
+        lputv %slatInt.1 %tmp.68;
+        symbol [ slatInt %slatInt.1 89 12 19 ];
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 90 8 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_12_90_54_begin:
-        %tmp.73 = lgetv %lat.1;
-        symbol [ lat %tmp.73 90 12 15 ];
-        %tmp.74 = null;
-        %tmp.75 = ne %tmp.73 %tmp.74;
-        bf %tmp.75 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_27_90_54_true:
-        %tmp.76 = lgetv %lat.1;
-        symbol [ lat %tmp.76 90 27 30 ];
-        %tmp.77 = as %tmp.76 { (!Null) };
-        symbol [ Toybox %tmp.79 90 42 48 ];
-        %tmp.79 = getv ? :Toybox;
-        symbol [ Lang %tmp.80 90 49 53 ];
-        %tmp.80 = getv %tmp.79 :Lang;
-        symbol [ Float %tmp.81 90 54 59 ];
-        %tmp.81 = getv %tmp.80 :Float;
-        %tmp.82 = isa %tmp.77 %tmp.81;
-        push %tmp.82;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_27_90_54_end:
-        %tmp.83 = phi [%tmp.75 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_12_90_54_begin] [%tmp.82 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_27_90_54_true] [%tmp.83 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_27_90_54_end];
-        bf %tmp.83 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_61_92_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 91 12 ]
-        %tmp.84 = lgetv %data;
-        symbol [ data %tmp.84 91 12 16 ];
-        symbol [ climbStartLat %tmp.85 91 17 30 ];
-        %tmp.85 = getv %tmp.84 :climbStartLat;
-        %tmp.86 = lgetv %lat.1;
-        symbol [ lat %tmp.86 91 38 41 ];
-        %tmp.87 = as %tmp.86 { (Toybox.Lang.Float) && (!Null) };
-        %tmp.88 = lgetv %idx;
-        symbol [ idx %tmp.88 91 31 34 ];
-        aputv %tmp.85 %tmp.88 %tmp.87;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_61_92_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_false:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 92 15 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_19_92_61_begin:
-        %tmp.89 = lgetv %lat.1;
-        symbol [ lat %tmp.89 92 19 22 ];
-        %tmp.90 = as %tmp.89 { (!(!Null && Toybox.Lang.Float)) };
-        %tmp.91 = null;
-        %tmp.92 = ne %tmp.90 %tmp.91;
-        bf %tmp.92 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_34_92_61_true:
-        %tmp.93 = lgetv %lat.1;
-        symbol [ lat %tmp.93 92 34 37 ];
-        %tmp.94 = as %tmp.93 { (!(!Null && Toybox.Lang.Float)) && (!Null) };
-        symbol [ Toybox %tmp.96 92 49 55 ];
-        %tmp.96 = getv ? :Toybox;
-        symbol [ Lang %tmp.97 92 56 60 ];
-        %tmp.97 = getv %tmp.96 :Lang;
-        symbol [ Number %tmp.98 92 61 67 ];
-        %tmp.98 = getv %tmp.97 :Number;
-        %tmp.99 = isa %tmp.94 %tmp.98;
-        push %tmp.99;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_34_92_61_end:
-        %tmp.100 = phi [%tmp.92 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_19_92_61_begin] [%tmp.99 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_34_92_61_true] [%tmp.100 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_34_92_61_end];
-        bf %tmp.100 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_69_94_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 93 12 ]
-        %tmp.101 = lgetv %data;
-        symbol [ data %tmp.101 93 12 16 ];
-        symbol [ climbStartLat %tmp.102 93 17 30 ];
-        %tmp.102 = getv %tmp.101 :climbStartLat;
-        %tmp.103 = lgetv %lat.1;
-        symbol [ lat %tmp.103 93 39 42 ];
-        %tmp.104 = as %tmp.103 { (!(!Null && Toybox.Lang.Float)) && (Toybox.Lang.Number) && (!Null) };
-        %tmp.105 = as %tmp.104 Toybox.Lang.Number;
-        symbol [ Toybox %tmp.105 93 46 52 ];
-        symbol [ Lang %tmp.105 93 53 57 ];
-        symbol [ Number %tmp.105 93 58 64 ];
-        symbol [ toFloat %tmp.106 93 66 73 ];
-        %tmp.106 = getv function %tmp.105 :toFloat;
-        %tmp.107 = invoke %tmp.105 %tmp.106();
-        %tmp.108 = lgetv %idx;
-        symbol [ idx %tmp.108 93 31 34 ];
-        aputv %tmp.102 %tmp.108 %tmp.107;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_69_94_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_else_false:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_94_15_96_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 95 12 ]
-        %tmp.109 = lgetv %data;
-        symbol [ data %tmp.109 95 12 16 ];
-        symbol [ climbStartLat %tmp.110 95 17 30 ];
-        %tmp.110 = getv %tmp.109 :climbStartLat;
-        %tmp.111 = 0.0;
-        %tmp.112 = lgetv %idx;
-        symbol [ idx %tmp.112 95 31 34 ];
-        aputv %tmp.110 %tmp.112 %tmp.111;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_94_15_96_8_stop:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_92_15_96_8_if_end:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_90_8_96_8_if_end:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_stop" ]
+        %slonInt.2 = local;
+        symbol [ slonInt %slonInt.2 90 12 19 ];
+        %tmp.69 = lgetv %climbDict;
+        symbol [ climbDict %tmp.69 90 22 31 ];
+        symbol [ get %tmp.70 90 32 35 ];
+        %tmp.70 = getv function %tmp.69 :get;
+        %tmp.71 = "slon";
+        %tmp.72 = invoke %tmp.69 %tmp.70(%tmp.71);
+        lputv %slonInt.2 %tmp.72;
+        symbol [ slonInt %slonInt.2 90 12 19 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 91 8 ]
+        %tmp.73 = lgetv %data;
+        symbol [ data %tmp.73 91 8 12 ];
+        symbol [ climbStartLat %tmp.74 91 13 26 ];
+        %tmp.74 = getv %tmp.73 :climbStartLat;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_35_91_85_begin:
+        %tmp.75 = lgetv %slatInt.1;
+        symbol [ slatInt %tmp.75 91 35 42 ];
+        %tmp.76 = null;
+        %tmp.77 = ne %tmp.75 %tmp.76;
+        bf %tmp.77 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_54_91_85_true:
+        %tmp.78 = lgetv %slatInt.1;
+        symbol [ slatInt %tmp.78 91 54 61 ];
+        %tmp.79 = as %tmp.78 { (!Null) };
+        symbol [ Toybox %tmp.81 91 73 79 ];
+        %tmp.81 = getv ? :Toybox;
+        symbol [ Lang %tmp.82 91 80 84 ];
+        %tmp.82 = getv %tmp.81 :Lang;
+        symbol [ Number %tmp.83 91 85 91 ];
+        %tmp.83 = getv %tmp.82 :Number;
+        %tmp.84 = isa %tmp.79 %tmp.83;
+        push %tmp.84;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_54_91_85_end:
+        %tmp.85 = phi [%tmp.77 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_35_91_85_begin] [%tmp.84 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_54_91_85_true] [%tmp.85 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_54_91_85_end];
+        bf %tmp.85 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_true:
+        %tmp.86 = lgetv %slatInt.1;
+        symbol [ slatInt %tmp.86 92 15 22 ];
+        %tmp.87 = as %tmp.86 { (Toybox.Lang.Number) && (!Null) };
+        %tmp.88 = as %tmp.87 Toybox.Lang.Number;
+        symbol [ Toybox %tmp.88 92 26 32 ];
+        symbol [ Lang %tmp.88 92 33 37 ];
+        symbol [ Number %tmp.88 92 38 44 ];
+        symbol [ toFloat %tmp.89 92 46 53 ];
+        %tmp.89 = getv function %tmp.88 :toFloat;
+        %tmp.90 = invoke %tmp.88 %tmp.89();
+        %tmp.91 = 100000.0f;
+        %tmp.92 = div %tmp.90 %tmp.91;
+        push %tmp.92;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_else_false:
+        %tmp.93 = 0.0f;
+        push %tmp.93;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_end:
+        %tmp.94 = phi [%tmp.85 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_begin] [%tmp.92 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_true] [%tmp.93 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_else_false] [%tmp.94 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_91_34_92_70_end];
+        %tmp.95 = lgetv %idx;
+        symbol [ idx %tmp.95 91 27 30 ];
+        aputv %tmp.74 %tmp.95 %tmp.94;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 93 8 ]
+        %tmp.96 = lgetv %data;
+        symbol [ data %tmp.96 93 8 12 ];
+        symbol [ climbStartLon %tmp.97 93 13 26 ];
+        %tmp.97 = getv %tmp.96 :climbStartLon;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_35_93_85_begin:
+        %tmp.98 = lgetv %slonInt.2;
+        symbol [ slonInt %tmp.98 93 35 42 ];
+        %tmp.99 = null;
+        %tmp.100 = ne %tmp.98 %tmp.99;
+        bf %tmp.100 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_54_93_85_true:
+        %tmp.101 = lgetv %slonInt.2;
+        symbol [ slonInt %tmp.101 93 54 61 ];
+        %tmp.102 = as %tmp.101 { (!Null) };
+        symbol [ Toybox %tmp.104 93 73 79 ];
+        %tmp.104 = getv ? :Toybox;
+        symbol [ Lang %tmp.105 93 80 84 ];
+        %tmp.105 = getv %tmp.104 :Lang;
+        symbol [ Number %tmp.106 93 85 91 ];
+        %tmp.106 = getv %tmp.105 :Number;
+        %tmp.107 = isa %tmp.102 %tmp.106;
+        push %tmp.107;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_54_93_85_end:
+        %tmp.108 = phi [%tmp.100 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_35_93_85_begin] [%tmp.107 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_54_93_85_true] [%tmp.108 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_54_93_85_end];
+        bf %tmp.108 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_true:
+        %tmp.109 = lgetv %slonInt.2;
+        symbol [ slonInt %tmp.109 94 15 22 ];
+        %tmp.110 = as %tmp.109 { (Toybox.Lang.Number) && (!Null) };
+        %tmp.111 = as %tmp.110 Toybox.Lang.Number;
+        symbol [ Toybox %tmp.111 94 26 32 ];
+        symbol [ Lang %tmp.111 94 33 37 ];
+        symbol [ Number %tmp.111 94 38 44 ];
+        symbol [ toFloat %tmp.112 94 46 53 ];
+        %tmp.112 = getv function %tmp.111 :toFloat;
+        %tmp.113 = invoke %tmp.111 %tmp.112();
+        %tmp.114 = 100000.0f;
+        %tmp.115 = div %tmp.113 %tmp.114;
+        push %tmp.115;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_else_false:
+        %tmp.116 = 0.0f;
+        push %tmp.116;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_end:
+        %tmp.117 = phi [%tmp.108 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_begin] [%tmp.115 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_true] [%tmp.116 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_else_false] [%tmp.117 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_93_34_94_70_end];
+        %tmp.118 = lgetv %idx;
+        symbol [ idx %tmp.118 93 27 30 ];
+        aputv %tmp.97 %tmp.118 %tmp.117;
 [ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 97 8 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_12_97_54_begin:
-        %tmp.113 = lgetv %lon.2;
-        symbol [ lon %tmp.113 97 12 15 ];
-        %tmp.114 = null;
-        %tmp.115 = ne %tmp.113 %tmp.114;
-        bf %tmp.115 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_27_97_54_true:
-        %tmp.116 = lgetv %lon.2;
-        symbol [ lon %tmp.116 97 27 30 ];
-        %tmp.117 = as %tmp.116 { (!Null) };
-        symbol [ Toybox %tmp.119 97 42 48 ];
-        %tmp.119 = getv ? :Toybox;
-        symbol [ Lang %tmp.120 97 49 53 ];
-        %tmp.120 = getv %tmp.119 :Lang;
-        symbol [ Float %tmp.121 97 54 59 ];
-        %tmp.121 = getv %tmp.120 :Float;
-        %tmp.122 = isa %tmp.117 %tmp.121;
-        push %tmp.122;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_27_97_54_end:
-        %tmp.123 = phi [%tmp.115 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_12_97_54_begin] [%tmp.122 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_27_97_54_true] [%tmp.123 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_27_97_54_end];
-        bf %tmp.123 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_61_99_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 98 12 ]
-        %tmp.124 = lgetv %data;
-        symbol [ data %tmp.124 98 12 16 ];
-        symbol [ climbStartLon %tmp.125 98 17 30 ];
-        %tmp.125 = getv %tmp.124 :climbStartLon;
-        %tmp.126 = lgetv %lon.2;
-        symbol [ lon %tmp.126 98 38 41 ];
-        %tmp.127 = as %tmp.126 { (Toybox.Lang.Float) && (!Null) };
-        %tmp.128 = lgetv %idx;
-        symbol [ idx %tmp.128 98 31 34 ];
-        aputv %tmp.125 %tmp.128 %tmp.127;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_61_99_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_false:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 99 15 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_19_99_61_begin:
-        %tmp.129 = lgetv %lon.2;
-        symbol [ lon %tmp.129 99 19 22 ];
-        %tmp.130 = as %tmp.129 { (!(!Null && Toybox.Lang.Float)) };
-        %tmp.131 = null;
-        %tmp.132 = ne %tmp.130 %tmp.131;
-        bf %tmp.132 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_34_99_61_true:
-        %tmp.133 = lgetv %lon.2;
-        symbol [ lon %tmp.133 99 34 37 ];
-        %tmp.134 = as %tmp.133 { (!(!Null && Toybox.Lang.Float)) && (!Null) };
-        symbol [ Toybox %tmp.136 99 49 55 ];
-        %tmp.136 = getv ? :Toybox;
-        symbol [ Lang %tmp.137 99 56 60 ];
-        %tmp.137 = getv %tmp.136 :Lang;
-        symbol [ Number %tmp.138 99 61 67 ];
-        %tmp.138 = getv %tmp.137 :Number;
-        %tmp.139 = isa %tmp.134 %tmp.138;
-        push %tmp.139;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_34_99_61_end:
-        %tmp.140 = phi [%tmp.132 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_19_99_61_begin] [%tmp.139 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_34_99_61_true] [%tmp.140 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_34_99_61_end];
-        bf %tmp.140 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_69_101_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 100 12 ]
-        %tmp.141 = lgetv %data;
-        symbol [ data %tmp.141 100 12 16 ];
-        symbol [ climbStartLon %tmp.142 100 17 30 ];
-        %tmp.142 = getv %tmp.141 :climbStartLon;
-        %tmp.143 = lgetv %lon.2;
-        symbol [ lon %tmp.143 100 39 42 ];
-        %tmp.144 = as %tmp.143 { (!(!Null && Toybox.Lang.Float)) && (Toybox.Lang.Number) && (!Null) };
-        %tmp.145 = as %tmp.144 Toybox.Lang.Number;
-        symbol [ Toybox %tmp.145 100 46 52 ];
-        symbol [ Lang %tmp.145 100 53 57 ];
-        symbol [ Number %tmp.145 100 58 64 ];
-        symbol [ toFloat %tmp.146 100 66 73 ];
-        %tmp.146 = getv function %tmp.145 :toFloat;
-        %tmp.147 = invoke %tmp.145 %tmp.146();
-        %tmp.148 = lgetv %idx;
-        symbol [ idx %tmp.148 100 31 34 ];
-        aputv %tmp.142 %tmp.148 %tmp.147;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_69_101_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_else_false:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_101_15_103_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 102 12 ]
-        %tmp.149 = lgetv %data;
-        symbol [ data %tmp.149 102 12 16 ];
-        symbol [ climbStartLon %tmp.150 102 17 30 ];
-        %tmp.150 = getv %tmp.149 :climbStartLon;
-        %tmp.151 = 0.0;
-        %tmp.152 = lgetv %idx;
-        symbol [ idx %tmp.152 102 31 34 ];
-        aputv %tmp.150 %tmp.152 %tmp.151;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_101_15_103_8_stop:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_99_15_103_8_if_end:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_97_8_103_8_if_end:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 106 8 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_stop" ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_stop" ]
         %segs.3 = local;
-        symbol [ segs %segs.3 106 12 16 ];
-        %tmp.153 = lgetv %climbDict;
-        symbol [ climbDict %tmp.153 106 19 28 ];
-        symbol [ get %tmp.154 106 29 32 ];
-        %tmp.154 = getv function %tmp.153 :get;
-        %tmp.155 = "segments";
-        %tmp.156 = invoke %tmp.153 %tmp.154(%tmp.155);
-        lputv %segs.3 %tmp.156;
-        symbol [ segs %segs.3 106 12 16 ];
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 107 8 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_12_107_56_begin:
-        %tmp.157 = lgetv %segs.3;
-        symbol [ segs %tmp.157 107 12 16 ];
-        %tmp.158 = null;
-        %tmp.159 = ne %tmp.157 %tmp.158;
-        bf %tmp.159 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_28_107_56_true:
-        %tmp.160 = lgetv %segs.3;
-        symbol [ segs %tmp.160 107 28 32 ];
-        %tmp.161 = as %tmp.160 { (!Null) };
-        symbol [ Toybox %tmp.163 107 44 50 ];
-        %tmp.163 = getv ? :Toybox;
-        symbol [ Lang %tmp.164 107 51 55 ];
-        %tmp.164 = getv %tmp.163 :Lang;
-        symbol [ Array %tmp.165 107 56 61 ];
-        %tmp.165 = getv %tmp.164 :Array;
-        %tmp.166 = isa %tmp.161 %tmp.165;
-        push %tmp.166;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_28_107_56_end:
-        %tmp.167 = phi [%tmp.159 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_12_107_56_begin] [%tmp.166 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_28_107_56_true] [%tmp.167 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_28_107_56_end];
-        bf %tmp.167 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_else_false;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_63_122_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 108 12 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_63_122_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_63_122_8_stop" ]
+        symbol [ segs %segs.3 97 12 16 ];
+        %tmp.119 = lgetv %climbDict;
+        symbol [ climbDict %tmp.119 97 19 28 ];
+        symbol [ get %tmp.120 97 29 32 ];
+        %tmp.120 = getv function %tmp.119 :get;
+        %tmp.121 = "segs";
+        %tmp.122 = invoke %tmp.119 %tmp.120(%tmp.121);
+        lputv %segs.3 %tmp.122;
+        symbol [ segs %segs.3 97 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 98 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_12_98_80_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_12_98_56_begin:
+        %tmp.123 = lgetv %segs.3;
+        symbol [ segs %tmp.123 98 12 16 ];
+        %tmp.124 = null;
+        %tmp.125 = ne %tmp.123 %tmp.124;
+        bf %tmp.125 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_28_98_56_true:
+        %tmp.126 = lgetv %segs.3;
+        symbol [ segs %tmp.126 98 28 32 ];
+        %tmp.127 = as %tmp.126 { (!Null) };
+        symbol [ Toybox %tmp.129 98 44 50 ];
+        %tmp.129 = getv ? :Toybox;
+        symbol [ Lang %tmp.130 98 51 55 ];
+        %tmp.130 = getv %tmp.129 :Lang;
+        symbol [ Array %tmp.131 98 56 61 ];
+        %tmp.131 = getv %tmp.130 :Array;
+        %tmp.132 = isa %tmp.127 %tmp.131;
+        push %tmp.132;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_28_98_56_end:
+        %tmp.133 = phi [%tmp.125 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_12_98_56_begin] [%tmp.132 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_28_98_56_true] [%tmp.133 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_28_98_56_end];
+        bf %tmp.133 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_65_98_80_true:
+        %tmp.134 = lgetv %segs.3;
+        symbol [ segs %tmp.134 98 65 69 ];
+        %tmp.135 = as %tmp.134 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.136 98 70 74 ];
+        %tmp.136 = getv function %tmp.135 :size;
+        %tmp.137 = invoke %tmp.135 %tmp.136();
+        %tmp.138 = 4;
+        %tmp.139 = gte %tmp.137 %tmp.138;
+        push %tmp.139;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_65_98_80_end:
+        %tmp.140 = phi [%tmp.133 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_12_98_80_begin] [%tmp.139 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_65_98_80_true] [%tmp.140 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_65_98_80_end];
+        bf %tmp.140 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_83_108_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 99 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_83_108_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_83_108_8_stop" ]
         %segCount.4 = local;
-        symbol [ segCount %segCount.4 108 16 24 ];
-        %tmp.168 = lgetv %segs.3;
-        symbol [ segs %tmp.168 108 27 31 ];
-        %tmp.169 = as %tmp.168 { (Toybox.Lang.Array) && (!Null) };
-        symbol [ size %tmp.170 108 32 36 ];
-        %tmp.170 = getv function %tmp.169 :size;
-        %tmp.171 = invoke %tmp.169 %tmp.170();
-        lputv %segCount.4 %tmp.171;
-        symbol [ segCount %segCount.4 108 16 24 ];
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 109 12 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_12_111_12_if_stmt:
-        %tmp.172 = lgetv %segCount.4;
-        symbol [ segCount %tmp.172 109 16 24 ];
-        %tmp.173 = lgetv %data;
-        symbol [ data %tmp.173 109 27 31 ];
-        symbol [ MAX_SEGMENTS %tmp.174 109 32 44 ];
-        %tmp.174 = getv %tmp.173 :MAX_SEGMENTS;
-        %tmp.175 = gt %tmp.172 %tmp.174;
-        bf %tmp.175 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_12_111_12_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_12_111_12_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_46_111_12_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 110 16 ]
-        %tmp.176 = lgetv %data;
-        symbol [ data %tmp.176 110 27 31 ];
-        symbol [ MAX_SEGMENTS %tmp.177 110 32 44 ];
-        %tmp.177 = getv %tmp.176 :MAX_SEGMENTS;
-        lputv %segCount.4 %tmp.177;
-        symbol [ segCount %segCount.4 110 16 24 ];
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_46_111_12_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_12_111_12_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_109_12_111_12_if_end:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 112 12 ]
-        %tmp.178 = lgetv %data;
-        symbol [ data %tmp.178 112 12 16 ];
-        symbol [ segCount %tmp.179 112 17 25 ];
-        %tmp.179 = getv %tmp.178 :segCount;
-        %tmp.180 = lgetv %segCount.4;
-        symbol [ segCount %tmp.180 112 33 41 ];
-        %tmp.181 = lgetv %idx;
-        symbol [ idx %tmp.181 112 26 29 ];
-        aputv %tmp.179 %tmp.181 %tmp.180;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 113 12 ]
-        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_init:
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_end" ]
+        symbol [ segCount %segCount.4 99 16 24 ];
+        %tmp.141 = lgetv %segs.3;
+        symbol [ segs %tmp.141 99 27 31 ];
+        %tmp.142 = as %tmp.141 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.143 99 32 36 ];
+        %tmp.143 = getv function %tmp.142 :size;
+        %tmp.144 = invoke %tmp.142 %tmp.143();
+        %tmp.145 = 4;
+        %tmp.146 = div %tmp.144 %tmp.145;
+        lputv %segCount.4 %tmp.146;
+        symbol [ segCount %segCount.4 99 16 24 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 100 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_12_100_78_if_stmt:
+        %tmp.147 = lgetv %segCount.4;
+        symbol [ segCount %tmp.147 100 16 24 ];
+        %tmp.148 = lgetv %data;
+        symbol [ data %tmp.148 100 27 31 ];
+        symbol [ MAX_SEGMENTS %tmp.149 100 32 44 ];
+        %tmp.149 = getv %tmp.148 :MAX_SEGMENTS;
+        %tmp.150 = gt %tmp.147 %tmp.149;
+        bf %tmp.150 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_12_100_78_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_12_100_78_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_46_100_78_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 100 48 ]
+        %tmp.151 = lgetv %data;
+        symbol [ data %tmp.151 100 59 63 ];
+        symbol [ MAX_SEGMENTS %tmp.152 100 64 76 ];
+        %tmp.152 = getv %tmp.151 :MAX_SEGMENTS;
+        lputv %segCount.4 %tmp.152;
+        symbol [ segCount %segCount.4 100 48 56 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_46_100_78_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_12_100_78_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_100_12_100_78_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 101 12 ]
+        %tmp.153 = lgetv %data;
+        symbol [ data %tmp.153 101 12 16 ];
+        symbol [ segCount %tmp.154 101 17 25 ];
+        %tmp.154 = getv %tmp.153 :segCount;
+        %tmp.155 = lgetv %segCount.4;
+        symbol [ segCount %tmp.155 101 33 41 ];
+        %tmp.156 = lgetv %idx;
+        symbol [ idx %tmp.156 101 26 29 ];
+        aputv %tmp.154 %tmp.156 %tmp.155;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 102 12 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_end" ]
         %s.5 = local;
-        symbol [ s %s.5 113 21 22 ];
-        %tmp.182 = 0;
-        lputv %s.5 %tmp.182;
-        symbol [ s %s.5 113 21 22 ];
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_test:
-        %tmp.183 = lgetv %s.5;
-        symbol [ s %tmp.183 113 28 29 ];
-        %tmp.184 = lgetv %segCount.4;
-        symbol [ segCount %tmp.184 113 32 40 ];
-        %tmp.185 = lt %tmp.183 %tmp.184;
-        bf %tmp.185 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_begin:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_47_121_12_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 114 16 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_47_121_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_47_121_12_stop" ]
-        %seg.6 = local;
-        symbol [ seg %seg.6 114 20 23 ];
-        %tmp.186 = lgetv %segs.3;
-        symbol [ segs %tmp.186 114 26 30 ];
-        %tmp.187 = as %tmp.186 { (Toybox.Lang.Array) && (!Null) };
-        %tmp.188 = lgetv %s.5;
-        symbol [ s %tmp.188 114 31 32 ];
-        %tmp.189 = agetv %tmp.187 %tmp.188;
-        lputv %seg.6 %tmp.189;
-        symbol [ seg %seg.6 114 20 23 ];
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 115 16 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_16_120_16_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_20_115_62_begin:
-        %tmp.190 = lgetv %seg.6;
-        symbol [ seg %tmp.190 115 20 23 ];
-        %tmp.191 = null;
-        %tmp.192 = ne %tmp.190 %tmp.191;
-        bf %tmp.192 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_16_120_16_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_35_115_62_true:
-        %tmp.193 = lgetv %seg.6;
-        symbol [ seg %tmp.193 115 35 38 ];
-        %tmp.194 = as %tmp.193 { (!Null) };
-        symbol [ Toybox %tmp.196 115 50 56 ];
-        %tmp.196 = getv ? :Toybox;
-        symbol [ Lang %tmp.197 115 57 61 ];
-        %tmp.197 = getv %tmp.196 :Lang;
-        symbol [ Dictionary %tmp.198 115 62 72 ];
-        %tmp.198 = getv %tmp.197 :Dictionary;
-        %tmp.199 = isa %tmp.194 %tmp.198;
-        push %tmp.199;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_35_115_62_end:
-        %tmp.200 = phi [%tmp.192 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_20_115_62_begin] [%tmp.199 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_35_115_62_true] [%tmp.200 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_35_115_62_end];
-        bf %tmp.200 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_16_120_16_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_16_120_16_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_74_120_16_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 116 20 ]
-        %tmp.201 = lgetv %data;
-        symbol [ data %tmp.201 116 20 24 ];
-        symbol [ segDist %tmp.202 116 25 32 ];
-        %tmp.202 = getv %tmp.201 :segDist;
-        %tmp.203 = lgetv %idx;
-        symbol [ idx %tmp.203 116 33 36 ];
-        %tmp.204 = agetv %tmp.202 %tmp.203;
-        %tmp.205 = self;
-        symbol [ getInt %tmp.206 116 43 49 ];
-        %tmp.206 = getv function %tmp.205 :getInt;
-        %tmp.207 = lgetv %seg.6;
-        symbol [ seg %tmp.207 116 50 53 ];
-        %tmp.208 = as %tmp.207 { (Toybox.Lang.Dictionary) && (!Null) };
-        %tmp.209 = "distance";
-        %tmp.210 = 0;
-        %tmp.211 = invoke %tmp.205 %tmp.206(%tmp.208, %tmp.209, %tmp.210);
-        %tmp.212 = lgetv %s.5;
-        symbol [ s %tmp.212 116 38 39 ];
-        aputv %tmp.204 %tmp.212 %tmp.211;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 117 20 ]
-        %tmp.213 = lgetv %data;
-        symbol [ data %tmp.213 117 20 24 ];
-        symbol [ segElevGain %tmp.214 117 25 36 ];
-        %tmp.214 = getv %tmp.213 :segElevGain;
-        %tmp.215 = lgetv %idx;
-        symbol [ idx %tmp.215 117 37 40 ];
-        %tmp.216 = agetv %tmp.214 %tmp.215;
-        %tmp.217 = self;
-        symbol [ getInt %tmp.218 117 47 53 ];
-        %tmp.218 = getv function %tmp.217 :getInt;
-        %tmp.219 = lgetv %seg.6;
-        symbol [ seg %tmp.219 117 54 57 ];
-        %tmp.220 = as %tmp.219 { (Toybox.Lang.Dictionary) && (!Null) };
-        %tmp.221 = "elevationGain";
-        %tmp.222 = 0;
-        %tmp.223 = invoke %tmp.217 %tmp.218(%tmp.220, %tmp.221, %tmp.222);
-        %tmp.224 = lgetv %s.5;
-        symbol [ s %tmp.224 117 42 43 ];
-        aputv %tmp.216 %tmp.224 %tmp.223;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 118 20 ]
-        %tmp.225 = lgetv %data;
-        symbol [ data %tmp.225 118 20 24 ];
-        symbol [ segGradient %tmp.226 118 25 36 ];
-        %tmp.226 = getv %tmp.225 :segGradient;
-        %tmp.227 = lgetv %idx;
-        symbol [ idx %tmp.227 118 37 40 ];
-        %tmp.228 = agetv %tmp.226 %tmp.227;
-        %tmp.229 = self;
-        symbol [ getInt %tmp.230 118 47 53 ];
-        %tmp.230 = getv function %tmp.229 :getInt;
-        %tmp.231 = lgetv %seg.6;
-        symbol [ seg %tmp.231 118 54 57 ];
-        %tmp.232 = as %tmp.231 { (Toybox.Lang.Dictionary) && (!Null) };
-        %tmp.233 = "gradient";
-        %tmp.234 = 0;
-        %tmp.235 = invoke %tmp.229 %tmp.230(%tmp.232, %tmp.233, %tmp.234);
-        %tmp.236 = lgetv %s.5;
-        symbol [ s %tmp.236 118 42 43 ];
-        aputv %tmp.228 %tmp.236 %tmp.235;
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 119 20 ]
-        %tmp.237 = lgetv %data;
-        symbol [ data %tmp.237 119 20 24 ];
-        symbol [ segColor %tmp.238 119 25 33 ];
-        %tmp.238 = getv %tmp.237 :segColor;
-        %tmp.239 = lgetv %idx;
-        symbol [ idx %tmp.239 119 34 37 ];
-        %tmp.240 = agetv %tmp.238 %tmp.239;
-        %tmp.241 = self;
-        symbol [ getInt %tmp.242 119 44 50 ];
-        %tmp.242 = getv function %tmp.241 :getInt;
-        %tmp.243 = lgetv %seg.6;
-        symbol [ seg %tmp.243 119 51 54 ];
-        %tmp.244 = as %tmp.243 { (Toybox.Lang.Dictionary) && (!Null) };
-        %tmp.245 = "colorIndex";
-        %tmp.246 = 0;
-        %tmp.247 = invoke %tmp.241 %tmp.242(%tmp.244, %tmp.245, %tmp.246);
-        %tmp.248 = lgetv %s.5;
-        symbol [ s %tmp.248 119 39 40 ];
-        aputv %tmp.240 %tmp.248 %tmp.247;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_74_120_16_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_16_120_16_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_115_16_120_16_if_end:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_47_121_12_stop:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_incr:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 113 ]
-        %tmp.251 = lgetv %s.5;
-        symbol [ s %tmp.251 113 42 43 ];
-        %tmp.252 = add %tmp.251 1;
-        lputv %s.5 %tmp.252;
-        symbol [ s %s.5 113 42 43 ];
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_test;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_113_12_121_12_for_end:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_63_122_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_else_false:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_122_15_124_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 123 12 ]
+        symbol [ s %s.5 102 21 22 ];
+        %tmp.157 = 0;
+        lputv %s.5 %tmp.157;
+        symbol [ s %s.5 102 21 22 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_test:
+        %tmp.158 = lgetv %s.5;
+        symbol [ s %tmp.158 102 28 29 ];
+        %tmp.159 = lgetv %segCount.4;
+        symbol [ segCount %tmp.159 102 32 40 ];
+        %tmp.160 = lt %tmp.158 %tmp.159;
+        bf %tmp.160 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_47_107_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 103 16 ]
+        %tmp.161 = lgetv %data;
+        symbol [ data %tmp.161 103 16 20 ];
+        symbol [ segDist %tmp.162 103 21 28 ];
+        %tmp.162 = getv %tmp.161 :segDist;
+        %tmp.163 = lgetv %idx;
+        symbol [ idx %tmp.163 103 29 32 ];
+        %tmp.164 = agetv %tmp.162 %tmp.163;
+        %tmp.165 = lgetv %segs.3;
+        symbol [ segs %tmp.165 103 43 47 ];
+        %tmp.166 = as %tmp.165 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.167 = lgetv %s.5;
+        symbol [ s %tmp.167 103 48 49 ];
+        %tmp.168 = 4;
+        %tmp.169 = mul %tmp.167 %tmp.168;
+        %tmp.170 = agetv %tmp.166 %tmp.169;
+        %tmp.171 = lgetv %s.5;
+        symbol [ s %tmp.171 103 34 35 ];
+        aputv %tmp.164 %tmp.171 %tmp.170;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 104 16 ]
+        %tmp.172 = lgetv %data;
+        symbol [ data %tmp.172 104 16 20 ];
+        symbol [ segElevGain %tmp.173 104 21 32 ];
+        %tmp.173 = getv %tmp.172 :segElevGain;
+        %tmp.174 = lgetv %idx;
+        symbol [ idx %tmp.174 104 33 36 ];
+        %tmp.175 = agetv %tmp.173 %tmp.174;
+        %tmp.176 = lgetv %segs.3;
+        symbol [ segs %tmp.176 104 43 47 ];
+        %tmp.177 = as %tmp.176 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.178 = lgetv %s.5;
+        symbol [ s %tmp.178 104 48 49 ];
+        %tmp.179 = 4;
+        %tmp.180 = mul %tmp.178 %tmp.179;
+        %tmp.181 = 1;
+        %tmp.182 = add %tmp.180 %tmp.181;
+        %tmp.183 = agetv %tmp.177 %tmp.182;
+        %tmp.184 = lgetv %s.5;
+        symbol [ s %tmp.184 104 38 39 ];
+        aputv %tmp.175 %tmp.184 %tmp.183;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 105 16 ]
+        %tmp.185 = lgetv %data;
+        symbol [ data %tmp.185 105 16 20 ];
+        symbol [ segGradient %tmp.186 105 21 32 ];
+        %tmp.186 = getv %tmp.185 :segGradient;
+        %tmp.187 = lgetv %idx;
+        symbol [ idx %tmp.187 105 33 36 ];
+        %tmp.188 = agetv %tmp.186 %tmp.187;
+        %tmp.189 = lgetv %segs.3;
+        symbol [ segs %tmp.189 105 43 47 ];
+        %tmp.190 = as %tmp.189 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.191 = lgetv %s.5;
+        symbol [ s %tmp.191 105 48 49 ];
+        %tmp.192 = 4;
+        %tmp.193 = mul %tmp.191 %tmp.192;
+        %tmp.194 = 2;
+        %tmp.195 = add %tmp.193 %tmp.194;
+        %tmp.196 = agetv %tmp.190 %tmp.195;
+        %tmp.197 = lgetv %s.5;
+        symbol [ s %tmp.197 105 38 39 ];
+        aputv %tmp.188 %tmp.197 %tmp.196;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 106 16 ]
+        %tmp.198 = lgetv %data;
+        symbol [ data %tmp.198 106 16 20 ];
+        symbol [ segColor %tmp.199 106 21 29 ];
+        %tmp.199 = getv %tmp.198 :segColor;
+        %tmp.200 = lgetv %idx;
+        symbol [ idx %tmp.200 106 30 33 ];
+        %tmp.201 = agetv %tmp.199 %tmp.200;
+        %tmp.202 = lgetv %segs.3;
+        symbol [ segs %tmp.202 106 43 47 ];
+        %tmp.203 = as %tmp.202 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.204 = lgetv %s.5;
+        symbol [ s %tmp.204 106 48 49 ];
+        %tmp.205 = 4;
+        %tmp.206 = mul %tmp.204 %tmp.205;
+        %tmp.207 = 3;
+        %tmp.208 = add %tmp.206 %tmp.207;
+        %tmp.209 = agetv %tmp.203 %tmp.208;
+        %tmp.210 = lgetv %s.5;
+        symbol [ s %tmp.210 106 35 36 ];
+        aputv %tmp.201 %tmp.210 %tmp.209;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_47_107_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 102 ]
+        %tmp.213 = lgetv %s.5;
+        symbol [ s %tmp.213 102 42 43 ];
+        %tmp.214 = add %tmp.213 1;
+        lputv %s.5 %tmp.214;
+        symbol [ s %s.5 102 42 43 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_102_12_107_12_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_83_108_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_108_15_110_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 109 12 ]
+        %tmp.215 = lgetv %data;
+        symbol [ data %tmp.215 109 12 16 ];
+        symbol [ segCount %tmp.216 109 17 25 ];
+        %tmp.216 = getv %tmp.215 :segCount;
+        %tmp.217 = 0;
+        %tmp.218 = lgetv %idx;
+        symbol [ idx %tmp.218 109 26 29 ];
+        aputv %tmp.216 %tmp.218 %tmp.217;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_108_15_110_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_98_8_110_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 113 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_stop" ]
+        %calib.6 = local;
+        symbol [ calib %calib.6 113 12 17 ];
+        %tmp.219 = lgetv %climbDict;
+        symbol [ climbDict %tmp.219 113 20 29 ];
+        symbol [ get %tmp.220 113 30 33 ];
+        %tmp.220 = getv function %tmp.219 :get;
+        %tmp.221 = "calib";
+        %tmp.222 = invoke %tmp.219 %tmp.220(%tmp.221);
+        lputv %calib.6 %tmp.222;
+        symbol [ calib %calib.6 113 12 17 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 114 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_12_114_83_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_12_114_58_begin:
+        %tmp.223 = lgetv %calib.6;
+        symbol [ calib %tmp.223 114 12 17 ];
+        %tmp.224 = null;
+        %tmp.225 = ne %tmp.223 %tmp.224;
+        bf %tmp.225 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_29_114_58_true:
+        %tmp.226 = lgetv %calib.6;
+        symbol [ calib %tmp.226 114 29 34 ];
+        %tmp.227 = as %tmp.226 { (!Null) };
+        symbol [ Toybox %tmp.229 114 46 52 ];
+        %tmp.229 = getv ? :Toybox;
+        symbol [ Lang %tmp.230 114 53 57 ];
+        %tmp.230 = getv %tmp.229 :Lang;
+        symbol [ Array %tmp.231 114 58 63 ];
+        %tmp.231 = getv %tmp.230 :Array;
+        %tmp.232 = isa %tmp.227 %tmp.231;
+        push %tmp.232;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_29_114_58_end:
+        %tmp.233 = phi [%tmp.225 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_12_114_58_begin] [%tmp.232 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_29_114_58_true] [%tmp.233 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_29_114_58_end];
+        bf %tmp.233 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_67_114_83_true:
+        %tmp.234 = lgetv %calib.6;
+        symbol [ calib %tmp.234 114 67 72 ];
+        %tmp.235 = as %tmp.234 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.236 114 73 77 ];
+        %tmp.236 = getv function %tmp.235 :size;
+        %tmp.237 = invoke %tmp.235 %tmp.236();
+        %tmp.238 = 3;
+        %tmp.239 = gte %tmp.237 %tmp.238;
+        push %tmp.239;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_67_114_83_end:
+        %tmp.240 = phi [%tmp.233 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_12_114_83_begin] [%tmp.239 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_67_114_83_true] [%tmp.240 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_67_114_83_end];
+        bf %tmp.240 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_86_123_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 115 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_86_123_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_86_123_8_stop" ]
+        %calibCount.7 = local;
+        symbol [ calibCount %calibCount.7 115 16 26 ];
+        %tmp.241 = lgetv %calib.6;
+        symbol [ calib %tmp.241 115 29 34 ];
+        %tmp.242 = as %tmp.241 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.243 115 35 39 ];
+        %tmp.243 = getv function %tmp.242 :size;
+        %tmp.244 = invoke %tmp.242 %tmp.243();
+        %tmp.245 = 3;
+        %tmp.246 = div %tmp.244 %tmp.245;
+        lputv %calibCount.7 %tmp.246;
+        symbol [ calibCount %calibCount.7 115 16 26 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 116 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_12_116_76_if_stmt:
+        %tmp.247 = lgetv %calibCount.7;
+        symbol [ calibCount %tmp.247 116 16 26 ];
+        %tmp.248 = lgetv %data;
+        symbol [ data %tmp.248 116 29 33 ];
+        symbol [ MAX_CALIB %tmp.249 116 34 43 ];
+        %tmp.249 = getv %tmp.248 :MAX_CALIB;
+        %tmp.250 = gt %tmp.247 %tmp.249;
+        bf %tmp.250 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_12_116_76_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_12_116_76_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_45_116_76_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 116 47 ]
+        %tmp.251 = lgetv %data;
+        symbol [ data %tmp.251 116 60 64 ];
+        symbol [ MAX_CALIB %tmp.252 116 65 74 ];
+        %tmp.252 = getv %tmp.251 :MAX_CALIB;
+        lputv %calibCount.7 %tmp.252;
+        symbol [ calibCount %calibCount.7 116 47 57 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_45_116_76_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_12_116_76_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_116_12_116_76_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 117 12 ]
         %tmp.253 = lgetv %data;
-        symbol [ data %tmp.253 123 12 16 ];
-        symbol [ segCount %tmp.254 123 17 25 ];
-        %tmp.254 = getv %tmp.253 :segCount;
-        %tmp.255 = 0;
+        symbol [ data %tmp.253 117 12 16 ];
+        symbol [ calibCount %tmp.254 117 17 27 ];
+        %tmp.254 = getv %tmp.253 :calibCount;
+        %tmp.255 = lgetv %calibCount.7;
+        symbol [ calibCount %tmp.255 117 35 45 ];
         %tmp.256 = lgetv %idx;
-        symbol [ idx %tmp.256 123 26 29 ];
+        symbol [ idx %tmp.256 117 28 31 ];
         aputv %tmp.254 %tmp.256 %tmp.255;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_122_15_124_8_stop:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_107_8_124_8_if_end:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_125_4_stop:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 118 12 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_end" ]
+        %k.8 = local;
+        symbol [ k %k.8 118 21 22 ];
+        %tmp.257 = 0;
+        lputv %k.8 %tmp.257;
+        symbol [ k %k.8 118 21 22 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_test:
+        %tmp.258 = lgetv %k.8;
+        symbol [ k %tmp.258 118 28 29 ];
+        %tmp.259 = lgetv %calibCount.7;
+        symbol [ calibCount %tmp.259 118 32 42 ];
+        %tmp.260 = lt %tmp.258 %tmp.259;
+        bf %tmp.260 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_49_122_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 119 16 ]
+        %tmp.261 = lgetv %data;
+        symbol [ data %tmp.261 119 16 20 ];
+        symbol [ calibDist %tmp.262 119 21 30 ];
+        %tmp.262 = getv %tmp.261 :calibDist;
+        %tmp.263 = lgetv %idx;
+        symbol [ idx %tmp.263 119 31 34 ];
+        %tmp.264 = agetv %tmp.262 %tmp.263;
+        %tmp.265 = lgetv %calib.6;
+        symbol [ calib %tmp.265 119 41 46 ];
+        %tmp.266 = as %tmp.265 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.267 = lgetv %k.8;
+        symbol [ k %tmp.267 119 47 48 ];
+        %tmp.268 = 3;
+        %tmp.269 = mul %tmp.267 %tmp.268;
+        %tmp.270 = agetv %tmp.266 %tmp.269;
+        %tmp.271 = lgetv %k.8;
+        symbol [ k %tmp.271 119 36 37 ];
+        aputv %tmp.264 %tmp.271 %tmp.270;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 120 16 ]
+        %tmp.272 = lgetv %data;
+        symbol [ data %tmp.272 120 16 20 ];
+        symbol [ calibLat %tmp.273 120 21 29 ];
+        %tmp.273 = getv %tmp.272 :calibLat;
+        %tmp.274 = lgetv %idx;
+        symbol [ idx %tmp.274 120 30 33 ];
+        %tmp.275 = agetv %tmp.273 %tmp.274;
+        %tmp.276 = lgetv %calib.6;
+        symbol [ calib %tmp.276 120 42 47 ];
+        %tmp.277 = as %tmp.276 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.278 = lgetv %k.8;
+        symbol [ k %tmp.278 120 48 49 ];
+        %tmp.279 = 3;
+        %tmp.280 = mul %tmp.278 %tmp.279;
+        %tmp.281 = 1;
+        %tmp.282 = add %tmp.280 %tmp.281;
+        %tmp.283 = agetv %tmp.277 %tmp.282;
+        %tmp.284 = as %tmp.283 Toybox.Lang.Number;
+        symbol [ Toybox %tmp.284 120 62 68 ];
+        symbol [ Lang %tmp.284 120 69 73 ];
+        symbol [ Number %tmp.284 120 74 80 ];
+        symbol [ toFloat %tmp.285 120 82 89 ];
+        %tmp.285 = getv function %tmp.284 :toFloat;
+        %tmp.286 = invoke %tmp.284 %tmp.285();
+        %tmp.287 = 100000.0f;
+        %tmp.288 = div %tmp.286 %tmp.287;
+        %tmp.289 = lgetv %k.8;
+        symbol [ k %tmp.289 120 35 36 ];
+        aputv %tmp.275 %tmp.289 %tmp.288;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 121 16 ]
+        %tmp.290 = lgetv %data;
+        symbol [ data %tmp.290 121 16 20 ];
+        symbol [ calibLon %tmp.291 121 21 29 ];
+        %tmp.291 = getv %tmp.290 :calibLon;
+        %tmp.292 = lgetv %idx;
+        symbol [ idx %tmp.292 121 30 33 ];
+        %tmp.293 = agetv %tmp.291 %tmp.292;
+        %tmp.294 = lgetv %calib.6;
+        symbol [ calib %tmp.294 121 42 47 ];
+        %tmp.295 = as %tmp.294 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.296 = lgetv %k.8;
+        symbol [ k %tmp.296 121 48 49 ];
+        %tmp.297 = 3;
+        %tmp.298 = mul %tmp.296 %tmp.297;
+        %tmp.299 = 2;
+        %tmp.300 = add %tmp.298 %tmp.299;
+        %tmp.301 = agetv %tmp.295 %tmp.300;
+        %tmp.302 = as %tmp.301 Toybox.Lang.Number;
+        symbol [ Toybox %tmp.302 121 62 68 ];
+        symbol [ Lang %tmp.302 121 69 73 ];
+        symbol [ Number %tmp.302 121 74 80 ];
+        symbol [ toFloat %tmp.303 121 82 89 ];
+        %tmp.303 = getv function %tmp.302 :toFloat;
+        %tmp.304 = invoke %tmp.302 %tmp.303();
+        %tmp.305 = 100000.0f;
+        %tmp.306 = div %tmp.304 %tmp.305;
+        %tmp.307 = lgetv %k.8;
+        symbol [ k %tmp.307 121 35 36 ];
+        aputv %tmp.293 %tmp.307 %tmp.306;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_49_122_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 118 ]
+        %tmp.310 = lgetv %k.8;
+        symbol [ k %tmp.310 118 44 45 ];
+        %tmp.311 = add %tmp.310 1;
+        lputv %k.8 %tmp.311;
+        symbol [ k %k.8 118 44 45 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_118_12_122_12_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_86_123_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_123_15_125_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 124 12 ]
+        %tmp.312 = lgetv %data;
+        symbol [ data %tmp.312 124 12 16 ];
+        symbol [ calibCount %tmp.313 124 17 27 ];
+        %tmp.313 = getv %tmp.312 :calibCount;
+        %tmp.314 = 0;
+        %tmp.315 = lgetv %idx;
+        symbol [ idx %tmp.315 124 28 31 ];
+        aputv %tmp.313 %tmp.315 %tmp.314;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_123_15_125_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_114_8_125_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 128 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_stop" ]
+        %surf.9 = local;
+        symbol [ surf %surf.9 128 12 16 ];
+        %tmp.316 = lgetv %climbDict;
+        symbol [ climbDict %tmp.316 128 19 28 ];
+        symbol [ get %tmp.317 128 29 32 ];
+        %tmp.317 = getv function %tmp.316 :get;
+        %tmp.318 = "surf";
+        %tmp.319 = invoke %tmp.316 %tmp.317(%tmp.318);
+        lputv %surf.9 %tmp.319;
+        symbol [ surf %surf.9 128 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 129 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_12_129_56_begin:
+        %tmp.320 = lgetv %surf.9;
+        symbol [ surf %tmp.320 129 12 16 ];
+        %tmp.321 = null;
+        %tmp.322 = ne %tmp.320 %tmp.321;
+        bf %tmp.322 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_28_129_56_true:
+        %tmp.323 = lgetv %surf.9;
+        symbol [ surf %tmp.323 129 28 32 ];
+        %tmp.324 = as %tmp.323 { (!Null) };
+        symbol [ Toybox %tmp.326 129 44 50 ];
+        %tmp.326 = getv ? :Toybox;
+        symbol [ Lang %tmp.327 129 51 55 ];
+        %tmp.327 = getv %tmp.326 :Lang;
+        symbol [ Array %tmp.328 129 56 61 ];
+        %tmp.328 = getv %tmp.327 :Array;
+        %tmp.329 = isa %tmp.324 %tmp.328;
+        push %tmp.329;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_28_129_56_end:
+        %tmp.330 = phi [%tmp.322 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_12_129_56_begin] [%tmp.329 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_28_129_56_true] [%tmp.330 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_28_129_56_end];
+        bf %tmp.330 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_63_141_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 130 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_63_141_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_63_141_8_stop" ]
+        %surfSize.10 = local;
+        symbol [ surfSize %surfSize.10 130 16 24 ];
+        %tmp.331 = lgetv %surf.9;
+        symbol [ surf %tmp.331 130 27 31 ];
+        %tmp.332 = as %tmp.331 { (Toybox.Lang.Array) && (!Null) };
+        symbol [ size %tmp.333 130 32 36 ];
+        %tmp.333 = getv function %tmp.332 :size;
+        %tmp.334 = invoke %tmp.332 %tmp.333();
+        lputv %surfSize.10 %tmp.334;
+        symbol [ surfSize %surfSize.10 130 16 24 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 131 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_63_141_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_63_141_8_stop" ]
+        %segCnt.11 = local;
+        symbol [ segCnt %segCnt.11 131 16 22 ];
+        %tmp.335 = lgetv %data;
+        symbol [ data %tmp.335 131 25 29 ];
+        symbol [ segCount %tmp.336 131 30 38 ];
+        %tmp.336 = getv %tmp.335 :segCount;
+        %tmp.337 = lgetv %idx;
+        symbol [ idx %tmp.337 131 39 42 ];
+        %tmp.338 = agetv %tmp.336 %tmp.337;
+        lputv %segCnt.11 %tmp.338;
+        symbol [ segCnt %segCnt.11 131 16 22 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 132 12 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_end" ]
+        %s.12 = local;
+        symbol [ s %s.12 132 21 22 ];
+        %tmp.339 = 0;
+        lputv %s.12 %tmp.339;
+        symbol [ s %s.12 132 21 22 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_test:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_28_132_46_begin:
+        %tmp.340 = lgetv %s.12;
+        symbol [ s %tmp.340 132 28 29 ];
+        %tmp.341 = lgetv %segCnt.11;
+        symbol [ segCnt %tmp.341 132 32 38 ];
+        %tmp.342 = lt %tmp.340 %tmp.341;
+        %tmp.343 = dup %tmp.342;
+        bf %tmp.343 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_42_132_46_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_42_132_46_true:
+        %tmp.344 = lgetv %s.12;
+        symbol [ s %tmp.344 132 42 43 ];
+        %tmp.345 = lgetv %surfSize.10;
+        symbol [ surfSize %tmp.345 132 46 54 ];
+        %tmp.346 = lt %tmp.344 %tmp.345;
+        %tmp.347 = and %tmp.342 %tmp.346;
+        push %tmp.347;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_42_132_46_end:
+        %tmp.348 = phi [%tmp.343 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_28_132_46_begin] [%tmp.347 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_42_132_46_true] [%tmp.348 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_42_132_46_end];
+        bf %tmp.348 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_61_140_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 133 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_61_140_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_61_140_12_stop" ]
+        %sv.13 = local;
+        symbol [ sv %sv.13 133 20 22 ];
+        %tmp.349 = lgetv %surf.9;
+        symbol [ surf %tmp.349 133 25 29 ];
+        %tmp.350 = as %tmp.349 { (Toybox.Lang.Array) && (!Null) };
+        %tmp.351 = lgetv %s.12;
+        symbol [ s %tmp.351 133 30 31 ];
+        %tmp.352 = agetv %tmp.350 %tmp.351;
+        lputv %sv.13 %tmp.352;
+        symbol [ sv %sv.13 133 20 22 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 134 16 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_16_139_16_if_stmt:
+        %tmp.353 = lgetv %sv.13;
+        symbol [ sv %tmp.353 134 20 22 ];
+        symbol [ Toybox %tmp.355 134 34 40 ];
+        %tmp.355 = getv ? :Toybox;
+        symbol [ Lang %tmp.356 134 41 45 ];
+        %tmp.356 = getv %tmp.355 :Lang;
+        symbol [ Number %tmp.357 134 46 52 ];
+        %tmp.357 = getv %tmp.356 :Number;
+        %tmp.358 = isa %tmp.353 %tmp.357;
+        bf %tmp.358 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_16_139_16_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_16_139_16_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_54_137_16_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 135 20 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_54_137_16_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_54_137_16_stop" ]
+        %si.14 = local;
+        symbol [ si %si.14 135 24 26 ];
+        %tmp.359 = lgetv %sv.13;
+        symbol [ sv %tmp.359 135 29 31 ];
+        %tmp.360 = as %tmp.359 { (Toybox.Lang.Number) };
+        symbol [ toNumber %tmp.361 135 32 40 ];
+        %tmp.361 = getv function %tmp.360 :toNumber;
+        %tmp.362 = invoke %tmp.360 %tmp.361();
+        lputv %si.14 %tmp.362;
+        symbol [ si %si.14 135 24 26 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 136 20 ]
+        %tmp.363 = lgetv %data;
+        symbol [ data %tmp.363 136 20 24 ];
+        symbol [ segSurf %tmp.364 136 25 32 ];
+        %tmp.364 = getv %tmp.363 :segSurf;
+        %tmp.365 = lgetv %idx;
+        symbol [ idx %tmp.365 136 33 36 ];
+        %tmp.366 = agetv %tmp.364 %tmp.365;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_44_136_61_begin:
+        %tmp.367 = lgetv %si.14;
+        symbol [ si %tmp.367 136 44 46 ];
+        %tmp.368 = 0;
+        %tmp.369 = gte %tmp.367 %tmp.368;
+        bf %tmp.369 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_55_136_61_true:
+        %tmp.370 = lgetv %si.14;
+        symbol [ si %tmp.370 136 55 57 ];
+        %tmp.371 = 5;
+        %tmp.372 = lte %tmp.370 %tmp.371;
+        push %tmp.372;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_55_136_61_end:
+        %tmp.373 = phi [%tmp.369 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_44_136_61_begin] [%tmp.372 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_55_136_61_true] [%tmp.373 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_55_136_61_end];
+        bf %tmp.373 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_true:
+        %tmp.374 = lgetv %si.14;
+        symbol [ si %tmp.374 136 66 68 ];
+        push %tmp.374;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_else_false:
+        %tmp.375 = 5;
+        push %tmp.375;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_end:
+        %tmp.376 = phi [%tmp.373 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_begin] [%tmp.374 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_true] [%tmp.375 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_else_false] [%tmp.376 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_136_43_136_71_end];
+        %tmp.377 = lgetv %s.12;
+        symbol [ s %tmp.377 136 38 39 ];
+        aputv %tmp.366 %tmp.377 %tmp.376;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_54_137_16_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_16_139_16_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_16_139_16_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_137_23_139_16_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 138 20 ]
+        %tmp.378 = lgetv %data;
+        symbol [ data %tmp.378 138 20 24 ];
+        symbol [ segSurf %tmp.379 138 25 32 ];
+        %tmp.379 = getv %tmp.378 :segSurf;
+        %tmp.380 = lgetv %idx;
+        symbol [ idx %tmp.380 138 33 36 ];
+        %tmp.381 = agetv %tmp.379 %tmp.380;
+        %tmp.382 = 5;
+        %tmp.383 = lgetv %s.12;
+        symbol [ s %tmp.383 138 38 39 ];
+        aputv %tmp.381 %tmp.383 %tmp.382;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_137_23_139_16_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_134_16_139_16_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_61_140_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 132 ]
+        %tmp.386 = lgetv %s.12;
+        symbol [ s %tmp.386 132 56 57 ];
+        %tmp.387 = add %tmp.386 1;
+        lputv %s.12 %tmp.387;
+        symbol [ s %s.12 132 56 57 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_132_12_140_12_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_63_141_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_141_15_146_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 143 12 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_end" ]
+        %s.15 = local;
+        symbol [ s %s.15 143 21 22 ];
+        %tmp.388 = 0;
+        lputv %s.15 %tmp.388;
+        symbol [ s %s.15 143 21 22 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_test:
+        %tmp.389 = lgetv %s.15;
+        symbol [ s %tmp.389 143 28 29 ];
+        %tmp.390 = lgetv %data;
+        symbol [ data %tmp.390 143 32 36 ];
+        symbol [ segCount %tmp.391 143 37 45 ];
+        %tmp.391 = getv %tmp.390 :segCount;
+        %tmp.392 = lgetv %idx;
+        symbol [ idx %tmp.392 143 46 49 ];
+        %tmp.393 = agetv %tmp.391 %tmp.392;
+        %tmp.394 = lt %tmp.389 %tmp.393;
+        bf %tmp.394 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_57_145_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 144 16 ]
+        %tmp.395 = lgetv %data;
+        symbol [ data %tmp.395 144 16 20 ];
+        symbol [ segSurf %tmp.396 144 21 28 ];
+        %tmp.396 = getv %tmp.395 :segSurf;
+        %tmp.397 = lgetv %idx;
+        symbol [ idx %tmp.397 144 29 32 ];
+        %tmp.398 = agetv %tmp.396 %tmp.397;
+        %tmp.399 = 5;
+        %tmp.400 = lgetv %s.15;
+        symbol [ s %tmp.400 144 34 35 ];
+        aputv %tmp.398 %tmp.400 %tmp.399;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_57_145_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 143 ]
+        %tmp.403 = lgetv %s.15;
+        symbol [ s %tmp.403 143 52 53 ];
+        %tmp.404 = add %tmp.403 1;
+        lputv %s.15 %tmp.404;
+        symbol [ s %s.15 143 52 53 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_143_12_145_12_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_141_15_146_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_146_8_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_75_53_147_4_stop:
     }
-    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc"; @line = 127; @symbol_functiondef = [getInt,127,20,26]; @symbol_param<0> = [dict,127,27,31]; @symbol_param<1> = [key,127,33,36]; @symbol_param<2> = [defaultVal,127,38,48]; ]
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc"; @line = 149; @symbol_functiondef = [getInt,149,20,26]; @symbol_param<0> = [dict,149,27,31]; @symbol_param<1> = [key,149,33,36]; @symbol_param<2> = [defaultVal,149,38,48]; ]
     protected
     function getInt(dict, key, defaultVal) {
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_127_50_133_4_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 128 8 ]
-        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_127_50_133_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_127_50_133_4_stop" ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_149_50_155_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 150 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_149_50_155_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_149_50_155_4_stop" ]
         %val.1 = local;
-        symbol [ val %val.1 128 12 15 ];
+        symbol [ val %val.1 150 12 15 ];
         %tmp.1 = lgetv %dict;
-        symbol [ dict %tmp.1 128 18 22 ];
-        symbol [ get %tmp.2 128 23 26 ];
+        symbol [ dict %tmp.1 150 18 22 ];
+        symbol [ get %tmp.2 150 23 26 ];
         %tmp.2 = getv function %tmp.1 :get;
         %tmp.3 = lgetv %key;
-        symbol [ key %tmp.3 128 27 30 ];
+        symbol [ key %tmp.3 150 27 30 ];
         %tmp.4 = invoke %tmp.1 %tmp.2(%tmp.3);
         lputv %val.1 %tmp.4;
-        symbol [ val %val.1 128 12 15 ];
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 129 8 ]
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_131_8_if_stmt:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_12_129_54_begin:
+        symbol [ val %val.1 150 12 15 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 151 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_8_153_8_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_12_151_54_begin:
         %tmp.5 = lgetv %val.1;
-        symbol [ val %tmp.5 129 12 15 ];
+        symbol [ val %tmp.5 151 12 15 ];
         %tmp.6 = null;
         %tmp.7 = ne %tmp.5 %tmp.6;
-        bf %tmp.7 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_131_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_27_129_54_true:
+        bf %tmp.7 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_8_153_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_27_151_54_true:
         %tmp.8 = lgetv %val.1;
-        symbol [ val %tmp.8 129 27 30 ];
+        symbol [ val %tmp.8 151 27 30 ];
         %tmp.9 = as %tmp.8 { (!Null) };
-        symbol [ Toybox %tmp.11 129 42 48 ];
+        symbol [ Toybox %tmp.11 151 42 48 ];
         %tmp.11 = getv ? :Toybox;
-        symbol [ Lang %tmp.12 129 49 53 ];
+        symbol [ Lang %tmp.12 151 49 53 ];
         %tmp.12 = getv %tmp.11 :Lang;
-        symbol [ Number %tmp.13 129 54 60 ];
+        symbol [ Number %tmp.13 151 54 60 ];
         %tmp.13 = getv %tmp.12 :Number;
         %tmp.14 = isa %tmp.9 %tmp.13;
         push %tmp.14;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_27_129_54_end:
-        %tmp.15 = phi [%tmp.7 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_12_129_54_begin] [%tmp.14 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_27_129_54_true] [%tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_27_129_54_end];
-        bf %tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_131_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_131_8_if_true:
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_62_131_8_start:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 130 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_27_151_54_end:
+        %tmp.15 = phi [%tmp.7 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_12_151_54_begin] [%tmp.14 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_27_151_54_true] [%tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_27_151_54_end];
+        bf %tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_8_153_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_8_153_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_62_153_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 152 12 ]
         %tmp.16 = lgetv %val.1;
-        symbol [ val %tmp.16 130 19 22 ];
+        symbol [ val %tmp.16 152 19 22 ];
         %tmp.17 = as %tmp.16 { (Toybox.Lang.Number) && (!Null) };
         ret %tmp.17;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_62_131_8_stop:
-        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_131_8_if_end;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_129_8_131_8_if_end:
-[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 132 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_62_153_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_8_153_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_151_8_153_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc" 154 8 ]
         %tmp.18 = lgetv %defaultVal;
-        symbol [ defaultVal %tmp.18 132 15 25 ];
+        symbol [ defaultVal %tmp.18 154 15 25 ];
         ret %tmp.18;
-C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_127_50_133_4_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_source_CommListener_mc_149_50_155_4_stop:
     }
 }
 [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin\source\CommListener.mc"; @line = 1; ]

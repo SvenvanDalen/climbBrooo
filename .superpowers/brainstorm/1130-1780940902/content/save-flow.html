@@ -1,0 +1,126 @@
+<h2>Save-optie: hoe verschijnt die?</h2>
+<p class="subtitle">FR255 heeft geen touchscreen — kies hoe de gebruiker iets opslaat</p>
+
+<style>
+.watch-frame {
+  width: 160px; height: 160px;
+  border-radius: 50%; background: #111;
+  border: 6px solid #444; overflow: hidden;
+  display: flex; align-items: stretch;
+  justify-content: center; position: relative; flex-shrink: 0;
+}
+.watch-screen {
+  width: 100%; display: flex; flex-direction: column;
+  padding: 16px 12px 12px; box-sizing: border-box; overflow: hidden;
+}
+.ws-title { font-size: 8px; color: #aaa; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ws-item { font-size: 7.5px; color: #fff; padding: 2.5px 4px; border-radius: 2px; margin-bottom: 1px; }
+.ws-item.selected { background: #1a5fb4; }
+.ws-item.save-btn { background: #1a6b1a; color: #7fff7f; text-align: center; margin-top: 4px; }
+.ws-item.delete-btn { background: #6b1a1a; color: #ff7f7f; text-align: center; }
+.ws-divider { height: 1px; background: #333; margin: 3px 0; }
+.ws-stats { font-size: 6.5px; color: #888; text-align: center; margin-bottom: 3px; }
+.ws-hint { font-size: 6px; color: #555; text-align: center; margin-top: auto; }
+.ws-menu-overlay {
+  position: absolute; bottom: 20px; left: 10px; right: 10px;
+  background: #1e1e2e; border: 1px solid #444; border-radius: 3px;
+  padding: 4px;
+}
+.ws-menu-item { font-size: 7px; color: #fff; padding: 2px 4px; }
+.ws-menu-item.selected { background: #1a5fb4; }
+.ws-menu-item.green { color: #7fff7f; }
+.ws-menu-item.red { color: #ff7f7f; }
+.watch-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.btn-hint { font-size: 10px; color: #666; }
+.label-small { font-size: 9px; color: #888; font-style: italic; }
+
+.cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+.card { width: 200px; }
+.card-image { display: flex; justify-content: center; align-items: flex-end; padding: 16px 0 8px; background: #1a1a2e; border-radius: 8px 8px 0 0; gap: 8px; flex-direction: column; align-items: center; }
+.card-body { padding: 10px 12px; }
+.card-body h3 { margin: 0 0 4px; font-size: 14px; }
+.card-body p { margin: 0; font-size: 12px; color: #aaa; line-height: 1.4; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Save as last item in list -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="card-image">
+      <div class="watch-wrap">
+        <div class="label-small">Route geladen ↓ scroll omlaag</div>
+        <div class="watch-frame">
+          <div class="watch-screen">
+            <div class="ws-title">Mont Ventoux</div>
+            <div class="ws-stats">3 klimmen · 48km</div>
+            <div class="ws-item">Col du Géant</div>
+            <div class="ws-item">Versant Sud</div>
+            <div class="ws-item">Chalet Reynard</div>
+            <div class="ws-divider"></div>
+            <div class="ws-item save-btn">💾 Sla route op</div>
+          </div>
+        </div>
+        <div class="btn-hint">▼ DOWN om naar save te scrollen · SELECT om op te slaan</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — "Sla op" onderaan lijst</h3>
+      <p>Na alle klimmen staat een save-knop onderaan. Scroll omlaag om hem te bereiken. Simpel, geen extra scherm.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Context menu via long SELECT -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="card-image">
+      <div class="watch-wrap">
+        <div class="label-small">Houd SELECT ingedrukt op een klim</div>
+        <div class="watch-frame" style="position:relative;">
+          <div class="watch-screen">
+            <div class="ws-title">Klimmen</div>
+            <div class="ws-item">Col du Géant</div>
+            <div class="ws-item selected">Versant Sud</div>
+            <div class="ws-item">Chalet Reynard</div>
+          </div>
+          <div class="ws-menu-overlay">
+            <div class="ws-menu-item selected green">💾 Sla klim op</div>
+            <div class="ws-menu-item green">💾 Sla route op</div>
+            <div class="ws-menu-item">Bekijk details</div>
+          </div>
+        </div>
+        <div class="btn-hint">Lang SELECT → popup menu</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Long-press menu</h3>
+      <p>Houd SELECT ingedrukt op een klim of route voor een contextmenu. Sneller, maar minder ontdekbaar.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Confirmation screen after loading -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="card-image">
+      <div class="watch-wrap">
+        <div class="label-small">Route geladen → bevestigingsscherm</div>
+        <div class="watch-frame">
+          <div class="watch-screen">
+            <div class="ws-title" style="color:#7fff7f; font-size:9px;">Mont Ventoux</div>
+            <div class="ws-stats" style="font-size:7px; color:#ccc;">3 klimmen geladen</div>
+            <div style="height:6px;"></div>
+            <div class="ws-item save-btn" style="font-size:7.5px; padding:3px 4px;">💾 Opslaan op watch</div>
+            <div style="height:2px;"></div>
+            <div class="ws-item" style="background:#333; color:#ccc; font-size:7.5px; text-align:center; padding:3px 4px;">Verder zonder opslaan</div>
+          </div>
+        </div>
+        <div class="btn-hint">SELECT = opslaan · BACK = skip</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Bevestigingsscherm na laden</h3>
+      <p>Na het laden van een route verschijnt direct een "Wil je opslaan?" scherm. Je kunt niet missen, maar onderbreekt de flow.</p>
+    </div>
+  </div>
+
+</div>

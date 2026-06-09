@@ -1,0 +1,165 @@
+<h2>Hoofdscherm: route lijst indeling</h2>
+<p class="subtitle">Hoe wil je "van telefoon" vs "opgeslagen op watch" tonen?</p>
+
+<style>
+.watch-frame {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: #111;
+  border: 6px solid #444;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.watch-screen {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.ws-title {
+  font-size: 8px;
+  color: #aaa;
+  text-align: center;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.ws-item {
+  font-size: 7.5px;
+  color: #fff;
+  padding: 2.5px 4px;
+  border-radius: 2px;
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-item.selected { background: #1a5fb4; }
+.ws-item.saved { color: #78d0ff; }
+.ws-divider {
+  font-size: 6.5px;
+  color: #555;
+  margin: 3px 0 2px;
+  text-align: center;
+  border-top: 1px solid #333;
+  padding-top: 2px;
+}
+.ws-sync {
+  font-size: 7px;
+  color: #888;
+  text-align: center;
+  margin-top: 2px;
+}
+.ws-label-phone { color: #aaa; font-size: 6.5px; margin-bottom: 2px; }
+.ws-label-saved { color: #555; font-size: 6.5px; margin-top: 3px; margin-bottom: 2px; }
+.ws-item.dimmed { color: #555; font-style: italic; }
+.tag {
+  display: inline-block;
+  font-size: 6px;
+  padding: 0 2px;
+  border-radius: 1px;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+.tag.phone { background: #1a5f30; color: #7fff7f; }
+.tag.saved-tag { background: #1a3a5f; color: #78d0ff; }
+
+.cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.card {
+  width: 200px;
+}
+.card-image {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+  background: #1a1a2e;
+  border-radius: 8px 8px 0 0;
+}
+.card-body { padding: 10px 12px; }
+.card-body h3 { margin: 0 0 4px; font-size: 14px; }
+.card-body p { margin: 0; font-size: 12px; color: #aaa; line-height: 1.4; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Two sections, phone on top -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="card-image">
+      <div class="watch-frame">
+        <div class="watch-screen">
+          <div class="ws-title">Routes</div>
+          <div class="ws-label-phone">📱 Telefoon</div>
+          <div class="ws-item selected">Col du Tourmalet</div>
+          <div class="ws-item">Alpe d'Huez</div>
+          <div class="ws-item">Mont Ventoux</div>
+          <div class="ws-label-saved">💾 Op watch</div>
+          <div class="ws-item saved">Kemmelberg</div>
+          <div class="ws-item saved dimmed">— geen —</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Twee secties</h3>
+      <p>Telefoon-routes bovenaan, opgeslagen onderaan. Duidelijk onderscheid, scrollen door één lijst.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Tabs -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="card-image">
+      <div class="watch-frame">
+        <div class="watch-screen">
+          <div style="display:flex; gap:2px; margin-bottom:4px;">
+            <div style="flex:1; background:#1a5fb4; border-radius:2px; font-size:6.5px; color:#fff; text-align:center; padding:2px 0;">📱 Telefoon</div>
+            <div style="flex:1; background:#333; border-radius:2px; font-size:6.5px; color:#888; text-align:center; padding:2px 0;">💾 Watch</div>
+          </div>
+          <div class="ws-item selected">Col du Tourmalet</div>
+          <div class="ws-item">Alpe d'Huez</div>
+          <div class="ws-item">Mont Ventoux</div>
+          <div class="ws-item">Stelvio</div>
+          <div class="ws-item">Mortirolo</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Tabs bovenaan</h3>
+      <p>Aparte pagina's voor telefoon vs watch. Scrollen per tab. Duidelijker maar kost meer knoppen.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Mixed with icons -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="card-image">
+      <div class="watch-frame">
+        <div class="watch-screen">
+          <div class="ws-title">Routes</div>
+          <div class="ws-item selected">Col du Tourmalet <span class="tag phone">📱</span></div>
+          <div class="ws-item">Alpe d'Huez <span class="tag phone">📱</span></div>
+          <div class="ws-item">Kemmelberg <span class="tag saved-tag">💾</span></div>
+          <div class="ws-item">Mont Ventoux <span class="tag phone">📱</span></div>
+          <div class="ws-item">Stelvio <span class="tag saved-tag">💾</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Gemengd met icoontje</h3>
+      <p>Alles in één lijst, icoontje geeft aan of het van telefoon of watch komt. Meest compact.</p>
+    </div>
+  </div>
+
+</div>

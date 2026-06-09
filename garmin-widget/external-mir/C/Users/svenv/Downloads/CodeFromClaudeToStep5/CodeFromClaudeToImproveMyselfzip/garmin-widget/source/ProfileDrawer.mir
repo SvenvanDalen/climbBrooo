@@ -1,0 +1,861 @@
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 1; @symbol_usingdef<0> = [Toybox,1,6,12]; @symbol_usingdef<1> = [Graphics,1,13,21]; @symbol_usingAlias = [Gfx,1,25,28]; ]
+using Toybox.Graphics as :Gfx;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 3; @symbol_classdef = [ProfileDrawer,3,6,19]; ]
+class ProfileDrawer {
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 3; ]
+    <init> {
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 5 17 ]
+        %tmp.1 = newa 6;
+        %tmp.2 = 0x99FF99;
+        %tmp.3 = dup %tmp.1;
+        %tmp.4 = aputv %tmp.3 0 %tmp.2;
+        %tmp.5 = 0xFFFF00;
+        %tmp.6 = dup %tmp.4;
+        %tmp.7 = aputv %tmp.6 1 %tmp.5;
+        %tmp.8 = 0xFFAA00;
+        %tmp.9 = dup %tmp.7;
+        %tmp.10 = aputv %tmp.9 2 %tmp.8;
+        %tmp.11 = 0xFF5500;
+        %tmp.12 = dup %tmp.10;
+        %tmp.13 = aputv %tmp.12 3 %tmp.11;
+        %tmp.14 = 0xFF0000;
+        %tmp.15 = dup %tmp.13;
+        %tmp.16 = aputv %tmp.15 4 %tmp.14;
+        %tmp.17 = 0xAA0000;
+        %tmp.18 = dup %tmp.16;
+        %tmp.19 = aputv %tmp.18 5 %tmp.17;
+        putv self :COLORS %tmp.19;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 8 17 ]
+        %tmp.20 = newa 5;
+        %tmp.21 = 0x404040;
+        %tmp.22 = dup %tmp.20;
+        %tmp.23 = aputv %tmp.22 0 %tmp.21;
+        %tmp.24 = 0xC8A050;
+        %tmp.25 = dup %tmp.23;
+        %tmp.26 = aputv %tmp.25 1 %tmp.24;
+        %tmp.27 = 0x8B4513;
+        %tmp.28 = dup %tmp.26;
+        %tmp.29 = aputv %tmp.28 2 %tmp.27;
+        %tmp.30 = 0x909090;
+        %tmp.31 = dup %tmp.29;
+        %tmp.32 = aputv %tmp.31 3 %tmp.30;
+        %tmp.33 = 0x9060C0;
+        %tmp.34 = dup %tmp.32;
+        %tmp.35 = aputv %tmp.34 4 %tmp.33;
+        putv self :SURFACE_COLORS %tmp.35;
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 3; ]
+    static
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 5; @position = 17; @symbol_constdef = [COLORS,5,17,23]; ]
+    protected
+    const COLORS;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 8; @position = 17; @symbol_constdef = [SURFACE_COLORS,8,17,31]; ]
+    protected
+    const SURFACE_COLORS;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 12; @symbol_functiondef = [drawProfile,12,13,24]; @symbol_param<0> = [dc,12,25,27]; @symbol_param<1> = [data,12,29,33]; @symbol_param<2> = [ci,12,35,37]; @symbol_param<3> = [x,12,39,40]; @symbol_param<4> = [y,12,42,43]; @symbol_param<5> = [w,12,45,46]; @symbol_param<6> = [h,12,48,49]; ]
+    function drawProfile(dc, data, ci, x, y, w, h) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 13 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop" ]
+        %totalLen.1 = local;
+        symbol [ totalLen %totalLen.1 13 12 20 ];
+        %tmp.1 = lgetv %data;
+        symbol [ data %tmp.1 13 23 27 ];
+        symbol [ climbLength %tmp.2 13 28 39 ];
+        %tmp.2 = getv %tmp.1 :climbLength;
+        %tmp.3 = lgetv %ci;
+        symbol [ ci %tmp.3 13 40 42 ];
+        %tmp.4 = agetv %tmp.2 %tmp.3;
+        lputv %totalLen.1 %tmp.4;
+        symbol [ totalLen %totalLen.1 13 12 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 14 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_8_14_37_if_stmt:
+        %tmp.5 = lgetv %totalLen.1;
+        symbol [ totalLen %tmp.5 14 12 20 ];
+        %tmp.6 = 0;
+        %tmp.7 = lte %tmp.5 %tmp.6;
+        bf %tmp.7 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_8_14_37_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_8_14_37_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_27_14_37_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 14 29 ]
+        ret ?;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_27_14_37_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_8_14_37_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_14_8_14_37_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 15 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop" ]
+        %totalElev.2 = local;
+        symbol [ totalElev %totalElev.2 15 12 21 ];
+        %tmp.8 = lgetv %data;
+        symbol [ data %tmp.8 15 24 28 ];
+        symbol [ climbElevGain %tmp.9 15 29 42 ];
+        %tmp.9 = getv %tmp.8 :climbElevGain;
+        %tmp.10 = lgetv %ci;
+        symbol [ ci %tmp.10 15 43 45 ];
+        %tmp.11 = agetv %tmp.9 %tmp.10;
+        lputv %totalElev.2 %tmp.11;
+        symbol [ totalElev %totalElev.2 15 12 21 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 16 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_8_16_45_if_stmt:
+        %tmp.12 = lgetv %totalElev.2;
+        symbol [ totalElev %tmp.12 16 12 21 ];
+        %tmp.13 = 0;
+        %tmp.14 = lte %tmp.12 %tmp.13;
+        bf %tmp.14 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_8_16_45_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_8_16_45_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_28_16_45_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 16 30 ]
+        %tmp.15 = 1;
+        lputv %totalElev.2 %tmp.15;
+        symbol [ totalElev %totalElev.2 16 30 39 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_28_16_45_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_8_16_45_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_16_8_16_45_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 17 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop" ]
+        %segCount.3 = local;
+        symbol [ segCount %segCount.3 17 12 20 ];
+        %tmp.16 = lgetv %data;
+        symbol [ data %tmp.16 17 23 27 ];
+        symbol [ segCount %tmp.17 17 28 36 ];
+        %tmp.17 = getv %tmp.16 :segCount;
+        %tmp.18 = lgetv %ci;
+        symbol [ ci %tmp.18 17 37 39 ];
+        %tmp.19 = agetv %tmp.17 %tmp.18;
+        lputv %segCount.3 %tmp.19;
+        symbol [ segCount %segCount.3 17 12 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 18 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_8_18_37_if_stmt:
+        %tmp.20 = lgetv %segCount.3;
+        symbol [ segCount %tmp.20 18 12 20 ];
+        %tmp.21 = 0;
+        %tmp.22 = lte %tmp.20 %tmp.21;
+        bf %tmp.22 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_8_18_37_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_8_18_37_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_27_18_37_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 18 29 ]
+        ret ?;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_27_18_37_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_8_18_37_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_18_8_18_37_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 20 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop" ]
+        %baseline.4 = local;
+        symbol [ baseline %baseline.4 20 12 20 ];
+        %tmp.23 = lgetv %y;
+        symbol [ y %tmp.23 20 23 24 ];
+        %tmp.24 = lgetv %h;
+        symbol [ h %tmp.24 20 27 28 ];
+        %tmp.25 = add %tmp.23 %tmp.24;
+        %tmp.26 = 3;
+        %tmp.27 = sub %tmp.25 %tmp.26;
+        lputv %baseline.4 %tmp.27;
+        symbol [ baseline %baseline.4 20 12 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 21 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop" ]
+        %stepW.5 = local;
+        symbol [ stepW %stepW.5 21 12 17 ];
+        %tmp.28 = lgetv %w;
+        symbol [ w %tmp.28 21 20 21 ];
+        symbol [ toFloat %tmp.29 21 22 29 ];
+        %tmp.29 = getv function %tmp.28 :toFloat;
+        %tmp.30 = invoke %tmp.28 %tmp.29();
+        %tmp.31 = lgetv %segCount.3;
+        symbol [ segCount %tmp.31 21 34 42 ];
+        symbol [ toFloat %tmp.32 21 43 50 ];
+        %tmp.32 = getv function %tmp.31 :toFloat;
+        %tmp.33 = invoke %tmp.31 %tmp.32();
+        %tmp.34 = div %tmp.30 %tmp.33;
+        lputv %stepW.5 %tmp.34;
+        symbol [ stepW %stepW.5 21 12 17 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 22 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop" ]
+        %cumElev.6 = local;
+        symbol [ cumElev %cumElev.6 22 12 19 ];
+        %tmp.35 = 0;
+        lputv %cumElev.6 %tmp.35;
+        symbol [ cumElev %cumElev.6 22 12 19 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 24 8 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_end" ]
+        %s.7 = local;
+        symbol [ s %s.7 24 17 18 ];
+        %tmp.36 = 0;
+        lputv %s.7 %tmp.36;
+        symbol [ s %s.7 24 17 18 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_test:
+        %tmp.37 = lgetv %s.7;
+        symbol [ s %tmp.37 24 24 25 ];
+        %tmp.38 = lgetv %segCount.3;
+        symbol [ segCount %tmp.38 24 28 36 ];
+        %tmp.39 = lt %tmp.37 %tmp.38;
+        bf %tmp.39 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 25 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %segE.8 = local;
+        symbol [ segE %segE.8 25 16 20 ];
+        %tmp.40 = lgetv %data;
+        symbol [ data %tmp.40 25 23 27 ];
+        symbol [ segElevGain %tmp.41 25 28 39 ];
+        %tmp.41 = getv %tmp.40 :segElevGain;
+        %tmp.42 = lgetv %ci;
+        symbol [ ci %tmp.42 25 40 42 ];
+        %tmp.43 = agetv %tmp.41 %tmp.42;
+        %tmp.44 = lgetv %s.7;
+        symbol [ s %tmp.44 25 44 45 ];
+        %tmp.45 = agetv %tmp.43 %tmp.44;
+        lputv %segE.8 %tmp.45;
+        symbol [ segE %segE.8 25 16 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 26 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %colorIdx.9 = local;
+        symbol [ colorIdx %colorIdx.9 26 16 24 ];
+        %tmp.46 = lgetv %data;
+        symbol [ data %tmp.46 26 27 31 ];
+        symbol [ segColor %tmp.47 26 32 40 ];
+        %tmp.47 = getv %tmp.46 :segColor;
+        %tmp.48 = lgetv %ci;
+        symbol [ ci %tmp.48 26 41 43 ];
+        %tmp.49 = agetv %tmp.47 %tmp.48;
+        %tmp.50 = lgetv %s.7;
+        symbol [ s %tmp.50 26 45 46 ];
+        %tmp.51 = agetv %tmp.49 %tmp.50;
+        lputv %colorIdx.9 %tmp.51;
+        symbol [ colorIdx %colorIdx.9 26 16 24 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 27 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_12_27_46_if_stmt:
+        %tmp.52 = lgetv %colorIdx.9;
+        symbol [ colorIdx %tmp.52 27 16 24 ];
+        %tmp.53 = 0;
+        %tmp.54 = lt %tmp.52 %tmp.53;
+        bf %tmp.54 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_12_27_46_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_12_27_46_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_30_27_46_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 27 32 ]
+        %tmp.55 = 0;
+        lputv %colorIdx.9 %tmp.55;
+        symbol [ colorIdx %colorIdx.9 27 32 40 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_30_27_46_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_12_27_46_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_27_12_27_46_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 28 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_12_28_46_if_stmt:
+        %tmp.56 = lgetv %colorIdx.9;
+        symbol [ colorIdx %tmp.56 28 16 24 ];
+        %tmp.57 = 5;
+        %tmp.58 = gt %tmp.56 %tmp.57;
+        bf %tmp.58 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_12_28_46_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_12_28_46_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_30_28_46_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 28 32 ]
+        %tmp.59 = 5;
+        lputv %colorIdx.9 %tmp.59;
+        symbol [ colorIdx %colorIdx.9 28 32 40 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_30_28_46_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_12_28_46_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_28_12_28_46_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 30 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %x1.10 = local;
+        symbol [ x1 %x1.10 30 16 18 ];
+        %tmp.60 = lgetv %x;
+        symbol [ x %tmp.60 30 21 22 ];
+        %tmp.61 = lgetv %s.7;
+        symbol [ s %tmp.61 30 26 27 ];
+        %tmp.62 = lgetv %stepW.5;
+        symbol [ stepW %tmp.62 30 30 35 ];
+        %tmp.63 = mul %tmp.61 %tmp.62;
+        symbol [ toNumber %tmp.64 30 37 45 ];
+        %tmp.64 = getv function %tmp.63 :toNumber;
+        %tmp.65 = invoke %tmp.63 %tmp.64();
+        %tmp.66 = add %tmp.60 %tmp.65;
+        lputv %x1.10 %tmp.66;
+        symbol [ x1 %x1.10 30 16 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 31 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %x2.11 = local;
+        symbol [ x2 %x2.11 31 16 18 ];
+        %tmp.67 = lgetv %x;
+        symbol [ x %tmp.67 31 21 22 ];
+        %tmp.68 = lgetv %s.7;
+        symbol [ s %tmp.68 31 27 28 ];
+        %tmp.69 = 1;
+        %tmp.70 = add %tmp.68 %tmp.69;
+        %tmp.71 = lgetv %stepW.5;
+        symbol [ stepW %tmp.71 31 36 41 ];
+        %tmp.72 = mul %tmp.70 %tmp.71;
+        symbol [ toNumber %tmp.73 31 43 51 ];
+        %tmp.73 = getv function %tmp.72 :toNumber;
+        %tmp.74 = invoke %tmp.72 %tmp.73();
+        %tmp.75 = add %tmp.67 %tmp.74;
+        lputv %x2.11 %tmp.75;
+        symbol [ x2 %x2.11 31 16 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 32 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_12_32_41_if_stmt:
+        %tmp.76 = lgetv %x2.11;
+        symbol [ x2 %tmp.76 32 16 18 ];
+        %tmp.77 = lgetv %x1.10;
+        symbol [ x1 %tmp.77 32 22 24 ];
+        %tmp.78 = lte %tmp.76 %tmp.77;
+        bf %tmp.78 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_12_32_41_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_12_32_41_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_26_32_41_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 32 28 ]
+        %tmp.79 = lgetv %x1.10;
+        symbol [ x1 %tmp.79 32 33 35 ];
+        %tmp.80 = 1;
+        %tmp.81 = add %tmp.79 %tmp.80;
+        lputv %x2.11 %tmp.81;
+        symbol [ x2 %x2.11 32 28 30 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_26_32_41_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_12_32_41_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_32_12_32_41_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 34 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %y1.12 = local;
+        symbol [ y1 %y1.12 34 16 18 ];
+        %tmp.82 = lgetv %baseline.4;
+        symbol [ baseline %tmp.82 34 21 29 ];
+        %tmp.83 = lgetv %cumElev.6;
+        symbol [ cumElev %tmp.83 34 34 41 ];
+        %tmp.84 = lgetv %h;
+        symbol [ h %tmp.84 34 44 45 ];
+        %tmp.85 = mul %tmp.83 %tmp.84;
+        %tmp.86 = lgetv %totalElev.2;
+        symbol [ totalElev %tmp.86 34 49 58 ];
+        %tmp.87 = div %tmp.85 %tmp.86;
+        %tmp.88 = sub %tmp.82 %tmp.87;
+        lputv %y1.12 %tmp.88;
+        symbol [ y1 %y1.12 34 16 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 35 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %y2.13 = local;
+        symbol [ y2 %y2.13 35 16 18 ];
+        %tmp.89 = lgetv %baseline.4;
+        symbol [ baseline %tmp.89 35 21 29 ];
+        %tmp.90 = lgetv %cumElev.6;
+        symbol [ cumElev %tmp.90 35 35 42 ];
+        %tmp.91 = lgetv %segE.8;
+        symbol [ segE %tmp.91 35 45 49 ];
+        %tmp.92 = add %tmp.90 %tmp.91;
+        %tmp.93 = lgetv %h;
+        symbol [ h %tmp.93 35 53 54 ];
+        %tmp.94 = mul %tmp.92 %tmp.93;
+        %tmp.95 = lgetv %totalElev.2;
+        symbol [ totalElev %tmp.95 35 58 67 ];
+        %tmp.96 = div %tmp.94 %tmp.95;
+        %tmp.97 = sub %tmp.89 %tmp.96;
+        lputv %y2.13 %tmp.97;
+        symbol [ y2 %y2.13 35 16 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 37 12 ]
+        %tmp.98 = lgetv %dc;
+        symbol [ dc %tmp.98 37 12 14 ];
+        symbol [ setColor %tmp.99 37 15 23 ];
+        %tmp.99 = getv function %tmp.98 :setColor;
+        symbol [ COLORS %tmp.101 37 24 30 ];
+        %tmp.101 = getv ? :COLORS;
+        %tmp.102 = lgetv %colorIdx.9;
+        symbol [ colorIdx %tmp.102 37 31 39 ];
+        %tmp.103 = agetv %tmp.101 %tmp.102;
+        symbol [ Gfx %tmp.104 37 42 45 ];
+        %tmp.104 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.105 37 46 63 ];
+        %tmp.105 = getv %tmp.104 :COLOR_TRANSPARENT;
+        invoke %tmp.98 %tmp.99(%tmp.103, %tmp.105);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 38 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop" ]
+        %width.14 = local;
+        symbol [ width %width.14 38 16 21 ];
+        %tmp.106 = lgetv %x2.11;
+        symbol [ x2 %tmp.106 38 24 26 ];
+        %tmp.107 = lgetv %x1.10;
+        symbol [ x1 %tmp.107 38 29 31 ];
+        %tmp.108 = sub %tmp.106 %tmp.107;
+        lputv %width.14 %tmp.108;
+        symbol [ width %width.14 38 16 21 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 39 12 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_end" ]
+        %px.15 = local;
+        symbol [ px %px.15 39 21 23 ];
+        %tmp.109 = 0;
+        lputv %px.15 %tmp.109;
+        symbol [ px %px.15 39 21 23 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_test:
+        %tmp.110 = lgetv %px.15;
+        symbol [ px %tmp.110 39 29 31 ];
+        %tmp.111 = lgetv %width.14;
+        symbol [ width %tmp.111 39 34 39 ];
+        %tmp.112 = lt %tmp.110 %tmp.111;
+        bf %tmp.112 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_47_45_12_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 40 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_47_45_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_47_45_12_stop" ]
+        %interp.16 = local;
+        symbol [ interp %interp.16 40 20 26 ];
+        %tmp.113 = lgetv %px.15;
+        symbol [ px %tmp.113 40 29 31 ];
+        symbol [ toFloat %tmp.114 40 32 39 ];
+        %tmp.114 = getv function %tmp.113 :toFloat;
+        %tmp.115 = invoke %tmp.113 %tmp.114();
+        %tmp.116 = lgetv %width.14;
+        symbol [ width %tmp.116 40 44 49 ];
+        symbol [ toFloat %tmp.117 40 50 57 ];
+        %tmp.117 = getv function %tmp.116 :toFloat;
+        %tmp.118 = invoke %tmp.116 %tmp.117();
+        %tmp.119 = div %tmp.115 %tmp.118;
+        lputv %interp.16 %tmp.119;
+        symbol [ interp %interp.16 40 20 26 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 41 16 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_47_45_12_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_47_45_12_stop" ]
+        %py.17 = local;
+        symbol [ py %py.17 41 20 22 ];
+        %tmp.120 = lgetv %y1.12;
+        symbol [ y1 %tmp.120 41 26 28 ];
+        %tmp.121 = lgetv %y2.13;
+        symbol [ y2 %tmp.121 41 33 35 ];
+        %tmp.122 = lgetv %y1.12;
+        symbol [ y1 %tmp.122 41 38 40 ];
+        %tmp.123 = sub %tmp.121 %tmp.122;
+        %tmp.124 = lgetv %interp.16;
+        symbol [ interp %tmp.124 41 44 50 ];
+        %tmp.125 = mul %tmp.123 %tmp.124;
+        %tmp.126 = add %tmp.120 %tmp.125;
+        symbol [ toNumber %tmp.127 41 53 61 ];
+        %tmp.127 = getv function %tmp.126 :toNumber;
+        %tmp.128 = invoke %tmp.126 %tmp.127();
+        lputv %py.17 %tmp.128;
+        symbol [ py %py.17 41 20 22 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 42 16 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_16_42_38_if_stmt:
+        %tmp.129 = lgetv %py.17;
+        symbol [ py %tmp.129 42 20 22 ];
+        %tmp.130 = lgetv %y;
+        symbol [ y %tmp.130 42 25 26 ];
+        %tmp.131 = lt %tmp.129 %tmp.130;
+        bf %tmp.131 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_16_42_38_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_16_42_38_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_28_42_38_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 42 30 ]
+        %tmp.132 = lgetv %y;
+        symbol [ y %tmp.132 42 35 36 ];
+        lputv %py.17 %tmp.132;
+        symbol [ py %py.17 42 30 32 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_28_42_38_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_16_42_38_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_42_16_42_38_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 43 16 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_16_43_52_if_stmt:
+        %tmp.133 = lgetv %py.17;
+        symbol [ py %tmp.133 43 20 22 ];
+        %tmp.134 = lgetv %baseline.4;
+        symbol [ baseline %tmp.134 43 25 33 ];
+        %tmp.135 = gt %tmp.133 %tmp.134;
+        bf %tmp.135 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_16_43_52_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_16_43_52_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_35_43_52_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 43 37 ]
+        %tmp.136 = lgetv %baseline.4;
+        symbol [ baseline %tmp.136 43 42 50 ];
+        lputv %py.17 %tmp.136;
+        symbol [ py %py.17 43 37 39 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_35_43_52_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_16_43_52_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_43_16_43_52_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 44 16 ]
+        %tmp.137 = lgetv %dc;
+        symbol [ dc %tmp.137 44 16 18 ];
+        symbol [ fillRectangle %tmp.138 44 19 32 ];
+        %tmp.138 = getv function %tmp.137 :fillRectangle;
+        %tmp.139 = lgetv %x1.10;
+        symbol [ x1 %tmp.139 44 33 35 ];
+        %tmp.140 = lgetv %px.15;
+        symbol [ px %tmp.140 44 38 40 ];
+        %tmp.141 = add %tmp.139 %tmp.140;
+        %tmp.142 = lgetv %py.17;
+        symbol [ py %tmp.142 44 42 44 ];
+        %tmp.143 = 1;
+        %tmp.144 = lgetv %baseline.4;
+        symbol [ baseline %tmp.144 44 49 57 ];
+        %tmp.145 = lgetv %py.17;
+        symbol [ py %tmp.145 44 60 62 ];
+        %tmp.146 = sub %tmp.144 %tmp.145;
+        invoke %tmp.137 %tmp.138(%tmp.141, %tmp.142, %tmp.143, %tmp.146);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_47_45_12_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 39 ]
+        %tmp.149 = lgetv %px.15;
+        symbol [ px %tmp.149 39 41 43 ];
+        %tmp.150 = add %tmp.149 1;
+        lputv %px.15 %tmp.150;
+        symbol [ px %px.15 39 41 43 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_39_12_45_12_for_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 46 12 ]
+        %tmp.151 = lgetv %dc;
+        symbol [ dc %tmp.151 46 12 14 ];
+        symbol [ setColor %tmp.152 46 15 23 ];
+        %tmp.152 = getv function %tmp.151 :setColor;
+        symbol [ Gfx %tmp.153 46 24 27 ];
+        %tmp.153 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.154 46 28 39 ];
+        %tmp.154 = getv %tmp.153 :COLOR_BLACK;
+        symbol [ Gfx %tmp.155 46 41 44 ];
+        %tmp.155 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.156 46 45 62 ];
+        %tmp.156 = getv %tmp.155 :COLOR_TRANSPARENT;
+        invoke %tmp.151 %tmp.152(%tmp.154, %tmp.156);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 47 12 ]
+        %tmp.157 = lgetv %dc;
+        symbol [ dc %tmp.157 47 12 14 ];
+        symbol [ drawLine %tmp.158 47 15 23 ];
+        %tmp.158 = getv function %tmp.157 :drawLine;
+        %tmp.159 = lgetv %x1.10;
+        symbol [ x1 %tmp.159 47 24 26 ];
+        %tmp.160 = lgetv %y1.12;
+        symbol [ y1 %tmp.160 47 28 30 ];
+        %tmp.161 = lgetv %x2.11;
+        symbol [ x2 %tmp.161 47 32 34 ];
+        %tmp.162 = lgetv %y2.13;
+        symbol [ y2 %tmp.162 47 36 38 ];
+        invoke %tmp.157 %tmp.158(%tmp.159, %tmp.160, %tmp.161, %tmp.162);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 48 12 ]
+        %tmp.163 = lgetv %cumElev.6;
+        symbol [ cumElev %tmp.163 48 12 19 ];
+        %tmp.164 = lgetv %segE.8;
+        symbol [ segE %tmp.164 48 23 27 ];
+        %tmp.165 = add %tmp.163 %tmp.164;
+        lputv %cumElev.6 %tmp.165;
+        symbol [ cumElev %cumElev.6 48 12 19 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_43_49_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 24 ]
+        %tmp.168 = lgetv %s.7;
+        symbol [ s %tmp.168 24 38 39 ];
+        %tmp.169 = add %tmp.168 1;
+        lputv %s.7 %tmp.169;
+        symbol [ s %s.7 24 38 39 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_24_8_49_8_for_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 51 8 ]
+        %tmp.170 = lgetv %dc;
+        symbol [ dc %tmp.170 51 8 10 ];
+        symbol [ setColor %tmp.171 51 11 19 ];
+        %tmp.171 = getv function %tmp.170 :setColor;
+        symbol [ Gfx %tmp.172 51 20 23 ];
+        %tmp.172 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.173 51 24 35 ];
+        %tmp.173 = getv %tmp.172 :COLOR_BLACK;
+        symbol [ Gfx %tmp.174 51 37 40 ];
+        %tmp.174 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.175 51 41 58 ];
+        %tmp.175 = getv %tmp.174 :COLOR_TRANSPARENT;
+        invoke %tmp.170 %tmp.171(%tmp.173, %tmp.175);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 52 8 ]
+        %tmp.176 = lgetv %dc;
+        symbol [ dc %tmp.176 52 8 10 ];
+        symbol [ drawLine %tmp.177 52 11 19 ];
+        %tmp.177 = getv function %tmp.176 :drawLine;
+        %tmp.178 = lgetv %x;
+        symbol [ x %tmp.178 52 20 21 ];
+        %tmp.179 = lgetv %baseline.4;
+        symbol [ baseline %tmp.179 52 23 31 ];
+        %tmp.180 = lgetv %x;
+        symbol [ x %tmp.180 52 33 34 ];
+        %tmp.181 = lgetv %w;
+        symbol [ w %tmp.181 52 37 38 ];
+        %tmp.182 = add %tmp.180 %tmp.181;
+        %tmp.183 = lgetv %baseline.4;
+        symbol [ baseline %tmp.183 52 40 48 ];
+        invoke %tmp.176 %tmp.177(%tmp.178, %tmp.179, %tmp.182, %tmp.183);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_12_51_53_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 55; @symbol_functiondef = [drawSurfaceBar,55,13,27]; @symbol_param<0> = [dc,55,28,30]; @symbol_param<1> = [data,55,32,36]; @symbol_param<2> = [ci,55,38,40]; @symbol_param<3> = [barX,55,42,46]; @symbol_param<4> = [barY,55,48,52]; @symbol_param<5> = [barWidth,55,54,62]; ]
+    function drawSurfaceBar(dc, data, ci, barX, barY, barWidth) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 56 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_stop" ]
+        %segCnt.1 = local;
+        symbol [ segCnt %segCnt.1 56 12 18 ];
+        %tmp.1 = lgetv %data;
+        symbol [ data %tmp.1 56 21 25 ];
+        symbol [ segCount %tmp.2 56 26 34 ];
+        %tmp.2 = getv %tmp.1 :segCount;
+        %tmp.3 = lgetv %ci;
+        symbol [ ci %tmp.3 56 35 37 ];
+        %tmp.4 = agetv %tmp.2 %tmp.3;
+        lputv %segCnt.1 %tmp.4;
+        symbol [ segCnt %segCnt.1 56 12 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 57 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_8_57_35_if_stmt:
+        %tmp.5 = lgetv %segCnt.1;
+        symbol [ segCnt %tmp.5 57 12 18 ];
+        %tmp.6 = 0;
+        %tmp.7 = lte %tmp.5 %tmp.6;
+        bf %tmp.7 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_8_57_35_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_8_57_35_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_25_57_35_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 57 27 ]
+        ret ?;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_25_57_35_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_8_57_35_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_57_8_57_35_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 58 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_stop" ]
+        %allUnknown.2 = local;
+        symbol [ allUnknown %allUnknown.2 58 12 22 ];
+        %tmp.8 = true;
+        lputv %allUnknown.2 %tmp.8;
+        symbol [ allUnknown %allUnknown.2 58 12 22 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 59 8 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_end" ]
+        %s.3 = local;
+        symbol [ s %s.3 59 17 18 ];
+        %tmp.9 = 0;
+        lputv %s.3 %tmp.9;
+        symbol [ s %s.3 59 17 18 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_test:
+        %tmp.10 = lgetv %s.3;
+        symbol [ s %tmp.10 59 24 25 ];
+        %tmp.11 = lgetv %segCnt.1;
+        symbol [ segCnt %tmp.11 59 28 34 ];
+        %tmp.12 = lt %tmp.10 %tmp.11;
+        bf %tmp.12 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_41_61_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 60 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_12_60_71_if_stmt:
+        %tmp.13 = lgetv %data;
+        symbol [ data %tmp.13 60 16 20 ];
+        symbol [ segSurf %tmp.14 60 21 28 ];
+        %tmp.14 = getv %tmp.13 :segSurf;
+        %tmp.15 = lgetv %ci;
+        symbol [ ci %tmp.15 60 29 31 ];
+        %tmp.16 = agetv %tmp.14 %tmp.15;
+        %tmp.17 = lgetv %s.3;
+        symbol [ s %tmp.17 60 33 34 ];
+        %tmp.18 = agetv %tmp.16 %tmp.17;
+        %tmp.19 = 5;
+        %tmp.20 = ne %tmp.18 %tmp.19;
+        bf %tmp.20 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_12_60_71_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_12_60_71_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_42_60_71_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 60 44 ]
+        %tmp.21 = false;
+        lputv %allUnknown.2 %tmp.21;
+        symbol [ allUnknown %allUnknown.2 60 44 54 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 60 64 ]
+        goto break @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_42_60_71_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_12_60_71_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_60_12_60_71_if_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_41_61_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 59 ]
+        %tmp.24 = lgetv %s.3;
+        symbol [ s %tmp.24 59 36 37 ];
+        %tmp.25 = add %tmp.24 1;
+        lputv %s.3 %tmp.25;
+        symbol [ s %s.3 59 36 37 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_59_8_61_8_for_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 62 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_8_62_34_if_stmt:
+        %tmp.26 = lgetv %allUnknown.2;
+        symbol [ allUnknown %tmp.26 62 12 22 ];
+        bf %tmp.26 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_8_62_34_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_8_62_34_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_24_62_34_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 62 26 ]
+        ret ?;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_24_62_34_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_8_62_34_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_62_8_62_34_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 64 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_stop" ]
+        %segW.4 = local;
+        symbol [ segW %segW.4 64 12 16 ];
+        %tmp.27 = lgetv %barWidth;
+        symbol [ barWidth %tmp.27 64 19 27 ];
+        %tmp.28 = lgetv %segCnt.1;
+        symbol [ segCnt %tmp.28 64 30 36 ];
+        %tmp.29 = div %tmp.27 %tmp.28;
+        lputv %segW.4 %tmp.29;
+        symbol [ segW %segW.4 64 12 16 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 65 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_8_65_34_if_stmt:
+        %tmp.30 = lgetv %segW.4;
+        symbol [ segW %tmp.30 65 12 16 ];
+        %tmp.31 = 1;
+        %tmp.32 = lt %tmp.30 %tmp.31;
+        bf %tmp.32 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_8_65_34_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_8_65_34_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_22_65_34_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 65 24 ]
+        %tmp.33 = 1;
+        lputv %segW.4 %tmp.33;
+        symbol [ segW %segW.4 65 24 28 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_22_65_34_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_8_65_34_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_65_8_65_34_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 66 8 ]
+        for @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_test @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_incr @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_init:
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_begin" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_end" ]
+        %s.5 = local;
+        symbol [ s %s.5 66 17 18 ];
+        %tmp.34 = 0;
+        lputv %s.5 %tmp.34;
+        symbol [ s %s.5 66 17 18 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_test:
+        %tmp.35 = lgetv %s.5;
+        symbol [ s %tmp.35 66 24 25 ];
+        %tmp.36 = lgetv %segCnt.1;
+        symbol [ segCnt %tmp.36 66 28 34 ];
+        %tmp.37 = lt %tmp.35 %tmp.36;
+        bf %tmp.37 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_begin:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 67 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_stop" ]
+        %surf.6 = local;
+        symbol [ surf %surf.6 67 16 20 ];
+        %tmp.38 = lgetv %data;
+        symbol [ data %tmp.38 67 23 27 ];
+        symbol [ segSurf %tmp.39 67 28 35 ];
+        %tmp.39 = getv %tmp.38 :segSurf;
+        %tmp.40 = lgetv %ci;
+        symbol [ ci %tmp.40 67 36 38 ];
+        %tmp.41 = agetv %tmp.39 %tmp.40;
+        %tmp.42 = lgetv %s.5;
+        symbol [ s %tmp.42 67 40 41 ];
+        %tmp.43 = agetv %tmp.41 %tmp.42;
+        lputv %surf.6 %tmp.43;
+        symbol [ surf %surf.6 67 16 20 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 68 12 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_12_68_71_if_stmt:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_16_68_56_begin:
+        %tmp.44 = lgetv %surf.6;
+        symbol [ surf %tmp.44 68 16 20 ];
+        %tmp.45 = 0;
+        %tmp.46 = lt %tmp.44 %tmp.45;
+        bt %tmp.46 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_12_68_71_if_true;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_28_68_56_false:
+        %tmp.47 = lgetv %surf.6;
+        symbol [ surf %tmp.47 68 28 32 ];
+        symbol [ SURFACE_COLORS %tmp.49 68 36 50 ];
+        %tmp.49 = getv ? :SURFACE_COLORS;
+        symbol [ size %tmp.50 68 51 55 ];
+        %tmp.50 = getv function %tmp.49 :size;
+        %tmp.51 = invoke %tmp.49 %tmp.50();
+        %tmp.52 = gte %tmp.47 %tmp.51;
+        push %tmp.52;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_28_68_56_end:
+        %tmp.53 = phi [%tmp.46 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_16_68_56_begin] [%tmp.52 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_28_68_56_false] [%tmp.53 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_28_68_56_end];
+        bf %tmp.53 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_12_68_71_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_12_68_71_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_59_68_71_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 68 61 ]
+        goto break @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_incr;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_59_68_71_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_12_68_71_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_68_12_68_71_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 69 12 ]
+        %tmp.54 = lgetv %dc;
+        symbol [ dc %tmp.54 69 12 14 ];
+        symbol [ setColor %tmp.55 69 15 23 ];
+        %tmp.55 = getv function %tmp.54 :setColor;
+        symbol [ SURFACE_COLORS %tmp.57 69 24 38 ];
+        %tmp.57 = getv ? :SURFACE_COLORS;
+        %tmp.58 = lgetv %surf.6;
+        symbol [ surf %tmp.58 69 39 43 ];
+        %tmp.59 = agetv %tmp.57 %tmp.58;
+        symbol [ Gfx %tmp.60 69 46 49 ];
+        %tmp.60 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.61 69 50 67 ];
+        %tmp.61 = getv %tmp.60 :COLOR_TRANSPARENT;
+        invoke %tmp.54 %tmp.55(%tmp.59, %tmp.61);
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 70 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_stop" ]
+        %bx.7 = local;
+        symbol [ bx %bx.7 70 16 18 ];
+        %tmp.62 = lgetv %barX;
+        symbol [ barX %tmp.62 70 21 25 ];
+        %tmp.63 = lgetv %s.5;
+        symbol [ s %tmp.63 70 28 29 ];
+        %tmp.64 = lgetv %segW.4;
+        symbol [ segW %tmp.64 70 32 36 ];
+        %tmp.65 = mul %tmp.63 %tmp.64;
+        %tmp.66 = add %tmp.62 %tmp.65;
+        lputv %bx.7 %tmp.66;
+        symbol [ bx %bx.7 70 16 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 71 12 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_stop" ]
+        %bw.8 = local;
+        symbol [ bw %bw.8 71 16 18 ];
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_begin:
+        %tmp.67 = lgetv %s.5;
+        symbol [ s %tmp.67 71 22 23 ];
+        %tmp.68 = lgetv %segCnt.1;
+        symbol [ segCnt %tmp.68 71 27 33 ];
+        %tmp.69 = 1;
+        %tmp.70 = sub %tmp.68 %tmp.69;
+        %tmp.71 = eq %tmp.67 %tmp.70;
+        bf %tmp.71 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_true:
+        %tmp.72 = lgetv %barX;
+        symbol [ barX %tmp.72 71 42 46 ];
+        %tmp.73 = lgetv %barWidth;
+        symbol [ barWidth %tmp.73 71 49 57 ];
+        %tmp.74 = add %tmp.72 %tmp.73;
+        %tmp.75 = lgetv %bx.7;
+        symbol [ bx %tmp.75 71 60 62 ];
+        %tmp.76 = sub %tmp.74 %tmp.75;
+        push %tmp.76;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_else_false:
+        %tmp.77 = lgetv %segW.4;
+        symbol [ segW %tmp.77 71 66 70 ];
+        push %tmp.77;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_end:
+        %tmp.78 = phi [%tmp.71 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_begin] [%tmp.76 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_true] [%tmp.77 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_else_false] [%tmp.78 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_71_21_71_66_end];
+        lputv %bw.8 %tmp.78;
+        symbol [ bw %bw.8 71 16 18 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 72 12 ]
+        %tmp.79 = lgetv %dc;
+        symbol [ dc %tmp.79 72 12 14 ];
+        symbol [ fillRectangle %tmp.80 72 15 28 ];
+        %tmp.80 = getv function %tmp.79 :fillRectangle;
+        %tmp.81 = lgetv %bx.7;
+        symbol [ bx %tmp.81 72 29 31 ];
+        %tmp.82 = lgetv %barY;
+        symbol [ barY %tmp.82 72 33 37 ];
+        %tmp.83 = lgetv %bw.8;
+        symbol [ bw %tmp.83 72 39 41 ];
+        %tmp.84 = 5;
+        invoke %tmp.79 %tmp.80(%tmp.81, %tmp.82, %tmp.83, %tmp.84);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_41_73_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_incr:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc" 66 ]
+        %tmp.87 = lgetv %s.5;
+        symbol [ s %tmp.87 66 36 37 ];
+        %tmp.88 = add %tmp.87 1;
+        lputv %s.5 %tmp.88;
+        symbol [ s %s.5 66 36 37 ];
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_test;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_66_8_73_8_for_end:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_ProfileDrawer_mc_55_64_74_4_stop:
+    }
+}
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\ProfileDrawer.mc"; @line = 1; ]
+<init> {
+}

@@ -1,0 +1,291 @@
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 1; @symbol_usingdef<0> = [Toybox,1,6,12]; @symbol_usingdef<1> = [System,1,13,19]; @symbol_usingAlias = [Sys,1,23,26]; ]
+using Toybox.System as :Sys;
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 3; @symbol_classdef = [PhoneRouteIndex,3,6,21]; ]
+class PhoneRouteIndex {
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 3; ]
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 3; ]
+    static
+    <init> {
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 5; @position = 8; @symbol_vardef = [routes,5,8,14]; ]
+    var routes;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 6; @position = 8; @symbol_vardef = [received,6,8,16]; ]
+    var received;
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 8; @symbol_functiondef = [initialize,8,13,23]; ]
+    function initialize() as Void {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_8_26_11_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 9 8 ]
+        %tmp.1 = newa 0;
+        symbol [ routes ? 9 8 14 ];
+        putv self :routes %tmp.1;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 10 8 ]
+        %tmp.2 = false;
+        symbol [ received ? 10 8 16 ];
+        putv self :received %tmp.2;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_8_26_11_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 13; @symbol_functiondef = [populate,13,13,21]; @symbol_param<0> = [routeList,13,22,31]; ]
+    function populate(routeList) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_13_33_21_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 14 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_8_18_8_if_stmt:
+        %tmp.1 = lgetv %routeList;
+        symbol [ routeList %tmp.1 14 12 21 ];
+        symbol [ Toybox %tmp.3 14 33 39 ];
+        %tmp.3 = getv ? :Toybox;
+        symbol [ Lang %tmp.4 14 40 44 ];
+        %tmp.4 = getv %tmp.3 :Lang;
+        symbol [ Array %tmp.5 14 45 50 ];
+        %tmp.5 = getv %tmp.4 :Array;
+        %tmp.6 = isa %tmp.1 %tmp.5;
+        bf %tmp.6 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_8_18_8_if_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_8_18_8_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_52_16_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 15 12 ]
+        %tmp.7 = lgetv %routeList;
+        symbol [ routeList %tmp.7 15 21 30 ];
+        %tmp.8 = as %tmp.7 { (Toybox.Lang.Array) };
+        symbol [ routes ? 15 12 18 ];
+        putv self :routes %tmp.8;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_52_16_8_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_8_18_8_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_8_18_8_if_else_false:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_16_15_18_8_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 17 12 ]
+        %tmp.9 = newa 0;
+        symbol [ routes ? 17 12 18 ];
+        putv self :routes %tmp.9;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_16_15_18_8_stop:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_14_8_18_8_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 19 8 ]
+        %tmp.10 = true;
+        symbol [ received ? 19 8 16 ];
+        putv self :received %tmp.10;
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 20 8 ]
+        symbol [ Sys %tmp.11 20 8 11 ];
+        %tmp.11 = getm $.Toybox.System;
+        symbol [ println %tmp.12 20 12 19 ];
+        %tmp.12 = getv function %tmp.11 :println;
+        %tmp.13 = "PhoneRouteIndex: ";
+        symbol [ routes %tmp.15 20 42 48 ];
+        %tmp.15 = getv ? :routes;
+        symbol [ size %tmp.16 20 49 53 ];
+        %tmp.16 = getv function %tmp.15 :size;
+        %tmp.17 = invoke %tmp.15 %tmp.16();
+        %tmp.18 = add %tmp.13 %tmp.17;
+        %tmp.19 = " routes";
+        %tmp.20 = add %tmp.18 %tmp.19;
+        invoke %tmp.11 %tmp.12(%tmp.20);
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_13_33_21_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 23; @symbol_functiondef = [getCount,23,13,21]; ]
+    function getCount() {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_23_24_23_48_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 23 26 ]
+        symbol [ routes %tmp.2 23 33 39 ];
+        %tmp.2 = getv ? :routes;
+        symbol [ size %tmp.3 23 40 44 ];
+        %tmp.3 = getv function %tmp.2 :size;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        ret %tmp.4;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_23_24_23_48_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 25; @symbol_functiondef = [getId,25,13,18]; @symbol_param<0> = [i,25,19,20]; ]
+    function getId(i) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_25_22_28_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 26 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_25_22_28_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_25_22_28_4_stop" ]
+        %r.1 = local;
+        symbol [ r %r.1 26 12 13 ];
+        symbol [ routes %tmp.2 26 16 22 ];
+        %tmp.2 = getv ? :routes;
+        %tmp.3 = lgetv %i;
+        symbol [ i %tmp.3 26 23 24 ];
+        %tmp.4 = agetv %tmp.2 %tmp.3;
+        lputv %r.1 %tmp.4;
+        symbol [ r %r.1 26 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 27 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_begin:
+        %tmp.5 = lgetv %r.1;
+        symbol [ r %tmp.5 27 16 17 ];
+        symbol [ Toybox %tmp.7 27 29 35 ];
+        %tmp.7 = getv ? :Toybox;
+        symbol [ Lang %tmp.8 27 36 40 ];
+        %tmp.8 = getv %tmp.7 :Lang;
+        symbol [ Dictionary %tmp.9 27 41 51 ];
+        %tmp.9 = getv %tmp.8 :Dictionary;
+        %tmp.10 = isa %tmp.5 %tmp.9;
+        bf %tmp.10 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_true:
+        %tmp.11 = lgetv %r.1;
+        symbol [ r %tmp.11 27 55 56 ];
+        %tmp.12 = as %tmp.11 { (Toybox.Lang.Dictionary) };
+        symbol [ get %tmp.13 27 57 60 ];
+        %tmp.13 = getv function %tmp.12 :get;
+        %tmp.14 = "id";
+        %tmp.15 = invoke %tmp.12 %tmp.13(%tmp.14);
+        push %tmp.15;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_else_false:
+        %tmp.16 = null;
+        push %tmp.16;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_end:
+        %tmp.17 = phi [%tmp.10 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_begin] [%tmp.15 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_true] [%tmp.16 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_else_false] [%tmp.17 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_27_15_27_69_end];
+        ret %tmp.17;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_25_22_28_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 30; @symbol_functiondef = [getName,30,13,20]; @symbol_param<0> = [i,30,21,22]; ]
+    function getName(i) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_30_24_35_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 31 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_30_24_35_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_30_24_35_4_stop" ]
+        %r.1 = local;
+        symbol [ r %r.1 31 12 13 ];
+        symbol [ routes %tmp.2 31 16 22 ];
+        %tmp.2 = getv ? :routes;
+        %tmp.3 = lgetv %i;
+        symbol [ i %tmp.3 31 23 24 ];
+        %tmp.4 = agetv %tmp.2 %tmp.3;
+        lputv %r.1 %tmp.4;
+        symbol [ r %r.1 31 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 32 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_8_32_70_if_stmt:
+        %tmp.5 = lgetv %r.1;
+        symbol [ r %tmp.5 32 14 15 ];
+        symbol [ Toybox %tmp.7 32 27 33 ];
+        %tmp.7 = getv ? :Toybox;
+        symbol [ Lang %tmp.8 32 34 38 ];
+        %tmp.8 = getv %tmp.7 :Lang;
+        symbol [ Dictionary %tmp.9 32 39 49 ];
+        %tmp.9 = getv %tmp.8 :Dictionary;
+        %tmp.10 = isa %tmp.5 %tmp.9;
+        %tmp.11 = not %tmp.10;
+        bf %tmp.11 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_8_32_70_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_8_32_70_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_52_32_70_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 32 54 ]
+        %tmp.12 = "Route";
+        ret %tmp.12;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_52_32_70_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_8_32_70_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_32_8_32_70_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 33 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_30_24_35_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_30_24_35_4_stop" ]
+        %n.2 = local;
+        symbol [ n %n.2 33 12 13 ];
+        %tmp.13 = lgetv %r.1;
+        symbol [ r %tmp.13 33 16 17 ];
+        symbol [ get %tmp.14 33 18 21 ];
+        %tmp.14 = getv function %tmp.13 :get;
+        %tmp.15 = "name";
+        %tmp.16 = invoke %tmp.13 %tmp.14(%tmp.15);
+        lputv %n.2 %tmp.16;
+        symbol [ n %n.2 33 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 34 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_begin:
+        %tmp.17 = lgetv %n.2;
+        symbol [ n %tmp.17 34 16 17 ];
+        symbol [ Toybox %tmp.19 34 29 35 ];
+        %tmp.19 = getv ? :Toybox;
+        symbol [ Lang %tmp.20 34 36 40 ];
+        %tmp.20 = getv %tmp.19 :Lang;
+        symbol [ String %tmp.21 34 41 47 ];
+        %tmp.21 = getv %tmp.20 :String;
+        %tmp.22 = isa %tmp.17 %tmp.21;
+        bf %tmp.22 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_true:
+        %tmp.23 = lgetv %n.2;
+        symbol [ n %tmp.23 34 51 52 ];
+        %tmp.24 = as %tmp.23 { (Toybox.Lang.String) };
+        push %tmp.24;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_else_false:
+        %tmp.25 = "Route";
+        push %tmp.25;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_end:
+        %tmp.26 = phi [%tmp.22 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_begin] [%tmp.24 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_true] [%tmp.25 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_else_false] [%tmp.26 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_34_15_34_55_end];
+        ret %tmp.26;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_30_24_35_4_stop:
+    }
+    [ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 37; @symbol_functiondef = [getClimbCount,37,13,26]; @symbol_param<0> = [i,37,27,28]; ]
+    function getClimbCount(i) {
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_37_30_42_4_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 38 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_37_30_42_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_37_30_42_4_stop" ]
+        %r.1 = local;
+        symbol [ r %r.1 38 12 13 ];
+        symbol [ routes %tmp.2 38 16 22 ];
+        %tmp.2 = getv ? :routes;
+        %tmp.3 = lgetv %i;
+        symbol [ i %tmp.3 38 23 24 ];
+        %tmp.4 = agetv %tmp.2 %tmp.3;
+        lputv %r.1 %tmp.4;
+        symbol [ r %r.1 38 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 39 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_8_39_64_if_stmt:
+        %tmp.5 = lgetv %r.1;
+        symbol [ r %tmp.5 39 14 15 ];
+        symbol [ Toybox %tmp.7 39 27 33 ];
+        %tmp.7 = getv ? :Toybox;
+        symbol [ Lang %tmp.8 39 34 38 ];
+        %tmp.8 = getv %tmp.7 :Lang;
+        symbol [ Dictionary %tmp.9 39 39 49 ];
+        %tmp.9 = getv %tmp.8 :Dictionary;
+        %tmp.10 = isa %tmp.5 %tmp.9;
+        %tmp.11 = not %tmp.10;
+        bf %tmp.11 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_8_39_64_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_8_39_64_if_true:
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_52_39_64_start:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 39 54 ]
+        %tmp.12 = 0;
+        ret %tmp.12;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_52_39_64_stop:
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_8_39_64_if_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_39_8_39_64_if_end:
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 40 8 ]
+        [ "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_37_30_42_4_start" "C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_37_30_42_4_stop" ]
+        %c.2 = local;
+        symbol [ c %c.2 40 12 13 ];
+        %tmp.13 = lgetv %r.1;
+        symbol [ r %tmp.13 40 16 17 ];
+        symbol [ get %tmp.14 40 18 21 ];
+        %tmp.14 = getv function %tmp.13 :get;
+        %tmp.15 = "climbCount";
+        %tmp.16 = invoke %tmp.13 %tmp.14(%tmp.15);
+        lputv %c.2 %tmp.16;
+        symbol [ c %c.2 40 12 13 ];
+[ "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc" 41 8 ]
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_begin:
+        %tmp.17 = lgetv %c.2;
+        symbol [ c %tmp.17 41 16 17 ];
+        symbol [ Toybox %tmp.19 41 29 35 ];
+        %tmp.19 = getv ? :Toybox;
+        symbol [ Lang %tmp.20 41 36 40 ];
+        %tmp.20 = getv %tmp.19 :Lang;
+        symbol [ Number %tmp.21 41 41 47 ];
+        %tmp.21 = getv %tmp.20 :Number;
+        %tmp.22 = isa %tmp.17 %tmp.21;
+        bf %tmp.22 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_else_false;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_true:
+        %tmp.23 = lgetv %c.2;
+        symbol [ c %tmp.23 41 51 52 ];
+        %tmp.24 = as %tmp.23 { (Toybox.Lang.Number) };
+        symbol [ toNumber %tmp.25 41 53 61 ];
+        %tmp.25 = getv function %tmp.24 :toNumber;
+        %tmp.26 = invoke %tmp.24 %tmp.25();
+        push %tmp.26;
+        goto @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_end;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_else_false:
+        %tmp.27 = 0;
+        push %tmp.27;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_end:
+        %tmp.28 = phi [%tmp.22 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_begin] [%tmp.26 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_true] [%tmp.27 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_else_false] [%tmp.28 @C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_41_15_41_66_end];
+        ret %tmp.28;
+C__Users_svenv_Downloads_CodeFromClaudeToStep5_CodeFromClaudeToImproveMyselfzip_garmin_widget_source_PhoneRouteIndex_mc_37_30_42_4_stop:
+    }
+}
+[ @file = "C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-widget\source\PhoneRouteIndex.mc"; @line = 1; ]
+<init> {
+}

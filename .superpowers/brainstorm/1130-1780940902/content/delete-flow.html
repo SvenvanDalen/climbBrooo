@@ -1,0 +1,127 @@
+<h2>Verwijderen van opgeslagen items</h2>
+<p class="subtitle">Je bent in de "Op watch" sectie — hoe verwijder je een opgeslagen route of klim?</p>
+
+<style>
+.watch-frame {
+  width: 155px; height: 155px;
+  border-radius: 50%; background: #111;
+  border: 6px solid #444; overflow: hidden;
+  display: flex; align-items: stretch;
+  justify-content: center; position: relative; flex-shrink: 0;
+}
+.watch-screen {
+  width: 100%; display: flex; flex-direction: column;
+  padding: 16px 12px 12px; box-sizing: border-box; overflow: hidden;
+}
+.ws-title { font-size: 8px; color: #aaa; text-align: center; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ws-item { font-size: 7.5px; color: #fff; padding: 2.5px 4px; border-radius: 2px; margin-bottom: 1px; }
+.ws-item.selected { background: #1a5fb4; }
+.ws-item.saved { color: #78d0ff; }
+.ws-item.delete-btn { background: #6b1a1a; color: #ff9f9f; text-align: center; margin-top: 4px; }
+.ws-item.save-btn { background: #1a6b1a; color: #7fff7f; text-align: center; }
+.ws-divider { font-size: 6px; color: #444; text-align: center; border-top: 1px solid #333; margin: 3px 0 2px; padding-top: 2px; }
+.ws-stats { font-size: 6.5px; color: #888; text-align: center; margin-bottom: 3px; }
+.ws-confirm { font-size: 7px; color: #ff9f9f; text-align: center; margin-bottom: 4px; }
+.ws-menu-overlay {
+  position: absolute; bottom: 18px; left: 8px; right: 8px;
+  background: #1e1e2e; border: 1px solid #555; border-radius: 3px; padding: 4px;
+}
+.ws-menu-item { font-size: 7px; color: #fff; padding: 2px 4px; }
+.ws-menu-item.red { color: #ff9f9f; }
+.ws-menu-item.sel { background: #6b1a1a; }
+.watch-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.btn-hint { font-size: 10px; color: #666; text-align: center; max-width: 200px; line-height: 1.4; }
+.label-small { font-size: 9px; color: #888; font-style: italic; text-align: center; }
+.arrow { font-size: 18px; color: #555; align-self: center; }
+.step-row { display: flex; align-items: center; gap: 8px; }
+
+.cards { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.card { width: 210px; }
+.card-image { display: flex; justify-content: center; padding: 16px 0 8px; background: #1a1a2e; border-radius: 8px 8px 0 0; }
+.card-body { padding: 10px 12px; }
+.card-body h3 { margin: 0 0 4px; font-size: 14px; }
+.card-body p { margin: 0; font-size: 12px; color: #aaa; line-height: 1.4; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Delete at bottom of detail screen -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="card-image">
+      <div class="watch-wrap">
+        <div class="label-small">SELECT op opgeslagen route →</div>
+        <div class="step-row">
+          <div class="watch-frame">
+            <div class="watch-screen">
+              <div class="ws-title">Mont Ventoux</div>
+              <div class="ws-stats">3 klimmen · 48km</div>
+              <div class="ws-item">Col du Géant</div>
+              <div class="ws-item">Versant Sud</div>
+              <div class="ws-item">Chalet Reynard</div>
+              <div class="ws-divider">— opgeslagen op watch —</div>
+              <div class="ws-item delete-btn">🗑 Verwijder route</div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-hint">Scroll omlaag → SELECT op verwijder-knop</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Verwijder onderaan detail</h3>
+      <p>Open de route/klim, scroll naar beneden, druk op "Verwijder". Zelfde patroon als opslaan. Consistent.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Confirm screen -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="card-image">
+      <div class="watch-wrap">
+        <div class="label-small">SELECT op opgeslagen route →</div>
+        <div class="step-row">
+          <div class="watch-frame">
+            <div class="watch-screen">
+              <div class="ws-title" style="color:#ff9f9f; font-size:9px;">Verwijderen?</div>
+              <div class="ws-confirm">Mont Ventoux</div>
+              <div class="ws-item" style="background:#6b1a1a; color:#ff9f9f; text-align:center; font-size:7.5px; padding:3px 4px;">✓ Ja, verwijder</div>
+              <div style="height:2px;"></div>
+              <div class="ws-item" style="background:#333; color:#ccc; text-align:center; font-size:7.5px; padding:3px 4px;">✗ Annuleer</div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-hint">Lang SELECT in lijst → bevestig verwijdering</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Bevestigingsscherm</h3>
+      <p>Lang SELECT in de opgeslagen sectie opent direct een "Zeker weten?" scherm. Snel, maar interrumpeert.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Manage mode -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="card-image">
+      <div class="watch-wrap">
+        <div class="label-small">"Beheer" knop onderaan hoofdlijst</div>
+        <div class="watch-frame">
+          <div class="watch-screen">
+            <div class="ws-title">Op watch</div>
+            <div class="ws-item saved selected">🗑 Mont Ventoux</div>
+            <div class="ws-item saved">🗑 Kemmelberg</div>
+            <div class="ws-item saved">🗑 Alpe d'Huez</div>
+            <div class="ws-divider"></div>
+            <div class="ws-item" style="color:#888; text-align:center; font-size:6.5px;">SELECT = verwijder · BACK = klaar</div>
+          </div>
+        </div>
+        <div class="btn-hint">Aparte "beheer" modus — alles zichtbaar met delete-icoon</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Beheer-modus</h3>
+      <p>Aparte scherm/modus waar je alles ziet wat is opgeslagen. SELECT op een item verwijdert het direct. Overzichtelijk maar extra navigatie.</p>
+    </div>
+  </div>
+
+</div>
