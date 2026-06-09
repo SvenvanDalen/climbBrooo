@@ -13,6 +13,7 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.service.RouteSyncWorker;
+import nl.paree.climbpro.service.SyncScheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,6 +89,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 routeRepo.setFlatSegmentSurfaceType(routeId, startDistance, surfaceType);
+                SyncScheduler.triggerImmediateSync(getApplication());
                 loadRoute(routeId);
             } catch (Exception e) {
                 error.postValue("Opslaan mislukt: " + e.getMessage());
