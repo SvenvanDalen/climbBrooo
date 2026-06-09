@@ -96,6 +96,7 @@ public final class RouteRepository {
         List<RoutePoint> pts = points != null ? points : Collections.emptyList();
         route.flatSegments = toStoredFlatSegments(flatDomain, pts,
                 loadPreviousFlatSegments(route.routeId));
+        route.surfaceSections = new ArrayList<>(loadPreviousSurfaceSections(route.routeId));
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -197,6 +198,18 @@ public final class RouteRepository {
         try (FileInputStream in = new FileInputStream(f)) {
             StoredRoute existing = mapper.readValue(in, StoredRoute.class);
             return existing.flatSegments != null ? existing.flatSegments : Collections.emptyList();
+        } catch (IOException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<StoredSurfaceSection> loadPreviousSurfaceSections(String routeId) {
+        File f = routeFile(routeId);
+        if (!f.exists()) return Collections.emptyList();
+        try (FileInputStream in = new FileInputStream(f)) {
+            StoredRoute existing = mapper.readValue(in, StoredRoute.class);
+            return existing.surfaceSections != null
+                    ? existing.surfaceSections : Collections.emptyList();
         } catch (IOException e) {
             return Collections.emptyList();
         }

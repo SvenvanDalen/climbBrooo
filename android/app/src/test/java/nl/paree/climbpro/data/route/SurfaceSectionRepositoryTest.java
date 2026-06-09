@@ -149,4 +149,26 @@ public class SurfaceSectionRepositoryTest {
 
         assertEquals(1, repo.loadRoute("r1").surfaceSections.size());
     }
+
+    @Test
+    public void saveRoute_preservesSurfaceSectionsAcrossReimport() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL);
+
+        // Simulate a re-import: a brand-new StoredRoute with the same id, no surfaceSections set.
+        StoredRoute fresh = new StoredRoute();
+        fresh.routeId = "r1";
+        fresh.name    = "Test";
+        java.util.List<nl.paree.climbpro.domain.route.RoutePoint> points = new java.util.ArrayList<>();
+        points.add(new nl.paree.climbpro.domain.route.RoutePoint(51.0, 5.0, 100, 0));
+        points.add(new nl.paree.climbpro.domain.route.RoutePoint(51.02, 5.02, 140, 5000));
+
+        repo.saveRoute(fresh, points, java.util.Collections.emptyList());
+
+        StoredRoute reloaded = repo.loadRoute("r1");
+        assertEquals("surface sections must survive re-import",
+                1, reloaded.surfaceSections.size());
+        assertEquals(SurfaceType.GRAVEL, reloaded.surfaceSections.get(0).surfaceType);
+    }
 }
