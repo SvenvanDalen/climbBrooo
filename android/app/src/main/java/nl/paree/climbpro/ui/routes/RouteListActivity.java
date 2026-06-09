@@ -103,6 +103,35 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         binding.fab.setOnClickListener(v -> showImportDialog());
+
+        nl.paree.climbpro.service.SyncScheduler.manualSyncInfo(this).observe(this, infos -> {
+            if (infos == null || infos.isEmpty()) return;
+            androidx.work.WorkInfo info = infos.get(infos.size() - 1);
+
+            boolean pullDone =
+                    info.getProgress().getBoolean(
+                            nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false)
+                 || info.getOutputData().getBoolean(
+                            nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false);
+            if (pullDone) {
+                viewModel.loadRoutes(); // new routes appear immediately (at the bottom with default sort)
+            }
+
+            if (info.getState().isFinished()) {
+                if (info.getState() == androidx.work.WorkInfo.State.SUCCEEDED) {
+                    int changed = info.getOutputData().getInt(
+                            nl.paree.climbpro.service.RouteSyncWorker.KEY_CHANGED, 0);
+                    viewModel.loadRoutes();
+                    Toast.makeText(this,
+                            changed > 0
+                                    ? ("Sync klaar: " + changed + " nieuwe/gewijzigde route(s)")
+                                    : "Sync klaar — geen wijzigingen",
+                            Toast.LENGTH_SHORT).show();
+                } else if (info.getState() == androidx.work.WorkInfo.State.FAILED) {
+                    Toast.makeText(this, "Sync mislukt", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     @Override
@@ -123,6 +152,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        } else if (id == R.id.action_sort) {
+            showSortDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -155,6 +187,22 @@ public final class RouteListActivity extends AppCompatActivity {
                         }
                     }
                 }).show();
+    }
+
+    private void showSortDialog() {
+        final String[] labels = {
+                "Importdatum (nieuwste onderaan)",
+                "Importdatum (nieuwste bovenaan)",
+                "Naam (A–Z)"
+        };
+        int current = viewModel.getSortMode();
+        new AlertDialog.Builder(this)
+                .setTitle("Sorteer routes")
+                .setSingleChoiceItems(labels, current, (d, which) -> {
+                    viewModel.setSortMode(which);
+                    d.dismiss();
+                })
+                .show();
     }
 
     private void importGpx(android.net.Uri uri) {
