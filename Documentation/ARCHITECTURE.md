@@ -227,6 +227,22 @@ Key types — names should match across modules where possible.
 - A `Climb`'s segments cover the full climb with no gaps or overlap. `sum(segment.distance) == climb.length` (within rounding).
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 
+### Custom surface sections (phone-only)
+
+Beyond auto-detected per-climb-segment and per-flat-segment surface types, the user can
+manually mark an **arbitrary stretch** of a route with a surface type. These live in
+`StoredRoute.surfaceSections` (`StoredSurfaceSection`: `startDistance`, `endDistance`,
+`surfaceType`, all integer metres) and are managed from the route detail screen
+(`RouteDetailActivity` → "Ondergrond-stukken").
+
+They are **phone-only for now** — deliberately not serialised into the Connect IQ payload.
+The distance-range shape is chosen so a future wire extension can carry them unchanged:
+a packed `surfSec` array of `[startDistance, endDistance, surfaceType, …]` integers on the
+route payload, added via `protocol/schema.json` first (then regenerated Java POJOs and a
+hand-written Monkey C match), with overlap-resolution decided watch-side at that time.
+Custom sections survive route re-import (preserved in `RouteRepository.saveRoute` like
+flat-segment surfaces) and contribute to the catalog `surfaceTypes` index.
+
 ---
 
 ## Configuration Management
