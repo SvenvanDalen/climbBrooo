@@ -47,7 +47,7 @@ public class StravaRoutesRepositoryTest {
     @Before
     public void setUp() throws Exception {
         app = ApplicationProvider.getApplicationContext();
-        // Sla RouteRepository-migratie (die alle routes wist) over.
+        // Skip RouteRepository migration (which wipes all routes). Value must match ClimbConstants.SEGMENT_VERSION.
         SharedPreferences prefs = app.getSharedPreferences("route_repo", Context.MODE_PRIVATE);
         prefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
 
@@ -93,9 +93,9 @@ public class StravaRoutesRepositoryTest {
     public void syncRoutes_unchangedRoute_returnsZero() throws Exception {
         stubOneRoute();
         StravaRoutesRepository repo = new StravaRoutesRepository(auth, routeRepo, api);
-        repo.syncRoutes(); // eerste keer: opgeslagen
+        repo.syncRoutes(); // first time: saved
 
-        stubOneRoute(); // zelfde dto -> zelfde sourceHash
+        stubOneRoute(); // same dto -> same sourceHash
         int changed = repo.syncRoutes();
 
         assertEquals(0, changed);

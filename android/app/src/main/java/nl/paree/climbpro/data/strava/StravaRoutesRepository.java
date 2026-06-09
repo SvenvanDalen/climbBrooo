@@ -47,7 +47,7 @@ public final class StravaRoutesRepository {
         this(auth, routeRepo, buildRetrofit().create(StravaApiClient.class));
     }
 
-    /** Test-injecteerbare variant — geef een (mock) StravaApiClient mee. */
+    /** Package-private, test-injectable variant — pass a (mock) StravaApiClient. */
     StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo, StravaApiClient api) {
         this.auth      = auth;
         this.routeRepo = routeRepo;
