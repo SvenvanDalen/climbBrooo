@@ -18,10 +18,11 @@ import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
+import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
+import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
-import nl.paree.climbpro.ui.climbs.ClimbListAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +32,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private static final String EXTRA_ROUTE_ID = "route_id";
 
     private ActivityRouteDetailBinding binding;
-    private RouteDetailViewModel       viewModel;
-    private ClimbListAdapter           adapter;
-    private String                     routeId;
+    private RouteDetailViewModel        viewModel;
+    private RouteDetailAdapter          adapter;
+    private String                      routeId;
 
     public static Intent intentFor(Context ctx, String routeId) {
         Intent i = new Intent(ctx, RouteDetailActivity.class);
@@ -55,22 +56,25 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         routeId   = getIntent().getStringExtra(EXTRA_ROUTE_ID);
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
-        adapter   = new ClimbListAdapter();
+        adapter   = new RouteDetailAdapter();
 
         binding.climbsRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.climbsRecycler.setAdapter(adapter);
 
-        adapter.setListener((climb, index) ->
+        adapter.setOnClimbClickListener((climb, index) ->
                 startActivity(ClimbDetailActivity.intentFor(this, routeId, index)));
+        adapter.setOnFlatClickListener(this::zoomToFlat);
+        adapter.setOnFlatLongClickListener(this::showFlatSurfaceDialog);
 
         viewModel.route().observe(this, route -> {
             if (route == null) return;
             String name = route.userDisplayName != null ? route.userDisplayName : route.name;
             binding.toolbar.setTitle(name != null ? name : route.routeId);
             binding.notesEdit.setText(route.notes != null ? route.notes : "");
-            adapter.setItems(route.climbs);
             drawRoute(route);
         });
+
+        viewModel.routeItems().observe(this, items -> adapter.setItems(items));
 
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
@@ -140,6 +144,32 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 .setPositiveButton("Save", (d, w) ->
                         viewModel.renameRoute(routeId, input.getText().toString().trim()))
                 .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void zoomToFlat(StoredFlatSegment flat) {
+        if (Double.isNaN(flat.startLat) || Double.isNaN(flat.endLat)) return;
+        List<GeoPoint> pts = new ArrayList<>();
+        pts.add(new GeoPoint(flat.startLat, flat.startLon));
+        pts.add(new GeoPoint(flat.endLat,   flat.endLon));
+        BoundingBox box = BoundingBox.fromGeoPoints(pts);
+        binding.mapView.post(() -> binding.mapView.zoomToBoundingBox(box, true, 80));
+    }
+
+    private void showFlatSurfaceDialog(StoredFlatSegment flat) {
+        String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed", "Onbekend"};
+        int current = SurfaceType.fromInt(flat.surfaceType);
+        new AlertDialog.Builder(this)
+                .setTitle("Oppervlak voor vlak segment")
+                .setSingleChoiceItems(typeLabels, current, null)
+                .setPositiveButton("Opslaan", (dialog, which) -> {
+                    android.widget.ListView lv = ((AlertDialog) dialog).getListView();
+                    int chosen = lv.getCheckedItemPosition();
+                    if (chosen >= 0 && chosen <= 5) {
+                        viewModel.setFlatSegmentSurface(routeId, flat.startDistance, chosen);
+                    }
+                })
+                .setNegativeButton("Annuleer", null)
                 .show();
     }
 
