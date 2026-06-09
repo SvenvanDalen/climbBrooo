@@ -155,6 +155,40 @@ GPS tick ──► nearest-point search ──► hysteresis filter ──► pr
 - **Retry**: exponential backoff. Sync failures must not block UI.
 - **Resumable**: a half-synced route must be detectable and resumed, not silently treated as complete.
 
+#### Orchestration (offline-first)
+
+`RouteSyncWorker` (WorkManager) is thin glue; the orchestration logic lives in the
+pure, unit-tested `service/SyncOrchestrator` so it can be tested without the Garmin SDK.
+One sync round runs in this order:
+
+1. **Strava pull first** — fetch + persist routes to disk, **independent of the watch
+   connection**. This is the offline-first guarantee: routes download and appear in the
+   app even when no watch is connected. (Previously the watch-connection wait gated the
+   whole worker, so nothing downloaded without a watch — fixed.)
+2. **Report progress** — the orchestrator signals "pull complete" via
+   `WorkManager.setProgressAsync` (`RouteSyncWorker.KEY_PULL_DONE` / `KEY_CHANGED`) so the
+   UI can refresh immediately.
+3. **Opportunistic watch send** — build the mode-specific payload and send it to the watch.
+   This step may fail or be skipped (no watch, nothing to send) **without** failing the
+   sync. The worker only returns `Result.retry()` for a transient Strava-pull failure, a
+   transient payload-build failure, or a failed send to an *available* watch — never merely
+   because the watch is absent.
+
+#### UI refresh & feedback
+
+The manual "Sync now" action enqueues a uniquely-named work request
+(`SyncScheduler.UNIQUE_MANUAL_SYNC`, `ExistingWorkPolicy.REPLACE`). `RouteListActivity`
+observes `SyncScheduler.manualSyncInfo(...)` and reloads the catalog as soon as the pull
+reports done (and again on terminal success), showing a toast with the number of
+new/changed routes. New routes therefore appear without leaving the screen.
+
+#### Route-list ordering
+
+Sort order is user-selectable via the "Sorteer" menu and persisted in
+`SharedPreferences` (`route_sort_mode`). The pure `ui/routes/RouteSorting` helper supports
+import-time ascending (newest at bottom — default), import-time descending, and name A–Z.
+`RouteListViewModel` combines this with the existing surface-type filter.
+
 ---
 
 ## Critical File Locations
@@ -167,7 +201,7 @@ Once scaffolded, these files will be the highest-traffic edits:
 | Segmentation (8% slices)           | `android/app/src/main/.../domain/segment/Segmenter.java`                          |
 | Color mapping                      | `protocol/colors.md` (spec) + generated `GradientColor.java` / `GradientColor.mc` |
 | Wire format                        | `protocol/schema.json` (canonical) → generated `ClimbPayload.java` + hand-written `ClimbPayload.mc` |
-| Sync orchestration                 | `android/app/src/main/.../service/SyncWorker.java`                                |
+| Sync orchestration                 | `android/app/src/main/.../service/SyncOrchestrator.java` (logic) + `RouteSyncWorker.java` (WorkManager glue) |
 | Watch render loop                  | `garmin/source/views/ClimbView.mc`                                                |
 | GPS matching (watch)               | `garmin/source/matching/RouteMatcher.mc`                                          |
 

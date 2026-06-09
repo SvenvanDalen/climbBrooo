@@ -31,6 +31,7 @@ Everything works offline during the activity. The phone is only needed for sync,
 - Show live route/climb data on the watch.
 - Start navigation to the selected route.
 - Import a single climb or route from a GPX file.
+- Sort the route library (by import time or name); the list auto-refreshes when a Strava sync finishes.
 
 ## Components
 
