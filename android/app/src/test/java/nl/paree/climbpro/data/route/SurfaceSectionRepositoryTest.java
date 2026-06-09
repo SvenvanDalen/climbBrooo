@@ -124,4 +124,29 @@ public class SurfaceSectionRepositoryTest {
         }
         assertTrue("GRAVEL must appear in the route's catalog surfaceTypes", gravelInCatalog);
     }
+
+    @Test
+    public void deleteSurfaceSection_removesByIndex() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 500, 1000, SurfaceType.ASPHALT);
+        repo.addSurfaceSection("r1", 3000, 4000, SurfaceType.DIRT);
+
+        repo.deleteSurfaceSection("r1", 0); // removes the 500..1000 ASPHALT section
+
+        List<StoredSurfaceSection> sections = repo.loadRoute("r1").surfaceSections;
+        assertEquals(1, sections.size());
+        assertEquals(3000, sections.get(0).startDistance);
+    }
+
+    @Test
+    public void deleteSurfaceSection_ignoresOutOfRangeIndex() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 500, 1000, SurfaceType.ASPHALT);
+
+        repo.deleteSurfaceSection("r1", 7); // no-op, must not throw
+
+        assertEquals(1, repo.loadRoute("r1").surfaceSections.size());
+    }
 }

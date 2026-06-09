@@ -483,6 +483,23 @@ public final class RouteRepository {
     }
 
     /**
+     * Removes the surface section at the given index (after sorting by startDistance).
+     * Out-of-range indices are ignored.
+     */
+    public void deleteSurfaceSection(String routeId, int index) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.surfaceSections == null
+                || index < 0 || index >= route.surfaceSections.size()) {
+            Log.w(TAG, "deleteSurfaceSection: index out of range: " + index);
+            return;
+        }
+        route.surfaceSections.remove(index);
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
      * Extracts the sub-list of RoutePoints that belong to the given climb,
      * using the route's parallel arrays and the climb's startDistance/endDistance.
      */
