@@ -412,13 +412,19 @@ public final class RouteRepository {
     public void setFlatSegmentSurfaceType(String routeId, int startDistance,
                                            int surfaceType) throws IOException {
         StoredRoute route = loadRoute(routeId);
+        boolean found = false;
         if (route.flatSegments != null) {
             for (StoredFlatSegment sf : route.flatSegments) {
                 if (sf.startDistance == startDistance) {
                     sf.surfaceType = surfaceType;
+                    found = true;
                     break;
                 }
             }
+        }
+        if (!found) {
+            Log.w(TAG, "setFlatSegmentSurfaceType: no flat segment at startDistance " + startDistance);
+            return;
         }
         route.lastModifiedMs = System.currentTimeMillis();
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
@@ -475,7 +481,7 @@ public final class RouteRepository {
             for (StoredClimb sc : route.climbs) {
                 if (sc.segments != null) {
                     for (StoredSegment ss : sc.segments) {
-                        if (ss.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                        if (ss.surfaceType != SurfaceType.UNKNOWN) {
                             surfaceSet.add(ss.surfaceType);
                         }
                     }
@@ -484,7 +490,7 @@ public final class RouteRepository {
         }
         if (route.flatSegments != null) {
             for (StoredFlatSegment sf : route.flatSegments) {
-                if (sf.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+                if (sf.surfaceType != SurfaceType.UNKNOWN) {
                     surfaceSet.add(sf.surfaceType);
                 }
             }
