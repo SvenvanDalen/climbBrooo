@@ -1,8 +1,10 @@
 package nl.paree.climbpro.ui.routes;
 
 import android.app.Application;
+import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -31,10 +33,17 @@ public final class RouteListViewModel extends AndroidViewModel {
     /** -1 = show all; 0–4 = filter by SurfaceType constant */
     private volatile int activeSurfaceFilter = -1;
 
+    private static final String PREF_SORT_MODE = "route_sort_mode";
+
+    /** Sort mode from {@link RouteSorting}; defaults to newest-at-bottom. */
+    private volatile int activeSortMode = RouteSorting.SORT_IMPORT_ASC;
+
     public RouteListViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
         authRepo  = new StravaAuthRepository(app);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
+        activeSortMode = prefs.getInt(PREF_SORT_MODE, RouteSorting.SORT_IMPORT_ASC);
         loadRoutes();
     }
 
@@ -47,7 +56,7 @@ public final class RouteListViewModel extends AndroidViewModel {
         executor.execute(() -> {
             List<RouteCatalogEntry> all = routeRepo.loadCatalog();
             allRoutes.postValue(all);
-            routes.postValue(applyFilter(all, activeSurfaceFilter));
+            routes.postValue(applyView(all, activeSurfaceFilter, activeSortMode));
         });
     }
 
@@ -55,7 +64,19 @@ public final class RouteListViewModel extends AndroidViewModel {
         activeSurfaceFilter = surfaceType;
         List<RouteCatalogEntry> all = allRoutes.getValue();
         if (all != null) {
-            routes.postValue(applyFilter(all, surfaceType));
+            routes.postValue(applyView(all, surfaceType, activeSortMode));
+        }
+    }
+
+    public int getSortMode() { return activeSortMode; }
+
+    public void setSortMode(int sortMode) {
+        activeSortMode = sortMode;
+        PreferenceManager.getDefaultSharedPreferences(getApplication())
+                .edit().putInt(PREF_SORT_MODE, sortMode).apply();
+        List<RouteCatalogEntry> all = allRoutes.getValue();
+        if (all != null) {
+            routes.postValue(applyView(all, activeSurfaceFilter, sortMode));
         }
     }
 
@@ -74,14 +95,19 @@ public final class RouteListViewModel extends AndroidViewModel {
         SyncScheduler.triggerImmediateSync(getApplication());
     }
 
-    /** Returns routes matching the filter. -1 means "all". */
-    private static List<RouteCatalogEntry> applyFilter(List<RouteCatalogEntry> all, int surfaceType) {
-        if (surfaceType == -1) return all;
-        List<RouteCatalogEntry> result = new ArrayList<>();
-        for (RouteCatalogEntry e : all) {
-            if (hasSurfaceType(e, surfaceType)) result.add(e);
+    /** Applies the surface-type filter, then sorts according to {@code sortMode}. */
+    private static List<RouteCatalogEntry> applyView(
+            List<RouteCatalogEntry> all, int surfaceType, int sortMode) {
+        List<RouteCatalogEntry> filtered;
+        if (surfaceType == -1) {
+            filtered = new ArrayList<>(all);
+        } else {
+            filtered = new ArrayList<>();
+            for (RouteCatalogEntry e : all) {
+                if (hasSurfaceType(e, surfaceType)) filtered.add(e);
+            }
         }
-        return result;
+        return RouteSorting.sort(filtered, sortMode);
     }
 
     private static boolean hasSurfaceType(RouteCatalogEntry e, int surfaceType) {
