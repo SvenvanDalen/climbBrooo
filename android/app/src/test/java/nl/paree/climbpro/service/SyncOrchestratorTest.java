@@ -72,6 +72,24 @@ public class SyncOrchestratorTest {
         assertFalse(r.sendAttempted);
     }
 
+    @Test
+    public void buildThrows_marksBuildFailed() {
+        SyncOrchestrator orch = new SyncOrchestrator(
+                true, () -> 1, new FakeWatch(true, true),
+                new SyncOrchestrator.PayloadJob() {
+                    public byte[] build() throws java.io.IOException {
+                        throw new java.io.IOException("disk error");
+                    }
+                    public void onSent() {}
+                },
+                0, 0);
+
+        SyncOrchestrator.Result r = orch.run((c, ok) -> {});
+
+        assertTrue(r.buildFailed);
+        assertFalse(r.sendAttempted);
+    }
+
     // --- fakes ---
 
     private static final class FakeWatch implements SyncOrchestrator.WatchSender {

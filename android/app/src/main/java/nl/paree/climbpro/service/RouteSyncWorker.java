@@ -6,6 +6,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
+import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
@@ -82,8 +83,8 @@ public final class RouteSyncWorker extends Worker {
                 }
                 return ciqClient.isConnected();
             }
-            @Override public boolean send(byte[] payload, long ms) {
-                return ciqClient.sendPayloadBlocking(payload, ms);
+            @Override public boolean send(byte[] payload, long timeoutMs) {
+                return ciqClient.sendPayloadBlocking(payload, timeoutMs);
             }
         };
 
@@ -95,19 +96,20 @@ public final class RouteSyncWorker extends Worker {
                 /* connectTimeoutMs */ 5_000, /* sendTimeoutMs */ 10_000);
 
         SyncOrchestrator.Result r = orchestrator.run((changed, ok) ->
-                setProgressAsync(new androidx.work.Data.Builder()
+                setProgressAsync(new Data.Builder()
                         .putBoolean(KEY_PULL_DONE, true)
                         .putInt(KEY_CHANGED, changed)
                         .build()));
 
-        androidx.work.Data output = new androidx.work.Data.Builder()
+        Data output = new Data.Builder()
                 .putBoolean(KEY_PULL_DONE, true)
                 .putInt(KEY_CHANGED, r.routesChanged)
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
                 .build();
 
         boolean shouldRetry = (r.pullAttempted && !r.pullSucceeded)
-                || (r.sendAttempted && !r.sendSucceeded);
+                || (r.sendAttempted && !r.sendSucceeded)
+                || r.buildFailed;
         if (shouldRetry) {
             Log.w(TAG, "Sync incomplete — will retry (pull=" + r.pullSucceeded
                     + ", sendAttempted=" + r.sendAttempted + ", sent=" + r.sendSucceeded + ")");

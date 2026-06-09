@@ -46,15 +46,18 @@ public final class SyncOrchestrator {
         public final boolean watchAvailable;
         public final boolean sendAttempted;
         public final boolean sendSucceeded;
+        public final boolean buildFailed;
 
         Result(boolean pullAttempted, boolean pullSucceeded, int routesChanged,
-               boolean watchAvailable, boolean sendAttempted, boolean sendSucceeded) {
+               boolean watchAvailable, boolean sendAttempted, boolean sendSucceeded,
+               boolean buildFailed) {
             this.pullAttempted  = pullAttempted;
             this.pullSucceeded  = pullSucceeded;
             this.routesChanged  = routesChanged;
             this.watchAvailable = watchAvailable;
             this.sendAttempted  = sendAttempted;
             this.sendSucceeded  = sendSucceeded;
+            this.buildFailed    = buildFailed;
         }
     }
 
@@ -93,17 +96,17 @@ public final class SyncOrchestrator {
 
         boolean watchAvailable = watch.awaitConnected(connectTimeoutMs);
         if (!watchAvailable) {
-            return new Result(pullAttempted, pullSucceeded, changed, false, false, false);
+            return new Result(pullAttempted, pullSucceeded, changed, false, false, false, false);
         }
 
         byte[] payload;
         try {
             payload = payloadJob.build();
         } catch (IOException e) {
-            return new Result(pullAttempted, pullSucceeded, changed, true, false, false);
+            return new Result(pullAttempted, pullSucceeded, changed, true, false, false, true);
         }
         if (payload == null) {
-            return new Result(pullAttempted, pullSucceeded, changed, true, false, false);
+            return new Result(pullAttempted, pullSucceeded, changed, true, false, false, false);
         }
 
         boolean sent;
@@ -115,6 +118,6 @@ public final class SyncOrchestrator {
         if (sent) {
             try { payloadJob.onSent(); } catch (IOException ignored) { /* not fatal */ }
         }
-        return new Result(pullAttempted, pullSucceeded, changed, true, true, sent);
+        return new Result(pullAttempted, pullSucceeded, changed, true, true, sent, false);
     }
 }
