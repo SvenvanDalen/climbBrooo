@@ -47,6 +47,23 @@ public final class SettingsActivity extends AppCompatActivity {
         viewModel.syncStatus().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
+        viewModel.riderProfile().observe(this, profile -> {
+            if (profile == null) return;
+            binding.inputFtp.setText(profile.ftpWatts > 0 ? String.valueOf(profile.ftpWatts) : "");
+            binding.inputRiderWeight.setText(
+                    profile.riderWeightKg > 0 ? String.valueOf(profile.riderWeightKg) : "");
+            binding.inputBikeWeight.setText(
+                    profile.bikeWeightKg > 0 ? String.valueOf(profile.bikeWeightKg) : "");
+        });
+
+        binding.btnSaveProfile.setOnClickListener(v -> {
+            int ftp = parseIntSafe(binding.inputFtp.getText().toString());
+            double rider = parseDoubleSafe(binding.inputRiderWeight.getText().toString());
+            double bike = parseDoubleSafe(binding.inputBikeWeight.getText().toString());
+            viewModel.saveRiderProfile(ftp, rider, bike);
+            Toast.makeText(this, "Profiel opgeslagen", Toast.LENGTH_SHORT).show();
+        });
+
         binding.radioRoute.setOnClickListener(v ->
                 viewModel.setSyncMode("route"));
         binding.radioRadius.setOnClickListener(v ->
@@ -73,6 +90,22 @@ public final class SettingsActivity extends AppCompatActivity {
         });
 
         binding.btnSyncNow.setOnClickListener(v -> viewModel.syncNow());
+    }
+
+    private static int parseIntSafe(String s) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static double parseDoubleSafe(String s) {
+        try {
+            return Double.parseDouble(s.trim().replace(',', '.'));
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
     }
 
     @Override

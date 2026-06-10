@@ -8,14 +8,18 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
+import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 
 public final class SettingsViewModel extends AndroidViewModel {
 
     private final StravaAuthRepository authRepo;
+    private final RiderProfileRepository riderRepo;
     private final MutableLiveData<Boolean> stravaSignedIn = new MutableLiveData<>();
+    private final MutableLiveData<RiderProfile> riderProfile = new MutableLiveData<>();
     private final MutableLiveData<String>  syncMode       = new MutableLiveData<>();
     private final MutableLiveData<Integer> radiusKm       = new MutableLiveData<>();
     private final MutableLiveData<String>  syncStatus     = new MutableLiveData<>();
@@ -23,13 +27,15 @@ public final class SettingsViewModel extends AndroidViewModel {
     public SettingsViewModel(@NonNull Application app) {
         super(app);
         authRepo = new StravaAuthRepository(app);
+        riderRepo = new RiderProfileRepository(app);
         reload();
     }
 
-    public LiveData<Boolean> stravaSignedIn() { return stravaSignedIn; }
-    public LiveData<String>  syncMode()       { return syncMode; }
-    public LiveData<Integer> radiusKm()       { return radiusKm; }
-    public LiveData<String>  syncStatus()     { return syncStatus; }
+    public LiveData<Boolean>     stravaSignedIn() { return stravaSignedIn; }
+    public LiveData<String>      syncMode()       { return syncMode; }
+    public LiveData<Integer>     radiusKm()       { return radiusKm; }
+    public LiveData<String>      syncStatus()     { return syncStatus; }
+    public LiveData<RiderProfile> riderProfile()  { return riderProfile; }
 
     public void reload() {
         stravaSignedIn.postValue(authRepo.isAuthorised());
@@ -37,6 +43,7 @@ public final class SettingsViewModel extends AndroidViewModel {
         syncMode.postValue(prefs.getString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_ROUTE));
         int r = prefs.getInt(RouteSyncWorker.PREF_RADIUS_M, 30_000) / 1000;
         radiusKm.postValue(r);
+        riderProfile.postValue(riderRepo.load());
     }
 
     public void setSyncMode(String mode) {
@@ -49,6 +56,12 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(RouteSyncWorker.PREF_RADIUS_M, km * 1000).apply();
         radiusKm.postValue(km);
+    }
+
+    public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg) {
+        RiderProfile profile = new RiderProfile(ftpWatts, riderKg, bikeKg);
+        riderRepo.save(profile);
+        riderProfile.postValue(profile);
     }
 
     public void signOutStrava() {

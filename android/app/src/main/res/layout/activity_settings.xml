@@ -106,6 +106,52 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rider profile"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/input_ftp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="FTP (watts)"
+                android:inputType="number"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/input_rider_weight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Rider weight (kg)"
+                android:inputType="numberDecimal"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/input_bike_weight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Bike weight (kg)"
+                android:inputType="numberDecimal"
+                android:layout_marginBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btn_save_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Save rider profile"
+                android:layout_marginBottom="16dp"/>
+
             <Button
                 android:id="@+id/btn_sync_now"
                 android:layout_width="match_parent"
