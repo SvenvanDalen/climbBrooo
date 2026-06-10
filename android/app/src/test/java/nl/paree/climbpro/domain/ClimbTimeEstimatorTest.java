@@ -37,14 +37,16 @@ public class ClimbTimeEstimatorTest {
         assertEquals(3, e.segmentSeconds.length);
     }
 
-    // 2 km at 8% asphalt, 80 kg, ~FTP power: real-world ~9-11 min.
+    // 2 km at 8% asphalt, 80 kg. The time-dependent model rides this ~8-minute
+    // effort above FTP (CP + W'/t ~= 290 W ~= 116% of a 250 W FTP, which matches
+    // typical ~8-min power), giving ~500 s — faster than a steady-FTP estimate.
     @Test
     public void estimateIsInRealisticRange() {
         int[] dist = {1000, 1000};
         double[] grad = {0.08, 0.08};
         ClimbTimeEstimate e = ClimbTimeEstimator.estimate(dist, grad, asphalt(2), RIDER);
-        assertTrue("2km@8% should be ~540-660s but was " + e.totalSeconds,
-                e.totalSeconds > 540 && e.totalSeconds < 660);
+        assertTrue("2km@8% should be ~440-560s but was " + e.totalSeconds,
+                e.totalSeconds > 440 && e.totalSeconds < 560);
     }
 
     @Test
