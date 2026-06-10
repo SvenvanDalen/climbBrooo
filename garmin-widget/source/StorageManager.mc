@@ -1,5 +1,6 @@
 using Toybox.Application.Storage as Storage;
 
+(:glance)
 module StorageManager {
 
     function getSavedRouteIds() {
