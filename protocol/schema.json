@@ -29,6 +29,13 @@
       "type": "string",
       "maxLength": 32
     },
+    "surfaceSections": {
+      "description": "Optional user-defined surface overrides for arbitrary stretches of the route (route mode only), ordered by startDistance. Wire encoding: packed int array 'surfSec' of [startDistance, endDistance, surfaceType, ...] triples.",
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/SurfaceSection" }
+    },
     "climbs": {
       "description": "Ordered list of climbs. In route mode: ordered by startDistance along the route. In radius mode: ordered by phone-side proximity to last known location (closest first).",
       "type": "array",
@@ -117,6 +124,29 @@
         },
         "colorIndex": {
           "description": "Color category derived from gradient. See protocol/colors.md for the cutoff table.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        }
+      }
+    },
+    "SurfaceSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startDistance", "endDistance", "surfaceType"],
+      "properties": {
+        "startDistance": {
+          "description": "Metres from route start where the section begins.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "endDistance": {
+          "description": "Metres from route start where the section ends. Must exceed startDistance.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "surfaceType": {
+          "description": "SurfaceType constant: 0=asphalt 1=gravel 2=dirt 3=cobblestone 4=mixed 5=unknown.",
           "type": "integer",
           "minimum": 0,
           "maximum": 5

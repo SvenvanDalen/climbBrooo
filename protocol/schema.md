@@ -39,6 +39,12 @@ Instead:
 - The round-trip test (`ProtocolRoundTripTest`) loads each example and asserts the mode-specific fields are populated correctly.
 - The consumer must tolerate missing optional fields gracefully.
 
+## Wire keys for packed encoding
+
+When a payload is serialized for the wire, logical JSON objects are packed into compact integer arrays:
+
+- `surfSec` — packed int array of user-defined surface sections: `[startDistance, endDistance, surfaceType, …]`, 3 ints per section, ordered by startDistance. Route mode only. Sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
+
 ## Byte budget
 
 Watch-side cap is **8 KB** (configurable; tuned in Phase 7 after measurement). Estimated cost of a representative payload, JSON-encoded with the schema as-is:

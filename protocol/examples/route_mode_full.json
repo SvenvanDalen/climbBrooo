@@ -3,6 +3,10 @@
   "mode": "route",
   "routeId": "strava_route_8472193",
   "name": "Limburg 3-climb loop",
+  "surfaceSections": [
+    { "startDistance": 1000, "endDistance": 2500, "surfaceType": 1 },
+    { "startDistance": 6000, "endDistance": 7000, "surfaceType": 3 }
+  ],
   "climbs": [
     {
       "startDistance": 12500,
