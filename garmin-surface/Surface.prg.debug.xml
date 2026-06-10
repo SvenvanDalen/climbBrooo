@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<debugInfo>
+    <manifest filename="C:\Users\svenv\Downloads\CodeFromClaudeToStep5\CodeFromClaudeToImproveMyselfzip\garmin-surface\manifest.xml"/>
+    <pcToLineNum>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="1" lineNum="7" parent="globals/SurfaceFieldView" pc="268435460" symbol="&lt;init&gt;"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\gen\\006-B3990-00\\source\\Rez.mcgen" id="2" lineNum="7" parent="globals/Rez" pc="268435472" symbol="&lt;init&gt;"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="3" lineNum="7" parent="globals/SurfaceFieldApp" pc="268435492" symbol="&lt;init&gt;"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="24" parent="globals/SurfaceFieldView" pc="268435504" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="25" parent="globals/SurfaceFieldView" pc="268435507" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="26" parent="globals/SurfaceFieldView" pc="268435524" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="26" parent="globals/SurfaceFieldView" pc="268435541" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="27" parent="globals/SurfaceFieldView" pc="268435545" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="28" parent="globals/SurfaceFieldView" pc="268435548" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="29" parent="globals/SurfaceFieldView" pc="268435576" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="4" lineNum="31" parent="globals/SurfaceFieldView" pc="268435594" symbol="compute"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="60" parent="globals/SurfaceFieldView" pc="268435607" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="61" parent="globals/SurfaceFieldView" pc="268435610" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="64" parent="globals/SurfaceFieldView" pc="268435625" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="65" parent="globals/SurfaceFieldView" pc="268435645" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="67" parent="globals/SurfaceFieldView" pc="268435669" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="68" parent="globals/SurfaceFieldView" pc="268435682" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="69" parent="globals/SurfaceFieldView" pc="268435714" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="72" parent="globals/SurfaceFieldView" pc="268435758" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="73" parent="globals/SurfaceFieldView" pc="268435769" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="74" parent="globals/SurfaceFieldView" pc="268435784" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="5" lineNum="75" parent="globals/SurfaceFieldView" pc="268435800" symbol="drawCurrentSection"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="6" lineNum="90" parent="globals/SurfaceFieldView" pc="268435844" symbol="formatDist"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="6" lineNum="91" parent="globals/SurfaceFieldView" pc="268435846" symbol="formatDist"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="6" lineNum="92" parent="globals/SurfaceFieldView" pc="268435855" symbol="formatDist"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="6" lineNum="94" parent="globals/SurfaceFieldView" pc="268435887" symbol="formatDist"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="7" lineNum="20" parent="globals/SurfaceFieldView" pc="268435896" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="7" lineNum="21" parent="globals/SurfaceFieldView" pc="268435898" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="34" parent="globals/SurfaceFieldView" pc="268435911" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="35" parent="globals/SurfaceFieldView" pc="268435914" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="36" parent="globals/SurfaceFieldView" pc="268435930" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="38" parent="globals/SurfaceFieldView" pc="268435938" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="39" parent="globals/SurfaceFieldView" pc="268435947" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="40" parent="globals/SurfaceFieldView" pc="268435956" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="42" parent="globals/SurfaceFieldView" pc="268435973" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="43" parent="globals/SurfaceFieldView" pc="268436002" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="44" parent="globals/SurfaceFieldView" pc="268436015" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="46" parent="globals/SurfaceFieldView" pc="268436044" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="49" parent="globals/SurfaceFieldView" pc="268436048" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="50" parent="globals/SurfaceFieldView" pc="268436059" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="51" parent="globals/SurfaceFieldView" pc="268436079" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="52" parent="globals/SurfaceFieldView" pc="268436090" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="54" parent="globals/SurfaceFieldView" pc="268436110" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="8" lineNum="55" parent="globals/SurfaceFieldView" pc="268436126" symbol="onUpdate"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="80" parent="globals/SurfaceFieldView" pc="268436156" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="81" parent="globals/SurfaceFieldView" pc="268436159" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="82" parent="globals/SurfaceFieldView" pc="268436174" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="83" parent="globals/SurfaceFieldView" pc="268436190" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="84" parent="globals/SurfaceFieldView" pc="268436218" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="85" parent="globals/SurfaceFieldView" pc="268436231" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldView.mc" id="9" lineNum="86" parent="globals/SurfaceFieldView" pc="268436266" symbol="drawNextOnly"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="64" parent="globals/SurfaceData" pc="268436314" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="65" parent="globals/SurfaceData" pc="268436317" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="66" parent="globals/SurfaceData" pc="268436326" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="67" parent="globals/SurfaceData" pc="268436335" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="68" parent="globals/SurfaceData" pc="268436343" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="69" parent="globals/SurfaceData" pc="268436352" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="70" parent="globals/SurfaceData" pc="268436366" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="71" parent="globals/SurfaceData" pc="268436394" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="72" parent="globals/SurfaceData" pc="268436403" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="73" parent="globals/SurfaceData" pc="268436424" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="74" parent="globals/SurfaceData" pc="268436438" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="75" parent="globals/SurfaceData" pc="268436447" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="10" lineNum="76" parent="globals/SurfaceData" pc="268436465" symbol="updateProgress"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="32" parent="globals/SurfaceData" pc="268436482" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="33" parent="globals/SurfaceData" pc="268436485" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="33" parent="globals/SurfaceData" pc="268436501" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="34" parent="globals/SurfaceData" pc="268436506" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="35" parent="globals/SurfaceData" pc="268436522" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="36" parent="globals/SurfaceData" pc="268436536" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="37" parent="globals/SurfaceData" pc="268436557" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="39" parent="globals/SurfaceData" pc="268436562" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="40" parent="globals/SurfaceData" pc="268436578" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="40" parent="globals/SurfaceData" pc="268436594" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="42" parent="globals/SurfaceData" pc="268436599" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="43" parent="globals/SurfaceData" pc="268436620" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="45" parent="globals/SurfaceData" pc="268436641" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="46" parent="globals/SurfaceData" pc="268436653" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="46" parent="globals/SurfaceData" pc="268436661" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="47" parent="globals/SurfaceData" pc="268436668" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="48" parent="globals/SurfaceData" pc="268436677" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="49" parent="globals/SurfaceData" pc="268436688" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="50" parent="globals/SurfaceData" pc="268436704" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="51" parent="globals/SurfaceData" pc="268436723" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="52" parent="globals/SurfaceData" pc="268436736" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="54" parent="globals/SurfaceData" pc="268436791" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="55" parent="globals/SurfaceData" pc="268436799" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="56" parent="globals/SurfaceData" pc="268436808" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="57" parent="globals/SurfaceData" pc="268436817" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="11" lineNum="58" parent="globals/SurfaceData" pc="268436847" symbol="parse"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="12" lineNum="25" parent="globals/SurfaceData" pc="268436849" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="12" lineNum="26" parent="globals/SurfaceData" pc="268436851" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="12" lineNum="27" parent="globals/SurfaceData" pc="268436861" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceData.mc" id="12" lineNum="28" parent="globals/SurfaceData" pc="268436871" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="15" parent="globals/SurfaceFieldApp" pc="268436882" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="16" parent="globals/SurfaceFieldApp" pc="268436885" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="17" parent="globals/SurfaceFieldApp" pc="268436910" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="19" parent="globals/SurfaceFieldApp" pc="268436936" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="20" parent="globals/SurfaceFieldApp" pc="268436955" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="21" parent="globals/SurfaceFieldApp" pc="268436961" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="13" lineNum="23" parent="globals/SurfaceFieldApp" pc="268436980" symbol="onStart"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="26" parent="globals/SurfaceFieldApp" pc="268436999" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="27" parent="globals/SurfaceFieldApp" pc="268437002" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="27" parent="globals/SurfaceFieldApp" pc="268437019" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="28" parent="globals/SurfaceFieldApp" pc="268437023" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="30" parent="globals/SurfaceFieldApp" pc="268437045" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="31" parent="globals/SurfaceFieldApp" pc="268437075" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="32" parent="globals/SurfaceFieldApp" pc="268437079" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="14" lineNum="34" parent="globals/SurfaceFieldApp" pc="268437109" symbol="onPhoneMessage"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="15" lineNum="40" parent="globals/SurfaceFieldApp" pc="268437124" symbol="getInitialView"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="15" lineNum="41" parent="globals/SurfaceFieldApp" pc="268437126" symbol="getInitialView"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="16" lineNum="11" parent="globals/SurfaceFieldApp" pc="268437152" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="16" lineNum="12" parent="globals/SurfaceFieldApp" pc="268437154" symbol="initialize"/>
+        <entry filename="C:\\Users\\svenv\\Downloads\\CodeFromClaudeToStep5\\CodeFromClaudeToImproveMyselfzip\\garmin-surface\\source\\SurfaceFieldApp.mc" id="17" lineNum="38" parent="globals/SurfaceFieldApp" pc="268437167" symbol="onStop"/>
+    </pcToLineNum>
+    <symbolTable>
+        <entry id="8388639" module="true" symbol="Graphics"/>
+        <entry id="6" object="true" symbol="SurfaceFieldApp"/>
+        <entry id="8388632" method="true" symbol="&lt;init&gt;"/>
+        <entry id="8390424" module="true" symbol="Storage"/>
+        <entry field="true" id="22" symbol="secType"/>
+        <entry field="true" id="8388611" module="true" symbol="Toybox"/>
+        <entry field="true" id="21" symbol="secStart"/>
+        <entry field="true" id="27" symbol="AppName"/>
+        <entry id="4" module="true" symbol="globals/Rez/Strings"/>
+        <entry id="8388648" module="true" symbol="WatchUi"/>
+        <entry id="2" module="true" symbol="globals/Rez"/>
+        <entry field="true" id="16" symbol="payloadReceived"/>
+        <entry id="8389124" method="true" symbol="onUpdate"/>
+        <entry id="11" method="true" symbol="drawNextOnly"/>
+        <entry id="8389299" method="true" symbol="parse"/>
+        <entry id="8388771" module="true" object="true" symbol="Drawables"/>
+        <entry field="true" id="8389850" symbol="count"/>
+        <entry id="8389137" method="true" symbol="compute"/>
+        <entry field="true" id="14" symbol="distToNext"/>
+        <entry id="3" module="true" symbol="globals/Rez/Drawables"/>
+        <entry id="9" symbol="SURF_NAMES"/>
+        <entry id="8388769" module="true" object="true" symbol="Rez"/>
+        <entry id="23" method="true" symbol="updateProgress"/>
+        <entry id="8388640" module="true" symbol="Lang"/>
+        <entry id="24" method="true" symbol="onPhoneMessage"/>
+        <entry field="true" id="26" symbol="LauncherIcon"/>
+        <entry id="8388610" symbol="statics"/>
+        <entry field="true" id="19" symbol="routeName"/>
+        <entry field="true" id="18" symbol="routeId"/>
+        <entry id="8389350" module="true" symbol="globals"/>
+        <entry id="8388770" module="true" object="true" symbol="Strings"/>
+        <entry field="true" id="17" symbol="remainingInSection"/>
+        <entry id="8388702" method="true" symbol="initialize"/>
+        <entry id="10" method="true" symbol="drawCurrentSection"/>
+        <entry id="8389279" method="true" symbol="onStart"/>
+        <entry field="true" id="20" symbol="secEnd"/>
+        <entry id="8389280" method="true" symbol="getInitialView"/>
+        <entry id="8389281" method="true" symbol="onStop"/>
+        <entry id="12" method="true" symbol="formatDist"/>
+        <entry field="true" id="13" symbol="currentIdx"/>
+        <entry field="true" id="25" symbol="surfaceData"/>
+        <entry field="true" id="8388734" symbol="elapsedDistance"/>
+        <entry id="5" object="true" symbol="SurfaceData"/>
+        <entry field="true" id="15" symbol="nextIdx"/>
+        <entry id="7" object="true" symbol="SurfaceFieldView"/>
+        <entry id="8" symbol="SURF_COLORS"/>
+    </symbolTable>
+    <localVars>
+        <entry arg="true" endPc="268435606" name="info" stackId="1" startPc="268435504"/>
+        <entry endPc="268435605" name="data" stackId="2" startPc="268435507"/>
+        <entry endPc="268435605" name="elapsed" stackId="3" startPc="268435507"/>
+        <entry arg="true" endPc="268435843" name="dc" stackId="1" startPc="268435607"/>
+        <entry arg="true" endPc="268435843" name="data" stackId="2" startPc="268435607"/>
+        <entry arg="true" endPc="268435843" name="w" stackId="3" startPc="268435607"/>
+        <entry arg="true" endPc="268435843" name="h" stackId="4" startPc="268435607"/>
+        <entry endPc="268435842" name="t" stackId="5" startPc="268435610"/>
+        <entry endPc="268435839" name="nt" stackId="6" startPc="268435769"/>
+        <entry arg="true" endPc="268435895" name="meters" stackId="1" startPc="268435844"/>
+        <entry arg="true" endPc="268436155" name="dc" stackId="1" startPc="268435911"/>
+        <entry endPc="268436154" name="w" stackId="2" startPc="268435914"/>
+        <entry endPc="268436154" name="h" stackId="3" startPc="268435914"/>
+        <entry endPc="268436154" name="data" stackId="4" startPc="268435914"/>
+        <entry arg="true" endPc="268436313" name="dc" stackId="1" startPc="268436156"/>
+        <entry arg="true" endPc="268436313" name="data" stackId="2" startPc="268436156"/>
+        <entry arg="true" endPc="268436313" name="w" stackId="3" startPc="268436156"/>
+        <entry arg="true" endPc="268436313" name="h" stackId="4" startPc="268436156"/>
+        <entry endPc="268436312" name="nt" stackId="5" startPc="268436159"/>
+        <entry arg="true" endPc="268436481" name="elapsed" stackId="1" startPc="268436314"/>
+        <entry endPc="268436480" name="i" stackId="2" startPc="268436366"/>
+        <entry arg="true" endPc="268436848" name="msg" stackId="1" startPc="268436482"/>
+        <entry endPc="268436848" name="version" stackId="2" startPc="268436485"/>
+        <entry endPc="268436848" name="surfSec" stackId="3" startPc="268436485"/>
+        <entry endPc="268436848" name="n" stackId="4" startPc="268436485"/>
+        <entry endPc="268436790" name="i" stackId="5" startPc="268436688"/>
+        <entry endPc="268436780" name="t" stackId="6" startPc="268436688"/>
+        <entry arg="true" endPc="268436998" name="state" stackId="1" startPc="268436882"/>
+        <entry endPc="268436997" name="saved" stackId="2" startPc="268436885"/>
+        <entry arg="true" endPc="268437123" name="msg" stackId="1" startPc="268436999"/>
+        <entry endPc="268437103" name="e" stackId="2" startPc="268437075"/>
+    </localVars>
+    <deviceInfo deviceVersion="45fe3cbb0de8ea0a70e12628d2697915f1272301" partNumber="006-B3990-00"/>
+    <annotations>
+        <annotationEntry annotation="initialized" class="Drawables" module="globals/Rez" symbol="LauncherIcon"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="AppName"/>
+    </annotations>
+    <dataEntryOffsetMappings>
+        <dataEntry label="globals" offset="49" parentId="" symbolId="globals" type="module"/>
+        <dataEntry label="globals/SurfaceFieldView" offset="116" parentId="globals" symbolId="SurfaceFieldView" type="class"/>
+        <dataEntry label="globals/SurfaceData" offset="223" parentId="globals" symbolId="SurfaceData" type="class"/>
+        <dataEntry label="globals/Rez" offset="384" parentId="globals" symbolId="Rez" type="module"/>
+        <dataEntry label="globals/SurfaceFieldApp" offset="428" parentId="globals" symbolId="SurfaceFieldApp" type="class"/>
+        <dataEntry label="globals/Rez/Drawables" offset="517" parentId="Rez" symbolId="Drawables" type="module"/>
+        <dataEntry label="globals/Rez/Strings" offset="552" parentId="Rez" symbolId="Strings" type="module"/>
+    </dataEntryOffsetMappings>
+    <functions>
+        <functionEntry accessMode="public" endPc="268435471" name="&lt;init&gt;" parent="SurfaceFieldView" startPc="268435460">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="SurfaceData">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435491" name="&lt;init&gt;" parent="Rez" startPc="268435472">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435503" name="&lt;init&gt;" parent="SurfaceFieldApp" startPc="268435492">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435606" name="compute" parent="SurfaceFieldView" startPc="268435504">
+            <param id="info"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="protected" endPc="268435843" name="drawCurrentSection" parent="SurfaceFieldView" startPc="268435607">
+            <param id="dc"/>
+            <param id="data"/>
+            <param id="w"/>
+            <param id="h"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="protected" endPc="268435895" name="formatDist" parent="SurfaceFieldView" startPc="268435844">
+            <param id="meters"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435910" name="initialize" parent="SurfaceFieldView" startPc="268435896">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436155" name="onUpdate" parent="SurfaceFieldView" startPc="268435911">
+            <param id="dc"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="protected" endPc="268436313" name="drawNextOnly" parent="SurfaceFieldView" startPc="268436156">
+            <param id="dc"/>
+            <param id="data"/>
+            <param id="w"/>
+            <param id="h"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436481" name="updateProgress" parent="SurfaceData" startPc="268436314">
+            <param id="elapsed"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436848" name="parse" parent="SurfaceData" startPc="268436482">
+            <param id="msg"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436881" name="initialize" parent="SurfaceData" startPc="268436849">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Drawables">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Strings">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436998" name="onStart" parent="SurfaceFieldApp" startPc="268436882">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437123" name="onPhoneMessage" parent="SurfaceFieldApp" startPc="268436999">
+            <param id="msg"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437151" name="getInitialView" parent="SurfaceFieldApp" startPc="268437124">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437166" name="initialize" parent="SurfaceFieldApp" startPc="268437152">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437169" name="onStop" parent="SurfaceFieldApp" startPc="268437167">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+    </functions>
+</debugInfo>
