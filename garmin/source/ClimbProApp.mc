@@ -2,6 +2,7 @@ using Toybox.Application as App;
 using Toybox.Communications as Comm;
 using Toybox.System as Sys;
 using Toybox.WatchUi as Ui;
+using Toybox.Application.Storage as Storage;
 
 /**
  * Entry point for the ClimbPro datafield.
@@ -22,6 +23,12 @@ class ClimbProApp extends App.AppBase {
 
         msgCallback = new PhoneMessageCallback();
         Comm.registerForPhoneAppMessages(method(:onPhoneMessage));
+
+        var saved = Storage.getValue("active_payload");
+        if (saved != null) {
+            msgCallback.onMessage(saved);
+            Sys.println("ClimbPro: restored active payload from storage");
+        }
 
         Sys.println("ClimbPro: started, listening for phone messages");
     }

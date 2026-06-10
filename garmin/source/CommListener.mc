@@ -1,6 +1,7 @@
 using Toybox.Communications as Comm;
 using Toybox.Application as App;
 using Toybox.System as Sys;
+using Toybox.Application.Storage as Storage;
 
 /**
  * Listens for payloads from the Android companion app via the
@@ -70,6 +71,11 @@ class PhoneMessageCallback {
         data.payloadReceived = true;
         for (var i = 0; i < data.climbCount; i++) { data.calibIdx[i] = 0; }
         Sys.println("CommListener: payload parsed, " + data.climbCount + " climbs");
+        try {
+            Storage.setValue("active_payload", msg);
+        } catch (e) {
+            Sys.println("CommListener: payload too large to persist");
+        }
     }
 
     hidden function parseClimb(data, idx, climbDict) {
