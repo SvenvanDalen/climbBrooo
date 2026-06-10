@@ -334,6 +334,16 @@ Once code exists:
 
 ---
 
+## Watch app, active-route relay & surface datafield (2026-06-10)
+
+The browse widget is now a **device app** (`garmin-widget/`, manifest type `watch-app`, same app ID) with a glance in the FR255 up/down loop. Heavy init happens in `getInitialView` so the glance stays within its memory budget. The saved-route list reads a lightweight `saved_route_meta` Storage index (`{routeId → {name, climbCount}}`) instead of loading full payloads; climb data is loaded only when a route is opened.
+
+**Active route/climb selection.** Connect IQ apps have isolated storage, so the watch app cannot hand a payload to a datafield directly. Selection is relayed through the phone: watch app sends `SET_ACTIVE_ROUTE {id}` or `SET_ACTIVE_CLIMB {id, climbIdx}`; `WatchRequestHandler` builds the payload and pushes it to the datafield app IDs (`ConnectIqAppId.DATAFIELD`, `ConnectIqAppId.SURFACE_FIELD`); the phone acks the watch app with `ACTIVE_SET {ok, name}`. The climb datafield persists every received payload under Storage key `active_payload` and restores it at `onStart`, so the ride itself is fully offline. The phone must be reachable only at selection time.
+
+**Surface-sections datafield** (`garmin-surface/`, app ID `00112233...`): shows the user-defined surface section the rider is in (surface + remaining metres) and the next one. It receives a dedicated lean payload `{v:3, mode:"route", routeId, name, climbs:[], surfSec:[start,end,type, ...]}` built by `ClimbPayloadBuilder.buildSurfaceSectionPayload` from `StoredRoute.surfaceSections` (see `protocol/schema.json` `surfaceSections`). An empty `surfSec` is sent on purpose to clear stale sections. Auto-detected flat segments are deliberately **not** included (user decision 2026-06-10). Single-climb activation sends no surface payload — sections are route-relative.
+
+---
+
 ## Resolved decisions
 
 Decisions taken from the original open-questions list. These are now load-bearing — change them only with a deliberate revisit, and update this section when you do.

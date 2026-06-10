@@ -22,6 +22,8 @@ Custom ClimbPro-style climb analysis and visualization for the Garmin Forerunner
 
 Everything works offline during the activity. The phone is only needed for sync, not during the ride.
 
+The watch side consists of three Connect IQ apps for the Forerunner 255 Music: the **ClimbPro app** (`garmin-widget/`, a device app with a glance in the up/down loop) for browsing routes/climbs, saving them to the watch, and marking one as *active*; the **ClimbPro datafield** (`garmin/`) that renders the active climb during a ride (fully offline — the active payload is persisted on the watch); and the **Ondergrond datafield** (`garmin-surface/`) that shows the user-defined surface section you are riding plus the next one. Setting the active route/climb from the watch requires the phone to be reachable at that moment; the ride itself does not.
+
 ## User features
 
 - Select a route to follow from the synced library.
@@ -39,7 +41,9 @@ Everything works offline during the activity. The phone is only needed for sync,
 | Component | Tech | Role |
 |-----------|------|------|
 | Android companion app | Java, MVVM, Repository, WorkManager | Route parsing, climb detection, segmentation, Strava integration, sync orchestration |
-| Garmin datafield | Monkey C, Connect IQ SDK | Render current/next climb, match GPS to route, fire alerts |
+| ClimbPro app (watch) | Monkey C, Connect IQ SDK | Device app with glance; browse and save routes/climbs; set active route/climb |
+| ClimbPro datafield (watch) | Monkey C, Connect IQ SDK | Render current/next climb, match GPS to route, fire alerts; fully offline once active payload received |
+| Ondergrond datafield (watch) | Monkey C, Connect IQ SDK | Show user-defined surface section and next section during ride |
 | Shared protocol | JSON Schema (canonical) → generated Java POJOs + hand-written Monkey C classes | Single source of truth for wire format and domain constants |
 
 See `ARCHITECTURE.md` for the full breakdown.
