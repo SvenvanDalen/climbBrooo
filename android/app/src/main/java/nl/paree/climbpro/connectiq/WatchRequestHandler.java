@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
 
@@ -36,6 +37,12 @@ public final class WatchRequestHandler {
             handleListRoutes();
         } else if ("LOAD_ROUTE".equals(type)) {
             handleLoadRoute((String) message.get("id"));
+        } else if ("SET_ACTIVE_ROUTE".equals(type)) {
+            handleSetActiveRoute((String) message.get("id"));
+        } else if ("SET_ACTIVE_CLIMB".equals(type)) {
+            Object idx = message.get("climbIdx");
+            handleSetActiveClimb((String) message.get("id"),
+                    idx instanceof Number ? ((Number) idx).intValue() : -1);
         } else {
             Log.w(TAG, "Unknown message type from watch: " + type);
         }
@@ -71,5 +78,53 @@ public final class WatchRequestHandler {
         } catch (IOException e) {
             Log.e(TAG, "LOAD_ROUTE failed for " + routeId, e);
         }
+    }
+
+    private void handleSetActiveRoute(String routeId) {
+        if (routeId == null || routeId.isEmpty()) {
+            ackActiveSet(false, null);
+            return;
+        }
+        try {
+            StoredRoute route = routeRepo.loadRoute(routeId);
+            ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+            boolean ok = connectIqClient.sendPayloadToDatafield(builder.buildRoutePayload(route));
+            // Always push the surface payload — an empty surfSec clears stale sections.
+            connectIqClient.sendPayloadToSurfaceField(builder.buildSurfaceSectionPayload(route));
+            String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+            ackActiveSet(ok, name);
+            Log.i(TAG, "SET_ACTIVE_ROUTE " + routeId + " ok=" + ok);
+        } catch (IOException | IllegalArgumentException e) {
+            Log.e(TAG, "SET_ACTIVE_ROUTE failed for " + routeId, e);
+            ackActiveSet(false, null);
+        }
+    }
+
+    private void handleSetActiveClimb(String routeId, int climbIndex) {
+        if (routeId == null || routeId.isEmpty() || climbIndex < 0) {
+            ackActiveSet(false, null);
+            return;
+        }
+        try {
+            StoredRoute route = routeRepo.loadRoute(routeId);
+            byte[] payload = new ClimbPayloadBuilder(mapper)
+                    .buildSingleClimbPayload(route, climbIndex);
+            boolean ok = connectIqClient.sendPayloadToDatafield(payload);
+            StoredClimb climb = route.climbs.get(climbIndex);
+            String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
+            ackActiveSet(ok, name);
+            Log.i(TAG, "SET_ACTIVE_CLIMB " + routeId + "[" + climbIndex + "] ok=" + ok);
+        } catch (IOException | IllegalArgumentException e) {
+            Log.e(TAG, "SET_ACTIVE_CLIMB failed for " + routeId + "[" + climbIndex + "]", e);
+            ackActiveSet(false, null);
+        }
+    }
+
+    private void ackActiveSet(boolean ok, String name) {
+        Map<String, Object> ack = new LinkedHashMap<>();
+        ack.put("type", "ACTIVE_SET");
+        ack.put("ok",   ok);
+        if (name != null) ack.put("name", name);
+        connectIqClient.sendMessage(ack);
     }
 }
