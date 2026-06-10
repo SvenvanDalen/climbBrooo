@@ -2,7 +2,7 @@
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
     <iq:application
         entry="ClimbWidgetApp"
-        type="widget"
+        type="watch-app"
         name="@Strings.AppName"
         id="fedcba9876543210fedcba9876543210"
         launcherIcon="@Drawables.LauncherIcon"
