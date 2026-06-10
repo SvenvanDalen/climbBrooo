@@ -126,7 +126,7 @@ Both modes share the climb/segment data model — only the envelope and the matc
 
 ```
 Strava API ──┐
-GPX file ────┼──► Android Repository ──► Domain: parse → smooth → simplify → detect climbs → segment
+GPX file ────┼──► Android Repository ──► Domain: parse → smooth → simplify → detect climbs → trim false flat → segment
 FIT file ────┘                                                                       │
 Garmin course ──► Connect IQ event ──────────────────────────────────────────────────┤
                                                                                      ▼
@@ -224,6 +224,7 @@ Key types — names should match across modules where possible.
 **Invariants**:
 
 - A `Climb` has length ≥ 800 m and avg gradient ≥ 3%. If either fails, it is not a climb.
+- A detected `Climb` has its leading/trailing **vals plat** (false flat: a contiguous stretch averaging < 2% over ≥ 200 m) trimmed off, but is never trimmed below the 800 m minimum. After trimming, start/end distance and `startLat`/`startLon` reflect the tighter boundaries. See `domain/climb/ClimbTrimmer.java`.
 - A `Climb`'s segments cover the full climb with no gaps or overlap. `sum(segment.distance) == climb.length` (within rounding).
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 

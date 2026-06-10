@@ -35,6 +35,7 @@ Two modes (route-follow vs radius) means the wire format and the watch's local s
 These come from `Idea.md` and must be preserved across all implementations:
 
 - **Climb definition**: ≥ 800 m length AND ≥ 3% average gradient. Both conditions required.
+- **False-flat trim**: after a climb is detected, leading and trailing *vals plat* — a contiguous stretch averaging **< 2 %** gradient over **≥ 200 m** — is trimmed off so the climb starts/ends on real climbing. Never trim a climb below the 800 m minimum. Threshold lives in `ClimbConstants` (`FALSE_FLAT_MAX_GRADIENT`, `FALSE_FLAT_MIN_LENGTH_M`); logic in `domain/climb/ClimbTrimmer.java`.
 - **Segmentation**: each detected climb is split into segments of exactly **8% of the climb length** (so every climb has 12–13 segments; do not hardcode a count).
 - **Segment color mapping** (gradient → color): 0–2% light yellow, 2–4% yellow, 4–6% dark yellow, 6–8% orange, 8–10% dark orange, 10%+ red. Keep this mapping in one place — the shared protocol module — so phone and watch agree.
 - **Climb-start alert**: vibration + sound, trigger **once per climb** within 50 m of start. Idempotency must survive GPS jitter (don't re-trigger if the user drifts back across the 50 m boundary).
