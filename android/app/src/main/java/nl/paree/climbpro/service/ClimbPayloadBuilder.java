@@ -5,6 +5,7 @@ import nl.paree.climbpro.data.route.StoredCalibrationPoint;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.data.route.StoredSurfaceSection;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,6 +60,49 @@ public final class ClimbPayloadBuilder {
             for (StoredClimb sc : climbs) out.add(buildRadiusClimb(sc));
         }
         payload.put("climbs", out);
+        return mapper.writeValueAsBytes(payload);
+    }
+
+    /** Route-mode payload containing exactly one climb (watch "set active climb"). */
+    public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex) throws IOException {
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
+            throw new IllegalArgumentException("climbIndex out of range: " + climbIndex);
+        }
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("v",       SCHEMA_VERSION);
+        payload.put("mode",    "route");
+        payload.put("routeId", route.routeId);
+        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+        if (name != null && name.length() <= 32) payload.put("name", name);
+        List<Map<String, Object>> climbs = new ArrayList<>(1);
+        climbs.add(buildRouteClimb(route.climbs.get(climbIndex)));
+        payload.put("climbs", climbs);
+        return mapper.writeValueAsBytes(payload);
+    }
+
+    /**
+     * Lean payload for the surface-sections datafield: no climbs, packed
+     * surfSec triples [startDistance, endDistance, surfaceType, ...].
+     * An empty surfSec is sent deliberately so a stale route on the watch is cleared.
+     */
+    public byte[] buildSurfaceSectionPayload(StoredRoute route) throws IOException {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("v",       SCHEMA_VERSION);
+        payload.put("mode",    "route");
+        payload.put("routeId", route.routeId);
+        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+        if (name != null && name.length() <= 32) payload.put("name", name);
+        payload.put("climbs", new ArrayList<>());
+        List<StoredSurfaceSection> sections = route.surfaceSections;
+        int count = sections == null ? 0 : sections.size();
+        List<Integer> packed = new ArrayList<>(count * 3);
+        for (int i = 0; i < count; i++) {
+            StoredSurfaceSection s = sections.get(i);
+            packed.add(s.startDistance);
+            packed.add(s.endDistance);
+            packed.add(s.surfaceType);
+        }
+        payload.put("surfSec", packed);
         return mapper.writeValueAsBytes(payload);
     }
 
