@@ -33,6 +33,8 @@ class PhoneMessageCallback {
         if (msgType instanceof Toybox.Lang.String) {
             if (msgType.equals("ROUTE_LIST")) {
                 handleRouteList(msg);
+            } else if (msgType.equals("ACTIVE_SET")) {
+                App.getApp().activeAck = msg;
             } else {
                 Sys.println("CommListener: unknown type: " + msgType);
             }

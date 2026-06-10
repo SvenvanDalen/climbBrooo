@@ -64,7 +64,7 @@ class ClimbListView extends Ui.View {
         }
 
         var data       = App.getApp().climbData;
-        var totalItems = data.climbCount + 1;  // last item = save/delete action
+        var totalItems = data.climbCount + 2;  // last items: save/delete + set-active
 
         dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 6, Gfx.FONT_XTINY,
@@ -100,13 +100,17 @@ class ClimbListView extends Ui.View {
                 var sign     = grad < 0 ? "-" : "";
                 var gradStr  = sign + (absGrad / 10) + "." + (absGrad % 10) + "%  " + formatDist(data.climbLength[i]);
                 dc.drawText(w / 2, yPos + 20, Gfx.FONT_XTINY, gradStr, Gfx.TEXT_JUSTIFY_CENTER);
-            } else {
+            } else if (i == data.climbCount) {
                 if (routeSaved == null) { refreshRouteSaved(); }
                 var isSaved = routeSaved;
                 var label   = isSaved ? "Delete route" : "Save route";
                 var color   = isSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN;
                 dc.setColor(i == selectedIndex ? Gfx.COLOR_WHITE : color, Gfx.COLOR_TRANSPARENT);
                 dc.drawText(w / 2, yPos + 14, Gfx.FONT_XTINY, label, Gfx.TEXT_JUSTIFY_CENTER);
+            } else {
+                // "Zet actief" row
+                dc.setColor(i == selectedIndex ? Gfx.COLOR_WHITE : Gfx.COLOR_BLUE, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(w / 2, yPos + 14, Gfx.FONT_XTINY, "Zet actief", Gfx.TEXT_JUSTIFY_CENTER);
             }
         }
     }
@@ -131,7 +135,7 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
         var view = Ui.getCurrentView()[0];
         var data = App.getApp().climbData;
         if (view instanceof ClimbListView) {
-            var total = data.climbCount + 1;
+            var total = data.climbCount + 2;
             if (view.selectedIndex < total - 1) {
                 view.selectedIndex++;
                 Ui.requestUpdate();
@@ -167,9 +171,13 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
             }
             view.refreshRouteSaved();
             Ui.requestUpdate();
+        } else if (view.selectedIndex == data.climbCount + 1) {
+            Comm.transmit({ "type" => "SET_ACTIVE_ROUTE", "id" => view.getRouteId() },
+                          null, new CommListener());
+            Ui.pushView(new ActiveSetView(), new ActiveSetDelegate(), Ui.SLIDE_LEFT);
         } else {
             Ui.pushView(
-                new ClimbDetailView(view.selectedIndex),
+                new ClimbDetailView(view.selectedIndex, view.selectedIndex),
                 new ClimbDetailDelegate(),
                 Ui.SLIDE_LEFT
             );

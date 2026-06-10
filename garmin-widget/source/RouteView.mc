@@ -214,7 +214,7 @@ class RouteListDelegate extends Ui.BehaviorDelegate {
             "climbs"  => [climbDict]
         };
         App.getApp().processMessage(fakePayload);
-        Ui.pushView(new ClimbDetailView(0), new ClimbDetailDelegate(), Ui.SLIDE_LEFT);
+        Ui.pushView(new ClimbDetailView(0, climbIdx), new ClimbDetailDelegate(), Ui.SLIDE_LEFT);
     }
 
     hidden function splitOnLastUnderscore(s) {

@@ -1,18 +1,23 @@
 using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Application as App;
+using Toybox.Communications as Comm;
 
 class ClimbDetailView extends Ui.View {
 
     hidden var climbIndex;
+    hidden var originalClimbIndex;
     hidden var drawer;
     hidden var climbSaved = null;
 
-    function initialize(ci) {
+    function initialize(ci, origIdx) {
         View.initialize();
-        climbIndex = ci;
+        climbIndex         = ci;
+        originalClimbIndex = origIdx;
         drawer = new ProfileDrawer();
     }
+
+    function getOriginalClimbIndex() { return originalClimbIndex; }
 
     function onUpdate(dc) {
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_BLACK);
@@ -52,7 +57,7 @@ class ClimbDetailView extends Ui.View {
             if (climbSaved == null) { refreshClimbSaved(); }
             dc.setColor(climbSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, h - 8, Gfx.FONT_XTINY,
-                climbSaved ? "SELECT: Remove" : "SELECT: Save",
+                (climbSaved ? "SELECT: Remove" : "SELECT: Save") + "  MENU: Actief",
                 Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -102,6 +107,19 @@ class ClimbDetailDelegate extends Ui.BehaviorDelegate {
         if (view instanceof ClimbDetailView) {
             view.toggleSave();
             Ui.requestUpdate();
+        }
+        return true;
+    }
+
+    function onMenu() {
+        var data = App.getApp().climbData;
+        var rId  = data.routeId;
+        var view = Ui.getCurrentView()[0];
+        if (rId != null && view instanceof ClimbDetailView) {
+            Comm.transmit({ "type" => "SET_ACTIVE_CLIMB", "id" => rId,
+                            "climbIdx" => view.getOriginalClimbIndex() },
+                          null, new CommListener());
+            Ui.pushView(new ActiveSetView(), new ActiveSetDelegate(), Ui.SLIDE_LEFT);
         }
         return true;
     }
