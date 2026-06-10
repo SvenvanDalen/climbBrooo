@@ -18,6 +18,8 @@ public final class SurfaceRollingResistance {
     public static final double CRR_MIXED       = 0.011;
 
     public static double crr(int surfaceType) {
+        // SurfaceType is a holder of `static final int` constants (not an enum),
+        // so these compile-time int constants are valid switch case labels.
         switch (SurfaceType.fromInt(surfaceType)) {
             case SurfaceType.GRAVEL:      return CRR_GRAVEL;
             case SurfaceType.DIRT:        return CRR_DIRT;
