@@ -13,6 +13,11 @@ module StorageManager {
         return (keys instanceof Toybox.Lang.Array) ? keys : [];
     }
 
+    function getSavedRouteMeta() {
+        var meta = Storage.getValue("saved_route_meta");
+        return (meta instanceof Toybox.Lang.Dictionary) ? meta : {};
+    }
+
     function isRouteSaved(routeId) {
         var ids = getSavedRouteIds();
         for (var i = 0; i < ids.size(); i++) {
@@ -30,6 +35,19 @@ module StorageManager {
         if (!found) { ids.add(routeId); }
         Storage.setValue("saved_route_ids", ids);
         Storage.setValue("route_" + routeId, payloadDict);
+
+        // Lightweight meta so the route list never loads full payloads.
+        var name = routeId;
+        var climbCount = 0;
+        if (payloadDict instanceof Toybox.Lang.Dictionary) {
+            var n = payloadDict.get("name");
+            if (n instanceof Toybox.Lang.String) { name = n; }
+            var cls = payloadDict.get("climbs");
+            if (cls instanceof Toybox.Lang.Array) { climbCount = cls.size(); }
+        }
+        var meta = getSavedRouteMeta();
+        meta.put(routeId, { "name" => name, "climbCount" => climbCount });
+        Storage.setValue("saved_route_meta", meta);
     }
 
     function deleteRoute(routeId) {
@@ -40,6 +58,10 @@ module StorageManager {
         }
         Storage.setValue("saved_route_ids", newIds);
         Storage.deleteValue("route_" + routeId);
+
+        var meta = getSavedRouteMeta();
+        meta.remove(routeId);
+        Storage.setValue("saved_route_meta", meta);
     }
 
     function loadRoute(routeId) {

@@ -1,6 +1,7 @@
 using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Application as App;
+using Toybox.System as Sys;
 
 class RouteListView extends Ui.View {
 
@@ -30,18 +31,27 @@ class RouteListView extends Ui.View {
         savedRouteIds  = StorageManager.getSavedRouteIds();
         savedClimbKeys = StorageManager.getSavedClimbKeys();
 
+        var meta = StorageManager.getSavedRouteMeta();
         savedRouteNames       = new [savedRouteIds.size()];
         savedRouteClimbCounts = new [savedRouteIds.size()];
         for (var i = 0; i < savedRouteIds.size(); i++) {
-            var p = StorageManager.loadRoute(savedRouteIds[i]);
-            if (p instanceof Toybox.Lang.Dictionary) {
-                var n = p.get("name");
-                savedRouteNames[i] = (n instanceof Toybox.Lang.String) ? n : savedRouteIds[i];
-                var cls = p.get("climbs");
-                savedRouteClimbCounts[i] = (cls instanceof Toybox.Lang.Array) ? cls.size() : 0;
+            var m = meta.get(savedRouteIds[i]);
+            if (m instanceof Toybox.Lang.Dictionary) {
+                savedRouteNames[i]       = m.get("name");
+                savedRouteClimbCounts[i] = m.get("climbCount");
             } else {
-                savedRouteNames[i]       = savedRouteIds[i];
-                savedRouteClimbCounts[i] = 0;
+                // Route saved before the meta index existed: load once and backfill.
+                var p = StorageManager.loadRoute(savedRouteIds[i]);
+                if (p instanceof Toybox.Lang.Dictionary) {
+                    StorageManager.saveRoute(savedRouteIds[i], p);
+                    var n = p.get("name");
+                    savedRouteNames[i] = (n instanceof Toybox.Lang.String) ? n : savedRouteIds[i];
+                    var cls = p.get("climbs");
+                    savedRouteClimbCounts[i] = (cls instanceof Toybox.Lang.Array) ? cls.size() : 0;
+                } else {
+                    savedRouteNames[i]       = savedRouteIds[i];
+                    savedRouteClimbCounts[i] = 0;
+                }
             }
         }
     }
@@ -53,6 +63,11 @@ class RouteListView extends Ui.View {
     function onUpdate(dc) {
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_BLACK);
         dc.clear();
+
+        // Phone-connection indicator: green dot = verbonden, rood = geen verbinding
+        var phoneConnected = Sys.getDeviceSettings().phoneConnected;
+        dc.setColor(phoneConnected ? 0x00AA00 : Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+        dc.fillCircle(dc.getWidth() - 10, 10, 5);
 
         var w     = dc.getWidth();
         var h     = dc.getHeight();
