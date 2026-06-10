@@ -100,7 +100,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         "Stel je FTP en gewicht in (Instellingen) voor een tijdschatting");
                 adapter.setSegmentSeconds(null);
             } else {
-                binding.climbTimeEstimate.setText(String.format(
+                binding.climbTimeEstimate.setText(String.format(java.util.Locale.US,
                         "Geschatte tijd: %s · %.0f W",
                         DurationFormat.format(estimate.totalSeconds),
                         estimate.assumedPowerWatts));
