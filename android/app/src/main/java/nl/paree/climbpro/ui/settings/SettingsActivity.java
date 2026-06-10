@@ -51,9 +51,9 @@ public final class SettingsActivity extends AppCompatActivity {
             if (profile == null) return;
             binding.inputFtp.setText(profile.ftpWatts > 0 ? String.valueOf(profile.ftpWatts) : "");
             binding.inputRiderWeight.setText(
-                    profile.riderWeightKg > 0 ? String.valueOf(profile.riderWeightKg) : "");
+                    profile.riderWeightKg > 0 ? formatKg(profile.riderWeightKg) : "");
             binding.inputBikeWeight.setText(
-                    profile.bikeWeightKg > 0 ? String.valueOf(profile.bikeWeightKg) : "");
+                    profile.bikeWeightKg > 0 ? formatKg(profile.bikeWeightKg) : "");
         });
 
         binding.btnSaveProfile.setOnClickListener(v -> {
@@ -106,6 +106,14 @@ public final class SettingsActivity extends AppCompatActivity {
         } catch (NumberFormatException e) {
             return 0.0;
         }
+    }
+
+    /**
+     * Weights are persisted as float, so widening back to double can leave noise
+     * (e.g. 72.0000019). Show a single decimal; parseDoubleSafe reads it back.
+     */
+    private static String formatKg(double kg) {
+        return String.format(java.util.Locale.US, "%.1f", kg);
     }
 
     @Override
