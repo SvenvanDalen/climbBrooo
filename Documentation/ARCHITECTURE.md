@@ -243,6 +243,34 @@ hand-written Monkey C match), with overlap-resolution decided watch-side at that
 Custom sections survive route re-import (preserved in `RouteRepository.saveRoute` like
 flat-segment surfaces) and contribute to the catalog `surfaceTypes` index.
 
+### Climb time estimate (phone-only)
+
+The phone estimates how long each climb takes from a rider profile (FTP in
+watts, rider weight, bike weight) stored in `SharedPreferences`
+(`RiderProfileRepository`). The estimate is computed on demand in the
+climb-detail screen (`ClimbDetailViewModel` → `LiveData<ClimbTimeEstimate>`,
+recomputed in `onResume` so a changed profile is picked up) and is **not** part
+of the wire payload — the watch never sees it.
+
+The model lives in `domain.power`:
+
+- `PowerSpeedSolver` solves the steady-state power-balance equation
+  (`P = m·g·(sinθ + Crr·cosθ)·v + ½·ρ·CdA·v³`) for speed via bisection, taking
+  the rolling resistance `Crr` as a parameter. Descents (net-assisting gravity)
+  clamp to `PowerConstants.MAX_SPEED_MPS`.
+- `SurfaceRollingResistance` maps each segment's `surfaceType` (asphalt, gravel,
+  dirt, cobblestone, mixed) to its own `Crr`, so rougher surfaces are estimated
+  as slower. Unknown surfaces fall back to asphalt.
+- `PowerDurationModel` is a Critical-Power 2-parameter curve `P(t) = FTP + W'/t`,
+  so longer climbs are ridden closer to FTP and short climbs allow a surge.
+- `ClimbTimeEstimator` ties them together by fixed-point iteration: a climb's
+  duration sets the sustainable power, which sets per-segment speeds (each using
+  its surface `Crr`), which sum back to the duration; iterate until stable. It
+  returns total and per-segment seconds, or `null` when the profile is incomplete.
+
+Constants (CdA, air density, drivetrain efficiency, W') live in `PowerConstants`;
+the per-surface `Crr` values live in `SurfaceRollingResistance`.
+
 ---
 
 ## Configuration Management

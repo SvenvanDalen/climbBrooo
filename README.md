@@ -32,6 +32,7 @@ Everything works offline during the activity. The phone is only needed for sync,
 - Start navigation to the selected route.
 - Import a single climb or route from a GPX file.
 - Sort the route library (by import time or name); the list auto-refreshes when a Strava sync finishes.
+- **Estimated climb time** — per-climb and per-segment time estimates based on your FTP, body weight and bike weight (set these in Settings), with rolling resistance adjusted per segment surface (asphalt rolls faster than gravel/cobbles). Phone-only; not synced to the watch.
 
 ## Components
 
