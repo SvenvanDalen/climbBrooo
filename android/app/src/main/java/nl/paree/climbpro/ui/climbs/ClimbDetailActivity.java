@@ -26,6 +26,7 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
+import nl.paree.climbpro.domain.power.DurationFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,6 +94,20 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             tryDrawMap();
         });
 
+        viewModel.timeEstimate().observe(this, estimate -> {
+            if (estimate == null) {
+                binding.climbTimeEstimate.setText(
+                        "Stel je FTP en gewicht in (Instellingen) voor een tijdschatting");
+                adapter.setSegmentSeconds(null);
+            } else {
+                binding.climbTimeEstimate.setText(String.format(
+                        "Geschatte tijd: %s · %.0f W",
+                        DurationFormat.format(estimate.totalSeconds),
+                        estimate.assumedPowerWatts));
+                adapter.setSegmentSeconds(estimate.segmentSeconds);
+            }
+        });
+
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
         viewModel.saved().observe(this, isSaved -> {
@@ -115,6 +130,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         binding.mapView.onResume();
+        viewModel.refreshEstimate();
     }
 
     @Override

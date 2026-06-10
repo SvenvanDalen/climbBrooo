@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.domain.power.DurationFormat;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.util.ArrayList;
@@ -34,10 +35,16 @@ public final class ClimbSegmentAdapter
     };
 
     private List<StoredSegment> items = new ArrayList<>();
+    private int[] segmentSeconds; // null when no estimate available
     private OnSegmentLongClickListener longClickListener;
 
     public void setItems(List<StoredSegment> list) {
         items = list != null ? list : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    public void setSegmentSeconds(int[] seconds) {
+        this.segmentSeconds = seconds;
         notifyDataSetChanged();
     }
 
@@ -58,6 +65,12 @@ public final class ClimbSegmentAdapter
         StoredSegment s = items.get(position);
         h.gradientView.setText(String.format("%.1f%%", s.gradient * 100));
         h.distView.setText(s.distance + " m");
+        if (segmentSeconds != null && position < segmentSeconds.length) {
+            h.timeView.setVisibility(View.VISIBLE);
+            h.timeView.setText(DurationFormat.format(segmentSeconds[position]));
+        } else {
+            h.timeView.setVisibility(View.GONE);
+        }
         int ci = Math.max(0, Math.min(5, s.colorIndex));
         h.colorBar.setBackgroundColor(SEGMENT_COLORS[ci]);
 
@@ -89,12 +102,14 @@ public final class ClimbSegmentAdapter
     static final class ViewHolder extends RecyclerView.ViewHolder {
         TextView gradientView;
         TextView distView;
+        TextView timeView;
         View     colorBar;
         TextView surfaceBadge;
         ViewHolder(View v) {
             super(v);
             gradientView  = v.findViewById(R.id.segment_gradient);
             distView      = v.findViewById(R.id.segment_distance);
+            timeView      = v.findViewById(R.id.segment_time);
             colorBar      = v.findViewById(R.id.segment_color_bar);
             surfaceBadge  = v.findViewById(R.id.segment_surface_badge);
         }
