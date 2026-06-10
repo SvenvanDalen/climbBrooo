@@ -64,6 +64,8 @@ public final class ClimbDetector {
                 continue;
             }
 
+            // Untrimmed metrics — used only for the climb-validity checks below;
+            // the emitted Climb is rebuilt from the trimmed points further down.
             RoutePoint start = points.get(startIdx);
             RoutePoint end   = points.get(endIdx);
             double length    = end.distance - start.distance;
@@ -81,6 +83,10 @@ public final class ClimbDetector {
             }
 
             // Trim leading/trailing false flat, then recompute the climb from the trimmed points.
+            // endIdx > startIdx was already checked above, so the sub-list has >= 2 points and
+            // ClimbTrimmer never returns fewer, making the get(0)/get(size()-1) accesses safe.
+            // No re-validation after trimming: the trimmer only removes sub-2% ends and never
+            // drops below MIN_CLIMB_LENGTH_M, so a climb that passed >=800 m / >=3% still passes.
             List<RoutePoint> climbPoints = ClimbTrimmer.trim(points.subList(startIdx, endIdx + 1));
             RoutePoint trimmedStart = climbPoints.get(0);
             RoutePoint trimmedEnd   = climbPoints.get(climbPoints.size() - 1);

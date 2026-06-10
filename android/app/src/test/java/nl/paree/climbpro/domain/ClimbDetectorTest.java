@@ -94,7 +94,8 @@ public class ClimbDetectorTest {
         List<Climb> climbs = ClimbDetector.detect(route);
         assertEquals("one climb expected", 1, climbs.size());
         Climb c = climbs.get(0);
-        assertTrue("lead-in trimmed (start pushed forward)", c.startDistance >= 250);
+        // Whole 300 m lead-in is trimmed (>=200 m min length is met), so start ~= 300 m.
+        assertTrue("full lead-in trimmed (start pushed forward)", c.startDistance >= 290);
         assertTrue("trimmed climb still >= 800 m", c.length >= 800);
     }
 
@@ -105,6 +106,7 @@ public class ClimbDetectorTest {
         List<Climb> climbs = ClimbDetector.detect(route);
         assertEquals("one climb expected", 1, climbs.size());
         Climb c = climbs.get(0);
+        // End pulled back to ~1000 m; allow ~one sample-point of slack into the flat.
         assertTrue("lead-out trimmed (end pulled back)", c.endDistance <= 1100);
         assertTrue("trimmed climb still >= 800 m", c.length >= 800);
     }
