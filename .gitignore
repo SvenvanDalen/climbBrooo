@@ -43,6 +43,21 @@ garmin/*.prg
 garmin/*.prg.debug.xml
 garmin/developer_key
 garmin/developer_key.der
+garmin/external-mir/
+garmin/internal-mir/
+garmin/gen/
+
+garmin-surface/*.prg
+garmin-surface/*.prg.debug.xml
+garmin-surface/external-mir/
+garmin-surface/internal-mir/
+garmin-surface/gen/
+
+garmin-widget/*.prg
+garmin-widget/*.prg.debug.xml
+garmin-widget/external-mir/
+garmin-widget/internal-mir/
+garmin-widget/gen/
 
 # ============================================================================
 # Secrets — never commit
