@@ -13,5 +13,12 @@ package nl.paree.climbpro.connectiq;
 public final class ConnectIqAppId {
     private ConnectIqAppId() {}
 
+    /** Watch app (browse/select UI; was the widget). Counterpart for incoming messages. */
     public static final String VALUE = "fedcba9876543210fedcba9876543210";
+
+    /** Existing ClimbPro datafield — receives the active route/climb payload. */
+    public static final String DATAFIELD = "0123456789abcdef0123456789abcdef";
+
+    /** Surface-sections datafield. MUST equal the id in garmin-surface/manifest.xml. */
+    public static final String SURFACE_FIELD = "00112233445566770011223344556677";
 }

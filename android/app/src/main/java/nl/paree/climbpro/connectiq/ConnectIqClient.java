@@ -36,7 +36,9 @@ public final class ConnectIqClient {
 
     private final Context context;
     private final ConnectIQ connectIQ;
-    private final IQApp iqApp = new IQApp(ConnectIqAppId.VALUE);
+    private final IQApp iqApp        = new IQApp(ConnectIqAppId.VALUE);
+    private final IQApp datafieldApp = new IQApp(ConnectIqAppId.DATAFIELD);
+    private final IQApp surfaceApp   = new IQApp(ConnectIqAppId.SURFACE_FIELD);
 
     private final MutableLiveData<ConnectIqState> stateLd =
             new MutableLiveData<>(ConnectIqState.DISCONNECTED);
@@ -130,35 +132,53 @@ public final class ConnectIqClient {
         }
     }
 
-    /** Fire-and-forget send of a Map (serialised to a Dictionary by the SDK). */
+    /** Fire-and-forget send of a Map to the watch app (serialised to a Dictionary by the SDK). */
     public boolean sendMessage(Map<String, Object> message) {
+        return sendMessageTo(iqApp, message);
+    }
+
+    private boolean sendMessageTo(IQApp targetApp, Map<String, Object> message) {
         final IQDevice d = device;
         if (!connected || d == null) {
-            Log.w(TAG, "sendMessage: not connected");
+            Log.w(TAG, "sendMessageTo: not connected");
             return false;
         }
         try {
             stateLd.postValue(ConnectIqState.SENDING);
-            connectIQ.sendMessage(d, iqApp, message, (dev, app, status) -> {
+            connectIQ.sendMessage(d, targetApp, message, (dev, app, status) -> {
                 if (status != ConnectIQ.IQMessageStatus.SUCCESS) {
-                    Log.e(TAG, "sendMessage status: " + status);
+                    Log.e(TAG, "sendMessageTo status: " + status);
                 }
                 stateLd.postValue(ConnectIqState.CONNECTED);
             });
             return true;
         } catch (InvalidStateException | ServiceUnavailableException e) {
-            Log.e(TAG, "sendMessage failed", e);
+            Log.e(TAG, "sendMessageTo failed", e);
             stateLd.postValue(ConnectIqState.ERROR);
             return false;
         }
     }
 
-    /** Decode JSON payload to a Map and send it (Dictionary on the watch). */
+    /** Decode JSON payload to a Map and send it to the watch app. */
     public boolean sendPayload(byte[] payload) {
+        return sendPayloadTo(iqApp, payload);
+    }
+
+    /** Send a route/climb payload to the ClimbPro datafield app. */
+    public boolean sendPayloadToDatafield(byte[] payload) {
+        return sendPayloadTo(datafieldApp, payload);
+    }
+
+    /** Send a surface-sections payload to the surface datafield app. */
+    public boolean sendPayloadToSurfaceField(byte[] payload) {
+        return sendPayloadTo(surfaceApp, payload);
+    }
+
+    private boolean sendPayloadTo(IQApp targetApp, byte[] payload) {
         try {
-            return sendMessage(PayloadCodec.decode(payload));
+            return sendMessageTo(targetApp, PayloadCodec.decode(payload));
         } catch (IOException e) {
-            Log.e(TAG, "sendPayload: cannot parse payload JSON", e);
+            Log.e(TAG, "sendPayloadTo: cannot parse payload JSON", e);
             return false;
         }
     }
