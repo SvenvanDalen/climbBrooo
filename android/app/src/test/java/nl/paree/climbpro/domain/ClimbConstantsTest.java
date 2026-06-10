@@ -26,4 +26,14 @@ public class ClimbConstantsTest {
     public void payloadBudgetIs4KB() {
         assertEquals(4 * 1024, PayloadBudget.MAX_BYTES);
     }
+
+    @Test
+    public void falseFlatMaxGradientIsTwoPercent() {
+        assertEquals(0.02, ClimbConstants.FALSE_FLAT_MAX_GRADIENT, 1e-9);
+    }
+
+    @Test
+    public void falseFlatMinLengthIs200m() {
+        assertEquals(200, ClimbConstants.FALSE_FLAT_MIN_LENGTH_M);
+    }
 }

@@ -12,4 +12,8 @@ public final class ClimbConstants {
     public static final int    CALIBRATION_MIN_DISTANCE_M   = 200;
     public static final int    ALERT_RADIUS_M               = 50;
     public static final int    ROUTE_MATCHING_HYSTERESIS_M  = 20;
+    /** A stretch averaging below this gradient (fraction) counts as "vals plat" (false flat). */
+    public static final double FALSE_FLAT_MAX_GRADIENT      = 0.02;
+    /** Minimum length (metres) of a leading/trailing false flat before it is trimmed off a climb. */
+    public static final int    FALSE_FLAT_MIN_LENGTH_M      = 200;
 }
