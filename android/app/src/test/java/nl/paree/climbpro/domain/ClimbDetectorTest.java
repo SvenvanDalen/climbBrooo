@@ -86,4 +86,26 @@ public class ClimbDetectorTest {
         assertFalse(climbs.isEmpty());
         assertFalse("climb should have segments", climbs.get(0).segments.isEmpty());
     }
+
+    @Test
+    public void trimsFalseFlatLeadIn() {
+        // 300 m at 1.7% (above the 1.5% start-skip, below the 2% false-flat line) then 1000 m at 6%.
+        List<RoutePoint> route = buildRoute(new double[][]{{0, 300, 0.017}, {300, 1300, 0.06}});
+        List<Climb> climbs = ClimbDetector.detect(route);
+        assertEquals("one climb expected", 1, climbs.size());
+        Climb c = climbs.get(0);
+        assertTrue("lead-in trimmed (start pushed forward)", c.startDistance >= 250);
+        assertTrue("trimmed climb still >= 800 m", c.length >= 800);
+    }
+
+    @Test
+    public void trimsFalseFlatLeadOut() {
+        // 1000 m at 6% then 400 m at 1.5% still rising toward the peak — must be trimmed off the end.
+        List<RoutePoint> route = buildRoute(new double[][]{{0, 1000, 0.06}, {1000, 1400, 0.015}});
+        List<Climb> climbs = ClimbDetector.detect(route);
+        assertEquals("one climb expected", 1, climbs.size());
+        Climb c = climbs.get(0);
+        assertTrue("lead-out trimmed (end pulled back)", c.endDistance <= 1100);
+        assertTrue("trimmed climb still >= 800 m", c.length >= 800);
+    }
 }

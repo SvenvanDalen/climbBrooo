@@ -80,21 +80,29 @@ public final class ClimbDetector {
                 continue;
             }
 
-            List<RoutePoint> climbPoints = points.subList(startIdx, endIdx + 1);
+            // Trim leading/trailing false flat, then recompute the climb from the trimmed points.
+            List<RoutePoint> climbPoints = ClimbTrimmer.trim(points.subList(startIdx, endIdx + 1));
+            RoutePoint trimmedStart = climbPoints.get(0);
+            RoutePoint trimmedEnd   = climbPoints.get(climbPoints.size() - 1);
+            double trimmedLength   = trimmedEnd.distance - trimmedStart.distance;
+            double trimmedEleGain  = trimmedEnd.elevation - trimmedStart.elevation;
+            double trimmedGradient = trimmedLength > 0 ? trimmedEleGain / trimmedLength : 0;
+
             List<Segment> segments = Segmenter.segment(climbPoints);
 
             Climb climb = Climb.builder()
-                    .startDistance((int) Math.round(start.distance))
-                    .endDistance((int) Math.round(end.distance))
-                    .length((int) Math.round(length))
-                    .elevationGain((int) Math.round(eleGain))
-                    .avgGradient(avgGradient)
-                    .startLat(start.lat)
-                    .startLon(start.lon)
+                    .startDistance((int) Math.round(trimmedStart.distance))
+                    .endDistance((int) Math.round(trimmedEnd.distance))
+                    .length((int) Math.round(trimmedLength))
+                    .elevationGain((int) Math.round(trimmedEleGain))
+                    .avgGradient(trimmedGradient)
+                    .startLat(trimmedStart.lat)
+                    .startLon(trimmedStart.lon)
                     .segments(segments)
                     .build();
 
             climbs.add(climb);
+            // Advance past the ORIGINAL (untrimmed) end so a trailing flat is not rescanned.
             i = endIdx + 1;
         }
 
