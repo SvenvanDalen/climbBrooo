@@ -83,4 +83,24 @@ public class ClimbTrimmerTest {
         in.add(new RoutePoint(51.0, 5.0, 100.0, 0.0));
         assertEquals(in.size(), ClimbTrimmer.trim(in).size());
     }
+
+    @Test
+    public void trimsBothEndsAtOnce() {
+        // 300 m @ 1% (lead-in flat) + 1000 m @ 6% (climb) + 300 m @ 1% (lead-out flat).
+        // Both ends are false flat and the remaining climb stays >= 800 m, so both get trimmed.
+        List<RoutePoint> out = ClimbTrimmer.trim(
+                route(new double[][]{{300, 0.01}, {1000, 0.06}, {300, 0.01}}));
+        assertTrue("lead-in trimmed", out.get(0).distance >= 250);
+        assertTrue("lead-out trimmed", out.get(out.size() - 1).distance <= 1350);
+        assertTrue("remaining length ~1000 m", len(out) >= 950 && len(out) <= 1050);
+    }
+
+    @Test
+    public void twoPointListReturnedUnchanged() {
+        // n < 3 guard boundary: a two-point list is returned as-is.
+        List<RoutePoint> in = new ArrayList<>();
+        in.add(new RoutePoint(51.0, 5.0, 100.0, 0.0));
+        in.add(new RoutePoint(51.0, 5.0, 160.0, 1000.0));
+        assertEquals(in.size(), ClimbTrimmer.trim(in).size());
+    }
 }
