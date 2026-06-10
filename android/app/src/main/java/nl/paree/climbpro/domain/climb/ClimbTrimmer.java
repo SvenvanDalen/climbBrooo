@@ -20,6 +20,11 @@ import java.util.List;
  * smoothed elevation), so the local gradient is meaningful and not GPS-jittery.
  * Distances are cumulative from the route start; the returned points keep their
  * original distance/lat/lon, so callers recompute climb fields directly from them.
+ *
+ * <p><b>Precondition:</b> the input is a single climb's points, ending at (or before)
+ * the elevation peak — i.e. it has no trailing descent. The gradient test below is
+ * signed, so a descending tail would read as below-threshold and be trimmed as false
+ * flat. {@code ClimbDetector} satisfies this by ending each sub-list at {@code peakIdx}.
  */
 public final class ClimbTrimmer {
 
@@ -54,6 +59,8 @@ public final class ClimbTrimmer {
             e--;
         }
         double trimmedLeadOut = pts.get(end).distance - pts.get(e).distance;
+        // start may already reflect a committed lead-in trim, so this guards the
+        // doubly-trimmed length stays >= MIN_CLIMB_LENGTH_M.
         double remainingAfterTail = pts.get(e).distance - pts.get(start).distance;
         if (e < end
                 && trimmedLeadOut >= ClimbConstants.FALSE_FLAT_MIN_LENGTH_M
