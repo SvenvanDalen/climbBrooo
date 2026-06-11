@@ -61,6 +61,13 @@ class RouteListView extends Ui.View {
     }
 
     function onUpdate(dc) {
+        // Refresh phoneCount from the live index so that a response arriving after
+        // SyncView's timeout (or after this view was already shown) is not missed.
+        var _liveIndex = App.getApp().phoneRouteIndex;
+        if (_liveIndex != null && _liveIndex.received) {
+            phoneCount = _liveIndex.getCount();
+        }
+
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_BLACK);
         dc.clear();
 

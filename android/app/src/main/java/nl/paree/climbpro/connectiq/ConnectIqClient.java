@@ -1,6 +1,8 @@
 package nl.paree.climbpro.connectiq;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -80,9 +82,11 @@ public final class ConnectIqClient {
             }
 
             @Override public void onSdkShutDown() {
+                Log.w(TAG, "CIQ SDK shut down — scheduling reconnect");
                 connected = false;
                 device = null;
                 stateLd.postValue(ConnectIqState.DISCONNECTED);
+                new Handler(Looper.getMainLooper()).postDelayed(ConnectIqClient.this::connect, 5_000);
             }
         });
     }
@@ -104,6 +108,15 @@ public final class ConnectIqClient {
                 connected = nowConnected;
                 stateLd.postValue(nowConnected
                         ? ConnectIqState.CONNECTED : ConnectIqState.DISCONNECTED);
+                if (nowConnected) {
+                    // Re-register in case the CIQ session was reset during the disconnect.
+                    try {
+                        connectIQ.registerForAppEvents(device, iqApp,
+                                (d, a, data, st) -> dispatchIncoming(data));
+                    } catch (InvalidStateException | ServiceUnavailableException e) {
+                        Log.w(TAG, "Re-register app events after reconnect failed", e);
+                    }
+                }
             });
 
             connectIQ.registerForAppEvents(device, iqApp,
