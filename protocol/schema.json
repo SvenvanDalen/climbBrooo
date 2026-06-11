@@ -30,7 +30,7 @@
       "maxLength": 32
     },
     "surfaceSections": {
-      "description": "Optional user-defined surface overrides for arbitrary stretches of the route (route mode only), ordered by startDistance. Wire encoding: packed int array 'surfSec' of [startDistance, endDistance, surfaceType, ...] triples.",
+      "description": "Optional user-defined surface overrides and named flat sections for arbitrary stretches of the route (route mode only), ordered by startDistance. Wire encoding: 'surfSec' array of objects {s:startDistance, e:endDistance, t:surfaceType, n:name?, cp:[distance,latInt,lonInt, ...]}.",
       "type": "array",
       "minItems": 0,
       "maxItems": 32,
@@ -150,6 +150,25 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 5
+        },
+        "name": {
+          "description": "Optional user-supplied display name for the section, shown on the watch surface datafield.",
+          "type": "string",
+          "maxLength": 24
+        },
+        "checkpoints": {
+          "description": "GPS checkpoints along the section for distance-correction on the watch. Wire encoding: packed int array 'cp' of [distanceFromRouteStart, latInt, lonInt, ...] where latInt/lonInt = degrees x 100000.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["distance", "lat", "lon"],
+            "properties": {
+              "distance": { "type": "integer", "minimum": 0 },
+              "lat": { "type": "number", "minimum": -90.0, "maximum": 90.0 },
+              "lon": { "type": "number", "minimum": -180.0, "maximum": 180.0 }
+            }
+          }
         }
       }
     }

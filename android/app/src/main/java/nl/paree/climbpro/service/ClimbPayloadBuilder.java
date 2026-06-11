@@ -87,9 +87,14 @@ public final class ClimbPayloadBuilder {
     }
 
     /**
-     * Lean payload for the surface-sections datafield: no climbs, packed
-     * surfSec triples [startDistance, endDistance, surfaceType, ...].
-     * An empty surfSec is sent deliberately so a stale route on the watch is cleared.
+     * Lean payload for the surface-sections datafield: no climbs, and a 'surfSec'
+     * array of section objects {s,e,t,n?,cp}. 'cp' is a packed checkpoint array
+     * [dist, latInt, lonInt, ...]. Both user surface sections and qualifying flat
+     * segments (named OR with a known surface) are merged and sorted by start
+     * distance. An empty array is sent deliberately to clear a stale route.
+     *
+     * Wire format:
+     *   surfSec:[{s,e,t,n?,cp:[dist,latInt,lonInt, ...]}, ...]   // surface + flat sections
      */
     public byte[] buildSurfaceSectionPayload(StoredRoute route) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -99,16 +104,47 @@ public final class ClimbPayloadBuilder {
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);
         payload.put("climbs", new ArrayList<>());
-        List<StoredSurfaceSection> sections = route.surfaceSections;
-        int count = sections == null ? 0 : sections.size();
-        List<Integer> packed = new ArrayList<>(count * 3);
-        for (int i = 0; i < count; i++) {
-            StoredSurfaceSection s = sections.get(i);
-            packed.add(s.startDistance);
-            packed.add(s.endDistance);
-            packed.add(s.surfaceType);
+
+        // Collect all sections (surface sections + qualifying flat segments).
+        List<int[]> ranges = new ArrayList<>();   // {start, end, surfaceType}
+        List<String> names = new ArrayList<>();
+        if (route.surfaceSections != null) {
+            for (StoredSurfaceSection s : route.surfaceSections) {
+                ranges.add(new int[]{s.startDistance, s.endDistance,
+                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
+                names.add(s.name);
+            }
         }
-        payload.put("surfSec", packed);
+        if (route.flatSegments != null) {
+            for (nl.paree.climbpro.data.route.StoredFlatSegment f : route.flatSegments) {
+                boolean qualifies = (f.name != null && !f.name.isEmpty())
+                        || f.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN;
+                if (!qualifies) continue;
+                ranges.add(new int[]{f.startDistance, f.endDistance,
+                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(f.surfaceType)});
+                names.add(f.name);
+            }
+        }
+        // Sort by start distance, keeping names aligned via an index permutation.
+        Integer[] order = new Integer[ranges.size()];
+        for (int i = 0; i < order.length; i++) order[i] = i;
+        java.util.Arrays.sort(order, (a, b) ->
+                Integer.compare(ranges.get(a)[0], ranges.get(b)[0]));
+
+        List<Map<String, Object>> surfSec = new ArrayList<>(order.length);
+        for (int oi : order) {
+            int[] rg = ranges.get(oi);
+            Map<String, Object> sec = new LinkedHashMap<>();
+            sec.put("s", rg[0]);
+            sec.put("e", rg[1]);
+            sec.put("t", rg[2]);
+            String secName = names.get(oi);
+            if (secName != null && secName.length() <= 24) sec.put("n", secName);
+            sec.put("cp", buildCheckpoints(route.distances, route.lats, route.lons,
+                    rg[0], rg[1]));
+            surfSec.add(sec);
+        }
+        payload.put("surfSec", surfSec);
         return mapper.writeValueAsBytes(payload);
     }
 

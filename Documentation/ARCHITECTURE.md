@@ -228,21 +228,21 @@ Key types — names should match across modules where possible.
 - A `Climb`'s segments cover the full climb with no gaps or overlap. `sum(segment.distance) == climb.length` (within rounding).
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 
-### Custom surface sections (phone-only)
+### Custom surface sections
 
 Beyond auto-detected per-climb-segment and per-flat-segment surface types, the user can
-manually mark an **arbitrary stretch** of a route with a surface type. These live in
-`StoredRoute.surfaceSections` (`StoredSurfaceSection`: `startDistance`, `endDistance`,
-`surfaceType`, all integer metres) and are managed from the route detail screen
-(`RouteDetailActivity` → "Ondergrond-stukken").
+manually mark an **arbitrary stretch** of a route with a surface type and an optional name.
+These live in `StoredRoute.surfaceSections` (`StoredSurfaceSection`: `startDistance`,
+`endDistance`, `surfaceType`, `name`) and are managed from the route detail screen
+(`RouteDetailActivity` → "Ondergrond-stukken"). Flat segments (`StoredFlatSegment`) also
+carry a `name` field; both are set and preserved by `RouteRepository` (atomic write,
+re-import keyed by `startDistance`).
 
-They are **phone-only for now** — deliberately not serialised into the Connect IQ payload.
-The distance-range shape is chosen so a future wire extension can carry them unchanged:
-a packed `surfSec` array of `[startDistance, endDistance, surfaceType, …]` integers on the
-route payload, added via `protocol/schema.json` first (then regenerated Java POJOs and a
-hand-written Monkey C match), with overlap-resolution decided watch-side at that time.
-Custom sections survive route re-import (preserved in `RouteRepository.saveRoute` like
-flat-segment surfaces) and contribute to the catalog `surfaceTypes` index.
+Surface sections are now serialised to the watch via the `surfSec` object array
+(`{s,e,t,n?,cp:[dist,latInt,lonInt,…]}`). Qualifying flat segments (named or with a
+non-UNKNOWN surface) are merged into the same list and sorted by start distance.
+Untouched flat segments are still skipped. Sections survive route re-import and
+contribute to the catalog `surfaceTypes` index.
 
 ### Climb time estimate (phone-only)
 
@@ -340,7 +340,9 @@ The browse widget is now a **device app** (`garmin-widget/`, manifest type `watc
 
 **Active route/climb selection.** Connect IQ apps have isolated storage, so the watch app cannot hand a payload to a datafield directly. Selection is relayed through the phone: watch app sends `SET_ACTIVE_ROUTE {id}` or `SET_ACTIVE_CLIMB {id, climbIdx}`; `WatchRequestHandler` builds the payload and pushes it to the datafield app IDs (`ConnectIqAppId.DATAFIELD`, `ConnectIqAppId.SURFACE_FIELD`); the phone acks the watch app with `ACTIVE_SET {ok, name}`. The climb datafield persists every received payload under Storage key `active_payload` and restores it at `onStart`, so the ride itself is fully offline. The phone must be reachable only at selection time.
 
-**Surface-sections datafield** (`garmin-surface/`, app ID `00112233...`): shows the user-defined surface section the rider is in (surface + remaining metres) and the next one. It receives a dedicated lean payload `{v:3, mode:"route", routeId, name, climbs:[], surfSec:[start,end,type, ...]}` built by `ClimbPayloadBuilder.buildSurfaceSectionPayload` from `StoredRoute.surfaceSections` (see `protocol/schema.json` `surfaceSections`). An empty `surfSec` is sent on purpose to clear stale sections. Auto-detected flat segments are deliberately **not** included (user decision 2026-06-10). Single-climb activation sends no surface payload — sections are route-relative.
+**Surface-sections datafield** (`garmin-surface/`, app ID `00112233...`): shows the user-defined surface/flat section the rider is in (name as title, surface type small underneath, remaining metres) and the next one. It receives a lean payload `{v:3, mode:"route", routeId, name, climbs:[], surfSec:[{s,e,t,n?,cp:[dist,latInt,lonInt, ...]}, ...]}` built by `ClimbPayloadBuilder.buildSurfaceSectionPayload`. The `surfSec` array merges `StoredRoute.surfaceSections` with **qualifying** `StoredFlatSegment`s (those the user has named or assigned a surface to) — this **reverses** the earlier 2026-06-10 decision to never send flat segments, but only for ones the user has explicitly touched; untouched flat segments are still skipped. Each section carries an optional `name` and a packed checkpoint array `cp = [distanceFromRouteStart, latInt, lonInt, ...]` (latInt/lonInt = degrees×100000, mirroring climb `calib`), computed at build time from the route geometry. An empty `surfSec` is sent on purpose to clear stale sections. Single-climb activation sends no surface payload.
+
+On the watch, `SurfaceData` keeps `elapsedDistance` as the primary matching axis and applies a smoothed `distanceOffset` snapped to the nearest checkpoint within 40 m (`correctElapsed`), so GPS coordinates correct drift without replacing distance matching.
 
 ---
 

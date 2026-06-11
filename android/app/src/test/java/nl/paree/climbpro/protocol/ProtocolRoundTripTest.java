@@ -45,6 +45,7 @@ public class ProtocolRoundTripTest {
                 {"route_mode_short.json"},
                 {"route_mode_full.json"},
                 {"radius_mode.json"},
+                {"route_mode_surface.json"},
         });
     }
 

@@ -72,7 +72,7 @@ public class ClimbPayloadBuilderActivePayloadTest {
     }
 
     @Test
-    public void surfacePayload_packsSectionsAsTriples() throws Exception {
+    public void surfacePayload_emitsSectionsAsObjects() throws Exception {
         StoredRoute route = routeWithTwoClimbs();
         route.surfaceSections = new ArrayList<>();
         StoredSurfaceSection s1 = new StoredSurfaceSection();
@@ -90,9 +90,16 @@ public class ClimbPayloadBuilderActivePayloadTest {
         assertEquals("r1", decoded.get("routeId"));
         assertTrue("surface payload must not carry climbs",
                 ((List<?>) decoded.get("climbs")).isEmpty());
-        assertEquals(Arrays.asList(1000, 2500, SurfaceType.GRAVEL,
-                                   6000, 7000, SurfaceType.COBBLESTONE),
-                decoded.get("surfSec"));
+
+        List<?> surfSec = (List<?>) decoded.get("surfSec");
+        assertEquals(2, surfSec.size());
+        Map<?, ?> sec1 = (Map<?, ?>) surfSec.get(0);
+        assertEquals(1000, sec1.get("s"));
+        assertEquals(2500, sec1.get("e"));
+        assertEquals(SurfaceType.GRAVEL, sec1.get("t"));
+        Map<?, ?> sec2 = (Map<?, ?>) surfSec.get(1);
+        assertEquals(6000, sec2.get("s"));
+        assertEquals(SurfaceType.COBBLESTONE, sec2.get("t"));
     }
 
     @Test

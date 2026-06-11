@@ -28,7 +28,11 @@ class SurfaceFieldView extends Ui.DataField {
         if (info != null && info has :elapsedDistance && info.elapsedDistance != null) {
             elapsed = info.elapsedDistance.toNumber();
         }
-        data.updateProgress(elapsed);
+        var pos = null;
+        if (info != null && info has :currentLocation && info.currentLocation != null) {
+            pos = info.currentLocation.toDegrees();  // [lat, lon] decimal degrees
+        }
+        data.updateProgress(data.correctElapsed(elapsed, pos));
     }
 
     function onUpdate(dc) {
@@ -57,32 +61,44 @@ class SurfaceFieldView extends Ui.DataField {
         }
     }
 
+    // Title = user name when present, else the surface-type label.
+    hidden function titleFor(data, idx) {
+        var nm = data.secName[idx];
+        if (nm != null && nm.length() > 0) { return nm; }
+        return SURF_NAMES[data.secType[idx]];
+    }
+
     hidden function drawCurrentSection(dc, data, w, h) {
         var t = data.secType[data.currentIdx];
 
-        // colour swatch above the surface name
+        // colour swatch above the section title
         dc.setColor(SURF_COLORS[t], Gfx.COLOR_TRANSPARENT);
         dc.fillRectangle(w / 2 - 50, 6, 100, 8);
 
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h / 4, Gfx.FONT_MEDIUM, SURF_NAMES[t], Gfx.TEXT_JUSTIFY_CENTER);
-        dc.drawText(w / 2, h / 2, Gfx.FONT_SMALL,
+        dc.drawText(w / 2, h / 4, Gfx.FONT_MEDIUM, titleFor(data, data.currentIdx),
+            Gfx.TEXT_JUSTIFY_CENTER);
+        // Surface type small under the name (only meaningful when a name overrides it).
+        dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, h / 2 - 8, Gfx.FONT_XTINY, SURF_NAMES[t],
+            Gfx.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, h / 2 + 8, Gfx.FONT_SMALL,
             "nog " + formatDist(data.remainingInSection), Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.nextIdx >= 0) {
-            var nt = data.secType[data.nextIdx];
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, (h * 3) / 4, Gfx.FONT_XTINY,
-                "dan: " + SURF_NAMES[nt], Gfx.TEXT_JUSTIFY_CENTER);
+                "dan: " + titleFor(data, data.nextIdx), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
     hidden function drawNextOnly(dc, data, w, h) {
-        var nt = data.secType[data.nextIdx];
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, h / 4, Gfx.FONT_XTINY, "VOLGENDE", Gfx.TEXT_JUSTIFY_CENTER);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h / 2 - 10, Gfx.FONT_MEDIUM, SURF_NAMES[nt], Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, h / 2 - 10, Gfx.FONT_MEDIUM, titleFor(data, data.nextIdx),
+            Gfx.TEXT_JUSTIFY_CENTER);
         dc.drawText(w / 2, (h * 3) / 4, Gfx.FONT_SMALL,
             "in " + formatDist(data.distToNext), Gfx.TEXT_JUSTIFY_CENTER);
     }
