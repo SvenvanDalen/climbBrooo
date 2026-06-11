@@ -282,9 +282,13 @@ public final class RouteRepository {
             List<FlatSegment> flat, List<RoutePoint> points,
             List<StoredFlatSegment> previous) {
         Map<Integer, Integer> prevSurface = new HashMap<>();
+        Map<Integer, String>  prevName    = new HashMap<>();
         for (StoredFlatSegment prev : previous) {
             if (prev.surfaceType != SurfaceType.UNKNOWN) {
                 prevSurface.put(prev.startDistance, prev.surfaceType);
+            }
+            if (prev.name != null) {
+                prevName.put(prev.startDistance, prev.name);
             }
         }
         List<StoredFlatSegment> result = new ArrayList<>(flat.size());
@@ -294,6 +298,7 @@ public final class RouteRepository {
             sfs.endDistance   = fs.endDistance;
             sfs.length        = fs.length;
             sfs.surfaceType   = prevSurface.getOrDefault(fs.startDistance, SurfaceType.UNKNOWN);
+            sfs.name          = prevName.get(fs.startDistance);
             double[] startCoord = nearestCoord(points, fs.startDistance);
             double[] endCoord   = nearestCoord(points, fs.endDistance);
             sfs.startLat = startCoord[0];
@@ -461,15 +466,48 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets both the surface type and the optional display name of a flat segment
+     * identified by its startDistance, in a single atomic write. A blank/empty name
+     * is stored as null. Updates the catalog surface index.
+     */
+    public void updateFlatSegment(String routeId, int startDistance,
+                                  int surfaceType, String name) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        boolean found = false;
+        if (route.flatSegments != null) {
+            for (StoredFlatSegment sf : route.flatSegments) {
+                if (sf.startDistance == startDistance) {
+                    sf.surfaceType = SurfaceType.fromInt(surfaceType);
+                    sf.name = (name == null || name.trim().isEmpty()) ? null : name.trim();
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            Log.w(TAG, "updateFlatSegment: no flat segment at startDistance " + startDistance);
+            return;
+        }
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /** Backwards-compatible overload: adds a section with no name. */
+    public void addSurfaceSection(String routeId, int startDistance, int endDistance,
+                                  int surfaceType) throws IOException {
+        addSurfaceSection(routeId, startDistance, endDistance, surfaceType, null);
+    }
+
+    /**
      * Adds a user-defined surface override for an arbitrary route stretch.
      * Distances are integer metres. The surface type is clamped to a legal value.
-     * The list is kept sorted by startDistance. Overlaps with existing sections are
-     * allowed (phone-only display); the most-recently-added section wins visually.
+     * A blank/empty name is stored as null. The list is kept sorted by startDistance.
      *
      * @throws IllegalArgumentException if start &lt; 0, end &lt;= start, or end &gt; route length.
      */
     public void addSurfaceSection(String routeId, int startDistance, int endDistance,
-                                  int surfaceType) throws IOException {
+                                  int surfaceType, String name) throws IOException {
         StoredRoute route = loadRoute(routeId);
         int routeLength = routeLengthMeters(route);
         if (startDistance < 0) {
@@ -488,6 +526,7 @@ public final class RouteRepository {
         section.startDistance = startDistance;
         section.endDistance   = endDistance;
         section.surfaceType   = SurfaceType.fromInt(surfaceType);
+        section.name          = (name == null || name.trim().isEmpty()) ? null : name.trim();
 
         if (route.surfaceSections == null) {
             route.surfaceSections = new ArrayList<>();
@@ -515,6 +554,23 @@ public final class RouteRepository {
         route.lastModifiedMs = System.currentTimeMillis();
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
+     * Renames the surface section at the given index (after sorting by startDistance).
+     * A blank/empty name clears it (stored as null). Out-of-range indices are ignored.
+     */
+    public void setSurfaceSectionName(String routeId, int index, String name) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.surfaceSections == null
+                || index < 0 || index >= route.surfaceSections.size()) {
+            Log.w(TAG, "setSurfaceSectionName: index out of range: " + index);
+            return;
+        }
+        route.surfaceSections.get(index).name =
+                (name == null || name.trim().isEmpty()) ? null : name.trim();
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
     }
 
     /**

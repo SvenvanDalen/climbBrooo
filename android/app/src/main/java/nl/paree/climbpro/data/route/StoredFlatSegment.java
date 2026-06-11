@@ -13,4 +13,6 @@ public final class StoredFlatSegment {
     public double startLon    = Double.NaN;
     public double endLat      = Double.NaN;
     public double endLon      = Double.NaN;
+    /** Optional user-supplied display name; survives route re-import. */
+    public String name;
 }

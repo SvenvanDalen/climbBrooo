@@ -162,17 +162,32 @@ public final class RouteDetailActivity extends AppCompatActivity {
     }
 
     private void showFlatSurfaceDialog(StoredFlatSegment flat) {
-        int current = SurfaceType.fromInt(flat.surfaceType);
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad, pad, pad);
+
+        final EditText nameInput = new EditText(this);
+        nameInput.setHint("Naam (optioneel)");
+        nameInput.setSingleLine(true);
+        if (flat.name != null) nameInput.setText(flat.name);
+        layout.addView(nameInput);
+
+        final android.widget.Spinner surface = new android.widget.Spinner(this);
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, SURFACE_LABELS_NL);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(adapter);
+        surface.setSelection(SurfaceType.fromInt(flat.surfaceType));
+        layout.addView(surface);
+
         new AlertDialog.Builder(this)
-                .setTitle("Oppervlak voor vlak segment")
-                .setSingleChoiceItems(SURFACE_LABELS_NL, current, null)
-                .setPositiveButton("Opslaan", (dialog, which) -> {
-                    android.widget.ListView lv = ((AlertDialog) dialog).getListView();
-                    int chosen = lv.getCheckedItemPosition();
-                    if (chosen >= 0 && chosen <= 5) {
-                        viewModel.setFlatSegmentSurface(routeId, flat.startDistance, chosen);
-                    }
-                })
+                .setTitle("Vlak segment")
+                .setView(layout)
+                .setPositiveButton("Opslaan", (dialog, which) ->
+                        viewModel.updateFlatSegment(routeId, flat.startDistance,
+                                surface.getSelectedItemPosition(),
+                                nameInput.getText().toString()))
                 .setNegativeButton("Annuleer", null)
                 .show();
     }
@@ -190,19 +205,44 @@ public final class RouteDetailActivity extends AppCompatActivity {
             rows = new String[current.size()];
             for (int i = 0; i < current.size(); i++) {
                 nl.paree.climbpro.data.route.StoredSurfaceSection s = current.get(i);
-                rows[i] = String.format("%.1f–%.1f km · %s",
+                String label = String.format("%.1f–%.1f km · %s",
                         s.startDistance / 1000.0, s.endDistance / 1000.0,
                         SURFACE_LABELS_NL[SurfaceType.fromInt(s.surfaceType)]);
+                rows[i] = (s.name != null ? s.name + " — " : "") + label;
             }
         }
 
         new AlertDialog.Builder(this)
                 .setTitle("Ondergrond-stukken")
                 .setItems(rows, (dialog, which) -> {
-                    if (!current.isEmpty()) confirmDeleteSection(which);
+                    if (!current.isEmpty()) showSectionActions(which, current.get(which).name);
                 })
                 .setPositiveButton("Toevoegen", (d, w) -> showAddSurfaceSectionDialog())
                 .setNegativeButton("Sluiten", null)
+                .show();
+    }
+
+    private void showSectionActions(int index, String currentName) {
+        new AlertDialog.Builder(this)
+                .setItems(new String[]{"Hernoemen", "Verwijderen"}, (d, which) -> {
+                    if (which == 0) showRenameSectionDialog(index, currentName);
+                    else confirmDeleteSection(index);
+                })
+                .show();
+    }
+
+    private void showRenameSectionDialog(int index, String currentName) {
+        final EditText input = new EditText(this);
+        input.setHint("Naam");
+        input.setSingleLine(true);
+        if (currentName != null) input.setText(currentName);
+        new AlertDialog.Builder(this)
+                .setTitle("Hernoem stuk")
+                .setView(input)
+                .setPositiveButton("Opslaan", (d, w) ->
+                        viewModel.setSurfaceSectionName(routeId, index,
+                                input.getText().toString()))
+                .setNegativeButton("Annuleer", null)
                 .show();
     }
 
@@ -220,6 +260,11 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
         int pad = (int) (16 * getResources().getDisplayMetrics().density);
         layout.setPadding(pad, pad, pad, pad);
+
+        final android.widget.EditText nameInput = new android.widget.EditText(this);
+        nameInput.setHint("Naam (optioneel)");
+        nameInput.setSingleLine(true);
+        layout.addView(nameInput);
 
         final android.widget.EditText startKm = new android.widget.EditText(this);
         startKm.setHint("Start (km)");
@@ -253,7 +298,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
                         return;
                     }
                     viewModel.addSurfaceSection(routeId, startM, endM,
-                            surface.getSelectedItemPosition());
+                            surface.getSelectedItemPosition(),
+                            nameInput.getText().toString());
                 })
                 .setNegativeButton("Annuleer", null)
                 .show();

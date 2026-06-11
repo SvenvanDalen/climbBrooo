@@ -30,6 +30,12 @@ import java.util.Map;
 public final class ClimbPayloadBuilder {
 
     private static final int SCHEMA_VERSION = 3;
+
+    /** One checkpoint at the section start, one every 200 m, and one at the end. */
+    static final int CHECKPOINT_SPACING_M = 200;
+    /** Hard cap on checkpoints per section to bound the watch payload. */
+    static final int MAX_CHECKPOINTS_PER_SECTION = 12;
+
     private final ObjectMapper mapper;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
@@ -159,6 +165,56 @@ public final class ClimbPayloadBuilder {
             arr[i * 3 + 2] = (int) Math.round(p.lon * 100000);
         }
         return arr;
+    }
+
+    /**
+     * Packs GPS checkpoints for the route stretch [startDist, endDist] into
+     * [dist, latInt, lonInt, ...] triples. Emits the start, one every
+     * {@link #CHECKPOINT_SPACING_M}, and the end, capped at
+     * {@link #MAX_CHECKPOINTS_PER_SECTION}. latInt/lonInt = degrees × 100000.
+     */
+    static int[] buildCheckpoints(double[] distances, double[] lats, double[] lons,
+                                  int startDist, int endDist) {
+        if (distances == null || distances.length == 0
+                || lats == null || lons == null) {
+            return new int[0];
+        }
+        int routeLen = (int) Math.round(distances[distances.length - 1]);
+        int start = Math.max(0, Math.min(startDist, routeLen));
+        int end   = Math.max(start, Math.min(endDist, routeLen));
+
+        List<Integer> targets = new ArrayList<>();
+        for (int d = start; d < end; d += CHECKPOINT_SPACING_M) targets.add(d);
+        targets.add(end);
+        if (targets.size() > MAX_CHECKPOINTS_PER_SECTION) {
+            List<Integer> thinned = new ArrayList<>(MAX_CHECKPOINTS_PER_SECTION);
+            int last = targets.size() - 1;
+            for (int i = 0; i < MAX_CHECKPOINTS_PER_SECTION; i++) {
+                int idx = (int) Math.round(i * (double) last / (MAX_CHECKPOINTS_PER_SECTION - 1));
+                thinned.add(targets.get(idx));
+            }
+            targets = thinned;
+        }
+
+        int[] out = new int[targets.size() * 3];
+        for (int i = 0; i < targets.size(); i++) {
+            int target  = targets.get(i);
+            int nearest = nearestIndex(distances, target);
+            out[i * 3]     = target;
+            out[i * 3 + 1] = (int) Math.round(lats[nearest] * 100000);
+            out[i * 3 + 2] = (int) Math.round(lons[nearest] * 100000);
+        }
+        return out;
+    }
+
+    private static int nearestIndex(double[] distances, int targetM) {
+        int best = 0;
+        double bestDiff = Math.abs(distances[0] - targetM);
+        for (int i = 1; i < distances.length; i++) {
+            double diff = Math.abs(distances[i] - targetM);
+            if (diff < bestDiff) { bestDiff = diff; best = i; }
+        }
+        return best;
     }
 
     private static int[] buildSurf(List<StoredSegment> segs) {

@@ -16,4 +16,6 @@ public final class StoredSurfaceSection {
     public int startDistance;
     public int endDistance;
     public int surfaceType = SurfaceType.UNKNOWN;
+    /** Optional user-supplied display name; survives route re-import. */
+    public String name;
 }

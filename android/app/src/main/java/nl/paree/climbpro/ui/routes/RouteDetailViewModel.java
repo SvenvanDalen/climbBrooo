@@ -91,29 +91,55 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
     /** Persists the surface type for a flat segment identified by its startDistance. */
     public void setFlatSegmentSurface(String routeId, int startDistance, int surfaceType) {
+        updateFlatSegment(routeId, startDistance, surfaceType, null);
+    }
+
+    /** Sets a flat segment's surface type and optional name (phone + watch). */
+    public void updateFlatSegment(String routeId, int startDistance,
+                                  int surfaceType, String name) {
         executor.execute(() -> {
             try {
-                routeRepo.setFlatSegmentSurfaceType(routeId, startDistance, surfaceType);
-                SyncScheduler.triggerImmediateSync(getApplication());
+                routeRepo.updateFlatSegment(routeId, startDistance, surfaceType, name);
                 loadRoute(routeId);
+                saved.postValue(true);
             } catch (Exception e) {
                 error.postValue("Opslaan mislukt: " + e.getMessage());
             }
         });
     }
 
-    /** Adds a user-defined surface override for an arbitrary stretch (phone-only). */
+    /** Adds a user-defined surface override for an arbitrary stretch (phone + watch). */
     public void addSurfaceSection(String routeId, int startDistance, int endDistance,
                                   int surfaceType) {
+        addSurfaceSection(routeId, startDistance, endDistance, surfaceType, null);
+    }
+
+    /** Adds a user-defined surface override for an arbitrary stretch (phone + watch). */
+    public void addSurfaceSection(String routeId, int startDistance, int endDistance,
+                                  int surfaceType, String name) {
         executor.execute(() -> {
             try {
-                routeRepo.addSurfaceSection(routeId, startDistance, endDistance, surfaceType);
+                routeRepo.addSurfaceSection(routeId, startDistance, endDistance,
+                        surfaceType, name);
                 loadRoute(routeId);
                 saved.postValue(true);
             } catch (IllegalArgumentException e) {
                 error.postValue("Ongeldig stuk: " + e.getMessage());
             } catch (Exception e) {
                 error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Renames the surface section at the given index (phone + watch). */
+    public void setSurfaceSectionName(String routeId, int index, String name) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setSurfaceSectionName(routeId, index, name);
+                loadRoute(routeId);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Hernoemen mislukt: " + e.getMessage());
             }
         });
     }

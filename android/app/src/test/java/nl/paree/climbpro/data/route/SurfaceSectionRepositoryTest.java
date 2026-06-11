@@ -151,6 +151,38 @@ public class SurfaceSectionRepositoryTest {
     }
 
     @Test
+    public void addSurfaceSection_storesName() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL, "Grindstrook");
+
+        StoredSurfaceSection s = repo.loadRoute("r1").surfaceSections.get(0);
+        assertEquals("Grindstrook", s.name);
+    }
+
+    @Test
+    public void addSurfaceSection_blankNameStoredAsNull() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL, "   ");
+
+        org.junit.Assert.assertNull(repo.loadRoute("r1").surfaceSections.get(0).name);
+    }
+
+    @Test
+    public void setSurfaceSectionName_updatesByIndex() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL, null);
+
+        repo.setSurfaceSectionName("r1", 0, "Hernoemd");
+
+        assertEquals("Hernoemd", repo.loadRoute("r1").surfaceSections.get(0).name);
+    }
+
+    @Test
     public void saveRoute_preservesSurfaceSectionsAcrossReimport() throws Exception {
         seedRoute("r1");
         RouteRepository repo = new RouteRepository(app);
