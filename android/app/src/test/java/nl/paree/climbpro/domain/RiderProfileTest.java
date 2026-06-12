@@ -32,4 +32,28 @@ public class RiderProfileTest {
     public void incompleteWhenBikeWeightZero() {
         assertFalse(new RiderProfile(250, 72.0, 0.0).isComplete());
     }
+
+    @Test
+    public void threeArgConstructorUsesDefaultIntensity() {
+        RiderProfile p = new RiderProfile(250, 72.0, 8.0);
+        assertEquals(RiderProfile.DEFAULT_RIDE_INTENSITY_PCT, p.rideIntensityPct);
+    }
+
+    @Test
+    public void intensityFractionClampsLow() {
+        RiderProfile p = new RiderProfile(250, 72.0, 8.0, 10);
+        assertEquals(RiderProfile.RIDE_INTENSITY_MIN_PCT / 100.0, p.rideIntensityFraction(), 1e-9);
+    }
+
+    @Test
+    public void intensityFractionClampsHigh() {
+        RiderProfile p = new RiderProfile(250, 72.0, 8.0, 130);
+        assertEquals(RiderProfile.RIDE_INTENSITY_MAX_PCT / 100.0, p.rideIntensityFraction(), 1e-9);
+    }
+
+    @Test
+    public void intensityFractionInRange() {
+        RiderProfile p = new RiderProfile(250, 72.0, 8.0, 65);
+        assertEquals(0.65, p.rideIntensityFraction(), 1e-9);
+    }
 }
