@@ -18,6 +18,7 @@ import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
+import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
@@ -134,9 +135,39 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.mapView.getOverlays().clear();
         binding.mapView.getOverlays().add(polyline);
 
+        drawSurfaceSections(route);
+
         BoundingBox box = BoundingBox.fromGeoPoints(points);
         binding.mapView.post(() -> binding.mapView.zoomToBoundingBox(box, true, 50));
         binding.mapView.invalidate();
+    }
+
+    /** Tekent elk handmatig ingevoerd ondergrond-stuk als gekleurde overlay op de route. */
+    private void drawSurfaceSections(StoredRoute route) {
+        if (route.surfaceSections == null) return;
+        for (nl.paree.climbpro.data.route.StoredSurfaceSection s : route.surfaceSections) {
+            List<double[]> coords = SurfaceSectionGeometry.pointsBetween(
+                    route.distances, route.lats, route.lons,
+                    s.startDistance, s.endDistance);
+            if (coords.size() < 2) continue;
+
+            List<GeoPoint> geo = new ArrayList<>(coords.size());
+            for (double[] c : coords) geo.add(new GeoPoint(c[0], c[1]));
+
+            Polyline overlay = new Polyline();
+            overlay.setColor(SurfaceColorPalette.toColor(s.surfaceType));
+            overlay.setWidth(12f);
+            overlay.setPoints(geo);
+
+            final String label = (s.name != null ? s.name : "(naamloos)")
+                    + " · " + SURFACE_LABELS_NL[SurfaceType.fromInt(s.surfaceType)];
+            overlay.setOnClickListener((polyline, mapView, eventPos) -> {
+                Toast.makeText(this, label, Toast.LENGTH_SHORT).show();
+                return true;
+            });
+
+            binding.mapView.getOverlays().add(overlay);
+        }
     }
 
     private void showRenameDialog() {
