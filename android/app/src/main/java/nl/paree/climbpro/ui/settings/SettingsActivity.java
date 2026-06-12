@@ -54,13 +54,22 @@ public final class SettingsActivity extends AppCompatActivity {
                     profile.riderWeightKg > 0 ? formatKg(profile.riderWeightKg) : "");
             binding.inputBikeWeight.setText(
                     profile.bikeWeightKg > 0 ? formatKg(profile.bikeWeightKg) : "");
+            binding.inputRideIntensity.setText(String.valueOf(
+                    profile.rideIntensityPct > 0
+                            ? profile.rideIntensityPct
+                            : nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT));
         });
 
         binding.btnSaveProfile.setOnClickListener(v -> {
             int ftp = parseIntSafe(binding.inputFtp.getText().toString());
             double rider = parseDoubleSafe(binding.inputRiderWeight.getText().toString());
             double bike = parseDoubleSafe(binding.inputBikeWeight.getText().toString());
-            viewModel.saveRiderProfile(ftp, rider, bike);
+            int intensityRaw = parseIntSafe(binding.inputRideIntensity.getText().toString());
+            int intensity = intensityRaw <= 0
+                    ? nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT
+                    : Math.max(nl.paree.climbpro.domain.power.RiderProfile.RIDE_INTENSITY_MIN_PCT,
+                        Math.min(nl.paree.climbpro.domain.power.RiderProfile.RIDE_INTENSITY_MAX_PCT, intensityRaw));
+            viewModel.saveRiderProfile(ftp, rider, bike, intensity);
             Toast.makeText(this, "Profiel opgeslagen", Toast.LENGTH_SHORT).show();
         });
 

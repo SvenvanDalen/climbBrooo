@@ -58,8 +58,8 @@ public final class SettingsViewModel extends AndroidViewModel {
         radiusKm.postValue(km);
     }
 
-    public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg) {
-        RiderProfile profile = new RiderProfile(ftpWatts, riderKg, bikeKg);
+    public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg, int rideIntensityPct) {
+        RiderProfile profile = new RiderProfile(ftpWatts, riderKg, bikeKg, rideIntensityPct);
         riderRepo.save(profile);
         riderProfile.postValue(profile);
     }

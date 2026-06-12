@@ -138,6 +138,14 @@
                 android:inputType="numberDecimal"
                 android:layout_marginBottom="8dp"/>
 
+            <EditText
+                android:id="@+id/input_ride_intensity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Rit-intensiteit (% FTP, 40-95)"
+                android:inputType="number"
+                android:layout_marginBottom="8dp"/>
+
             <Button
                 android:id="@+id/btn_save_profile"
                 android:layout_width="match_parent"
