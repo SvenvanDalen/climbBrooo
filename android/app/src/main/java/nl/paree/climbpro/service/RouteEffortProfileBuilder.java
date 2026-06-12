@@ -42,12 +42,16 @@ public final class RouteEffortProfileBuilder {
             if (climb.startDistance > cursor) {
                 appendNonClimbTiles(tiles, route, cursor, climb.startDistance);
             }
+            // A climb with null segments contributes no tiles (consistent with
+            // ClimbPayloadBuilder); its span is simply skipped in the effort profile.
             if (climb.segments != null) {
                 for (StoredSegment seg : climb.segments) {
                     tiles.add(new RouteTile(seg.distance, seg.gradient, seg.surfaceType, ci));
                 }
             }
-            cursor = Math.max(cursor, climb.endDistance);
+            // Clamp to totalDistance so a climb whose endDistance overshoots the
+            // route never drops the trailing gap or breaks the cursor invariant.
+            cursor = Math.min(Math.max(cursor, climb.endDistance), totalDistance);
         }
         if (totalDistance > cursor) {
             appendNonClimbTiles(tiles, route, cursor, totalDistance);
@@ -73,6 +77,8 @@ public final class RouteEffortProfileBuilder {
             if (tileLen <= 0) {
                 continue;
             }
+            // Gradient is taken from the enclosing point-pair (the route arrays carry
+            // no interpolated elevation at clipped sub-segment boundaries).
             double grad = (e[i + 1] - e[i]) / pairLen;
             int surface = nonClimbSurface(route, (int) Math.round(a));
             tiles.add(new RouteTile(tileLen, grad, surface, -1));
