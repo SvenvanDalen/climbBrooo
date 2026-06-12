@@ -19,6 +19,14 @@ public final class PowerConstants {
 
     /** Anaerobic work capacity W' for the Critical-Power model (joules). */
     public static final double W_PRIME = 20_000.0;
+    /** Recovery time constant for W' reconstitution below CP (seconds). */
+    public static final double W_PRIME_TAU_SECONDS = 400.0;
+    /** Fraction of W'max kept in reserve at the route finish (buffer, not empty). */
+    public static final double RESERVE_FRACTION = 0.10;
+    /** Upper bound for the per-climb power offset above CP during bisection (watts). */
+    public static final double X_MAX_OFFSET_W = 600.0;
+    /** Bisection iterations for solving the shared climb offset x. */
+    public static final int BISECTION_ITERATIONS = 40;
 
     /** Speed cap so descents/flat segments never yield absurd times (m/s ~= 90 km/h). */
     public static final double MAX_SPEED_MPS = 25.0;
