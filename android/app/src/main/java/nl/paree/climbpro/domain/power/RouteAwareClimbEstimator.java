@@ -34,8 +34,9 @@ public final class RouteAwareClimbEstimator {
         }
 
         // Bisection: largest offset x whose route-wide min balance stays >= reserve.
-        // x = 0 is always feasible (climbs at CP never deplete). minBalance is monotone
-        // decreasing in x, so we keep the largest tested feasible value.
+        // x = 0 is always feasible: climbs at CP never deplete, and non-climb power is
+        // rideIntensityFraction()*CP <= 0.95*CP < CP, so W' only recovers on flats.
+        // minBalance is monotone decreasing in x, so we keep the largest feasible value.
         double xLo = 0.0;
         double xHi = PowerConstants.X_MAX_OFFSET_W;
         for (int iter = 0; iter < PowerConstants.BISECTION_ITERATIONS; iter++) {
@@ -79,6 +80,9 @@ public final class RouteAwareClimbEstimator {
         double min = wPrimeMax;
         for (int i = 0; i < tiles.size(); i++) {
             RouteTile t = tiles.get(i);
+            if (t.distanceMeters <= 0) {
+                continue; // a zero-length tile cannot change the balance
+            }
             double power = t.isClimb() ? cp + x : pNonClimb;
             double v = PowerSpeedSolver.speedMetersPerSecond(power, mass, t.gradient, crr[i]);
             double dt = t.distanceMeters / v;
