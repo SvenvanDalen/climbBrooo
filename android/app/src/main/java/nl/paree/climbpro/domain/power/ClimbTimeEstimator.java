@@ -59,11 +59,22 @@ public final class ClimbTimeEstimator {
         // Final pass at the converged power, rounding per segment so the total
         // shown equals the sum of the per-segment values shown.
         double power = PowerDurationModel.sustainablePower(profile.ftpWatts, durationGuess);
+        return estimateAtFixedPower(segmentDistancesMeters, segmentGradients, crr, mass, power);
+    }
+
+    /**
+     * Estimates per-segment and total seconds at a fixed pedal power, rounding each
+     * segment so the displayed total equals the sum of the displayed segment times.
+     * Shared by {@link #estimate} and RouteAwareClimbEstimator.
+     */
+    public static ClimbTimeEstimate estimateAtFixedPower(int[] dist, double[] grad, double[] crr,
+                                                         double mass, double power) {
+        int n = dist.length;
         int[] segSeconds = new int[n];
         int total = 0;
         for (int i = 0; i < n; i++) {
-            double v = PowerSpeedSolver.speedMetersPerSecond(power, mass, segmentGradients[i], crr[i]);
-            int secs = (int) Math.round(segmentDistancesMeters[i] / v);
+            double v = PowerSpeedSolver.speedMetersPerSecond(power, mass, grad[i], crr[i]);
+            int secs = (int) Math.round(dist[i] / v);
             segSeconds[i] = secs;
             total += secs;
         }

@@ -85,4 +85,17 @@ public class ClimbTimeEstimatorTest {
             // ok
         }
     }
+
+    @Test
+    public void fixedPowerTotalEqualsSumOfSegments() {
+        int[] dist = {1000, 1000};
+        double[] grad = {0.06, 0.06};
+        double[] crr = {nl.paree.climbpro.domain.power.SurfaceRollingResistance.CRR_ASPHALT,
+                        nl.paree.climbpro.domain.power.SurfaceRollingResistance.CRR_ASPHALT};
+        ClimbTimeEstimate e = ClimbTimeEstimator.estimateAtFixedPower(dist, grad, crr, 80.0, 280.0);
+        int sum = 0;
+        for (int s : e.segmentSeconds) sum += s;
+        assertEquals(sum, e.totalSeconds);
+        assertEquals(280.0, e.assumedPowerWatts, 1e-9);
+    }
 }
