@@ -34,7 +34,7 @@ The watch side consists of three Connect IQ apps for the Forerunner 255 Music: t
 - Start navigation to the selected route.
 - Import a single climb or route from a GPX file.
 - Sort the route library (by import time or name); the list auto-refreshes when a Strava sync finishes.
-- **Estimated climb time** — per-climb and per-segment time estimates based on your FTP, body weight and bike weight (set these in Settings), with rolling resistance adjusted per segment surface (asphalt rolls faster than gravel/cobbles). Phone-only; not synced to the watch.
+- **Estimated climb time** — per-climb and per-segment time estimates based on your FTP, body weight and bike weight (set these in Settings), with rolling resistance adjusted per segment surface (asphalt rolls faster than gravel/cobbles). The estimate accounts for fatigue across the whole route: climbs later in a hard route are estimated slower because earlier efforts have depleted W'. Ride intensity between climbs (configurable in Settings as % FTP) controls how much W' recovers on non-climb sections. Phone-only; not synced to the watch.
 
 ## Components
 

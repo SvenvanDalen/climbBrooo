@@ -272,6 +272,8 @@ The model lives in `domain.power`:
 Constants (CdA, air density, drivetrain efficiency, W') live in `PowerConstants`;
 the per-surface `Crr` values live in `SurfaceRollingResistance`.
 
+**Fatigue-aware climb-time estimate (phone-only).** The climb-detail screen's time estimate accounts for the effort of the whole route, not just the climb in isolation. All climbs are modelled at CP + x watts with a single shared offset x, solved by a W'-balance bisection over the entire route (`RouteAwareClimbEstimator`, fed by `RouteEffortProfileBuilder`). Non-climb stretches are ridden at the rider's configurable ride-intensity (% FTP, set in Settings), where W' recovers; the bisection keeps the largest x whose route-wide W'-balance never drops below a 10% reserve, so deeper climbs in a hard route are estimated slower and energy is implicitly reserved for what remains. When a route lacks elevation/distance data the screen falls back to the fresh per-climb `ClimbTimeEstimator`. The wire payload and the watch are unchanged.
+
 ---
 
 ## Configuration Management
