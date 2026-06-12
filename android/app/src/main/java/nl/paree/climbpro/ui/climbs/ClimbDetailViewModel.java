@@ -15,6 +15,9 @@ import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimator;
 import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.power.RouteAwareClimbEstimator;
+import nl.paree.climbpro.domain.power.RouteTile;
+import nl.paree.climbpro.service.RouteEffortProfileBuilder;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +36,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<ClimbTimeEstimate> timeEstimate = new MutableLiveData<>();
 
     private volatile StoredClimb lastClimb;
+    private volatile StoredRoute lastRoute;
+    private volatile int lastClimbIndex;
 
     public ClimbDetailViewModel(@NonNull Application app) {
         super(app);
@@ -50,6 +55,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
+                lastRoute = r;
+                lastClimbIndex = climbIndex;
                 route.postValue(r);
                 if (r.climbs != null && climbIndex < r.climbs.size()) {
                     StoredClimb loaded = r.climbs.get(climbIndex);
@@ -126,17 +133,34 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
             timeEstimate.postValue(null);
             return;
         }
-        List<StoredSegment> segs = c.segments;
-        int[] dist = new int[segs.size()];
-        double[] grad = new double[segs.size()];
-        int[] surface = new int[segs.size()];
-        for (int i = 0; i < segs.size(); i++) {
-            dist[i] = segs.get(i).distance;
-            grad[i] = segs.get(i).gradient;
-            surface[i] = segs.get(i).surfaceType;
-        }
         RiderProfile profile = riderRepo.load();
-        timeEstimate.postValue(ClimbTimeEstimator.estimate(dist, grad, surface, profile));
+
+        // Preferred path: whole-route, fatigue-aware estimate.
+        StoredRoute r = lastRoute;
+        ClimbTimeEstimate estimate = null;
+        if (r != null) {
+            List<RouteTile> tiles = RouteEffortProfileBuilder.build(r);
+            if (tiles != null) {
+                estimate = RouteAwareClimbEstimator.estimate(tiles, lastClimbIndex, profile);
+            }
+        }
+
+        // Fallback: fresh per-climb estimate when the route can't be profiled
+        // (e.g. missing elevation/distance arrays) but the profile is usable.
+        if (estimate == null && profile.isComplete()) {
+            List<StoredSegment> segs = c.segments;
+            int[] dist = new int[segs.size()];
+            double[] grad = new double[segs.size()];
+            int[] surface = new int[segs.size()];
+            for (int i = 0; i < segs.size(); i++) {
+                dist[i] = segs.get(i).distance;
+                grad[i] = segs.get(i).gradient;
+                surface[i] = segs.get(i).surfaceType;
+            }
+            estimate = ClimbTimeEstimator.estimate(dist, grad, surface, profile);
+        }
+
+        timeEstimate.postValue(estimate);
     }
 
     @Override
