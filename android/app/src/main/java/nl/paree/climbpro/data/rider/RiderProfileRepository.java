@@ -10,9 +10,10 @@ import nl.paree.climbpro.domain.power.RiderProfile;
 /** Persists the rider's FTP, body weight and bike weight in default SharedPreferences. */
 public final class RiderProfileRepository {
 
-    public static final String PREF_FTP_WATTS      = "rider_ftp_watts";
-    public static final String PREF_RIDER_WEIGHT_KG = "rider_weight_kg";
-    public static final String PREF_BIKE_WEIGHT_KG  = "bike_weight_kg";
+    public static final String PREF_FTP_WATTS        = "rider_ftp_watts";
+    public static final String PREF_RIDER_WEIGHT_KG  = "rider_weight_kg";
+    public static final String PREF_BIKE_WEIGHT_KG   = "bike_weight_kg";
+    public static final String PREF_RIDE_INTENSITY_PCT = "rider_ride_intensity_pct";
 
     private final SharedPreferences prefs;
 
@@ -24,7 +25,8 @@ public final class RiderProfileRepository {
         int ftp = prefs.getInt(PREF_FTP_WATTS, 0);
         double rider = prefs.getFloat(PREF_RIDER_WEIGHT_KG, 0f);
         double bike = prefs.getFloat(PREF_BIKE_WEIGHT_KG, 0f);
-        return new RiderProfile(ftp, rider, bike);
+        int intensity = prefs.getInt(PREF_RIDE_INTENSITY_PCT, RiderProfile.DEFAULT_RIDE_INTENSITY_PCT);
+        return new RiderProfile(ftp, rider, bike, intensity);
     }
 
     public void save(RiderProfile profile) {
@@ -32,6 +34,7 @@ public final class RiderProfileRepository {
                 .putInt(PREF_FTP_WATTS, profile.ftpWatts)
                 .putFloat(PREF_RIDER_WEIGHT_KG, (float) profile.riderWeightKg)
                 .putFloat(PREF_BIKE_WEIGHT_KG, (float) profile.bikeWeightKg)
+                .putInt(PREF_RIDE_INTENSITY_PCT, profile.rideIntensityPct)
                 .apply();
     }
 }
