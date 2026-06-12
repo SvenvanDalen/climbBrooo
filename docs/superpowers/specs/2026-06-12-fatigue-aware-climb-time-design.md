@@ -88,7 +88,7 @@ Afgeleid:
    - `power = tile.climbIndex >= 0 ? CP + x : P_nonclimb`
    - `v = PowerSpeedSolver.speedMetersPerSecond(power, mass, tile.gradient, crr)`
    - `dt = tile.distanceMeters / v`
-   - `bal.applyTile(power, dt)`
+   - `bal.applyInterval(power, dt)`
    - `minBalance = min(minBalance, bal.current())`
 4. Return `minBalance`.
 
@@ -109,7 +109,7 @@ en bereken hun per-segment tijden op vermogen `CP + x*` via
 `ClimbTimeEstimator.estimateAtFixedPower(dist, grad, crr, mass, CP + x*)`. De
 `ClimbTimeEstimate` krijgt `assumedPowerWatts = CP + x*`.
 
-### W'-balans model (`WPrimeBalance.applyTile(power, dt)`)
+### W'-balans model (`WPrimeBalance.applyInterval(power, dt)`)
 
 - **Depletie** (`power > CP`): `W' -= (power − CP) · dt`, daarna clamp `≥ 0`.
 - **Herstel** (`power ≤ CP`): `W' = W'max − (W'max − W') · exp(−dt / τ)`,
