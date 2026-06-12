@@ -20,12 +20,13 @@ public final class WPrimeBalance {
         this.current = wPrimeMax;
     }
 
+    /** Current W'-balance in joules (0 … wPrimeMax). */
     public double current() {
         return current;
     }
 
     /** Apply a stretch ridden at constant {@code power} for {@code durationSeconds}. */
-    public void applyTile(double power, double durationSeconds) {
+    public void applyInterval(double power, double durationSeconds) {
         if (durationSeconds <= 0) {
             return;
         }
