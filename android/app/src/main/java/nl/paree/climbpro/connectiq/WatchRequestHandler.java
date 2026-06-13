@@ -4,11 +4,14 @@ import android.util.Log;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
+import nl.paree.climbpro.service.RoutePacingPlanner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,11 +26,25 @@ public final class WatchRequestHandler {
     private final RouteRepository routeRepo;
     private final ConnectIqClient connectIqClient;
     private final ObjectMapper    mapper;
+    private final RiderProfileRepository riderRepo;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
+        this(routeRepo, connectIqClient, null);
+    }
+
+    public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
+                               RiderProfileRepository riderRepo) {
         this.routeRepo       = routeRepo;
         this.connectIqClient = connectIqClient;
         this.mapper          = new ObjectMapper();
+        this.riderRepo       = riderRepo;
+    }
+
+    /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
+    private int[][] pacingPlan(StoredRoute route) {
+        if (riderRepo == null) return null;
+        RiderProfile profile = riderRepo.load();
+        return RoutePacingPlanner.plan(route, profile);
     }
 
     public void handleMessage(Map<String, Object> message) {
@@ -72,7 +89,8 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route   = routeRepo.loadRoute(routeId);
-            byte[]      payload = new ClimbPayloadBuilder(mapper).buildRoutePayload(route);
+            byte[]      payload = new ClimbPayloadBuilder(mapper)
+                    .buildRoutePayload(route, pacingPlan(route));
             connectIqClient.sendPayload(payload);
             Log.i(TAG, "Sent route payload for " + routeId + " (" + payload.length + " bytes)");
         } catch (IOException e) {
@@ -88,7 +106,8 @@ public final class WatchRequestHandler {
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
             ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
-            boolean ok = connectIqClient.sendPayloadToDatafield(builder.buildRoutePayload(route));
+            boolean ok = connectIqClient.sendPayloadToDatafield(
+                    builder.buildRoutePayload(route, pacingPlan(route)));
             // Always push the surface payload — an empty surfSec clears stale sections.
             connectIqClient.sendPayloadToSurfaceField(builder.buildSurfaceSectionPayload(route));
             String name = route.userDisplayName != null ? route.userDisplayName : route.name;
@@ -108,7 +127,7 @@ public final class WatchRequestHandler {
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
             byte[] payload = new ClimbPayloadBuilder(mapper)
-                    .buildSingleClimbPayload(route, climbIndex);
+                    .buildSingleClimbPayload(route, climbIndex, pacingPlan(route));
             boolean ok = connectIqClient.sendPayloadToDatafield(payload);
             StoredClimb climb = route.climbs.get(climbIndex);
             String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;

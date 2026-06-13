@@ -23,7 +23,9 @@ public final class ClimbProApplication extends Application {
 
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
-        ciqClient.setWatchRequestHandler(new WatchRequestHandler(routeRepo, ciqClient));
+        ciqClient.setWatchRequestHandler(new WatchRequestHandler(
+                routeRepo, ciqClient,
+                new nl.paree.climbpro.data.rider.RiderProfileRepository(this)));
         ciqClient.connect();
     }
 
