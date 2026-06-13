@@ -36,6 +36,7 @@ The watch side consists of three Connect IQ apps for the Forerunner 255 Music: t
 - Sort the route library (by import time or name); the list auto-refreshes when a Strava sync finishes.
 - **Estimated climb time** — per-climb and per-segment time estimates based on your FTP, body weight and bike weight (set these in Settings), with rolling resistance adjusted per segment surface (asphalt rolls faster than gravel/cobbles). The estimate accounts for fatigue across the whole route: climbs later in a hard route are estimated slower because earlier efforts have depleted W'. Ride intensity between climbs (configurable in Settings as % FTP) controls how much W' recovers on non-climb sections. Phone-only; not synced to the watch.
 - **Pacing-paspoort & live ghost** — the route detail screen shows a pacing passport (total climbs, elevation, hardest climb, estimated total time, and a target time per climb). Those per-segment target times are synced to the watch (route mode), where the climb datafield shows live whether you are ahead of or behind your plan (`+/−s`) and a short summary after each summit.
+- **Climb Logbook** — per-climb history and PRs derived from your Strava rides (last 12 months on first sync, incremental after). Reachable from the route list overflow menu ("Logboek"); each climb's detail screen also shows a "Historie" block with past attempts and delta-to-PR. Phone-only; not synced to the watch.
 
 ## Components
 
