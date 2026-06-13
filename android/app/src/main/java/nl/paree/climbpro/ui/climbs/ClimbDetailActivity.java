@@ -115,6 +115,31 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "Opgeslagen", Toast.LENGTH_SHORT).show();
         });
 
+        viewModel.history().observe(this, rows -> {
+            android.widget.TextView header = binding.historyHeader;
+            android.widget.LinearLayout container = binding.historyContainer;
+            container.removeAllViews();
+            if (rows == null || rows.isEmpty()) {
+                header.setVisibility(android.view.View.GONE);
+                return;
+            }
+            header.setVisibility(android.view.View.VISIBLE);
+            java.text.SimpleDateFormat fmt =
+                    new java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault());
+            for (nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row : rows) {
+                android.widget.TextView tv = new android.widget.TextView(this);
+                int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
+                String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
+                String delta = row.deltaToPrSec == 0
+                        ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
+                        + String.format(java.util.Locale.getDefault(), "%02d", row.deltaToPrSec % 60);
+                tv.setText(String.format(java.util.Locale.getDefault(),
+                        "%s   %d:%02d   (%s)", date, m, s, delta));
+                tv.setPadding(0, 8, 0, 8);
+                container.addView(tv);
+            }
+        });
+
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
 

@@ -8,10 +8,14 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
+import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.LogbookCalculator;
+import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimator;
 import nl.paree.climbpro.domain.power.RiderProfile;
@@ -27,6 +31,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
+    private final ClimbAttemptRepository attemptRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredClimb>       climb        = new MutableLiveData<>();
@@ -34,6 +39,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<String>            error        = new MutableLiveData<>();
     private final MutableLiveData<Boolean>           saved        = new MutableLiveData<>(false);
     private final MutableLiveData<ClimbTimeEstimate> timeEstimate = new MutableLiveData<>();
+    private final MutableLiveData<List<HistoryRow>>  history      = new MutableLiveData<>();
 
     private volatile StoredClimb lastClimb;
     private volatile StoredRoute lastRoute;
@@ -43,6 +49,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         super(app);
         routeRepo = new RouteRepository(app);
         riderRepo = new RiderProfileRepository(app);
+        attemptRepo = new ClimbAttemptRepository(app);
     }
 
     public LiveData<StoredClimb>       climb()        { return climb; }
@@ -50,6 +57,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     public LiveData<String>            error()        { return error; }
     public LiveData<Boolean>           saved()        { return saved; }
     public LiveData<ClimbTimeEstimate> timeEstimate() { return timeEstimate; }
+    public LiveData<List<HistoryRow>>  history()      { return history; }
 
     public void loadClimb(String routeId, int climbIndex) {
         executor.execute(() -> {
@@ -63,6 +71,11 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                     lastClimb = loaded;
                     climb.postValue(loaded);
                     computeEstimate(loaded);
+                    int len = loaded.length > 0
+                            ? loaded.length : (loaded.endDistance - loaded.startDistance);
+                    String climbId = ClimbIdentity.of(loaded.startLat, loaded.startLon, len);
+                    history.postValue(
+                            LogbookCalculator.historyFor(climbId, attemptRepo.loadAll()));
                 } else {
                     error.postValue("Climb not found");
                 }
