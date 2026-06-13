@@ -29,6 +29,8 @@ import java.util.concurrent.Executors;
 
 public final class ClimbDetailViewModel extends AndroidViewModel {
 
+    private static final String TAG = "ClimbDetailVM";
+
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
@@ -73,6 +75,10 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                     computeEstimate(loaded);
                     int len = loaded.length > 0
                             ? loaded.length : (loaded.endDistance - loaded.startDistance);
+                    if (len <= 0) {
+                        android.util.Log.w(TAG, "Climb length resolved to " + len
+                                + " for route climb; history may be empty");
+                    }
                     String climbId = ClimbIdentity.of(loaded.startLat, loaded.startLon, len);
                     history.postValue(
                             LogbookCalculator.historyFor(climbId, attemptRepo.loadAll()));
