@@ -43,6 +43,15 @@ public final class ClimbPayloadBuilder {
     }
 
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
+        return buildRoutePayload(route, null);
+    }
+
+    /**
+     * @param targetSeconds per-climb per-segment target seconds (indexed by climb
+     *                      position); null, or a null/short entry, omits 'tsec' for
+     *                      that climb.
+     */
+    public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
         payload.put("mode",    "route");
@@ -51,7 +60,11 @@ public final class ClimbPayloadBuilder {
         if (name != null && name.length() <= 32) payload.put("name", name);
         List<Map<String, Object>> climbs = new ArrayList<>();
         if (route.climbs != null) {
-            for (StoredClimb sc : route.climbs) climbs.add(buildRouteClimb(sc));
+            for (int i = 0; i < route.climbs.size(); i++) {
+                int[] tsec = (targetSeconds != null && i < targetSeconds.length)
+                        ? targetSeconds[i] : null;
+                climbs.add(buildRouteClimb(route.climbs.get(i), tsec));
+            }
         }
         payload.put("climbs", climbs);
         return mapper.writeValueAsBytes(payload);
@@ -71,6 +84,11 @@ public final class ClimbPayloadBuilder {
 
     /** Route-mode payload containing exactly one climb (watch "set active climb"). */
     public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex) throws IOException {
+        return buildSingleClimbPayload(route, climbIndex, null);
+    }
+
+    public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex,
+                                          int[][] targetSeconds) throws IOException {
         if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
             throw new IllegalArgumentException("climbIndex out of range: " + climbIndex);
         }
@@ -81,7 +99,9 @@ public final class ClimbPayloadBuilder {
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);
         List<Map<String, Object>> climbs = new ArrayList<>(1);
-        climbs.add(buildRouteClimb(route.climbs.get(climbIndex)));
+        int[] tsec = (targetSeconds != null && climbIndex < targetSeconds.length)
+                ? targetSeconds[climbIndex] : null;
+        climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec));
         payload.put("climbs", climbs);
         return mapper.writeValueAsBytes(payload);
     }
@@ -148,11 +168,12 @@ public final class ClimbPayloadBuilder {
         return mapper.writeValueAsBytes(payload);
     }
 
-    private Map<String, Object> buildRouteClimb(StoredClimb sc) {
+    private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds) {
         Map<String, Object> c = new LinkedHashMap<>();
         c.put("sd", sc.startDistance);
         c.put("ed", sc.endDistance);
         addCommonClimbFields(c, sc);
+        addTargetSeconds(c, sc, targetSeconds);
         return c;
     }
 
@@ -176,6 +197,15 @@ public final class ClimbPayloadBuilder {
         }
         int[] surf = buildSurf(sc.segments);
         if (surf != null) c.put("surf", surf);
+    }
+
+    /** Emits 'tsec' only when the array is non-null and exactly one value per segment. */
+    private static void addTargetSeconds(Map<String, Object> c, StoredClimb sc, int[] targetSeconds) {
+        if (targetSeconds == null || sc.segments == null
+                || targetSeconds.length != sc.segments.size()) {
+            return;
+        }
+        c.put("tsec", targetSeconds);
     }
 
     private static int[] buildSegs(List<StoredSegment> segs) {
