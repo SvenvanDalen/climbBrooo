@@ -47,6 +47,7 @@ class ClimbProView extends Ui.DataField {
     hidden var summaryClimbIndex = -1;     // which climb the summary is for
     hidden var summaryActualSec = 0;
     hidden var summaryDeltaSec = 0;
+    hidden var lastRouteId = null;         // detect a new payload (route change) to reset ghost state
 
     function initialize() {
         DataField.initialize();
@@ -59,6 +60,19 @@ class ClimbProView extends Ui.DataField {
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
             return;
+        }
+
+        // A new payload (route change) invalidates all per-ride ghost/summary state,
+        // otherwise a stale climbStartTimerMs or summary index would leak across routes.
+        var rid = data.routeId;
+        var routeChanged = (rid == null) ? (lastRouteId != null) : !rid.equals(lastRouteId);
+        if (routeChanged) {
+            lastRouteId = rid;
+            lastActiveClimb = -1;
+            alertedClimbIndex = -1;
+            summaryUntilMs = -1;
+            summaryClimbIndex = -1;
+            data.climbStartTimerMs = -1;
         }
 
         var elapsed = 0;
