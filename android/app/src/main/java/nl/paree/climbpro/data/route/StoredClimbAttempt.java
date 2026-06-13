@@ -10,5 +10,4 @@ public final class StoredClimbAttempt {
     public long   activityId;    // Strava activity id (dedupe)
     public long   dateEpochSec;  // activity start time
     public int    elapsedSec;    // time on the climb
-    public double avgSpeedKmh;   // derived from length / elapsed
 }

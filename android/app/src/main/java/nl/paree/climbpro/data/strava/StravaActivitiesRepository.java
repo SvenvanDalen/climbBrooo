@@ -138,8 +138,6 @@ public final class StravaActivitiesRepository {
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
                     a.elapsedSec   = elapsed;
-                    // Persisted for future history detail; not shown in v1 UI.
-                    a.avgSpeedKmh  = (k.lengthM / (double) elapsed) * 3.6;
                     out.add(a);
                 }
             }

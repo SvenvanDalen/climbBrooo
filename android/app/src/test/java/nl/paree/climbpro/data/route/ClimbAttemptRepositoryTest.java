@@ -24,7 +24,6 @@ public class ClimbAttemptRepositoryTest {
         a.activityId    = activityId;
         a.dateEpochSec  = dateSec;
         a.elapsedSec    = elapsed;
-        a.avgSpeedKmh   = 18.0;
         return a;
     }
 
