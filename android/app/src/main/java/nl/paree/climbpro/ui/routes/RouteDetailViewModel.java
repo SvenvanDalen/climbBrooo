@@ -8,11 +8,14 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.service.RoutePacingPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 
@@ -25,6 +28,7 @@ import java.util.concurrent.Executors;
 public final class RouteDetailViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
+    private final RiderProfileRepository riderRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredRoute> route      = new MutableLiveData<>();
@@ -32,10 +36,13 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<String>       error      = new MutableLiveData<>();
     private final MutableLiveData<Boolean>      saved      = new MutableLiveData<>(false);
     private final MutableLiveData<List<StoredSurfaceSection>> surfaceSections = new MutableLiveData<>();
+    private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
+    private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
+        riderRepo = new RiderProfileRepository(app);
     }
 
     public LiveData<StoredRoute>  route()      { return route; }
@@ -43,6 +50,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<String>       error()      { return error; }
     public LiveData<Boolean>      saved()      { return saved; }
     public LiveData<List<StoredSurfaceSection>> surfaceSections() { return surfaceSections; }
+    public LiveData<RoutePassport> passport()           { return passport; }
+    public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -50,6 +59,10 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 route.postValue(r);
                 routeItems.postValue(buildRouteItems(r));
+                RiderProfile profile = riderRepo.load();
+                int[][] plan = RoutePacingPlanner.plan(r, profile);
+                passport.postValue(RoutePassport.from(r, plan));
+                climbTargetSeconds.postValue(perClimbTotals(r, plan));
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
             } catch (Exception e) {
@@ -176,6 +189,23 @@ public final class RouteDetailViewModel extends AndroidViewModel {
             }
         }
         return result;
+    }
+
+    /** Per-climb total target seconds (index = climb position); -1 when that climb has no plan. */
+    private static int[] perClimbTotals(StoredRoute r, int[][] plan) {
+        int n = r.climbs != null ? r.climbs.size() : 0;
+        int[] totals = new int[n];
+        for (int ci = 0; ci < n; ci++) {
+            int[] segs = (plan != null && ci < plan.length) ? plan[ci] : null;
+            if (segs == null) {
+                totals[ci] = -1;
+            } else {
+                int sum = 0;
+                for (int s : segs) sum += s;
+                totals[ci] = sum;
+            }
+        }
+        return totals;
     }
 
     @Override
