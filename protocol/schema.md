@@ -44,6 +44,7 @@ Instead:
 When a payload is serialized for the wire, logical JSON objects are packed into compact integer arrays:
 
 - `surfSec` — packed int array of user-defined surface sections: `[startDistance, endDistance, surfaceType, …]`, 3 ints per section, ordered by startDistance. Route mode only. Sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
+- `tsec` — packed int array of per-segment target times in whole seconds, one int per segment, parallel to `segs` (same length). Route mode only. Optional per climb; omitted when no pacing plan is available.
 
 ## Byte budget
 
@@ -54,6 +55,8 @@ Watch-side cap is **8 KB** (configurable; tuned in Phase 7 after measurement). E
 - Per segment: ~60 bytes (`distance`, `elevationGain`, `gradient`, `colorIndex`)
 
 So ~150 + 12 × 60 = ~870 bytes per climb. 8 KB ÷ 870 ≈ **~9 climbs comfortably**, more if names are omitted and JSON is minified (no whitespace).
+
+When a pacing plan is present, the optional `tsec` array adds ~1 int per segment — roughly **+70–80 bytes per climb** (minified). This narrows the comfortable climb count slightly but stays well within 8 KB for typical routes.
 
 If the budget ever feels tight, options in priority order:
 1. Drop optional `name` fields.
@@ -68,5 +71,5 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
-| 1       | 2026-06-13 | Added optional `tsec` (targetSeconds) packed int array on Climb — per-segment target time in whole seconds, parallel to `segs`. Route-mode only, omitted when no pacing plan. ~13 ints per climb; additive, no version bump. |
+| 1       | 2026-06-13 | Added optional `tsec` (targetSeconds) packed int array on Climb — per-segment target time in whole seconds, parallel to `segments` (wire key `segs`). Route-mode only, omitted when no pacing plan. ~13 ints per climb; additive, no version bump. |
 | 1       | 2026-05-20 | Initial schema. Two modes, fixed-point gradients, color index, byte budget 8 KB. |
