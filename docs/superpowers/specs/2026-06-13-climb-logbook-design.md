@@ -28,10 +28,11 @@ historie zonder de watch te raken.
 
 ## Dataflow
 
-1. **Ophalen** — een nieuwe Strava-call `listActivities()` haalt recente ritten op.
-   Per relevante rit haalt `getActivityStreams()` de streams `latlng` en `time` op
-   (en optioneel `altitude`/`watts` indien beschikbaar). Incrementeel: alleen ritten
-   nieuwer dan de laatste sync.
+1. **Ophalen** — een nieuwe Strava-call `listActivities()` haalt ritten op. De
+   **eerste sync pakt alle ritten van de afgelopen 12 maanden** (`after` =
+   nu − 1 jaar), gepagineerd. Per relevante rit haalt `getActivityStreams()` de
+   streams `latlng` en `time` op (en optioneel `altitude`/`watts` indien
+   beschikbaar). Daarna incrementeel: alleen ritten nieuwer dan de laatste sync.
 2. **Matchen** — `ClimbAttemptMatcher` legt elke activity-track langs elke bekende
    klim. Per klim: vind het GPS-sample dichtbij de klim-start en dichtbij het
    klim-eind (hergebruik `NearestPointFinder`), en valideer dat de tussen die twee
@@ -67,7 +68,8 @@ record, zonder schema-wijziging aan bestaande opslag.
 
 `StravaApiClient` krijgt erbij:
 
-- `GET athlete/activities?page&per_page&after` → lijst van activity-samenvattingen.
+- `GET athlete/activities?page&per_page&after` → lijst van activity-samenvattingen
+  (`after` = epoch van 12 maanden geleden bij eerste sync; laatste sync-tijd daarna).
 - `GET activities/{id}/streams?keys=latlng,time,altitude,watts&key_by_type=true`
   → streams voor matching.
 
@@ -91,8 +93,9 @@ record, zonder schema-wijziging aan bestaande opslag.
 - **Dubbele import van dezelfde rit** → dedupe op Strava activity-id.
 - **Klim verwijderd of hernoemd** → records overleven, want gekoppeld op
   `ClimbIdentity`, niet op route-id.
-- **Strava rate limits** → incrementeel ophalen (alleen nieuwer dan laatste sync) +
-  retry met dezelfde semantiek als bestaande sync.
+- **Strava rate limits** → eerste sync begrensd tot de laatste 12 maanden en
+  gepagineerd; daarna incrementeel (alleen nieuwer dan laatste sync) + retry met
+  dezelfde semantiek als bestaande sync.
 - **GPS-drift in de activity** → `NearestPointFinder` + afstandsdrempel vangen jitter
   rond start/eind op.
 
