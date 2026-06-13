@@ -84,12 +84,20 @@ public final class StravaActivitiesRepository {
         Set<Long> known = attemptRepo.knownActivityIds();
 
         List<StoredClimbAttempt> created = new ArrayList<>();
+        boolean paginationComplete = false;
         int page = 1;
         while (true) {
             Response<List<StravaActivityDto>> resp =
                     api.listActivities(token, after, page, 50).execute();
-            if (!resp.isSuccessful() || resp.body() == null || resp.body().isEmpty()) break;
-
+            if (!resp.isSuccessful()) {
+                Log.w(TAG, "Activity page " + page + " failed (HTTP "
+                        + resp.code() + "); keeping sync cursor for retry");
+                break; // aborted — do NOT mark complete
+            }
+            if (resp.body() == null || resp.body().isEmpty()) {
+                paginationComplete = true; // reached the end cleanly
+                break;
+            }
             for (StravaActivityDto act : resp.body()) {
                 if (known.contains(act.id)) continue;
                 created.addAll(matchActivity(token, act, climbs));
@@ -98,8 +106,11 @@ public final class StravaActivitiesRepository {
         }
 
         if (!created.isEmpty()) attemptRepo.append(created);
-        prefs.edit().putLong(PREF_LAST, nowSec).apply();
-        Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)");
+        if (paginationComplete) {
+            prefs.edit().putLong(PREF_LAST, nowSec).apply();
+        }
+        Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)"
+                + (paginationComplete ? "" : " (incomplete — cursor not advanced)"));
         return created.size();
     }
 
@@ -127,6 +138,7 @@ public final class StravaActivitiesRepository {
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
                     a.elapsedSec   = elapsed;
+                    // Persisted for future history detail; not shown in v1 UI.
                     a.avgSpeedKmh  = (k.lengthM / (double) elapsed) * 3.6;
                     out.add(a);
                 }
@@ -145,7 +157,9 @@ public final class StravaActivitiesRepository {
                 for (KnownClimb k : KnownClimbs.fromRoute(route)) {
                     byId.put(k.climbId, k); // dedupe same climb appearing on multiple routes
                 }
-            } catch (IOException ignored) {}
+            } catch (IOException e) {
+                Log.w(TAG, "Skipping route " + entry.routeId + " in climb enumeration", e);
+            }
         }
         return new ArrayList<>(byId.values());
     }

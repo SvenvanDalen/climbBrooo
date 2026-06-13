@@ -142,4 +142,41 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(0, created);
         assertEquals(1, attemptRepo.loadAll().size());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_rateLimitedMidPagination_doesNotAdvanceCursor() throws Exception {
+        StravaActivityDto act = new StravaActivityDto();
+        act.id = 555L; act.type = "Ride"; act.startDate = "2026-03-01T08:00:00Z";
+
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Collections.singletonList(act)));
+        Call<List<StravaActivityDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.error(429,
+                okhttp3.ResponseBody.create("rate limited", okhttp3.MediaType.parse("text/plain"))));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listActivities(anyString(), anyLong(), eq(2), anyInt())).thenReturn(page2);
+
+        StravaStreamsDto streams = new StravaStreamsDto();
+        streams.latlng = new StravaStreamsDto.LatLngStream();
+        streams.latlng.data = Arrays.asList(
+                Arrays.asList(45.000, 6.0), Arrays.asList(45.0045, 6.0), Arrays.asList(45.009, 6.0));
+        streams.time = new StravaStreamsDto.TimeStream();
+        streams.time.data = Arrays.asList(0, 150, 300);
+        Call<StravaStreamsDto> streamCall = mock(Call.class);
+        when(streamCall.execute()).thenReturn(Response.success(streams));
+        when(api.getStreams(anyString(), eq(555L), anyString())).thenReturn(streamCall);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        int created = repo.syncActivities();
+
+        // Page-1 attempt is still persisted...
+        assertEquals(1, created);
+        assertEquals(1, attemptRepo.loadAll().size());
+        // ...but the cursor is NOT advanced, so the next sync re-pages from the original window.
+        long cursor = app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
+                .getLong("last_sync_epoch_sec", -1L);
+        assertEquals(-1L, cursor);
+    }
 }
