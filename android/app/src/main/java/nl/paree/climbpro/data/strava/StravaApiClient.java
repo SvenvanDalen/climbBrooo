@@ -31,10 +31,9 @@ public interface StravaApiClient {
             @Query("page") int page,
             @Query("per_page") int perPage);
 
-    @GET("activities/{id}/streams")
+    @GET("activities/{id}/streams?key_by_type=true")
     Call<StravaStreamsDto> getStreams(
             @Header("Authorization") String bearerToken,
             @Path("id") long activityId,
-            @Query("keys") String keys,
-            @Query("key_by_type") boolean keyByType);
+            @Query("keys") String keys);
 }
