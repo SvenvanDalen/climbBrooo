@@ -41,6 +41,13 @@ class ClimbProView extends Ui.DataField {
     hidden var lastActiveClimb = -1;
     hidden var lastActiveSeg = -1;
 
+    // Ghost / summary state
+    hidden var lastGhostTimerMs = 0;
+    hidden var summaryUntilMs = -1;        // show post-summit summary until this timer value (ms)
+    hidden var summaryClimbIndex = -1;     // which climb the summary is for
+    hidden var summaryActualSec = 0;
+    hidden var summaryDeltaSec = 0;
+
     function initialize() {
         DataField.initialize();
     }
@@ -54,15 +61,33 @@ class ClimbProView extends Ui.DataField {
             return;
         }
 
-        // Get elapsed distance from activity info
         var elapsed = 0;
         if (info != null && info has :elapsedDistance && info.elapsedDistance != null) {
             elapsed = info.elapsedDistance.toNumber();
         }
+        var timerMs = (info != null && info has :timerTime && info.timerTime != null)
+                ? info.timerTime : 0;
+        lastGhostTimerMs = timerMs;
 
         data.updateProgress(elapsed);
 
-        // Climb-start alert: vibrate when entering a new climb within 50m
+        // Detect leaving a climb (summary) BEFORE overwriting the climb-start timer.
+        if (lastActiveClimb >= 0 && data.activeClimbIndex != lastActiveClimb
+                && data.climbStartTimerMs >= 0) {
+            summaryClimbIndex = lastActiveClimb;
+            summaryActualSec = ((timerMs - data.climbStartTimerMs) / 1000.0).toNumber();
+            var totalTarget = climbTotalTarget(data, lastActiveClimb);
+            summaryDeltaSec = (totalTarget >= 0) ? (summaryActualSec - totalTarget) : 0;
+            summaryUntilMs = timerMs + 12000;   // show for 12 s
+        }
+
+        // Capture the timer at the start of a newly entered climb.
+        if (data.activeClimbIndex >= 0 && data.activeClimbIndex != lastActiveClimb) {
+            data.climbStartTimerMs = timerMs;
+        }
+        lastActiveClimb = data.activeClimbIndex;
+
+        // Climb-start alert: vibrate when entering a new climb within 50m.
         if (data.activeClimbIndex >= 0 && data.activeClimbIndex != alertedClimbIndex) {
             if (data.progressInClimb <= 50) {
                 triggerClimbAlert();
@@ -79,6 +104,12 @@ class ClimbProView extends Ui.DataField {
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
             drawNoData(dc);
+            return;
+        }
+
+        if (summaryUntilMs > 0 && lastGhostTimerMs < summaryUntilMs
+                && data.activeClimbIndex < 0 && summaryClimbIndex >= 0) {
+            drawClimbSummary(dc, data);
             return;
         }
 
@@ -199,6 +230,25 @@ class ClimbProView extends Ui.DataField {
             gradWhole + "." + gradFrac + "%",
             Gfx.TEXT_JUSTIFY_RIGHT
         );
+
+        // Pacing ghost: actual elapsed minus target time at current position.
+        if (data.hasTargets[ci] && data.climbStartTimerMs >= 0) {
+            var target = data.targetSecondsAt();
+            if (target >= 0) {
+                var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
+                var delta = (actual - target).toNumber();   // + = behind, - = ahead
+                var label;
+                if (delta > 0) {
+                    label = "+" + delta + "s";
+                    dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+                } else {
+                    label = delta + "s";   // negative sign already included
+                    dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+                }
+                dc.drawText(w / 2, profileTop.toNumber() - 2, Gfx.FONT_TINY, label,
+                        Gfx.TEXT_JUSTIFY_CENTER);
+            }
+        }
     }
 
     // =========================================================================
@@ -362,6 +412,50 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_LAP);
+        }
+    }
+
+    hidden function climbTotalTarget(data, ci) {
+        if (ci < 0 || !data.hasTargets[ci]) { return -1; }
+        var sum = 0;
+        for (var s = 0; s < data.segCount[ci]; s++) { sum += data.segTargetSec[ci][s]; }
+        return sum;
+    }
+
+    hidden function drawClimbSummary(dc, data) {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var ci = summaryClimbIndex;
+
+        var name = data.climbName[ci];
+        if (name == null) { name = "Climb " + (ci + 1); }
+
+        dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "KLIM KLAAR", Gfx.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, (h * 0.18).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+
+        var mins = summaryActualSec / 60;
+        var secs = summaryActualSec % 60;
+        if (secs < 0) { secs = -secs; }
+        dc.drawText(w / 2, (h * 0.40).toNumber(), Gfx.FONT_NUMBER_MEDIUM,
+                mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
+
+        dc.drawText(w / 2, (h * 0.62).toNumber(), Gfx.FONT_XTINY,
+                data.climbElevGain[ci] + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+
+        if (data.hasTargets[ci]) {
+            var d = summaryDeltaSec;
+            if (d > 0) {
+                dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(w / 2, (h * 0.78).toNumber(), Gfx.FONT_XTINY,
+                        "+" + d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
+            } else {
+                dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(w / 2, (h * 0.78).toNumber(), Gfx.FONT_XTINY,
+                        d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
+            }
         }
     }
 
