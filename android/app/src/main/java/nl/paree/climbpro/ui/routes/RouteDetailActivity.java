@@ -79,6 +79,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
             drawRoute(route);
         });
 
+        viewModel.passport().observe(this, this::renderPassport);
+        viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
+
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
 
         viewModel.error().observe(this,
@@ -104,6 +107,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         binding.mapView.onResume();
+        if (routeId != null) viewModel.loadRoute(routeId);
     }
 
     @Override
@@ -116,6 +120,24 @@ public final class RouteDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) { finish(); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void renderPassport(RoutePassport p) {
+        if (p == null) { binding.passportSummary.setText(""); return; }
+        StringBuilder sb = new StringBuilder();
+        sb.append(p.climbCount).append(" klimmen · ")
+          .append(p.totalElevationGain).append(" hm");
+        if (p.hardestClimbName != null) {
+            sb.append("\nZwaarste: ").append(p.hardestClimbName)
+              .append(String.format(java.util.Locale.US, " (%.1f%%)", p.hardestClimbGradient * 100));
+        }
+        if (p.totalEstimatedSeconds >= 0) {
+            sb.append("\nGeschatte tijd: ")
+              .append(nl.paree.climbpro.domain.power.DurationFormat.format(p.totalEstimatedSeconds));
+        } else {
+            sb.append("\nGeschatte tijd: vul je profiel in (Instellingen)");
+        }
+        binding.passportSummary.setText(sb.toString());
     }
 
     private void drawRoute(StoredRoute route) {

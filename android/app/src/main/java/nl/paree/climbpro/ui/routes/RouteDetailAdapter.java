@@ -47,6 +47,12 @@ public final class RouteDetailAdapter
     private OnClimbClickListener    climbClickListener;
     private OnFlatClickListener     flatClickListener;
     private OnFlatLongClickListener flatLongClickListener;
+    private int[] climbTargetSeconds; // index = climb position; -1 = none
+
+    public void setClimbTargetSeconds(int[] secs) {
+        this.climbTargetSeconds = secs;
+        notifyDataSetChanged();
+    }
 
     public void setItems(List<Object> list) {
         items = list != null ? list : new ArrayList<>();
@@ -113,6 +119,12 @@ public final class RouteDetailAdapter
         h.nameView.setText(name != null ? name : "Klim " + (climbIndex + 1));
         h.statsView.setText(String.format("%d m · %.1f%% gem. · %d m hoogte",
                 c.length, c.avgGradient * 100, c.elevationGain));
+        if (climbTargetSeconds != null && climbIndex < climbTargetSeconds.length
+                && climbTargetSeconds[climbIndex] >= 0) {
+            h.statsView.setText(h.statsView.getText() + "  ·  ⏱ "
+                    + nl.paree.climbpro.domain.power.DurationFormat.format(
+                            climbTargetSeconds[climbIndex]));
+        }
         final int ci = climbIndex;
         h.itemView.setOnClickListener(v -> {
             if (climbClickListener != null) climbClickListener.onClimbClick(c, ci);
