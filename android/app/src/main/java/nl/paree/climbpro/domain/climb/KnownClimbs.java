@@ -14,7 +14,8 @@ public final class KnownClimbs {
 
     public static List<KnownClimb> fromRoute(StoredRoute route) {
         if (route == null || route.climbs == null || route.lats == null
-                || route.lats.length == 0) {
+                || route.lats.length == 0
+                || route.distances == null || route.distances.length == 0) {
             return Collections.emptyList();
         }
         List<KnownClimb> out = new ArrayList<>(route.climbs.size());

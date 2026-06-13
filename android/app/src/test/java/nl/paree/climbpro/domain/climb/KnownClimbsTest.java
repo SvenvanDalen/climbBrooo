@@ -47,4 +47,18 @@ public class KnownClimbsTest {
         StoredRoute route = new StoredRoute();
         assertTrue(KnownClimbs.fromRoute(route).isEmpty());
     }
+
+    @Test
+    public void fromRoute_nullDistances_returnsEmpty() {
+        StoredRoute route = new StoredRoute();
+        route.lats = new double[]{45.0, 45.001};
+        route.lons = new double[]{6.0, 6.001};
+        // distances left null
+        StoredClimb c = new StoredClimb();
+        c.startDistance = 0; c.endDistance = 800; c.length = 800;
+        c.startLat = 45.0; c.startLon = 6.0;
+        route.climbs = java.util.Collections.singletonList(c);
+
+        assertTrue(KnownClimbs.fromRoute(route).isEmpty());
+    }
 }
