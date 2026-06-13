@@ -274,6 +274,19 @@ the per-surface `Crr` values live in `SurfaceRollingResistance`.
 
 **Fatigue-aware climb-time estimate (phone-only).** The climb-detail screen's time estimate accounts for the effort of the whole route, not just the climb in isolation. All climbs are modelled at CP + x watts with a single shared offset x, solved by a W'-balance bisection over the entire route (`RouteAwareClimbEstimator`, fed by `RouteEffortProfileBuilder`). Non-climb stretches are ridden at the rider's configurable ride-intensity (% FTP, set in Settings), where W' recovers; the bisection keeps the largest x whose route-wide W'-balance never drops below a 10% reserve, so deeper climbs in a hard route are estimated slower and energy is implicitly reserved for what remains. When a route lacks elevation/distance data the screen falls back to the fresh per-climb `ClimbTimeEstimator`. The wire payload and the watch are unchanged.
 
+### Pacing plan (phone → watch)
+
+The phone precomputes a per-segment target time for every climb via
+`service/RoutePacingPlanner` (route-aware fatigue model with a per-climb
+fallback, using the rider profile). These are serialised as an optional packed
+int array `tsec` on each climb (parallel to `segs`), route-mode only, omitted
+when no plan is available. The climb datafield parses `tsec`, records the timer
+at climb start, and shows a live time-delta ghost (`+/−s` vs plan) plus a short
+post-summit summary. The route detail screen shows a pacing passport (totals +
+per-climb target time) via `ui/routes/RoutePassport`. Background sync re-sends a
+route when the rider-profile signature changes (combined with the source hash in
+the sync gate). Radius mode is unchanged.
+
 ---
 
 ## Configuration Management
