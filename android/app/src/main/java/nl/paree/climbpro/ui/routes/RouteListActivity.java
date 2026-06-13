@@ -150,6 +150,10 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_strava) {
             startActivity(new Intent(this, StravaAuthActivity.class));
             return true;
+        } else if (id == R.id.action_logbook) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.climbs.ClimbLogbookActivity.class));
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
