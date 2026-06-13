@@ -22,7 +22,13 @@ public final class ClimbAttemptMatcher {
 
     private ClimbAttemptMatcher() {}
 
-    /** One GPS fix: position + absolute epoch seconds. */
+    /**
+     * One GPS fix: position + a time value.
+     *
+     * The matcher only uses the DIFFERENCE between the exit and entry {@code timeSec},
+     * so any consistent time base works: absolute epoch seconds OR seconds relative to
+     * the activity start. Callers must use one consistent base for all samples in a track.
+     */
     public static final class TrackSample {
         public final double lat;
         public final double lon;
@@ -42,10 +48,10 @@ public final class ClimbAttemptMatcher {
                             int climbLengthM) {
         if (track == null || track.size() < 2 || climbLengthM <= 0) return -1;
 
-        int entryIdx = nearestWithin(track, startLat, startLon, 0);
+        int entryIdx = firstWithin(track, startLat, startLon, 0);
         if (entryIdx < 0) return -1;
 
-        int exitIdx = nearestWithin(track, endLat, endLon, entryIdx + 1);
+        int exitIdx = firstWithin(track, endLat, endLon, entryIdx + 1);
         if (exitIdx < 0 || exitIdx <= entryIdx) return -1;
 
         double covered = 0;
@@ -62,16 +68,15 @@ public final class ClimbAttemptMatcher {
         return (int) elapsed;
     }
 
-    /** Index of the sample at/after {@code fromIdx} nearest to (lat,lon) within GATE_M, or -1. */
-    private static int nearestWithin(List<TrackSample> track,
-                                     double lat, double lon, int fromIdx) {
-        int best = -1;
-        double bestDist = GATE_M;
+    /** Index of the first sample at/after {@code fromIdx} within GATE_M of (lat,lon), or -1. */
+    private static int firstWithin(List<TrackSample> track,
+                                   double lat, double lon, int fromIdx) {
         for (int i = fromIdx; i < track.size(); i++) {
             TrackSample s = track.get(i);
-            double d = CumulativeDistance.haversine(lat, lon, s.lat, s.lon);
-            if (d <= bestDist) { bestDist = d; best = i; }
+            if (CumulativeDistance.haversine(lat, lon, s.lat, s.lon) <= GATE_M) {
+                return i;
+            }
         }
-        return best;
+        return -1;
     }
 }

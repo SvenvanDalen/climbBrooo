@@ -58,6 +58,19 @@ public class ClimbAttemptMatcherTest {
     }
 
     @Test
+    public void outAndBack_matchesAscentNotReturnPass() {
+        // Ascent: 45.000 -> 45.009 over indices 0..9 (t=0..540, 60s steps).
+        // Descent: back down to 45.000 over indices 10..19 (t=600..1140).
+        java.util.List<TrackSample> track = new java.util.ArrayList<>();
+        for (int i = 0; i <= 9; i++) track.add(new TrackSample(45.000 + i * 0.001, 6.0, i * 60L));
+        for (int i = 1; i <= 9; i++) track.add(new TrackSample(45.009 - i * 0.001, 6.0, 540L + i * 60L));
+        int elapsed = ClimbAttemptMatcher.match(track, 45.000, 6.0, 45.009, 6.0, 1000);
+        // Entry = first sample within gate of start = index 0 (t=0).
+        // Exit  = first sample within gate of end after entry = index 9 (t=540).
+        assertEquals(540, elapsed);
+    }
+
+    @Test
     public void tooFewSamples_returnsMinusOne() {
         List<TrackSample> track = new ArrayList<>();
         track.add(new TrackSample(45.0, 6.0, 0));
