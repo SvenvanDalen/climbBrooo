@@ -29,7 +29,8 @@
         { "distance": 230, "elevationGain": 12, "gradient": 52, "colorIndex": 2 },
         { "distance": 230, "elevationGain": 14, "gradient": 61, "colorIndex": 3 },
         { "distance": 140, "elevationGain": 12, "gradient": 86, "colorIndex": 4 }
-      ]
+      ],
+      "targetSeconds": [60, 58, 56, 55, 53, 50, 56, 60, 62, 64, 66, 62, 40]
     },
     {
       "startDistance": 23800,

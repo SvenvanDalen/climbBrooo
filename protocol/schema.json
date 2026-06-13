@@ -99,6 +99,13 @@
           "minItems": 1,
           "maxItems": 16,
           "items": { "$ref": "#/definitions/Segment" }
+        },
+        "targetSeconds": {
+          "description": "Optional per-segment target time in whole seconds, parallel to 'segments' (same length). Precomputed phone-side from the rider profile (route-mode only). Wire encoding: packed int array 'tsec'. Omitted when no pacing plan is available.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "type": "integer", "minimum": 0 }
         }
       }
     },

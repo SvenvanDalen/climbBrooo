@@ -68,4 +68,5 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 1       | 2026-06-13 | Added optional `tsec` (targetSeconds) packed int array on Climb — per-segment target time in whole seconds, parallel to `segs`. Route-mode only, omitted when no pacing plan. ~13 ints per climb; additive, no version bump. |
 | 1       | 2026-05-20 | Initial schema. Two modes, fixed-point gradients, color index, byte budget 8 KB. |
