@@ -367,7 +367,7 @@ The Climb Logbook matches a rider's Strava activity history against known climbs
 
 ### Data source
 
-Strava activities are fetched via two new `StravaApiClient` endpoints (`listActivities`, `getActivityStreams`). On first sync the app fetches the last 12 months of activities; subsequent syncs are incremental (the cursor is only advanced once a full batch has been matched and persisted — an aborted run does not lose its place). Sync is triggered manually (no WorkManager periodic worker for activities yet).
+Strava activities are fetched via two new `StravaApiClient` endpoints (`listActivities`, `getStreams`). On first sync the app fetches the last 12 months of activities; subsequent syncs are incremental (the cursor is only advanced once a full batch has been matched and persisted — an aborted run does not lose its place). Sync is triggered manually (no WorkManager periodic worker for activities yet).
 
 ### Route-independent climb identity
 
@@ -378,10 +378,10 @@ Each known climb is keyed by a `ClimbIdentity`: a bucketed start coordinate (0.0
 For each activity the matcher checks whether the GPS track passes through a known climb:
 
 1. **Entry gate**: the track must come within a proximity threshold of the climb start. The timestamp of the earliest crossing is the attempt start.
-2. **Exit gate**: the track must come within the same threshold of the climb end. The timestamp of the last crossing is the attempt end.
+2. **Exit gate**: the track must come within the same threshold of the climb end. The first sample at or after the entry that comes within the gate of the climb end marks the attempt end (`firstWithin`, the same earliest-match logic used for the entry).
 3. **Length validation**: the matched segment length must be within ±25% of the known climb length. This rejects partial traversals (e.g. turning around mid-climb) while tolerating GPS drift.
 
-Out-and-back rides are handled: the matcher can find both the outbound and the return traversal as separate attempts.
+Out-and-back rides are handled by picking the earliest gate entry: this ensures the ascent on an out-and-back ride is still matched (rather than dropped because a return pass shadowed it). `match()` records one attempt per activity per climb — it does not record separate outbound and return attempts.
 
 ### Persistence
 
@@ -401,7 +401,7 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 | `ClimbIdentity` | `domain/climb` | Route-independent climb key (bucketed coord + length) |
 | `KnownClimbs` | `domain/climb` | Derives match endpoints + identity from a `StoredRoute` |
 | `ClimbAttemptMatcher` | `domain/matching` | Maps an activity GPS track to an elapsed climb time |
-| `StoredClimbAttempt` | `data/route` | Persisted attempt: climbId, activityId, start/end timestamp, elapsed seconds |
+| `StoredClimbAttempt` | `data/route` | Persisted attempt: climbId, activityId, `dateEpochSec` (activity start date), `elapsedSec` |
 | `ClimbAttemptRepository` | `data/route` | JSON-file persistence + dedupe for `climb_attempts.json` |
 | `LogbookCalculator` | `domain/climb` | Per-climb PR summaries + per-attempt delta-to-PR |
 | `StravaActivitiesRepository` | `data/strava` | Fetch activity list + streams; first-sync (12-month) + incremental cursor |
