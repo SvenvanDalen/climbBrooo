@@ -42,4 +42,9 @@ public final class RiderProfile {
         int p = Math.max(RIDE_INTENSITY_MIN_PCT, Math.min(RIDE_INTENSITY_MAX_PCT, rideIntensityPct));
         return p / 100.0;
     }
+
+    /** Stable signature of the profile fields that affect a pacing estimate. */
+    public String signature() {
+        return ftpWatts + ":" + riderWeightKg + ":" + bikeWeightKg + ":" + rideIntensityPct;
+    }
 }
