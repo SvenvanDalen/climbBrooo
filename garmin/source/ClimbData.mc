@@ -46,6 +46,8 @@ class ClimbData {
     var segGradient;      // segment gradient fixed-point (pct×10)
     var segColor;         // color index 0-5
     var segSurf;          // surface type per segment: 0=asphalt 1=gravel 2=dirt 3=cobble 4=mixed 5=unknown
+    var segTargetSec;     // per-segment target seconds (parallel to seg arrays); 0 = none
+    var hasTargets;       // bool per climb: true when tsec was provided
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -54,6 +56,7 @@ class ClimbData {
     var distToNextClimb = -1;      // meters to the next climb start (-1 = unknown)
     var nextClimbIndex = -1;       // index of next upcoming climb
     var lastElapsedDistance = 0;  // last GPS elapsed distance passed to updateProgress
+    var climbStartTimerMs = -1;    // timerTime (ms) when the active climb was entered; -1 = not set
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -71,6 +74,8 @@ class ClimbData {
         segGradient = new [MAX_CLIMBS];
         segColor = new [MAX_CLIMBS];
         segSurf = new [MAX_CLIMBS];
+        segTargetSec = new [MAX_CLIMBS];
+        hasTargets = new [MAX_CLIMBS];
 
         for (var i = 0; i < MAX_CLIMBS; i++) {
             climbStartDist[i] = 0;
@@ -88,12 +93,15 @@ class ClimbData {
             segGradient[i] = new [MAX_SEGMENTS];
             segColor[i] = new [MAX_SEGMENTS];
             segSurf[i] = new [MAX_SEGMENTS];
+            segTargetSec[i] = new [MAX_SEGMENTS];
+            hasTargets[i] = false;
             for (var s = 0; s < MAX_SEGMENTS; s++) {
                 segDist[i][s] = 0;
                 segElevGain[i][s] = 0;
                 segGradient[i][s] = 0;
                 segColor[i][s] = 0;
                 segSurf[i][s] = 5; // UNKNOWN
+                segTargetSec[i][s] = 0;
             }
         }
 
@@ -203,5 +211,28 @@ class ClimbData {
             }
         }
         activeSegmentIndex = segCount[ci] - 1;
+    }
+
+    // Cumulative target seconds at the current progressInClimb for the active climb,
+    // linearly interpolated within the running segment. Returns -1 when no targets.
+    function targetSecondsAt() {
+        var ci = activeClimbIndex;
+        if (ci < 0 || !hasTargets[ci]) { return -1; }
+        var cum = 0;            // cumulative target seconds for completed segments
+        var cumDist = 0;        // cumulative distance at end of completed segments
+        for (var s = 0; s < segCount[ci]; s++) {
+            var segLen = segDist[ci][s];
+            var segEnd = cumDist + segLen;
+            if (progressInClimb <= segEnd || s == segCount[ci] - 1) {
+                var into = progressInClimb - cumDist;
+                if (into < 0) { into = 0; }
+                if (into > segLen) { into = segLen; }
+                var frac = (segLen > 0) ? (into.toFloat() / segLen.toFloat()) : 0.0;
+                return cum + (segTargetSec[ci][s] * frac);
+            }
+            cum += segTargetSec[ci][s];
+            cumDist = segEnd;
+        }
+        return cum;
     }
 }

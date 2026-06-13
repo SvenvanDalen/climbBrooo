@@ -150,6 +150,20 @@ class PhoneMessageCallback {
                 data.segSurf[idx][s] = 5;
             }
         }
+
+        // Optional tsec array: [targetSeconds, ...] one int per segment (parallel to segs)
+        var tsec = climbDict.get("tsec");
+        if (tsec != null && tsec instanceof Toybox.Lang.Array && tsec.size() >= data.segCount[idx]
+                && data.segCount[idx] > 0) {
+            data.hasTargets[idx] = true;
+            for (var s = 0; s < data.segCount[idx]; s++) {
+                var tv = tsec[s];
+                data.segTargetSec[idx][s] =
+                    (tv instanceof Toybox.Lang.Number) ? tv.toNumber() : 0;
+            }
+        } else {
+            data.hasTargets[idx] = false;
+        }
     }
 
     hidden function getInt(dict, key, defaultVal) {
