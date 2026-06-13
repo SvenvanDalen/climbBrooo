@@ -69,7 +69,7 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
             try {
                 StravaActivitiesRepository repo = new StravaActivitiesRepository(
                         getApplicationContext(),
-                        new StravaAuthRepository(this),
+                        new StravaAuthRepository(getApplicationContext()),
                         new RouteRepository(this),
                         new ClimbAttemptRepository(this));
                 int created = repo.syncActivities();
