@@ -23,4 +23,18 @@ public interface StravaApiClient {
     Call<ResponseBody> exportGpx(
             @Header("Authorization") String bearerToken,
             @Path("id") long routeId);
+
+    @GET("athlete/activities")
+    Call<List<StravaActivityDto>> listActivities(
+            @Header("Authorization") String bearerToken,
+            @Query("after") long afterEpochSec,
+            @Query("page") int page,
+            @Query("per_page") int perPage);
+
+    @GET("activities/{id}/streams")
+    Call<StravaStreamsDto> getStreams(
+            @Header("Authorization") String bearerToken,
+            @Path("id") long activityId,
+            @Query("keys") String keys,
+            @Query("key_by_type") boolean keyByType);
 }
