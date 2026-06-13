@@ -65,6 +65,10 @@ public final class RouteSyncWorker extends Worker {
                 ((nl.paree.climbpro.ClimbProApplication) ctx).connectIqClient();
         SharedPreferences    prefs           = PreferenceManager.getDefaultSharedPreferences(ctx);
 
+        nl.paree.climbpro.data.rider.RiderProfileRepository riderRepo =
+                new nl.paree.climbpro.data.rider.RiderProfileRepository(ctx);
+        nl.paree.climbpro.domain.power.RiderProfile profile = riderRepo.load();
+
         boolean authorised = authRepo.isAuthorised();
 
         SyncOrchestrator.RouteSource pull = () ->
@@ -89,7 +93,7 @@ public final class RouteSyncWorker extends Worker {
         };
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder);
+                prefs, routeRepo, syncStateRepo, payloadBuilder, profile);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -125,7 +129,8 @@ public final class RouteSyncWorker extends Worker {
      */
     private SyncOrchestrator.PayloadJob buildPayloadJob(
             SharedPreferences prefs, RouteRepository routeRepo,
-            SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder) {
+            SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
+            nl.paree.climbpro.domain.power.RiderProfile profile) {
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
@@ -158,12 +163,14 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
+                String wantHash = route.sourceHash + "|" + profile.signature();
                 if (SyncState.Status.SYNCED.equals(state.status)
-                        && route.sourceHash.equals(state.lastSyncedHash)) {
-                    Log.i(TAG, "Route " + routeId + " unchanged, no re-sync needed");
+                        && wantHash.equals(state.lastSyncedHash)) {
+                    Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
                     return null;
                 }
-                byte[] payload = payloadBuilder.buildRoutePayload(route);
+                int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
+                byte[] payload = payloadBuilder.buildRoutePayload(route, plan);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return null;
@@ -174,7 +181,7 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, route.sourceHash);
+                    syncStateRepo.markSynced(routeId, route.sourceHash + "|" + profile.signature());
                 }
             }
         };
