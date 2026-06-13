@@ -52,23 +52,22 @@ public final class ClimbAttemptRepository {
         return ids;
     }
 
-    /** Appends attempts, skipping any whose (climbId, activityId) already exists. */
-    public void append(List<StoredClimbAttempt> attempts) {
+    /**
+     * Not thread-safe: call only from a single-threaded executor.
+     * Appends attempts, skipping any whose (climbId, activityId) already exists.
+     */
+    public void append(List<StoredClimbAttempt> attempts) throws IOException {
         List<StoredClimbAttempt> all = loadAll();
         Set<String> seen = new HashSet<>();
         for (StoredClimbAttempt a : all) seen.add(key(a));
         for (StoredClimbAttempt a : attempts) {
             if (seen.add(key(a))) all.add(a);
         }
-        try {
-            writeAtomic(file, mapper.writeValueAsBytes(all));
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to persist climb attempts", e);
-        }
+        writeAtomic(file, mapper.writeValueAsBytes(all));
     }
 
     private static String key(StoredClimbAttempt a) {
-        return a.climbId + "#" + a.activityId;
+        return (a.climbId != null ? a.climbId : "") + "#" + a.activityId;
     }
 
     private static void writeAtomic(File target, byte[] data) throws IOException {
@@ -78,12 +77,14 @@ public final class ClimbAttemptRepository {
             out.getFD().sync();
         }
         try {
-            java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-            java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            try {
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException moveFailed) {
             tmp.delete();
             throw moveFailed;
