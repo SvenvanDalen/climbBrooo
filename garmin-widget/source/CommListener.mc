@@ -35,6 +35,8 @@ class PhoneMessageCallback {
                 handleRouteList(msg);
             } else if (msgType.equals("ACTIVE_SET")) {
                 App.getApp().activeAck = msg;
+            } else if (msgType.equals("HELLO")) {
+                handleHello();
             } else {
                 Sys.println("CommListener: unknown type: " + msgType);
             }
@@ -72,6 +74,14 @@ class PhoneMessageCallback {
         data.payloadReceived = true;
         for (var i = 0; i < data.climbCount; i++) { data.calibIdx[i] = 0; }
         Sys.println("CommListener: v3 parsed, " + data.climbCount + " climbs");
+    }
+
+    // Phone (re)connected — possibly a fresh install. Re-request the route list so the
+    // widget's "Telefoon" section refreshes without the user reopening the sync screen.
+    hidden function handleHello() {
+        Sys.println("CommListener: HELLO from phone, re-requesting route list");
+        App.getApp().phoneRouteIndex.received = false;
+        Comm.transmit({ "type" => "LIST_ROUTES" }, null, new CommListener());
     }
 
     hidden function handleRouteList(msg) {

@@ -15,6 +15,7 @@ import com.garmin.android.connectiq.exception.InvalidStateException;
 import com.garmin.android.connectiq.exception.ServiceUnavailableException;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -36,6 +37,21 @@ public final class ConnectIqClient {
 
     private static final String TAG = "ConnectIqClient";
 
+    /** Control message the phone sends to the widget right after (re)connecting. */
+    static final String MSG_TYPE_HELLO = "HELLO";
+
+    /**
+     * The {@code HELLO} control message. Sent once per connection to prime the GCM
+     * message binding to this (possibly freshly reinstalled) app process and to let
+     * the widget refresh its route list. Package-private + static so it is unit
+     * testable without initialising the SDK.
+     */
+    static Map<String, Object> helloMessage() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("type", MSG_TYPE_HELLO);
+        return m;
+    }
+
     private final Context context;
     private final ConnectIQ connectIQ;
     private final IQApp iqApp        = new IQApp(ConnectIqAppId.VALUE);
@@ -47,6 +63,10 @@ public final class ConnectIqClient {
 
     private volatile IQDevice device;
     private volatile boolean connected;
+    // The check-then-set in maybeSendHello() is not atomic across SDK callback
+    // threads, so a startup race can send HELLO twice. That's accepted by design:
+    // HELLO is an idempotent prime/refresh trigger, a duplicate is harmless.
+    private volatile boolean helloSent;
     private volatile WatchRequestHandler requestHandler;
 
     public ConnectIqClient(Context context) {
@@ -72,6 +92,7 @@ public final class ConnectIqClient {
             return;
         }
         stateLd.postValue(ConnectIqState.CONNECTING);
+        helloSent = false;
         connectIQ.initialize(context, /* autoUI= */ true, new ConnectIQ.ConnectIQListener() {
             @Override public void onSdkReady() { handleSdkReady(); }
 
@@ -116,6 +137,7 @@ public final class ConnectIqClient {
                     } catch (InvalidStateException | ServiceUnavailableException e) {
                         Log.w(TAG, "Re-register app events after reconnect failed", e);
                     }
+                    maybeSendHello();
                 }
             });
 
@@ -125,12 +147,23 @@ public final class ConnectIqClient {
             connected = device.getStatus() == IQDevice.IQDeviceStatus.CONNECTED;
             stateLd.postValue(connected
                     ? ConnectIqState.CONNECTED : ConnectIqState.DISCONNECTED);
+            maybeSendHello();
 
         } catch (InvalidStateException | ServiceUnavailableException e) {
             Log.e(TAG, "handleSdkReady failed", e);
             connected = false;
             stateLd.postValue(ConnectIqState.ERROR);
         }
+    }
+
+    /** Send the HELLO control message once per connection, when first connected. */
+    private void maybeSendHello() {
+        if (!connected || device == null || helloSent) {
+            return;
+        }
+        helloSent = true;
+        Log.i(TAG, "Connected — sending HELLO to widget to prime GCM binding");
+        sendMessage(helloMessage());
     }
 
     @SuppressWarnings("unchecked")
@@ -234,6 +267,28 @@ public final class ConnectIqClient {
             return false;
         }
         return result.get() == ConnectIQ.IQMessageStatus.SUCCESS;
+    }
+
+    /**
+     * Force the SDK to fully shut down and re-initialise, then reconnect. Use this at
+     * app startup so a phone-only app update can't leave Garmin Connect Mobile routing
+     * the watch's LIST_ROUTES to the dead previous process (the "watch route list is
+     * empty after updating only the phone" bug). The shutdown clears GCM's stale
+     * message binding; the delayed reconnect lets the teardown settle before re-init.
+     */
+    public void forceRebind() {
+        Log.i(TAG, "forceRebind: shutting down SDK to clear any stale GCM binding");
+        try {
+            connectIQ.shutdown(context);
+        } catch (Exception e) {
+            // Expected on a cold start where the SDK was never initialised.
+            Log.w(TAG, "forceRebind: shutdown threw (likely not yet initialised): " + e);
+        }
+        connected = false;
+        device = null;
+        helloSent = false;
+        stateLd.postValue(ConnectIqState.DISCONNECTED);
+        new Handler(Looper.getMainLooper()).postDelayed(this::connect, 1_000);
     }
 
     public void disconnect() {
