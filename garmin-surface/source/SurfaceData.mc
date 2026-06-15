@@ -11,6 +11,8 @@ class SurfaceData {
     const MAX_SECTIONS = 32;
     const MAX_CP = 256;
     const SNAP_M = 40;          // only snap when a checkpoint is within this many metres
+    const SUBPIECE_FRACTION_PCT = 8;   // elk deel-stuk = 8% van de stuk-lengte (zoals klimmen)
+    const MAX_SUBPIECES = 16;          // veiligheidscap op het aantal balk-cellen
 
     var payloadReceived = false;
     var routeId = null;
@@ -36,6 +38,9 @@ class SurfaceData {
     var nextIdx = -1;           // first section ahead (-1 = none)
     var remainingInSection = 0; // metres left in current section
     var distToNext = -1;        // metres to next section start
+    var subPieceCount = 0;      // deel-stukken in het huidige stuk (0 = niet in een stuk)
+    var currentSubPiece = -1;   // 0-based index van het deel-stuk waarin de rijder zit
+    var subPieceLen = 0;        // meters per deel-stuk in het huidige stuk
 
     function initialize() {
         secStart = new [MAX_SECTIONS];
@@ -141,6 +146,9 @@ class SurfaceData {
         nextIdx = -1;
         remainingInSection = 0;
         distToNext = -1;
+        subPieceCount = 0;
+        currentSubPiece = -1;
+        subPieceLen = 0;
         for (var i = 0; i < count; i++) {
             if (elapsed >= secStart[i] && elapsed < secEnd[i]) {
                 currentIdx = i;
@@ -149,6 +157,23 @@ class SurfaceData {
                 nextIdx = i;
                 distToNext = secStart[i] - elapsed;
                 break;
+            }
+        }
+
+        // Tussentijdse deel-stuk-check: splits het huidige stuk in deel-stukken van
+        // 8% van de stuk-lengte en bepaal in welk deel-stuk de rijder zit.
+        if (currentIdx >= 0) {
+            var secLen = secEnd[currentIdx] - secStart[currentIdx];
+            if (secLen > 0) {
+                subPieceLen = (secLen * SUBPIECE_FRACTION_PCT) / 100;  // integer floor van 8%
+                if (subPieceLen < 1) { subPieceLen = 1; }
+                subPieceCount = (secLen + subPieceLen - 1) / subPieceLen;  // ceil
+                if (subPieceCount > MAX_SUBPIECES) { subPieceCount = MAX_SUBPIECES; }
+                var into = elapsed - secStart[currentIdx];
+                if (into < 0) { into = 0; }
+                var idx = into / subPieceLen;
+                if (idx > subPieceCount - 1) { idx = subPieceCount - 1; }
+                currentSubPiece = idx;
             }
         }
     }
