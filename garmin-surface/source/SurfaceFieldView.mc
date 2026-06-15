@@ -25,7 +25,7 @@ class SurfaceFieldView extends Ui.DataField {
     function initialize() {
         DataField.initialize();
         alertedSec = new [32];   // MAX_SECTIONS
-        for (var i = 0; i < 32; i++) { alertedSec[i] = false; }
+        for (var i = 0; i < alertedSec.size(); i++) { alertedSec[i] = false; }
     }
 
     function compute(info) {
@@ -172,7 +172,8 @@ class SurfaceFieldView extends Ui.DataField {
         return meters + "m";
     }
 
-    // Tril + geluid bij binnenkomst van een ondergrond-stuk (zelfde modaliteit als de klim-alert).
+    // Tril + geluid bij binnenkomst van een ondergrond-stuk (zelfde toon TONE_LAP als de klim-alert;
+    // bewust een kortere tril dan triggerClimbAlert omdat ondergrond-stukken vaker voorkomen dan klimmen).
     hidden function triggerSurfaceAlert() {
         if (Attention has :vibrate) {
             var vibePattern = [
