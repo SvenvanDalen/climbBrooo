@@ -31,7 +31,7 @@ Connect geïnstalleerd zijn en de watch daarin gekoppeld.
 
 | Laag | Bestand | Rol |
 |---|---|---|
-| App-lifecycle | `android/.../ClimbProApplication.java` | Maakt één app-brede `ConnectIqClient`, roept `connect()` aan bij opstart |
+| App-lifecycle | `android/.../ClimbProApplication.java` | Maakt één app-brede `ConnectIqClient`, roept `forceRebind()` aan bij opstart (zie §3) |
 | SDK-wrapper | `android/.../connectiq/ConnectIqClient.java` | Init, device discovery, zenden, ontvangen, statusbeheer |
 | App-UUID | `android/.../connectiq/ConnectIqAppId.java` | De UUID van de watch-app waarmee we praten |
 | Wire-format | `android/.../connectiq/PayloadCodec.java` | JSON-bytes → `Map` (zodat de watch een Dictionary krijgt) |
