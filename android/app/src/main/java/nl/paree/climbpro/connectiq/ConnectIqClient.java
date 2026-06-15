@@ -37,6 +37,9 @@ public final class ConnectIqClient {
 
     private static final String TAG = "ConnectIqClient";
 
+    /** Delay before a self-healing reconnect after a recoverable connect failure. */
+    private static final long RECONNECT_DELAY_MS = 5_000;
+
     /** Control message the phone sends to the widget right after (re)connecting. */
     static final String MSG_TYPE_HELLO = "HELLO";
 
@@ -100,6 +103,7 @@ public final class ConnectIqClient {
                 Log.e(TAG, "CIQ initialize error: " + status);
                 connected = false;
                 stateLd.postValue(ConnectIqState.ERROR);
+                scheduleReconnect();
             }
 
             @Override public void onSdkShutDown() {
@@ -107,7 +111,8 @@ public final class ConnectIqClient {
                 connected = false;
                 device = null;
                 stateLd.postValue(ConnectIqState.DISCONNECTED);
-                new Handler(Looper.getMainLooper()).postDelayed(ConnectIqClient.this::connect, 5_000);
+                new Handler(Looper.getMainLooper()).postDelayed(
+                        ConnectIqClient.this::connect, RECONNECT_DELAY_MS);
             }
         });
     }
@@ -116,9 +121,13 @@ public final class ConnectIqClient {
         try {
             List<IQDevice> devices = connectIQ.getConnectedDevices();
             if (devices == null || devices.isEmpty()) {
-                Log.w(TAG, "No connected Garmin devices found");
+                // Common right after forceRebind()'s shutdown(): GCM hasn't re-reported
+                // the device yet. Without a retry the phone would stay ERROR forever and
+                // never answer the watch's LIST_ROUTES (widget shows "No routes").
+                Log.w(TAG, "No connected Garmin devices found — scheduling retry");
                 connected = false;
                 stateLd.postValue(ConnectIqState.ERROR);
+                scheduleReconnect();
                 return;
             }
             device = devices.get(0);
@@ -153,7 +162,18 @@ public final class ConnectIqClient {
             Log.e(TAG, "handleSdkReady failed", e);
             connected = false;
             stateLd.postValue(ConnectIqState.ERROR);
+            scheduleReconnect();
         }
+    }
+
+    /**
+     * Schedule one delayed reconnect attempt after a recoverable failure (init error,
+     * empty device list, or a discovery exception). {@link #connect()} is idempotent —
+     * if we're already CONNECTING/CONNECTED by the time this fires it is a no-op — so a
+     * few overlapping schedules can't double-initialise the SDK.
+     */
+    private void scheduleReconnect() {
+        new Handler(Looper.getMainLooper()).postDelayed(this::connect, RECONNECT_DELAY_MS);
     }
 
     /** Send the HELLO control message once per connection, when first connected. */

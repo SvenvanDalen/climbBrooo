@@ -75,7 +75,9 @@ ConnectIQ.getInstance(ctx, WIRELESS).initialize(ctx, autoUI=true, listener)
   │
   └─► onSdkReady()                      → handleSdkReady()
          │
-         ├─ getConnectedDevices()  leeg? → state = ERROR, nieuwe poging na 10 s
+         ├─ getConnectedDevices()  leeg? → state = ERROR, nieuwe poging na 5 s
+         │     (idem bij onInitializeError — beide plannen een reconnect i.p.v.
+         │      voorgoed in ERROR te blijven hangen)
          │
          ├─ device = devices.get(0)
          ├─ registerForDeviceEvents(device, …)   → onDeviceStatusChanged → state = CONNECTED / DISCONNECTED
@@ -199,7 +201,7 @@ Verwachte volgorde:
 | Symptoom | Oorzaak / fix |
 |---|---|
 | `GCM_NOT_INSTALLED` terwijl Garmin Connect er is | `<queries>`-blok ontbreekt in het manifest, of GCM niet ingelogd/gekoppeld |
-| Status blijft `ERROR`, "No connected Garmin devices found" | Watch niet gekoppeld in Garmin Connect, of niet binnen Bluetooth-bereik. De client probeert het elke 10 s opnieuw zodra de watch weer verbonden is |
+| Status blijft `ERROR`, "No connected Garmin devices found" | Watch niet gekoppeld in Garmin Connect, of niet binnen Bluetooth-bereik. De client plant na zo'n fout (en na `onInitializeError`) elke 5 s een nieuwe `connect()`-poging, dus hij herstelt zodra de watch weer in beeld is. Vlak ná `forceRebind()` is deze lege-lijst-fout normaal en wordt zo automatisch opgevangen |
 | Widget toont "Geen verbinding" | UUID-mismatch: `ConnectIqAppId.VALUE` ≠ `garmin-widget/manifest.xml` id |
 | "Telefoon"-lijst leeg ná alleen-telefoon update | Stale GCM-binding. Sinds `forceRebind()` bij opstart zou dit vanzelf moeten herstellen; lukt het niet, herstart Garmin Connect Mobile + ClimbPro. Géén UUID-probleem. |
 | Watch ontvangt niets / dropt bericht | Er werd `byte[]` i.p.v. een `Map` gestuurd, of payload > 4096 bytes |
