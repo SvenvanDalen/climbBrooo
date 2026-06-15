@@ -1,6 +1,7 @@
 using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Application as App;
+using Toybox.Attention as Attention;
 
 // Datafield showing the user-defined surface section the rider is currently
 // in (surface name + remaining distance) plus a preview of the next section.
@@ -17,13 +18,28 @@ class SurfaceFieldView extends Ui.DataField {
         0xAAAAAA   // 5: unknown     — light grey
     ];
 
+    // Alert-state (voorkom her-trigger; idempotent per stuk, gereset bij route-wissel)
+    hidden var lastRouteId = null;
+    hidden var alertedSec;   // Boolean per stuk-index (grootte = SurfaceData MAX_SECTIONS)
+
     function initialize() {
         DataField.initialize();
+        alertedSec = new [32];   // MAX_SECTIONS
+        for (var i = 0; i < 32; i++) { alertedSec[i] = false; }
     }
 
     function compute(info) {
         var data = App.getApp().surfaceData;
         if (data == null || !data.payloadReceived) { return; }
+
+        // Een nieuwe payload (route-wissel) maakt de per-stuk alert-state ongeldig.
+        var rid = data.routeId;
+        var routeChanged = (rid == null) ? (lastRouteId != null) : !rid.equals(lastRouteId);
+        if (routeChanged) {
+            lastRouteId = rid;
+            for (var i = 0; i < alertedSec.size(); i++) { alertedSec[i] = false; }
+        }
+
         var elapsed = 0;
         if (info != null && info has :elapsedDistance && info.elapsedDistance != null) {
             elapsed = info.elapsedDistance.toNumber();
@@ -32,7 +48,18 @@ class SurfaceFieldView extends Ui.DataField {
         if (info != null && info has :currentLocation && info.currentLocation != null) {
             pos = info.currentLocation.toDegrees();  // [lat, lon] decimal degrees
         }
-        data.updateProgress(data.correctElapsed(elapsed, pos));
+        var corrected = data.correctElapsed(elapsed, pos);
+        data.updateProgress(corrected);
+
+        // Stuk-start-alert: één keer per stuk, binnen 50 m van de stuk-start.
+        var ci = data.currentIdx;
+        if (ci >= 0 && ci < alertedSec.size() && !alertedSec[ci]) {
+            var into = corrected - data.secStart[ci];
+            if (into >= 0 && into <= 50) {
+                triggerSurfaceAlert();
+                alertedSec[ci] = true;
+            }
+        }
     }
 
     function onUpdate(dc) {
@@ -143,5 +170,20 @@ class SurfaceFieldView extends Ui.DataField {
             return (meters / 1000) + "." + ((meters % 1000) / 100) + "km";
         }
         return meters + "m";
+    }
+
+    // Tril + geluid bij binnenkomst van een ondergrond-stuk (zelfde modaliteit als de klim-alert).
+    hidden function triggerSurfaceAlert() {
+        if (Attention has :vibrate) {
+            var vibePattern = [
+                new Attention.VibeProfile(100, 400),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 400)
+            ];
+            Attention.vibrate(vibePattern);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_LAP);
+        }
     }
 }
