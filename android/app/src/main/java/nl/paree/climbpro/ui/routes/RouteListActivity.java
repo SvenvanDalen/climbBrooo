@@ -1,6 +1,9 @@
 package nl.paree.climbpro.ui.routes;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -11,6 +14,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -48,6 +52,10 @@ public final class RouteListActivity extends AppCompatActivity {
     private final ActivityResultLauncher<String[]> gpxPicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                     uri -> { if (uri != null) importGpx(uri); });
+
+    private final ActivityResultLauncher<String[]> btPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+                    result -> onBluetoothPermissionResult());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,6 +140,46 @@ public final class RouteListActivity extends AppCompatActivity {
                 }
             }
         });
+
+        ensureBluetoothPermission();
+    }
+
+    /**
+     * The Garmin Connect IQ SDK can only bind to the Garmin Connect Mobile Bluetooth
+     * service when {@code BLUETOOTH_CONNECT} is granted (Android 12+ runtime permission).
+     * Without it {@code getConnectedDevices()} returns empty and the watch widget shows
+     * "No routes". A fresh (re)install resets this grant — and nothing requested it — so
+     * the connection silently never came up. Request it here; on grant, (re)connect.
+     */
+    private void ensureBluetoothPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return; // pre-Android-12: BT perms are install-time; Application already connected
+        }
+        boolean granted = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+        if (granted) {
+            return; // ClimbProApplication#onCreate already kicked off forceRebind() with permission
+        }
+        btPermissionLauncher.launch(new String[]{
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN
+        });
+    }
+
+    private void onBluetoothPermissionResult() {
+        boolean granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                        == PackageManager.PERMISSION_GRANTED;
+        if (granted) {
+            // The startup forceRebind() ran before the grant and is stuck retrying in ERROR
+            // (no reachable device). Rebind now that the SDK can actually reach the watch.
+            ((nl.paree.climbpro.ClimbProApplication) getApplication())
+                    .connectIqClient().forceRebind();
+        } else {
+            Toast.makeText(this,
+                    "Zonder Bluetooth-toestemming kan de telefoon de horloge-app niet bereiken",
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
