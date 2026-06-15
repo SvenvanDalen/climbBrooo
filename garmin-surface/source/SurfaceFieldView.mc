@@ -108,8 +108,10 @@ class SurfaceFieldView extends Ui.DataField {
 
         var x0 = 20;
         var barW = w - 40;
-        var y = (h * 60) / 100;
+        var y = (h * 60) / 100;   // onder de 'nog ...'-regel (h/2+8), boven de 'dan:'-preview (3h/4)
         var barH = 6;
+        // n is begrensd door SurfaceData.MAX_SUBPIECES (16), dus cellW >= 1 op het fr255m-scherm
+        // en de cellen lopen nooit voorbij de rechtermarge.
         var cellW = barW / n;
         if (cellW < 1) { cellW = 1; }
 
