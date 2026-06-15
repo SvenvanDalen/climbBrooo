@@ -15,6 +15,7 @@ import com.garmin.android.connectiq.exception.InvalidStateException;
 import com.garmin.android.connectiq.exception.ServiceUnavailableException;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -35,6 +36,21 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class ConnectIqClient {
 
     private static final String TAG = "ConnectIqClient";
+
+    /** Control message the phone sends to the widget right after (re)connecting. */
+    static final String MSG_TYPE_HELLO = "HELLO";
+
+    /**
+     * The {@code HELLO} control message. Sent once per connection to prime the GCM
+     * message binding to this (possibly freshly reinstalled) app process and to let
+     * the widget refresh its route list. Package-private + static so it is unit
+     * testable without initialising the SDK.
+     */
+    static Map<String, Object> helloMessage() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("type", MSG_TYPE_HELLO);
+        return m;
+    }
 
     private final Context context;
     private final ConnectIQ connectIQ;
