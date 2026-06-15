@@ -83,13 +83,46 @@ class SurfaceFieldView extends Ui.DataField {
         dc.drawText(w / 2, h / 2 - 8, Gfx.FONT_XTINY, SURF_NAMES[t],
             Gfx.TEXT_JUSTIFY_CENTER);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h / 2 + 8, Gfx.FONT_SMALL,
-            "nog " + formatDist(data.remainingInSection), Gfx.TEXT_JUSTIFY_CENTER);
+        var remLine = "nog " + formatDist(data.remainingInSection);
+        if (data.subPieceCount > 0) {
+            remLine = remLine + "  ·  deel " + (data.currentSubPiece + 1) + "/" + data.subPieceCount;
+        }
+        dc.drawText(w / 2, h / 2 + 8, Gfx.FONT_SMALL, remLine, Gfx.TEXT_JUSTIFY_CENTER);
+
+        drawSubPieceBar(dc, data, w, h);
 
         if (data.nextIdx >= 0) {
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, (h * 3) / 4, Gfx.FONT_XTINY,
                 "dan: " + titleFor(data, data.nextIdx), Gfx.TEXT_JUSTIFY_CENTER);
+        }
+    }
+
+    // Gevulde segmentbalk: afgereden deel-stukken in de ondergrondkleur, het huidige
+    // deel-stuk blauw, komende deel-stukken lichtgrijs. De teller staat op de 'nog ...'-regel erboven.
+    hidden function drawSubPieceBar(dc, data, w, h) {
+        var n = data.subPieceCount;
+        if (n <= 0) { return; }
+        var cur = data.currentSubPiece;
+        var t = data.secType[data.currentIdx];
+
+        var x0 = 20;
+        var barW = w - 40;
+        var y = (h * 60) / 100;
+        var barH = 6;
+        var cellW = barW / n;
+        if (cellW < 1) { cellW = 1; }
+
+        for (var i = 0; i < n; i++) {
+            var cx = x0 + i * cellW;
+            if (i < cur) {
+                dc.setColor(SURF_COLORS[t], Gfx.COLOR_TRANSPARENT);   // afgereden
+            } else if (i == cur) {
+                dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_TRANSPARENT);   // huidig
+            } else {
+                dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT); // komend
+            }
+            dc.fillRectangle(cx, y, cellW - 1, barH);
         }
     }
 
