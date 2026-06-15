@@ -12,7 +12,7 @@ class SurfaceData {
     const MAX_CP = 256;
     const SNAP_M = 40;          // only snap when a checkpoint is within this many metres
     const SUBPIECE_FRACTION_PCT = 8;   // elk deel-stuk = 8% van de stuk-lengte (zoals klimmen)
-    const MAX_SUBPIECES = 16;          // veiligheidscap op het aantal balk-cellen
+    const MAX_SUBPIECES = 16;          // 13 nominaal (ceil 100/8) + marge voor floor-afronding op korte stukken
 
     var payloadReceived = false;
     var routeId = null;
@@ -160,8 +160,8 @@ class SurfaceData {
             }
         }
 
-        // Tussentijdse deel-stuk-check: splits het huidige stuk in deel-stukken van
-        // 8% van de stuk-lengte en bepaal in welk deel-stuk de rijder zit.
+        // Deel-stuk-voortgang: splits het huidige stuk in deel-stukken van 8% van de
+        // stuk-lengte (zoals klimmen) en bepaal in welk deel-stuk de rijder zit.
         if (currentIdx >= 0) {
             var secLen = secEnd[currentIdx] - secStart[currentIdx];
             if (secLen > 0) {
@@ -170,7 +170,6 @@ class SurfaceData {
                 subPieceCount = (secLen + subPieceLen - 1) / subPieceLen;  // ceil
                 if (subPieceCount > MAX_SUBPIECES) { subPieceCount = MAX_SUBPIECES; }
                 var into = elapsed - secStart[currentIdx];
-                if (into < 0) { into = 0; }
                 var idx = into / subPieceLen;
                 if (idx > subPieceCount - 1) { idx = subPieceCount - 1; }
                 currentSubPiece = idx;
