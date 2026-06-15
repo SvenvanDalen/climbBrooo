@@ -63,6 +63,9 @@ public final class ConnectIqClient {
 
     private volatile IQDevice device;
     private volatile boolean connected;
+    // The check-then-set in maybeSendHello() is not atomic across SDK callback
+    // threads, so a startup race can send HELLO twice. That's accepted by design:
+    // HELLO is an idempotent prime/refresh trigger, a duplicate is harmless.
     private volatile boolean helloSent;
     private volatile WatchRequestHandler requestHandler;
 
