@@ -1,6 +1,10 @@
 using Toybox.System as Sys;
 using Toybox.Math as Math;
 
+// Module-level so SurfaceFieldView can size alertedSec[] to match without
+// duplicating the magic number.
+const SURFACE_MAX_SECTIONS = 32;
+
 // Parallel-array store for the user-defined surface sections of the active
 // route. Filled from the phone payload's 'surfSec' object array:
 // [{s:startDistance, e:endDistance, t:surfaceType, n:name?, cp:[dist,latInt,lonInt,...]}, ...].
@@ -8,11 +12,12 @@ using Toybox.Math as Math;
 // apply a smoothed distanceOffset that corrects for sensor drift.
 class SurfaceData {
 
-    const MAX_SECTIONS = 32;
+    const MAX_SECTIONS = SURFACE_MAX_SECTIONS;
     const MAX_CP = 256;
-    const SNAP_M = 40;          // only snap when a checkpoint is within this many metres
-    const SUBPIECE_FRACTION_PCT = 8;   // elk deel-stuk = 8% van de stuk-lengte (zoals klimmen)
-    const MAX_SUBPIECES = 16;          // 13 nominaal (ceil 100/8) + marge voor floor-afronding op korte stukken
+    const SNAP_M = 40;               // only snap when a checkpoint is within this many metres
+    const GPS_SUBPIECE_SNAP_M = 75;  // radius voor GPS-gebaseerde deel-stuk detectie
+    const SUBPIECE_FRACTION_PCT = 8; // elk deel-stuk = 8% van de stuk-lengte (zoals klimmen)
+    const MAX_SUBPIECES = 16;        // 13 nominaal (ceil 100/8) + marge voor floor-afronding op korte stukken
 
     var payloadReceived = false;
     var routeId = null;
@@ -114,29 +119,38 @@ class SurfaceData {
         if (posDegrees == null || totalCp == 0) { return elapsed + distanceOffset; }
         var lat = (posDegrees[0] * 100000).toNumber();
         var lon = (posDegrees[1] * 100000).toNumber();
+        // Hoist the cosine term: it depends only on the rider's latitude, which
+        // is constant across all checkpoint comparisons in this call.
+        var meanLatRad = (lat / 100000.0) * 0.0174533;
+        var cosLat = Math.cos(meanLatRad);
         var bestM = SNAP_M + 1;
         var bestDist = -1;
         for (var i = 0; i < totalCp; i++) {
-            var m = approxMeters(lat, lon, cpLat[i], cpLon[i]);
+            var m = approxMeters(lat, lon, cpLat[i], cpLon[i], cosLat);
             if (m < bestM) { bestM = m; bestDist = cpDist[i]; }
         }
         if (bestDist >= 0) {
             var raw = bestDist - elapsed;
-            distanceOffset = ((distanceOffset * 3) + raw) / 4;  // low-pass smoothing
+            // Float arithmetic so sub-metre corrections accumulate instead of
+            // being truncated by integer division.
+            distanceOffset = (((distanceOffset * 3.0) + raw) / 4.0).toNumber();
         }
         return elapsed + distanceOffset;
     }
 
     // Equirectangular approximation. Inputs are degrees * 100000.
-    hidden function approxMeters(latA, lonA, latB, lonB) {
+    // cosLat must be Math.cos(latA_in_radians) — precomputed by the caller.
+    hidden function approxMeters(latA, lonA, latB, lonB, cosLat) {
         var dLat = (latA - latB) * 0.011132;                  // 1.1132 m per 1e-5 deg
-        var meanLatRad = (latA / 100000.0) * 0.0174533;       // deg -> rad
-        var dLon = (lonA - lonB) * 0.011132 * Math.cos(meanLatRad);
+        var dLon = (lonA - lonB) * 0.011132 * cosLat;
         return Math.sqrt((dLat * dLat) + (dLon * dLon));
     }
 
     hidden function numOr(v, fallback) {
-        return (v instanceof Toybox.Lang.Number) ? v : fallback;
+        if (v instanceof Toybox.Lang.Number) { return v; }
+        if (v instanceof Toybox.Lang.Float)  { return v.toNumber(); }
+        if (v instanceof Toybox.Lang.Long)   { return v.toNumber(); }
+        return fallback;
     }
 
     // elapsed = activity elapsedDistance in metres (already corrected by correctElapsed).
@@ -175,5 +189,41 @@ class SurfaceData {
                 currentSubPiece = idx;
             }
         }
+    }
+
+    // Verfijnt currentSubPiece op basis van GPS zodra een checkpoint binnen de actieve
+    // sectie binnen GPS_SUBPIECE_SNAP_M meter ligt. Overschrijft de afstandsgebaseerde
+    // waarde van updateProgress() — alleen aanroepen ná updateProgress().
+    //
+    // Waarom alleen binnen de eigen sectie zoeken: checkpoints van aangrenzende secties
+    // liggen vlak bij de stuk-grenzen; die zouden het deel-stuk prematuur laten omslaan.
+    function refineSubPieceByGPS(posDegrees) {
+        if (currentIdx < 0 || subPieceCount <= 0 || subPieceLen <= 0) { return; }
+        if (posDegrees == null) { return; }
+
+        var lat = (posDegrees[0] * 100000).toNumber();
+        var lon = (posDegrees[1] * 100000).toNumber();
+        var cosLat = Math.cos((lat / 100000.0) * 0.0174533);
+
+        var off = secCpOff[currentIdx];
+        var cnt = secCpCnt[currentIdx];
+        if (cnt <= 0) { return; }
+
+        // Dichtstbijzijnde checkpoint binnen de actieve sectie.
+        var bestM    = GPS_SUBPIECE_SNAP_M + 1;
+        var bestDist = -1;
+        for (var k = 0; k < cnt; k++) {
+            var i = off + k;
+            var m = approxMeters(lat, lon, cpLat[i], cpLon[i], cosLat);
+            if (m < bestM) { bestM = m; bestDist = cpDist[i]; }
+        }
+
+        if (bestDist < 0) { return; }  // geen checkpoint dichtbij genoeg
+
+        var into = bestDist - secStart[currentIdx];
+        if (into < 0) { into = 0; }
+        var gpsIdx = into / subPieceLen;
+        if (gpsIdx >= subPieceCount) { gpsIdx = subPieceCount - 1; }
+        currentSubPiece = gpsIdx;
     }
 }

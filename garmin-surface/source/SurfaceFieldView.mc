@@ -24,7 +24,7 @@ class SurfaceFieldView extends Ui.DataField {
 
     function initialize() {
         DataField.initialize();
-        alertedSec = new [32];   // MAX_SECTIONS
+        alertedSec = new [SURFACE_MAX_SECTIONS];
         for (var i = 0; i < alertedSec.size(); i++) { alertedSec[i] = false; }
     }
 
@@ -50,6 +50,7 @@ class SurfaceFieldView extends Ui.DataField {
         }
         var corrected = data.correctElapsed(elapsed, pos);
         data.updateProgress(corrected);
+        data.refineSubPieceByGPS(pos);  // overschrijft afstandsgebaseerd deel-stuk wanneer GPS dichtbij een checkpoint ligt
 
         // Stuk-start-alert: één keer per stuk, binnen 50 m van de stuk-start.
         var ci = data.currentIdx;
@@ -109,13 +110,12 @@ class SurfaceFieldView extends Ui.DataField {
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, h / 2 - 8, Gfx.FONT_XTINY, SURF_NAMES[t],
             Gfx.TEXT_JUSTIFY_CENTER);
+        // Resterende afstand op eigen regel.
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        var remLine = "nog " + formatDist(data.remainingInSection);
-        if (data.subPieceCount > 0) {
-            remLine = remLine + "  ·  deel " + (data.currentSubPiece + 1) + "/" + data.subPieceCount;
-        }
-        dc.drawText(w / 2, h / 2 + 8, Gfx.FONT_SMALL, remLine, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, h / 2 + 4, Gfx.FONT_SMALL,
+            "nog " + formatDist(data.remainingInSection), Gfx.TEXT_JUSTIFY_CENTER);
 
+        // Sub-stuk-voortgang los eronder: balk + teller gescheiden van de afstand.
         drawSubPieceBar(dc, data, w, h);
 
         if (data.nextIdx >= 0) {
@@ -125,8 +125,9 @@ class SurfaceFieldView extends Ui.DataField {
         }
     }
 
-    // Gevulde segmentbalk: afgereden deel-stukken in de ondergrondkleur, het huidige
-    // deel-stuk blauw, komende deel-stukken lichtgrijs. De teller staat op de 'nog ...'-regel erboven.
+    // Voortgangsbalk: afgereden deel-stukken in de ondergrondkleur, het huidige blauw,
+    // komende lichtgrijs. Teller "deel Y/Z" staat als klein label onder de balk zodat
+    // hij niet overlapt met de "nog X"-afstandsregel erboven.
     hidden function drawSubPieceBar(dc, data, w, h) {
         var n = data.subPieceCount;
         if (n <= 0) { return; }
@@ -135,24 +136,28 @@ class SurfaceFieldView extends Ui.DataField {
 
         var x0 = 20;
         var barW = w - 40;
-        var y = (h * 60) / 100;   // onder de 'nog ...'-regel (h/2+8), boven de 'dan:'-preview (3h/4)
-        var barH = 6;
-        // n is begrensd door SurfaceData.MAX_SUBPIECES (16), dus cellW >= 1 op het fr255m-scherm
-        // en de cellen lopen nooit voorbij de rechtermarge.
+        var y = (h * 63) / 100;   // 4 px lager dan voorheen: genoeg lucht onder "nog X"-regel
+        var barH = 8;              // iets dikker voor leesbaarheid
+
         var cellW = barW / n;
         if (cellW < 1) { cellW = 1; }
 
         for (var i = 0; i < n; i++) {
             var cx = x0 + i * cellW;
             if (i < cur) {
-                dc.setColor(SURF_COLORS[t], Gfx.COLOR_TRANSPARENT);   // afgereden
+                dc.setColor(SURF_COLORS[t], Gfx.COLOR_TRANSPARENT);
             } else if (i == cur) {
-                dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_TRANSPARENT);   // huidig
+                dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_TRANSPARENT);
             } else {
-                dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT); // komend
+                dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
             }
             dc.fillRectangle(cx, y, cellW - 1, barH);
         }
+
+        // Teller onder de balk, los van de afstandsregel.
+        dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, y + barH + 2, Gfx.FONT_XTINY,
+            "deel " + (cur + 1) + "/" + n, Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     hidden function drawNextOnly(dc, data, w, h) {

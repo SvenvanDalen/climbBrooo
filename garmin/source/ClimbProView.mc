@@ -155,8 +155,8 @@ class ClimbProView extends Ui.DataField {
         var topY = safeTop;
 
         // profiel zone (niet te hoog / niet te laag)
-        var profileTop = safeTop + 12;
-        var profileBottom = safeBottom - 18;
+        var profileTop = safeTop + 18;
+        var profileBottom = safeBottom - 22;
         var profileHeight = profileBottom - profileTop;
 
         var statsY = safeBottom;
@@ -194,9 +194,12 @@ class ClimbProView extends Ui.DataField {
             if (progressPct > 1.0) { progressPct = 1.0; }
 
             var markerX = 4 + ((w - 8) * progressPct).toNumber();
+            // Clamp so the 2px marker stays within the profile area (right edge = 4 + (w-8) - 2).
+            var markerMax = w - 10;
+            if (markerX > markerMax) { markerX = markerMax; }
 
-            dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-            dc.fillRectangle(markerX - 2, profileTop.toNumber() - 2, 4, 6);
+            dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+            dc.fillRectangle(markerX, profileTop.toNumber(), 2, profileBottom.toNumber() - profileTop.toNumber());
         }
 
         // =========================
