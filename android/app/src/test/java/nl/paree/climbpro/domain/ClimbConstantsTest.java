@@ -8,8 +8,13 @@ import static org.junit.Assert.*;
 public class ClimbConstantsTest {
 
     @Test
-    public void segmentCountIs16() {
-        assertEquals(16, ClimbConstants.SEGMENT_COUNT);
+    public void segmentFractionIsEightPercent() {
+        assertEquals(0.08, ClimbConstants.SEGMENT_FRACTION, 1e-9);
+    }
+
+    @Test
+    public void defaultSegmentCountIs13() {
+        assertEquals(13, ClimbConstants.defaultSegmentCount());
     }
 
     @Test
@@ -18,8 +23,8 @@ public class ClimbConstantsTest {
     }
 
     @Test
-    public void segmentVersionIs2() {
-        assertEquals(2, ClimbConstants.SEGMENT_VERSION);
+    public void segmentVersionIs3() {
+        assertEquals(3, ClimbConstants.SEGMENT_VERSION);
     }
 
     @Test

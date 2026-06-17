@@ -88,15 +88,24 @@ public final class RouteRepository {
         route.elevations = toDoubleArray(points, "ele");
         route.distances  = toDoubleArray(points, "dist");
         route.climbs     = toStoredClimbs(climbs);
+        // Load existing stored data once to preserve user customisation (renames, surface types).
+        // A single read avoids the TOCTOU race that three separate reads created.
+        StoredRoute prev = loadPreviousRoute(route.routeId);
+        List<StoredClimb>          prevClimbs   = prev != null && prev.climbs != null
+                ? prev.climbs : Collections.emptyList();
+        List<StoredFlatSegment>    prevFlats    = prev != null && prev.flatSegments != null
+                ? prev.flatSegments : Collections.emptyList();
+        List<StoredSurfaceSection> prevSections = prev != null && prev.surfaceSections != null
+                ? prev.surfaceSections : Collections.emptyList();
+        mergePreviousClimbUserData(route.climbs, prevClimbs);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
                 : 0;
         List<FlatSegment> flatDomain = FlatSegmentDetector.detect(
                 routeLength, climbs != null ? climbs : Collections.emptyList());
         List<RoutePoint> pts = points != null ? points : Collections.emptyList();
-        route.flatSegments = toStoredFlatSegments(flatDomain, pts,
-                loadPreviousFlatSegments(route.routeId));
-        route.surfaceSections = new ArrayList<>(loadPreviousSurfaceSections(route.routeId));
+        route.flatSegments    = toStoredFlatSegments(flatDomain, pts, prevFlats);
+        route.surfaceSections = new ArrayList<>(prevSections);
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -192,28 +201,45 @@ public final class RouteRepository {
         return new File(routesDir, routeId + ".json");
     }
 
-    private List<StoredFlatSegment> loadPreviousFlatSegments(String routeId) {
+    /** Reads the existing stored route for {@code routeId}, or null on first import or read error. */
+    private StoredRoute loadPreviousRoute(String routeId) {
         File f = routeFile(routeId);
-        if (!f.exists()) return Collections.emptyList();
+        if (!f.exists()) return null;
         try (FileInputStream in = new FileInputStream(f)) {
-            StoredRoute existing = mapper.readValue(in, StoredRoute.class);
-            return existing.flatSegments != null ? existing.flatSegments : Collections.emptyList();
+            return mapper.readValue(in, StoredRoute.class);
         } catch (IOException e) {
-            return Collections.emptyList();
+            return null;
         }
     }
 
-    private List<StoredSurfaceSection> loadPreviousSurfaceSections(String routeId) {
-        File f = routeFile(routeId);
-        if (!f.exists()) return Collections.emptyList();
-        try (FileInputStream in = new FileInputStream(f)) {
-            StoredRoute existing = mapper.readValue(in, StoredRoute.class);
-            return existing.surfaceSections != null
-                    ? existing.surfaceSections : Collections.emptyList();
-        } catch (IOException e) {
-            return Collections.emptyList();
+    /**
+     * Copies user-supplied climb data (display-name rename + per-segment surface type)
+     * from a route's previous climbs onto the freshly detected ones, matching climbs by
+     * start distance. Per-segment surface is copied by index — segment counts are stable
+     * for unchanged geometry — and only non-UNKNOWN values overwrite, so re-detection
+     * never erases a user's customisation.
+     */
+    private static void mergePreviousClimbUserData(List<StoredClimb> fresh,
+                                                   List<StoredClimb> previous) {
+        if (fresh == null || previous == null || previous.isEmpty()) return;
+        Map<Integer, StoredClimb> prevByStart = new HashMap<>();
+        for (StoredClimb p : previous) prevByStart.put(p.startDistance, p);
+        for (StoredClimb f : fresh) {
+            StoredClimb p = prevByStart.get(f.startDistance);
+            if (p == null) continue;
+            if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
+            if (f.segments != null && p.segments != null) {
+                int n = Math.min(f.segments.size(), p.segments.size());
+                for (int i = 0; i < n; i++) {
+                    int prevSurface = p.segments.get(i).surfaceType;
+                    if (prevSurface != SurfaceType.UNKNOWN) {
+                        f.segments.get(i).surfaceType = prevSurface;
+                    }
+                }
+            }
         }
     }
+
 
     private static void writeAtomic(File target, byte[] data) throws IOException {
         File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
@@ -272,6 +298,9 @@ public final class RouteRepository {
                 ss.gradient     = seg.gradient;
                 ss.colorIndex   = seg.colorIndex;
                 sc.segments.add(ss);
+            }
+            if (c.calibrationPoints != null && !c.calibrationPoints.isEmpty()) {
+                sc.calibrationPoints = toStoredCalibPoints(c.calibrationPoints);
             }
             out.add(sc);
         }
@@ -373,7 +402,7 @@ public final class RouteRepository {
 
     /**
      * Re-segments one climb in a stored route using the given segment count.
-     * Pass {@code newSegmentCount <= 0} to fall back to {@link ClimbConstants#SEGMENT_COUNT}.
+     * Pass {@code newSegmentCount <= 0} to fall back to {@link ClimbConstants#defaultSegmentCount()}.
      */
     public void reSegmentClimb(String routeId, int climbIndex, int newSegmentCount) throws IOException {
         StoredRoute route = loadRoute(routeId);
@@ -385,12 +414,12 @@ public final class RouteRepository {
         List<RoutePoint> climbPts = extractClimbPoints(route, sc);
 
         int count = newSegmentCount > 0 ? newSegmentCount
-                                        : ClimbConstants.SEGMENT_COUNT;
+                                        : ClimbConstants.defaultSegmentCount();
 
         sc.segments          = toStoredSegments(
                 Segmenter.segment(climbPts, count));
         sc.calibrationPoints = toStoredCalibPoints(
-                Segmenter.calibrationPoints(climbPts)); // uses SEGMENT_COUNT spacing; acceptable for custom counts
+                Segmenter.calibrationPoints(climbPts, count));
         sc.segmentCount      = count;
         route.lastModifiedMs = System.currentTimeMillis();
 

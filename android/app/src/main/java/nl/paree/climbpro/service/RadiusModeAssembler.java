@@ -66,8 +66,9 @@ public final class RadiusModeAssembler {
 
         candidates.sort(Comparator.comparingDouble(cwd -> cwd.distance));
 
-        // Accumulate climbs until over budget
+        // Accumulate climbs until over budget; cache last fitting payload to avoid a rebuild.
         List<StoredClimb> accepted = new ArrayList<>();
+        byte[] lastFitting = builder.buildRadiusPayload(accepted);
         for (ClimbWithDist cwd : candidates) {
             accepted.add(cwd.climb);
             byte[] trial = builder.buildRadiusPayload(accepted);
@@ -77,11 +78,12 @@ public final class RadiusModeAssembler {
                 Log.w(TAG, "Payload budget exceeded — dropping climb " + cwd.climb.name);
                 break;
             }
+            lastFitting = trial;
         }
 
         Log.i(TAG, "Radius mode: " + accepted.size() + " climbs"
                 + (truncated ? " (truncated)" : ""));
-        return builder.buildRadiusPayload(accepted);
+        return lastFitting;
     }
 
     private static double haversine(double lat1, double lon1, double lat2, double lon2) {

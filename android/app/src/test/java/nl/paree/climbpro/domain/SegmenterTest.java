@@ -36,20 +36,22 @@ public class SegmenterTest {
     }
 
     @Test
-    public void segmentCountIsFixed() {
+    public void segmentCountIs13ForDefaultFraction() {
         List<RoutePoint> climb = buildClimb(2000, 0.072);
         List<Segment> segs = Segmenter.segment(climb);
-        // SEGMENT_COUNT = 16, so always expect exactly 16 segments
-        assertEquals("expect exactly " + ClimbConstants.SEGMENT_COUNT + " segments", ClimbConstants.SEGMENT_COUNT, segs.size());
+        // SEGMENT_FRACTION = 0.08 → ⌈1/0.08⌉ = 13 segments
+        int expected = ClimbConstants.defaultSegmentCount();
+        assertEquals("expect " + expected + " segments", expected, segs.size());
     }
 
     @Test
-    public void segmentCountIsAlways16ForVariousLengths() {
+    public void segmentCountIsAlways13ForVariousLengths() {
+        int expected = ClimbConstants.defaultSegmentCount();
         for (int len : new int[]{800, 1200, 2000, 5000, 10000}) {
             List<RoutePoint> climb = buildClimb(len, 0.05);
             List<Segment> segs = Segmenter.segment(climb);
-            assertEquals("expect " + ClimbConstants.SEGMENT_COUNT + " segments for " + len + "m climb",
-                    ClimbConstants.SEGMENT_COUNT, segs.size());
+            assertEquals("expect " + expected + " segments for " + len + "m climb",
+                    expected, segs.size());
         }
     }
 
@@ -96,10 +98,11 @@ public class SegmenterTest {
 
     @Test
     public void calibrationPointsRespectMinDistance() {
-        // 3200m / 16 = 200m per segment — every segment end qualifies
+        // 3200m × 8% = 256m per segment — all 13 segment ends qualify (256 >= 200m min)
         List<RoutePoint> climb = buildClimb(3200, 0.05);
         List<CalibrationPoint> cps = Segmenter.calibrationPoints(climb);
-        assertEquals("all 16 segment ends qualify", 16, cps.size());
+        int expected = ClimbConstants.defaultSegmentCount();
+        assertEquals("all " + expected + " segment ends qualify", expected, cps.size());
         for (int i = 1; i < cps.size(); i++) {
             int gap = cps.get(i).distanceFromClimbStart - cps.get(i - 1).distanceFromClimbStart;
             assertTrue("consecutive gap >= 200m but was " + gap, gap >= 198);

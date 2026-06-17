@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Splits a climb's route points into exactly {@link ClimbConstants#SEGMENT_COUNT} segments.
- * Each segment represents the same distance; the last segment may be smaller due to rounding.
+ * Splits a climb's route points into segments of {@link ClimbConstants#SEGMENT_FRACTION} each
+ * (8% of climb length → ⌈1/0.08⌉ = 13 segments). The last segment may be shorter.
  *
  * Invariant: sum(segment.distance) == climb.length (within 1 m rounding).
  */
@@ -29,7 +29,7 @@ public final class Segmenter {
         double totalLength = last.distance - first.distance;
         if (totalLength <= 0) return new ArrayList<>();
 
-        double segmentLength = totalLength / ClimbConstants.SEGMENT_COUNT;
+        double segmentLength = totalLength * ClimbConstants.SEGMENT_FRACTION;
         List<Segment> segments = new ArrayList<>();
 
         double segStart = first.distance;
@@ -134,13 +134,30 @@ public final class Segmenter {
         double totalLength = last.distance - first.distance;
         if (totalLength <= 0) return new ArrayList<>();
 
-        double segmentLength = totalLength / ClimbConstants.SEGMENT_COUNT;
+        return calibrationPoints(climbPoints, ClimbConstants.defaultSegmentCount());
+    }
+
+    /**
+     * Returns calibration points using a custom segment count.
+     * Used by {@link nl.paree.climbpro.data.route.RouteRepository#reSegmentClimb} so the
+     * checkpoint spacing matches the custom segment grid.
+     */
+    public static List<CalibrationPoint> calibrationPoints(List<RoutePoint> climbPoints,
+                                                            int segmentCount) {
+        if (climbPoints == null || climbPoints.size() < 2) return new ArrayList<>();
+
+        RoutePoint first = climbPoints.get(0);
+        RoutePoint last  = climbPoints.get(climbPoints.size() - 1);
+        double totalLength = last.distance - first.distance;
+        if (totalLength <= 0) return new ArrayList<>();
+
+        double segmentLength = totalLength / segmentCount;
         List<CalibrationPoint> result = new ArrayList<>();
         double lastCalibRelDist = 0;
 
-        for (int i = 0; i < ClimbConstants.SEGMENT_COUNT; i++) {
+        for (int i = 0; i < segmentCount; i++) {
             double relEnd = Math.min((i + 1) * segmentLength, totalLength);
-            boolean isLast = (i == ClimbConstants.SEGMENT_COUNT - 1);
+            boolean isLast = (i == segmentCount - 1);
 
             if (relEnd - lastCalibRelDist >= ClimbConstants.CALIBRATION_MIN_DISTANCE_M || isLast) {
                 double[] latLon = interpolateLatLon(climbPoints, first.distance + relEnd);

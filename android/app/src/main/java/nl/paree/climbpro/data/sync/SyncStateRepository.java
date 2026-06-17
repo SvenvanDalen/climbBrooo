@@ -89,19 +89,27 @@ public final class SyncStateRepository {
     }
 
     private void saveAll(Map<String, SyncState> map) {
+        File tmp = new File(stateFile.getParentFile(), FILE + ".tmp");
         try {
             byte[] data = mapper.writeValueAsBytes(map.values());
-            File tmp = new File(stateFile.getParentFile(), FILE + ".tmp");
             try (FileOutputStream out = new FileOutputStream(tmp)) {
                 out.write(data);
                 out.getFD().sync();
             }
-            if (!tmp.renameTo(stateFile)) {
-                tmp.delete();
-                Log.e(TAG, "Atomic rename failed");
+            // Replace the existing file atomically. File.renameTo does NOT overwrite an
+            // existing target on Windows / non-POSIX filesystems, so use Files.move with
+            // REPLACE_EXISTING (matching RouteRepository.writeAtomic).
+            try {
+                java.nio.file.Files.move(tmp.toPath(), stateFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                java.nio.file.Files.move(tmp.toPath(), stateFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
             Log.e(TAG, "Failed to save sync state", e);
+            tmp.delete();
         }
     }
 
