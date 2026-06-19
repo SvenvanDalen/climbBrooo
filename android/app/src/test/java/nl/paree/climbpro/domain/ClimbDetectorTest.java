@@ -80,6 +80,17 @@ public class ClimbDetectorTest {
     }
 
     @Test
+    public void detectPopulatesCalibrationPoints() {
+        // A detected climb must carry GPS calibration points so the watch can
+        // correct in-climb GPS drift; without them checkCalibration() is a no-op.
+        List<RoutePoint> route = singleClimb(1000, 0.06);
+        List<Climb> climbs = ClimbDetector.detect(route);
+        assertFalse("should find at least one climb", climbs.isEmpty());
+        assertFalse("detected climb must carry calibration points",
+                climbs.get(0).calibrationPoints.isEmpty());
+    }
+
+    @Test
     public void climbHasSegments() {
         List<RoutePoint> route = singleClimb(1600, 0.07);
         List<Climb> climbs = ClimbDetector.detect(route);

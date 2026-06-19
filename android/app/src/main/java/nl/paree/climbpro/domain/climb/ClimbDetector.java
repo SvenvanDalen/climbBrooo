@@ -105,6 +105,7 @@ public final class ClimbDetector {
                     .startLat(trimmedStart.lat)
                     .startLon(trimmedStart.lon)
                     .segments(segments)
+                    .calibrationPoints(Segmenter.calibrationPoints(climbPoints))
                     .build();
 
             climbs.add(climb);
