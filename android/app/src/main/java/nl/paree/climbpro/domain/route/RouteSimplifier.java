@@ -23,7 +23,8 @@ public final class RouteSimplifier {
     }
 
     private static List<RoutePoint> simplifyDegrees(List<RoutePoint> points, double epsilon) {
-        if (points == null || points.size() <= 2) return new ArrayList<>(points);
+        if (points == null) return new ArrayList<>();
+        if (points.size() <= 2) return new ArrayList<>(points);
         List<RoutePoint> result = douglasPeucker(points, 0, points.size() - 1, epsilon);
         if (result.size() > MAX_POINTS_AFTER_SIMPLIFICATION) {
             result = resample(result, MAX_POINTS_AFTER_SIMPLIFICATION);
