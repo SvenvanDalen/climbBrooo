@@ -1,31 +1,29 @@
 {
-  "v": 1,
+  "v": 3,
   "mode": "route",
-  "routeId": "demo_surface_001",
-  "name": "Surface demo loop",
-  "surfaceSections": [
+  "routeId": "demo_surface",
+  "name": "Surface demo route",
+  "climbs": [],
+  "surfSec": [
     {
-      "startDistance": 1000,
-      "endDistance": 2000,
-      "surfaceType": 1,
-      "name": "Grindstrook",
-      "checkpoints": [
-        { "distance": 1000, "lat": 51.01000, "lon": 5.00000 },
-        { "distance": 1200, "lat": 51.01200, "lon": 5.00100 },
-        { "distance": 1400, "lat": 51.01400, "lon": 5.00200 },
-        { "distance": 2000, "lat": 51.02000, "lon": 5.00400 }
+      "s": 0,
+      "e": 1200,
+      "t": 1,
+      "n": "Gravel sector",
+      "cp": [
+        0, 5100000, 500000,
+        200, 5100500, 500200,
+        1200, 5101000, 501000
       ]
     },
     {
-      "startDistance": 3000,
-      "endDistance": 3600,
-      "surfaceType": 3,
-      "name": "Kasseien",
-      "checkpoints": [
-        { "distance": 3000, "lat": 51.03000, "lon": 5.00800 },
-        { "distance": 3600, "lat": 51.03600, "lon": 5.01000 }
+      "s": 3000,
+      "e": 4000,
+      "t": 3,
+      "cp": [
+        3000, 5103000, 503000,
+        4000, 5104000, 504000
       ]
     }
-  ],
-  "climbs": []
+  ]
 }

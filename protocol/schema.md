@@ -4,11 +4,13 @@ Companion document to `schema.json`. The schema is the canonical source — this
 
 ## Versioning
 
-The `v` field (currently `1`) is required and gates compatibility. On a breaking change:
+The `v` field (currently `3`) is required and gates compatibility. On a breaking change:
 
 - Bump `v` in the schema.
 - Both producer (Android) and consumer (Monkey C) must check `v` and reject (or down-convert) unknown versions rather than silently mis-parsing.
 - Update `protocol/examples/*.json` to the new version.
+
+`v3` is the **packed wire format**: short keys (`sd`, `ed`, `len`, `eg`, `ag`, `n`, `segs`, …) and packed integer arrays instead of the verbose object-per-segment shape. `schema.json` describes this packed form directly, so `jsonschema2pojo` generates POJOs whose fields are the actual wire keys. The producer `service/ClimbPayloadBuilder` hand-builds the maps (it does not use the generated POJOs); `ProtocolRoundTripTest` keeps it honest by validating **both** the example files and the live builder output against `schema.json`.
 
 Within a major version, only **additive** changes are allowed (new optional fields). Renaming, removing, or re-typing a field is a breaking change.
 
@@ -41,10 +43,14 @@ Instead:
 
 ## Wire keys for packed encoding
 
-When a payload is serialized for the wire, logical JSON objects are packed into compact integer arrays:
+Per-climb numeric data is packed into compact integer arrays (the watch slices them by stride):
 
-- `surfSec` — packed int array of user-defined surface sections: `[startDistance, endDistance, surfaceType, …]`, 3 ints per section, ordered by startDistance. Route mode only. Sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
-- `tsec` — packed int array of per-segment target times in whole seconds, one int per segment, parallel to `segs` (same length). Route mode only. Optional per climb; omitted when no pacing plan is available.
+- `segs` — `[distance, elevationGain, gradientFixedPoint, colorIndex, …]`, **4 ints per segment**.
+- `calib` — `[distanceFromClimbStart, latInt, lonInt, …]`, **3 ints per point** (`latInt`/`lonInt` = degrees × 100000). Route mode, optional.
+- `surf` — one surface-type code (0–5) per segment, parallel to `segs`. Omitted when every segment is UNKNOWN.
+- `tsec` — per-segment target time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no pacing plan is available.
+
+`surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
 ## Byte budget
 

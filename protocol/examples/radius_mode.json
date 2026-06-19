@@ -1,97 +1,34 @@
 {
-  "v": 1,
+  "v": 3,
   "mode": "radius",
   "climbs": [
     {
-      "startLat": 50.84231,
-      "startLon": 5.85412,
-      "length": 2900,
-      "elevationGain": 210,
-      "avgGradient": 72,
-      "name": "Cauberg",
-      "segments": [
-        { "distance": 230, "elevationGain": 13, "gradient": 57, "colorIndex": 2 },
-        { "distance": 230, "elevationGain": 16, "gradient": 70, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 18, "gradient": 78, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 19, "gradient": 83, "colorIndex": 4 },
-        { "distance": 230, "elevationGain": 21, "gradient": 91, "colorIndex": 4 },
-        { "distance": 230, "elevationGain": 23, "gradient": 100, "colorIndex": 5 },
-        { "distance": 230, "elevationGain": 19, "gradient": 83, "colorIndex": 4 },
-        { "distance": 230, "elevationGain": 16, "gradient": 70, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 14, "gradient": 61, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 13, "gradient": 57, "colorIndex": 2 },
-        { "distance": 230, "elevationGain": 12, "gradient": 52, "colorIndex": 2 },
-        { "distance": 230, "elevationGain": 14, "gradient": 61, "colorIndex": 3 },
-        { "distance": 140, "elevationGain": 12, "gradient": 86, "colorIndex": 4 }
+      "slat": 5084231,
+      "slon": 585412,
+      "len": 2900,
+      "eg": 210,
+      "ag": 72,
+      "n": "Cauberg",
+      "segs": [
+        230, 13, 57, 2,
+        230, 16, 70, 3,
+        230, 18, 78, 3,
+        230, 19, 83, 4,
+        140, 12, 86, 4
       ]
     },
     {
-      "startLat": 50.81905,
-      "startLon": 5.79231,
-      "length": 1600,
-      "elevationGain": 90,
-      "avgGradient": 56,
-      "name": "Keutenberg",
-      "segments": [
-        { "distance": 128, "elevationGain": 5, "gradient": 39, "colorIndex": 1 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 8, "gradient": 63, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 9, "gradient": 70, "colorIndex": 3 },
-        { "distance": 128, "elevationGain": 9, "gradient": 70, "colorIndex": 3 },
-        { "distance": 128, "elevationGain": 8, "gradient": 63, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 7, "gradient": 55, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 7, "gradient": 55, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 7, "gradient": 55, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 64, "elevationGain": 6, "gradient": 94, "colorIndex": 4 }
-      ]
-    },
-    {
-      "startLat": 50.85773,
-      "startLon": 5.91204,
-      "length": 1100,
-      "elevationGain": 55,
-      "avgGradient": 50,
-      "name": "Bemelerberg",
-      "segments": [
-        { "distance": 88, "elevationGain": 3, "gradient": 34, "colorIndex": 1 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 5, "gradient": 57, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 5, "gradient": 57, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 5, "gradient": 57, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 5, "gradient": 57, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 88, "elevationGain": 4, "gradient": 45, "colorIndex": 2 },
-        { "distance": 44, "elevationGain": 4, "gradient": 91, "colorIndex": 4 }
-      ]
-    },
-    {
-      "startLat": 50.79412,
-      "startLon": 5.96118,
-      "length": 900,
-      "elevationGain": 38,
-      "avgGradient": 42,
-      "name": "Eyserweg",
-      "segments": [
-        { "distance": 72, "elevationGain": 2, "gradient": 28, "colorIndex": 1 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 4, "gradient": 56, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 4, "gradient": 56, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 2, "gradient": 28, "colorIndex": 1 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 36, "elevationGain": 2, "gradient": 56, "colorIndex": 2 }
+      "slat": 5081905,
+      "slon": 579231,
+      "len": 1600,
+      "eg": 90,
+      "ag": 56,
+      "n": "Keutenberg",
+      "segs": [
+        128, 5, 39, 1,
+        128, 6, 47, 2,
+        128, 8, 63, 2,
+        64, 6, 94, 4
       ]
     }
   ]

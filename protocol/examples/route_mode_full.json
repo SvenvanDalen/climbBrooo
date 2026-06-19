@@ -1,82 +1,29 @@
 {
   "v": 3,
   "mode": "route",
-  "routeId": "strava_route_8472193",
-  "name": "Limburg 3-climb loop",
-  "surfaceSections": [
-    { "startDistance": 1000, "endDistance": 2500, "surfaceType": 1 },
-    { "startDistance": 6000, "endDistance": 7000, "surfaceType": 3 }
-  ],
+  "routeId": "demo_route_full",
+  "name": "Full demo climb",
   "climbs": [
     {
-      "startDistance": 12500,
-      "endDistance": 15400,
-      "length": 2900,
-      "elevationGain": 210,
-      "avgGradient": 72,
-      "name": "Cauberg",
-      "segments": [
-        { "distance": 230, "elevationGain": 13, "gradient": 57, "colorIndex": 2 },
-        { "distance": 230, "elevationGain": 16, "gradient": 70, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 18, "gradient": 78, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 19, "gradient": 83, "colorIndex": 4 },
-        { "distance": 230, "elevationGain": 21, "gradient": 91, "colorIndex": 4 },
-        { "distance": 230, "elevationGain": 23, "gradient": 100, "colorIndex": 5 },
-        { "distance": 230, "elevationGain": 19, "gradient": 83, "colorIndex": 4 },
-        { "distance": 230, "elevationGain": 16, "gradient": 70, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 14, "gradient": 61, "colorIndex": 3 },
-        { "distance": 230, "elevationGain": 13, "gradient": 57, "colorIndex": 2 },
-        { "distance": 230, "elevationGain": 12, "gradient": 52, "colorIndex": 2 },
-        { "distance": 230, "elevationGain": 14, "gradient": 61, "colorIndex": 3 },
-        { "distance": 140, "elevationGain": 12, "gradient": 86, "colorIndex": 4 }
+      "sd": 1000,
+      "ed": 3000,
+      "len": 2000,
+      "eg": 80,
+      "ag": 40,
+      "n": "Long Drag",
+      "segs": [
+        500, 20, 40, 1,
+        500, 20, 40, 1,
+        500, 20, 40, 1,
+        500, 20, 40, 1
       ],
-      "targetSeconds": [60, 58, 56, 55, 53, 50, 56, 60, 62, 64, 66, 62, 40]
-    },
-    {
-      "startDistance": 23800,
-      "endDistance": 25400,
-      "length": 1600,
-      "elevationGain": 90,
-      "avgGradient": 56,
-      "name": "Keutenberg",
-      "segments": [
-        { "distance": 128, "elevationGain": 5, "gradient": 39, "colorIndex": 1 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 8, "gradient": 63, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 9, "gradient": 70, "colorIndex": 3 },
-        { "distance": 128, "elevationGain": 9, "gradient": 70, "colorIndex": 3 },
-        { "distance": 128, "elevationGain": 8, "gradient": 63, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 7, "gradient": 55, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 7, "gradient": 55, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 7, "gradient": 55, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 128, "elevationGain": 6, "gradient": 47, "colorIndex": 2 },
-        { "distance": 64, "elevationGain": 6, "gradient": 94, "colorIndex": 4 }
-      ]
-    },
-    {
-      "startDistance": 32100,
-      "endDistance": 33000,
-      "length": 900,
-      "elevationGain": 38,
-      "avgGradient": 42,
-      "name": "Eyserweg",
-      "segments": [
-        { "distance": 72, "elevationGain": 2, "gradient": 28, "colorIndex": 1 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 4, "gradient": 56, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 4, "gradient": 56, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 72, "elevationGain": 2, "gradient": 28, "colorIndex": 1 },
-        { "distance": 72, "elevationGain": 3, "gradient": 42, "colorIndex": 2 },
-        { "distance": 36, "elevationGain": 2, "gradient": 56, "colorIndex": 2 }
-      ]
+      "calib": [
+        0, 5150000, 510000,
+        1000, 5151000, 510500,
+        2000, 5152000, 511000
+      ],
+      "surf": [1, 1, 0, 0],
+      "tsec": [60, 62, 64, 66]
     }
   ]
 }

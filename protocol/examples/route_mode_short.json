@@ -1,30 +1,21 @@
 {
-  "v": 1,
+  "v": 3,
   "mode": "route",
   "routeId": "demo_route_001",
   "name": "Short demo loop",
   "climbs": [
     {
-      "startDistance": 5200,
-      "endDistance": 6240,
-      "length": 1040,
-      "elevationGain": 65,
-      "avgGradient": 63,
-      "name": "Demo Hill",
-      "segments": [
-        { "distance": 80, "elevationGain": 4, "gradient": 50, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 5, "gradient": 63, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 6, "gradient": 75, "colorIndex": 3 },
-        { "distance": 80, "elevationGain": 6, "gradient": 75, "colorIndex": 3 },
-        { "distance": 80, "elevationGain": 5, "gradient": 63, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 4, "gradient": 50, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 6, "gradient": 75, "colorIndex": 3 },
-        { "distance": 80, "elevationGain": 7, "gradient": 88, "colorIndex": 4 },
-        { "distance": 80, "elevationGain": 5, "gradient": 63, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 4, "gradient": 50, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 4, "gradient": 50, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 5, "gradient": 63, "colorIndex": 2 },
-        { "distance": 80, "elevationGain": 4, "gradient": 50, "colorIndex": 2 }
+      "sd": 5200,
+      "ed": 6240,
+      "len": 1040,
+      "eg": 65,
+      "ag": 63,
+      "n": "Demo Hill",
+      "segs": [
+        80, 4, 50, 2,
+        80, 5, 63, 2,
+        80, 6, 75, 3,
+        80, 7, 88, 4
       ]
     }
   ]
