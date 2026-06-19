@@ -68,6 +68,9 @@ garmin-widget/mir/
 builds/
 garminAppComplete/
 
+# Device render previews
+fr255m-*.html
+
 # ============================================================================
 # Secrets — never commit
 # ============================================================================
