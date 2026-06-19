@@ -57,7 +57,7 @@ These are settled — don't reopen them without a deliberate revisit (see `Docum
 - **Radius mode**: phone syncs all climbs within a user-configurable km radius of last known location. Phone truncates if over budget; watch is unaware of truncation.
 - **Navigation handoff**: phone shares GPX to Garmin Connect (intent); Garmin Connect pushes the course to the watch. We do not push courses ourselves.
 - **User metadata on watch**: route name + climb name only (if they fit). Notes/tags stay phone-side.
-- **Protocol source of truth**: `protocol/schema.json` (JSON Schema). Java POJOs are **generated** from it (Gradle task); Monkey C classes are **hand-written** to match. Round-trip tests on both sides catch drift. Never hand-edit generated Java; never change Monkey C without first updating `schema.json`.
+- **Protocol source of truth**: `protocol/schema.json` (JSON Schema) describes the **v3 packed wire format** (short keys, packed integer arrays). Java POJOs are **generated** from it (`generateProtocolPojos`), but the producer `service/ClimbPayloadBuilder` hand-builds the wire maps directly (it does not use the generated POJOs); Monkey C parsers are **hand-written** to match. `ProtocolRoundTripTest` validates both `protocol/examples/*.json` and the **live builder output** against the schema, so any Java-side drift fails CI — but the Monkey C parsers have no JVM harness and stay **review-only**, so when you change the wire format you MUST update `schema.json`, `protocol/examples/`, `ClimbPayloadBuilder`, **and** the Monkey C `CommListener.mc`/`SurfaceData.mc` together. Never hand-edit generated Java.
 
 ## Key cross-cutting concerns
 
