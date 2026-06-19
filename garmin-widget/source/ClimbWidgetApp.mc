@@ -43,7 +43,6 @@ class ClimbWidgetApp extends App.AppBase {
 
     function getInitialView() {
         climbData        = new ClimbData();
-        climbData.initialize();
         phoneRouteIndex  = new PhoneRouteIndex();
         msgCallback      = new PhoneMessageCallback();
         Comm.registerForPhoneAppMessages(method(:onPhoneMessage));
