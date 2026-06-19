@@ -143,11 +143,17 @@ Garmin course ──► Connect IQ event ─────────────
 
 ```
 GPS tick ──► nearest-point search ──► hysteresis filter ──► progress update
-                                                                │
-                                                                ├──► within 50 m of climb start? → audio/vibration (once per climb)
-                                                                │
+                  │                                             │
+                  └──► within 30 m of a calib point?            ├──► within 50 m of climb start? → audio/vibration (once per climb)
+                       → snap progress (GPS drift correction)   │
                                                                 └──► active segment changed? → redraw
 ```
+
+> **GPS calibration:** while on a climb, the datafield's `compute()` passes `currentLocation` to
+> `ClimbData.checkCalibration()`. The phone embeds per-climb `calib` points (distance-from-start +
+> lat/lon) in the v3 payload; when the rider passes within 30 m of the next unconsumed point, the
+> watch snaps `progressInClimb` to that point's known distance, correcting accumulated `elapsedDistance`
+> drift. Each calib point fires at most once (monotonic `calibIdx`).
 
 ### Sync semantics
 
