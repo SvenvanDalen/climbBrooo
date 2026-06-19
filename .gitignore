@@ -59,10 +59,20 @@ garmin-widget/external-mir/
 garmin-widget/internal-mir/
 garmin-widget/gen/
 
+# Connect IQ compiler mirror output (not the external-mir/internal-mir variants)
+garmin/mir/
+garmin-surface/mir/
+garmin-widget/mir/
+
+# Local build/export output
+builds/
+garminAppComplete/
+
 # ============================================================================
 # Secrets — never commit
 # ============================================================================
 **/local.properties
 **/secrets.properties
 **/*.developer_key
+developer_key
 strava-client-secret*
