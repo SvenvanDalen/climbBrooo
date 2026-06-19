@@ -131,23 +131,18 @@ class PhoneMessageCallback {
         }
 
         // Optional surf array: [surfaceType, ...] one int per segment (parallel to segs)
+        // Reset every segment to UNKNOWN first so a re-sync with a shorter surf
+        // array can't leave stale values from the previous payload.
+        var segCnt = data.segCount[idx];
+        for (var s = 0; s < segCnt; s++) { data.segSurf[idx][s] = 5; }
         var surf = climbDict.get("surf");
         if (surf != null && surf instanceof Toybox.Lang.Array) {
             var surfSize = surf.size();
-            var segCnt = data.segCount[idx];
             for (var s = 0; s < segCnt && s < surfSize; s++) {
                 var sv = surf[s];
-                if (sv instanceof Toybox.Lang.Number) {
-                    var si = sv.toNumber();
-                    data.segSurf[idx][s] = (si >= 0 && si <= 5) ? si : 5;
-                } else {
-                    data.segSurf[idx][s] = 5;
+                if (sv instanceof Toybox.Lang.Number && sv.toNumber() >= 0 && sv.toNumber() <= 5) {
+                    data.segSurf[idx][s] = sv.toNumber();
                 }
-            }
-        } else {
-            // surf absent — all segments unknown
-            for (var s = 0; s < data.segCount[idx]; s++) {
-                data.segSurf[idx][s] = 5;
             }
         }
 

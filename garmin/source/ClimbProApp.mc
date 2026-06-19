@@ -19,7 +19,6 @@ class ClimbProApp extends App.AppBase {
 
     function onStart(state) {
         climbData = new ClimbData();
-        climbData.initialize(); // belangrijk!
 
         msgCallback = new PhoneMessageCallback();
         Comm.registerForPhoneAppMessages(method(:onPhoneMessage));
