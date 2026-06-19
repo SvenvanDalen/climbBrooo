@@ -143,9 +143,11 @@ Garmin course ──► Connect IQ event ─────────────
 
 ```
 GPS tick ──► nearest-point search ──► hysteresis filter ──► progress update
-                  │                                             │
-                  └──► within 30 m of a calib point?            ├──► within 50 m of climb start? → audio/vibration (once per climb)
-                       → snap progress (GPS drift correction)   │
+                                                                │
+                                                                ├──► within 30 m of next calib point? → snap progress (GPS drift correction)
+                                                                │
+                                                                ├──► within 50 m of climb start? → audio/vibration (once per climb)
+                                                                │
                                                                 └──► active segment changed? → redraw
 ```
 
