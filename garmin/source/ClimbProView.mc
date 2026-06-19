@@ -85,6 +85,13 @@ class ClimbProView extends Ui.DataField {
 
         data.updateProgress(elapsed);
 
+        if (data.activeClimbIndex >= 0
+                && info != null && info has :currentLocation
+                && info.currentLocation != null) {
+            var ll = info.currentLocation.toDegrees();   // [lat, lon]
+            data.checkCalibration(ll[0], ll[1]);
+        }
+
         // Detect leaving a climb (summary) BEFORE overwriting the climb-start timer.
         if (lastActiveClimb >= 0 && data.activeClimbIndex != lastActiveClimb
                 && data.climbStartTimerMs >= 0) {
