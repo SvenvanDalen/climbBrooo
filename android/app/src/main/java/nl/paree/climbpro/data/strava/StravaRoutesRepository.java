@@ -44,9 +44,23 @@ public final class StravaRoutesRepository {
     private static final int    ELEVATION_WINDOW = 5;
     private static final double SIMPLIFY_EPSILON = 5.0; // metres
 
+    /** Max number of automatic retries after an HTTP 429 before giving up on a call. */
+    private static final int  MAX_RETRY_ATTEMPTS   = 2;
+    /** Backoff used when a 429 carries no (parseable) Retry-After header. */
+    private static final long DEFAULT_RETRY_WAIT_MS = 5_000L;
+    /** Upper bound we are willing to block a sync; longer Retry-After -> give up, retry next sync. */
+    private static final long MAX_RETRY_WAIT_MS     = 60_000L;
+
+    /** Pauses the current thread. Injectable so tests don't actually sleep. */
+    interface Sleeper { void sleep(long millis) throws InterruptedException; }
+
+    /** Produces a fresh single-shot {@link Call}; called again for each retry attempt. */
+    private interface CallFactory<T> { Call<T> create(); }
+
     private final StravaAuthRepository auth;
     private final RouteRepository      routeRepo;
     private final StravaApiClient      api;
+    private final Sleeper              sleeper;
 
     public StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo) {
         this(auth, routeRepo, buildRetrofit().create(StravaApiClient.class));
@@ -54,9 +68,16 @@ public final class StravaRoutesRepository {
 
     /** Package-private, test-injectable variant — pass a (mock) StravaApiClient. */
     StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo, StravaApiClient api) {
+        this(auth, routeRepo, api, Thread::sleep);
+    }
+
+    /** Package-private, fully-injectable variant — used by tests to capture backoff timing. */
+    StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo,
+                           StravaApiClient api, Sleeper sleeper) {
         this.auth      = auth;
         this.routeRepo = routeRepo;
         this.api       = api;
+        this.sleeper   = sleeper;
     }
 
     /**
@@ -68,13 +89,12 @@ public final class StravaRoutesRepository {
     public int syncRoutes() throws IOException {
         String token = "Bearer " + auth.getAccessToken();
         List<StravaRouteDto> routes = new ArrayList<>();
-        int page = 1;
-        while (true) {
+        for (int page = 1; ; page++) {
+            final int p = page;
             Response<List<StravaRouteDto>> resp =
-                    api.listRoutes(token, page, 50).execute();
-            if (!resp.isSuccessful() || resp.body() == null || resp.body().isEmpty()) break;
+                    executeWithRetry(() -> api.listRoutes(token, p, 50));
+            if (resp == null || !resp.isSuccessful() || resp.body() == null || resp.body().isEmpty()) break;
             routes.addAll(resp.body());
-            page++;
         }
         Log.i(TAG, "Found " + routes.size() + " Strava routes");
 
@@ -114,8 +134,8 @@ public final class StravaRoutesRepository {
             }
 
             Response<okhttp3.ResponseBody> gpxResp =
-                    api.exportGpx(token, dto.id).execute();
-            if (!gpxResp.isSuccessful() || gpxResp.body() == null) {
+                    executeWithRetry(() -> api.exportGpx(token, dto.id));
+            if (gpxResp == null || !gpxResp.isSuccessful() || gpxResp.body() == null) {
                 Log.e(TAG, "Failed to download GPX for " + routeId);
                 return false;
             }
@@ -218,15 +238,60 @@ public final class StravaRoutesRepository {
     private List<StravaSegmentDto> fetchStarredSegments(String token) throws IOException {
         List<StravaSegmentDto> segments = new ArrayList<>();
         for (int page = 1; page <= MAX_STARRED_PAGES; page++) {
-            Call<List<StravaSegmentDto>> call = api.listStarredSegments(token, page, 50);
-            if (call == null) break;
-            Response<List<StravaSegmentDto>> resp = call.execute();
-            if (!resp.isSuccessful() || resp.body() == null || resp.body().isEmpty()) break;
+            final int p = page;
+            Response<List<StravaSegmentDto>> resp =
+                    executeWithRetry(() -> api.listStarredSegments(token, p, 50));
+            if (resp == null || !resp.isSuccessful() || resp.body() == null || resp.body().isEmpty()) break;
             for (StravaSegmentDto s : resp.body()) {
                 if (s != null) segments.add(s);
             }
         }
         return segments;
+    }
+
+    /**
+     * Executes a Strava call, retrying on HTTP 429 ("Too Many Requests") after honoring the
+     * {@code Retry-After} header (delta-seconds). Retries up to {@link #MAX_RETRY_ATTEMPTS}
+     * times; if the server asks us to wait longer than {@link #MAX_RETRY_WAIT_MS} we give up
+     * and return the 429 response so the next scheduled sync can pick the work back up.
+     *
+     * @return the response, or {@code null} if the factory produced no call (e.g. an
+     *         unstubbed endpoint) — callers treat null as "stop, nothing to read".
+     */
+    private <T> Response<T> executeWithRetry(CallFactory<T> factory) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            Call<T> call = factory.create();
+            if (call == null) return null;
+            Response<T> resp = call.execute();
+            if (resp.code() != 429 || attempt >= MAX_RETRY_ATTEMPTS) return resp;
+
+            long waitMs = retryAfterMillis(resp);
+            if (waitMs > MAX_RETRY_WAIT_MS) {
+                Log.w(TAG, "Strava 429: Retry-After " + waitMs + " ms exceeds cap; giving up this sync");
+                return resp;
+            }
+            Log.w(TAG, "Strava rate-limited (429); retrying in " + waitMs + " ms");
+            try {
+                sleeper.sleep(waitMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted during Strava rate-limit backoff", e);
+            }
+        }
+    }
+
+    /** Parses the {@code Retry-After} header (delta-seconds); falls back to a default backoff. */
+    private static long retryAfterMillis(Response<?> resp) {
+        String header = resp.headers().get("Retry-After");
+        if (header != null) {
+            try {
+                long secs = Long.parseLong(header.trim());
+                if (secs >= 0) return secs * 1000L;
+            } catch (NumberFormatException ignored) {
+                // Retry-After may be an HTTP-date; we don't parse those — use the default.
+            }
+        }
+        return DEFAULT_RETRY_WAIT_MS;
     }
 
     private static Retrofit buildRetrofit() {

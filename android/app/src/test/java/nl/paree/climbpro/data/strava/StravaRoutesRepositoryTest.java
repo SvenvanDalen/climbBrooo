@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -234,5 +235,55 @@ public class StravaRoutesRepositoryTest {
         assertEquals("Kort Sterklimmetje", climb.name);
         assertEquals("climb is below the 800 m detector minimum -> proves promotion",
                 true, climb.length < ClimbConstants.MIN_CLIMB_LENGTH_M);
+    }
+
+    /** Builds a 429 "Too Many Requests" response carrying the given Retry-After header. */
+    private static <T> Response<T> error429(String retryAfter) {
+        okhttp3.Response raw = new okhttp3.Response.Builder()
+                .code(429)
+                .message("Too Many Requests")
+                .protocol(okhttp3.Protocol.HTTP_1_1)
+                .header("Retry-After", retryAfter)
+                .request(new okhttp3.Request.Builder().url("https://www.strava.com/").build())
+                .build();
+        return Response.error(
+                ResponseBody.create("rate limited", MediaType.parse("text/plain")), raw);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void syncRoutes_honorsRetryAfterOn429_thenSucceeds() throws Exception {
+        StravaRouteDto dto = new StravaRouteDto();
+        dto.id = 123L;
+        dto.name = "Rate Limited Route";
+        dto.distance = 1000f;
+        dto.updatedAt = "2026-04-04T00:00:00Z";
+
+        // listRoutes page 1: first a 429 (Retry-After: 2 s), then the route on retry.
+        Call<List<StravaRouteDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(
+                error429("2"),
+                Response.success(Collections.singletonList(dto)));
+        Call<List<StravaRouteDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(Collections.<StravaRouteDto>emptyList()));
+        when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listRoutes(anyString(), eq(2), anyInt())).thenReturn(page2);
+
+        Call<ResponseBody> gpx = mock(Call.class);
+        when(gpx.execute()).thenReturn(Response.success(
+                ResponseBody.create(GPX, MediaType.parse("application/gpx+xml"))));
+        when(api.exportGpx(anyString(), eq(123L))).thenReturn(gpx);
+
+        // Recording sleeper: capture the requested backoff without actually sleeping.
+        List<Long> slept = new ArrayList<>();
+        StravaRoutesRepository repo = new StravaRoutesRepository(
+                auth, routeRepo, api, millis -> slept.add(millis));
+
+        int changed = repo.syncRoutes();
+
+        assertEquals("route must sync after honoring the 429 retry", 1, changed);
+        assertEquals("exactly one backoff should have happened", 1, slept.size());
+        assertEquals("must wait the Retry-After seconds (2 s -> 2000 ms)",
+                2000L, (long) slept.get(0));
     }
 }

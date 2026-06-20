@@ -189,6 +189,14 @@ One sync round runs in this order:
    transient payload-build failure, or a failed send to an *available* watch — never merely
    because the watch is absent.
 
+**Strava rate limiting (429):** every Strava call in the pull (`listRoutes`,
+`export_gpx`, `segments/starred`) goes through `StravaRoutesRepository.executeWithRetry`,
+which on an HTTP 429 honors the `Retry-After` header (delta-seconds), waits, and retries
+up to `MAX_RETRY_ATTEMPTS` times. If the server asks for longer than `MAX_RETRY_WAIT_MS`
+(60 s) the call gives up and returns the 429 so the next scheduled sync resumes the work,
+rather than blocking the worker for a full rate-limit window. The wait is performed via an
+injectable `Sleeper` so unit tests verify the backoff timing without actually sleeping.
+
 #### UI refresh & feedback
 
 The manual "Sync now" action enqueues a uniquely-named work request
