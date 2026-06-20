@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.segment.SurfaceType;
@@ -160,5 +161,82 @@ public class StravaRoutesRepositoryTest {
 
         assertEquals(0, changed);
         assertEquals(1, routeRepo.loadCatalog().size());
+    }
+
+    /**
+     * A short, steep GPX: ~5 steps of ~89 m at ~6.7% -> ~445 m total.
+     * Below the 800 m detector minimum, so ClimbDetector yields zero climbs.
+     */
+    private static String shortClimbGpx() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\"?><gpx><trk><trkseg>");
+        double lat = 51.0;
+        double ele = 0.0;
+        for (int i = 0; i < 6; i++) {
+            sb.append(String.format(java.util.Locale.US,
+                    "<trkpt lat=\"%.6f\" lon=\"5.0\"><ele>%.1f</ele></trkpt>", lat, ele));
+            lat += 0.0008;
+            ele += 6.0;
+        }
+        sb.append("</trkseg></trk></gpx>");
+        return sb.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubStarredOnShortRoute() throws Exception {
+        StravaRouteDto dto = new StravaRouteDto();
+        dto.id = 123L;
+        dto.name = "Short Route";
+        dto.distance = 445f;
+        dto.updatedAt = "2026-03-03T00:00:00Z";
+
+        Call<List<StravaRouteDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Collections.singletonList(dto)));
+        Call<List<StravaRouteDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(Collections.<StravaRouteDto>emptyList()));
+        when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listRoutes(anyString(), eq(2), anyInt())).thenReturn(page2);
+
+        Call<ResponseBody> gpx = mock(Call.class);
+        when(gpx.execute()).thenReturn(Response.success(
+                ResponseBody.create(shortClimbGpx(), MediaType.parse("application/gpx+xml"))));
+        when(api.exportGpx(anyString(), eq(123L))).thenReturn(gpx);
+
+        // Route detail: one segment spanning the whole short route, ~6.7% grade, starred id 555.
+        StravaSegmentDto seg = new StravaSegmentDto();
+        seg.id = 555L;
+        seg.name = "Kort Sterklimmetje";
+        seg.averageGrade = 6.7f;
+        seg.startLatlng = new double[]{51.0, 5.0};
+        seg.endLatlng = new double[]{51.0040, 5.0}; // 51.0 + 5*0.0008
+        StravaRouteDetailDto detail = new StravaRouteDetailDto();
+        detail.segments = Collections.singletonList(seg);
+        Call<StravaRouteDetailDto> detailCall = mock(Call.class);
+        when(detailCall.execute()).thenReturn(Response.success(detail));
+        when(api.getRoute(anyString(), eq(123L))).thenReturn(detailCall);
+
+        // Starred list: page 1 has the segment, page 2 empty.
+        Call<List<StravaSegmentDto>> starred1 = mock(Call.class);
+        when(starred1.execute()).thenReturn(Response.success(Collections.singletonList(seg)));
+        Call<List<StravaSegmentDto>> starred2 = mock(Call.class);
+        when(starred2.execute()).thenReturn(Response.success(Collections.<StravaSegmentDto>emptyList()));
+        when(api.listStarredSegments(anyString(), eq(1), anyInt())).thenReturn(starred1);
+        when(api.listStarredSegments(anyString(), eq(2), anyInt())).thenReturn(starred2);
+    }
+
+    @Test
+    public void syncRoutes_shortStarredSegment_isPromotedToNamedClimb() throws Exception {
+        stubStarredOnShortRoute();
+        StravaRoutesRepository repo = new StravaRoutesRepository(auth, routeRepo, api);
+
+        repo.syncRoutes();
+
+        StoredRoute stored = routeRepo.loadRoute("strava_123");
+        assertEquals("the short starred segment must become the only climb",
+                1, stored.climbs.size());
+        StoredClimb climb = stored.climbs.get(0);
+        assertEquals("Kort Sterklimmetje", climb.name);
+        assertEquals("climb is below the 800 m detector minimum -> proves promotion",
+                true, climb.length < ClimbConstants.MIN_CLIMB_LENGTH_M);
     }
 }
