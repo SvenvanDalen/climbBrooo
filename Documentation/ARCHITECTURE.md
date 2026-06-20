@@ -249,19 +249,30 @@ Key types — names should match across modules where possible.
 When a route is synced from Strava, any **starred** Strava segment that lies on the
 route and has an average gradient ≥ 3% is promoted to a climb, even if it is shorter
 than the normal 800 m minimum (the ≥ 3% rule is kept; the length floor is dropped).
-The phone fetches the route's segment list (`GET /routes/{id}` →
-`StravaRouteDetailDto`) and the athlete's starred-segment IDs (`GET /segments/starred`,
-paginated), then for each qualifying segment matches its start/end onto the simplified
-route geometry (`domain/climb/StarredSegmentLocator`, within
-`ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M` of a route point) and merges the result
-into the detected climbs (`domain/climb/ClimbMerger`). On overlap the **starred
-segment's bounds replace** the detected climb. The 3% gate uses Strava's authoritative
-`average_grade`; **no false-flat trim** is applied; the climb is **named** after the
-segment (a user's manual rename still survives resync via the existing climb-user-data
-merge). The fetch is **best-effort** — any network failure falls back to the
-normally-detected climbs (offline-first). Applies to **Strava-synced routes only**;
-manual GPX imports have no segment data. Promoted climbs are ordinary `Climb` objects,
-so they serialise through the existing wire path unchanged.
+
+The phone fetches the athlete's starred segments **once per sync** (`GET
+/segments/starred`, paginated). Each starred segment already carries its own
+`average_grade`, `start_latlng` and `end_latlng`, so routes are matched **locally with
+no per-route network call**: for each route, `matchStarredClimbs` runs every qualifying
+starred segment through `domain/climb/StarredSegmentLocator`, which places the segment's
+start/end onto the simplified route geometry (within
+`ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M` of a route point) — a segment is "on the
+route" iff it can be placed there. Matches are merged into the detected climbs
+(`domain/climb/ClimbMerger`); on overlap the **starred segment's bounds replace** the
+detected climb. The 3% gate uses Strava's authoritative `average_grade`; **no false-flat
+trim** is applied; the climb is **named** after the segment (a user's manual rename
+still survives resync via the existing climb-user-data merge). The fetch is
+**best-effort** — any network failure falls back to the normally-detected climbs
+(offline-first). Applies to **Strava-synced routes only**; manual GPX imports have no
+segment data. Promoted climbs are ordinary `Climb` objects, so they serialise through
+the existing wire path unchanged.
+
+> **Why no `GET /routes/{id}` call:** an earlier version fetched each route's segment
+> list per route to find its starred segments. That doubled Strava API calls during a
+> full re-sync (e.g. on a fresh phone, where every route is "new"), tripping Strava's
+> ~100-req/15-min rate limit and starving the essential `export_gpx` downloads — routes
+> silently failed to sync. Matching by geometry from the single starred-list fetch keeps
+> sync call volume at the known-good baseline.
 
 ### Custom surface sections
 

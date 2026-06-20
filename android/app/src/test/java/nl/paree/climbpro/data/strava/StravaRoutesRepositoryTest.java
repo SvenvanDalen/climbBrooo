@@ -202,18 +202,14 @@ public class StravaRoutesRepositoryTest {
                 ResponseBody.create(shortClimbGpx(), MediaType.parse("application/gpx+xml"))));
         when(api.exportGpx(anyString(), eq(123L))).thenReturn(gpx);
 
-        // Route detail: one segment spanning the whole short route, ~6.7% grade, starred id 555.
+        // The starred segment carries its own geometry + grade — no per-route detail call.
+        // Its start/end coordinates land on the short GPX track (51.0..51.004, lon 5.0).
         StravaSegmentDto seg = new StravaSegmentDto();
         seg.id = 555L;
         seg.name = "Kort Sterklimmetje";
         seg.averageGrade = 6.7f;
         seg.startLatlng = new double[]{51.0, 5.0};
         seg.endLatlng = new double[]{51.0040, 5.0}; // 51.0 + 5*0.0008
-        StravaRouteDetailDto detail = new StravaRouteDetailDto();
-        detail.segments = Collections.singletonList(seg);
-        Call<StravaRouteDetailDto> detailCall = mock(Call.class);
-        when(detailCall.execute()).thenReturn(Response.success(detail));
-        when(api.getRoute(anyString(), eq(123L))).thenReturn(detailCall);
 
         // Starred list: page 1 has the segment, page 2 empty.
         Call<List<StravaSegmentDto>> starred1 = mock(Call.class);
