@@ -24,6 +24,17 @@ public interface StravaApiClient {
             @Header("Authorization") String bearerToken,
             @Path("id") long routeId);
 
+    @GET("routes/{id}")
+    Call<StravaRouteDetailDto> getRoute(
+            @Header("Authorization") String bearerToken,
+            @Path("id") long routeId);
+
+    @GET("segments/starred")
+    Call<List<StravaSegmentDto>> listStarredSegments(
+            @Header("Authorization") String bearerToken,
+            @Query("page") int page,
+            @Query("per_page") int perPage);
+
     @GET("athlete/activities")
     Call<List<StravaActivityDto>> listActivities(
             @Header("Authorization") String bearerToken,
