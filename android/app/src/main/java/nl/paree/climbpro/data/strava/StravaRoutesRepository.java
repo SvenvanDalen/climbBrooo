@@ -7,7 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.Climb;
+import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
+import nl.paree.climbpro.domain.climb.ClimbMerger;
+import nl.paree.climbpro.domain.climb.StarredSegmentLocator;
 import nl.paree.climbpro.domain.route.CumulativeDistance;
 import nl.paree.climbpro.domain.route.ElevationSmoother;
 import nl.paree.climbpro.domain.route.GpxParseException;
@@ -17,6 +20,7 @@ import nl.paree.climbpro.domain.route.RouteSimplifier;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -27,7 +31,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Coordinates Strava auth + API + domain processing + persistence.
@@ -73,15 +80,25 @@ public final class StravaRoutesRepository {
         }
         Log.i(TAG, "Found " + routes.size() + " Strava routes");
 
+        // Fetch the athlete's starred-segment IDs once per sync (best-effort) rather
+        // than once per route — keeps us well under Strava's request rate limits.
+        Set<Long> starredIds;
+        try {
+            starredIds = fetchStarredSegmentIds(token);
+        } catch (IOException e) {
+            Log.w(TAG, "Starred-segment list fetch failed; skipping promotion this sync", e);
+            starredIds = Collections.emptySet();
+        }
+
         int changed = 0;
         for (StravaRouteDto dto : routes) {
-            if (processRoute(token, dto)) changed++;
+            if (processRoute(token, dto, starredIds)) changed++;
         }
         Log.i(TAG, "Strava sync: " + changed + " route(s) created/updated");
         return changed;
     }
 
-    private boolean processRoute(String token, StravaRouteDto dto) {
+    private boolean processRoute(String token, StravaRouteDto dto, Set<Long> starredIds) {
         String routeId = "strava_" + dto.id;
         String hash    = sha256(dto.updatedAt + "_" + dto.distance);
 
@@ -109,6 +126,13 @@ public final class StravaRoutesRepository {
             List<RoutePoint> smoothed   = ElevationSmoother.smooth(withDist, ELEVATION_WINDOW);
             List<RoutePoint> simplified = RouteSimplifier.simplify(smoothed, SIMPLIFY_EPSILON);
             List<Climb>      climbs     = ClimbDetector.detect(simplified);
+
+            List<Climb> starredClimbs = fetchStarredClimbs(token, dto.id, simplified, starredIds);
+            if (!starredClimbs.isEmpty()) {
+                climbs = ClimbMerger.merge(climbs, starredClimbs);
+                Log.i(TAG, "Promoted " + starredClimbs.size()
+                        + " starred segment(s) to climbs on " + routeId);
+            }
 
             StoredRoute stored = new StoredRoute();
             stored.routeId      = routeId;
@@ -153,6 +177,68 @@ public final class StravaRoutesRepository {
             Log.e(TAG, "I/O error processing route " + routeId, e);
             return false;
         }
+    }
+
+    /**
+     * Fetches the route's segment list and builds a {@link Climb} for every segment in
+     * {@code starredIds} that lies on the route and has an average gradient
+     * >= {@link ClimbConstants#MIN_AVG_GRADIENT}. The starred-ID set is fetched once per
+     * sync by the caller. Returns an empty list (never null) on any failure or when
+     * nothing qualifies — sync must not break when Strava is unreachable or the endpoints
+     * change.
+     */
+    private List<Climb> fetchStarredClimbs(String token, long routeId, List<RoutePoint> route,
+                                           Set<Long> starredIds) {
+        if (starredIds.isEmpty()) return Collections.emptyList();
+        try {
+            Call<StravaRouteDetailDto> detailCall = api.getRoute(token, routeId);
+            if (detailCall == null) return Collections.emptyList();
+            Response<StravaRouteDetailDto> detailResp = detailCall.execute();
+            if (!detailResp.isSuccessful() || detailResp.body() == null
+                    || detailResp.body().segments == null) {
+                return Collections.emptyList();
+            }
+
+            List<Climb> result = new ArrayList<>();
+            for (StravaSegmentDto seg : detailResp.body().segments) {
+                if (seg == null || !starredIds.contains(seg.id)) continue;
+                // Gate on Strava's authoritative segment grade: keep the >= 3% rule,
+                // drop the 800 m minimum (per product decision 2026-06-20).
+                if (seg.averageGrade / 100.0 < ClimbConstants.MIN_AVG_GRADIENT) continue;
+                if (seg.startLatlng == null || seg.startLatlng.length < 2
+                        || seg.endLatlng == null || seg.endLatlng.length < 2) continue;
+
+                Climb c = StarredSegmentLocator.locate(
+                        route,
+                        seg.startLatlng[0], seg.startLatlng[1],
+                        seg.endLatlng[0], seg.endLatlng[1],
+                        seg.name,
+                        ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M);
+                if (c != null) result.add(c);
+            }
+            return result;
+        } catch (IOException e) {
+            Log.w(TAG, "Starred-segment fetch failed for route " + routeId + ": " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /** Hard cap on starred-segment pages — guards against a misbehaving API looping forever. */
+    private static final int MAX_STARRED_PAGES = 50;
+
+    /** Collects the IDs of all the athlete's starred segments (paginated). */
+    private Set<Long> fetchStarredSegmentIds(String token) throws IOException {
+        Set<Long> ids = new HashSet<>();
+        for (int page = 1; page <= MAX_STARRED_PAGES; page++) {
+            Call<List<StravaSegmentDto>> call = api.listStarredSegments(token, page, 50);
+            if (call == null) break;
+            Response<List<StravaSegmentDto>> resp = call.execute();
+            if (!resp.isSuccessful() || resp.body() == null || resp.body().isEmpty()) break;
+            for (StravaSegmentDto s : resp.body()) {
+                if (s != null) ids.add(s.id);
+            }
+        }
+        return ids;
     }
 
     private static Retrofit buildRetrofit() {

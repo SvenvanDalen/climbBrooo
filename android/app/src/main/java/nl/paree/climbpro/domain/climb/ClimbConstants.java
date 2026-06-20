@@ -18,6 +18,12 @@ public final class ClimbConstants {
     public static final int    CALIBRATION_MIN_DISTANCE_M   = 200;
     public static final int    ALERT_RADIUS_M               = 50;
     public static final int    ROUTE_MATCHING_HYSTERESIS_M  = 20;
+    /**
+     * Max distance (metres) between a Strava starred-segment endpoint and the nearest
+     * route point for the segment to count as lying on the route. Generous enough to
+     * absorb Douglas-Peucker simplification (~5 m epsilon) plus Strava/GPX rounding.
+     */
+    public static final int    STARRED_SEGMENT_MATCH_MAX_M  = 50;
     /** A stretch averaging below this gradient (fraction) counts as "vals plat" (false flat). */
     public static final double FALSE_FLAT_MAX_GRADIENT      = 0.02;
     /** Minimum length (metres) of a leading/trailing false flat before it is trimmed off a climb. */
