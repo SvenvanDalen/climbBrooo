@@ -19,7 +19,9 @@ phone and no network. Sync is opportunistic.
 ## What it does
 
 - **Detects climbs** in Strava routes and imported GPX files — a climb is `≥ 800 m`
-  long **and** `≥ 3 %` average gradient (both required).
+  long **and** `≥ 3 %` average gradient (both required). **Exception:** a *starred*
+  Strava segment on a synced route is always shown as a climb when it is `≥ 3 %`, even
+  if shorter than 800 m, and is named after the segment.
 - **Trims false flats** (*vals plat*) off the start/end of each climb so it begins and
   ends on real climbing — but never trims a climb below 800 m.
 - **Segments** each climb into a fixed number of slices and **color-codes** them by
@@ -68,6 +70,8 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Radius mode** — no fixed route; the watch alerts on any known climb within a
   configurable radius of your GPS position.
 - **Rename routes and climbs** — names survive resync (kept separate from source data).
+- **Starred segments as climbs** — a starred Strava segment on a synced route is always
+  shown as a climb (when `≥ 3 %`), regardless of length, named after the segment.
 - **Custom notes/tags on routes** — phone-side only; not synced to the watch.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
