@@ -98,14 +98,42 @@ public class SegmenterTest {
 
     @Test
     public void calibrationPointsRespectMinDistance() {
-        // 3200m × 8% = 256m per segment — all 13 segment ends qualify (256 >= 200m min)
+        // 3200m × 8% = 256m per full segment — all 12 full-segment ends qualify (256 >= 200m),
+        // plus the always-included final (short, 4%) segment end → 13 points total.
         List<RoutePoint> climb = buildClimb(3200, 0.05);
         List<CalibrationPoint> cps = Segmenter.calibrationPoints(climb);
         int expected = ClimbConstants.defaultSegmentCount();
         assertEquals("all " + expected + " segment ends qualify", expected, cps.size());
-        for (int i = 1; i < cps.size(); i++) {
+        // Every consecutive gap must respect the 200m minimum EXCEPT the last one, which
+        // is the always-included final short segment end at the climb top.
+        for (int i = 1; i < cps.size() - 1; i++) {
             int gap = cps.get(i).distanceFromClimbStart - cps.get(i - 1).distanceFromClimbStart;
             assertTrue("consecutive gap >= 200m but was " + gap, gap >= 198);
+        }
+        assertEquals("final calibration point at climb end",
+                3200, cps.get(cps.size() - 1).distanceFromClimbStart, 2);
+    }
+
+    @Test
+    public void calibrationPointsAlignWithSegmentBoundaries() {
+        // Calibration points must be a SUBSET of the 8%-fraction segment ends used by
+        // segment(List) — not an independent equal-division grid.
+        List<RoutePoint> climb = buildClimb(2000, 0.06);
+
+        List<Segment> segs = Segmenter.segment(climb);
+        java.util.Set<Integer> boundaries = new java.util.HashSet<>();
+        int cum = 0;
+        for (Segment s : segs) { cum += s.distance; boundaries.add(cum); }
+
+        List<CalibrationPoint> cps = Segmenter.calibrationPoints(climb);
+        assertFalse("at least one calibration point expected", cps.isEmpty());
+        for (CalibrationPoint cp : cps) {
+            boolean onBoundary = false;
+            for (int b : boundaries) {
+                if (Math.abs(b - cp.distanceFromClimbStart) <= 2) { onBoundary = true; break; }
+            }
+            assertTrue("calibration point at " + cp.distanceFromClimbStart
+                    + "m must sit on a segment boundary " + boundaries, onBoundary);
         }
     }
 

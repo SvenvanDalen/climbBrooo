@@ -125,10 +125,13 @@ public final class StravaRoutesRepository {
             routeRepo.saveRoute(stored, simplified, climbs);
             Log.i(TAG, "Saved route " + routeId + " with " + climbs.size() + " climbs");
 
-            // Wire surface type detection from Strava sub_type
+            // Seed surface type from the Strava sub_type on FIRST import only. On a
+            // re-sync (existing != null) saveRoute has already preserved the user's
+            // per-segment surface edits, and a blanket bulk-set here would clobber them.
             int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
                     .detectFromStravaSubType(dto.subType);
-            if (detectedSurface != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
+            if (existing == null
+                    && detectedSurface != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
                 try {
                     StoredRoute saved = routeRepo.loadRoute(routeId);
                     if (saved.climbs != null) {

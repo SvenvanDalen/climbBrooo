@@ -156,6 +156,13 @@ GPS tick ──► nearest-point search ──► hysteresis filter ──► pr
 > lat/lon) in the v3 payload; when the rider passes within 30 m of the next unconsumed point, the
 > watch snaps `progressInClimb` to that point's known distance, correcting accumulated `elapsedDistance`
 > drift. Each calib point fires at most once (monotonic `calibIdx`).
+>
+> Calibration points are **a subset of the climb's segment-end positions** — `Segmenter.calibrationPoints`
+> and `Segmenter.segment` walk the *same* 8%-fraction boundary grid, so every calib distance lands on a
+> real segment end (never an independent equal-division grid). The subset keeps consecutive points
+> ≥ `CALIBRATION_MIN_DISTANCE_M` (200 m) apart, with the final (short) segment end always included — so
+> the last gap may be under 200 m. The `reSegmentClimb` path divides the climb into equal segments and
+> reuses the count overload, which is aligned for the same reason.
 
 ### Sync semantics
 
@@ -235,6 +242,7 @@ Key types — names should match across modules where possible.
 - A detected `Climb` has its leading/trailing **vals plat** (false flat: a contiguous stretch averaging < 2% over ≥ 200 m) trimmed off, but is never trimmed below the 800 m minimum. After trimming, start/end distance and `startLat`/`startLon` reflect the tighter boundaries. See `domain/climb/ClimbTrimmer.java`.
 - A `Climb`'s segments cover the full climb with no gaps or overlap. `sum(segment.distance) == climb.length` (within rounding).
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
+- Calibration points are a **subset of the segment-end positions** (same 8%-fraction grid), spaced ≥ 200 m apart with the final segment end always included. `Segmenter.calibrationPoints(climbPoints)` and `Segmenter.segment(climbPoints)` must walk identical boundaries.
 
 ### Custom surface sections
 
@@ -251,6 +259,13 @@ Surface sections are now serialised to the watch via the `surfSec` object array
 non-UNKNOWN surface) are merged into the same list and sorted by start distance.
 Untouched flat segments are still skipped. Sections survive route re-import and
 contribute to the catalog `surfaceTypes` index.
+
+**Auto-seeding vs. user edits.** `StravaRoutesRepository` seeds per-climb-segment surface
+from the Strava `sub_type` (e.g. road → asphalt) **only on first import** (`existing == null`).
+On any re-sync, `RouteRepository.saveRoute` has already preserved the user's manual
+per-segment surface edits (matched by climb `startDistance`, copied by segment index for
+non-UNKNOWN values), so the seeding step is skipped to avoid clobbering them. This upholds
+the "user customisation survives resync" rule for surfaces, the same way renames are kept.
 
 ### Climb time estimate (phone-only)
 

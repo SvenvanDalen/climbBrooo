@@ -46,7 +46,7 @@ Instead:
 Per-climb numeric data is packed into compact integer arrays (the watch slices them by stride):
 
 - `segs` — `[distance, elevationGain, gradientFixedPoint, colorIndex, …]`, **4 ints per segment**.
-- `calib` — `[distanceFromClimbStart, latInt, lonInt, …]`, **3 ints per point** (`latInt`/`lonInt` = degrees × 100000). Route mode, optional.
+- `calib` — `[distanceFromClimbStart, latInt, lonInt, …]`, **3 ints per point** (`latInt`/`lonInt` = degrees × 100000). Route mode, optional. The `distanceFromClimbStart` values coincide with the climb's **8%-fraction segment ends** (a subset, ≥ 200 m apart, final segment end always included) — they are not an independent equal-division grid. Wire shape is unchanged; only which distances are emitted.
 - `surf` — one surface-type code (0–5) per segment, parallel to `segs`. Omitted when every segment is UNKNOWN.
 - `tsec` — per-segment target time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no pacing plan is available.
 
@@ -77,5 +77,6 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 3       | 2026-06-19 | `calib` point distances now coincide with the 8%-fraction segment-end grid (were an independent equal-division grid in the default detection path). Wire shape unchanged (still 3 ints/point); only the emitted distances differ. No version bump. |
 | 1       | 2026-06-13 | Added optional `tsec` (targetSeconds) packed int array on Climb — per-segment target time in whole seconds, parallel to `segments` (wire key `segs`). Route-mode only, omitted when no pacing plan. ~13 ints per climb; additive, no version bump. |
 | 1       | 2026-05-20 | Initial schema. Two modes, fixed-point gradients, color index, byte budget 8 KB. |

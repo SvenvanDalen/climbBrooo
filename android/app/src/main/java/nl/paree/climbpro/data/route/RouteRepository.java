@@ -151,7 +151,7 @@ public final class RouteRepository {
 
     public void renameClimb(String routeId, int climbIndex, String displayName) throws IOException {
         StoredRoute route = loadRoute(routeId);
-        if (route.climbs != null && climbIndex < route.climbs.size()) {
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
             route.climbs.get(climbIndex).userDisplayName = displayName;
             route.lastModifiedMs = System.currentTimeMillis();
             writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
@@ -406,7 +406,7 @@ public final class RouteRepository {
      */
     public void reSegmentClimb(String routeId, int climbIndex, int newSegmentCount) throws IOException {
         StoredRoute route = loadRoute(routeId);
-        if (route.climbs == null || climbIndex >= route.climbs.size()) {
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
             throw new IOException("Climb index out of range: " + climbIndex);
         }
 
@@ -433,11 +433,11 @@ public final class RouteRepository {
     public void setSegmentSurfaceType(String routeId, int climbIndex, int segmentIndex,
                                        int surfaceType) throws IOException {
         StoredRoute route = loadRoute(routeId);
-        if (route.climbs == null || climbIndex >= route.climbs.size()) {
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
             throw new IOException("Climb index out of range: " + climbIndex);
         }
         StoredClimb sc = route.climbs.get(climbIndex);
-        if (sc.segments == null || segmentIndex >= sc.segments.size()) {
+        if (sc.segments == null || segmentIndex < 0 || segmentIndex >= sc.segments.size()) {
             throw new IOException("Segment index out of range: " + segmentIndex);
         }
         sc.segments.get(segmentIndex).surfaceType = surfaceType;
@@ -452,7 +452,7 @@ public final class RouteRepository {
     public void setBulkClimbSurfaceType(String routeId, int climbIndex,
                                          int surfaceType) throws IOException {
         StoredRoute route = loadRoute(routeId);
-        if (route.climbs == null || climbIndex >= route.climbs.size()) {
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
             throw new IOException("Climb index out of range: " + climbIndex);
         }
         StoredClimb sc = route.climbs.get(climbIndex);

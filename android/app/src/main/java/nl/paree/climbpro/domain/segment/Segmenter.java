@@ -134,7 +134,25 @@ public final class Segmenter {
         double totalLength = last.distance - first.distance;
         if (totalLength <= 0) return new ArrayList<>();
 
-        return calibrationPoints(climbPoints, ClimbConstants.defaultSegmentCount());
+
+        // Walk the SAME 8%-fraction segment boundaries as segment(List) so calibration
+        // points always land on real segment ends. (The count overload divides equally
+        // and is used by reSegmentClimb, where the segment grid is equal too.)
+        double segmentLength = totalLength * ClimbConstants.SEGMENT_FRACTION;
+        List<CalibrationPoint> result = new ArrayList<>();
+        double lastCalibRelDist = 0;
+        double segStart = 0;
+        while (segStart < totalLength - 0.5) {
+            double relEnd = Math.min(segStart + segmentLength, totalLength);
+            boolean isLast = relEnd >= totalLength - 0.5;
+            if (relEnd - lastCalibRelDist >= ClimbConstants.CALIBRATION_MIN_DISTANCE_M || isLast) {
+                double[] latLon = interpolateLatLon(climbPoints, first.distance + relEnd);
+                result.add(new CalibrationPoint((int) Math.round(relEnd), latLon[0], latLon[1]));
+                lastCalibRelDist = relEnd;
+            }
+            segStart = relEnd;
+        }
+        return result;
     }
 
     /**
