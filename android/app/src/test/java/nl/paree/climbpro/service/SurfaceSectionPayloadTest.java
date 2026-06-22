@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 
@@ -99,6 +100,39 @@ public class SurfaceSectionPayloadTest {
         s.startDistance = 1000; s.endDistance = 2000; s.surfaceType = SurfaceType.MIXED;
         r.surfaceSections = new ArrayList<>(); r.surfaceSections.add(s);
         assertFalse(build(r).get("surfSec").get(0).has("n"));
+    }
+
+    @Test
+    public void surfaceSectionPayload_includesSpecializedStarredOnly() throws Exception {
+        StoredRoute r = new StoredRoute();
+        r.routeId   = "r1";
+        r.distances = new double[]{0, 200, 400, 600};
+        r.lats      = new double[]{51.0, 51.001, 51.002, 51.003};
+        r.lons      = new double[]{5.0, 5.0, 5.0, 5.0};
+
+        StoredStarredSegment specialized = new StoredStarredSegment();
+        specialized.stravaId     = 1;
+        specialized.startDistance = 0;
+        specialized.endDistance   = 400;
+        specialized.length        = 400;
+        specialized.surfaceType   = SurfaceType.GRAVEL;
+        specialized.name          = "Gravel ster";
+
+        StoredStarredSegment plain = new StoredStarredSegment();
+        plain.stravaId     = 2;
+        plain.startDistance = 400;
+        plain.endDistance   = 600;
+        plain.length        = 200;
+        plain.surfaceType   = SurfaceType.UNKNOWN;
+        plain.name          = "Naamloos";
+
+        r.starredSegments = new ArrayList<>(java.util.Arrays.asList(specialized, plain));
+
+        JsonNode surfSec = build(r).get("surfSec");
+        assertEquals(1, surfSec.size());
+        assertEquals(0, surfSec.get(0).get("s").asInt());
+        assertEquals(400, surfSec.get(0).get("e").asInt());
+        assertEquals(SurfaceType.GRAVEL, surfSec.get(0).get("t").asInt());
     }
 
     private static JsonNode build(StoredRoute r) throws Exception {

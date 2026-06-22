@@ -5,6 +5,7 @@ import nl.paree.climbpro.data.route.StoredCalibrationPoint;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 
 import java.io.IOException;
@@ -143,6 +144,14 @@ public final class ClimbPayloadBuilder {
                 ranges.add(new int[]{f.startDistance, f.endDistance,
                         nl.paree.climbpro.domain.segment.SurfaceType.fromInt(f.surfaceType)});
                 names.add(f.name);
+            }
+        }
+        if (route.starredSegments != null) {
+            for (StoredStarredSegment s : route.starredSegments) {
+                if (s.surfaceType == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) continue;
+                ranges.add(new int[]{s.startDistance, s.endDistance,
+                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
+                names.add(s.userDisplayName != null ? s.userDisplayName : s.name);
             }
         }
         // Sort by start distance, keeping names aligned via an index permutation.
