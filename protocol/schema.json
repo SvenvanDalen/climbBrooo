@@ -40,6 +40,12 @@
       "type": "array",
       "maxItems": 64,
       "items": { "$ref": "#/definitions/Climb" }
+    },
+    "fss": {
+      "description": "Specialized starred flat segments (route mode), shown as a separate list section in the widget. Only segments with an assigned surface (t 0-4) are sent. Omitted when none qualify.",
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/definitions/FlatStarredSection" }
     }
   },
   "definitions": {
@@ -105,6 +111,17 @@
           "type": "array",
           "items": { "type": "integer", "minimum": 0 }
         }
+      }
+    },
+    "FlatStarredSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["s", "e", "t"],
+      "properties": {
+        "s": { "description": "Metres from route start where the segment begins.", "type": "integer", "minimum": 0 },
+        "e": { "description": "Metres from route start where the segment ends (> s).", "type": "integer", "minimum": 1 },
+        "t": { "description": "SurfaceType: 0=asphalt 1=gravel 2=dirt 3=cobblestone 4=mixed.", "type": "integer", "minimum": 0, "maximum": 4 },
+        "n": { "description": "Optional display name (<= 24 chars).", "type": "string", "maxLength": 24 }
       }
     },
     "SurfaceSection": {

@@ -1,0 +1,11 @@
+{
+  "v": 3,
+  "mode": "route",
+  "routeId": "demo_starred",
+  "name": "Starred demo route",
+  "climbs": [],
+  "fss": [
+    { "s": 3200, "e": 3600, "t": 1, "n": "Gravel ster" },
+    { "s": 5000, "e": 5400, "t": 2 }
+  ]
+}

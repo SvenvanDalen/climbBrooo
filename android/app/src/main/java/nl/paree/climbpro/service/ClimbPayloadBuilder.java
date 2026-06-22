@@ -23,7 +23,8 @@ import java.util.Map;
  *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
  *      calib:[dist,latInt,lonInt, ...],                 // 3 ints × calibCount (optional)
  *      surf:[surfType, ...]}                             // 1 int × segCount (optional, omitted if all UNKNOWN)
- *   ]}
+ *   ],
+ *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
  *
  * latInt/lonInt = degrees × 100000 (integer).
  * gradient = fraction × 100 × 10 (fixed-point pct×10).
@@ -68,6 +69,8 @@ public final class ClimbPayloadBuilder {
             }
         }
         payload.put("climbs", climbs);
+        List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
+        if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
         return mapper.writeValueAsBytes(payload);
     }
 
@@ -175,6 +178,24 @@ public final class ClimbPayloadBuilder {
         }
         payload.put("surfSec", surfSec);
         return mapper.writeValueAsBytes(payload);
+    }
+
+    /** Specialized (surface-assigned) starred segments for the widget list. Null if none. */
+    private static List<Map<String, Object>> buildFlatStarredSections(
+            List<StoredStarredSegment> segs) {
+        if (segs == null || segs.isEmpty()) return null;
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (StoredStarredSegment s : segs) {
+            if (s.surfaceType == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) continue;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("s", s.startDistance);
+            m.put("e", s.endDistance);
+            m.put("t", nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType));
+            String n = s.userDisplayName != null ? s.userDisplayName : s.name;
+            if (n != null && n.length() <= 24) m.put("n", n);
+            out.add(m);
+        }
+        return out;
     }
 
     private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds) {

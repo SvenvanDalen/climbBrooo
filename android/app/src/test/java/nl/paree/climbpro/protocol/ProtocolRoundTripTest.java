@@ -21,6 +21,7 @@ import nl.paree.climbpro.data.route.StoredCalibrationPoint;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
@@ -45,6 +46,7 @@ public class ProtocolRoundTripTest {
             "route_mode_full.json",
             "radius_mode.json",
             "route_mode_surface.json",
+            "route_mode_starred.json",
     };
 
     @Test
@@ -112,7 +114,30 @@ public class ProtocolRoundTripTest {
         c.calibrationPoints.add(cp);
 
         route.climbs = new ArrayList<>(Arrays.asList(c));
+
+        StoredStarredSegment ss = new StoredStarredSegment();
+        ss.stravaId = 99; ss.startDistance = 3200; ss.endDistance = 3600; ss.length = 400;
+        ss.surfaceType = SurfaceType.GRAVEL; ss.name = "Gravel ster";
+        route.starredSegments = new ArrayList<>(Arrays.asList(ss));
+
         return route;
+    }
+
+    @Test
+    public void builderRoutePayload_fssContainsOnlySpecialized() throws Exception {
+        StoredRoute route = routeFixture();
+        StoredStarredSegment plain = new StoredStarredSegment();
+        plain.stravaId = 100; plain.startDistance = 4000; plain.endDistance = 4300;
+        plain.length = 300; plain.surfaceType = SurfaceType.UNKNOWN; plain.name = "Naamloos";
+        route.starredSegments.add(plain);
+
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(route));
+
+        JsonNode fss = payload.get("fss");
+        assertTrue("fss present", fss != null && fss.isArray());
+        org.junit.Assert.assertEquals("only the specialized segment is included", 1, fss.size());
+        org.junit.Assert.assertEquals(3200, fss.get(0).get("s").asInt());
     }
 
     private static StoredRoute surfaceFixture() {
