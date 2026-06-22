@@ -26,6 +26,9 @@ public final class StoredRoute {
     /** User-defined surface overrides for arbitrary route stretches, sorted by startDistance. */
     public List<StoredSurfaceSection> surfaceSections;
 
+    /** Strava starred segments too flat to be climbs (< 3%); user-curated, surface-taggable. */
+    public List<StoredStarredSegment> starredSegments;
+
     public long importedAtMs;
     public long lastModifiedMs;
 }

@@ -83,6 +83,11 @@ public final class RouteRepository {
     // -------------------------------------------------------------------------
 
     public void saveRoute(StoredRoute route, List<RoutePoint> points, List<Climb> climbs) throws IOException {
+        saveRoute(route, points, climbs, java.util.Collections.<StoredStarredSegment>emptyList());
+    }
+
+    public void saveRoute(StoredRoute route, List<RoutePoint> points, List<Climb> climbs,
+                          List<StoredStarredSegment> starredSegments) throws IOException {
         route.lats       = toDoubleArray(points, "lat");
         route.lons       = toDoubleArray(points, "lon");
         route.elevations = toDoubleArray(points, "ele");
@@ -97,6 +102,8 @@ public final class RouteRepository {
                 ? prev.flatSegments : Collections.emptyList();
         List<StoredSurfaceSection> prevSections = prev != null && prev.surfaceSections != null
                 ? prev.surfaceSections : Collections.emptyList();
+        List<StoredStarredSegment> prevStarred  = prev != null && prev.starredSegments != null
+                ? prev.starredSegments : Collections.emptyList();
         mergePreviousClimbUserData(route.climbs, prevClimbs);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
@@ -106,6 +113,7 @@ public final class RouteRepository {
         List<RoutePoint> pts = points != null ? points : Collections.emptyList();
         route.flatSegments    = toStoredFlatSegments(flatDomain, pts, prevFlats);
         route.surfaceSections = new ArrayList<>(prevSections);
+        route.starredSegments = mergePreviousStarredSegmentUserData(starredSegments, prevStarred);
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -240,6 +248,25 @@ public final class RouteRepository {
         }
     }
 
+
+    private static List<StoredStarredSegment> mergePreviousStarredSegmentUserData(
+            List<StoredStarredSegment> fresh, List<StoredStarredSegment> previous) {
+        List<StoredStarredSegment> result = fresh != null ? new ArrayList<>(fresh) : new ArrayList<>();
+        if (previous == null || previous.isEmpty()) return result;
+        java.util.Map<Long, Integer> prevSurface = new java.util.HashMap<>();
+        java.util.Map<Long, String>  prevName    = new java.util.HashMap<>();
+        for (StoredStarredSegment p : previous) {
+            if (p.surfaceType != SurfaceType.UNKNOWN) prevSurface.put(p.stravaId, p.surfaceType);
+            if (p.userDisplayName != null)             prevName.put(p.stravaId, p.userDisplayName);
+        }
+        for (StoredStarredSegment s : result) {
+            Integer su = prevSurface.get(s.stravaId);
+            if (su != null) s.surfaceType = su;
+            String nm = prevName.get(s.stravaId);
+            if (nm != null) s.userDisplayName = nm;
+        }
+        return result;
+    }
 
     private static void writeAtomic(File target, byte[] data) throws IOException {
         File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
@@ -671,6 +698,11 @@ public final class RouteRepository {
                 if (ss.surfaceType != SurfaceType.UNKNOWN) {
                     surfaceSet.add(ss.surfaceType);
                 }
+            }
+        }
+        if (route.starredSegments != null) {
+            for (StoredStarredSegment s : route.starredSegments) {
+                if (s.surfaceType != SurfaceType.UNKNOWN) surfaceSet.add(s.surfaceType);
             }
         }
         return surfaceSet.isEmpty() ? null
