@@ -21,18 +21,42 @@ public final class StarredSegmentLocator {
 
     private StarredSegmentLocator() {}
 
+    /** Located span of a starred segment on a route (distances cumulative from route start). */
+    public static final class Span {
+        public final int startDistance, endDistance, length;
+        public final double startLat, startLon, endLat, endLon, avgGradient;
+        Span(int startDistance, int endDistance, int length,
+             double startLat, double startLon, double endLat, double endLon, double avgGradient) {
+            this.startDistance = startDistance; this.endDistance = endDistance; this.length = length;
+            this.startLat = startLat; this.startLon = startLon;
+            this.endLat = endLat; this.endLon = endLon; this.avgGradient = avgGradient;
+        }
+    }
+
+    public static Span locateSpan(List<RoutePoint> route,
+                                  double startLat, double startLon,
+                                  double endLat, double endLon, double maxMatchM) {
+        int[] idx = matchIndices(route, startLat, startLon, endLat, endLon, maxMatchM);
+        if (idx == null) return null;
+        RoutePoint first = route.get(idx[0]);
+        RoutePoint last  = route.get(idx[1]);
+        double length = last.distance - first.distance;
+        if (length <= 0) return null;
+        double eleGain = last.elevation - first.elevation;
+        return new Span(
+                (int) Math.round(first.distance), (int) Math.round(last.distance),
+                (int) Math.round(length),
+                first.lat, first.lon, last.lat, last.lon, eleGain / length);
+    }
+
     public static Climb locate(List<RoutePoint> route,
                                double startLat, double startLon,
                                double endLat, double endLon,
                                String name, double maxMatchM) {
-        if (route == null || route.size() < 2) return null;
+        int[] idx = matchIndices(route, startLat, startLon, endLat, endLon, maxMatchM);
+        if (idx == null) return null;
 
-        int startIdx = nearestIndex(route, startLat, startLon, maxMatchM);
-        int endIdx   = nearestIndex(route, endLat, endLon, maxMatchM);
-        if (startIdx < 0 || endIdx < 0) return null;
-        if (endIdx <= startIdx) return null;
-
-        List<RoutePoint> climbPoints = route.subList(startIdx, endIdx + 1);
+        List<RoutePoint> climbPoints = route.subList(idx[0], idx[1] + 1);
         RoutePoint first = climbPoints.get(0);
         RoutePoint last  = climbPoints.get(climbPoints.size() - 1);
 
@@ -56,6 +80,18 @@ public final class StarredSegmentLocator {
                 .segments(segments)
                 .calibrationPoints(calib)
                 .build();
+    }
+
+    /** Shared start/end index match with direction guard; null if not on route or reversed. */
+    private static int[] matchIndices(List<RoutePoint> route,
+                                      double startLat, double startLon,
+                                      double endLat, double endLon, double maxMatchM) {
+        if (route == null || route.size() < 2) return null;
+        int startIdx = nearestIndex(route, startLat, startLon, maxMatchM);
+        int endIdx   = nearestIndex(route, endLat, endLon, maxMatchM);
+        if (startIdx < 0 || endIdx < 0) return null;
+        if (endIdx <= startIdx) return null;
+        return new int[]{startIdx, endIdx};
     }
 
     /**
