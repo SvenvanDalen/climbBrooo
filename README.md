@@ -72,6 +72,13 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Rename routes and climbs** — names survive resync (kept separate from source data).
 - **Starred segments as climbs** — a starred Strava segment on a synced route is always
   shown as a climb (when `≥ 3 %`), regardless of length, named after the segment.
+- **Flat starred segments** — a starred Strava segment that is too flat to be a climb
+  (`< 3 %`) is kept as a separate entity. All such segments appear in the route detail
+  screen with a ★. Tap one to tag it with a surface type (asphalt, gravel, dirt,
+  cobblestone, mixed). Tagged segments are sent to the watch: they appear in the browse
+  widget's route detail list after the climbs, and are included in the surface-section
+  datafield payload so the Ondergrond field knows what surface you're on. Untagged
+  segments stay phone-only. Surface tags and user renames survive Strava re-sync.
 - **Custom notes/tags on routes** — phone-side only; not synced to the watch.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.

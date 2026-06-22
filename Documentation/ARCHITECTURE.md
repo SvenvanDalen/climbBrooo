@@ -252,6 +252,76 @@ Key types — names should match across modules where possible.
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 - Calibration points are a **subset of the segment-end positions** (same 8%-fraction grid), spaced ≥ 200 m apart with the final segment end always included. `Segmenter.calibrationPoints(climbPoints)` and `Segmenter.segment(climbPoints)` must walk identical boundaries.
 
+### Flat starred Strava segments with surface tagging (2026-06-22)
+
+A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
+a climb) is not promoted to a climb. Instead it is stored as a `StoredStarredSegment` on
+`StoredRoute.starredSegments` — a separate, user-curated entity:
+
+```
+StoredStarredSegment {
+    long   stravaId          // stable Strava ID; re-sync keyed on this
+    int    startDistance     // metres from route start (integer)
+    int    endDistance
+    int    length
+    double startLat/Lon, endLat/Lon   // for future use
+    double avgGradient       // Strava's value
+    int    surfaceType       // SurfaceType.UNKNOWN by default (= non-specialized)
+    String name              // Strava segment name; re-derived each sync
+    String userDisplayName   // optional user rename; survives resync
+}
+```
+
+**Matching.** `StarredSegmentLocator.locateSpan` places each starred segment's
+`start_latlng`/`end_latlng` onto the simplified route geometry (within
+`ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M`). A segment qualifies as "on the route" iff
+both endpoints can be placed. Segments with `average_grade >= 3%` are handled by the
+existing `StarredSegmentLocator` / `ClimbMerger` path (promoted to climbs); only the
+sub-3% remainder is stored as `StoredStarredSegment`.
+
+**Resync preservation.** On every Strava re-sync `RouteRepository.saveRoute` matches
+incoming starred segments by `stravaId` and preserves `surfaceType` and `userDisplayName`
+from any existing entry, so user edits survive resync.
+
+**Specialization rule.** A starred flat segment is **specialized** when its `surfaceType`
+is anything other than `SurfaceType.UNKNOWN`. Only specialized segments cross to the
+watch; non-specialized are phone-only.
+
+**Phone UI.** `RouteDetailActivity` lists **all** starred segments (both specialized and
+non-specialized) with a ★ indicator. Tapping one opens a surface-tag dialog
+(`RouteDetailAdapter.OnStarredClickListener`), calling
+`RouteRepository.updateStarredSegment(routeId, stravaId, surfaceType, userDisplayName)`.
+
+**Two watch paths for specialized segments:**
+
+1. **Surface datafield (`surfSec`)** — `ClimbPayloadBuilder.buildSurfaceSectionPayload`
+   merges specialized starred segments (where `surfaceType != UNKNOWN`) into the same
+   `surfSec` array as `StoredSurfaceSection`s and qualifying `StoredFlatSegment`s, sorted
+   by start distance. Each entry carries `{s,e,t,n?,cp:[...]}` with GPS checkpoints. This
+   payload is auto-pushed to `ConnectIqAppId.SURFACE_FIELD` by `WatchRequestHandler` on
+   every `SET_ACTIVE_ROUTE` (the same path used for all surface sections).
+
+2. **Browse widget (`fss`)** — `ClimbPayloadBuilder.buildRoutePayload` appends a top-level
+   `fss` array containing only specialized starred segments:
+   ```json
+   "fss": [{ "s": 3200, "e": 3600, "t": 1, "n": "Gravel ster" }, ...]
+   ```
+   Keys: `s` (start distance, m), `e` (end distance, m), `t` (surface type 0–4), `n`
+   (optional name ≤ 24 chars). `fss` is **omitted** when no segment is specialized;
+   `t = 5` (UNKNOWN) is never emitted. In the browse widget (`garmin-widget/`) the
+   `CommListener.mc` parser reads `fss` into `ClimbData.flatStarred*` arrays;
+   `ClimbListView.mc` renders them as rows after the climb rows in the route detail list,
+   showing name and surface initial (`A/G/D/K/M`). Rows fall back to "Ster N" when
+   unnamed.
+
+The key distinctions:
+- `fss` (browse widget): specialized starred segments only, no checkpoints, no `t=5`.
+- `surfSec` (surface datafield): all surface/flat entities including specialized starred segments, with checkpoints.
+- Non-specialized starred segments: phone-only, never in either payload.
+
+`protocol/examples/route_mode_starred.json` is the canonical `fss` wire sample and is
+validated by `ProtocolRoundTripTest`.
+
 ### Starred Strava segments as climbs (2026-06-20)
 
 When a route is synced from Strava, any **starred** Strava segment that lies on the
