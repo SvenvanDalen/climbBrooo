@@ -12,6 +12,7 @@ class ClimbData {
     const MAX_CLIMBS = 16;
     const MAX_SEGMENTS = 16;
     const MAX_CALIB = 16;
+    const MAX_FLAT_STARRED = 16;
 
     // Payload state
     var payloadReceived = false;
@@ -46,6 +47,13 @@ class ClimbData {
     var segGradient;      // segment gradient fixed-point (pct×10)
     var segColor;         // color index 0-5
     var segSurf;          // surface type per segment: 0=asphalt 1=gravel 2=dirt 3=cobble 4=mixed 5=unknown
+
+    // Flat starred segments (specialized Strava starred segments, route mode only)
+    var flatStarredCount = 0;
+    var flatStarredStart;   // start distance (m)
+    var flatStarredEnd;     // end distance (m)
+    var flatStarredSurf;    // surface type 0-4 (5=unknown)
+    var flatStarredName;    // String or null
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -114,6 +122,17 @@ class ClimbData {
                 calibLat[i][k]  = 0.0f;
                 calibLon[i][k]  = 0.0f;
             }
+        }
+
+        flatStarredStart = new [MAX_FLAT_STARRED];
+        flatStarredEnd   = new [MAX_FLAT_STARRED];
+        flatStarredSurf  = new [MAX_FLAT_STARRED];
+        flatStarredName  = new [MAX_FLAT_STARRED];
+        for (var i = 0; i < MAX_FLAT_STARRED; i++) {
+            flatStarredStart[i] = 0;
+            flatStarredEnd[i]   = 0;
+            flatStarredSurf[i]  = 5;
+            flatStarredName[i]  = null;
         }
     }
 

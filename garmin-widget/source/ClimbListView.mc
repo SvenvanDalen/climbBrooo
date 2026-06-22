@@ -63,8 +63,13 @@ class ClimbListView extends Ui.View {
             return;
         }
 
-        var data       = App.getApp().climbData;
-        var totalItems = data.climbCount + 2;  // last items: save/delete + set-active
+        var data        = App.getApp().climbData;
+        var starredBase = data.climbCount;
+        var actionBase  = data.climbCount + data.flatStarredCount;
+        var totalItems  = actionBase + 2;  // last items: save/delete + set-active
+
+        // Surface label single-char map: index 0-4 = A G D K M, 5 = ?
+        var surfLabels = ["A", "G", "D", "K", "M"];
 
         dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 6, Gfx.FONT_XTINY,
@@ -90,7 +95,8 @@ class ClimbListView extends Ui.View {
                 dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
             }
 
-            if (i < data.climbCount) {
+            if (i < starredBase) {
+                // Climb row
                 var name = data.climbName[i];
                 if (name == null) { name = "Climb " + (i + 1); }
                 dc.drawText(w / 2, yPos + 4, Gfx.FONT_XTINY, name, Gfx.TEXT_JUSTIFY_CENTER);
@@ -100,7 +106,19 @@ class ClimbListView extends Ui.View {
                 var sign     = grad < 0 ? "-" : "";
                 var gradStr  = sign + (absGrad / 10) + "." + (absGrad % 10) + "%  " + formatDist(data.climbLength[i]);
                 dc.drawText(w / 2, yPos + 20, Gfx.FONT_XTINY, gradStr, Gfx.TEXT_JUSTIFY_CENTER);
-            } else if (i == data.climbCount) {
+            } else if (i < actionBase) {
+                // Flat starred segment row
+                var k = i - starredBase;
+                var fsName = data.flatStarredName[k];
+                if (fsName == null) { fsName = "Ster " + (k + 1); }
+                var surf = data.flatStarredSurf[k];
+                var surfLabel = (surf >= 0 && surf < surfLabels.size()) ? surfLabels[surf] : "?";
+                dc.drawText(w / 2, yPos + 4, Gfx.FONT_XTINY,
+                    fsName + " [" + surfLabel + "]", Gfx.TEXT_JUSTIFY_CENTER);
+                dc.drawText(w / 2, yPos + 20, Gfx.FONT_XTINY,
+                    formatDist(data.flatStarredEnd[k] - data.flatStarredStart[k]),
+                    Gfx.TEXT_JUSTIFY_CENTER);
+            } else if (i == actionBase) {
                 if (routeSaved == null) { refreshRouteSaved(); }
                 var isSaved = routeSaved;
                 var label   = isSaved ? "Delete route" : "Save route";
@@ -135,7 +153,7 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
         var view = Ui.getCurrentView()[0];
         var data = App.getApp().climbData;
         if (view instanceof ClimbListView) {
-            var total = data.climbCount + 2;
+            var total = data.climbCount + data.flatStarredCount + 2;
             if (view.selectedIndex < total - 1) {
                 view.selectedIndex++;
                 Ui.requestUpdate();
@@ -157,9 +175,10 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
         var view = Ui.getCurrentView()[0];
         if (!(view instanceof ClimbListView)) { return true; }
 
-        var data = App.getApp().climbData;
+        var data        = App.getApp().climbData;
+        var actionBase  = data.climbCount + data.flatStarredCount;
 
-        if (view.selectedIndex == data.climbCount) {
+        if (view.selectedIndex == actionBase) {
             var routeId = view.getRouteId();
             if (StorageManager.isRouteSaved(routeId)) {
                 StorageManager.deleteRoute(routeId);
@@ -171,10 +190,13 @@ class ClimbListDelegate extends Ui.BehaviorDelegate {
             }
             view.refreshRouteSaved();
             Ui.requestUpdate();
-        } else if (view.selectedIndex == data.climbCount + 1) {
+        } else if (view.selectedIndex == actionBase + 1) {
             Comm.transmit({ "type" => "SET_ACTIVE_ROUTE", "id" => view.getRouteId() },
                           null, new CommListener());
             Ui.pushView(new ActiveSetView(), new ActiveSetDelegate(), Ui.SLIDE_LEFT);
+        } else if (view.selectedIndex >= data.climbCount && view.selectedIndex < actionBase) {
+            // Starred segment row — display-only, no detail view
+            Ui.requestUpdate();
         } else {
             Ui.pushView(
                 new ClimbDetailView(view.selectedIndex, view.selectedIndex),
