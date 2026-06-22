@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
@@ -156,6 +157,8 @@ public final class StravaRoutesRepository {
                         + " starred segment(s) to climbs on " + routeId);
             }
 
+            List<StoredStarredSegment> starredFlats = matchStarredFlatSegments(simplified, starredSegments);
+
             StoredRoute stored = new StoredRoute();
             stored.routeId      = routeId;
             stored.sourceHash   = hash;
@@ -168,7 +171,7 @@ public final class StravaRoutesRepository {
                 stored.notes           = existing.notes;
             }
 
-            routeRepo.saveRoute(stored, simplified, climbs);
+            routeRepo.saveRoute(stored, simplified, climbs, starredFlats);
             Log.i(TAG, "Saved route " + routeId + " with " + climbs.size() + " climbs");
 
             // Seed surface type from the Strava sub_type on FIRST import only. On a
@@ -227,6 +230,42 @@ public final class StravaRoutesRepository {
                     seg.name,
                     ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M);
             if (c != null) result.add(c);
+        }
+        return result;
+    }
+
+    /**
+     * Builds a {@link StoredStarredSegment} for every starred segment that lies on the route
+     * and is too flat to be a climb (avg gradient < {@link ClimbConstants#MIN_AVG_GRADIENT}).
+     * Pure CPU; returns an empty list (never null) when nothing qualifies.
+     */
+    private static List<StoredStarredSegment> matchStarredFlatSegments(
+            List<RoutePoint> route, List<StravaSegmentDto> starredSegments) {
+        if (starredSegments.isEmpty()) return Collections.emptyList();
+        List<StoredStarredSegment> result = new ArrayList<>();
+        for (StravaSegmentDto seg : starredSegments) {
+            if (seg == null) continue;
+            if (seg.averageGrade / 100.0 >= ClimbConstants.MIN_AVG_GRADIENT) continue; // climbs handled separately
+            if (seg.startLatlng == null || seg.startLatlng.length < 2
+                    || seg.endLatlng == null || seg.endLatlng.length < 2) continue;
+
+            StarredSegmentLocator.Span span = StarredSegmentLocator.locateSpan(
+                    route,
+                    seg.startLatlng[0], seg.startLatlng[1],
+                    seg.endLatlng[0], seg.endLatlng[1],
+                    ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M);
+            if (span == null) continue;
+
+            StoredStarredSegment s = new StoredStarredSegment();
+            s.stravaId = seg.id;
+            s.startDistance = span.startDistance;
+            s.endDistance = span.endDistance;
+            s.length = span.length;
+            s.startLat = span.startLat; s.startLon = span.startLon;
+            s.endLat = span.endLat;     s.endLon = span.endLon;
+            s.avgGradient = span.avgGradient;
+            s.name = seg.name;
+            result.add(s);
         }
         return result;
     }

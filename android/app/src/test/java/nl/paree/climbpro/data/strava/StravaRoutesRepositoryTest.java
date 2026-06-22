@@ -237,6 +237,70 @@ public class StravaRoutesRepositoryTest {
                 true, climb.length < ClimbConstants.MIN_CLIMB_LENGTH_M);
     }
 
+    /** A flat single-track GPX (~445 m, ~0% gradient) → ClimbDetector yields zero climbs. */
+    private static String flatGpx() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\"?><gpx><trk><trkseg>");
+        double lat = 51.0;
+        for (int i = 0; i < 6; i++) {
+            sb.append(String.format(java.util.Locale.US,
+                    "<trkpt lat=\"%.6f\" lon=\"5.0\"><ele>10.0</ele></trkpt>", lat));
+            lat += 0.0008;
+        }
+        sb.append("</trkseg></trk></gpx>");
+        return sb.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubFlatStarredOnFlatRoute() throws Exception {
+        StravaRouteDto dto = new StravaRouteDto();
+        dto.id = 123L; dto.name = "Flat Route"; dto.distance = 445f;
+        dto.updatedAt = "2026-05-05T00:00:00Z";
+
+        Call<List<StravaRouteDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Collections.singletonList(dto)));
+        Call<List<StravaRouteDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(Collections.<StravaRouteDto>emptyList()));
+        when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listRoutes(anyString(), eq(2), anyInt())).thenReturn(page2);
+
+        Call<ResponseBody> gpx = mock(Call.class);
+        when(gpx.execute()).thenReturn(Response.success(
+                ResponseBody.create(flatGpx(), MediaType.parse("application/gpx+xml"))));
+        when(api.exportGpx(anyString(), eq(123L))).thenReturn(gpx);
+
+        StravaSegmentDto seg = new StravaSegmentDto();
+        seg.id = 777L;
+        seg.name = "Vlak Sterstuk";
+        seg.averageGrade = 1.0f;                 // < 3% → flat, not a climb
+        seg.startLatlng = new double[]{51.0, 5.0};
+        seg.endLatlng   = new double[]{51.0040, 5.0};
+
+        Call<List<StravaSegmentDto>> starred1 = mock(Call.class);
+        when(starred1.execute()).thenReturn(Response.success(Collections.singletonList(seg)));
+        Call<List<StravaSegmentDto>> starred2 = mock(Call.class);
+        when(starred2.execute()).thenReturn(Response.success(Collections.<StravaSegmentDto>emptyList()));
+        when(api.listStarredSegments(anyString(), eq(1), anyInt())).thenReturn(starred1);
+        when(api.listStarredSegments(anyString(), eq(2), anyInt())).thenReturn(starred2);
+    }
+
+    @Test
+    public void syncRoutes_flatStarredSegment_storedAsStarredNotClimb() throws Exception {
+        stubFlatStarredOnFlatRoute();
+        StravaRoutesRepository repo = new StravaRoutesRepository(auth, routeRepo, api);
+
+        repo.syncRoutes();
+
+        StoredRoute stored = routeRepo.loadRoute("strava_123");
+        assertEquals("flat starred segment must NOT be promoted to a climb",
+                0, stored.climbs.size());
+        assertEquals("flat starred segment must be stored as a starred segment",
+                1, stored.starredSegments.size());
+        assertEquals(777L, stored.starredSegments.get(0).stravaId);
+        assertEquals("Vlak Sterstuk", stored.starredSegments.get(0).name);
+        assertEquals(SurfaceType.UNKNOWN, stored.starredSegments.get(0).surfaceType);
+    }
+
     /** Builds a 429 "Too Many Requests" response carrying the given Retry-After header. */
     private static <T> Response<T> error429(String retryAfter) {
         okhttp3.Response raw = new okhttp3.Response.Builder()
