@@ -98,4 +98,30 @@ public class RouteRepositoryStarredSegmentTest {
         org.junit.Assert.assertEquals(0,
                 loaded.starredSegments == null ? 0 : loaded.starredSegments.size());
     }
+
+    @Test
+    public void updateStarredSegment_setsSurfaceAndName() throws Exception {
+        StoredRoute r = new StoredRoute();
+        r.routeId = "strava_1"; r.name = "R";
+        repo.saveRoute(r, points(), Collections.<Climb>emptyList(),
+                Arrays.asList(seg(7L, SurfaceType.UNKNOWN, null)));
+
+        repo.updateStarredSegment("strava_1", 7L, SurfaceType.DIRT, "  Bospad  ");
+
+        StoredStarredSegment s = repo.loadRoute("strava_1").starredSegments.get(0);
+        assertEquals(SurfaceType.DIRT, s.surfaceType);
+        assertEquals("Bospad", s.userDisplayName);
+    }
+
+    @Test
+    public void updateStarredSegment_blankNameClears() throws Exception {
+        StoredRoute r = new StoredRoute();
+        r.routeId = "strava_1"; r.name = "R";
+        repo.saveRoute(r, points(), Collections.<Climb>emptyList(),
+                Arrays.asList(seg(7L, SurfaceType.GRAVEL, "Oud")));
+
+        repo.updateStarredSegment("strava_1", 7L, SurfaceType.GRAVEL, "   ");
+
+        assertNull(repo.loadRoute("strava_1").starredSegments.get(0).userDisplayName);
+    }
 }

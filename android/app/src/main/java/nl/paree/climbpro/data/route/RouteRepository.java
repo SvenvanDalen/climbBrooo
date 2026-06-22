@@ -549,6 +549,39 @@ public final class RouteRepository {
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
+    /** Sets a starred segment's surface type (phone + watch). */
+    public void setStarredSegmentSurface(String routeId, long stravaId, int surfaceType) throws IOException {
+        updateStarredSegment(routeId, stravaId, surfaceType, null);
+    }
+
+    /**
+     * Sets a starred segment's surface type and optional display name in a single atomic
+     * write, identified by Strava id. A blank/empty name is stored as null. Updates the
+     * catalog surface index.
+     */
+    public void updateStarredSegment(String routeId, long stravaId,
+                                     int surfaceType, String name) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        boolean found = false;
+        if (route.starredSegments != null) {
+            for (StoredStarredSegment s : route.starredSegments) {
+                if (s.stravaId == stravaId) {
+                    s.surfaceType = SurfaceType.fromInt(surfaceType);
+                    s.userDisplayName = (name == null || name.trim().isEmpty()) ? null : name.trim();
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            Log.w(TAG, "updateStarredSegment: no starred segment with id " + stravaId);
+            return;
+        }
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
     /** Backwards-compatible overload: adds a section with no name. */
     public void addSurfaceSection(String routeId, int startDistance, int endDistance,
                                   int surfaceType) throws IOException {
