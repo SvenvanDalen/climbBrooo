@@ -13,6 +13,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.RoutePacingPlanner;
@@ -121,6 +122,19 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Sets a starred segment's surface type and optional name (phone + watch). */
+    public void updateStarredSegment(String routeId, long stravaId, int surfaceType, String name) {
+        executor.execute(() -> {
+            try {
+                routeRepo.updateStarredSegment(routeId, stravaId, surfaceType, name);
+                loadRoute(routeId);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Kon ster-segment niet opslaan: " + e.getMessage());
+            }
+        });
+    }
+
     /** Adds a user-defined surface override for an arbitrary stretch (phone + watch). */
     public void addSurfaceSection(String routeId, int startDistance, int endDistance,
                                   int surfaceType) {
@@ -170,22 +184,24 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         });
     }
 
-    private static List<Object> buildRouteItems(StoredRoute r) {
-        List<StoredFlatSegment> flats  = r.flatSegments != null ? r.flatSegments : Collections.emptyList();
-        List<StoredClimb>       climbs = r.climbs       != null ? r.climbs       : Collections.emptyList();
+    static List<Object> buildRouteItems(StoredRoute r) {
+        List<StoredFlatSegment>    flats   = r.flatSegments    != null ? r.flatSegments    : Collections.emptyList();
+        List<StoredClimb>          climbs  = r.climbs          != null ? r.climbs          : Collections.emptyList();
+        List<StoredStarredSegment> starred = r.starredSegments != null ? r.starredSegments : Collections.emptyList();
 
-        List<Object> result = new ArrayList<>(flats.size() + climbs.size());
-        int fi = 0, ci = 0;
-        while (fi < flats.size() || ci < climbs.size()) {
-            StoredFlatSegment flat  = fi < flats.size()  ? flats.get(fi)  : null;
-            StoredClimb       climb = ci < climbs.size() ? climbs.get(ci) : null;
+        List<Object> result = new ArrayList<>(flats.size() + climbs.size() + starred.size());
+        int fi = 0, ci = 0, si = 0;
+        while (fi < flats.size() || ci < climbs.size() || si < starred.size()) {
+            int flatPos    = fi < flats.size()   ? flats.get(fi).startDistance    : Integer.MAX_VALUE;
+            int climbPos   = ci < climbs.size()  ? climbs.get(ci).startDistance   : Integer.MAX_VALUE;
+            int starredPos = si < starred.size() ? starred.get(si).startDistance  : Integer.MAX_VALUE;
 
-            if (flat != null && (climb == null || flat.startDistance <= climb.startDistance)) {
-                result.add(flat);
-                fi++;
+            if (flatPos <= climbPos && flatPos <= starredPos) {
+                result.add(flats.get(fi++));
+            } else if (starredPos <= climbPos) {
+                result.add(starred.get(si++));
             } else {
-                result.add(climb);
-                ci++;
+                result.add(climbs.get(ci++));
             }
         }
         return result;

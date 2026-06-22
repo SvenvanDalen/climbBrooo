@@ -70,6 +70,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 startActivity(ClimbDetailActivity.intentFor(this, routeId, index)));
         adapter.setOnFlatClickListener(this::zoomToFlat);
         adapter.setOnFlatLongClickListener(this::showFlatSurfaceDialog);
+        adapter.setOnStarredClickListener(this::showStarredSurfaceDialog);
 
         viewModel.route().observe(this, route -> {
             if (route == null) return;
@@ -239,6 +240,37 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 .setView(layout)
                 .setPositiveButton("Opslaan", (dialog, which) ->
                         viewModel.updateFlatSegment(routeId, flat.startDistance,
+                                surface.getSelectedItemPosition(),
+                                nameInput.getText().toString()))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    private void showStarredSurfaceDialog(
+            nl.paree.climbpro.data.route.StoredStarredSegment seg) {
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+
+        final android.widget.EditText nameInput = new android.widget.EditText(this);
+        nameInput.setHint("Naam");
+        nameInput.setSingleLine(true);
+        if (seg.userDisplayName != null) nameInput.setText(seg.userDisplayName);
+        else if (seg.name != null)       nameInput.setText(seg.name);
+        layout.addView(nameInput);
+
+        final android.widget.Spinner surface = new android.widget.Spinner(this);
+        android.widget.ArrayAdapter<String> a = new android.widget.ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, SURFACE_LABELS_NL);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(a);
+        surface.setSelection(SurfaceType.fromInt(seg.surfaceType));
+        layout.addView(surface);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Ster-segment")
+                .setView(layout)
+                .setPositiveButton("Opslaan", (dialog, which) ->
+                        viewModel.updateStarredSegment(routeId, seg.stravaId,
                                 surface.getSelectedItemPosition(),
                                 nameInput.getText().toString()))
                 .setNegativeButton("Annuleer", null)
