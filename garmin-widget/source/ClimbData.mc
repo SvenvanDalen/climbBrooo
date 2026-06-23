@@ -210,4 +210,31 @@ class ClimbData {
         }
         activeSegmentIndex = segCount[ci] - 1;
     }
+
+    /**
+     * Parses the v3 payload's top-level 'fss' array (specialized starred flat segments)
+     * into the flatStarred* arrays. Resets the count first, so a resync whose payload omits
+     * 'fss' clears stale entries. Non-Dictionary elements are skipped (no phantom rows), so
+     * flatStarredCount reflects only the valid sections actually stored.
+     */
+    function parseFlatStarred(fss) {
+        flatStarredCount = 0;
+        if (!(fss instanceof Toybox.Lang.Array)) { return; }
+        var w = 0;
+        for (var i = 0; i < fss.size() && w < MAX_FLAT_STARRED; i++) {
+            var fd = fss[i];
+            if (!(fd instanceof Toybox.Lang.Dictionary)) { continue; }
+            flatStarredStart[w] = fdInt(fd, "s", 0);
+            flatStarredEnd[w]   = fdInt(fd, "e", 0);
+            flatStarredSurf[w]  = fdInt(fd, "t", 5);
+            flatStarredName[w]  = fd.get("n");
+            w++;
+        }
+        flatStarredCount = w;
+    }
+
+    hidden function fdInt(dict, key, def) {
+        var v = dict.get(key);
+        return (v instanceof Toybox.Lang.Number) ? v : def;
+    }
 }

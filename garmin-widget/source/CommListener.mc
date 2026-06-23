@@ -71,23 +71,9 @@ class PhoneMessageCallback {
             data.climbCount = 0;
         }
 
-        // Parse fss (flat starred segments). Reset first so a resync without fss
-        // clears stale entries — mirrors the surf reset discipline above.
-        data.flatStarredCount = 0;
-        var fss = msg.get("fss");
-        if (fss != null && fss instanceof Toybox.Lang.Array) {
-            var maxF = data.MAX_FLAT_STARRED < fss.size() ? data.MAX_FLAT_STARRED : fss.size();
-            data.flatStarredCount = maxF;
-            for (var i = 0; i < maxF; i++) {
-                var fd = fss[i];
-                if (fd instanceof Toybox.Lang.Dictionary) {
-                    data.flatStarredStart[i] = getInt(fd, "s", 0);
-                    data.flatStarredEnd[i]   = getInt(fd, "e", 0);
-                    data.flatStarredSurf[i]  = getInt(fd, "t", 5);
-                    data.flatStarredName[i]  = fd.get("n");
-                }
-            }
-        }
+        // Parse fss (flat starred segments). Resets internally so a resync without
+        // fss clears stale entries — mirrors the surf reset discipline above.
+        data.parseFlatStarred(msg.get("fss"));
 
         data.payloadReceived = true;
         for (var i = 0; i < data.climbCount; i++) { data.calibIdx[i] = 0; }
