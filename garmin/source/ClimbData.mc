@@ -13,6 +13,13 @@ class ClimbData {
     const MAX_SEGMENTS = 16;
     const MAX_CALIB = 16;
 
+    // Route-matching thresholds (metres)
+    const APPROACH_WINDOW_M = 1000; // start GPS↔route coordinate checking this far before a climb
+    const CALIB_SNAP_M      = 30;   // on-climb: snap progress when within this of a calib point
+    const APPROACH_SNAP_M   = 40;   // approach: align climb start when within this of calib point 0
+    const OFFROUTE_ON_M     = 100;  // on-climb: off-route if beyond this from every calib point
+    const OFFROUTE_MARGIN_M = 300;  // approach: off-route if straight-line exceeds along-route remaining by this
+
     // Payload state
     var payloadReceived = false;
     var mode = "route";       // "route" or "radius"
@@ -57,6 +64,7 @@ class ClimbData {
     var nextClimbIndex = -1;       // index of next upcoming climb
     var lastElapsedDistance = 0;  // last GPS elapsed distance passed to updateProgress
     var climbStartTimerMs = -1;    // timerTime (ms) when the active climb was entered; -1 = not set
+    var offRoute = false;          // true when GPS has diverged from the route near a climb
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -175,21 +183,56 @@ class ClimbData {
         }
     }
 
+    /**
+     * Call on each GPS update (route mode). Matches the GPS position against the route's
+     * known coordinates (the per-climb calibration points) and:
+     *  - while ON a climb: snaps progress to calibration points (see {@link #checkCalibration})
+     *    and flags {@link #offRoute} when the rider is beyond OFFROUTE_ON_M from every point;
+     *  - while APPROACHING a climb (within APPROACH_WINDOW_M): aligns the climb's start distance
+     *    once the rider reaches its first calibration point, and flags off-route when the
+     *    straight-line distance to that point exceeds the remaining along-route distance by
+     *    OFFROUTE_MARGIN_M (i.e. the rider has diverged from the route).
+     * Outside the approach window and off any climb there is no route geometry to check, so
+     * offRoute is left false.
+     */
+    function updateRouteMatch(lat, lon) {
+        offRoute = false;
+        if (!payloadReceived || mode == null || !mode.equals("route")) { return; }
+
+        var ci = activeClimbIndex;
+        if (ci >= 0) {
+            checkCalibration(lat, lon);
+            var minD = minCalibDistM(ci, lat, lon);
+            if (minD >= 0 && minD > OFFROUTE_ON_M) { offRoute = true; }
+            return;
+        }
+
+        var ni = nextClimbIndex;
+        if (ni >= 0 && distToNextClimb >= 0 && distToNextClimb <= APPROACH_WINDOW_M
+                && calibCount[ni] > 0) {
+            var actual   = distM(lat, lon, calibLat[ni][0], calibLon[ni][0]);
+            var expected = (climbStartDist[ni] + calibDist[ni][0]) - lastElapsedDistance;
+            // Straight-line distance can never exceed the along-route distance on-route, so a
+            // large excess means the rider has left the route.
+            if (expected > 0 && actual > expected + OFFROUTE_MARGIN_M) { offRoute = true; }
+            // Reached the climb's first calibration point: align its start to current elapsed
+            // distance so the climb triggers at the right place despite GPS/odometer drift.
+            if (actual <= APPROACH_SNAP_M) {
+                climbStartDist[ni] = lastElapsedDistance - calibDist[ni][0];
+            }
+        }
+    }
+
     // Call on each GPS update when activeClimbIndex >= 0.
-    // Resets progressInClimb when within 30 m of the next calibration point.
+    // Resets progressInClimb when within CALIB_SNAP_M of the next calibration point.
     function checkCalibration(lat, lon) {
         if (activeClimbIndex < 0) { return; }
         var ci = activeClimbIndex;
         var k  = calibIdx[ci];
         if (k >= calibCount[ci]) { return; }
 
-        var dlat = lat - calibLat[ci][k];
-        var dlon = lon - calibLon[ci][k];
-        // Rough distance in metres: flat-Earth approx
-        var cosLat = Math.cos(lat * Math.PI / 180.0f);
-        var dm = Math.sqrt((dlat * 111111.0f) * (dlat * 111111.0f)
-                         + (dlon * 111111.0f * cosLat) * (dlon * 111111.0f * cosLat));
-        if (dm < 30.0f) {
+        var dm = distM(lat, lon, calibLat[ci][k], calibLon[ci][k]);
+        if (dm < CALIB_SNAP_M) {
             // Shift climbStartDist so the NEXT updateProgress() call produces the correct progress.
             // GPS says we are at lastElapsedDistance; we know we're really at calibDist[ci][k].
             climbStartDist[ci] = lastElapsedDistance - calibDist[ci][k];
@@ -197,6 +240,27 @@ class ClimbData {
             calibIdx[ci] = k + 1;
             updateCurrentSegment();
         }
+    }
+
+    // Minimum distance (m) from (lat,lon) to any calibration point of climb ci; -1 if none.
+    hidden function minCalibDistM(ci, lat, lon) {
+        var n = calibCount[ci];
+        if (n <= 0) { return -1.0; }
+        var best = -1.0;
+        for (var k = 0; k < n; k++) {
+            var d = distM(lat, lon, calibLat[ci][k], calibLon[ci][k]);
+            if (best < 0 || d < best) { best = d; }
+        }
+        return best;
+    }
+
+    // Flat-Earth great-circle approximation in metres.
+    hidden function distM(lat1, lon1, lat2, lon2) {
+        var dlat = lat1 - lat2;
+        var dlon = lon1 - lon2;
+        var cosLat = Math.cos(lat1 * Math.PI / 180.0f);
+        return Math.sqrt((dlat * 111111.0f) * (dlat * 111111.0f)
+                       + (dlon * 111111.0f * cosLat) * (dlon * 111111.0f * cosLat));
     }
 
     hidden function updateCurrentSegment() {

@@ -85,11 +85,11 @@ class ClimbProView extends Ui.DataField {
 
         data.updateProgress(elapsed);
 
-        if (data.activeClimbIndex >= 0
-                && info != null && info has :currentLocation
-                && info.currentLocation != null) {
+        // GPS↔route coordinate matching every tick: snaps progress on a climb, pre-aligns
+        // and watches for divergence from ~1 km before a climb, and sets data.offRoute.
+        if (info != null && info has :currentLocation && info.currentLocation != null) {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
-            data.checkCalibration(ll[0], ll[1]);
+            data.updateRouteMatch(ll[0], ll[1]);
         }
 
         // Detect leaving a climb (summary) BEFORE overwriting the climb-start timer.
@@ -109,7 +109,9 @@ class ClimbProView extends Ui.DataField {
         lastActiveClimb = data.activeClimbIndex;
 
         // Climb-start alert: vibrate when entering a new climb within 50m.
-        if (data.activeClimbIndex >= 0 && data.activeClimbIndex != alertedClimbIndex) {
+        // Suppressed while off-route so a wrong-turn odometer reading can't fire it.
+        if (data.activeClimbIndex >= 0 && data.activeClimbIndex != alertedClimbIndex
+                && !data.offRoute) {
             if (data.progressInClimb <= 50) {
                 triggerClimbAlert();
                 alertedClimbIndex = data.activeClimbIndex;
@@ -141,6 +143,19 @@ class ClimbProView extends Ui.DataField {
         } else {
             drawNoClimbs(dc);
         }
+
+        if (data.offRoute) {
+            drawOffRouteBanner(dc);
+        }
+    }
+
+    // Red banner across the top when the rider has diverged from the route near a climb.
+    hidden function drawOffRouteBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_RED);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, "OFF ROUTE", Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // =========================================================================
