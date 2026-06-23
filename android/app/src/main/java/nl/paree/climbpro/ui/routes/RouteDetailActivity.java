@@ -71,6 +71,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         adapter.setOnFlatClickListener(this::zoomToFlat);
         adapter.setOnFlatLongClickListener(this::showFlatSurfaceDialog);
         adapter.setOnStarredClickListener(this::showStarredSurfaceDialog);
+        adapter.setOnSurfaceClickListener(this::showSurfaceSectionRowDialog);
 
         viewModel.route().observe(this, route -> {
             if (route == null) return;
@@ -273,6 +274,52 @@ public final class RouteDetailActivity extends AppCompatActivity {
                         viewModel.updateStarredSegment(routeId, seg.stravaId,
                                 surface.getSelectedItemPosition(),
                                 nameInput.getText().toString()))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    /**
+     * Tapping a surface-section row in the list: edit its surface + name in place, or delete.
+     * The section's index is resolved by identity against the route's surfaceSections list
+     * (both come from the same loaded StoredRoute, so reference equality holds).
+     */
+    private void showSurfaceSectionRowDialog(
+            nl.paree.climbpro.data.route.StoredSurfaceSection section) {
+        java.util.List<nl.paree.climbpro.data.route.StoredSurfaceSection> sections =
+                viewModel.surfaceSections().getValue();
+        final int index = sections != null ? sections.indexOf(section) : -1;
+        if (index < 0) {
+            showSurfaceSectionsManager(); // fallback: open the manager if we lost the reference
+            return;
+        }
+
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad, pad, pad);
+
+        final EditText nameInput = new EditText(this);
+        nameInput.setHint("Naam (optioneel)");
+        nameInput.setSingleLine(true);
+        if (section.name != null) nameInput.setText(section.name);
+        layout.addView(nameInput);
+
+        final android.widget.Spinner surface = new android.widget.Spinner(this);
+        android.widget.ArrayAdapter<String> a = new android.widget.ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, SURFACE_LABELS_NL);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(a);
+        surface.setSelection(SurfaceType.fromInt(section.surfaceType));
+        layout.addView(surface);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Ondergrond-stuk")
+                .setView(layout)
+                .setPositiveButton("Opslaan", (d, w) ->
+                        viewModel.updateSurfaceSection(routeId, index,
+                                surface.getSelectedItemPosition(),
+                                nameInput.getText().toString()))
+                .setNeutralButton("Verwijder", (d, w) -> confirmDeleteSection(index))
                 .setNegativeButton("Annuleer", null)
                 .show();
     }

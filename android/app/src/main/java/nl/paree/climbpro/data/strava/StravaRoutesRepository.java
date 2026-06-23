@@ -129,7 +129,13 @@ public final class StravaRoutesRepository {
             StoredRoute existing = null;
             try { existing = routeRepo.loadRoute(routeId); } catch (IOException ignored) {}
 
-            if (existing != null && hash.equals(existing.sourceHash)) {
+            // Skip unchanged routes — UNLESS the stored doc predates the starred-segment
+            // feature (starredSegments == null). Such routes were saved before flat starred
+            // segments were matched, so reprocess them once to populate the field even when
+            // the Strava sourceHash is unchanged. After that first reprocess the field is
+            // non-null (possibly empty) and the route skips normally again.
+            if (existing != null && hash.equals(existing.sourceHash)
+                    && existing.starredSegments != null) {
                 Log.d(TAG, "Route " + routeId + " unchanged, skipping");
                 return false;
             }

@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.strava;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -299,6 +300,31 @@ public class StravaRoutesRepositoryTest {
         assertEquals(777L, stored.starredSegments.get(0).stravaId);
         assertEquals("Vlak Sterstuk", stored.starredSegments.get(0).name);
         assertEquals(SurfaceType.UNKNOWN, stored.starredSegments.get(0).surfaceType);
+    }
+
+    @Test
+    public void syncRoutes_preFeatureRoute_reprocessedToPopulateStarred() throws Exception {
+        // First sync populates the starred segment normally.
+        stubFlatStarredOnFlatRoute();
+        StravaRoutesRepository repo = new StravaRoutesRepository(auth, routeRepo, api);
+        repo.syncRoutes();
+        assertEquals(1, routeRepo.loadRoute("strava_123").starredSegments.size());
+
+        // Simulate a doc saved BEFORE the starred-segment feature: null the field on disk.
+        com.fasterxml.jackson.databind.ObjectMapper m =
+                new com.fasterxml.jackson.databind.ObjectMapper();
+        java.io.File f = new java.io.File(app.getFilesDir(), "routes/strava_123.json");
+        StoredRoute onDisk = m.readValue(f, StoredRoute.class);
+        onDisk.starredSegments = null;
+        m.writeValue(f, onDisk);
+        assertNull(m.readValue(f, StoredRoute.class).starredSegments);
+
+        // Re-sync with the SAME route (unchanged sourceHash): must reprocess because the
+        // field was null, repopulating the flat starred segment.
+        stubFlatStarredOnFlatRoute();
+        int changed = repo.syncRoutes();
+        assertEquals("pre-feature route must be reprocessed despite unchanged hash", 1, changed);
+        assertEquals(1, routeRepo.loadRoute("strava_123").starredSegments.size());
     }
 
     /** Builds a 429 "Too Many Requests" response carrying the given Retry-After header. */

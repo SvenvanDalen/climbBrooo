@@ -663,6 +663,28 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets both the surface type and the optional name of the surface section at the given
+     * index, in a single atomic write. Surface is clamped via {@link SurfaceType#fromInt};
+     * a blank/empty name is stored as null. Updates the catalog surface index. Out-of-range
+     * indices are ignored.
+     */
+    public void updateSurfaceSection(String routeId, int index,
+                                     int surfaceType, String name) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.surfaceSections == null
+                || index < 0 || index >= route.surfaceSections.size()) {
+            Log.w(TAG, "updateSurfaceSection: index out of range: " + index);
+            return;
+        }
+        StoredSurfaceSection section = route.surfaceSections.get(index);
+        section.surfaceType = SurfaceType.fromInt(surfaceType);
+        section.name = (name == null || name.trim().isEmpty()) ? null : name.trim();
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
      * Extracts the sub-list of RoutePoints that belong to the given climb,
      * using the route's parallel arrays and the climb's startDistance/endDistance.
      */

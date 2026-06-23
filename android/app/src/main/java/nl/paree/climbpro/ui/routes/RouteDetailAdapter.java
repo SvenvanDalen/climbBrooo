@@ -12,6 +12,7 @@ import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
+import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public final class RouteDetailAdapter
     private static final int VIEW_TYPE_FLAT    = 0;
     private static final int VIEW_TYPE_CLIMB   = 1;
     private static final int VIEW_TYPE_STARRED = 2;
+    private static final int VIEW_TYPE_SURFACE = 3;
 
     // Surface badge background colors — same mapping as ClimbSegmentAdapter
     private static final int[] SURFACE_BG = {
@@ -47,11 +49,14 @@ public final class RouteDetailAdapter
 
     public interface OnStarredClickListener { void onStarredClick(StoredStarredSegment seg); }
 
+    public interface OnSurfaceClickListener { void onSurfaceClick(StoredSurfaceSection section); }
+
     private List<Object> items = new ArrayList<>();
     private OnClimbClickListener    climbClickListener;
     private OnFlatClickListener     flatClickListener;
     private OnFlatLongClickListener flatLongClickListener;
     private OnStarredClickListener  starredClickListener;
+    private OnSurfaceClickListener  surfaceClickListener;
     private int[] climbTargetSeconds; // index = climb position; -1 = none
 
     public void setClimbTargetSeconds(int[] secs) {
@@ -68,12 +73,14 @@ public final class RouteDetailAdapter
     public void setOnFlatClickListener(OnFlatClickListener l)         { flatClickListener = l; }
     public void setOnFlatLongClickListener(OnFlatLongClickListener l) { flatLongClickListener = l; }
     public void setOnStarredClickListener(OnStarredClickListener l)   { starredClickListener = l; }
+    public void setOnSurfaceClickListener(OnSurfaceClickListener l)   { surfaceClickListener = l; }
 
     @Override
     public int getItemViewType(int position) {
         Object o = items.get(position);
         if (o instanceof StoredFlatSegment)    return VIEW_TYPE_FLAT;
         if (o instanceof StoredStarredSegment) return VIEW_TYPE_STARRED;
+        if (o instanceof StoredSurfaceSection) return VIEW_TYPE_SURFACE;
         return VIEW_TYPE_CLIMB;
     }
 
@@ -87,6 +94,9 @@ public final class RouteDetailAdapter
         if (viewType == VIEW_TYPE_STARRED) {
             return new StarredViewHolder(inflater.inflate(R.layout.item_starred_segment, parent, false));
         }
+        if (viewType == VIEW_TYPE_SURFACE) {
+            return new SurfaceViewHolder(inflater.inflate(R.layout.item_surface_section, parent, false));
+        }
         return new ClimbViewHolder(inflater.inflate(R.layout.item_climb, parent, false));
     }
 
@@ -98,6 +108,10 @@ public final class RouteDetailAdapter
         }
         if (holder instanceof StarredViewHolder) {
             bindStarred((StarredViewHolder) holder, (StoredStarredSegment) items.get(position));
+            return;
+        }
+        if (holder instanceof SurfaceViewHolder) {
+            bindSurface((SurfaceViewHolder) holder, (StoredSurfaceSection) items.get(position));
             return;
         }
         bindClimb((ClimbViewHolder) holder, position);
@@ -197,6 +211,36 @@ public final class RouteDetailAdapter
             super(v);
             nameView     = v.findViewById(R.id.starred_name);
             surfaceBadge = v.findViewById(R.id.starred_surface_badge);
+        }
+    }
+
+    private void bindSurface(SurfaceViewHolder h, StoredSurfaceSection s) {
+        String label = s.name != null ? s.name : "Ondergrond-stuk";
+        h.nameView.setText(String.format("%s · %.1f–%.1f km",
+                label, s.startDistance / 1000.0, s.endDistance / 1000.0));
+
+        String badge = SurfaceType.label(s.surfaceType);
+        if (badge != null) {
+            h.surfaceBadge.setVisibility(View.VISIBLE);
+            h.surfaceBadge.setText(badge);
+            int st = SurfaceType.fromInt(s.surfaceType);
+            if (st < SURFACE_BG.length) h.surfaceBadge.setBackgroundColor(SURFACE_BG[st]);
+        } else {
+            h.surfaceBadge.setVisibility(View.INVISIBLE);
+        }
+
+        h.itemView.setOnClickListener(v -> {
+            if (surfaceClickListener != null) surfaceClickListener.onSurfaceClick(s);
+        });
+    }
+
+    static final class SurfaceViewHolder extends RecyclerView.ViewHolder {
+        TextView nameView;
+        TextView surfaceBadge;
+        SurfaceViewHolder(View v) {
+            super(v);
+            nameView     = v.findViewById(R.id.surface_name);
+            surfaceBadge = v.findViewById(R.id.surface_surface_badge);
         }
     }
 }

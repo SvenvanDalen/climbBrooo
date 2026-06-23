@@ -183,6 +183,45 @@ public class SurfaceSectionRepositoryTest {
     }
 
     @Test
+    public void updateSurfaceSection_changesSurfaceAndName() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL, "Oud");
+
+        repo.updateSurfaceSection("r1", 0, SurfaceType.COBBLESTONE, "  Kasseistrook  ");
+
+        StoredSurfaceSection s = repo.loadRoute("r1").surfaceSections.get(0);
+        assertEquals(SurfaceType.COBBLESTONE, s.surfaceType);
+        assertEquals("Kasseistrook", s.name);
+    }
+
+    @Test
+    public void updateSurfaceSection_blankNameClears_andClampsSurface() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL, "Oud");
+
+        repo.updateSurfaceSection("r1", 0, 99, "   "); // 99 -> UNKNOWN, blank -> null
+
+        StoredSurfaceSection s = repo.loadRoute("r1").surfaceSections.get(0);
+        assertEquals(SurfaceType.UNKNOWN, s.surfaceType);
+        org.junit.Assert.assertNull(s.name);
+    }
+
+    @Test
+    public void updateSurfaceSection_ignoresOutOfRangeIndex() throws Exception {
+        seedRoute("r1");
+        RouteRepository repo = new RouteRepository(app);
+        repo.addSurfaceSection("r1", 1000, 2000, SurfaceType.GRAVEL, "Behoud");
+
+        repo.updateSurfaceSection("r1", 7, SurfaceType.DIRT, "X"); // no-op, must not throw
+
+        StoredSurfaceSection s = repo.loadRoute("r1").surfaceSections.get(0);
+        assertEquals(SurfaceType.GRAVEL, s.surfaceType);
+        assertEquals("Behoud", s.name);
+    }
+
+    @Test
     public void saveRoute_preservesSurfaceSectionsAcrossReimport() throws Exception {
         seedRoute("r1");
         RouteRepository repo = new RouteRepository(app);

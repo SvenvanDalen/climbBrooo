@@ -184,25 +184,39 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Updates a surface section's surface type and name by index (phone + watch). */
+    public void updateSurfaceSection(String routeId, int index, int surfaceType, String name) {
+        executor.execute(() -> {
+            try {
+                routeRepo.updateSurfaceSection(routeId, index, surfaceType, name);
+                loadRoute(routeId);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Kon ondergrond-stuk niet opslaan: " + e.getMessage());
+            }
+        });
+    }
+
     static List<Object> buildRouteItems(StoredRoute r) {
         List<StoredFlatSegment>    flats   = r.flatSegments    != null ? r.flatSegments    : Collections.emptyList();
         List<StoredClimb>          climbs  = r.climbs          != null ? r.climbs          : Collections.emptyList();
         List<StoredStarredSegment> starred = r.starredSegments != null ? r.starredSegments : Collections.emptyList();
+        List<StoredSurfaceSection> surfsec = r.surfaceSections != null ? r.surfaceSections : Collections.emptyList();
 
-        List<Object> result = new ArrayList<>(flats.size() + climbs.size() + starred.size());
-        int fi = 0, ci = 0, si = 0;
-        while (fi < flats.size() || ci < climbs.size() || si < starred.size()) {
+        List<Object> result = new ArrayList<>(
+                flats.size() + climbs.size() + starred.size() + surfsec.size());
+        int fi = 0, ci = 0, si = 0, ui = 0;
+        while (fi < flats.size() || ci < climbs.size() || si < starred.size() || ui < surfsec.size()) {
             int flatPos    = fi < flats.size()   ? flats.get(fi).startDistance    : Integer.MAX_VALUE;
             int climbPos   = ci < climbs.size()  ? climbs.get(ci).startDistance   : Integer.MAX_VALUE;
             int starredPos = si < starred.size() ? starred.get(si).startDistance  : Integer.MAX_VALUE;
+            int surfPos    = ui < surfsec.size() ? surfsec.get(ui).startDistance  : Integer.MAX_VALUE;
 
-            if (flatPos <= climbPos && flatPos <= starredPos) {
-                result.add(flats.get(fi++));
-            } else if (starredPos <= climbPos) {
-                result.add(starred.get(si++));
-            } else {
-                result.add(climbs.get(ci++));
-            }
+            int min = Math.min(Math.min(flatPos, climbPos), Math.min(starredPos, surfPos));
+            if (flatPos == min)         result.add(flats.get(fi++));
+            else if (surfPos == min)    result.add(surfsec.get(ui++));
+            else if (starredPos == min) result.add(starred.get(si++));
+            else                        result.add(climbs.get(ci++));
         }
         return result;
     }
