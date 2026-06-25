@@ -33,11 +33,86 @@ function checkCalibration_nearPoint_snapsProgress(logger) {
     d.calibDist[0][0] = 400;          // 400 m from climb start
     d.calibLat[0][0]  = 52.0f;
     d.calibLon[0][0]  = 5.0f;
+    d.climbEntered[0] = true;         // GPS already confirmed we are on the climb
 
     d.updateProgress(1300);           // GPS says 300 m into the climb
     d.checkCalibration(52.0f, 5.0f);  // but we are exactly on the calib point (400 m)
 
     Test.assertEqual(d.progressInClimb, 400);
+    return true;
+}
+
+// A climb with calibration geometry must NOT activate from the odometer alone:
+// the rider must have been GPS-confirmed at its start (climbEntered) first.
+(:test)
+function updateProgress_inRangeButNotConfirmed_staysOffClimb(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true;
+    d.mode = "route";
+    d.climbCount = 1;
+    d.climbStartDist[0] = 1000;
+    d.climbEndDist[0]   = 1800;
+    d.segCount[0] = 1; d.segDist[0][0] = 800;
+    d.calibCount[0] = 1;              // has geometry, but climbEntered[0] is still false
+    d.calibDist[0][0] = 0;
+    d.calibLat[0][0]  = 52.0f;
+    d.calibLon[0][0]  = 5.0f;
+
+    d.updateProgress(1300);           // odometer is well inside [1000,1800]...
+
+    Test.assertEqual(d.activeClimbIndex, -1);   // ...but the climb has NOT started
+    Test.assertEqual(d.nextClimbIndex, 0);      // it is still the upcoming climb
+    return true;
+}
+
+// A climb with no calibration geometry falls back to odometer-only activation.
+(:test)
+function updateProgress_inRangeNoCalib_activatesFromOdometer(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true;
+    d.mode = "route";
+    d.climbCount = 1;
+    d.climbStartDist[0] = 1000;
+    d.climbEndDist[0]   = 1800;
+    d.segCount[0] = 1; d.segDist[0][0] = 800;
+    // calibCount[0] stays 0
+
+    d.updateProgress(1300);
+
+    Test.assertEqual(d.activeClimbIndex, 0);
+    return true;
+}
+
+// Full per-tick flow: approaching, then reaching the start confirms entry (climbEntered),
+// and the next updateProgress activates the climb.
+(:test)
+function approachReachingStart_confirmsThenActivates(logger) {
+    var d = approachData();           // climb at 2000 m, calib point 0 at its start
+
+    d.updateProgress(1500);           // 500 m before the climb
+    Test.assertEqual(d.activeClimbIndex, -1);
+
+    d.updateRouteMatch(52.0f, 5.0f);  // GPS exactly at the climb start → confirm entry
+    Test.assert(d.climbEntered[0]);
+
+    d.updateProgress(1500);           // same tick odometer, now confirmed
+    Test.assertEqual(d.activeClimbIndex, 0);
+    return true;
+}
+
+// Off-route during approach never confirms entry, so the climb never starts even though
+// the odometer rolls past its start.
+(:test)
+function offRouteApproach_neverConfirms_climbDoesNotStart(logger) {
+    var d = approachData();
+
+    d.updateProgress(1500);
+    d.updateRouteMatch(52.018f, 5.0f);   // ~2 km off route → off route, not confirmed
+    Test.assert(d.offRoute);
+    Test.assert(!d.climbEntered[0]);
+
+    d.updateProgress(2200);              // odometer rolled past the climb start (2000)
+    Test.assertEqual(d.activeClimbIndex, -1);   // climb still has NOT started
     return true;
 }
 
@@ -106,6 +181,7 @@ function updateRouteMatch_onClimbFarFromCalib_setsOffRoute(logger) {
     d.calibDist[0][0] = 400;
     d.calibLat[0][0]  = 52.0f;
     d.calibLon[0][0]  = 5.0f;
+    d.climbEntered[0] = true;               // already confirmed on the climb
 
     d.updateProgress(1300);                 // on the climb
     d.updateRouteMatch(52.01f, 5.0f);       // ~1.1 km from the only calib point → off route
@@ -127,6 +203,7 @@ function updateRouteMatch_onClimbNearCalib_noOffRoute(logger) {
     d.calibDist[0][0] = 400;
     d.calibLat[0][0]  = 52.0f;
     d.calibLon[0][0]  = 5.0f;
+    d.climbEntered[0] = true;               // already confirmed on the climb
 
     d.updateProgress(1300);
     d.updateRouteMatch(52.0f, 5.0f);        // on the calib point → on route

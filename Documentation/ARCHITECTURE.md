@@ -163,6 +163,17 @@ GPS tick ──► nearest-point search ──► hysteresis filter ──► pr
 > ≥ `CALIBRATION_MIN_DISTANCE_M` (200 m) apart, with the final (short) segment end always included — so
 > the last gap may be under 200 m. The `reSegmentClimb` path divides the climb into equal segments and
 > reuses the count overload, which is aligned for the same reason.
+>
+> **GPS-gated climb start (per tick):** a climb does **not** become active from the odometer
+> (`elapsedDistance`) alone. `ClimbData.updateProgress` only activates climb *i* once
+> `climbEntered[i]` is set, which happens in `updateRouteMatch` when GPS comes within
+> `APPROACH_SNAP_M` (40 m) of the climb's first calibration point — i.e. the rider is physically on
+> the climb. Until then the climb is reported as *upcoming* even if the odometer has rolled past its
+> start, so an off-route rider whose odometer keeps incrementing never trips the climb. Climbs that
+> carry no calibration geometry (`calibCount == 0`) fall back to odometer-only activation. The
+> approach/off-route check in `updateRouteMatch` runs whenever `distToNextClimb <= APPROACH_WINDOW_M`
+> (including ≤ 0, the unconfirmed-overrun case) so confirmation can still occur after an odometer
+> overrun. `climbEntered` is reset to false on every new payload (`CommListener`).
 
 ### Sync semantics
 

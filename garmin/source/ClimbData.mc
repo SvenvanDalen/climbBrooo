@@ -65,6 +65,9 @@ class ClimbData {
     var lastElapsedDistance = 0;  // last GPS elapsed distance passed to updateProgress
     var climbStartTimerMs = -1;    // timerTime (ms) when the active climb was entered; -1 = not set
     var offRoute = false;          // true when GPS has diverged from the route near a climb
+    var climbEntered;              // bool per climb: GPS has confirmed the rider physically reached
+                                   // this climb's start. A climb may not become active until this is
+                                   // set (climbs without calibration geometry fall back to odometer).
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -84,8 +87,10 @@ class ClimbData {
         segSurf = new [MAX_CLIMBS];
         segTargetSec = new [MAX_CLIMBS];
         hasTargets = new [MAX_CLIMBS];
+        climbEntered = new [MAX_CLIMBS];
 
         for (var i = 0; i < MAX_CLIMBS; i++) {
+            climbEntered[i] = false;
             climbStartDist[i] = 0;
             climbEndDist[i] = 0;
             climbLength[i] = 0;
@@ -150,8 +155,18 @@ class ClimbData {
         nextClimbIndex = -1;
 
         for (var i = 0; i < climbCount; i++) {
-            if (elapsedDistance >= climbStartDist[i] && elapsedDistance <= climbEndDist[i]) {
-                // We are ON this climb
+            // A climb may only become active once GPS has confirmed the rider physically reached
+            // its start (climbEntered). Climbs without calibration geometry have no GPS anchor, so
+            // they fall back to odometer-only activation.
+            var confirmed = climbEntered[i] || calibCount[i] == 0;
+
+            if (confirmed && elapsedDistance > climbEndDist[i]) {
+                // Already finished this climb — look at the next one.
+                continue;
+            }
+
+            if (confirmed && elapsedDistance >= climbStartDist[i]) {
+                // We are ON this climb (odometer in range AND GPS-confirmed at the start).
                 activeClimbIndex = i;
                 progressInClimb = elapsedDistance - climbStartDist[i];
 
@@ -174,8 +189,10 @@ class ClimbData {
                     distToNextClimb = climbStartDist[i + 1] - elapsedDistance;
                 }
                 return;
-            } else if (elapsedDistance < climbStartDist[i]) {
-                // Approaching this climb
+            } else {
+                // Approaching this climb — either the odometer hasn't reached the start yet, or it
+                // has but GPS has not yet confirmed we are on the climb. distToNextClimb may be ≤ 0
+                // in the latter case; updateRouteMatch still runs its confirmation check there.
                 nextClimbIndex = i;
                 distToNextClimb = climbStartDist[i] - elapsedDistance;
                 return;
@@ -208,16 +225,20 @@ class ClimbData {
         }
 
         var ni = nextClimbIndex;
-        if (ni >= 0 && distToNextClimb >= 0 && distToNextClimb <= APPROACH_WINDOW_M
-                && calibCount[ni] > 0) {
+        // distToNextClimb may be ≤ 0 when the odometer has rolled past an unconfirmed climb's start
+        // (e.g. the rider is off-route): we must still run the confirmation check here, so only the
+        // upper bound of the approach window is enforced.
+        if (ni >= 0 && distToNextClimb <= APPROACH_WINDOW_M && calibCount[ni] > 0) {
             var actual   = distM(lat, lon, calibLat[ni][0], calibLon[ni][0]);
             var expected = (climbStartDist[ni] + calibDist[ni][0]) - lastElapsedDistance;
             // Straight-line distance can never exceed the along-route distance on-route, so a
             // large excess means the rider has left the route.
             if (expected > 0 && actual > expected + OFFROUTE_MARGIN_M) { offRoute = true; }
-            // Reached the climb's first calibration point: align its start to current elapsed
+            // Reached the climb's first calibration point: confirm the rider is physically on the
+            // climb (so updateProgress may activate it) and align its start to the current elapsed
             // distance so the climb triggers at the right place despite GPS/odometer drift.
             if (actual <= APPROACH_SNAP_M) {
+                climbEntered[ni] = true;
                 climbStartDist[ni] = lastElapsedDistance - calibDist[ni][0];
             }
         }
