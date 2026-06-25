@@ -162,78 +162,60 @@ class ClimbProView extends Ui.DataField {
     // Active climb rendering
     // =========================================================================
 
+    // Mirrors drawNextClimbPreview's layout (header → name → centered profile → 3 stats →
+    // bottom line) but for the climb in progress: header reads "HUIDIGE KLIM", the profile carries
+    // a live progress marker + surface bar, the stats show remaining values, and the bottom line
+    // (where the preview shows "in X km") shows the pacing ghost.
     hidden function drawActiveClimb(dc, data) {
-
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ci = data.activeClimbIndex;
 
-        // =========================
-        // SAFE AREA (CRUCIAAL)
-        // =========================
-        var safeTop = 6;
-        var safeBottom = h - 10;
+        // Header (same slot as the next-climb page, text swapped)
+        dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "HUIDIGE KLIM", Gfx.TEXT_JUSTIFY_CENTER);
 
-        var topY = safeTop;
-
-        // profiel zone (niet te hoog / niet te laag)
-        var profileTop = safeTop + 18;
-        var profileBottom = safeBottom - 22;
-        var profileHeight = profileBottom - profileTop;
-
-        var statsY = safeBottom;
-
-        // =========================
-        // TITLE
-        // =========================
+        // Climb name
         var name = data.climbName[ci];
         if (name == null) {
             name = "Climb " + (ci + 1);
         }
-
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, topY, Gfx.FONT_XTINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.15).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
 
-        // =========================
-        // PROFILE
-        // =========================
-        drawProfile(dc, data, ci, 4,
-            profileTop.toNumber(),
-            w - 8,
-            profileHeight.toNumber()
-        );
+        // Profile (same geometry as the next-climb preview)
+        var profileTop = (h * 0.30).toNumber();
+        var profileHeight = (h * 0.35).toNumber();
+        var profileBottom = profileTop + profileHeight;
+        drawProfile(dc, data, ci, 8, profileTop, w - 16, profileHeight);
 
-        // Surface bar: 5px tall, 2px below the gradient profile bottom
-        drawSurfaceBar(dc, data, ci, 4, profileBottom.toNumber() + 2, w - 8);
+        // Surface bar: 5px tall, 2px below the profile (skipped if all segments are UNKNOWN)
+        drawSurfaceBar(dc, data, ci, 8, profileBottom + 2, w - 16);
 
-        // =========================
-        // PROGRESS MARKER
-        // =========================
+        // Progress marker on the profile
         var totalLen = data.climbLength[ci];
         if (totalLen > 0) {
-
             var progressPct = data.progressInClimb.toFloat() / totalLen.toFloat();
             if (progressPct > 1.0) { progressPct = 1.0; }
+            if (progressPct < 0.0) { progressPct = 0.0; }
 
-            var markerX = 4 + ((w - 8) * progressPct).toNumber();
-            // Clamp so the 2px marker stays within the profile area (right edge = 4 + (w-8) - 2).
+            var markerX = 8 + ((w - 16) * progressPct).toNumber();
+            // Clamp so the 2px marker stays within the profile (right edge = 8 + (w-16) - 2).
             var markerMax = w - 10;
             if (markerX > markerMax) { markerX = markerMax; }
 
             dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
-            dc.fillRectangle(markerX, profileTop.toNumber(), 2, profileBottom.toNumber() - profileTop.toNumber());
+            dc.fillRectangle(markerX, profileTop, 2, profileHeight);
         }
 
-        // =========================
-        // STATS (SAFE FIXED POS)
-        // =========================
+        // Stats row — same positions as the next-climb page, live values
+        var statsY = (h * 0.72).toNumber();
 
         var remaining = totalLen - data.progressInClimb;
         if (remaining < 0) { remaining = 0; }
 
         var remElev = 0;
         var cumDist = 0;
-
         for (var s = 0; s < data.segCount[ci]; s++) {
             cumDist += data.segDist[ci][s];
             if (cumDist > data.progressInClimb) {
@@ -245,47 +227,32 @@ class ClimbProView extends Ui.DataField {
         if (data.activeSegmentIndex >= 0 && data.activeSegmentIndex < data.segCount[ci]) {
             curGrad = data.segGradient[ci][data.activeSegmentIndex];
         }
-
-        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-
-        dc.drawText(32  , statsY,
-            Gfx.FONT_XTINY,
-            formatDist(remaining),
-            Gfx.TEXT_JUSTIFY_LEFT
-        );
-
-        dc.drawText(w / 2, statsY,
-            Gfx.FONT_XTINY,
-            remElev + "m↑",
-            Gfx.TEXT_JUSTIFY_CENTER
-        );
-
         var gradWhole = curGrad / 10;
         var gradFrac = curGrad % 10;
         if (gradFrac < 0) { gradFrac = -gradFrac; }
 
-        dc.drawText(w - 32, statsY,
-            Gfx.FONT_XTINY,
-            gradWhole + "." + gradFrac + "%",
-            Gfx.TEXT_JUSTIFY_RIGHT
-        );
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(32, statsY, Gfx.FONT_XTINY, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(w / 2, statsY, Gfx.FONT_XTINY, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
+            gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
-        // Pacing ghost: actual elapsed minus target time at current position.
+        // Bottom line (where the preview shows "in X km"): pacing ghost vs plan.
         if (data.hasTargets[ci] && data.climbStartTimerMs >= 0) {
             var target = data.targetSecondsAt();
             if (target >= 0) {
                 var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
                 var delta = (actual - target).toNumber();   // + = behind, - = ahead
-                var label;
+                var ghostY = (h * 0.88).toNumber();
                 if (delta > 0) {
-                    label = "+" + delta + "s";
                     dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+                    dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
+                        "+" + delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
                 } else {
-                    label = delta + "s";   // negative sign already included
                     dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+                    dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
+                        delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
                 }
-                dc.drawText(w / 2, profileTop.toNumber() - 2, Gfx.FONT_TINY, label,
-                        Gfx.TEXT_JUSTIFY_CENTER);
             }
         }
     }

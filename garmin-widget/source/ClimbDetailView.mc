@@ -19,6 +19,9 @@ class ClimbDetailView extends Ui.View {
 
     function getOriginalClimbIndex() { return originalClimbIndex; }
 
+    // Layout mirrors the datafield climb pages (name → centered profile → 3 stats → bottom line)
+    // using proportional positions, so nothing collides or runs off the round display. The bottom
+    // slot (where the datafield shows "in X km") carries the save/menu hint instead.
     function onUpdate(dc) {
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_BLACK);
         dc.clear();
@@ -28,35 +31,39 @@ class ClimbDetailView extends Ui.View {
         var data = App.getApp().climbData;
         var ci = climbIndex;
 
+        // Name (title)
         var name = data.climbName[ci];
         if (name == null) { name = "Climb " + (ci + 1); }
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, 6, Gfx.FONT_XTINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.15).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
 
-        var profileTop = 26;
-        var profileBottom = h - 30;
-        var profileH = profileBottom - profileTop;
+        // Profile (same geometry as the datafield climb pages)
+        var profileTop = (h * 0.30).toNumber();
+        var profileH = (h * 0.35).toNumber();
+        var profileBottom = profileTop + profileH;
         drawer.drawProfile(dc, data, ci, 8, profileTop, w - 16, profileH);
         drawer.drawSurfaceBar(dc, data, ci, 8, profileBottom + 2, w - 16);
 
-        var statsY = h - 22;
+        // Stats row
+        var statsY = (h * 0.72).toNumber();
         var grad = data.climbAvgGrad[ci];
         var gradFrac = grad % 10;
         if (gradFrac < 0) { gradFrac = -gradFrac; }
 
         dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(24, statsY, Gfx.FONT_XTINY,
+        dc.drawText(32, statsY, Gfx.FONT_XTINY,
             formatDist(data.climbLength[ci]), Gfx.TEXT_JUSTIFY_LEFT);
         dc.drawText(w / 2, statsY, Gfx.FONT_XTINY,
             data.climbElevGain[ci] + "m", Gfx.TEXT_JUSTIFY_CENTER);
-        dc.drawText(w - 24, statsY, Gfx.FONT_XTINY,
+        dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
             (grad / 10) + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
+        // Bottom line: save/menu hint (same slot as the datafield "in X km" line)
         var rId = data.routeId;
         if (rId != null) {
             if (climbSaved == null) { refreshClimbSaved(); }
             dc.setColor(climbSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, h - 8, Gfx.FONT_XTINY,
+            dc.drawText(w / 2, (h * 0.88).toNumber(), Gfx.FONT_XTINY,
                 (climbSaved ? "SELECT: Remove" : "SELECT: Save") + "  MENU: Actief",
                 Gfx.TEXT_JUSTIFY_CENTER);
         }
