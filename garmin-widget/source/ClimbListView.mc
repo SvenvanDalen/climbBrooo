@@ -71,9 +71,15 @@ class ClimbListView extends Ui.View {
         // Surface label single-char map: index 0-4 = A G D K M, 5 = ?
         var surfLabels = ["A", "G", "D", "K", "M"];
 
+        // Header count reflects only the climb/segment rows — the 2 action rows (save/delete +
+        // set-active) are navigable but are not climbs, so they must not inflate the count.
+        var contentCount = actionBase;
+        var headerPos = selectedIndex + 1;
+        if (headerPos > contentCount) { headerPos = contentCount; }  // clamp while on an action row
+
         dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 6, Gfx.FONT_XTINY,
-            "Climbs (" + (selectedIndex + 1) + "/" + totalItems + ")",
+            "Climbs (" + headerPos + "/" + contentCount + ")",
             Gfx.TEXT_JUSTIFY_CENTER);
 
         var startIdx = selectedIndex - 1;
