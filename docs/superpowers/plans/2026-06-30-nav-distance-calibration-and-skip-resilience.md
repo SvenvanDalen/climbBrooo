@@ -16,7 +16,7 @@
 - **Offline-first:** all watch matching works with no phone connection (payload incl. `rtl` is persisted under Storage `active_payload`).
 - **Scope:** only the climb datafield (`garmin/`) changes on the watch. No changes to `garmin-widget/`, `garmin-surface/`, radius mode, or the surface payload.
 - **Schema envelope has `"additionalProperties": false`** — a new top-level key must be added to `schema.json` before any example or builder output will validate.
-- **Run JVM tests with:** `android/gradlew.bat test` (Windows). Run a single class with `android/gradlew.bat test --tests <FQCN>`.
+- **Run JVM tests with:** `android/gradlew.bat test` (Windows). This is an Android module, so the `--tests` filter only works on the unit-test task: run a single class with `android/gradlew.bat :app:testDebugUnitTest --tests <FQCN>`.
 - **Monkey C tests** compile with `monkey-test.jungle` and run in the Connect IQ simulator (`monkeydo`); they have no headless harness, so plan steps note when a test can only be verified in the simulator.
 
 ---
@@ -819,7 +819,199 @@ git commit -m "test(protocol): wire-lockstep guard across schema/example/builder
 
 ---
 
-## Task 7: Pipeline — preflight gate + gated build
+## Task 7: Pipeline — Monkey C source guard (JVM, headless)
+
+**Files:**
+- Create: `android/app/src/main/java/nl/paree/climbpro/protocol/MonkeyCSourceGuard.java`
+- Test: `android/app/src/test/java/nl/paree/climbpro/protocol/MonkeyCSourceGuardTest.java`
+
+**Why:** `monkeyc` is not always installed, so the preflight's Monkey C *compile* step is often skipped. This guard runs in the JVM gate (always) and statically catches the two failures most likely to slip through review without the SDK: unbalanced braces/parens (a compile break) and a `(:test)` function missing `return true;` (a Monkey C test that silently does not pass).
+
+**Interfaces:**
+- Produces: pure `MonkeyCSourceGuard.bracesBalanced(String)` → boolean and `MonkeyCSourceGuard.testsWithoutReturnTrue(String)` → `List<String>` (offending function names); plus a JUnit test that unit-tests both on good/bad samples **and** runs them over the real `garmin*/source` and `garmin*/test` `.mc` files.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `MonkeyCSourceGuardTest.java`:
+
+```java
+package nl.paree.climbpro.protocol;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MonkeyCSourceGuardTest {
+
+    @Test
+    public void balanced_ignoresBracesInCommentsAndStrings() {
+        assertTrue(MonkeyCSourceGuard.bracesBalanced("function f() { var s = \"}{ ) (\"; }"));
+        assertTrue(MonkeyCSourceGuard.bracesBalanced("// } } }\nfunction f() { }"));
+        assertTrue(MonkeyCSourceGuard.bracesBalanced("/* { ( */ function f() { return 1; }"));
+    }
+
+    @Test
+    public void balanced_detectsMissingBrace() {
+        assertFalse(MonkeyCSourceGuard.bracesBalanced("function f() { return 1;"));
+        assertFalse(MonkeyCSourceGuard.bracesBalanced("function f( { }"));
+    }
+
+    @Test
+    public void testsWithoutReturnTrue_flagsMissing() {
+        String bad = "(:test)\nfunction t1(l) { Test.assertEqual(1,1); }\n"
+                   + "(:test)\nfunction t2(l) { return true; }\n";
+        List<String> missing = MonkeyCSourceGuard.testsWithoutReturnTrue(bad);
+        assertEquals(1, missing.size());
+        assertTrue(missing.contains("t1"));
+    }
+
+    @Test
+    public void realMonkeyCSourcesPassGuard() throws Exception {
+        File root = repoRoot();
+        List<File> files = new ArrayList<>();
+        String[] dirs = {
+            "garmin/source", "garmin/test",
+            "garmin-widget/source", "garmin-widget/test",
+            "garmin-surface/source", "garmin-surface/test",
+        };
+        for (String d : dirs) {
+            File dir = new File(root, d);
+            if (!dir.isDirectory()) { continue; }
+            File[] mc = dir.listFiles((f, n) -> n.endsWith(".mc"));
+            if (mc != null) { for (File f : mc) { files.add(f); } }
+        }
+        assertFalse("expected to find .mc files", files.isEmpty());
+        for (File f : files) {
+            String src = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+            assertTrue("unbalanced braces/parens in " + f, MonkeyCSourceGuard.bracesBalanced(src));
+            List<String> missing = MonkeyCSourceGuard.testsWithoutReturnTrue(src);
+            assertTrue("(:test) without 'return true' in " + f + ": " + missing, missing.isEmpty());
+        }
+    }
+
+    private static File repoRoot() {
+        File dir = new File("").getAbsoluteFile();
+        for (int i = 0; i < 8 && dir != null; i++) {
+            if (new File(dir, "protocol/schema.json").exists()) { return dir; }
+            dir = dir.getParentFile();
+        }
+        throw new IllegalStateException("repo root not found from " + new File("").getAbsolutePath());
+    }
+}
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `android/gradlew.bat :app:testDebugUnitTest --tests nl.paree.climbpro.protocol.MonkeyCSourceGuardTest`
+Expected: FAIL — `MonkeyCSourceGuard` does not exist (compile error).
+
+- [ ] **Step 3: Implement the guard**
+
+Create `MonkeyCSourceGuard.java`:
+
+```java
+package nl.paree.climbpro.protocol;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/** Headless static checks over Monkey C source (no SDK needed). */
+public final class MonkeyCSourceGuard {
+
+    private MonkeyCSourceGuard() {}
+
+    /** Replace // and /* *\/ comments and "..." strings with spaces so token counting is reliable. */
+    static String stripCommentsAndStrings(String src) {
+        StringBuilder out = new StringBuilder(src.length());
+        int n = src.length();
+        int i = 0;
+        while (i < n) {
+            char c = src.charAt(i);
+            char d = (i + 1 < n) ? src.charAt(i + 1) : '\0';
+            if (c == '/' && d == '/') {
+                while (i < n && src.charAt(i) != '\n') { i++; }
+            } else if (c == '/' && d == '*') {
+                i += 2;
+                while (i + 1 < n && !(src.charAt(i) == '*' && src.charAt(i + 1) == '/')) { i++; }
+                i += 2;
+            } else if (c == '"') {
+                i++;
+                while (i < n && src.charAt(i) != '"') {
+                    if (src.charAt(i) == '\\') { i++; }
+                    i++;
+                }
+                i++;
+            } else {
+                out.append(c);
+                i++;
+            }
+        }
+        return out.toString();
+    }
+
+    /** True when {} and () are balanced (ignoring comments/strings). */
+    static boolean bracesBalanced(String src) {
+        String s = stripCommentsAndStrings(src);
+        int curly = 0, paren = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '{') { curly++; }
+            else if (c == '}') { curly--; if (curly < 0) { return false; } }
+            else if (c == '(') { paren++; }
+            else if (c == ')') { paren--; if (paren < 0) { return false; } }
+        }
+        return curly == 0 && paren == 0;
+    }
+
+    private static final Pattern TEST_FN =
+            Pattern.compile("\\(:test\\)\\s*function\\s+(\\w+)");
+
+    /** Names of (:test) functions whose body lacks a `return true`. */
+    static List<String> testsWithoutReturnTrue(String src) {
+        String s = stripCommentsAndStrings(src);
+        List<String> missing = new ArrayList<>();
+        Matcher m = TEST_FN.matcher(s);
+        List<int[]> spans = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        while (m.find()) { spans.add(new int[]{ m.start(), m.end() }); names.add(m.group(1)); }
+        for (int k = 0; k < spans.size(); k++) {
+            int from = spans.get(k)[1];
+            int to = (k + 1 < spans.size()) ? spans.get(k + 1)[0] : s.length();
+            String body = s.substring(from, to);
+            if (!body.contains("return true")) { missing.add(names.get(k)); }
+        }
+        return missing;
+    }
+}
+```
+
+> Note: in the doc comment above, the block-comment terminator inside the prose is written `*\/` only to keep this Markdown code fence intact — when you create the real file, write it as the normal `*` + `/` sequence (the implementation in `stripCommentsAndStrings` already handles real `/* */` correctly).
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `android/gradlew.bat :app:testDebugUnitTest --tests nl.paree.climbpro.protocol.MonkeyCSourceGuardTest`
+Expected: PASS — sample-based checks pass and every real `.mc` file is balanced with all `(:test)` functions returning true. (If `realMonkeyCSourcesPassGuard` fails, a real Monkey C file has a genuine brace or missing-`return true` defect — fix the source, not the test.)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add android/app/src/main/java/nl/paree/climbpro/protocol/MonkeyCSourceGuard.java android/app/src/test/java/nl/paree/climbpro/protocol/MonkeyCSourceGuardTest.java
+git commit -m "test(pipeline): headless Monkey C source guard (braces + test-return)"
+```
+
+---
+
+## Task 8: Pipeline — preflight gate + gated build
 
 **Files:**
 - Create: `scripts/preflight.ps1`
@@ -842,7 +1034,7 @@ Create `scripts/preflight.ps1`:
 <#
   Preflight pipeline: runs every check that must pass BEFORE anything is built.
   Hard gates (failure → exit 1):
-    1. Android JVM tests (unit + ProtocolRoundTripTest + ProtocolLockstepGuardTest).
+    1. Android JVM tests (unit + ProtocolRoundTripTest + ProtocolLockstepGuardTest + MonkeyCSourceGuardTest).
     2. Monkey C compilation of all three Connect IQ apps (only if `monkeyc` is on PATH).
   Soft gates (warn, do not fail):
     - Monkey C unit tests (need the simulator; skipped when unavailable).
@@ -995,8 +1187,10 @@ pwsh -File scripts/preflight.ps1   # JVM tests + Monkey C compile (+ sim tests i
 pwsh -File scripts/build.ps1       # preflight, then APK + .prg only if it passed
 ```
 
-`preflight.ps1` exits non-zero if Android JVM tests (including `ProtocolRoundTripTest`
-and `ProtocolLockstepGuardTest`) or any Monkey C compilation fail. Monkey C unit
+`preflight.ps1` exits non-zero if Android JVM tests (including `ProtocolRoundTripTest`,
+`ProtocolLockstepGuardTest`, and `MonkeyCSourceGuardTest`) or any Monkey C compilation
+fail. The `MonkeyCSourceGuard` statically checks the Monkey C sources (brace/paren balance
+and `(:test)` return-true) so defects are caught even when the Connect IQ SDK is absent. Monkey C unit
 tests run when the Connect IQ simulator is available, otherwise they are reported
 as skipped. CI runs the JVM gate on every push (`.github/workflows/preflight.yml`).
 ```
@@ -1032,7 +1226,7 @@ Expected: `PREFLIGHT PASSED` (Monkey C steps may print `WARN: ... skipped` if th
 - [ ] **Run the full JVM suite explicitly**
 
 Run: `android/gradlew.bat test --console=plain`
-Expected: `BUILD SUCCESSFUL`; `ProtocolRoundTripTest`, `ProtocolLockstepGuardTest`, and `ClimbPayloadBuilderTest` all green.
+Expected: `BUILD SUCCESSFUL`; `ProtocolRoundTripTest`, `ProtocolLockstepGuardTest`, `MonkeyCSourceGuardTest`, and `ClimbPayloadBuilderTest` all green.
 
 - [ ] **Monkey C tests (simulator, if available)**
 
@@ -1043,6 +1237,6 @@ Expected: all `ClimbDataTest` cases pass, including the new `chooseAxis_*`, `cal
 
 ## Self-review notes (author)
 
-- **Spec coverage:** G1 (nav axis + trust) → Tasks 1,3,4; G2 (skip) → Task 5; immutable-anchor groundwork → Task 2; pipeline extra feature → Tasks 6,7. Wire lockstep constraint → Tasks 1 + 6.
+- **Spec coverage:** G1 (nav axis + trust) → Tasks 1,3,4; G2 (skip) → Task 5; immutable-anchor groundwork → Task 2; pipeline extra feature → Tasks 6 (wire lockstep guard), 7 (Monkey C source guard), 8 (preflight gate + gated build). Wire lockstep constraint → Tasks 1 + 6.
 - **Type consistency:** `climbStartDist0`/`climbEndDist0`, `navTrust`/`NAV_*`, `navMaxToDest`, `navDistThisTick`, `routeTotalLen`, `climbSkipped`, `SKIP_MARGIN_M`, `chooseAxis`, `resetNavTrust`, `backOnRoute`, `setAnchors`, `putRouteTotalLength` are each defined once and used with the same name/signature throughout.
 - **No placeholders:** every code step shows complete code; every run step states the exact command and expected result.
