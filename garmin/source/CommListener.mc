@@ -75,6 +75,7 @@ class PhoneMessageCallback {
         for (var i = 0; i < data.climbCount; i++) {
             data.calibIdx[i] = 0;
             data.climbEntered[i] = false;
+            data.climbSkipped[i] = false;
         }
         Sys.println("CommListener: payload parsed, " + data.climbCount + " climbs");
         try {

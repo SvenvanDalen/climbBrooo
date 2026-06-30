@@ -142,13 +142,20 @@ Garmin course ──► Connect IQ event ─────────────
 ### Activity-time (on watch, no phone needed)
 
 ```
-GPS tick ──► nearest-point search ──► hysteresis filter ──► progress update
-                                                                │
-                                                                ├──► within 30 m of next calib point? → snap progress (GPS drift correction)
-                                                                │
-                                                                ├──► within 50 m of climb start? → audio/vibration (once per climb)
-                                                                │
-                                                                └──► active segment changed? → redraw
+GPS tick ──► axis = chooseAxis(elapsedDistance, rtl − distanceToDestination)
+                    (trusted nav distance | odometer)
+                    │
+                    ├──► nearest-point search ──► hysteresis filter ──► progress update
+                    │                                                       │
+                    │                                                       ├──► within 30 m of next calib point?
+                    │                                                       │      • trusted nav → validate (revoke on disagreement)
+                    │                                                       │      • odometer    → snap progress (GPS drift correction)
+                    │                                                       │
+                    │                                                       ├──► never-entered climb ridden 1 km past end & back on route? → mark skipped, advance
+                    │                                                       │
+                    │                                                       ├──► within 50 m of climb start? → audio/vibration (once per climb)
+                    │                                                       │
+                    │                                                       └──► active segment changed? → redraw
 ```
 
 > **GPS calibration:** while on a climb, the datafield's `compute()` passes `currentLocation` to
@@ -174,6 +181,28 @@ GPS tick ──► nearest-point search ──► hysteresis filter ──► pr
 > approach/off-route check in `updateRouteMatch` runs whenever `distToNextClimb <= APPROACH_WINDOW_M`
 > (including ≤ 0, the unconfirmed-overrun case) so confirmation can still occur after an odometer
 > overrun. `climbEntered` is reset to false on every new payload (`CommListener`).
+
+### Navigation-anchored distance & skip resilience (2026-06-30)
+
+The climb datafield can match on Garmin's navigation course distance instead of
+the raw odometer. The phone ships `rtl` (route total length); the watch computes
+`navDist = rtl - Activity.Info.distanceToDestination` and uses it once a **length
+gate** (course length ≈ `rtl`) and ongoing **calibration agreement** (navDist
+within `NAV_DISAGREE_M` = 150 m of each calibration point's known absolute
+distance) confirm the loaded course is the selected route. Trust is one-way: a
+disagreement revokes it (`NAV_REVOKED`) and the watch falls back to the odometer
+drift-correction for the rest of the ride. While trusted, calibration points only
+*validate* (never shift) the climb anchor — so the watch keeps immutable
+`climbStartDist0`/`climbEndDist0` alongside the working (shiftable)
+`climbStartDist`/`climbEndDist`. `ClimbProView.compute` picks the axis via
+`ClimbData.chooseAxis(elapsed, navDist)`.
+
+A climb that is ridden `SKIP_MARGIN_M` (1 km) past its end without ever being
+entered — and with the rider confirmed back on the route (`backOnRoute`: trusted
+nav, or a later climb GPS-confirmed) — is flagged `climbSkipped` so progression
+continues to the next climb. `climbSkipped` resets on every payload (along with
+`climbEntered`, `calibIdx`, and `navTrust`). Radius mode is unaffected (`rtl` is
+route-mode only).
 
 ### Sync semantics
 

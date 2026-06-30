@@ -311,3 +311,62 @@ function calib_odometerMode_stillShifts(logger) {
     Test.assertEqual(d.climbStartDist[0], 1050);  // shifted: 1450 - 400 (existing behaviour)
     return true;
 }
+
+(:test)
+function skip_trustedNavPastEnd_marksSkippedAndAdvances(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 2;
+    d.setAnchors(0, 1000, 1800);   // climb 0
+    d.setAnchors(1, 4000, 5000);   // climb 1
+    d.calibCount[0] = 1; d.calibDist[0][0] = 0;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.navTrust = d.NAV_TRUSTED;            // on the course → back-on-route is implicit
+    d.updateProgress(2900);               // 1100 m past climb-0 end, never entered
+    Test.assertEqual(d.climbSkipped[0], true);
+    Test.assertEqual(d.nextClimbIndex, 1); // progression advanced to climb 1
+    return true;
+}
+
+(:test)
+function skip_odometerNoLaterConfirm_doesNotSkip(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 2;
+    d.setAnchors(0, 1000, 1800);
+    d.setAnchors(1, 4000, 5000);
+    d.calibCount[0] = 1; d.calibDist[0][0] = 0;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.navTrust = d.NAV_UNKNOWN;            // odometer mode, no later climb confirmed
+    d.updateProgress(2900);               // odometer past end, but might be off-route
+    Test.assertEqual(d.climbSkipped[0], false);
+    Test.assertEqual(d.nextClimbIndex, 0); // still waiting on climb 0
+    return true;
+}
+
+(:test)
+function skip_odometerLaterClimbEntered_skips(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 2;
+    d.setAnchors(0, 1000, 1800);
+    d.setAnchors(1, 4000, 5000);
+    d.calibCount[0] = 1; d.calibDist[0][0] = 0;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.navTrust = d.NAV_UNKNOWN;
+    d.climbEntered[1] = true;             // GPS confirmed we reached the later climb
+    d.updateProgress(2900);
+    Test.assertEqual(d.climbSkipped[0], true);
+    return true;
+}
+
+(:test)
+function skip_skippedClimbNotReactivated(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 2;
+    d.setAnchors(0, 1000, 1800);
+    d.setAnchors(1, 4000, 5000);
+    d.calibCount[0] = 1;
+    d.climbSkipped[0] = true;             // already abandoned
+    d.updateProgress(1500);               // axis back inside climb-0 range
+    Test.assertEqual(d.activeClimbIndex, -1);  // not reactivated
+    Test.assertEqual(d.nextClimbIndex, 1);
+    return true;
+}

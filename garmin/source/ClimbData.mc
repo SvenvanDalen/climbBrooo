@@ -85,6 +85,7 @@ class ClimbData {
     var navTrust = 0;             // NAV_UNKNOWN / NAV_TRUSTED / NAV_REVOKED
     var navMaxToDest = 0;         // largest distanceToDestination seen this ride (length gate)
     var navDistThisTick = -1;     // navDist for the current tick (-1 = not navigating); set by view
+    var climbSkipped;             // bool per climb: rider bypassed it; progression skips over it
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -107,9 +108,11 @@ class ClimbData {
         segTargetSec = new [MAX_CLIMBS];
         hasTargets = new [MAX_CLIMBS];
         climbEntered = new [MAX_CLIMBS];
+        climbSkipped = new [MAX_CLIMBS];
 
         for (var i = 0; i < MAX_CLIMBS; i++) {
             climbEntered[i] = false;
+            climbSkipped[i] = false;
             climbStartDist[i] = 0;
             climbEndDist[i] = 0;
             climbStartDist0[i] = 0;
@@ -208,10 +211,21 @@ class ClimbData {
         nextClimbIndex = -1;
 
         for (var i = 0; i < climbCount; i++) {
+            if (climbSkipped[i]) { continue; }   // already abandoned → next climb
+
             // A climb may only become active once GPS has confirmed the rider physically reached
             // its start (climbEntered). Climbs without calibration geometry have no GPS anchor, so
             // they fall back to odometer-only activation.
             var confirmed = climbEntered[i] || calibCount[i] == 0;
+
+            // Skip decision: never entered, has GPS geometry, ridden well past its end, and the
+            // rider is confirmed back on the route. Abandon it and continue with the next climb.
+            if (!confirmed && calibCount[i] > 0
+                    && elapsedDistance > climbEndDist0[i] + SKIP_MARGIN_M
+                    && backOnRoute(i)) {
+                climbSkipped[i] = true;
+                continue;
+            }
 
             if (confirmed && elapsedDistance > climbEndDist[i]) {
                 // Already finished this climb — look at the next one.
@@ -328,6 +342,17 @@ class ClimbData {
             }
             calibIdx[ci] = k + 1;
         }
+    }
+
+    // True when the rider is confirmed back on the route at/after climb i.
+    //  - trusted nav: the course distance proves we are on the route.
+    //  - odometer:    a later climb must be GPS-confirmed (entered) to avoid false-skip.
+    hidden function backOnRoute(i) {
+        if (navTrust == NAV_TRUSTED) { return true; }
+        for (var j = i + 1; j < climbCount; j++) {
+            if (climbEntered[j]) { return true; }
+        }
+        return false;
     }
 
     // Minimum distance (m) from (lat,lon) to any calibration point of climb ci; -1 if none.
