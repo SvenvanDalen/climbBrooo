@@ -58,6 +58,7 @@ public final class ClimbPayloadBuilder {
         payload.put("v",       SCHEMA_VERSION);
         payload.put("mode",    "route");
         payload.put("routeId", route.routeId);
+        putRouteTotalLength(payload, route);
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);
         List<Map<String, Object>> climbs = new ArrayList<>();
@@ -100,6 +101,7 @@ public final class ClimbPayloadBuilder {
         payload.put("v",       SCHEMA_VERSION);
         payload.put("mode",    "route");
         payload.put("routeId", route.routeId);
+        putRouteTotalLength(payload, route);
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);
         List<Map<String, Object>> climbs = new ArrayList<>(1);
@@ -108,6 +110,13 @@ public final class ClimbPayloadBuilder {
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec));
         payload.put("climbs", climbs);
         return mapper.writeValueAsBytes(payload);
+    }
+
+    /** Route-mode only: total route length (m), from the last cumulative distance. */
+    private static void putRouteTotalLength(Map<String, Object> payload, StoredRoute route) {
+        if (route.distances != null && route.distances.length > 0) {
+            payload.put("rtl", (int) Math.round(route.distances[route.distances.length - 1]));
+        }
     }
 
     /**

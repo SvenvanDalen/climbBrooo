@@ -168,4 +168,33 @@ public class ClimbPayloadBuilderTest {
         assertNotNull(surf);
         assertEquals(2, surf.get(3).asInt());
     }
+
+    @Test
+    public void routePayloadHasRtlEqualToLastDistance() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute r = buildRoute();
+        r.distances = new double[]{0, 1000, 5000, 8421.6};
+        JsonNode p = mapper.readTree(b.buildRoutePayload(r));
+        assertTrue("rtl present", p.has("rtl"));
+        assertEquals("rtl = rounded last distance", 8422, p.get("rtl").asInt());
+    }
+
+    @Test
+    public void radiusPayloadHasNoRtl() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        JsonNode p = mapper.readTree(b.buildRadiusPayload(buildRoute().climbs));
+        assertFalse("no rtl in radius mode", p.has("rtl"));
+    }
+
+    @Test
+    public void routePayloadOmitsRtlWhenNoDistances() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute r = buildRoute();
+        r.distances = null;
+        JsonNode p = mapper.readTree(b.buildRoutePayload(r));
+        assertFalse("rtl omitted when no distances", p.has("rtl"));
+    }
 }

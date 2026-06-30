@@ -52,6 +52,8 @@ Per-climb numeric data is packed into compact integer arrays (the watch slices t
 
 `surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
+- `rtl` (route mode, optional): total route length in whole metres. The watch derives distance-along-course = `rtl - Activity.Info.distanceToDestination` when the rider navigates the route as a Garmin course, giving a more accurate matching axis than the activity odometer (with a calibration-based trust check; falls back to the odometer otherwise).
+
 ## Byte budget
 
 Watch-side cap is **8 KB** (configurable; tuned in Phase 7 after measurement). Estimated cost of a representative payload, JSON-encoded with the schema as-is:

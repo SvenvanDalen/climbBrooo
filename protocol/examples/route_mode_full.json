@@ -3,6 +3,7 @@
   "mode": "route",
   "routeId": "demo_route_full",
   "name": "Full demo climb",
+  "rtl": 8000,
   "climbs": [
     {
       "sd": 1000,

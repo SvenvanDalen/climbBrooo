@@ -56,6 +56,8 @@ class PhoneMessageCallback {
         data.mode = msg.get("mode");
         data.routeId = msg.get("routeId");
         data.routeName = msg.get("name");
+        var rtl = msg.get("rtl");
+        data.routeTotalLen = (rtl != null && rtl instanceof Toybox.Lang.Number) ? rtl : 0;
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {

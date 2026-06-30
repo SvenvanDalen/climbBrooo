@@ -25,6 +25,7 @@ class ClimbData {
     var mode = "route";       // "route" or "radius"
     var routeId = null;
     var routeName = null;
+    var routeTotalLen = 0;    // route total length (m) from payload "rtl"; 0 = unknown
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;

@@ -29,6 +29,11 @@
       "type": "string",
       "maxLength": 32
     },
+    "rtl": {
+      "description": "Route mode (optional): total route length in whole metres. The watch derives distance-along-course as (rtl - Activity.Info.distanceToDestination) when navigating.",
+      "type": "integer",
+      "minimum": 1
+    },
     "surfSec": {
       "description": "Surface/named flat sections (route mode), sent in the lean surface-datafield payload (with climbs: []). Ordered by start distance.",
       "type": "array",
