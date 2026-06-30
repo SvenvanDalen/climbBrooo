@@ -156,6 +156,12 @@ De app deelt het GPX-bestand naar **Garmin Connect** (intent); Garmin Connect pu
 course naar de watch en jij start de navigatie vanaf de watch. De app pusht zelf geen
 courses.
 
+> **Tip — nauwkeurigere afstand:** navigeer de gekozen route als Garmin-course. Het
+> ClimbPro-datafield gebruikt dan de course-afstand (`rtl − distanceToDestination`) i.p.v.
+> de ruwe activiteits-odometer, met een kalibratie-controle die terugvalt op de odometer
+> als je een andere of geen course navigeert. Sla je per ongeluk een klim over, dan gaat
+> het datafield na ±1 km automatisch door met de volgende klim.
+
 ### 3.11 Routelijst sorteren & auto-refresh
 
 Sorteer op importtijd (oudste/nieuwste) of naam A–Z via het "Sorteer"-menu; de keuze

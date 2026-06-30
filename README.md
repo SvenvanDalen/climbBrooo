@@ -83,7 +83,7 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
-- **Start navigation** — hands the GPX to Garmin Connect, which pushes the course.
+- **Start navigation** — hands the GPX to Garmin Connect, which pushes the course. Navigating the selected route as a Garmin course also improves on-watch distance accuracy: the datafield matches on course distance (`rtl − distanceToDestination`) with a calibration trust check, falling back to the activity odometer when you are not navigating.
 - **Import a single route/climb from a GPX file**.
 - **Sort the route library** (import time or name); auto-refreshes after a Strava sync.
 - **Estimated climb time** — per-climb / per-segment, from your FTP + weights, with
@@ -125,7 +125,11 @@ Full step-by-step (prerequisites, keys, sideloading, troubleshooting) is in
 **[HANDLEIDING.md](HANDLEIDING.md)**.
 
 ```powershell
-# Android companion app
+# Preflight gate (recommended): runs all checks, then builds only if they pass
+pwsh -File scripts\preflight.ps1     # JVM tests + Monkey C compile (+ sim tests if available)
+pwsh -File scripts\build.ps1         # preflight, then APK + .prg artefacts
+
+# Android companion app (direct)
 cd android
 .\gradlew.bat assembleDebug          # build debug APK
 .\gradlew.bat test                   # run JVM unit tests

@@ -36,6 +36,22 @@ The repository is scaffolded but not yet buildable end-to-end. A few steps need 
    ```
 5. **Run in the simulator**: launch the Connect IQ Simulator from the SDK; load `ClimbPro.prg`; pick the Forerunner 255 Music device profile.
 
+## Preflight pipeline (build gate)
+
+Run all checks before building any artefact:
+
+```
+pwsh -File scripts/preflight.ps1   # JVM tests + Monkey C compile (+ sim tests if available)
+pwsh -File scripts/build.ps1       # preflight, then APK + .prg only if it passed
+```
+
+`preflight.ps1` exits non-zero if Android JVM tests (including `ProtocolRoundTripTest`,
+`ProtocolLockstepGuardTest`, and `MonkeyCSourceGuardTest`) or any Monkey C compilation
+fail. The `MonkeyCSourceGuard` statically checks the Monkey C sources (brace/paren balance
+and `(:test)` return-true) so defects are caught even when the Connect IQ SDK is absent.
+Monkey C unit tests run when the simulator is available, otherwise they are reported as
+skipped. CI runs the JVM gate on every push (`.github/workflows/preflight.yml`).
+
 ## Strava API registration
 
 Strava integration (Phase 3) needs an OAuth client registered with Strava:
