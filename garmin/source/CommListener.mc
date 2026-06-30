@@ -89,8 +89,7 @@ class PhoneMessageCallback {
         }
 
         // Short keys (v3 format)
-        data.climbStartDist[idx] = getInt(climbDict, "sd",  0);
-        data.climbEndDist[idx]   = getInt(climbDict, "ed",  0);
+        data.setAnchors(idx, getInt(climbDict, "sd", 0), getInt(climbDict, "ed", 0));
         data.climbLength[idx]    = getInt(climbDict, "len", 0);
         data.climbElevGain[idx]  = getInt(climbDict, "eg",  0);
         data.climbAvgGrad[idx]   = getInt(climbDict, "ag",  0);

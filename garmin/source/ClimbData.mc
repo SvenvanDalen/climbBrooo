@@ -29,8 +29,10 @@ class ClimbData {
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;
-    var climbStartDist;   // route mode: start distance along route (m)
-    var climbEndDist;     // route mode: end distance along route (m)
+    var climbStartDist;   // route mode: start distance along route (m) — working value (may be shifted)
+    var climbEndDist;     // route mode: end distance along route (m) — working value
+    var climbStartDist0;  // immutable start anchor (never shifted) — absolute route distance
+    var climbEndDist0;    // immutable end anchor (never shifted)
     var climbLength;      // climb length (m)
     var climbElevGain;    // elevation gain (m)
     var climbAvgGrad;     // avg gradient fixed-point (pct×10)
@@ -73,6 +75,8 @@ class ClimbData {
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
         climbEndDist = new [MAX_CLIMBS];
+        climbStartDist0 = new [MAX_CLIMBS];
+        climbEndDist0 = new [MAX_CLIMBS];
         climbLength = new [MAX_CLIMBS];
         climbElevGain = new [MAX_CLIMBS];
         climbAvgGrad = new [MAX_CLIMBS];
@@ -94,6 +98,8 @@ class ClimbData {
             climbEntered[i] = false;
             climbStartDist[i] = 0;
             climbEndDist[i] = 0;
+            climbStartDist0[i] = 0;
+            climbEndDist0[i] = 0;
             climbLength[i] = 0;
             climbElevGain[i] = 0;
             climbAvgGrad[i] = 0;
@@ -137,6 +143,14 @@ class ClimbData {
                 calibLon[i][k]  = 0.0f;
             }
         }
+    }
+
+    // Sets both the working values and the immutable anchors for a climb.
+    function setAnchors(i, startDist, endDist) {
+        climbStartDist[i]  = startDist;
+        climbEndDist[i]    = endDist;
+        climbStartDist0[i] = startDist;
+        climbEndDist0[i]   = endDist;
     }
 
     /**

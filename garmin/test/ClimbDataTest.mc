@@ -211,3 +211,18 @@ function updateRouteMatch_onClimbNearCalib_noOffRoute(logger) {
     Test.assert(!d.offRoute);
     return true;
 }
+
+(:test)
+function anchors_mirrorStartEndOnParse(logger) {
+    var d = new ClimbData();
+    d.climbCount = 1;
+    d.setAnchors(0, 1000, 1800);   // helper sets both working + immutable anchors
+    Test.assertEqual(d.climbStartDist[0], 1000);
+    Test.assertEqual(d.climbEndDist[0], 1800);
+    Test.assertEqual(d.climbStartDist0[0], 1000);
+    Test.assertEqual(d.climbEndDist0[0], 1800);
+    // Shifting the working value must not change the immutable anchor.
+    d.climbStartDist[0] = 950;
+    Test.assertEqual(d.climbStartDist0[0], 1000);
+    return true;
+}
