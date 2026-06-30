@@ -260,3 +260,54 @@ function chooseAxis_lengthGateFail_staysOdometer(logger) {
     Test.assertEqual(axis, 50);        // falls back to odometer
     return true;
 }
+
+(:test)
+function calib_agreementWithinTol_keepsTrusted(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 1;
+    d.setAnchors(0, 1000, 1800);
+    d.segCount[0] = 2; d.segDist[0][0] = 400; d.segDist[0][1] = 400;
+    d.calibCount[0] = 1; d.calibDist[0][0] = 400;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.navTrust = d.NAV_TRUSTED;
+    d.activeClimbIndex = 0;
+    d.navDistThisTick = 1400;            // absCalib = 1000 + 400 = 1400 → agree
+    d.checkCalibration(52.0f, 5.0f);     // within snap radius
+    Test.assertEqual(d.navTrust, d.NAV_TRUSTED);
+    Test.assertEqual(d.climbStartDist0[0], 1000);   // anchor untouched
+    Test.assertEqual(d.climbStartDist[0], 1000);    // NOT shifted while trusted
+    return true;
+}
+
+(:test)
+function calib_disagreementRevokesTrust(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 1;
+    d.setAnchors(0, 1000, 1800);
+    d.segCount[0] = 2; d.segDist[0][0] = 400; d.segDist[0][1] = 400;
+    d.calibCount[0] = 1; d.calibDist[0][0] = 400;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.navTrust = d.NAV_TRUSTED;
+    d.activeClimbIndex = 0;
+    d.navDistThisTick = 1700;            // absCalib 1400, off by 300 > 150 → revoke
+    d.checkCalibration(52.0f, 5.0f);
+    Test.assertEqual(d.navTrust, d.NAV_REVOKED);
+    return true;
+}
+
+(:test)
+function calib_odometerMode_stillShifts(logger) {
+    var d = new ClimbData();
+    d.payloadReceived = true; d.mode = "route"; d.climbCount = 1;
+    d.setAnchors(0, 1000, 1800);
+    d.segCount[0] = 2; d.segDist[0][0] = 400; d.segDist[0][1] = 400;
+    d.calibCount[0] = 1; d.calibDist[0][0] = 400;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.navTrust = d.NAV_UNKNOWN;          // odometer mode
+    d.activeClimbIndex = 0;
+    d.lastElapsedDistance = 1450;        // GPS says we're at the 400 m calib point
+    d.checkCalibration(52.0f, 5.0f);
+    Test.assertEqual(d.progressInClimb, 400);
+    Test.assertEqual(d.climbStartDist[0], 1050);  // shifted: 1450 - 400 (existing behaviour)
+    return true;
+}

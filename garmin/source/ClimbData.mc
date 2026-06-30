@@ -292,7 +292,9 @@ class ClimbData {
             // distance so the climb triggers at the right place despite GPS/odometer drift.
             if (actual <= APPROACH_SNAP_M) {
                 climbEntered[ni] = true;
-                climbStartDist[ni] = lastElapsedDistance - calibDist[ni][0];
+                if (navTrust != NAV_TRUSTED) {
+                    climbStartDist[ni] = lastElapsedDistance - calibDist[ni][0];
+                }
             }
         }
     }
@@ -307,12 +309,24 @@ class ClimbData {
 
         var dm = distM(lat, lon, calibLat[ci][k], calibLon[ci][k]);
         if (dm < CALIB_SNAP_M) {
-            // Shift climbStartDist so the NEXT updateProgress() call produces the correct progress.
-            // GPS says we are at lastElapsedDistance; we know we're really at calibDist[ci][k].
-            climbStartDist[ci] = lastElapsedDistance - calibDist[ci][k];
-            progressInClimb    = calibDist[ci][k];
+            if (navTrust == NAV_TRUSTED) {
+                // Trusted nav distance is already absolute route distance — validate it against
+                // the known absolute distance of this calibration point; do NOT shift the anchor.
+                var absCalib = climbStartDist0[ci] + calibDist[ci][k];
+                var diff = navDistThisTick - absCalib;
+                if (diff < 0) { diff = -diff; }
+                if (navDistThisTick >= 0 && diff > NAV_DISAGREE_M) {
+                    navTrust = NAV_REVOKED;
+                }
+            } else {
+                // Odometer mode: correct drift by shifting the working start anchor so the NEXT
+                // updateProgress() produces the correct progress. GPS says we are at
+                // lastElapsedDistance; we know we're really at calibDist[ci][k].
+                climbStartDist[ci] = lastElapsedDistance - calibDist[ci][k];
+                progressInClimb    = calibDist[ci][k];
+                updateCurrentSegment();
+            }
             calibIdx[ci] = k + 1;
-            updateCurrentSegment();
         }
     }
 
