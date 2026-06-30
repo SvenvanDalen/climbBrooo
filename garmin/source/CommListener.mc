@@ -71,6 +71,7 @@ class PhoneMessageCallback {
         }
 
         data.payloadReceived = true;
+        data.resetNavTrust();
         for (var i = 0; i < data.climbCount; i++) {
             data.calibIdx[i] = 0;
             data.climbEntered[i] = false;

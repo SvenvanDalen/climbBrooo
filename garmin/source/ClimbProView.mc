@@ -83,7 +83,20 @@ class ClimbProView extends Ui.DataField {
                 ? info.timerTime : 0;
         lastGhostTimerMs = timerMs;
 
-        data.updateProgress(elapsed);
+        // Navigation-anchored distance: when the route is loaded as a Garmin course,
+        // distance-along-course (rtl - distanceToDestination) is a more accurate axis
+        // than the raw odometer. chooseAxis() gates it behind a length + calibration
+        // trust check, falling back to the odometer otherwise.
+        var navDist = -1;
+        if (data.routeTotalLen > 0
+                && info has :distanceToDestination && info.distanceToDestination != null) {
+            navDist = data.routeTotalLen - info.distanceToDestination.toNumber();
+            if (navDist < 0) { navDist = 0; }
+        }
+        var axis = data.chooseAxis(elapsed, navDist);
+        data.navDistThisTick = navDist;
+
+        data.updateProgress(axis);
 
         // GPS↔route coordinate matching every tick: snaps progress on a climb, pre-aligns
         // and watches for divergence from ~1 km before a climb, and sets data.offRoute.

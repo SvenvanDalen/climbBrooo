@@ -20,6 +20,17 @@ class ClimbData {
     const OFFROUTE_ON_M     = 100;  // on-climb: off-route if beyond this from every calib point
     const OFFROUTE_MARGIN_M = 300;  // approach: off-route if straight-line exceeds along-route remaining by this
 
+    // Navigation-distance trust
+    const NAV_LEN_TOL_M   = 500;   // length-gate tolerance floor (m)
+    const NAV_LEN_TOL_PCT = 10;    // length-gate tolerance as % of routeTotalLen
+    const NAV_DISAGREE_M  = 150;   // nav-vs-calib disagreement that revokes trust (m)
+    const NAV_UNKNOWN = 0;
+    const NAV_TRUSTED = 1;
+    const NAV_REVOKED = 2;
+
+    // Skip resilience
+    const SKIP_MARGIN_M = 1000;   // ride this far past a climb's end (m) before it may be skipped
+
     // Payload state
     var payloadReceived = false;
     var mode = "route";       // "route" or "radius"
@@ -71,6 +82,9 @@ class ClimbData {
     var climbEntered;              // bool per climb: GPS has confirmed the rider physically reached
                                    // this climb's start. A climb may not become active until this is
                                    // set (climbs without calibration geometry fall back to odometer).
+    var navTrust = 0;             // NAV_UNKNOWN / NAV_TRUSTED / NAV_REVOKED
+    var navMaxToDest = 0;         // largest distanceToDestination seen this ride (length gate)
+    var navDistThisTick = -1;     // navDist for the current tick (-1 = not navigating); set by view
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -143,6 +157,30 @@ class ClimbData {
                 calibLon[i][k]  = 0.0f;
             }
         }
+    }
+
+    function resetNavTrust() {
+        navTrust = NAV_UNKNOWN;
+        navMaxToDest = 0;
+    }
+
+    // Returns the distance (m) to match progress on this tick.
+    //   navDist < 0  → not navigating → odometer.
+    //   navTrust TRUSTED → navDist; else odometer (evaluating the length gate while UNKNOWN).
+    function chooseAxis(elapsed, navDist) {
+        if (navDist < 0 || routeTotalLen <= 0) {
+            return elapsed;
+        }
+        if (navTrust == NAV_UNKNOWN) {
+            var distToDest = routeTotalLen - navDist;   // == info.distanceToDestination
+            if (distToDest > navMaxToDest) { navMaxToDest = distToDest; }
+            var tol = (routeTotalLen * NAV_LEN_TOL_PCT) / 100;
+            if (tol < NAV_LEN_TOL_M) { tol = NAV_LEN_TOL_M; }
+            if (navMaxToDest >= routeTotalLen - tol) {
+                navTrust = NAV_TRUSTED;
+            }
+        }
+        return (navTrust == NAV_TRUSTED) ? navDist : elapsed;
     }
 
     // Sets both the working values and the immutable anchors for a climb.

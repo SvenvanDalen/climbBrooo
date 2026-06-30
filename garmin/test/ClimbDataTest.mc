@@ -226,3 +226,37 @@ function anchors_mirrorStartEndOnParse(logger) {
     Test.assertEqual(d.climbStartDist0[0], 1000);
     return true;
 }
+
+(:test)
+function chooseAxis_notNavigating_returnsOdometer(logger) {
+    var d = new ClimbData();
+    d.routeTotalLen = 8000;
+    d.resetNavTrust();
+    Test.assertEqual(d.chooseAxis(1234, -1), 1234); // navDist < 0 → odometer
+    return true;
+}
+
+(:test)
+function chooseAxis_lengthGatePass_returnsNavDist(logger) {
+    var d = new ClimbData();
+    d.routeTotalLen = 8000;
+    d.resetNavTrust();
+    // distanceToDestination ~ full route at start → navMaxToDest within tolerance.
+    // navDist = rtl - distToDest = 8000 - 7900 = 100; distToDest 7900 within 10% of 8000.
+    var axis = d.chooseAxis(50, 100);
+    Test.assertEqual(d.navTrust, d.NAV_TRUSTED);
+    Test.assertEqual(axis, 100);
+    return true;
+}
+
+(:test)
+function chooseAxis_lengthGateFail_staysOdometer(logger) {
+    var d = new ClimbData();
+    d.routeTotalLen = 20000;          // our route is 20 km...
+    d.resetNavTrust();
+    // ...but the navigated course is only ~8 km: distToDest peaks near 8000.
+    var axis = d.chooseAxis(50, 12000); // navDist = 20000-8000; distToDest=8000 « 20000-tol
+    Test.assertEqual(d.navTrust, d.NAV_UNKNOWN);
+    Test.assertEqual(axis, 50);        // falls back to odometer
+    return true;
+}
