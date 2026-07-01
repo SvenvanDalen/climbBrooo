@@ -228,6 +228,55 @@ function compute_entersThenLeavesClimb_setsSummary_thenRenders(logger) {
     return true;
 }
 
+// =========================== navigation check (nav axis) ====================
+// End-to-end proof that when the handed-off route is loaded as a Garmin course, the
+// datafield trusts the along-course distance and matches climbs on it. The payload's
+// rtl and the shared GPX come from the same route geometry, so the course length lines
+// up with rtl and the length-gate engages.
+
+// A single odometer-activated climb (no calib) on an 8 km route.
+function navRoutePayload() {
+    return {
+        "v" => 3, "mode" => "route", "routeId" => "nav", "name" => "NavRoute", "rtl" => 8000,
+        "climbs" => [
+            { "sd" => 1000, "ed" => 3000, "len" => 2000, "eg" => 80, "ag" => 40,
+              "segs" => [500, 20, 40, 1, 500, 20, 40, 1, 500, 20, 40, 1, 500, 20, 40, 1] }
+        ]
+    };
+}
+
+(:test)
+function compute_navCourseMatchesRoute_trustsNavAxis(logger) {
+    var d = viewData();
+    new PhoneMessageCallback().onMessage(navRoutePayload());
+    var v = new ClimbProView();
+
+    // Tick near the start: distanceToDestination ~ full route length → length gate passes.
+    v.compute(new FakeInfo(50, 10000, 7900, null) as Activity.Info);
+    Test.assertEqual(d.navTrust, d.NAV_TRUSTED);
+
+    // Later tick: course says 2000 m done. Even with a stale odometer (50), progress
+    // follows the trusted nav axis → we are on the climb at [1000,3000].
+    v.compute(new FakeInfo(50, 20000, 6000, null) as Activity.Info);
+    Test.assertEqual(d.lastElapsedDistance, 2000);
+    Test.assertEqual(d.activeClimbIndex, 0);
+    return true;
+}
+
+(:test)
+function compute_navCourseWrongLength_staysOnOdometer(logger) {
+    var d = viewData();
+    new PhoneMessageCallback().onMessage(navRoutePayload());   // our route is 8 km
+    var v = new ClimbProView();
+
+    // A different/shorter course is loaded: distanceToDestination never approaches 8 km,
+    // so the length gate never trusts it and progress stays on the odometer.
+    v.compute(new FakeInfo(1500, 10000, 4000, null) as Activity.Info);
+    Test.assertEqual(d.navTrust, d.NAV_UNKNOWN);
+    Test.assertEqual(d.lastElapsedDistance, 1500);   // odometer axis, not nav
+    return true;
+}
+
 // =========================== App lifecycle smoke ============================
 
 (:test)
