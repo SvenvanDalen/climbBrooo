@@ -448,13 +448,20 @@ public final class RouteDetailActivity extends AppCompatActivity {
     }
 
     private void shareToGarminConnect() {
-        Intent share = new Intent(Intent.ACTION_SEND);
-        share.setType("application/gpx+xml");
-        share.putExtra(Intent.EXTRA_SUBJECT, "ClimbPro route");
-        share.setPackage("com.garmin.android.apps.connectmobile");
-        if (getPackageManager().resolveActivity(share, 0) == null) {
-            share.setPackage(null);
+        StoredRoute route = viewModel.route().getValue();
+        if (route == null || route.lats == null || route.lats.length == 0) {
+            Toast.makeText(this, "Route heeft nog geen geometrie om te delen",
+                    Toast.LENGTH_SHORT).show();
+            return;
         }
-        startActivity(Intent.createChooser(share, "Open in Garmin Connect"));
+        try {
+            java.io.File gpx = GarminHandoff.writeRouteGpx(this, route);
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", gpx);
+            Intent share = GarminHandoff.buildShareIntent(this, uri);
+            startActivity(Intent.createChooser(share, "Open in Garmin Connect"));
+        } catch (java.io.IOException e) {
+            Toast.makeText(this, "Kon GPX niet aanmaken", Toast.LENGTH_SHORT).show();
+        }
     }
 }
