@@ -11,8 +11,12 @@ pwsh -File tools/run-monkeyc-tests.ps1
 ```
 
 This builds each module's `monkey-test.jungle` with `--unit-test` and runs it in
-the Connect IQ simulator on the `fr255m` profile. **Current status: 93 tests
-pass (garmin 45, garmin-widget 30, garmin-surface 18), 0 failures, 0 errors.**
+the Connect IQ simulator on the `fr255m` profile. **Current status: 128 tests
+pass (garmin 69, garmin-widget 33, garmin-surface 26), 0 failures, 0 errors.**
+
+> A functionality-oriented view of the same coverage (each product feature +
+> how tightly it is tested) lives in
+> [`MONKEYC_FUNCTIONALITEITEN.md`](MONKEYC_FUNCTIONALITEITEN.md).
 
 > There is no line-coverage instrument in the Connect IQ SDK. Coverage below is
 > tracked by **function inventory** — every function in `*/source/*.mc` mapped to

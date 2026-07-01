@@ -93,6 +93,42 @@ function targetSecondsAt_intoSecondSegment_accumulates(logger) {
     return true;
 }
 
+(:test)
+function targetSecondsAt_atSegmentBoundary_returnsSegmentSum(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 400;          // exactly at the end of seg0 -> full 80, none of seg1
+    Test.assertEqual(d.targetSecondsAt().toNumber(), 80);
+    return true;
+}
+
+(:test)
+function targetSecondsAt_pastLastSegment_clampsToTotal(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 5000;         // way past the 800 m climb -> clamps to 80 + 90
+    Test.assertEqual(d.targetSecondsAt().toNumber(), 170);
+    return true;
+}
+
+(:test)
+function targetSecondsAt_noTargets_returnsNegative(logger) {
+    var d = viewData();
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route", "routeId" => "nt", "name" => "NoTargets",
+        "climbs" => [
+            { "sd" => 1000, "ed" => 1800, "len" => 800, "eg" => 60, "ag" => 75,
+              "segs" => [400, 30, 75, 3, 400, 30, 75, 3] }   // no tsec
+        ]
+    });
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 200;
+    Test.assertEqual(d.targetSecondsAt(), -1);   // hasTargets false -> -1
+    return true;
+}
+
 // =========================== onUpdate() smoke ===============================
 
 (:test)

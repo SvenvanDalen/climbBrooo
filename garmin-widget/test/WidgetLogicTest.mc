@@ -242,6 +242,41 @@ function widgetData_checkCalibration_noActiveClimb_returns(logger) {
     return true;
 }
 
+// More starred flats than MAX_FLAT_STARRED are truncated to the array bound.
+(:test)
+function widgetData_parseFlatStarred_exceedsMax_caps(logger) {
+    var d = wData();
+    var n = d.MAX_FLAT_STARRED + 6;
+    var fss = new [n];
+    for (var i = 0; i < n; i++) {
+        fss[i] = { "s" => i * 100, "e" => i * 100 + 50, "t" => 1 };
+    }
+    d.parseFlatStarred(fss);
+    Test.assertEqual(d.flatStarredCount, d.MAX_FLAT_STARRED);
+    return true;
+}
+
+// updateProgress records the odometer but activates nothing before a payload arrives.
+(:test)
+function widgetData_updateProgress_noPayload_earlyReturn(logger) {
+    var d = wData();                              // payloadReceived false
+    d.updateProgress(1500);
+    Test.assertEqual(d.lastElapsedDistance, 1500);
+    Test.assertEqual(d.activeClimbIndex, -1);
+    return true;
+}
+
+// A non-array fss clears any stale starred flats.
+(:test)
+function widgetData_parseFlatStarred_nonArray_clears(logger) {
+    var d = wData();
+    d.parseFlatStarred([ { "s" => 100, "e" => 200, "t" => 1 } ]);
+    Test.assertEqual(d.flatStarredCount, 1);
+    d.parseFlatStarred("nope");
+    Test.assertEqual(d.flatStarredCount, 0);
+    return true;
+}
+
 // ============================ App lifecycle ================================
 
 (:test)

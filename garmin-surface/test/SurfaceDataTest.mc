@@ -88,3 +88,94 @@ function surface_correctElapsed_snapsToNearestCheckpoint(logger) {
     Test.assertEqual(corrected, 485);
     return true;
 }
+
+// ===========================================================================
+// Edge cases
+// ===========================================================================
+
+// A payload without a surfSec array is not a surface payload → parse returns false.
+(:test)
+function surface_parse_missingSurfSec_returnsFalse(logger) {
+    var d = new SurfaceData();
+    Test.assert(!d.parse({ "v" => 3, "mode" => "route" }));
+    Test.assertEqual(d.payloadReceived, false);
+    return true;
+}
+
+// surfSec present but not an array → rejected.
+(:test)
+function surface_parse_surfSecNotArray_returnsFalse(logger) {
+    var d = new SurfaceData();
+    Test.assert(!d.parse({ "v" => 3, "surfSec" => "nope" }));
+    return true;
+}
+
+// A surface type outside 0..5 defaults to UNKNOWN (5).
+(:test)
+function surface_parse_typeOutOfRange_defaultsUnknown(logger) {
+    var d = new SurfaceData();
+    d.parse({ "v" => 3, "surfSec" => [ { "s" => 0, "e" => 400, "t" => 9 } ] });
+    Test.assertEqual(d.secType[0], 5);
+    return true;
+}
+
+// More sections than MAX_SECTIONS are truncated to the array bound.
+(:test)
+function surface_parse_moreSectionsThanMax_truncates(logger) {
+    var d = new SurfaceData();
+    var n = d.MAX_SECTIONS + 5;
+    var secs = new [n];
+    for (var i = 0; i < n; i++) {
+        secs[i] = { "s" => i * 100, "e" => i * 100 + 50, "t" => 1 };
+    }
+    d.parse({ "v" => 3, "surfSec" => secs });
+    Test.assertEqual(d.count, d.MAX_SECTIONS);
+    return true;
+}
+
+// Elapsed exactly at a section's end is treated as past it (end is exclusive).
+(:test)
+function surface_updateProgress_atSectionEnd_notCurrent(logger) {
+    var d = new SurfaceData();
+    d.parse({ "v" => 3, "surfSec" => [ { "s" => 1000, "e" => 2000, "t" => 1 } ] });
+    d.updateProgress(2000);
+    Test.assertEqual(d.currentIdx, -1);
+    Test.assertEqual(d.nextIdx, -1);
+    return true;
+}
+
+// correctElapsed with no checkpoints applies only the stored offset (0 here).
+(:test)
+function surface_correctElapsed_noCheckpoints_returnsElapsed(logger) {
+    var d = new SurfaceData();
+    d.parse({ "v" => 3, "surfSec" => [ { "s" => 0, "e" => 1000, "t" => 1 } ] });
+    Test.assertEqual(d.correctElapsed(480, [52.0, 5.0]), 480);   // totalCp 0
+    return true;
+}
+
+// With multiple checkpoints, correctElapsed snaps to the one the rider is actually near.
+(:test)
+function surface_correctElapsed_picksNearestCheckpoint(logger) {
+    var d = new SurfaceData();
+    d.parse({ "v" => 3, "surfSec" => [
+        { "s" => 0, "e" => 1000, "t" => 1,
+          "cp" => [200, 5200000, 500000, 800, 5201000, 500000] }  // cp0@(52.0,5.0) cp1@(52.01,5.0)
+    ] });
+    // GPS on cp1 (dist 800); odometer 760 → raw 40, smoothed 10, corrected 770.
+    var corrected = d.correctElapsed(760, [52.01, 5.0]);
+    Test.assertEqual(d.distanceOffset, 10);
+    Test.assertEqual(corrected, 770);
+    return true;
+}
+
+// refineSubPieceByGPS on a section that carries no checkpoints is a no-op.
+(:test)
+function surface_refine_sectionNoCheckpoints_noOp(logger) {
+    var d = new SurfaceData();
+    d.parse({ "v" => 3, "surfSec" => [ { "s" => 0, "e" => 1000, "t" => 1 } ] });  // no cp
+    d.updateProgress(100);
+    var before = d.currentSubPiece;
+    d.refineSubPieceByGPS([52.0, 5.0]);
+    Test.assertEqual(d.currentSubPiece, before);   // unchanged
+    return true;
+}

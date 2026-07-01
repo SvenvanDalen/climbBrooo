@@ -370,3 +370,166 @@ function skip_skippedClimbNotReactivated(logger) {
     Test.assertEqual(d.nextClimbIndex, 1);
     return true;
 }
+
+// ===========================================================================
+// Edge cases
+// ===========================================================================
+
+// A single odometer-activated climb (calibCount 0 → confirmed via odometer fallback).
+function edgeClimb() {
+    var d = new ClimbData();
+    d.payloadReceived = true;
+    d.mode = "route";
+    d.climbCount = 1;
+    d.setAnchors(0, 1000, 1800);
+    d.segCount[0] = 2; d.segDist[0][0] = 400; d.segDist[0][1] = 400;
+    return d;
+}
+
+// chooseAxis: navDist >= 0 but no known route length → cannot gate → odometer.
+(:test)
+function chooseAxis_noRouteLen_returnsOdometer(logger) {
+    var d = new ClimbData();
+    d.routeTotalLen = 0;                   // unknown
+    d.resetNavTrust();
+    Test.assertEqual(d.chooseAxis(500, 100), 500);
+    Test.assertEqual(d.navTrust, d.NAV_UNKNOWN);
+    return true;
+}
+
+// chooseAxis: once trust is revoked it never returns the nav axis again.
+(:test)
+function chooseAxis_revokedTrust_returnsOdometer(logger) {
+    var d = new ClimbData();
+    d.routeTotalLen = 8000;
+    d.resetNavTrust();
+    d.navTrust = d.NAV_REVOKED;
+    Test.assertEqual(d.chooseAxis(500, 100), 500);   // navDist ignored
+    Test.assertEqual(d.navTrust, d.NAV_REVOKED);     // and stays revoked
+    return true;
+}
+
+// updateProgress records the odometer but does nothing else before a payload arrives.
+(:test)
+function updateProgress_noPayload_earlyReturn(logger) {
+    var d = new ClimbData();               // payloadReceived == false
+    d.updateProgress(1500);
+    Test.assertEqual(d.lastElapsedDistance, 1500);
+    Test.assertEqual(d.activeClimbIndex, -1);
+    return true;
+}
+
+// Radius mode never drives an active climb from updateProgress.
+(:test)
+function updateProgress_radiusMode_earlyReturn(logger) {
+    var d = edgeClimb();
+    d.mode = "radius";
+    d.updateProgress(1500);
+    Test.assertEqual(d.lastElapsedDistance, 1500);
+    Test.assertEqual(d.activeClimbIndex, -1);
+    return true;
+}
+
+// Odometer past the only climb's end → no active climb and no next climb.
+(:test)
+function updateProgress_pastAllClimbs_noActiveNoNext(logger) {
+    var d = edgeClimb();
+    d.updateProgress(2000);                // > climbEndDist 1800
+    Test.assertEqual(d.activeClimbIndex, -1);
+    Test.assertEqual(d.nextClimbIndex, -1);
+    Test.assertEqual(d.distToNextClimb, -1);
+    return true;
+}
+
+// Progress beyond the sum of the segment lengths clamps to the last segment.
+(:test)
+function updateProgress_progressBeyondSegments_lastSegment(logger) {
+    var d = edgeClimb();
+    d.setAnchors(0, 1000, 2000);           // climb longer than its 800 m of segments
+    d.updateProgress(1900);                // 900 m in, but segDist sums to 800
+    Test.assertEqual(d.activeClimbIndex, 0);
+    Test.assertEqual(d.progressInClimb, 900);
+    Test.assertEqual(d.activeSegmentIndex, 1);   // last segment (fallback branch)
+    return true;
+}
+
+// Progress exactly on a segment boundary lands in the earlier segment (<= boundary).
+(:test)
+function updateProgress_segmentBoundaryExact_picksEarlierSegment(logger) {
+    var d = edgeClimb();
+    d.updateProgress(1400);                // exactly 400 m in = end of segment 0
+    Test.assertEqual(d.progressInClimb, 400);
+    Test.assertEqual(d.activeSegmentIndex, 0);
+    return true;
+}
+
+// Once every calibration point is consumed, checkCalibration is a no-op.
+(:test)
+function checkCalibration_exhaustedIdx_noOp(logger) {
+    var d = edgeClimb();
+    d.calibCount[0] = 1; d.calibDist[0][0] = 400;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.activeClimbIndex = 0;
+    d.calibIdx[0] = 1;                      // already past the only point
+    d.progressInClimb = 123;
+    d.checkCalibration(52.0f, 5.0f);        // on the point, but idx exhausted
+    Test.assertEqual(d.progressInClimb, 123);   // untouched
+    return true;
+}
+
+// GPS far from the pending calibration point → no snap, index not advanced.
+(:test)
+function checkCalibration_farFromPoint_noSnap(logger) {
+    var d = edgeClimb();
+    d.calibCount[0] = 1; d.calibDist[0][0] = 400;
+    d.calibLat[0][0] = 52.0f; d.calibLon[0][0] = 5.0f;
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 300;
+    d.checkCalibration(53.0f, 5.0f);        // ~111 km away
+    Test.assertEqual(d.calibIdx[0], 0);     // not consumed
+    Test.assertEqual(d.progressInClimb, 300);
+    return true;
+}
+
+// Reaching two calibration points in turn advances calibIdx and snaps to each.
+(:test)
+function checkCalibration_sequentialPoints_advancesIdx(logger) {
+    var d = edgeClimb();
+    d.calibCount[0] = 2;
+    d.calibDist[0][0] = 200; d.calibLat[0][0] = 52.0f;  d.calibLon[0][0] = 5.0f;
+    d.calibDist[0][1] = 600; d.calibLat[0][1] = 52.01f; d.calibLon[0][1] = 5.0f;
+    d.navTrust = d.NAV_UNKNOWN;             // odometer mode → snaps progress
+    d.activeClimbIndex = 0;
+    d.lastElapsedDistance = 1200;
+
+    d.checkCalibration(52.0f, 5.0f);        // first point (200 m)
+    Test.assertEqual(d.calibIdx[0], 1);
+    Test.assertEqual(d.progressInClimb, 200);
+
+    d.checkCalibration(52.01f, 5.0f);       // second point (600 m)
+    Test.assertEqual(d.calibIdx[0], 2);
+    Test.assertEqual(d.progressInClimb, 600);
+    return true;
+}
+
+// Radius mode leaves offRoute false (no route geometry to match against).
+(:test)
+function updateRouteMatch_radiusMode_noOffRoute(logger) {
+    var d = edgeClimb();
+    d.mode = "radius";
+    d.offRoute = true;                      // ensure it gets cleared
+    d.updateRouteMatch(52.0f, 5.0f);
+    Test.assert(!d.offRoute);
+    return true;
+}
+
+// Approaching a climb that carries no calibration geometry never flags off-route.
+(:test)
+function updateRouteMatch_nextClimbNoCalib_noOffRoute(logger) {
+    var d = edgeClimb();                    // calibCount[0] == 0
+    d.updateProgress(500);                  // approaching: nextClimbIndex 0, 500 m out
+    Test.assertEqual(d.nextClimbIndex, 0);
+    d.updateRouteMatch(52.5f, 5.0f);        // far away, but no calib to compare
+    Test.assert(!d.offRoute);
+    return true;
+}
