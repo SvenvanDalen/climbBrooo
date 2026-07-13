@@ -8,7 +8,6 @@ class OnboardApp extends App.AppBase {
     // Assigned in getInitialView; later tasks replace the nulls with real objects.
     var store = null;        // RawRouteStore (Task 2)
     var climbData = null;    // OnboardClimbData (Task 4)
-    var routeIndex = null;   // OnboardRouteIndex (Task 7)
     hidden var msgCallback = null;
 
     function initialize() {
@@ -32,9 +31,15 @@ class OnboardApp extends App.AppBase {
         }
     }
 
-    // Later tasks extend this: Task 7 assigns store/climbData/routeIndex/msgCallback
-    // and restores the persisted route.
     function getInitialView() {
+        store = new RawRouteStore();
+        climbData = new OnboardClimbData();
+        msgCallback = new OnboardMessageCallback();
+        Comm.registerForPhoneAppMessages(method(:onPhoneMessage));
+        // Offline-first: re-parse the last synced route from storage.
+        if (store.restoreFromStorage()) {
+            RouteParser.parse(store, climbData);
+        }
         Sys.println("OnboardApp: started");
         return [new OnboardView(), new OnboardDelegate()];
     }
