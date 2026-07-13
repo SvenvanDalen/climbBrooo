@@ -153,7 +153,65 @@ module RouteParser {
         return [start, end];
     }
 
-    // Replaced with the real segmenter in the next task.
+    // Port of Segmenter.segment: boundaries every SEGMENT_FRACTION of the climb
+    // length (last segment may be shorter), elevation interpolated at each
+    // boundary. Invariant: sum(segDist) == climbLength within rounding.
     function segmentClimb(store, data, c) {
+        var sIdx = data.climbStartIdx[c];
+        var eIdx = data.climbEndIdx[c];
+        var startDist = store.dist[sIdx];
+        var endDist = store.dist[eIdx];
+        var total = endDist - startDist;
+        if (total <= 0) {
+            data.segCount[c] = 0;
+            return;
+        }
+        var segLen = total * SEGMENT_FRACTION;
+        var segStart = startDist;
+        var segStartEle = store.ele[sIdx];
+        var ptIdx = sIdx + 1;
+        var s = 0;
+        while (segStart < endDist - 0.5 && s < data.MAX_SEGMENTS) {
+            var segEnd = segStart + segLen;
+            if (segEnd > endDist) { segEnd = endDist; }
+            while (ptIdx < eIdx && store.dist[ptIdx] < segEnd) {
+                ptIdx++;
+            }
+            var endEle = interpEle(store, ptIdx, segEnd);
+            var d = segEnd - segStart;
+            var g = endEle - segStartEle;
+            var gr = (d > 0) ? g / d : 0.0;
+            data.segDist[c][s]     = Math.round(d).toNumber();
+            data.segElevGain[c][s] = Math.round(g).toNumber();
+            data.segGradient[c][s] = Math.round(gr * 1000.0).toNumber();
+            data.segColor[c][s]    = colorFor(gr);
+            s++;
+            segStart = segEnd;
+            segStartEle = endEle;
+        }
+        data.segCount[c] = s;
+    }
+
+    // Port of GradientColor.forGradient. Cutoffs are the shared color contract.
+    function colorFor(gradient) {
+        if (gradient < 0.02) { return 0; }
+        if (gradient < 0.04) { return 1; }
+        if (gradient < 0.06) { return 2; }
+        if (gradient < 0.08) { return 3; }
+        if (gradient < 0.10) { return 4; }
+        return 5;
+    }
+
+    // Linear elevation at targetDist between store points idx-1 and idx.
+    function interpEle(store, idx, targetDist) {
+        if (idx <= 0) { return store.ele[0]; }
+        if (idx >= store.pointCount) { return store.ele[store.pointCount - 1]; }
+        var a = idx - 1;
+        var span = store.dist[idx] - store.dist[a];
+        if (span <= 0) { return store.ele[a]; }
+        var t = (targetDist - store.dist[a]) / span;
+        if (t < 0) { t = 0.0; }
+        if (t > 1) { t = 1.0; }
+        return store.ele[a] + t * (store.ele[idx] - store.ele[a]);
     }
 }
