@@ -21,4 +21,7 @@ public final class ConnectIqAppId {
 
     /** Surface-sections datafield. MUST equal the id in garmin-surface/manifest.xml. */
     public static final String SURFACE_FIELD = "00112233445566770011223344556677";
+
+    /** "ClimbPro Onboard" watch app (on-watch route parsing). MUST equal the id in garmin-onboard/manifest.xml. */
+    public static final String ONBOARD = "a0b1c2d3e4f50617a0b1c2d3e4f50617";
 }

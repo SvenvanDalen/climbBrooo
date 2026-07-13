@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -16,6 +17,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
@@ -30,6 +32,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
+    private final OnboardPushService onboardPushService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredRoute> route      = new MutableLiveData<>();
@@ -39,11 +42,14 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<List<StoredSurfaceSection>> surfaceSections = new MutableLiveData<>();
     private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
     private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
+    private final MutableLiveData<String> onboardPushMessage = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
         riderRepo = new RiderProfileRepository(app);
+        onboardPushService = new OnboardPushService(
+                ((ClimbProApplication) app).connectIqClient());
     }
 
     public LiveData<StoredRoute>  route()      { return route; }
@@ -53,6 +59,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<StoredSurfaceSection>> surfaceSections() { return surfaceSections; }
     public LiveData<RoutePassport> passport()           { return passport; }
     public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
+    public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -101,6 +108,20 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 .putString(RouteSyncWorker.PREF_ROUTE_ID, routeId)
                 .putString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_ROUTE)
                 .apply();
+    }
+
+    /** Loads the route fresh and pushes its raw geometry to the onboard watch app. */
+    public void sendToOnboard(String routeId) {
+        executor.execute(() -> {
+            try {
+                StoredRoute r = routeRepo.loadRoute(routeId);
+                boolean ok = onboardPushService.pushRoute(r);
+                onboardPushMessage.postValue(
+                        ok ? "Verstuurd naar horloge" : "Versturen naar horloge mislukt");
+            } catch (Exception e) {
+                onboardPushMessage.postValue("Versturen mislukt: " + e.getMessage());
+            }
+        });
     }
 
     /** Persists the surface type for a flat segment identified by its startDistance. */

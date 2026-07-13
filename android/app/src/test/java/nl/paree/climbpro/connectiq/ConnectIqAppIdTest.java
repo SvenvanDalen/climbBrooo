@@ -17,4 +17,9 @@ public class ConnectIqAppIdTest {
         assertTrue("got: " + ConnectIqAppId.VALUE,
                 ConnectIqAppId.VALUE.matches("[0-9a-f]{32}"));
     }
+
+    @Test
+    public void onboardId_matchesGarminOnboardManifest() {
+        assertEquals("a0b1c2d3e4f50617a0b1c2d3e4f50617", ConnectIqAppId.ONBOARD);
+    }
 }

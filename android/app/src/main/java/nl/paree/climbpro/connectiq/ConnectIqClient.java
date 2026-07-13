@@ -60,6 +60,7 @@ public final class ConnectIqClient {
     private final IQApp iqApp        = new IQApp(ConnectIqAppId.VALUE);
     private final IQApp datafieldApp = new IQApp(ConnectIqAppId.DATAFIELD);
     private final IQApp surfaceApp   = new IQApp(ConnectIqAppId.SURFACE_FIELD);
+    private final IQApp onboardApp   = new IQApp(ConnectIqAppId.ONBOARD);
 
     private final MutableLiveData<ConnectIqState> stateLd =
             new MutableLiveData<>(ConnectIqState.DISCONNECTED);
@@ -238,6 +239,12 @@ public final class ConnectIqClient {
     /** Send a surface-sections payload to the surface datafield app. */
     public boolean sendPayloadToSurfaceField(byte[] payload) {
         return sendPayloadTo(surfaceApp, payload);
+    }
+
+    /** Send a Map to the ClimbPro Onboard watch app (raw-route push channel). No
+     *  inbound registration is needed — the watch never transmits anything back. */
+    public boolean sendMessageToOnboard(Map<String, Object> message) {
+        return sendMessageTo(onboardApp, message);
     }
 
     private boolean sendPayloadTo(IQApp targetApp, byte[] payload) {

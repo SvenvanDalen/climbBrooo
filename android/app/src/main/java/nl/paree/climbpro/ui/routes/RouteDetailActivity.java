@@ -91,6 +91,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         viewModel.saved().observe(this, ok -> {
             if (Boolean.TRUE.equals(ok)) Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
         });
+        viewModel.onboardPushMessage().observe(this,
+                msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
         binding.btnSaveNotes.setOnClickListener(v ->
@@ -99,6 +101,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             viewModel.setActiveRoute(routeId);
             Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
         });
+        binding.btnSendToOnboard.setOnClickListener(v -> viewModel.sendToOnboard(routeId));
         binding.btnShareToGarmin.setOnClickListener(v -> shareToGarminConnect());
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
 

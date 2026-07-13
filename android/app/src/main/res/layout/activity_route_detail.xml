@@ -99,6 +99,13 @@
                 android:text="Select for watch" />
 
             <Button
+                android:id="@+id/btn_send_to_onboard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Verstuur naar horloge" />
+
+            <Button
                 android:id="@+id/btn_share_to_garmin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
