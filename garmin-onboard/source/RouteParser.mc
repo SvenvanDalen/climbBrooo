@@ -68,6 +68,10 @@ module RouteParser {
         if (n < 2) { return; }
         var i = 0;
         while (i < n - 1 && data.climbCount < data.MAX_CLIMBS) {
+            if (grad(store, i, i + 1) <= 0) {
+                i++;
+                continue;
+            }
             var startIdx = i;
             var peakEle = store.ele[i];
             var peakIdx = i;
