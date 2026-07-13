@@ -24,6 +24,8 @@ function onbApp() {
     var app = App.getApp() as OnboardApp;
     app.store = new RawRouteStore();
     app.climbData = new OnboardClimbData();
+    app.pendingStore = null;
+    app.pendingClimbData = null;
     return app;
 }
 
@@ -45,6 +47,32 @@ function comm_rawTransfer_parsesClimbEndToEnd(logger) {
     var st2 = new RawRouteStore();
     Test.assert(st2.restoreFromStorage());
     Test.assertEqual(st2.routeId, "e2e");
+    return true;
+}
+
+(:test)
+function comm_abortedResync_keepsLiveRouteIntact(logger) {
+    var app = onbApp();
+    var msgs = onbWireMessages();
+    var cb = new OnboardMessageCallback();
+    cb.onMessage(msgs[0]);
+    cb.onMessage(msgs[1]);
+    Test.assert(app.store.complete);
+    Test.assert(app.climbData.parsed);
+    var origClimbCount = app.climbData.climbCount;
+    var origRouteId = app.store.routeId;
+    // Start a replacement transfer for a different route, but withhold its chunk
+    // (simulating a mid-transfer BT drop).
+    cb.onMessage({ "type" => "RAW_HDR", "id" => "replacement", "name" => "New",
+                   "n" => 29, "tot" => 1 });
+    // The live route must still be the original, complete/parsed one.
+    Test.assert(app.store.complete);
+    Test.assert(app.climbData.parsed);
+    Test.assertEqual(app.climbData.climbCount, origClimbCount);
+    Test.assertEqual(app.store.routeId, origRouteId);
+    // The incoming transfer is tracked separately, pending.
+    Test.assert(app.pendingStore != null);
+    Test.assert(!app.pendingStore.complete);
     return true;
 }
 

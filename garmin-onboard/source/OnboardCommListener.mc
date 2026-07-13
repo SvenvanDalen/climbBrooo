@@ -20,15 +20,21 @@ class OnboardMessageCallback {
         if (app.store == null || app.climbData == null) { return; }
 
         if (t.equals("RAW_HDR")) {
-            app.climbData.reset();
-            app.store.beginRoute(msg.get("id"), msg.get("name"),
-                                 msg.get("n"), msg.get("tot"));
+            app.pendingStore = new RawRouteStore();
+            app.pendingClimbData = new OnboardClimbData();
+            app.pendingStore.beginRoute(msg.get("id"), msg.get("name"),
+                                        msg.get("n"), msg.get("tot"));
         } else if (t.equals("RAW_CHUNK")) {
-            var ok = app.store.addChunk(msg.get("seq"), msg.get("lat"),
+            if (app.pendingStore == null) { return; }   // chunk before header: ignore, as before
+            var ok = app.pendingStore.addChunk(msg.get("seq"), msg.get("lat"),
                                         msg.get("lon"), msg.get("ele"));
-            if (ok && app.store.complete) {
-                RouteParser.parse(app.store, app.climbData);
-                app.store.saveToStorage();
+            if (ok && app.pendingStore.complete) {
+                RouteParser.parse(app.pendingStore, app.pendingClimbData);
+                app.pendingStore.saveToStorage();
+                app.store = app.pendingStore;
+                app.climbData = app.pendingClimbData;
+                app.pendingStore = null;
+                app.pendingClimbData = null;
                 Sys.println("OnboardComm: route parsed, "
                             + app.climbData.climbCount + " climbs");
             }

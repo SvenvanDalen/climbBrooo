@@ -10,6 +10,10 @@ class OnboardApp extends App.AppBase {
     var climbData = null;    // OnboardClimbData (Task 4)
     hidden var msgCallback = null;
 
+    // In-progress incoming transfer, not yet live (see OnboardCommListener).
+    var pendingStore = null;
+    var pendingClimbData = null;
+
     function initialize() {
         AppBase.initialize();
     }
