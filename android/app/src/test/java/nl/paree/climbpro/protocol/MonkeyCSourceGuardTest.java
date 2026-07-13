@@ -44,6 +44,7 @@ public class MonkeyCSourceGuardTest {
             "garmin/source", "garmin/test",
             "garmin-widget/source", "garmin-widget/test",
             "garmin-surface/source", "garmin-surface/test",
+            "garmin-onboard/source", "garmin-onboard/test",
         };
         for (String d : dirs) {
             File dir = new File(root, d);

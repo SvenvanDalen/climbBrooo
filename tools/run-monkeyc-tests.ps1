@@ -27,7 +27,7 @@
 [CmdletBinding()]
 param(
     [string]   $Device  = "fr255m",
-    [string[]] $Modules = @("garmin", "garmin-widget", "garmin-surface")
+    [string[]] $Modules = @("garmin", "garmin-widget", "garmin-surface", "garmin-onboard")
 )
 
 $ErrorActionPreference = "Stop"
