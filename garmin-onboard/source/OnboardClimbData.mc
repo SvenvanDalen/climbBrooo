@@ -14,6 +14,7 @@ class OnboardClimbData {
     const OFFROUTE_M = 100;        // nearest-line distance beyond this = off route
     const ALERT_RADIUS_M = 50;     // climb-start alert window
     const SEARCH_WINDOW_PTS = 120; // vertices searched around the last match (~3 km at 25 m spacing)
+    const OFFROUTE_RESCAN_TICKS = 20;  // full-route rescans only this often while lost
 
     var parsed = false;
     var store = null;          // RawRouteStore backing this parse
@@ -42,6 +43,7 @@ class OnboardClimbData {
     var distToNextClimb = -1;
     var nextClimbIndex = -1;
     var offRoute = false;
+    var offRouteTickCount = 0;     // ticks since off-route was declared or last full rescan
     var alertedClimb;              // Boolean per climb, never cleared during a ride
     var pendingAlert = false;
 
@@ -96,6 +98,7 @@ class OnboardClimbData {
         distToNextClimb = -1;
         nextClimbIndex = -1;
         offRoute = false;
+        offRouteTickCount = 0;
         pendingAlert = false;
         for (var a = 0; a < MAX_CLIMBS; a++) { alertedClimb[a] = false; }
     }
@@ -116,13 +119,19 @@ class OnboardClimbData {
         }
         var m = bestMatch(latDeg, lonDeg, lo, hi);
         if (m[0] > OFFROUTE_M && (lo > 0 || hi < n - 2)) {
-            m = bestMatch(latDeg, lonDeg, 0, n - 2);   // widen before giving up
+            if (!offRoute || offRouteTickCount >= OFFROUTE_RESCAN_TICKS) {
+                m = bestMatch(latDeg, lonDeg, 0, n - 2);   // widen before giving up
+                offRouteTickCount = 0;
+            } else {
+                offRouteTickCount++;
+            }
         }
         if (m[0] > OFFROUTE_M) {
             offRoute = true;
             return;
         }
         offRoute = false;
+        offRouteTickCount = 0;
         var idx = m[1];
         var prog = store.dist[idx]
                  + (store.dist[idx + 1] - store.dist[idx]) * m[2];

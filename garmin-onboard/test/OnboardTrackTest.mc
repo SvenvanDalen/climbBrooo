@@ -62,6 +62,28 @@ function track_farFromRoute_setsOffRoute(logger) {
 }
 
 (:test)
+function track_offRouteDebouncesRescanAndRecovers(logger) {
+    var d = onbTrackData();
+    var st = d.store;
+    d.updatePosition(st.lat[5], st.lon[5]);
+    Test.assert(!d.offRoute);
+    // Go off-route: ~0.01 deg lon east of the line (> 700 m at lat 50).
+    d.updatePosition(st.lat[5], st.lon[5] + 0.01);
+    Test.assert(d.offRoute);
+    // Repeated ticks while still far off-route: stays off-route, no crash,
+    // and does not falsely "recover" just because the expensive rescan is
+    // skipped on most ticks.
+    for (var i = 0; i < 10; i++) {
+        d.updatePosition(st.lat[5], st.lon[5] + 0.01);
+        Test.assert(d.offRoute);
+    }
+    // Genuine recovery: back on the route line clears offRoute again.
+    d.updatePosition(st.lat[6], st.lon[6]);
+    Test.assert(!d.offRoute);
+    return true;
+}
+
+(:test)
 function track_alertFiresOncePerClimb(logger) {
     var d = onbTrackData();
     var st = d.store;
