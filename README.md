@@ -47,7 +47,7 @@ phone and no network. Sync is opportunistic.
 | **ClimbPro Onboard** (watch) | `garmin-onboard/` | Monkey C (`watch-app`) | Receives a pushed raw route and does the entire ClimbPro analysis on the watch, rendering a 5 km terrain window |
 | **Shared protocol** | `protocol/` | JSON Schema (canonical) | Single source of truth for the wire format and domain constants |
 
-The three watch apps have **separate, isolated storage**, so selecting an active route on
+The four watch apps have **separate, isolated storage**, so selecting an active route on
 the browse app is relayed *through the phone* to the datafields. Setting the active
 route/climb needs the phone reachable at that moment; the ride itself does not.
 
