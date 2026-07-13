@@ -61,24 +61,57 @@ function track_farFromRoute_setsOffRoute(logger) {
     return true;
 }
 
+// A flat, 300-point route (> 2 * SEARCH_WINDOW_PTS) used only by the debounce
+// test below: it needs to be long enough that once lastMatchIdx sits in the
+// middle, a windowed search (+/- SEARCH_WINDOW_PTS) is a strict sub-range of
+// the route rather than the whole thing -- otherwise the "lo > 0 || hi < n-2"
+// debounce guard can never actually gate anything (the false positive this
+// test used to be). Elevation profile is irrelevant here, so it's kept flat.
+function onbLargeFlatTrackData() {
+    var eles = new [300];
+    for (var i = 0; i < 300; i++) { eles[i] = 100; }
+    var st = onbStoreFromEle(eles);
+    var d = new OnboardClimbData();
+    d.store = st;
+    d.parsed = true;
+    return d;
+}
+
 (:test)
 function track_offRouteDebouncesRescanAndRecovers(logger) {
-    var d = onbTrackData();
+    var d = onbLargeFlatTrackData();
     var st = d.store;
-    d.updatePosition(st.lat[5], st.lon[5]);
+    // Establish an on-route match in the middle of the route so the next
+    // windowed search (idx 150 +/- 120 = [30, 270] of 300 points) is a real
+    // sub-range, not the full [0, n-2] span.
+    d.updatePosition(st.lat[150], st.lon[150]);
     Test.assert(!d.offRoute);
+    // bestMatch() may tie-break to the adjacent vertex when standing exactly
+    // on point 150 (both the incoming and outgoing segment score dist 0) --
+    // either is fine here, we only need lastMatchIdx solidly mid-route so the
+    // next windowed search is a strict sub-range, not the full route.
+    Test.assert((d.lastMatchIdx - 150).abs() <= 1);
+
     // Go off-route: ~0.01 deg lon east of the line (> 700 m at lat 50).
-    d.updatePosition(st.lat[5], st.lon[5] + 0.01);
+    // First off-route tick: guard fires, full rescan runs and still fails,
+    // and the tick counter is reset to 0 (not incremented).
+    d.updatePosition(st.lat[150], st.lon[150] + 0.01);
     Test.assert(d.offRoute);
-    // Repeated ticks while still far off-route: stays off-route, no crash,
-    // and does not falsely "recover" just because the expensive rescan is
-    // skipped on most ticks.
-    for (var i = 0; i < 10; i++) {
-        d.updatePosition(st.lat[5], st.lon[5] + 0.01);
+    Test.assertEqual(d.offRouteTickCount, 0);
+
+    // Repeated ticks while still far off-route and well under
+    // OFFROUTE_RESCAN_TICKS: stays off-route, and the tick counter genuinely
+    // increments each call -- proving the expensive full rescan is being
+    // skipped (debounced) rather than re-run on every tick.
+    for (var i = 0; i < 5; i++) {
+        d.updatePosition(st.lat[150], st.lon[150] + 0.01);
         Test.assert(d.offRoute);
+        Test.assertEqual(d.offRouteTickCount, i + 1);
     }
-    // Genuine recovery: back on the route line clears offRoute again.
-    d.updatePosition(st.lat[6], st.lon[6]);
+
+    // Genuine recovery: back on the route line clears offRoute again, even
+    // after several debounced (counter-only) ticks.
+    d.updatePosition(st.lat[155], st.lon[155]);
     Test.assert(!d.offRoute);
     return true;
 }
