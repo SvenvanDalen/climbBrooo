@@ -78,9 +78,24 @@ Android App Sven/
 │   ├── monkey.jungle
 │   └── manifest.xml
 │
+├── garmin-onboard/                # ClimbPro Onboard watch app (Monkey C, on-watch parsing)
+│   ├── source/
+│   │   ├── App.mc
+│   │   ├── RouteParser.mc         # Ports smoothing, detection, trimming, segmentation from Android domain
+│   │   ├── RawRouteStore.mc       # Stores raw points from phone, computes distances
+│   │   ├── views/                 # OnboardView (5 km terrain window)
+│   │   ├── matching/              # Full-polyline nearest-point matching with hysteresis
+│   │   └── audio/                 # Climb-start alert
+│   ├── resources/
+│   ├── test/                      # End-to-end detection + terrain-window tests
+│   ├── monkey-test.jungle
+│   ├── monkey.jungle
+│   └── manifest.xml
+│
 └── protocol/                      # Shared wire-format spec + codegen sources
-    ├── schema.json                # Canonical JSON Schema — source of truth for Java codegen
+    ├── schema.json                # Canonical JSON Schema — source of truth for v3 packed payload format
     ├── schema.md                  # Human-readable notes on schema (rationale, byte budget, change log)
+    ├── raw-route.md               # Raw geometry protocol for garmin-onboard (push-only)
     ├── examples/                  # Reference payloads used by round-trip tests on both sides
     └── colors.md                  # Gradient → color table (single source of truth)
 ```
@@ -88,10 +103,15 @@ Android App Sven/
 ### Module dependencies (strict)
 
 ```
-android ──────► protocol ◄────── garmin
+android ──────► protocol ◄────────── garmin
+               (v3 packed payload)      garmin-widget
+                                        garmin-surface
+
+android ──────► protocol/raw-route.md ◄── garmin-onboard
+               (raw geometry, push-only)
 ```
 
-`android` and `garmin` both depend on `protocol`. They **never** depend on each other directly. Any cross-side concept (payload shape, color thresholds, climb-detection constants) lives in `protocol`.
+`android` and `garmin*` both depend on `protocol`. They **never** depend on each other directly. Any cross-side concept (payload shape, color thresholds, climb-detection constants) lives in `protocol`. The onboard module receives raw geometry over a separate push-only channel documented in `protocol/raw-route.md`; the watch never requests or lists routes in this mode.
 
 ### Entry points
 
@@ -579,6 +599,12 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 | `ClimbLogbookActivity` | `ui/climbs` | Logbook screen reachable from route list overflow menu |
 
 > **Watch / protocol boundary**: nothing in the Climb Logbook crosses to the watch side. No changes to `protocol/schema.json`, no changes to `ClimbPayloadBuilder`, and no new fields in the sync payload.
+
+---
+
+## garmin-onboard — on-watch parsing experiment
+
+A fourth watch module, watch-app type, own CIQ UUID `a0b1c2d3e4f50617a0b1c2d3e4f50617`. Receives raw geometry via `protocol/raw-route.md`, **push-only** — the phone pushes unprompted via a "Verstuur naar horloge" button, the watch never requests or lists routes. Runs the full pipeline on-watch: `RouteParser.mc` ports `ElevationSmoother`/`ClimbDetector`/`ClimbTrimmer`/`Segmenter`/`GradientColor` from the Android domain layer. Domain rules are identical (800 m / 3% thresholds, 2%-over-200 m trim, 8% segments, color cutoffs, 50 m alert), enforced by shared tests (`garmin-onboard/test/` and companion fixtures). Live tracking uses full-polyline nearest-point matching with 20 m hysteresis instead of calibration points. The single live screen is a 5 km terrain window (not a climb-only view) with an off-route banner overlay instead of silently-stale data — when GPS strays > 100 m from the route, the last-computed window keeps rendering with a visible "OFF ROUTE" banner, preventing the user from riding blind. This module deliberately inverts the "heavy compute on the phone" rule as a self-contained experiment. The three existing modules (`garmin`, `garmin-widget`, `garmin-surface`) and the v3 packed payload are untouched.
 
 ---
 

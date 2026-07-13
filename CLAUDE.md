@@ -10,11 +10,12 @@ The first concrete task in this repo is to scaffold the three modules described 
 
 ## What this project is
 
-A custom ClimbPro-style system for the **Garmin Forerunner 255 Music**. The phone does all heavy route analysis; the watch only renders compact, precomputed climb data. Three components:
+A custom ClimbPro-style system for the **Garmin Forerunner 255 Music**. The phone does all heavy route analysis; the watch only renders compact, precomputed climb data. Four components:
 
 1. **Android companion app** (Java, MVVM + Repository, WorkManager) — parses GPX/FIT, detects climbs, segments them, syncs to the watch, integrates with Strava.
 2. **Garmin Connect IQ datafield** (Monkey C) — renders current climb profile and next-climb preview, matches GPS to route in realtime.
-3. **Shared protocol** — compact climb payload schema used by both sides over the Connect IQ Communications API.
+3. **Garmin Connect IQ Onboard watch app** (Monkey C) — receives raw routes pushed from the phone, runs the full climb pipeline on the watch, renders a 5 km terrain window.
+4. **Shared protocol** — compact climb payload schema used by both sides over the Connect IQ Communications API.
 
 ## User-facing features
 
@@ -58,6 +59,7 @@ These are settled — don't reopen them without a deliberate revisit (see `Docum
 - **Navigation handoff**: phone shares GPX to Garmin Connect (intent); Garmin Connect pushes the course to the watch. We do not push courses ourselves.
 - **User metadata on watch**: route name + climb name only (if they fit). Notes/tags stay phone-side.
 - **Protocol source of truth**: `protocol/schema.json` (JSON Schema) describes the **v3 packed wire format** (short keys, packed integer arrays). Java POJOs are **generated** from it (`generateProtocolPojos`), but the producer `service/ClimbPayloadBuilder` hand-builds the wire maps directly (it does not use the generated POJOs); Monkey C parsers are **hand-written** to match. `ProtocolRoundTripTest` validates both `protocol/examples/*.json` and the **live builder output** against the schema, so any Java-side drift fails CI — but the Monkey C parsers have no JVM harness and stay **review-only**, so when you change the wire format you MUST update `schema.json`, `protocol/examples/`, `ClimbPayloadBuilder`, **and** the Monkey C `CommListener.mc`/`SurfaceData.mc` together. Never hand-edit generated Java.
+- **garmin-onboard exception**: the onboard module intentionally parses the raw route on the watch (experiment); the heavy-compute-on-phone rule still governs the other modules. Push-only wire contract in `protocol/raw-route.md` (phone → watch, triggered by a phone-side button — the watch never requests), constants duplicated in `RawRoutePayloadBuilder`/`RawRouteStore` — change together.
 
 ## Key cross-cutting concerns
 
@@ -72,8 +74,8 @@ Once scaffolded, expect:
 
 - **Android**: Gradle Groovy DSL (`build.gradle`, not `.kts`). Commands: `./gradlew assembleDebug`, `./gradlew test`, `./gradlew :app:connectedDebugAndroidTest`. Single-test runs via `./gradlew test --tests <FQCN>`.
 - **Connect IQ**: Monkey C SDK with `monkeyc` compiler and the Connect IQ simulator. Build via `monkeyc -o app.prg -f monkey.jungle -y <developer_key>`; run in simulator for Forerunner 255 Music device profile.
-  - **Monkey C unit tests are runnable, not review-only.** Each watch module (`garmin`, `garmin-widget`, `garmin-surface`) has a `monkey-test.jungle` that adds `test/` to the source path and `(:test)` functions under `test/*.mc` (Toybox.Test). Build a test prg with `monkeyc -f <module>/monkey-test.jungle -o build/<module>-test.prg -y <key> -d fr255m --unit-test`, then run it in a running simulator with `monkeydo build/<module>-test.prg fr255m /t` (Windows uses `/t`, not `-t`). The simulator must be started first (`connectiq`). Each run prints a `PASSED (passed=N, failed=N, errors=N)` summary.
-  - **One command for all three suites**: `pwsh -File tools/run-monkeyc-tests.ps1`. It auto-locates the active SDK (from `%APPDATA%\Garmin\ConnectIQ\current-sdk.cfg`) and developer key, launches the simulator if needed, builds + runs every module's test jungle, and exits non-zero on any build failure, test failure, or error. Current status: **128 tests pass** (garmin 69, widget 33, surface 26), including edge-case coverage (axis/trust gating, segment-boundary and past-segment clamps, calibration exhaustion/sequencing, off-route/radius early-returns, parser truncation + malformed-array + resync-stale-clear guards, surface checkpoint selection). This complements the JVM-side `MonkeyCSourceGuard` (braces/test-return lint) and the protocol lockstep guard — the source guard is a fast headless gate, the simulator run is the real assertion harness.
+  - **Monkey C unit tests are runnable, not review-only.** Each watch module (`garmin`, `garmin-widget`, `garmin-surface`, `garmin-onboard`) has a `monkey-test.jungle` that adds `test/` to the source path and `(:test)` functions under `test/*.mc` (Toybox.Test). Build a test prg with `monkeyc -f <module>/monkey-test.jungle -o build/<module>-test.prg -y <key> -d fr255m --unit-test`, then run it in a running simulator with `monkeydo build/<module>-test.prg fr255m /t` (Windows uses `/t`, not `-t`). The simulator must be started first (`connectiq`). Each run prints a `PASSED (passed=N, failed=N, errors=N)` summary.
+  - **One command for all four suites**: `pwsh -File tools/run-monkeyc-tests.ps1`. It auto-locates the active SDK (from `%APPDATA%\Garmin\ConnectIQ\current-sdk.cfg`) and developer key, launches the simulator if needed, builds + runs every module's test jungle, and exits non-zero on any build failure, test failure, or error. Current status: **157 tests pass** (garmin 71, garmin-widget 33, garmin-surface 26, garmin-onboard 27), including edge-case coverage (axis/trust gating, segment-boundary and past-segment clamps, calibration exhaustion/sequencing, off-route/radius early-returns, parser truncation + malformed-array + resync-stale-clear guards, surface checkpoint selection, raw-route chunking + out-of-order recovery, on-watch detection + trimming + segmentation + terrain-window rendering). This complements the JVM-side `MonkeyCSourceGuard` (braces/test-return lint) and the protocol lockstep guard — the source guard is a fast headless gate, the simulator run is the real assertion harness.
 - **Shared models**: `protocol/schema.json` is canonical. Java POJOs are generated by a Gradle task (e.g. `jsonschema2pojo`) into the Android module's build sources; Monkey C classes are hand-written and kept in sync via round-trip tests against `protocol/examples/`.
 
 When you add the first build file, **update this section with the actual commands** rather than leaving the intended ones in place.

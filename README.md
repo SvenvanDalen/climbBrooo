@@ -36,7 +36,7 @@ phone and no network. Sync is opportunistic.
 
 ---
 
-## The four apps
+## The five apps
 
 | App | Folder | Tech | Role |
 |-----|--------|------|------|
@@ -44,6 +44,7 @@ phone and no network. Sync is opportunistic.
 | **ClimbPro browse app** (watch) | `garmin-widget/` | Monkey C (`watch-app` + glance) | Browse synced routes/climbs, save them, mark one **active** |
 | **ClimbPro datafield** (watch) | `garmin/` | Monkey C (`datafield`) | Render the active climb during a ride, match GPS, fire the start alert — fully offline |
 | **Ondergrond datafield** (watch) | `garmin-surface/` | Monkey C (`datafield`) | Show the user-defined surface section you're on + the next one |
+| **ClimbPro Onboard** (watch) | `garmin-onboard/` | Monkey C (`watch-app`) | Receives a pushed raw route and does the entire ClimbPro analysis on the watch, rendering a 5 km terrain window |
 | **Shared protocol** | `protocol/` | JSON Schema (canonical) | Single source of truth for the wire format and domain constants |
 
 The three watch apps have **separate, isolated storage**, so selecting an active route on
@@ -57,9 +58,10 @@ route/climb needs the phone reachable at that moment; the ride itself does not.
 | Browse app (`garmin-widget`) — phone's sync counterpart | `fedcba9876543210fedcba9876543210` |
 | Climb datafield (`garmin`) | `0123456789abcdef0123456789abcdef` |
 | Surface datafield (`garmin-surface`) | `00112233445566770011223344556677` |
+| Onboard app (`garmin-onboard`) | `a0b1c2d3e4f50617a0b1c2d3e4f50617` |
 
 These are mirrored in each `manifest.xml` and in
-`android/.../connectiq/ConnectIqAppId.java`. **For a public release, regenerate all three
+`android/.../connectiq/ConnectIqAppId.java`. **For a public release, regenerate all four
 to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 
 ---
@@ -108,7 +110,8 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 ├── garmin/                 # ClimbPro datafield (Monkey C)
 ├── garmin-widget/          # ClimbPro browse app + glance (Monkey C)
 ├── garmin-surface/         # Ondergrond (surface) datafield (Monkey C)
-├── protocol/               # schema.json (canonical) + examples + colors.md + notes
+├── garmin-onboard/         # ClimbPro Onboard watch app (Monkey C)
+├── protocol/               # schema.json (canonical) + examples + colors.md + raw-route.md
 ├── Documentation/          # ARCHITECTURE.md, SETUP.md, CONNECTION.md, plans
 ├── docs/                   # garmin-widget-setup.md, superpowers plans & specs
 ├── HANDLEIDING.md          # Full Dutch manual: functions + complete install guide
