@@ -1,52 +1,38 @@
 using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Application as App;
-using Toybox.Position as Position;
 using Toybox.Attention as Attention;
 using Toybox.System as Sys;
 
 /**
- * Single "5 km terrain window" view fed by the ON-WATCH parse: a doorlopend
- * elevation profile from the current position to +5 km (clamped to route
- * end), with detected-climb segments colored on top of the raw terrain line.
- * Terrain that never meets the climb definition (short rises, a dike) is
- * still visible via the profile shape, just not colored. offRoute keeps the
- * last window on screen (progress marker frozen) with a banner overlay
- * instead of going blank. Battery rule: redraw only when the active
- * segment/climb/off-route state changes or progress moved more than
- * REDRAW_DELTA_M.
+ * Single "5 km terrain window" datafield fed by the ON-WATCH parse: a
+ * doorlopend elevation profile from the current position to +5 km (clamped
+ * to route end), with detected-climb segments colored on top of the raw
+ * terrain line. Terrain that never meets the climb definition (short rises,
+ * a dike) is still visible via the profile shape, just not colored. offRoute
+ * keeps the last window on screen (progress marker frozen) with a banner
+ * overlay instead of going blank. As a datafield, position arrives via
+ * compute(info)'s Activity.Info each activity tick (no separate
+ * Position.enableLocationEvents registration, and no manual redraw-gating —
+ * the system already calls onUpdate at the activity's own refresh cadence).
  */
-class OnboardView extends Ui.View {
+class OnboardView extends Ui.DataField {
 
     hidden const COLORS = [
         0x99FF99, 0xFFFF00, 0xFFAA00, 0xFF5500, 0xFF0000, 0xAA0000,
     ];
-    hidden const REDRAW_DELTA_M = 10.0;
     hidden const WINDOW_M = 5000.0;
 
-    hidden var lastDrawnProgress = -1.0;
-    hidden var lastDrawnSegment = -2;
-    hidden var lastDrawnClimb = -2;
-    hidden var lastDrawnOffRoute = false;
-
     function initialize() {
-        View.initialize();
+        DataField.initialize();
     }
 
-    function onShow() {
-        Position.enableLocationEvents(Position.LOCATION_CONTINUOUS, method(:onPosition));
-    }
-
-    function onHide() {
-        Position.enableLocationEvents(Position.LOCATION_DISABLE, method(:onPosition));
-    }
-
-    function onPosition(info as Position.Info) as Void {
+    function compute(info) {
         var data = (App.getApp() as OnboardApp).climbData;
-        if (data == null || !data.parsed || info == null || info.position == null) {
+        if (data == null || !data.parsed || info == null || info.currentLocation == null) {
             return;
         }
-        var ll = info.position.toDegrees();
+        var ll = info.currentLocation.toDegrees();
         data.updatePosition(ll[0], ll[1]);
         if (data.takeAlert()) {
             if (Attention has :vibrate) {
@@ -55,25 +41,7 @@ class OnboardView extends Ui.View {
             if (Attention has :playTone) {
                 Attention.playTone(Attention.TONE_ALERT_HI);
             }
-            Ui.requestUpdate();
-            markDrawn(data);
-            return;
         }
-        // Redraw only on segment/climb/off-route change or a significant move (battery).
-        if (data.activeClimbIndex != lastDrawnClimb
-                || data.activeSegmentIndex != lastDrawnSegment
-                || data.offRoute != lastDrawnOffRoute
-                || (data.routeProgress - lastDrawnProgress).abs() > REDRAW_DELTA_M) {
-            Ui.requestUpdate();
-            markDrawn(data);
-        }
-    }
-
-    hidden function markDrawn(data) {
-        lastDrawnProgress = data.routeProgress;
-        lastDrawnSegment = data.activeSegmentIndex;
-        lastDrawnClimb = data.activeClimbIndex;
-        lastDrawnOffRoute = data.offRoute;
     }
 
     function onUpdate(dc) {
@@ -213,17 +181,5 @@ class OnboardView extends Ui.View {
             return (m / 1000).toNumber() + "." + tenths + " km";
         }
         return m.toNumber() + " m";
-    }
-}
-
-class OnboardDelegate extends Ui.BehaviorDelegate {
-
-    function initialize() {
-        BehaviorDelegate.initialize();
-    }
-
-    function onBack() {
-        Ui.popView(Ui.SLIDE_RIGHT);
-        return true;
     }
 }

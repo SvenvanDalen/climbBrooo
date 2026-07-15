@@ -44,7 +44,7 @@ phone and no network. Sync is opportunistic.
 | **ClimbPro browse app** (watch) | `garmin-widget/` | Monkey C (`watch-app` + glance) | Browse synced routes/climbs, save them, mark one **active** |
 | **ClimbPro datafield** (watch) | `garmin/` | Monkey C (`datafield`) | Render the active climb during a ride, match GPS, fire the start alert — fully offline |
 | **Ondergrond datafield** (watch) | `garmin-surface/` | Monkey C (`datafield`) | Show the user-defined surface section you're on + the next one |
-| **ClimbPro Onboard** (watch) | `garmin-onboard/` | Monkey C (`watch-app`) | Receives a pushed raw route and does the entire ClimbPro analysis on the watch, rendering a 5 km terrain window |
+| **ClimbPro Onboard** (watch) | `garmin-onboard/` | Monkey C (`datafield`) | Receives a pushed raw route and does the entire ClimbPro analysis on the watch, rendering a 5 km terrain window during a ride |
 | **Shared protocol** | `protocol/` | JSON Schema (canonical) | Single source of truth for the wire format and domain constants |
 
 The four watch apps have **separate, isolated storage**, so selecting an active route on

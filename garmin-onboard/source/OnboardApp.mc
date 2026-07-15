@@ -45,6 +45,6 @@ class OnboardApp extends App.AppBase {
             RouteParser.parse(store, climbData);
         }
         Sys.println("OnboardApp: started");
-        return [new OnboardView(), new OnboardDelegate()];
+        return [ new OnboardView() ];
     }
 }
