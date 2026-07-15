@@ -111,9 +111,19 @@ class RawRouteStore {
 
     // Persist in slices of STORAGE_SLICE points per key: 6000-point arrays as a
     // single value (~90 KB) would blow the per-value Storage limit; a 2000-point
-    // Float slice is ~10 KB.
+    // Float slice is ~10 KB. A new route replaces the old one's slice keys; if
+    // the old route had more slices than this one, the extra keys are deleted
+    // so they don't linger forever in the watch's limited Storage.
     function saveToStorage() {
         if (!complete) { return; }
+        var oldSlices = 0;
+        var prevMeta = Storage.getValue("onb_raw_meta");
+        if (prevMeta instanceof Toybox.Lang.Dictionary) {
+            var prevN = prevMeta.get("n");
+            if (prevN instanceof Toybox.Lang.Number && prevN > 0) {
+                oldSlices = sliceCount(prevN);
+            }
+        }
         Storage.setValue("onb_raw_meta", {
             "id"   => routeId,
             "name" => routeName,
@@ -127,6 +137,11 @@ class RawRouteStore {
             Storage.setValue("onb_raw_lat_" + k, lat.slice(from, to));
             Storage.setValue("onb_raw_lon_" + k, lon.slice(from, to));
             Storage.setValue("onb_raw_ele_" + k, ele.slice(from, to));
+        }
+        for (var j = slices; j < oldSlices; j++) {
+            Storage.deleteValue("onb_raw_lat_" + j);
+            Storage.deleteValue("onb_raw_lon_" + j);
+            Storage.deleteValue("onb_raw_ele_" + j);
         }
     }
 

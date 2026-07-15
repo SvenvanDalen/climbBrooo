@@ -100,6 +100,34 @@ function store_storageRoundTrip(logger) {
 }
 
 (:test)
+function store_saveToStorage_clearsOrphanedSlicesFromLargerPriorRoute(logger) {
+    // First save a big route spanning 2 slices (2500 pts => slice 0 + slice 1).
+    var bigEles = new [2500];
+    for (var i = 0; i < 2500; i++) { bigEles[i] = 100; }
+    var big = onbStoreFromEle(bigEles);
+    big.saveToStorage();
+    Test.assert(Storage.getValue("onb_raw_lat_1") != null);
+
+    // A new, smaller route (500 pts => 1 slice) replaces it.
+    var smallEles = new [500];
+    for (var i = 0; i < 500; i++) { smallEles[i] = 100; }
+    var small = onbStoreFromEle(smallEles);
+    small.saveToStorage();
+
+    // The orphaned slice-1 keys from the old, bigger route must be gone —
+    // otherwise they'd sit in the watch's limited Storage forever.
+    Test.assert(Storage.getValue("onb_raw_lat_1") == null);
+    Test.assert(Storage.getValue("onb_raw_lon_1") == null);
+    Test.assert(Storage.getValue("onb_raw_ele_1") == null);
+
+    // A fresh restore must reflect exactly the smaller route, not a mix.
+    var st2 = new RawRouteStore();
+    Test.assert(st2.restoreFromStorage());
+    Test.assertEqual(st2.pointCount, 500);
+    return true;
+}
+
+(:test)
 function store_storageMultiSliceRoundTrip(logger) {
     // 2500 points spans two STORAGE_SLICE blocks (2000 + 500)
     var eles = new [2500];
