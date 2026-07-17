@@ -55,6 +55,16 @@ public final class ConnectIqClient {
         return m;
     }
 
+    /**
+     * True when {@code applicationId} identifies the widget (the only watch app
+     * that transmits to the phone). GCM reports app ids in varying case and
+     * sometimes with dashes; normalise before comparing.
+     */
+    static boolean isWidgetApp(String applicationId) {
+        return applicationId != null
+                && applicationId.replace("-", "").equalsIgnoreCase(ConnectIqAppId.VALUE);
+    }
+
     private final Context context;
     private final ConnectIQ connectIQ;
     private final IQApp iqApp        = new IQApp(ConnectIqAppId.VALUE);
@@ -71,6 +81,8 @@ public final class ConnectIqClient {
     // threads, so a startup race can send HELLO twice. That's accepted by design:
     // HELLO is an idempotent prime/refresh trigger, a duplicate is harmless.
     private volatile boolean helloSent;
+    /** True once GCM accepted binder-service delivery for this session. */
+    private volatile boolean binderDelivery;
     private volatile WatchRequestHandler requestHandler;
 
     public ConnectIqClient(Context context) {
@@ -140,19 +152,26 @@ public final class ConnectIqClient {
                 stateLd.postValue(nowConnected
                         ? ConnectIqState.CONNECTED : ConnectIqState.DISCONNECTED);
                 if (nowConnected) {
-                    // Re-register in case the CIQ session was reset during the disconnect.
-                    try {
-                        connectIQ.registerForAppEvents(device, iqApp,
-                                (d, a, data, st) -> dispatchIncoming(data));
-                    } catch (InvalidStateException | ServiceUnavailableException e) {
-                        Log.w(TAG, "Re-register app events after reconnect failed", e);
+                    // Re-register in case the CIQ session was reset during the
+                    // disconnect. Binder-mode registrations live GCM-side and
+                    // need no refresh.
+                    if (!binderDelivery) {
+                        try {
+                            connectIQ.registerForAppEvents(device, iqApp,
+                                    (d, a, data, st) -> dispatchIncoming(data));
+                        } catch (InvalidStateException | ServiceUnavailableException e) {
+                            Log.w(TAG, "Re-register app events after reconnect failed", e);
+                        }
                     }
                     maybeSendHello();
                 }
             });
 
-            connectIQ.registerForAppEvents(device, iqApp,
-                    (dev, app, data, status) -> dispatchIncoming(data));
+            binderDelivery = tryRegisterBinderDelivery();
+            if (!binderDelivery) {
+                connectIQ.registerForAppEvents(device, iqApp,
+                        (dev, app, data, status) -> dispatchIncoming(data));
+            }
 
             connected = device.getStatus() == IQDevice.IQDeviceStatus.CONNECTED;
             stateLd.postValue(connected
@@ -175,6 +194,34 @@ public final class ConnectIqClient {
      */
     private void scheduleReconnect() {
         new Handler(Looper.getMainLooper()).postDelayed(this::connect, RECONNECT_DELAY_MS);
+    }
+
+    /**
+     * Ask GCM to deliver watch messages through the SDK's IQGarminBindingService
+     * instead of the runtime broadcast receiver. GCM then binds into this app's
+     * process for every incoming message — starting the process if it is dead —
+     * so the watch can reach us while the app is closed. The registration is
+     * stored GCM-side per package: it survives our process death and app
+     * updates, and SDK shutdown() does not remove it. On an old GCM without the
+     * AIDL call this throws before touching the broadcast receiver, so returning
+     * false leaves the legacy per-device path fully usable as fallback.
+     */
+    private boolean tryRegisterBinderDelivery() {
+        try {
+            // Listener first: never leave a window where GCM binder-delivers
+            // into a null listener (the SDK silently drops those messages).
+            connectIQ.registerForAppEvents((dev, app, data, status) -> {
+                if (app != null && isWidgetApp(app.getApplicationId())) {
+                    dispatchIncoming(data);
+                }
+            });
+            connectIQ.registerAppToUseBinderService(ConnectIqAppId.VALUE);
+            Log.i(TAG, "Binder-service delivery registered — watch can wake this app");
+            return true;
+        } catch (InvalidStateException | ServiceUnavailableException e) {
+            Log.w(TAG, "Binder-service delivery unavailable — using broadcast path", e);
+            return false;
+        }
     }
 
     /** Send the HELLO control message once per connection, when first connected. */
@@ -325,6 +372,7 @@ public final class ConnectIqClient {
         connected = false;
         device = null;
         helloSent = false;
+        binderDelivery = false;
         stateLd.postValue(ConnectIqState.DISCONNECTED);
         new Handler(Looper.getMainLooper()).postDelayed(this::connect, 1_000);
     }
@@ -337,6 +385,7 @@ public final class ConnectIqClient {
         }
         connected = false;
         device = null;
+        binderDelivery = false;
         stateLd.postValue(ConnectIqState.DISCONNECTED);
     }
 }
