@@ -27,6 +27,16 @@ last point. Chunks may arrive out of order; duplicates are ignored; the watch
 parses + persists when the last chunk lands. The watch persists the arrays in
 slices of 2000 points per Storage key (per-value size limits).
 
+Delivery: because the watch only swaps the incoming transfer live when EVERY
+chunk has landed and can never request a resend (push-only), the phone sends
+each message blocking on the CIQ device ACK (`sendMessageToOnboardBlocking`,
+10 s timeout, one retry per message) and aborts the push — reporting failure
+to the user — at the first message that fails both attempts. Fire-and-forget
+sends are not allowed on this channel: one silently dropped chunk stalls the
+watch's pending transfer forever. Retries may duplicate a delivered message;
+that is safe (duplicate seq is ignored, a duplicate RAW_HDR can only occur
+before any chunk was sent and just restarts the pending transfer).
+
 The watch's only live screen is a "5 km terrain window": the elevation
 profile from the current position to +5 km (clamped to route end), with
 detected-climb segments colored on top of the raw terrain line so

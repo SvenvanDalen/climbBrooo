@@ -29,6 +29,16 @@ public final class ClimbProApplication extends Application {
         // Force a clean GCM rebind on startup so a phone-only app update can't leave
         // the watch talking to a dead process. See ConnectIqClient#forceRebind.
         ciqClient.forceRebind();
+        // Keep the GCM binder-service registration fresh even if the user never
+        // opens the app (see RebindScheduler / CiqRebindWorker). On a device,
+        // WorkManager is initialised (androidx.startup) before this runs; in
+        // JVM/Robolectric tests it is not — there, scheduling is a no-op.
+        try {
+            nl.paree.climbpro.service.RebindScheduler.schedulePeriodicRebind(this);
+        } catch (IllegalStateException e) {
+            android.util.Log.w("ClimbProApplication",
+                    "WorkManager not initialised — skipping rebind schedule", e);
+        }
     }
 
     /** App-scoped Connect IQ client. Reused by RouteSyncWorker — never construct your own. */

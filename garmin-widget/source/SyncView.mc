@@ -7,6 +7,7 @@ using Toybox.Timer as Timer;
 class SyncView extends Ui.View {
 
     hidden var timer;
+    hidden var tick = 0;
     hidden var switched = false;
 
     function initialize() { View.initialize(); }
@@ -14,19 +15,27 @@ class SyncView extends Ui.View {
     function onShow() {
         App.getApp().phoneRouteIndex.received = false;
         Comm.transmit({ "type" => "LIST_ROUTES" }, null, new CommListener());
+        tick = 0;
         timer = new Timer.Timer();
-        timer.start(method(:onTimeout), 10000, false);
+        timer.start(method(:onTick), 1000, true);
     }
 
     function onHide() {
         if (timer != null) { timer.stop(); timer = null; }
     }
 
-    function onTimeout() as Void {
-        if (!switched) {
+    function onTick() as Void {
+        tick++;
+        var index = App.getApp().phoneRouteIndex;
+        var received = (index != null && index.received);
+        var action = SyncRetryPolicy.actionForTick(tick, received);
+        if (action == :retransmit) {
+            Comm.transmit({ "type" => "LIST_ROUTES" }, null, new CommListener());
+        } else if (action == :giveUp && !switched) {
             switched = true;
             Ui.switchToView(new RouteListView(), new RouteListDelegate(), Ui.SLIDE_LEFT);
         }
+        Ui.requestUpdate();
     }
 
     function onUpdate(dc) {
