@@ -257,6 +257,31 @@ up to `MAX_RETRY_ATTEMPTS` times. If the server asks for longer than `MAX_RETRY_
 rather than blocking the worker for a full rate-limit window. The wait is performed via an
 injectable `Sleeper` so unit tests verify the backoff timing without actually sleeping.
 
+#### Background message delivery (watch can wake the phone app)
+
+Watch → phone requests do not require the ClimbPro Android app to be running.
+On every successful SDK connect, `ConnectIqClient` registers **binder-service
+delivery** with Garmin Connect Mobile (`registerAppToUseBinderService`): GCM
+then delivers each watch message by binding into the app's
+`IQGarminBindingService` (declared by the vendored CIQ SDK AAR), which starts
+the app process if it is dead. The registration is stored GCM-side per package,
+survives process death and app updates, and is not removed by SDK `shutdown()`.
+On GCM versions without this AIDL call, the client falls back to the legacy
+per-device broadcast registration (foreground-only, pre-existing behaviour).
+
+Two support mechanisms close the remaining gaps:
+
+- **Cold-wake race** — the message that wakes a dead process is dropped inside
+  the SDK before the listener exists (~2–4 s init). The widget's sync screen
+  therefore retransmits `LIST_ROUTES` at 3 s and 6 s (`SyncRetryPolicy`), and
+  the phone's `HELLO` on connect independently triggers a re-request.
+- **Reboot / GCM restart** — `CiqRebindWorker` (scheduled by `RebindScheduler`:
+  periodic 6 h + one-shot from `BootCompletedReceiver`) starts the app process
+  so the connect path re-registers. It is deliberately **unconstrained**
+  WorkManager work: the "charging + unmetered" rule applies to route *sync*
+  (`RouteSyncWorker`), not to this no-network, sub-30-second registration
+  refresh.
+
 #### UI refresh & feedback
 
 The manual "Sync now" action enqueues a uniquely-named work request
