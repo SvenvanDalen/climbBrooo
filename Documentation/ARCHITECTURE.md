@@ -274,7 +274,10 @@ Two support mechanisms close the remaining gaps:
 - **Cold-wake race** — the message that wakes a dead process is dropped inside
   the SDK before the listener exists (~2–4 s init). The widget's sync screen
   therefore retransmits `LIST_ROUTES` at 3 s and 6 s (`SyncRetryPolicy`), and
-  the phone's `HELLO` on connect independently triggers a re-request.
+  the phone's `HELLO` independently triggers a re-request. `HELLO` is sent on
+  **every** (re)established connection — the send is re-armed whenever the
+  device reports DISCONNECTED — so a Bluetooth drop mid-ride also ends with a
+  fresh prime + widget refresh, not just the first connect of the process.
 - **Reboot / GCM restart** — `CiqRebindWorker` (scheduled by `RebindScheduler`:
   periodic 6 h + one-shot from `BootCompletedReceiver`) starts the app process
   so the connect path re-registers. It is deliberately **unconstrained**

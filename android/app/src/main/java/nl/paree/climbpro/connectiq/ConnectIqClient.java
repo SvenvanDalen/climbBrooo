@@ -151,6 +151,13 @@ public final class ConnectIqClient {
                 connected = nowConnected;
                 stateLd.postValue(nowConnected
                         ? ConnectIqState.CONNECTED : ConnectIqState.DISCONNECTED);
+                if (!nowConnected) {
+                    // Arm HELLO for the next reconnect: every re-established
+                    // connection must be fully re-primed (GCM binding in
+                    // fallback mode + widget route-list refresh), not just the
+                    // first connection of this process.
+                    helloSent = false;
+                }
                 if (nowConnected) {
                     // Re-register in case the CIQ session was reset during the
                     // disconnect. Binder-mode registrations live GCM-side and
