@@ -37,12 +37,12 @@ public class OnboardPushServiceTest {
 
     @Test
     public void pushRoute_sendsHeaderThenChunksInOrder() {
-        when(mockClient.sendMessageToOnboard(any())).thenReturn(true);
+        when(mockClient.sendMessageToOnboardBlocking(any(), anyLong())).thenReturn(true);
         OnboardPushService svc = new OnboardPushService(mockClient);
         boolean ok = svc.pushRoute(route(251));
         assertTrue(ok);
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(mockClient, times(3)).sendMessageToOnboard(captor.capture());
+        verify(mockClient, times(3)).sendMessageToOnboardBlocking(captor.capture(), anyLong());
         List<Map> sent = captor.getAllValues();
         assertEquals("RAW_HDR", sent.get(0).get("type"));
         assertEquals("RAW_CHUNK", sent.get(1).get("type"));
@@ -58,11 +58,30 @@ public class OnboardPushServiceTest {
     }
 
     @Test
-    public void pushRoute_sendFailure_stopsAndReturnsFalse() {
-        when(mockClient.sendMessageToOnboard(any())).thenReturn(true, false, true);
+    public void pushRoute_transientFailure_retriesSameMessageAndSucceeds() {
+        // hdr ok, chunk0 fails once then succeeds on retry, chunk1 ok.
+        when(mockClient.sendMessageToOnboardBlocking(any(), anyLong()))
+                .thenReturn(true, false, true, true);
+        OnboardPushService svc = new OnboardPushService(mockClient);
+        boolean ok = svc.pushRoute(route(251));
+        assertTrue(ok);
+        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+        verify(mockClient, times(4)).sendMessageToOnboardBlocking(captor.capture(), anyLong());
+        List<Map> sent = captor.getAllValues();
+        assertEquals("RAW_HDR", sent.get(0).get("type"));
+        assertEquals(0, sent.get(1).get("seq"));
+        assertEquals(0, sent.get(2).get("seq"));   // the retry resends the SAME chunk
+        assertEquals(1, sent.get(3).get("seq"));
+    }
+
+    @Test
+    public void pushRoute_persistentSendFailure_stopsAndReturnsFalse() {
+        // hdr ok; chunk0 fails on both attempts -> abort, chunk1 never sent.
+        when(mockClient.sendMessageToOnboardBlocking(any(), anyLong()))
+                .thenReturn(true, false, false);
         OnboardPushService svc = new OnboardPushService(mockClient);
         boolean ok = svc.pushRoute(route(251));
         assertFalse(ok);
-        verify(mockClient, times(2)).sendMessageToOnboard(any());
+        verify(mockClient, times(3)).sendMessageToOnboardBlocking(any(), anyLong());
     }
 }

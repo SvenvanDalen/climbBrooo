@@ -241,10 +241,16 @@ public final class ConnectIqClient {
         return sendPayloadTo(surfaceApp, payload);
     }
 
-    /** Send a Map to the ClimbPro Onboard watch app (raw-route push channel). No
-     *  inbound registration is needed — the watch never transmits anything back. */
-    public boolean sendMessageToOnboard(Map<String, Object> message) {
-        return sendMessageTo(onboardApp, message);
+    /**
+     * Blocking send to the ClimbPro Onboard watch app (raw-route push channel).
+     * Returns true only when the watch acknowledges SUCCESS within {@code timeoutMs}.
+     * The raw-route transfer is push-only (the watch never NACKs), so a silently
+     * dropped chunk would stall the watch's pending transfer forever — every
+     * message must be individually acknowledged. No inbound registration is
+     * needed — the watch never transmits anything back.
+     */
+    public boolean sendMessageToOnboardBlocking(Map<String, Object> message, long timeoutMs) {
+        return sendMessageBlocking(onboardApp, message, timeoutMs);
     }
 
     private boolean sendPayloadTo(IQApp targetApp, byte[] payload) {
@@ -261,11 +267,6 @@ public final class ConnectIqClient {
      * when the watch acknowledges SUCCESS within {@code timeoutMs}.
      */
     public boolean sendPayloadBlocking(byte[] payload, long timeoutMs) {
-        final IQDevice d = device;
-        if (!connected || d == null) {
-            Log.w(TAG, "sendPayloadBlocking: not connected");
-            return false;
-        }
         final Map<String, Object> message;
         try {
             message = PayloadCodec.decode(payload);
@@ -273,20 +274,30 @@ public final class ConnectIqClient {
             Log.e(TAG, "sendPayloadBlocking: cannot parse payload JSON", e);
             return false;
         }
+        return sendMessageBlocking(iqApp, message, timeoutMs);
+    }
+
+    private boolean sendMessageBlocking(IQApp targetApp, Map<String, Object> message,
+                                        long timeoutMs) {
+        final IQDevice d = device;
+        if (!connected || d == null) {
+            Log.w(TAG, "sendMessageBlocking: not connected");
+            return false;
+        }
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<ConnectIQ.IQMessageStatus> result = new AtomicReference<>();
         try {
-            connectIQ.sendMessage(d, iqApp, message, (dev, app, status) -> {
+            connectIQ.sendMessage(d, targetApp, message, (dev, app, status) -> {
                 result.set(status);
                 latch.countDown();
             });
         } catch (InvalidStateException | ServiceUnavailableException e) {
-            Log.e(TAG, "sendPayloadBlocking failed", e);
+            Log.e(TAG, "sendMessageBlocking failed", e);
             return false;
         }
         try {
             if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
-                Log.w(TAG, "sendPayloadBlocking: timed out");
+                Log.w(TAG, "sendMessageBlocking: timed out");
                 return false;
             }
         } catch (InterruptedException e) {
