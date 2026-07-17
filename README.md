@@ -28,9 +28,11 @@ phone and no network. Sync is opportunistic.
   gradient (light yellow → red) using one shared table.
 - **Syncs** a compact payload to the watch over the Connect IQ Communications API, with
   incremental resync, retry, and offline-first orchestration.
-- **Works with the phone app closed** — Garmin Connect Mobile wakes the ClimbPro app
-  (binder-service delivery) whenever the watch sends a request, so the watch route list
-  is always reachable, even after a phone reboot.
+- **Stays reachable in the background** — a periodic keep-alive worker (plus a
+  boot-time trigger) keeps a connected ClimbPro process around so the watch route
+  list usually loads without opening the phone app; HELLO re-priming after every
+  reconnect and a watch-side request retry make the sync robust across Bluetooth
+  drops.
 - **On the watch**: shows the live climb profile with progress, previews the next climb,
   shows the surface section you're on, and **alerts** (vibrate + tone) once per climb
   near the start.

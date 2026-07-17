@@ -13,14 +13,15 @@ import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.connectiq.ConnectIqClient;
 
 /**
- * Lightweight keep-registered worker. Starting this worker starts the app
- * process; {@code ClimbProApplication.onCreate} then kicks off the Connect IQ
- * (re)connect, and connecting re-registers binder-service delivery with Garmin
- * Connect Mobile — the registration that lets the watch wake this app while it
- * is closed. This worker only keeps the process alive long enough for that to
- * finish. It does no sync work (RouteSyncWorker owns that) and is deliberately
- * unconstrained: no network or charging requirement, because it must also run
- * on battery, offline, and shortly after boot.
+ * Lightweight keep-alive worker. Starting this worker starts the app process;
+ * {@code ClimbProApplication.onCreate} then kicks off the Connect IQ
+ * (re)connect, which re-registers the runtime message listener with Garmin
+ * Connect Mobile. The cached background process keeps answering watch requests
+ * for as long as Android keeps it around, so the watch route list usually loads
+ * without the user opening the app. This worker does no sync work
+ * (RouteSyncWorker owns that) and is deliberately unconstrained: no network or
+ * charging requirement, because it must also run on battery, offline, and
+ * shortly after boot.
  */
 public final class CiqRebindWorker extends Worker {
 

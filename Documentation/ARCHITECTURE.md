@@ -257,33 +257,36 @@ up to `MAX_RETRY_ATTEMPTS` times. If the server asks for longer than `MAX_RETRY_
 rather than blocking the worker for a full rate-limit window. The wait is performed via an
 injectable `Sleeper` so unit tests verify the backoff timing without actually sleeping.
 
-#### Background message delivery (watch can wake the phone app)
+#### Background message delivery (and the failed binder-service experiment)
 
-Watch → phone requests do not require the ClimbPro Android app to be running.
-On every successful SDK connect, `ConnectIqClient` registers **binder-service
-delivery** with Garmin Connect Mobile (`registerAppToUseBinderService`): GCM
-then delivers each watch message by binding into the app's
-`IQGarminBindingService` (declared by the vendored CIQ SDK AAR), which starts
-the app process if it is dead. The registration is stored GCM-side per package,
-survives process death and app updates, and is not removed by SDK `shutdown()`.
-On GCM versions without this AIDL call, the client falls back to the legacy
-per-device broadcast registration (foreground-only, pre-existing behaviour).
+Watch → phone requests require a live, registered ClimbPro process: incoming
+CIQ messages arrive on a **runtime-registered broadcast receiver** inside the
+SDK (`registerForAppEvents(device, app, listener)`), which dies with the
+process. Three mechanisms make that as robust as the platform allows:
 
-Two support mechanisms close the remaining gaps:
-
-- **Cold-wake race** — the message that wakes a dead process is dropped inside
-  the SDK before the listener exists (~2–4 s init). The widget's sync screen
-  therefore retransmits `LIST_ROUTES` at 3 s and 6 s (`SyncRetryPolicy`), and
-  the phone's `HELLO` independently triggers a re-request. `HELLO` is sent on
-  **every** (re)established connection — the send is re-armed whenever the
-  device reports DISCONNECTED — so a Bluetooth drop mid-ride also ends with a
-  fresh prime + widget refresh, not just the first connect of the process.
-- **Reboot / GCM restart** — `CiqRebindWorker` (scheduled by `RebindScheduler`:
+- **Keep-alive wake-ups** — `CiqRebindWorker` (scheduled by `RebindScheduler`:
   periodic 6 h + one-shot from `BootCompletedReceiver`) starts the app process
-  so the connect path re-registers. It is deliberately **unconstrained**
-  WorkManager work: the "charging + unmetered" rule applies to route *sync*
-  (`RouteSyncWorker`), not to this no-network, sub-30-second registration
-  refresh.
+  in the background; `Application.onCreate` then reconnects and re-registers,
+  and the cached process keeps answering watch requests for as long as Android
+  keeps it around. It is deliberately **unconstrained** WorkManager work: the
+  "charging + unmetered" rule applies to route *sync* (`RouteSyncWorker`), not
+  to this no-network, sub-30-second refresh.
+- **Re-prime on every reconnect** — `HELLO` is sent on **every** (re)established
+  connection (the send is re-armed whenever the device reports DISCONNECTED),
+  so a Bluetooth drop mid-ride ends with a fresh GCM message binding and a
+  widget route-list refresh, not just the first connect of the process.
+- **Watch-side retry** — the widget's sync screen retransmits `LIST_ROUTES` at
+  3 s and 6 s (`SyncRetryPolicy`) inside its 10 s window, covering a phone whose
+  process needs a few seconds to (re)connect.
+
+> **Do not resurrect `registerAppToUseBinderService`.** The vendored SDK offers
+> binder-service delivery (GCM binds into `IQGarminBindingService`, which would
+> wake a dead process). Verified on a real device (GCM 5.26.1, FR255M,
+> 2026-07-17): GCM *accepts* the registration but never delivers anything
+> through it — no messages, no device-status events — while the SDK
+> simultaneously unregisters the broadcast receiver, leaving the app fully
+> deaf. The attempt and revert are documented in
+> `docs/superpowers/plans/2026-07-17-always-connectable-watch-sync.md`.
 
 #### UI refresh & feedback
 
