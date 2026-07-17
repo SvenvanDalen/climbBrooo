@@ -131,10 +131,16 @@ public final class ConnectIqClient {
                 scheduleReconnect();
                 return;
             }
+            for (IQDevice d : devices) {
+                Log.i(TAG, "Device: id=" + d.getDeviceIdentifier()
+                        + " name=" + d.getFriendlyName() + " status=" + d.getStatus());
+            }
             device = devices.get(0);
             Log.i(TAG, "Using device: " + device.getFriendlyName());
 
             connectIQ.registerForDeviceEvents(device, (dev, status) -> {
+                Log.i(TAG, "Device event: id=" + dev.getDeviceIdentifier()
+                        + " status=" + status);
                 boolean nowConnected = status == IQDevice.IQDeviceStatus.CONNECTED;
                 connected = nowConnected;
                 stateLd.postValue(nowConnected
@@ -168,7 +174,14 @@ public final class ConnectIqClient {
             connectIQ.registerForAppEvents(device, iqApp,
                     (dev, app, data, status) -> dispatchIncoming(data));
 
-            connected = device.getStatus() == IQDevice.IQDeviceStatus.CONNECTED;
+            // GCM 5.26.1 returns status=UNKNOWN in the getConnectedDevices()
+            // parcel; the REAL status arrives via the device event above, which
+            // often fires before this line. Never downgrade with the stale
+            // snapshot — only upgrade — or the client stays "not connected"
+            // forever while messages demonstrably flow.
+            if (device.getStatus() == IQDevice.IQDeviceStatus.CONNECTED) {
+                connected = true;
+            }
             stateLd.postValue(connected
                     ? ConnectIqState.CONNECTED : ConnectIqState.DISCONNECTED);
             maybeSendHello();

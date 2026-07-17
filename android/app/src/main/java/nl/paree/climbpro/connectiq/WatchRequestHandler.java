@@ -78,8 +78,8 @@ public final class WatchRequestHandler {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("type",   "ROUTE_LIST");
         response.put("routes", routes);
-        connectIqClient.sendMessage(response);
-        Log.i(TAG, "Sent ROUTE_LIST with " + routes.size() + " routes");
+        boolean ok = connectIqClient.sendMessage(response);
+        Log.i(TAG, "ROUTE_LIST with " + routes.size() + " routes — sent=" + ok);
     }
 
     private void handleLoadRoute(String routeId) {
