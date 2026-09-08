@@ -65,6 +65,7 @@ garmin-surface/mir/
 garmin-widget/mir/
 
 # Local build/export output
+build/
 builds/
 garminAppComplete/
 

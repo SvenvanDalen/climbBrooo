@@ -47,6 +47,15 @@ class OnboardClimbData {
     var alertedClimb;              // Boolean per climb, never cleared during a ride
     var pendingAlert = false;
 
+    // TEMP diagnostics for the "5 km window doesn't update on a real ride"
+    // report — remove once root cause is confirmed. computeTicks proves
+    // compute(info) is firing at all; fixTicks proves info.currentLocation
+    // is non-null; lastLat/lastLon are the raw fix, independent of matching.
+    var computeTicks = 0;
+    var fixTicks = 0;
+    var lastLat = 0.0;
+    var lastLon = 0.0;
+
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
         climbEndDist   = new [MAX_CLIMBS];

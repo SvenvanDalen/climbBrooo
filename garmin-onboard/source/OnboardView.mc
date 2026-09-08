@@ -29,10 +29,17 @@ class OnboardView extends Ui.DataField {
 
     function compute(info) {
         var data = (App.getApp() as OnboardApp).climbData;
-        if (data == null || !data.parsed || info == null || info.currentLocation == null) {
+        if (data == null || !data.parsed) {
             return;
         }
+        data.computeTicks++;   // TEMP diagnostic, see OnboardClimbData
+        if (info == null || info.currentLocation == null) {
+            return;
+        }
+        data.fixTicks++;
         var ll = info.currentLocation.toDegrees();
+        data.lastLat = ll[0];
+        data.lastLon = ll[1];
         data.updatePosition(ll[0], ll[1]);
         if (data.takeAlert()) {
             if (Attention has :vibrate) {
@@ -150,6 +157,21 @@ class OnboardView extends Ui.DataField {
         dc.drawText(w / 2, baseline + 18, Gfx.FONT_SMALL, msg, Gfx.TEXT_JUSTIFY_CENTER);
 
         drawOffRouteBanner(dc, data, w);
+        drawDebugLine(dc, data, h);
+    }
+
+    // TEMP diagnostic for the "screen never updates" report — remove once
+    // root cause is confirmed. T=compute() calls with a parsed route,
+    // F=of those, calls where info.currentLocation was non-null,
+    // P=routeProgress in meters. If T stays 0, compute() isn't firing at
+    // all. If T grows but F doesn't, GPS fixes aren't reaching the field.
+    // If F grows but P doesn't, updatePosition/bestMatch is rejecting fixes.
+    hidden function drawDebugLine(dc, data, h) {
+        dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(4, h - 14, Gfx.FONT_XTINY,
+                    "T" + data.computeTicks + " F" + data.fixTicks
+                    + " P" + data.routeProgress.toNumber(),
+                    Gfx.TEXT_JUSTIFY_LEFT);
     }
 
     hidden function drawOffRouteBanner(dc, data, w) {
