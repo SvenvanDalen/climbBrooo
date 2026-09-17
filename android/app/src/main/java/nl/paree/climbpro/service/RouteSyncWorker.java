@@ -13,6 +13,7 @@ import androidx.work.WorkerParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.connectiq.ConnectIqClient;
+import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
@@ -57,6 +58,7 @@ public final class RouteSyncWorker extends Worker {
         Context ctx = getApplicationContext();
 
         RouteRepository      routeRepo      = new RouteRepository(ctx);
+        ClimbAttemptRepository attemptRepo  = new ClimbAttemptRepository(ctx);
         SyncStateRepository  syncStateRepo  = new SyncStateRepository(ctx);
         StravaAuthRepository authRepo        = new StravaAuthRepository(ctx);
         ObjectMapper         mapper          = new ObjectMapper();
@@ -93,7 +95,7 @@ public final class RouteSyncWorker extends Worker {
         };
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder, profile);
+                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, attemptRepo);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -130,7 +132,8 @@ public final class RouteSyncWorker extends Worker {
     private SyncOrchestrator.PayloadJob buildPayloadJob(
             SharedPreferences prefs, RouteRepository routeRepo,
             SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
-            nl.paree.climbpro.domain.power.RiderProfile profile) {
+            nl.paree.climbpro.domain.power.RiderProfile profile,
+            ClimbAttemptRepository attemptRepo) {
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
@@ -170,7 +173,9 @@ public final class RouteSyncWorker extends Worker {
                     return null;
                 }
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
-                byte[] payload = payloadBuilder.buildRoutePayload(route, plan);
+                int[][] refPlan = nl.paree.climbpro.service.RouteRefTimePlanner.plan(
+                        route, attemptRepo.loadAll());
+                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return null;

@@ -69,6 +69,8 @@ class ClimbData {
     var segSurf;          // surface type per segment: 0=asphalt 1=gravel 2=dirt 3=cobble 4=mixed 5=unknown
     var segTargetSec;     // per-segment target seconds (parallel to seg arrays); 0 = none
     var hasTargets;       // bool per climb: true when tsec was provided
+    var segRefSec;        // per-segment PR reference seconds (parallel to seg arrays); 0 = none
+    var hasRefTargets;    // bool per climb: true when refsec was provided
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -107,6 +109,8 @@ class ClimbData {
         segSurf = new [MAX_CLIMBS];
         segTargetSec = new [MAX_CLIMBS];
         hasTargets = new [MAX_CLIMBS];
+        segRefSec = new [MAX_CLIMBS];
+        hasRefTargets = new [MAX_CLIMBS];
         climbEntered = new [MAX_CLIMBS];
         climbSkipped = new [MAX_CLIMBS];
 
@@ -132,6 +136,8 @@ class ClimbData {
             segSurf[i] = new [MAX_SEGMENTS];
             segTargetSec[i] = new [MAX_SEGMENTS];
             hasTargets[i] = false;
+            segRefSec[i] = new [MAX_SEGMENTS];
+            hasRefTargets[i] = false;
             for (var s = 0; s < MAX_SEGMENTS; s++) {
                 segDist[i][s] = 0;
                 segElevGain[i][s] = 0;
@@ -139,6 +145,7 @@ class ClimbData {
                 segColor[i][s] = 0;
                 segSurf[i][s] = 5; // UNKNOWN
                 segTargetSec[i][s] = 0;
+                segRefSec[i][s] = 0;
             }
         }
 
@@ -408,6 +415,31 @@ class ClimbData {
                 return cum + (segTargetSec[ci][s] * frac);
             }
             cum += segTargetSec[ci][s];
+            cumDist = segEnd;
+        }
+        return cum;
+    }
+
+    // Cumulative PR reference seconds at the current progressInClimb for the active climb,
+    // linearly interpolated within the running segment. Returns -1 when no PR reference.
+    // Mirrors targetSecondsAt(); kept separate because tsec (manual pacing plan) and
+    // refsec (per-segment PR) are independent and may both be present.
+    function refSecondsAt() {
+        var ci = activeClimbIndex;
+        if (ci < 0 || !hasRefTargets[ci]) { return -1; }
+        var cum = 0;            // cumulative reference seconds for completed segments
+        var cumDist = 0;        // cumulative distance at end of completed segments
+        for (var s = 0; s < segCount[ci]; s++) {
+            var segLen = segDist[ci][s];
+            var segEnd = cumDist + segLen;
+            if (progressInClimb <= segEnd || s == segCount[ci] - 1) {
+                var into = progressInClimb - cumDist;
+                if (into < 0) { into = 0; }
+                if (into > segLen) { into = segLen; }
+                var frac = (segLen > 0) ? (into.toFloat() / segLen.toFloat()) : 0.0;
+                return cum + (segRefSec[ci][s] * frac);
+            }
+            cum += segRefSec[ci][s];
             cumDist = segEnd;
         }
         return cum;

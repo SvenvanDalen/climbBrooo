@@ -35,9 +35,11 @@ phone and no network. Sync is opportunistic.
   drops.
 - **On the watch**: shows the live climb profile with progress, previews the next climb,
   shows the surface section you're on, and **alerts** (vibrate + tone) once per climb
-  near the start.
+  near the start. On a repeat climb, shows a live "ahead/behind your PR" delta per
+  segment (falls back to the pacing-plan delta when no PR reference is available yet).
 - **Phone-side extras**: per-climb time estimate (fatigue-aware), pacing plan, and a
-  climb logbook built from your Strava history.
+  climb logbook built from your Strava history — including per-segment PR splits, once
+  an activity has been matched against a segmented climb.
 
 ---
 

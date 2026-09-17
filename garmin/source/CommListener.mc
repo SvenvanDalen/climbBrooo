@@ -165,6 +165,21 @@ class PhoneMessageCallback {
         } else {
             data.hasTargets[idx] = false;
         }
+
+        // Optional refsec array: [prSeconds, ...] one int per segment (parallel to segs).
+        // Per-segment PR reference time — distinct from tsec, may be present alongside it.
+        var refsec = climbDict.get("refsec");
+        if (refsec != null && refsec instanceof Toybox.Lang.Array && refsec.size() >= data.segCount[idx]
+                && data.segCount[idx] > 0) {
+            data.hasRefTargets[idx] = true;
+            for (var s = 0; s < data.segCount[idx]; s++) {
+                var rv = refsec[s];
+                data.segRefSec[idx][s] =
+                    (rv instanceof Toybox.Lang.Number) ? rv.toNumber() : 0;
+            }
+        } else {
+            data.hasRefTargets[idx] = false;
+        }
     }
 
     hidden function getInt(dict, key, defaultVal) {

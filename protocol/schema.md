@@ -48,7 +48,8 @@ Per-climb numeric data is packed into compact integer arrays (the watch slices t
 - `segs` — `[distance, elevationGain, gradientFixedPoint, colorIndex, …]`, **4 ints per segment**.
 - `calib` — `[distanceFromClimbStart, latInt, lonInt, …]`, **3 ints per point** (`latInt`/`lonInt` = degrees × 100000). Route mode, optional. The `distanceFromClimbStart` values coincide with the climb's **8%-fraction segment ends** (a subset, ≥ 200 m apart, final segment end always included) — they are not an independent equal-division grid. Wire shape is unchanged; only which distances are emitted.
 - `surf` — one surface-type code (0–5) per segment, parallel to `segs`. Omitted when every segment is UNKNOWN.
-- `tsec` — per-segment target time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no pacing plan is available.
+- `tsec` — per-segment target time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no pacing plan is available. Manual, power-based pacing target (see `RoutePacingPlanner`).
+- `refsec` — per-segment PR reference time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no stored attempt has a matching segment count for that climb. The fastest ever split recorded per segment across all attempts (`SegmentPrCalculator`), used for the live "ahead/behind your PR" delta. Distinct from `tsec` — both may be present on the same climb.
 
 `surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
@@ -64,7 +65,7 @@ Watch-side cap is **8 KB** (configurable; tuned in Phase 7 after measurement). E
 
 So ~150 + 12 × 60 = ~870 bytes per climb. 8 KB ÷ 870 ≈ **~9 climbs comfortably**, more if names are omitted and JSON is minified (no whitespace).
 
-When a pacing plan is present, the optional `tsec` array adds ~1 int per segment — roughly **+70–80 bytes per climb** (minified). This narrows the comfortable climb count slightly but stays well within 8 KB for typical routes.
+When a pacing plan is present, the optional `tsec` array adds ~1 int per segment — roughly **+70–80 bytes per climb** (minified). When per-segment PR data is present, `refsec` adds a similar ~70–80 bytes per climb; the two are independent and may both be present. This narrows the comfortable climb count slightly but stays well within 8 KB for typical routes.
 
 If the budget ever feels tight, options in priority order:
 1. Drop optional `name` fields.
@@ -79,6 +80,7 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 3       | 2026-09-17 | Added optional `refsec` (per-segment PR reference time) packed int array on Climb, parallel to `segs`. Route-mode only, omitted when no stored attempt has a matching segment count. Distinct from `tsec`; additive, no version bump. |
 | 3       | 2026-06-19 | `calib` point distances now coincide with the 8%-fraction segment-end grid (were an independent equal-division grid in the default detection path). Wire shape unchanged (still 3 ints/point); only the emitted distances differ. No version bump. |
 | 1       | 2026-06-13 | Added optional `tsec` (targetSeconds) packed int array on Climb — per-segment target time in whole seconds, parallel to `segments` (wire key `segs`). Route-mode only, omitted when no pacing plan. ~13 ints per climb; additive, no version bump. |
 | 1       | 2026-05-20 | Initial schema. Two modes, fixed-point gradients, color index, byte budget 8 KB. |

@@ -9,14 +9,22 @@ public final class KnownClimb {
     public final double endLat;
     public final double endLon;
     public final int    lengthM;
+    /** Per-segment length (m), in climb order; null when the route has no segments. */
+    public final int[]  segLengthsM;
 
     public KnownClimb(String climbId, double startLat, double startLon,
                       double endLat, double endLon, int lengthM) {
-        this.climbId  = climbId;
-        this.startLat = startLat;
-        this.startLon = startLon;
-        this.endLat   = endLat;
-        this.endLon   = endLon;
-        this.lengthM  = lengthM;
+        this(climbId, startLat, startLon, endLat, endLon, lengthM, null);
+    }
+
+    public KnownClimb(String climbId, double startLat, double startLon,
+                      double endLat, double endLon, int lengthM, int[] segLengthsM) {
+        this.climbId     = climbId;
+        this.startLat     = startLat;
+        this.startLon     = startLon;
+        this.endLat       = endLat;
+        this.endLon       = endLon;
+        this.lengthM      = lengthM;
+        this.segLengthsM  = segLengthsM;
     }
 }

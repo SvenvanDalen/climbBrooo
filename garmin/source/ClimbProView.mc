@@ -250,23 +250,36 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
-        // Bottom line (where the preview shows "in X km"): pacing ghost vs plan.
-        if (data.hasTargets[ci] && data.climbStartTimerMs >= 0) {
-            var target = data.targetSecondsAt();
-            if (target >= 0) {
-                var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
-                var delta = (actual - target).toNumber();   // + = behind, - = ahead
-                var ghostY = (h * 0.88).toNumber();
-                if (delta > 0) {
-                    dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-                    dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
-                        "+" + delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
-                } else {
-                    dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-                    dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
-                        delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
+        // Bottom line (where the preview shows "in X km"): live ghost delta.
+        // Prefers the per-segment PR delta ("vs PR") when a PR reference is available —
+        // that is the more actionable, always-on signal (repeat-climb comparison); falls
+        // back to the manual pacing-plan delta ("vs plan") otherwise. Screen space is too
+        // tight on the FR255M to show both at once.
+        if (data.climbStartTimerMs >= 0) {
+            var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
+            var ghostY = (h * 0.88).toNumber();
+            if (data.hasRefTargets[ci]) {
+                var ref = data.refSecondsAt();
+                if (ref >= 0) {
+                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR");
+                }
+            } else if (data.hasTargets[ci]) {
+                var target = data.targetSecondsAt();
+                if (target >= 0) {
+                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan");
                 }
             }
+        }
+    }
+
+    // + = behind (red), - or 0 = ahead/on pace (green).
+    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix) {
+        if (deltaSec > 0) {
+            dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, y, Gfx.FONT_XTINY, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+        } else {
+            dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, y, Gfx.FONT_XTINY, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 

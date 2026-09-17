@@ -23,7 +23,8 @@ function fullRoutePayload() {
                 "segs"  => [500, 20, 40, 1, 500, 20, 40, 1, 500, 20, 40, 1, 500, 20, 40, 1],
                 "calib" => [0, 5150000, 510000, 1000, 5151000, 510500, 2000, 5152000, 511000],
                 "surf"  => [1, 1, 0, 0],
-                "tsec"  => [60, 62, 64, 66]
+                "tsec"  => [60, 62, 64, 66],
+                "refsec" => [58, 59, 61, 63]
             }
         ]
     };
@@ -105,6 +106,19 @@ function parse_routeMode_unpacksSurfaceAndTargets(logger) {
 }
 
 (:test)
+function parse_routeMode_unpacksRefSecondsAlongsideTargets(logger) {
+    var d = freshData();
+    new PhoneMessageCallback().onMessage(fullRoutePayload());
+
+    // refsec is independent of tsec — both are present in the fixture at once.
+    Test.assert(d.hasRefTargets[0]);
+    Test.assertEqual(d.segRefSec[0][0], 58);
+    Test.assertEqual(d.segRefSec[0][3], 63);
+    Test.assert(d.hasTargets[0]);
+    return true;
+}
+
+(:test)
 function parse_radiusMode_decodesStartCoords(logger) {
     var d = freshData();
     new PhoneMessageCallback().onMessage({
@@ -137,6 +151,7 @@ function parse_missingSurfAndTargets_defaultsSafely(logger) {
 
     Test.assertEqual(d.segSurf[0][0], 5);    // UNKNOWN default when surf absent
     Test.assertEqual(d.hasTargets[0], false);
+    Test.assertEqual(d.hasRefTargets[0], false);
     Test.assertEqual(d.calibCount[0], 0);
     return true;
 }
@@ -273,6 +288,23 @@ function parse_tsecShorterThanSegs_noTargets(logger) {
                         "tsec" => [60] } ]   // only 1 of 2
     });
     Test.assertEqual(d.hasTargets[0], false);
+    return true;
+}
+
+// A refsec array shorter than the segment count disables the PR reference for that
+// climb — mirrors parse_tsecShorterThanSegs_noTargets. tsec/refsec are validated
+// independently, so a short refsec must not also disable tsec.
+(:test)
+function parse_refsecShorterThanSegs_noRefTargets(logger) {
+    var d = freshData();
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route",
+        "climbs" => [ { "sd" => 0, "ed" => 900, "len" => 900, "eg" => 50, "ag" => 55,
+                        "segs" => [400, 20, 40, 1, 500, 30, 50, 2],
+                        "tsec" => [60, 62], "refsec" => [58] } ]   // refsec only 1 of 2
+    });
+    Test.assertEqual(d.hasRefTargets[0], false);
+    Test.assert(d.hasTargets[0]);
     return true;
 }
 
