@@ -22,4 +22,11 @@ public final class StoredClimb {
     public List<StoredSegment> segments;
     public List<StoredCalibrationPoint> calibrationPoints; // null on routes stored before version 2
     public int segmentCount = 0; // 0 means use ClimbConstants.defaultSegmentCount() (for old stored routes)
+    /**
+     * Auto-computed shape classification (see {@code domain.climb.ClimbShape}), stored as the
+     * enum name. Phone-only for now — not part of the wire payload. Null on routes stored
+     * before this field existed; callers should fall back to classifying {@link #segments}
+     * on the fly rather than treating null as a real category.
+     */
+    public String shape;
 }

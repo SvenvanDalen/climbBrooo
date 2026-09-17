@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.domain.climb.ClimbShapeLabel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,8 @@ public final class ClimbListAdapter
         StoredClimb c = items.get(position);
         String name = c.userDisplayName != null ? c.userDisplayName : c.name;
         h.nameView.setText(name != null ? name : "Climb " + (position + 1));
-        h.statsView.setText(String.format("%d m · %.1f%% avg · %d m gain",
-                c.length, c.avgGradient * 100, c.elevationGain));
+        h.statsView.setText(String.format("%d m · %.1f%% avg · %d m gain · %s",
+                c.length, c.avgGradient * 100, c.elevationGain, ClimbShapeLabel.forStoredClimb(c)));
         final int idx = position;
         h.itemView.setOnClickListener(v -> { if (listener != null) listener.onClimbClick(c, idx); });
     }

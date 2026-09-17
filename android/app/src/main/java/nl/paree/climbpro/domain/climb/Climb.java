@@ -24,6 +24,8 @@ public final class Climb {
     public final String name;
     public final List<Segment> segments;
     public final List<CalibrationPoint> calibrationPoints;
+    /** Auto-computed shape classification (never null — {@link ClimbShapeClassifier} defaults to STEADY). */
+    public final ClimbShape shape;
 
     private Climb(Builder b) {
         this.startDistance = b.startDistance;
@@ -36,6 +38,7 @@ public final class Climb {
         this.name = b.name;
         this.segments = Collections.unmodifiableList(b.segments);
         this.calibrationPoints = Collections.unmodifiableList(b.calibrationPoints);
+        this.shape = b.shape != null ? b.shape : ClimbShapeClassifier.classify(b.segments);
     }
 
     public boolean hasCoordinates() {
@@ -57,6 +60,7 @@ public final class Climb {
         private String name;
         private List<Segment> segments = Collections.emptyList();
         private List<CalibrationPoint> calibrationPoints = Collections.emptyList();
+        private ClimbShape shape;
 
         public Builder startDistance(int v) { this.startDistance = v; return this; }
         public Builder endDistance(int v) { this.endDistance = v; return this; }
@@ -68,6 +72,8 @@ public final class Climb {
         public Builder name(String v) { this.name = v; return this; }
         public Builder segments(List<Segment> v) { this.segments = v; return this; }
         public Builder calibrationPoints(List<CalibrationPoint> v) { this.calibrationPoints = v; return this; }
+        /** Optional — omit to auto-classify from {@link #segments} via {@link ClimbShapeClassifier}. */
+        public Builder shape(ClimbShape v) { this.shape = v; return this; }
         public Climb build() { return new Climb(this); }
     }
 
