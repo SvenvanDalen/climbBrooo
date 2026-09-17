@@ -324,6 +324,8 @@ public final class RouteRepository {
                 ss.elevationGain = seg.elevationGain;
                 ss.gradient     = seg.gradient;
                 ss.colorIndex   = seg.colorIndex;
+                ss.avgVamMPerH  = seg.avgVamMPerH;
+                ss.peakVamMPerH = seg.peakVamMPerH;
                 sc.segments.add(ss);
             }
             if (c.calibrationPoints != null && !c.calibrationPoints.isEmpty()) {
@@ -711,6 +713,8 @@ public final class RouteRepository {
             ss.elevationGain = s.elevationGain;
             ss.gradient      = s.gradient;
             ss.colorIndex    = s.colorIndex;
+            ss.avgVamMPerH   = s.avgVamMPerH;
+            ss.peakVamMPerH  = s.peakVamMPerH;
             out.add(ss);
         }
         return out;

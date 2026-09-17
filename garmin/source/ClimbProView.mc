@@ -250,6 +250,19 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
+        // Current segment's gradient-implied VAM (vertical ascent m/h), complementary to the
+        // gradient stat above. Data-plumbing only: no new computation happens on the watch, this
+        // just renders the avg/peak pair CommListener already parsed into segVamAvg/segVamPeak.
+        if (data.hasVam[ci] && data.activeSegmentIndex >= 0
+                && data.activeSegmentIndex < data.segCount[ci]) {
+            var vamAvg = data.segVamAvg[ci][data.activeSegmentIndex];
+            var vamPeak = data.segVamPeak[ci][data.activeSegmentIndex];
+            var vamY = (h * 0.80).toNumber();
+            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, vamY, Gfx.FONT_XTINY,
+                "VAM " + vamAvg + "/" + vamPeak, Gfx.TEXT_JUSTIFY_CENTER);
+        }
+
         // Bottom line (where the preview shows "in X km"): pacing ghost vs plan.
         if (data.hasTargets[ci] && data.climbStartTimerMs >= 0) {
             var target = data.targetSecondsAt();

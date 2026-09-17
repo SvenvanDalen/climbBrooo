@@ -28,4 +28,19 @@ public final class ClimbConstants {
     public static final double FALSE_FLAT_MAX_GRADIENT      = 0.02;
     /** Minimum length (metres) of a leading/trailing false flat before it is trimmed off a climb. */
     public static final int    FALSE_FLAT_MIN_LENGTH_M      = 200;
+
+    /**
+     * Reference climbing speed (m/s) used by {@link VamCalculator} to convert a gradient into an
+     * implied VAM (vertical ascent metres/hour). Route points carry no elapsed-time data — routes
+     * are precomputed from GPX/FIT geometry, not recorded rides — so a true VAM (elevation gain /
+     * elapsed time) cannot be derived from a route file. ~3.5 m/s (12.6 km/h) is a representative
+     * sustained climbing speed on a road bike; the resulting VAM is a planning estimate for
+     * comparing segment intensity, not a measured ascent rate.
+     */
+    public static final double VAM_REFERENCE_SPEED_MPS      = 3.5;
+    /**
+     * Rolling window (metres) used by {@link VamCalculator} to find the peak VAM within a segment.
+     * Distance-based rather than time-based because {@code RoutePoint} carries no timestamp.
+     */
+    public static final int    VAM_PEAK_WINDOW_M            = 100;
 }
