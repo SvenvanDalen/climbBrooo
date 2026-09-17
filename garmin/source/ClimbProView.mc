@@ -83,6 +83,11 @@ class ClimbProView extends Ui.DataField {
                 ? info.timerTime : 0;
         lastGhostTimerMs = timerMs;
 
+        // Current speed for the ETA-to-summit estimate (cheap per-tick read, no extra
+        // smoothing beyond what Activity.Info already applies).
+        data.currentSpeedMps = (info != null && info has :currentSpeed && info.currentSpeed != null)
+                ? info.currentSpeed : 0.0;
+
         // Navigation-anchored distance: when the route is loaded as a Garmin course,
         // distance-along-course (rtl - distanceToDestination) is a more accurate axis
         // than the raw odometer. chooseAxis() gates it behind a length + calibration
@@ -250,13 +255,16 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
-        // Bottom line (where the preview shows "in X km"): pacing ghost vs plan.
+        // Bottom line (where the preview shows "in X km"): pacing ghost vs plan when the
+        // climb carries pre-computed targets, otherwise the ETA to the summit at current
+        // speed. Only one of the two fits the slot; targets take priority since they are
+        // an explicit, more precise signal than a live-speed estimate.
+        var ghostY = (h * 0.88).toNumber();
         if (data.hasTargets[ci] && data.climbStartTimerMs >= 0) {
             var target = data.targetSecondsAt();
             if (target >= 0) {
                 var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
                 var delta = (actual - target).toNumber();   // + = behind, - = ahead
-                var ghostY = (h * 0.88).toNumber();
                 if (delta > 0) {
                     dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
                     dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
@@ -267,6 +275,11 @@ class ClimbProView extends Ui.DataField {
                         delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
                 }
             }
+        } else {
+            var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
+            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
+                "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -418,6 +431,15 @@ class ClimbProView extends Ui.DataField {
             return km + "." + hm + "km";
         }
         return meters + "m";
+    }
+
+    // Formats a whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown,
+    // see ClimbData.etaSeconds) renders as a placeholder rather than a bogus duration.
+    hidden function formatEta(seconds) {
+        if (seconds < 0) { return "--:--"; }
+        var m = seconds / 60;
+        var s = seconds % 60;
+        return m + ":" + (s < 10 ? "0" + s : "" + s);
     }
 
     hidden function triggerClimbAlert() {

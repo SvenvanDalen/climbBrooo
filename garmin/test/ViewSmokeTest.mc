@@ -62,6 +62,20 @@ function noCalibClimb(d) {
     });
 }
 
+// A single odometer-activated climb (no calib geometry) with no pacing targets, so the
+// datafield's bottom line falls back to the ETA-to-summit display.
+function noTargetsClimb(d) {
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route", "routeId" => "noTargets", "name" => "NoTargets",
+        "climbs" => [
+            { "sd" => 1000, "ed" => 1800, "len" => 800,
+              "eg" => 60, "ag" => 75,
+              "segs" => [400, 30, 75, 3, 400, 30, 75, 3],
+              "surf" => [1, 0] }
+        ]
+    });
+}
+
 // =========================== targetSecondsAt() ==============================
 
 (:test)
@@ -146,6 +160,33 @@ function onUpdate_activeClimb_drawsProfileAndSurfaceAndGhost(logger) {
     d.activeSegmentIndex = 1;
     d.progressInClimb = 500;
     d.climbStartTimerMs = 0;
+    new ClimbProView().onUpdate(makeDc());
+    return true;
+}
+
+// noTargetsClimb (below) has no tsec, so drawActiveClimb's bottom line falls through
+// to the ETA branch instead of the pacing ghost.
+(:test)
+function onUpdate_activeClimb_noTargets_drawsEta(logger) {
+    var d = viewData();
+    noTargetsClimb(d);
+    d.activeClimbIndex = 0;
+    d.activeSegmentIndex = 0;
+    d.progressInClimb = 200;
+    d.currentSpeedMps = 4.0;
+    new ClimbProView().onUpdate(makeDc());
+    return true;
+}
+
+// Near-zero speed on a targetless climb hits the "--:--" placeholder path.
+(:test)
+function onUpdate_activeClimb_noTargetsNoSpeed_drawsPlaceholder(logger) {
+    var d = viewData();
+    noTargetsClimb(d);
+    d.activeClimbIndex = 0;
+    d.activeSegmentIndex = 0;
+    d.progressInClimb = 200;
+    d.currentSpeedMps = 0.0;
     new ClimbProView().onUpdate(makeDc());
     return true;
 }
