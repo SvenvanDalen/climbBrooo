@@ -83,6 +83,11 @@ class ClimbProView extends Ui.DataField {
                 ? info.timerTime : 0;
         lastGhostTimerMs = timerMs;
 
+        // Current speed for the ETA-to-summit estimate (cheap per-tick read, no extra
+        // smoothing beyond what Activity.Info already applies).
+        data.currentSpeedMps = (info != null && info has :currentSpeed && info.currentSpeed != null)
+                ? info.currentSpeed : 0.0;
+
         // Navigation-anchored distance: when the route is loaded as a Garmin course,
         // distance-along-course (rtl - distanceToDestination) is a more accurate axis
         // than the raw odometer. chooseAxis() gates it behind a length + calibration
@@ -250,25 +255,35 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
-        // Bottom line (where the preview shows "in X km"): live ghost delta.
-        // Prefers the per-segment PR delta ("vs PR") when a PR reference is available —
-        // that is the more actionable, always-on signal (repeat-climb comparison); falls
-        // back to the manual pacing-plan delta ("vs plan") otherwise. Screen space is too
-        // tight on the FR255M to show both at once.
+        // Bottom line (where the preview shows "in X km"): live ghost delta when the climb
+        // carries a pacing reference, otherwise the ETA to the summit at current speed.
+        // Among ghost deltas, the per-segment PR delta ("vs PR") takes priority over the
+        // manual pacing-plan delta ("vs plan") — it's the more actionable, always-on signal
+        // (repeat-climb comparison). Screen space is too tight on the FR255M to show more
+        // than one of these three at once.
+        var ghostY = (h * 0.88).toNumber();
+        var ghostDrawn = false;
         if (data.climbStartTimerMs >= 0) {
             var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
-            var ghostY = (h * 0.88).toNumber();
             if (data.hasRefTargets[ci]) {
                 var ref = data.refSecondsAt();
                 if (ref >= 0) {
                     drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR");
+                    ghostDrawn = true;
                 }
             } else if (data.hasTargets[ci]) {
                 var target = data.targetSecondsAt();
                 if (target >= 0) {
                     drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan");
+                    ghostDrawn = true;
                 }
             }
+        }
+        if (!ghostDrawn) {
+            var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
+            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
+                "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -431,6 +446,15 @@ class ClimbProView extends Ui.DataField {
             return km + "." + hm + "km";
         }
         return meters + "m";
+    }
+
+    // Formats a whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown,
+    // see ClimbData.etaSeconds) renders as a placeholder rather than a bogus duration.
+    hidden function formatEta(seconds) {
+        if (seconds < 0) { return "--:--"; }
+        var m = seconds / 60;
+        var s = seconds % 60;
+        return m + ":" + (s < 10 ? "0" + s : "" + s);
     }
 
     hidden function triggerClimbAlert() {
