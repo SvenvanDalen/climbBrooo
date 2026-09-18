@@ -268,31 +268,46 @@ class ClimbProView extends Ui.DataField {
                 "VAM " + vamAvg + "/" + vamPeak, Gfx.TEXT_JUSTIFY_CENTER);
         }
 
-        // Bottom line (where the preview shows "in X km"): pacing ghost vs plan when the
-        // climb carries pre-computed targets, otherwise the ETA to the summit at current
-        // speed. Only one of the two fits the slot; targets take priority since they are
-        // an explicit, more precise signal than a live-speed estimate.
+        // Bottom line (where the preview shows "in X km"): live ghost delta when the climb
+        // carries a pacing reference, otherwise the ETA to the summit at current speed.
+        // Among ghost deltas, the per-segment PR delta ("vs PR") takes priority over the
+        // manual pacing-plan delta ("vs plan") — it's the more actionable, always-on signal
+        // (repeat-climb comparison). Screen space is too tight on the FR255M to show more
+        // than one of these three at once.
         var ghostY = (h * 0.88).toNumber();
-        if (data.hasTargets[ci] && data.climbStartTimerMs >= 0) {
-            var target = data.targetSecondsAt();
-            if (target >= 0) {
-                var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
-                var delta = (actual - target).toNumber();   // + = behind, - = ahead
-                if (delta > 0) {
-                    dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-                    dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
-                        "+" + delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
-                } else {
-                    dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-                    dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
-                        delta + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
+        var ghostDrawn = false;
+        if (data.climbStartTimerMs >= 0) {
+            var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
+            if (data.hasRefTargets[ci]) {
+                var ref = data.refSecondsAt();
+                if (ref >= 0) {
+                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR");
+                    ghostDrawn = true;
+                }
+            } else if (data.hasTargets[ci]) {
+                var target = data.targetSecondsAt();
+                if (target >= 0) {
+                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan");
+                    ghostDrawn = true;
                 }
             }
-        } else {
+        }
+        if (!ghostDrawn) {
             var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
                 "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
+        }
+    }
+
+    // + = behind (red), - or 0 = ahead/on pace (green).
+    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix) {
+        if (deltaSec > 0) {
+            dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, y, Gfx.FONT_XTINY, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+        } else {
+            dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, y, Gfx.FONT_XTINY, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 

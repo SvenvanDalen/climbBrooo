@@ -23,6 +23,8 @@ import java.util.Map;
  *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
  *      calib:[dist,latInt,lonInt, ...],                 // 3 ints × calibCount (optional)
  *      surf:[surfType, ...],                             // 1 int × segCount (optional, omitted if all UNKNOWN)
+ *      tsec:[targetSec, ...],                            // 1 int × segCount (optional, manual pacing plan)
+ *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
  *      vam:[avgVamMPerH,peakVamMPerH, ...]}              // 2 ints × segCount (optional, omitted unless every segment has VAM)
  *   ],
  *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
@@ -46,7 +48,7 @@ public final class ClimbPayloadBuilder {
     }
 
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
-        return buildRoutePayload(route, null);
+        return buildRoutePayload(route, null, null);
     }
 
     /**
@@ -55,6 +57,19 @@ public final class ClimbPayloadBuilder {
      *                      that climb.
      */
     public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds) throws IOException {
+        return buildRoutePayload(route, targetSeconds, null);
+    }
+
+    /**
+     * @param targetSeconds per-climb per-segment target seconds (indexed by climb
+     *                      position); null, or a null/short entry, omits 'tsec' for
+     *                      that climb.
+     * @param refSeconds    per-climb per-segment PR reference seconds (indexed by climb
+     *                      position, {@link nl.paree.climbpro.domain.climb.SegmentPrCalculator});
+     *                      null, or a null/short entry, omits 'refsec' for that climb.
+     */
+    public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds, int[][] refSeconds)
+            throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
         payload.put("mode",    "route");
@@ -67,7 +82,9 @@ public final class ClimbPayloadBuilder {
             for (int i = 0; i < route.climbs.size(); i++) {
                 int[] tsec = (targetSeconds != null && i < targetSeconds.length)
                         ? targetSeconds[i] : null;
-                climbs.add(buildRouteClimb(route.climbs.get(i), tsec));
+                int[] refsec = (refSeconds != null && i < refSeconds.length)
+                        ? refSeconds[i] : null;
+                climbs.add(buildRouteClimb(route.climbs.get(i), tsec, refsec));
             }
         }
         payload.put("climbs", climbs);
@@ -90,11 +107,16 @@ public final class ClimbPayloadBuilder {
 
     /** Route-mode payload containing exactly one climb (watch "set active climb"). */
     public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex) throws IOException {
-        return buildSingleClimbPayload(route, climbIndex, null);
+        return buildSingleClimbPayload(route, climbIndex, null, null);
     }
 
     public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex,
                                           int[][] targetSeconds) throws IOException {
+        return buildSingleClimbPayload(route, climbIndex, targetSeconds, null);
+    }
+
+    public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex,
+                                          int[][] targetSeconds, int[][] refSeconds) throws IOException {
         if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
             throw new IllegalArgumentException("climbIndex out of range: " + climbIndex);
         }
@@ -108,7 +130,9 @@ public final class ClimbPayloadBuilder {
         List<Map<String, Object>> climbs = new ArrayList<>(1);
         int[] tsec = (targetSeconds != null && climbIndex < targetSeconds.length)
                 ? targetSeconds[climbIndex] : null;
-        climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec));
+        int[] refsec = (refSeconds != null && climbIndex < refSeconds.length)
+                ? refSeconds[climbIndex] : null;
+        climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
         payload.put("climbs", climbs);
         return mapper.writeValueAsBytes(payload);
     }
@@ -208,12 +232,13 @@ public final class ClimbPayloadBuilder {
         return out;
     }
 
-    private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds) {
+    private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds, int[] refSeconds) {
         Map<String, Object> c = new LinkedHashMap<>();
         c.put("sd", sc.startDistance);
         c.put("ed", sc.endDistance);
         addCommonClimbFields(c, sc);
         addTargetSeconds(c, sc, targetSeconds);
+        addRefSeconds(c, sc, refSeconds);
         return c;
     }
 
@@ -248,6 +273,20 @@ public final class ClimbPayloadBuilder {
             return;
         }
         c.put("tsec", targetSeconds);
+    }
+
+    /**
+     * Emits 'refsec' only when the array is non-null and exactly one value per segment.
+     * Carries the per-segment PR reference time (fastest-ever split per segment, from
+     * {@link nl.paree.climbpro.domain.climb.SegmentPrCalculator}) — a distinct concept
+     * from 'tsec' (a manual power-based pacing target): both may be present at once.
+     */
+    private static void addRefSeconds(Map<String, Object> c, StoredClimb sc, int[] refSeconds) {
+        if (refSeconds == null || sc.segments == null
+                || refSeconds.length != sc.segments.size()) {
+            return;
+        }
+        c.put("refsec", refSeconds);
     }
 
     private static int[] buildSegs(List<StoredSegment> segs) {

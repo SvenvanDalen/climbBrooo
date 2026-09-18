@@ -68,6 +68,88 @@ public final class ClimbAttemptMatcher {
         return (int) elapsed;
     }
 
+    /**
+     * Same gating/tolerance rules as {@link #match}, but also splits the elapsed time
+     * across the climb's segments so a per-segment PR can be tracked.
+     *
+     * The track between entry and exit is walked once, accumulating covered distance;
+     * each segment boundary's crossing time is found by linear interpolation between the
+     * two track samples straddling it. Segment N's split is boundary[N] - boundary[N-1]
+     * (boundary[-1] = entry time).
+     *
+     * @param segLengthsM per-segment length (m) in climb order, summing to ~climbLengthM.
+     * @return per-segment elapsed seconds (length == segLengthsM.length), or null if no
+     *         valid attempt is found (mirrors {@link #match} returning -1).
+     */
+    public static int[] matchSegments(List<TrackSample> track,
+                                      double startLat, double startLon,
+                                      double endLat, double endLon,
+                                      int climbLengthM, int[] segLengthsM) {
+        if (segLengthsM == null || segLengthsM.length == 0) return null;
+        if (track == null || track.size() < 2 || climbLengthM <= 0) return null;
+
+        int entryIdx = firstWithin(track, startLat, startLon, 0);
+        if (entryIdx < 0) return null;
+
+        int exitIdx = firstWithin(track, endLat, endLon, entryIdx + 1);
+        if (exitIdx < 0 || exitIdx <= entryIdx) return null;
+
+        double covered = 0;
+        for (int i = entryIdx; i < exitIdx; i++) {
+            TrackSample a = track.get(i);
+            TrackSample b = track.get(i + 1);
+            covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
+        }
+        double tol = LENGTH_TOLERANCE * climbLengthM;
+        if (Math.abs(covered - climbLengthM) > tol) return null;
+
+        long entryTime = track.get(entryIdx).timeSec;
+        long exitTime  = track.get(exitIdx).timeSec;
+        if (exitTime - entryTime <= 0) return null;
+
+        // Cumulative segment boundary distances from the climb start.
+        double[] boundaries = new double[segLengthsM.length];
+        double cum = 0;
+        for (int i = 0; i < segLengthsM.length; i++) {
+            cum += segLengthsM[i];
+            boundaries[i] = cum;
+        }
+
+        long[] boundaryTime = new long[segLengthsM.length];
+        double distSoFar = 0;
+        int sampleIdx = entryIdx;
+        for (int b = 0; b < boundaries.length; b++) {
+            double target = boundaries[b];
+            // Advance until the segment [sampleIdx, sampleIdx+1] straddles `target`,
+            // or we run out of track (clamp to exit).
+            while (sampleIdx < exitIdx) {
+                TrackSample a = track.get(sampleIdx);
+                TrackSample bSample = track.get(sampleIdx + 1);
+                double stepDist = CumulativeDistance.haversine(a.lat, a.lon, bSample.lat, bSample.lon);
+                if (distSoFar + stepDist >= target || sampleIdx == exitIdx - 1) {
+                    double into = target - distSoFar;
+                    double frac = (stepDist > 0) ? Math.max(0.0, Math.min(1.0, into / stepDist)) : 0.0;
+                    boundaryTime[b] = a.timeSec + Math.round((bSample.timeSec - a.timeSec) * frac);
+                    break;
+                }
+                distSoFar += stepDist;
+                sampleIdx++;
+            }
+        }
+
+        int[] splits = new int[segLengthsM.length];
+        long prevTime = entryTime;
+        for (int b = 0; b < boundaries.length; b++) {
+            long t = (b == boundaries.length - 1) ? exitTime : boundaryTime[b];
+            // Clamp: boundary times must be monotonic and within [entryTime, exitTime].
+            if (t < prevTime) t = prevTime;
+            if (t > exitTime) t = exitTime;
+            splits[b] = (int) (t - prevTime);
+            prevTime = t;
+        }
+        return splits;
+    }
+
     /** Index of the first sample at/after {@code fromIdx} within GATE_M of (lat,lon), or -1. */
     private static int firstWithin(List<TrackSample> track,
                                    double lat, double lon, int fromIdx) {

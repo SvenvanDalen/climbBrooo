@@ -509,6 +509,54 @@ per-climb target time) via `ui/routes/RoutePassport`. Background sync re-sends a
 route when the rider-profile signature changes (combined with the source hash in
 the sync gate). Radius mode is unchanged.
 
+### Per-segment PR / live delta (repeat-climb comparison, phone → watch)
+
+Whole-climb PR/attempt tracking already existed (`ClimbAttemptRepository`,
+`LogbookCalculator`, the climb logbook UI). This extends it one level deeper, to
+per-segment splits, so the watch can show a live "ahead/behind your PR" delta on
+a repeat climb — the same rendering mechanism as the pacing-plan ghost above, fed
+by a different (auto-derived) reference instead of a manual rider-profile plan.
+
+- **Capture**: `StravaActivitiesRepository.matchActivity()` already matches a
+  synced activity's GPS/time stream against every known climb
+  (`ClimbAttemptMatcher.match`) to get the whole-climb elapsed time. It now also
+  calls `ClimbAttemptMatcher.matchSegments()`, which walks the same matched
+  stretch once more and, by interpolating the crossing time of each segment
+  boundary, splits the elapsed time into one duration per segment. The result is
+  stored as `StoredClimbAttempt.segSplitSec` (nullable — absent when the climb
+  had no segments at match time). Segment boundaries are keyed by index, not
+  identity: if a climb is later re-segmented (different segment count), older
+  attempts' `segSplitSec` simply stop matching and are ignored rather than
+  misaligned.
+- **Selection**: `SegmentPrCalculator.bestSplits(climbId, segCount, attempts)`
+  computes, for a climb's *current* segment count, the fastest-ever split at
+  each segment index across all attempts with a matching-length `segSplitSec` —
+  a component-wise minimum, not necessarily all from the same attempt (per-segment
+  PR, not whole-climb PR).
+- **Wire**: `RouteRefTimePlanner.plan(route, attempts)` produces the same
+  per-climb-position `int[][]` shape as `RoutePacingPlanner`, and
+  `ClimbPayloadBuilder` emits it as an optional packed int array `refsec` on
+  each climb (parallel to `segs`), route-mode only, omitted when no attempt has
+  a matching segment count. `refsec` is a distinct field from `tsec` — one is an
+  auto-derived PR, the other a manual power-based pacing target — and both may
+  be present on the same climb at once.
+- **Watch**: `CommListener.mc` parses `refsec` into `ClimbData.segRefSec` /
+  `hasRefTargets`, mirroring the existing `tsec` parse. `ClimbData.refSecondsAt()`
+  mirrors `targetSecondsAt()` (cumulative reference seconds at the current
+  progress, linearly interpolated within the running segment). `ClimbProView`'s
+  existing ghost-delta line (bottom of the active-climb screen) prefers the PR
+  delta ("vs PR") when a PR reference is available and falls back to the pacing
+  delta ("vs plan") otherwise — the FR255M's data-field area is too small to show
+  both live deltas at once. No new redraw triggers: this piggybacks on the
+  existing per-tick `compute()`/segment-change redraw path.
+- **Scope limitation**: reference times are only populated for attempts matched
+  *after* this change (Strava activities re-synced going forward); already-stored
+  whole-climb attempts have no `segSplitSec` and simply don't contribute to
+  `refsec` until the rider's next resync captures fresh splits. Radius mode does
+  not carry `refsec` (mirrors `tsec`'s route-mode-only precedent — radius-mode
+  climbs are not resegmented per-route the same way). The end-of-climb summary
+  screen still only shows the `tsec` delta, not a PR delta.
+
 ### VAM / climb-rate per segment (phone → watch)
 
 Alongside the gradient-based colour mapping, the phone computes a per-segment

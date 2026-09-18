@@ -112,7 +112,12 @@
           "items": { "type": "integer", "minimum": 0, "maximum": 5 }
         },
         "tsec": {
-          "description": "Route mode (optional): per-segment target time in whole seconds, one int per segment, parallel to segs. Omitted when no pacing plan is available.",
+          "description": "Route mode (optional): per-segment target time in whole seconds, one int per segment, parallel to segs. Manual, power-based pacing plan. Omitted when no pacing plan is available.",
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "refsec": {
+          "description": "Route mode (optional): per-segment PR reference time in whole seconds, one int per segment, parallel to segs. The fastest previous split ever recorded on that exact segment (across all attempts, not necessarily the same attempt) — used to render a live 'ahead/behind your PR' delta. Distinct from 'tsec' (a manual pacing target); both may be present. Omitted when no attempt with a matching segment count exists.",
           "type": "array",
           "items": { "type": "integer", "minimum": 0 }
         },

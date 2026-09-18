@@ -138,6 +138,9 @@ public final class StravaActivitiesRepository {
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
                     a.elapsedSec   = elapsed;
+                    a.segSplitSec  = ClimbAttemptMatcher.matchSegments(
+                            track, k.startLat, k.startLon, k.endLat, k.endLon,
+                            k.lengthM, k.segLengthsM);
                     out.add(a);
                 }
             }

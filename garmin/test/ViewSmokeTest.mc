@@ -62,6 +62,20 @@ function noCalibClimb(d) {
     });
 }
 
+// Same shape as noCalibClimb but with a PR reference (refsec) instead of tsec.
+function noCalibClimbWithRef(d) {
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route", "routeId" => "nr", "name" => "NoCalibRef",
+        "climbs" => [
+            { "sd" => 1000, "ed" => 1800, "len" => 800,
+              "eg" => 60, "ag" => 75,
+              "segs" => [400, 30, 75, 3, 400, 30, 75, 3],
+              "surf" => [1, 0],
+              "refsec" => [75, 85] }
+        ]
+    });
+}
+
 // A single odometer-activated climb (no calib geometry) with no pacing targets, so the
 // datafield's bottom line falls back to the ETA-to-summit display.
 function noTargetsClimb(d) {
@@ -143,6 +157,50 @@ function targetSecondsAt_noTargets_returnsNegative(logger) {
     return true;
 }
 
+// =========================== refSecondsAt() ==================================
+// Mirrors the targetSecondsAt() coverage above: same interpolation logic, driven
+// by refsec/segRefSec/hasRefTargets instead of tsec/segTargetSec/hasTargets.
+
+(:test)
+function refSecondsAt_noActiveClimb_returnsNegative(logger) {
+    var d = viewData();
+    noCalibClimbWithRef(d);
+    d.activeClimbIndex = -1;
+    Test.assertEqual(d.refSecondsAt(), -1);
+    return true;
+}
+
+(:test)
+function refSecondsAt_midFirstSegment_interpolates(logger) {
+    var d = viewData();
+    noCalibClimbWithRef(d);
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 200;          // 200/400 into seg0 (ref 75) -> 37.5
+    Test.assertEqual(d.refSecondsAt().toNumber(), 37);
+    return true;
+}
+
+(:test)
+function refSecondsAt_pastLastSegment_clampsToTotal(logger) {
+    var d = viewData();
+    noCalibClimbWithRef(d);
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 5000;         // way past the 800 m climb -> clamps to 75 + 85
+    Test.assertEqual(d.refSecondsAt().toNumber(), 160);
+    return true;
+}
+
+(:test)
+function refSecondsAt_noRefTargets_returnsNegative(logger) {
+    var d = viewData();
+    noCalibClimb(d);   // has tsec, no refsec
+    d.activeClimbIndex = 0;
+    d.progressInClimb = 200;
+    Test.assertEqual(d.refSecondsAt(), -1);   // hasRefTargets false -> -1
+    Test.assertEqual(d.targetSecondsAt().toNumber(), 40); // tsec is unaffected
+    return true;
+}
+
 // =========================== onUpdate() smoke ===============================
 
 (:test)
@@ -187,6 +245,18 @@ function onUpdate_activeClimb_noTargetsNoSpeed_drawsPlaceholder(logger) {
     d.activeSegmentIndex = 0;
     d.progressInClimb = 200;
     d.currentSpeedMps = 0.0;
+    new ClimbProView().onUpdate(makeDc());
+    return true;
+}
+
+(:test)
+function onUpdate_activeClimb_withRef_drawsPrGhost(logger) {
+    var d = viewData();
+    noCalibClimbWithRef(d);
+    d.activeClimbIndex = 0;
+    d.activeSegmentIndex = 1;
+    d.progressInClimb = 500;
+    d.climbStartTimerMs = 0;
     new ClimbProView().onUpdate(makeDc());
     return true;
 }

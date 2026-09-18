@@ -26,8 +26,16 @@ public final class KnownClimbs {
                     ClimbIdentity.of(c.startLat, c.startLon, len),
                     c.startLat, c.startLon,
                     route.lats[endIdx], route.lons[endIdx],
-                    len));
+                    len, segmentLengths(c)));
         }
+        return out;
+    }
+
+    /** Per-segment length (m) in climb order, or null when the climb has no segments. */
+    private static int[] segmentLengths(StoredClimb c) {
+        if (c.segments == null || c.segments.isEmpty()) return null;
+        int[] out = new int[c.segments.size()];
+        for (int i = 0; i < out.length; i++) out[i] = c.segments.get(i).distance;
         return out;
     }
 

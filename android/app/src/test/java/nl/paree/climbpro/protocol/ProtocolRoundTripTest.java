@@ -67,6 +67,15 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderRoutePayloadWithRefSecondsValidatesAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        int[][] targets = {{60, 62, 64, 66}};  // 'tsec'
+        int[][] refs    = {{58, 59, 61, 63}};  // 'refsec' — both present at once
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(routeFixture(), targets, refs));
+        assertValid(payload, "route payload with refsec");
+    }
+
+    @Test
     public void builderRadiusPayloadValidatesAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
         JsonNode payload = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));
