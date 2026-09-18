@@ -180,6 +180,21 @@ class PhoneMessageCallback {
         } else {
             data.hasRefTargets[idx] = false;
         }
+
+        // Optional vam array: [avgVamMPerH, peakVamMPerH, ...] 2 ints per segment (parallel to segs)
+        var vam = climbDict.get("vam");
+        if (vam != null && vam instanceof Toybox.Lang.Array && vam.size() >= data.segCount[idx] * 2
+                && data.segCount[idx] > 0) {
+            data.hasVam[idx] = true;
+            for (var s = 0; s < data.segCount[idx]; s++) {
+                var av = vam[s * 2];
+                var pv = vam[s * 2 + 1];
+                data.segVamAvg[idx][s]  = (av instanceof Toybox.Lang.Number) ? av.toNumber() : 0;
+                data.segVamPeak[idx][s] = (pv instanceof Toybox.Lang.Number) ? pv.toNumber() : 0;
+            }
+        } else {
+            data.hasVam[idx] = false;
+        }
     }
 
     hidden function getInt(dict, key, defaultVal) {

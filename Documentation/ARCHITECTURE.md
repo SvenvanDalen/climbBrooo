@@ -557,6 +557,27 @@ by a different (auto-derived) reference instead of a manual rider-profile plan.
   climbs are not resegmented per-route the same way). The end-of-climb summary
   screen still only shows the `tsec` delta, not a PR delta.
 
+### VAM / climb-rate per segment (phone → watch)
+
+Alongside the gradient-based colour mapping, the phone computes a per-segment
+VAM (vertical ascent metres/hour) via `domain/climb/VamCalculator`, called from
+`domain/segment/Segmenter` for every segment it produces. Route points carry no
+elapsed-time data (routes come from GPX/FIT geometry, not recorded rides), so
+this is a *gradient-implied* VAM — gradient converted to m/h at a fixed
+reference climbing speed (`ClimbConstants.VAM_REFERENCE_SPEED_MPS`, 3.5 m/s) —
+not a measured ascent rate. Two values are kept per segment: the average
+(directly from the segment's own gradient) and the peak (the steepest gradient
+over any rolling 100 m window of full-resolution route points inside the
+segment, `ClimbConstants.VAM_PEAK_WINDOW_M`), which surfaces short ramps the
+segment average smooths over. Both are serialised as an optional packed int
+array `vam = [avgVamMPerH, peakVamMPerH, ...]` on each climb (parallel to
+`segs`, both mode), omitted unless every segment has a computed value — a
+climb resynced from storage that predates VAM support (segments carry the `-1`
+sentinel) is sent without `vam` rather than partial data. The climb datafield
+(`garmin/source/CommListener.mc` → `ClimbData.segVamAvg`/`segVamPeak`/`hasVam`)
+parses it and shows the active segment's avg/peak VAM next to the gradient
+stat on the active-climb page.
+
 ---
 
 ## Configuration Management

@@ -24,7 +24,8 @@ function fullRoutePayload() {
                 "calib" => [0, 5150000, 510000, 1000, 5151000, 510500, 2000, 5152000, 511000],
                 "surf"  => [1, 1, 0, 0],
                 "tsec"  => [60, 62, 64, 66],
-                "refsec" => [58, 59, 61, 63]
+                "refsec" => [58, 59, 61, 63],
+                "vam"   => [504, 560, 504, 540, 504, 580, 504, 520]
             }
         ]
     };
@@ -102,6 +103,40 @@ function parse_routeMode_unpacksSurfaceAndTargets(logger) {
     Test.assert(d.hasTargets[0]);
     Test.assertEqual(d.segTargetSec[0][0], 60);
     Test.assertEqual(d.segTargetSec[0][3], 66);
+    Test.assert(d.hasVam[0]);
+    Test.assertEqual(d.segVamAvg[0][0], 504);
+    Test.assertEqual(d.segVamPeak[0][0], 560);
+    Test.assertEqual(d.segVamAvg[0][3], 504);
+    Test.assertEqual(d.segVamPeak[0][3], 520);
+    return true;
+}
+
+// A vam array shorter than 2 ints per segment disables VAM for that climb.
+(:test)
+function parse_vamShorterThanSegs_noVam(logger) {
+    var d = freshData();
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route",
+        "climbs" => [ { "sd" => 0, "ed" => 900, "len" => 900, "eg" => 50, "ag" => 55,
+                        "segs" => [400, 20, 40, 1, 500, 30, 50, 2],
+                        "vam" => [504, 560] } ]   // only 1 of 2 segments (needs 4 ints)
+    });
+    Test.assertEqual(d.hasVam[0], false);
+    return true;
+}
+
+// vam absent: hasVam stays false, arrays stay at the zero default.
+(:test)
+function parse_vamAbsent_hasVamFalse(logger) {
+    var d = freshData();
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route",
+        "climbs" => [ { "sd" => 0, "ed" => 900, "len" => 900, "eg" => 50, "ag" => 55,
+                        "segs" => [900, 50, 55, 2] } ]
+    });
+    Test.assertEqual(d.hasVam[0], false);
+    Test.assertEqual(d.segVamAvg[0][0], 0);
+    Test.assertEqual(d.segVamPeak[0][0], 0);
     return true;
 }
 

@@ -1,6 +1,7 @@
 package nl.paree.climbpro.domain;
 
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.VamCalculator;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
 import nl.paree.climbpro.domain.segment.Segment;
@@ -154,6 +155,20 @@ public class SegmenterTest {
         assertEquals(8,  Segmenter.segment(climb, 8).size());
         assertEquals(12, Segmenter.segment(climb, 12).size());
         assertEquals(20, Segmenter.segment(climb, 20).size());
+    }
+
+    @Test
+    public void segmentsCarryComputedVam() {
+        List<RoutePoint> climb = buildClimb(2000, 0.072);
+        List<Segment> segs = Segmenter.segment(climb);
+        for (Segment s : segs) {
+            assertTrue("avgVamMPerH should be computed (not the -1 sentinel)", s.avgVamMPerH >= 0);
+            assertTrue("peakVamMPerH should be computed (not the -1 sentinel)", s.peakVamMPerH >= 0);
+            assertEquals("avgVamMPerH matches the segment's own gradient formula",
+                    VamCalculator.averageVam(s.gradient), s.avgVamMPerH);
+            assertTrue("peak should be >= average for a uniform-gradient climb",
+                    s.peakVamMPerH >= s.avgVamMPerH - 2);
+        }
     }
 
     @Test

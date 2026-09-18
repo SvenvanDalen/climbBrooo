@@ -193,6 +193,9 @@ The watch payload is the **v3 packed format**: short keys and packed integer arr
 fit the watch's tight memory (cap `4096 bytes` per message). Gradients are fixed-point
 (`percent × 10`), colors are integer indices, and per-segment data is packed as
 `segs = [distance, elevationGain, gradient×10, colorIndex, …]` (4 ints/segment).
+An optional parallel array `vam = [avgVamMPerH, peakVamMPerH, …]` (2 ints/segment)
+carries a gradient-implied VAM (vertical ascent m/h, not a measured ascent rate —
+routes have no elapsed-time data) per segment, omitted unless every segment has one.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

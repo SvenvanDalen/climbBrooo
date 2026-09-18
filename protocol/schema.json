@@ -120,6 +120,11 @@
           "description": "Route mode (optional): per-segment PR reference time in whole seconds, one int per segment, parallel to segs. The fastest previous split ever recorded on that exact segment (across all attempts, not necessarily the same attempt) — used to render a live 'ahead/behind your PR' delta. Distinct from 'tsec' (a manual pacing target); both may be present. Omitted when no attempt with a matching segment count exists.",
           "type": "array",
           "items": { "type": "integer", "minimum": 0 }
+        },
+        "vam": {
+          "description": "Optional: packed gradient-implied VAM (vertical ascent m/h) per segment: [avgVamMPerH, peakVamMPerH, ...], 2 ints per segment, parallel to segs. Derived from gradient at a fixed reference climbing speed (routes carry no elapsed-time data, so this is a planning estimate, not a measured ascent rate); peak is the steepest short window within the segment. Omitted unless every segment has a computed value.",
+          "type": "array",
+          "items": { "type": "integer" }
         }
       }
     },

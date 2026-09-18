@@ -50,6 +50,7 @@ Per-climb numeric data is packed into compact integer arrays (the watch slices t
 - `surf` — one surface-type code (0–5) per segment, parallel to `segs`. Omitted when every segment is UNKNOWN.
 - `tsec` — per-segment target time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no pacing plan is available. Manual, power-based pacing target (see `RoutePacingPlanner`).
 - `refsec` — per-segment PR reference time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no stored attempt has a matching segment count for that climb. The fastest ever split recorded per segment across all attempts (`SegmentPrCalculator`), used for the live "ahead/behind your PR" delta. Distinct from `tsec` — both may be present on the same climb.
+- `vam` — `[avgVamMPerH, peakVamMPerH, …]`, **2 ints per segment**, parallel to `segs`. Gradient-implied VAM (vertical ascent m/h) — route points carry no elapsed-time data, so this is gradient converted to m/h at a fixed reference climbing speed, not a measured ascent rate. `avg` comes straight from the segment's own gradient; `peak` is the steepest gradient found over any rolling 100 m window of the underlying route points, surfacing short ramps the segment average smooths over. Both modes, optional; omitted unless every segment in the climb has a computed value.
 
 `surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
@@ -67,6 +68,8 @@ So ~150 + 12 × 60 = ~870 bytes per climb. 8 KB ÷ 870 ≈ **~9 climbs comfortab
 
 When a pacing plan is present, the optional `tsec` array adds ~1 int per segment — roughly **+70–80 bytes per climb** (minified). When per-segment PR data is present, `refsec` adds a similar ~70–80 bytes per climb; the two are independent and may both be present. This narrows the comfortable climb count slightly but stays well within 8 KB for typical routes.
 
+When VAM is computed, the optional `vam` array adds ~2 ints per segment — roughly **+140–160 bytes per climb** (minified). Combined with `tsec` this still stays well within 8 KB for typical routes; if budget ever gets tight, `vam` is the first candidate to drop since `avgVamMPerH` is a fixed linear function of the already-sent `gradient` and could be recomputed on the watch instead (only `peakVamMPerH` needs to keep coming from the phone).
+
 If the budget ever feels tight, options in priority order:
 1. Drop optional `name` fields.
 2. Switch to a CBOR or MessagePack encoding (would require updating both decoders — not trivial).
@@ -81,6 +84,7 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
 | 3       | 2026-09-17 | Added optional `refsec` (per-segment PR reference time) packed int array on Climb, parallel to `segs`. Route-mode only, omitted when no stored attempt has a matching segment count. Distinct from `tsec`; additive, no version bump. |
+| 3       | 2026-09-17 | Added optional `vam` (`[avgVamMPerH, peakVamMPerH, …]`) packed int array on Climb — gradient-implied VAM per segment, parallel to `segments` (wire key `segs`). Both modes, omitted unless every segment has a computed value. ~26 ints per climb; additive, no version bump. |
 | 3       | 2026-06-19 | `calib` point distances now coincide with the 8%-fraction segment-end grid (were an independent equal-division grid in the default detection path). Wire shape unchanged (still 3 ints/point); only the emitted distances differ. No version bump. |
 | 1       | 2026-06-13 | Added optional `tsec` (targetSeconds) packed int array on Climb — per-segment target time in whole seconds, parallel to `segments` (wire key `segs`). Route-mode only, omitted when no pacing plan. ~13 ints per climb; additive, no version bump. |
 | 1       | 2026-05-20 | Initial schema. Two modes, fixed-point gradients, color index, byte budget 8 KB. |

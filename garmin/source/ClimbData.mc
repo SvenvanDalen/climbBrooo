@@ -74,6 +74,9 @@ class ClimbData {
     var hasTargets;       // bool per climb: true when tsec was provided
     var segRefSec;        // per-segment PR reference seconds (parallel to seg arrays); 0 = none
     var hasRefTargets;    // bool per climb: true when refsec was provided
+    var segVamAvg;        // gradient-implied average VAM (m/h) per segment; 0 = none
+    var segVamPeak;       // gradient-implied peak VAM (m/h) per segment; 0 = none
+    var hasVam;           // bool per climb: true when vam was provided
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -115,6 +118,9 @@ class ClimbData {
         hasTargets = new [MAX_CLIMBS];
         segRefSec = new [MAX_CLIMBS];
         hasRefTargets = new [MAX_CLIMBS];
+        segVamAvg = new [MAX_CLIMBS];
+        segVamPeak = new [MAX_CLIMBS];
+        hasVam = new [MAX_CLIMBS];
         climbEntered = new [MAX_CLIMBS];
         climbSkipped = new [MAX_CLIMBS];
 
@@ -142,6 +148,9 @@ class ClimbData {
             hasTargets[i] = false;
             segRefSec[i] = new [MAX_SEGMENTS];
             hasRefTargets[i] = false;
+            segVamAvg[i] = new [MAX_SEGMENTS];
+            segVamPeak[i] = new [MAX_SEGMENTS];
+            hasVam[i] = false;
             for (var s = 0; s < MAX_SEGMENTS; s++) {
                 segDist[i][s] = 0;
                 segElevGain[i][s] = 0;
@@ -150,6 +159,8 @@ class ClimbData {
                 segSurf[i][s] = 5; // UNKNOWN
                 segTargetSec[i][s] = 0;
                 segRefSec[i][s] = 0;
+                segVamAvg[i][s] = 0;
+                segVamPeak[i][s] = 0;
             }
         }
 
