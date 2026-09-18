@@ -1,6 +1,7 @@
 package nl.paree.climbpro.domain.segment;
 
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.VamCalculator;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
 
@@ -51,12 +52,16 @@ public final class Segmenter {
             double eleGain = endEle - segStartEle;
             double gradient = dist > 0 ? eleGain / dist : 0;
             int colorIndex = GradientColor.forGradient(gradient);
+            int avgVam = VamCalculator.averageVam(gradient);
+            int peakVam = VamCalculator.peakVam(climbPoints, segStart, segEnd, gradient);
 
             segments.add(new Segment(
                     (int) Math.round(dist),
                     (int) Math.round(eleGain),
                     gradient,
-                    colorIndex));
+                    colorIndex,
+                    avgVam,
+                    peakVam));
 
             segStart = segEnd;
             segStartEle = endEle;
@@ -97,8 +102,11 @@ public final class Segmenter {
             double eleGain = endEle - segStartEle;
             double grad    = dist > 0 ? eleGain / dist : 0;
             int color      = GradientColor.forGradient(grad);
+            int avgVam     = VamCalculator.averageVam(grad);
+            int peakVam    = VamCalculator.peakVam(climbPoints, segStart, segEnd, grad);
 
-            segments.add(new Segment((int) Math.round(dist), (int) Math.round(eleGain), grad, color));
+            segments.add(new Segment((int) Math.round(dist), (int) Math.round(eleGain), grad, color,
+                    avgVam, peakVam));
 
             segStart    = segEnd;
             segStartEle = endEle;

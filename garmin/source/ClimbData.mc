@@ -72,6 +72,9 @@ class ClimbData {
     var segSurf;          // surface type per segment: 0=asphalt 1=gravel 2=dirt 3=cobble 4=mixed 5=unknown
     var segTargetSec;     // per-segment target seconds (parallel to seg arrays); 0 = none
     var hasTargets;       // bool per climb: true when tsec was provided
+    var segVamAvg;        // gradient-implied average VAM (m/h) per segment; 0 = none
+    var segVamPeak;       // gradient-implied peak VAM (m/h) per segment; 0 = none
+    var hasVam;           // bool per climb: true when vam was provided
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -111,6 +114,9 @@ class ClimbData {
         segSurf = new [MAX_CLIMBS];
         segTargetSec = new [MAX_CLIMBS];
         hasTargets = new [MAX_CLIMBS];
+        segVamAvg = new [MAX_CLIMBS];
+        segVamPeak = new [MAX_CLIMBS];
+        hasVam = new [MAX_CLIMBS];
         climbEntered = new [MAX_CLIMBS];
         climbSkipped = new [MAX_CLIMBS];
 
@@ -136,6 +142,9 @@ class ClimbData {
             segSurf[i] = new [MAX_SEGMENTS];
             segTargetSec[i] = new [MAX_SEGMENTS];
             hasTargets[i] = false;
+            segVamAvg[i] = new [MAX_SEGMENTS];
+            segVamPeak[i] = new [MAX_SEGMENTS];
+            hasVam[i] = false;
             for (var s = 0; s < MAX_SEGMENTS; s++) {
                 segDist[i][s] = 0;
                 segElevGain[i][s] = 0;
@@ -143,6 +152,8 @@ class ClimbData {
                 segColor[i][s] = 0;
                 segSurf[i][s] = 5; // UNKNOWN
                 segTargetSec[i][s] = 0;
+                segVamAvg[i][s] = 0;
+                segVamPeak[i][s] = 0;
             }
         }
 

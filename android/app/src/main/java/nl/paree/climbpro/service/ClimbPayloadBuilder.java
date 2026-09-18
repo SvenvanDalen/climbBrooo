@@ -22,7 +22,8 @@ import java.util.Map;
  *     {sd:N, ed:N, len:N, eg:N, ag:N, n:"...",
  *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
  *      calib:[dist,latInt,lonInt, ...],                 // 3 ints × calibCount (optional)
- *      surf:[surfType, ...]}                             // 1 int × segCount (optional, omitted if all UNKNOWN)
+ *      surf:[surfType, ...],                             // 1 int × segCount (optional, omitted if all UNKNOWN)
+ *      vam:[avgVamMPerH,peakVamMPerH, ...]}              // 2 ints × segCount (optional, omitted unless every segment has VAM)
  *   ],
  *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
  *
@@ -236,6 +237,8 @@ public final class ClimbPayloadBuilder {
         }
         int[] surf = buildSurf(sc.segments);
         if (surf != null) c.put("surf", surf);
+        int[] vam = buildVam(sc.segments);
+        if (vam != null) c.put("vam", vam);
     }
 
     /** Emits 'tsec' only when the array is non-null and exactly one value per segment. */
@@ -335,6 +338,26 @@ public final class ClimbPayloadBuilder {
         int[] arr = new int[segs.size()];
         for (int i = 0; i < segs.size(); i++) {
             arr[i] = nl.paree.climbpro.domain.segment.SurfaceType.fromInt(segs.get(i).surfaceType);
+        }
+        return arr;
+    }
+
+    /**
+     * Packs 'vam' as [avgVamMPerH, peakVamMPerH, ...] one pair per segment, parallel to 'segs'.
+     * Returns null (field omitted) unless every segment has a computed VAM — a resynced climb
+     * whose stored segments predate VAM support (avgVamMPerH/peakVamMPerH == -1) is sent without
+     * 'vam' rather than partial/sentinel data.
+     */
+    private static int[] buildVam(List<StoredSegment> segs) {
+        if (segs == null || segs.isEmpty()) return null;
+        for (StoredSegment s : segs) {
+            if (s.avgVamMPerH < 0 || s.peakVamMPerH < 0) return null;
+        }
+        int[] arr = new int[segs.size() * 2];
+        for (int i = 0; i < segs.size(); i++) {
+            StoredSegment s = segs.get(i);
+            arr[i * 2]     = s.avgVamMPerH;
+            arr[i * 2 + 1] = s.peakVamMPerH;
         }
         return arr;
     }
