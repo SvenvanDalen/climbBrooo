@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.ClimbShapeClassifier;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
 import nl.paree.climbpro.domain.segment.FlatSegment;
@@ -317,6 +318,7 @@ public final class RouteRepository {
             sc.startLat      = c.startLat;
             sc.startLon      = c.startLon;
             sc.name          = c.name;
+            sc.shape         = c.shape.name();
             sc.segments      = new ArrayList<>();
             for (Segment seg : c.segments) {
                 StoredSegment ss = new StoredSegment();
@@ -448,6 +450,7 @@ public final class RouteRepository {
         sc.calibrationPoints = toStoredCalibPoints(
                 Segmenter.calibrationPoints(climbPts, count));
         sc.segmentCount      = count;
+        sc.shape             = ClimbShapeClassifier.classifyStored(sc.segments).name();
         route.lastModifiedMs = System.currentTimeMillis();
 
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));

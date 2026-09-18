@@ -28,4 +28,17 @@ public final class ClimbConstants {
     public static final double FALSE_FLAT_MAX_GRADIENT      = 0.02;
     /** Minimum length (metres) of a leading/trailing false flat before it is trimmed off a climb. */
     public static final int    FALSE_FLAT_MIN_LENGTH_M      = 200;
+
+    /**
+     * Minimum gap (fraction, e.g. 0.015 = 1.5 percentage points) between the average gradient
+     * of a climb's last third and first third of segments for the trend to count as a real
+     * ramp (STEEP_FINISH / EASY_START) rather than noise. Used by {@link ClimbShapeClassifier}.
+     */
+    public static final double SHAPE_TREND_DELTA_GRADIENT   = 0.015;
+    /**
+     * Population standard deviation (fraction) of segment gradients above which a climb with
+     * no clear start-to-end trend is classified IRREGULAR instead of STEADY. Used by
+     * {@link ClimbShapeClassifier}.
+     */
+    public static final double SHAPE_IRREGULAR_STDDEV       = 0.02;
 }
