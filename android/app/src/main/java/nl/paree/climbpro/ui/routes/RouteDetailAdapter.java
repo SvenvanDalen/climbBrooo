@@ -147,8 +147,11 @@ public final class RouteDetailAdapter
         StoredClimb c = (StoredClimb) items.get(position);
         String name = c.userDisplayName != null ? c.userDisplayName : c.name;
         h.nameView.setText(name != null ? name : "Klim " + (climbIndex + 1));
-        h.statsView.setText(String.format("%d m · %.1f%% gem. · %d m hoogte",
-                c.length, c.avgGradient * 100, c.elevationGain));
+        double distanceIntoRouteKm = c.startDistance / 1000.0;
+        double difficulty = nl.paree.climbpro.domain.climb.DifficultyScoreCalculator
+                .score(c.elevationGain, c.avgGradient, distanceIntoRouteKm);
+        h.statsView.setText(String.format("%d m · %.1f%% gem. · %d m hoogte · moeilijkheid %.0f",
+                c.length, c.avgGradient * 100, c.elevationGain, difficulty));
         if (climbTargetSeconds != null && climbIndex < climbTargetSeconds.length
                 && climbTargetSeconds[climbIndex] >= 0) {
             h.statsView.setText(h.statsView.getText() + "  ·  ⏱ "

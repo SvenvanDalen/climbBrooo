@@ -533,3 +533,64 @@ function updateRouteMatch_nextClimbNoCalib_noOffRoute(logger) {
     Test.assert(!d.offRoute);
     return true;
 }
+
+// ===========================================================================
+// etaSeconds() — pure function, remaining distance (m) + speed (m/s) -> seconds
+// ===========================================================================
+
+// Normal case: 1000 m remaining at 5 m/s (18 km/h) -> 200 s.
+(:test)
+function etaSeconds_normalCase_returnsRemainingOverSpeed(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(1000, 5.0), 200);
+    return true;
+}
+
+// Zero speed can't produce a meaningful estimate -> placeholder (-1), not a divide-by-zero.
+(:test)
+function etaSeconds_zeroSpeed_returnsNegativeOne(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(1000, 0.0), -1);
+    return true;
+}
+
+// Speed below the noise floor (stopped/near-stopped) also returns the placeholder.
+(:test)
+function etaSeconds_belowMinSpeed_returnsNegativeOne(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(1000, 0.1), -1);
+    return true;
+}
+
+// Null speed (e.g. Activity.Info.currentSpeed unavailable) is handled the same as zero.
+(:test)
+function etaSeconds_nullSpeed_returnsNegativeOne(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(1000, null), -1);
+    return true;
+}
+
+// Very small remaining distance with a healthy speed -> a small but valid ETA.
+(:test)
+function etaSeconds_verySmallRemaining_returnsSmallEta(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(5, 5.0), 1);
+    return true;
+}
+
+// Already at/past the summit -> 0 s, regardless of speed.
+(:test)
+function etaSeconds_zeroRemaining_returnsZero(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(0, 5.0), 0);
+    return true;
+}
+
+// Negative remaining (past the summit, e.g. clamp not yet applied by the caller) also
+// short-circuits to 0 rather than a negative/nonsensical ETA.
+(:test)
+function etaSeconds_negativeRemaining_returnsZero(logger) {
+    var d = new ClimbData();
+    Test.assertEqual(d.etaSeconds(-50, 5.0), 0);
+    return true;
+}

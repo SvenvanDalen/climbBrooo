@@ -31,6 +31,9 @@ class ClimbData {
     // Skip resilience
     const SKIP_MARGIN_M = 1000;   // ride this far past a climb's end (m) before it may be skipped
 
+    // ETA-to-summit
+    const MIN_ETA_SPEED_MPS = 0.5;   // below this, treat speed as too noisy/stopped for an ETA
+
     // Payload state
     var payloadReceived = false;
     var mode = "route";       // "route" or "radius"
@@ -89,6 +92,7 @@ class ClimbData {
     var navMaxToDest = 0;         // largest distanceToDestination seen this ride (length gate)
     var navDistThisTick = -1;     // navDist for the current tick (-1 = not navigating); set by view
     var climbSkipped;             // bool per climb: rider bypassed it; progression skips over it
+    var currentSpeedMps = 0.0;    // most recent Activity.Info.currentSpeed; set by view.compute()
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -422,5 +426,19 @@ class ClimbData {
             cumDist = segEnd;
         }
         return cum;
+    }
+
+    /**
+     * Pure calculation: remaining distance (m) to the climb end at the given current
+     * speed (m/s) -> whole seconds to arrival. This is deliberately a function of its
+     * parameters only (no instance state) so it stays trivial to unit test.
+     * Returns -1 when speed is null/near-zero (too noisy/stopped for a meaningful
+     * estimate) so callers can show a placeholder instead of a huge or divide-by-near-
+     * zero ETA. remainingM <= 0 always returns 0 (already there / past the summit).
+     */
+    function etaSeconds(remainingM, speedMps) {
+        if (remainingM <= 0) { return 0; }
+        if (speedMps == null || speedMps < MIN_ETA_SPEED_MPS) { return -1; }
+        return (remainingM / speedMps).toNumber();
     }
 }

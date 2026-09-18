@@ -43,4 +43,16 @@ public final class ClimbConstants {
      * Distance-based rather than time-based because {@code RoutePoint} carries no timestamp.
      */
     public static final int    VAM_PEAK_WINDOW_M            = 100;
+    /**
+     * Minimum gap (fraction, e.g. 0.015 = 1.5 percentage points) between the average gradient
+     * of a climb's last third and first third of segments for the trend to count as a real
+     * ramp (STEEP_FINISH / EASY_START) rather than noise. Used by {@link ClimbShapeClassifier}.
+     */
+    public static final double SHAPE_TREND_DELTA_GRADIENT   = 0.015;
+    /**
+     * Population standard deviation (fraction) of segment gradients above which a climb with
+     * no clear start-to-end trend is classified IRREGULAR instead of STEADY. Used by
+     * {@link ClimbShapeClassifier}.
+     */
+    public static final double SHAPE_IRREGULAR_STDDEV       = 0.02;
 }
