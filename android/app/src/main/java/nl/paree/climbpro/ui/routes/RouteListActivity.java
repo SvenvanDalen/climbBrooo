@@ -27,7 +27,9 @@ import nl.paree.climbpro.domain.route.CumulativeDistance;
 import nl.paree.climbpro.domain.route.ElevationSmoother;
 import nl.paree.climbpro.domain.route.RouteSimplifier;
 import nl.paree.climbpro.domain.climb.Climb;
+import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
+import nl.paree.climbpro.domain.climb.DuplicateClimbMatcher;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -271,33 +273,17 @@ public final class RouteListActivity extends AppCompatActivity {
                 int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
                         .detectFromGpxBytes(bytes);
 
-                String routeId = "gpx_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-                StoredRoute stored = new StoredRoute();
-                stored.routeId      = routeId;
-                stored.name         = uri.getLastPathSegment();
-                stored.importedAtMs = System.currentTimeMillis();
-                stored.sourceHash   = sha256(bytes);
+                RouteRepository repo = new RouteRepository(this);
+                List<DuplicateClimbMatcher.Match> duplicates = DuplicateClimbMatcher.findDuplicates(
+                        climbs, repo.loadCatalog(), ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
 
-                new RouteRepository(this).saveRoute(stored, simple, climbs);
-                if (detectedSurface != SurfaceType.UNKNOWN) {
-                    RouteRepository repo = new RouteRepository(this);
-                    try {
-                        StoredRoute saved = repo.loadRoute(routeId);
-                        if (saved.climbs != null) {
-                            for (int ci = 0; ci < saved.climbs.size(); ci++) {
-                                repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
-                            }
-                        }
-                    } catch (Exception e) {
-                        Log.w("RouteListActivity", "Surface type detection failed: " + e.getMessage());
-                    }
+                if (duplicates.isEmpty()) {
+                    finishImport(uri, bytes, simple, climbs, detectedSurface);
+                } else {
+                    runOnUiThread(() -> promptDuplicateResolution(duplicates,
+                            () -> executor.execute(
+                                    () -> finishImport(uri, bytes, simple, climbs, detectedSurface))));
                 }
-                runOnUiThread(() -> {
-                    viewModel.loadRoutes();
-                    Toast.makeText(this,
-                            "Imported: " + climbs.size() + " climb(s) detected",
-                            Toast.LENGTH_LONG).show();
-                });
             } catch (GpxParseException e) {
                 runOnUiThread(() -> Toast.makeText(this,
                         "GPX error: " + e.getMessage(), Toast.LENGTH_LONG).show());
@@ -306,6 +292,72 @@ public final class RouteListActivity extends AppCompatActivity {
                         "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         });
+    }
+
+    /**
+     * A newly-parsed GPX contains one or more climbs whose start coordinate matches an
+     * already-imported climb within {@link ClimbConstants#DUPLICATE_CLIMB_MATCH_RADIUS_M}.
+     * Ask the user whether to skip the import (the climb is already known — "merge") or
+     * import anyway (keep both as separate routes, e.g. an out-and-back variant).
+     * {@code onImportAnyway} continues the import; declining leaves nothing on disk.
+     */
+    private void promptDuplicateResolution(List<DuplicateClimbMatcher.Match> duplicates,
+                                           Runnable onImportAnyway) {
+        java.util.LinkedHashSet<String> routeNames = new java.util.LinkedHashSet<>();
+        for (DuplicateClimbMatcher.Match m : duplicates) {
+            String name = m.existingRoute.userDisplayName != null
+                    ? m.existingRoute.userDisplayName : m.existingRoute.name;
+            routeNames.add(name);
+        }
+        String message = duplicates.size() + " klim(men) uit dit bestand lijk(t)(en) al bekend "
+                + "(uit: " + String.join(", ", routeNames) + "). Samenvoegen slaat deze import over "
+                + "zodat de radius-index geen dubbele klim krijgt.";
+
+        new AlertDialog.Builder(this)
+                .setTitle("Klim al bekend")
+                .setMessage(message)
+                .setPositiveButton("Samenvoegen", (d, w) ->
+                        Toast.makeText(this, "Niet geïmporteerd — klim is al bekend",
+                                Toast.LENGTH_LONG).show())
+                .setNegativeButton("Toch importeren", (d, w) -> onImportAnyway.run())
+                .setNeutralButton("Annuleren", null)
+                .show();
+    }
+
+    private void finishImport(android.net.Uri uri, byte[] bytes, List<RoutePoint> simple,
+                              List<Climb> climbs, int detectedSurface) {
+        try {
+            String routeId = "gpx_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+            StoredRoute stored = new StoredRoute();
+            stored.routeId      = routeId;
+            stored.name         = uri.getLastPathSegment();
+            stored.importedAtMs = System.currentTimeMillis();
+            stored.sourceHash   = sha256(bytes);
+
+            RouteRepository repo = new RouteRepository(this);
+            repo.saveRoute(stored, simple, climbs);
+            if (detectedSurface != SurfaceType.UNKNOWN) {
+                try {
+                    StoredRoute saved = repo.loadRoute(routeId);
+                    if (saved.climbs != null) {
+                        for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                            repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w("RouteListActivity", "Surface type detection failed: " + e.getMessage());
+                }
+            }
+            runOnUiThread(() -> {
+                viewModel.loadRoutes();
+                Toast.makeText(this,
+                        "Imported: " + climbs.size() + " climb(s) detected",
+                        Toast.LENGTH_LONG).show();
+            });
+        } catch (Exception e) {
+            runOnUiThread(() -> Toast.makeText(this,
+                    "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        }
     }
 
     private static byte[] readStream(InputStream in) throws IOException {

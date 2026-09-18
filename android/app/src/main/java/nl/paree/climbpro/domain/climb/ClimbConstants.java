@@ -55,4 +55,13 @@ public final class ClimbConstants {
      * {@link ClimbShapeClassifier}.
      */
     public static final double SHAPE_IRREGULAR_STDDEV       = 0.02;
+    /**
+     * Max distance (metres) between a newly-imported climb's start coordinate and an
+     * already-known climb's start coordinate for the import flow to treat them as the
+     * same physical climb and offer a merge instead of a duplicate (issue #11). Wider
+     * than {@link #STARRED_SEGMENT_MATCH_MAX_M} because GPX sources (Strava export vs.
+     * a manual recording of the same road) can disagree on the exact climb start by
+     * more than simplification jitter alone.
+     */
+    public static final double DUPLICATE_CLIMB_MATCH_RADIUS_M = 150.0;
 }
