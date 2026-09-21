@@ -1,9 +1,7 @@
 name: build-android
-# Only fires when `production` moves — i.e. when main is deliberately pushed/merged
-# to production, not on every push to main. See DEPLOYMENT.md.
 on:
   push:
-    branches: [production]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
