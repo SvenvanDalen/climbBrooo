@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <strings>
     <string id="AppName">ClimbPro</string>
+    <string id="SettingsDarkThemeTitle">Low-light dark theme</string>
 </strings>
