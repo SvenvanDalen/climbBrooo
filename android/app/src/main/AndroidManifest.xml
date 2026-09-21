@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- In-app update checker: install a downloaded release APK from outside the Play Store. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Required on Android 11+ (targetSdk 30+) so the CIQ SDK can bind to
          the Garmin Connect Mobile service. Without this, initialize() reports
@@ -50,6 +52,11 @@
 
         <activity
             android:name=".ui.climbs.ClimbTimelineActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.wrapped.ClimbWrappedActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
@@ -120,6 +127,15 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Launches the install prompt once the update-checker's APK download finishes. -->
+        <receiver
+            android:name=".update.DownloadCompleteReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
 
