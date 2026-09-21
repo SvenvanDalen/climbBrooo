@@ -22,11 +22,13 @@ public final class KnownClimbs {
         for (StoredClimb c : route.climbs) {
             int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
             int endIdx = nearestIndex(route.distances, c.endDistance);
+            double[] calibLats = calibLats(c);
+            double[] calibLons = calibLons(c);
             out.add(new KnownClimb(
                     ClimbIdentity.of(c.startLat, c.startLon, len),
                     c.startLat, c.startLon,
                     route.lats[endIdx], route.lons[endIdx],
-                    len, segmentLengths(c)));
+                    len, segmentLengths(c), calibLats, calibLons));
         }
         return out;
     }
@@ -36,6 +38,20 @@ public final class KnownClimbs {
         if (c.segments == null || c.segments.isEmpty()) return null;
         int[] out = new int[c.segments.size()];
         for (int i = 0; i < out.length; i++) out[i] = c.segments.get(i).distance;
+        return out;
+    }
+
+    private static double[] calibLats(StoredClimb c) {
+        if (c.calibrationPoints == null || c.calibrationPoints.isEmpty()) return null;
+        double[] out = new double[c.calibrationPoints.size()];
+        for (int i = 0; i < out.length; i++) out[i] = c.calibrationPoints.get(i).lat;
+        return out;
+    }
+
+    private static double[] calibLons(StoredClimb c) {
+        if (c.calibrationPoints == null || c.calibrationPoints.isEmpty()) return null;
+        double[] out = new double[c.calibrationPoints.size()];
+        for (int i = 0; i < out.length; i++) out[i] = c.calibrationPoints.get(i).lon;
         return out;
     }
 

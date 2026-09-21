@@ -191,6 +191,24 @@ public final class ClimbAttemptMatcher {
     }
 
     /**
+     * Same passes as {@link #matchAll}, in the same order, but returns each pass's track
+     * index range ({@code {entryIdx, exitIdx}}) instead of its elapsed time. Used by
+     * route-deviation checks ({@link ClimbRouteDeviationDetector}) that need the actual
+     * track slice of a pass, not just its timing — callers pair this list positionally
+     * with {@link #matchAll}'s output for the same arguments.
+     */
+    public static List<int[]> matchAllPassIndices(List<TrackSample> track,
+                                                   double startLat, double startLon,
+                                                   double endLat, double endLon,
+                                                   int climbLengthM) {
+        List<int[]> out = new ArrayList<>();
+        for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
+            out.add(new int[]{p.entryIdx, p.exitIdx});
+        }
+        return out;
+    }
+
+    /**
      * Like {@link #matchSegments}, but returns the per-segment splits of every valid
      * ascent found in the track, in chronological order, instead of only the first.
      */

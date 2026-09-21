@@ -12,6 +12,7 @@ import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample;
+import nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -138,6 +139,8 @@ public final class StravaActivitiesRepository {
                 List<int[]> segPasses = ClimbAttemptMatcher.matchAllSegments(
                         track, k.startLat, k.startLon, k.endLat, k.endLon,
                         k.lengthM, k.segLengthsM);
+                List<int[]> passIndices = ClimbAttemptMatcher.matchAllPassIndices(
+                        track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
                 for (int i = 0; i < elapsedPasses.size(); i++) {
                     StoredClimbAttempt a = new StoredClimbAttempt();
                     a.climbId      = k.climbId;
@@ -146,6 +149,11 @@ public final class StravaActivitiesRepository {
                     a.elapsedSec   = elapsedPasses.get(i);
                     a.passIndex    = i;
                     a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
+                    if (i < passIndices.size()) {
+                        int[] idx = passIndices.get(i);
+                        a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
+                                track, idx[0], idx[1], k.calibLats, k.calibLons);
+                    }
                     out.add(a);
                 }
             }

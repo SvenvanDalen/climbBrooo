@@ -28,4 +28,15 @@ public final class StoredClimbAttempt {
      * whose segSplitSec.length matches the current segment count.
      */
     public int[]  segSplitSec;
+
+    /**
+     * True when the recorded GPS track diverged from the climb's known road geometry
+     * (e.g. a cut switchback) — see
+     * {@link nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector}. Excluded
+     * from PR calculations ({@link nl.paree.climbpro.domain.climb.SegmentPrCalculator},
+     * {@link nl.paree.climbpro.domain.climb.LogbookCalculator},
+     * {@link nl.paree.climbpro.domain.climb.BestOfYearCalculator}) but still shown in
+     * the plain chronological history/timeline.
+     */
+    public boolean routeDeviation = false;
 }
