@@ -23,6 +23,7 @@ import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 
 import java.util.ArrayList;
@@ -119,6 +120,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(),
                         this::shareToGarminConnect));
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
+        binding.btnBulkRenameClimbs.setOnClickListener(v ->
+                startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));
 
         viewModel.loadRoute(routeId);
     }

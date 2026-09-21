@@ -167,6 +167,30 @@ public final class RouteRepository {
         }
     }
 
+    /**
+     * Renames multiple climbs in one load/write cycle, for the bulk rename screen. Out-of-range
+     * indices (including negatives) are silently skipped, matching {@link #renameClimb}. A blank
+     * name clears {@code userDisplayName} back to null so the climb falls back to its auto name.
+     */
+    public void renameClimbs(String routeId, java.util.Map<Integer, String> namesByIndex)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || namesByIndex.isEmpty()) return;
+
+        boolean changed = false;
+        for (java.util.Map.Entry<Integer, String> entry : namesByIndex.entrySet()) {
+            int index = entry.getKey();
+            if (index < 0 || index >= route.climbs.size()) continue;
+            String trimmed = entry.getValue() != null ? entry.getValue().trim() : "";
+            route.climbs.get(index).userDisplayName = trimmed.isEmpty() ? null : trimmed;
+            changed = true;
+        }
+        if (changed) {
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
     public void saveNotes(String routeId, String notes) throws IOException {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;
