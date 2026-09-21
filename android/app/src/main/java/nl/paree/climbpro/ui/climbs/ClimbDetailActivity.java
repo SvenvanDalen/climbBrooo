@@ -148,6 +148,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
+        binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
+
+        viewModel.gpxExportFile().observe(this, this::shareGpxFile);
 
         setupBulkSurfaceSetter();
 
@@ -260,6 +263,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         } catch (java.io.IOException e) {
             Toast.makeText(this, "Kon afbeelding niet aanmaken", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Hands the GPX file {@link ClimbDetailViewModel#exportGpx()} just wrote off to the
+     * standard Android share sheet (issue #79). Mirrors {@link #shareClimbAsImage()}'s
+     * FileProvider handoff, using {@link ClimbGpxExportHandoff} instead.
+     */
+    private void shareGpxFile(java.io.File file) {
+        if (file == null) return;
+        android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                this, getPackageName() + ".fileprovider", file);
+        Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
+        startActivity(Intent.createChooser(share, "Exporteer klim als GPX"));
     }
 
     private void showRenameDialog() {

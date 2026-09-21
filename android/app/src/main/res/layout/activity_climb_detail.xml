@@ -69,6 +69,13 @@
                 android:text="Deel als afbeelding"/>
 
             <Button
+                android:id="@+id/btn_export_gpx"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Exporteer als GPX"/>
+
+            <Button
                 android:id="@+id/btn_re_segment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

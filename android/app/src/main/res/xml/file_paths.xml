@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Exposes cacheDir/shared_routes/ so the Garmin Connect handoff GPX is shareable,
      cacheDir/shared_images/ so a composed climb-share image (issue #33) is shareable,
+     cacheDir/shared_gpx/ so a single-climb GPX export (issue #79) is shareable,
      and getExternalFilesDir(DIRECTORY_DOWNLOADS)/ so the update-checker's downloaded
      APK is installable via the package installer. -->
 <paths>
     <cache-path name="shared_routes" path="shared_routes/"/>
     <cache-path name="shared_images" path="shared_images/"/>
+    <cache-path name="shared_gpx" path="shared_gpx/"/>
     <external-files-path name="downloads" path="Download/"/>
 </paths>
