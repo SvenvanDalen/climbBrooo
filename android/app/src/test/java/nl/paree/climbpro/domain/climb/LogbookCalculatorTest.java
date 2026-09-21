@@ -71,6 +71,54 @@ public class LogbookCalculatorTest {
         assertEquals(0, rows.size());
     }
 
+    @Test
+    public void timeline_emptyInput_returnsEmptyList() {
+        List<StoredClimbAttempt> rows = LogbookCalculator.timeline(Collections.emptyList());
+        assertEquals(0, rows.size());
+    }
+
+    @Test
+    public void timeline_singleAttempt_returnsThatAttempt() {
+        List<StoredClimbAttempt> attempts = Arrays.asList(at("k1", 1, 1000, 700));
+        List<StoredClimbAttempt> rows = LogbookCalculator.timeline(attempts);
+        assertEquals(1, rows.size());
+        assertEquals("k1", rows.get(0).climbId);
+    }
+
+    @Test
+    public void timeline_multipleAttemptsAcrossDifferentClimbs_sortedNewestFirst() {
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, 1000, 700),
+                at("k2", 2, 3000, 900),
+                at("k1", 3, 2000, 650),
+                at("k3", 4, 500, 800));
+
+        List<StoredClimbAttempt> rows = LogbookCalculator.timeline(attempts);
+
+        assertEquals(4, rows.size());
+        assertEquals(3000L, rows.get(0).dateEpochSec);
+        assertEquals("k2", rows.get(0).climbId);
+        assertEquals(2000L, rows.get(1).dateEpochSec);
+        assertEquals("k1", rows.get(1).climbId);
+        assertEquals(1000L, rows.get(2).dateEpochSec);
+        assertEquals("k1", rows.get(2).climbId);
+        assertEquals(500L, rows.get(3).dateEpochSec);
+        assertEquals("k3", rows.get(3).climbId);
+    }
+
+    @Test
+    public void timeline_doesNotMutateInputList() {
+        List<StoredClimbAttempt> attempts = new java.util.ArrayList<>(Arrays.asList(
+                at("k1", 1, 1000, 700),
+                at("k2", 2, 3000, 900)));
+        List<StoredClimbAttempt> original = new java.util.ArrayList<>(attempts);
+
+        LogbookCalculator.timeline(attempts);
+
+        assertEquals(original.get(0).climbId, attempts.get(0).climbId);
+        assertEquals(original.get(1).climbId, attempts.get(1).climbId);
+    }
+
     private static long epoch(int year, int month, int day) {
         return ZonedDateTime.of(year, month, day, 12, 0, 0, 0, ZoneOffset.UTC).toEpochSecond();
     }

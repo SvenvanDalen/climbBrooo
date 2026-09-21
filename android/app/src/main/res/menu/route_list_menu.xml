@@ -30,6 +30,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_timeline"
+        android:title="Tijdlijn"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_wrapped"
         android:title="Jaaroverzicht"
         app:showAsAction="never"/>
