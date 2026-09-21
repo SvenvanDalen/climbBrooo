@@ -36,10 +36,13 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
 import nl.paree.climbpro.ui.strava.StravaAuthActivity;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -286,6 +289,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_batch_export) {
+            showBatchExportDialog();
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
@@ -351,6 +357,102 @@ public final class RouteListActivity extends AppCompatActivity {
                     d.dismiss();
                 })
                 .show();
+    }
+
+    /**
+     * Batch-export of every climb ridden within a chosen calendar year as one combined GPX
+     * file (issue #91) — reuses the single-climb export path ({@link
+     * nl.paree.climbpro.domain.climb.ClimbGpxWriter}) in a loop via {@link
+     * nl.paree.climbpro.domain.climb.BatchClimbGpxWriter}, filtered by {@link
+     * nl.paree.climbpro.domain.climb.SeasonClimbFilter}. "Season" here is kept simple: a
+     * year picker showing only years that actually have dated attempts.
+     */
+    private void showBatchExportDialog() {
+        executor.execute(() -> {
+            nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
+                    new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
+            List<Integer> years = nl.paree.climbpro.domain.climb.SeasonClimbFilter
+                    .yearsWithAttempts(attemptRepo.loadAll());
+            runOnUiThread(() -> {
+                if (years.isEmpty()) {
+                    Toast.makeText(this, "Geen ritten met datum gevonden om te exporteren",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String[] labels = new String[years.size()];
+                for (int i = 0; i < years.size(); i++) labels[i] = String.valueOf(years.get(i));
+                new AlertDialog.Builder(this)
+                        .setTitle("Exporteer seizoen")
+                        .setItems(labels, (d, which) -> exportSeason(years.get(which)))
+                        .show();
+            });
+        });
+    }
+
+    private void exportSeason(int year) {
+        executor.execute(() -> {
+            try {
+                RouteRepository repo = new RouteRepository(this);
+                nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
+                        new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
+                List<nl.paree.climbpro.data.route.StoredClimbAttempt> attempts = attemptRepo.loadAll();
+
+                List<StoredRoute> routes = new ArrayList<>();
+                for (nl.paree.climbpro.data.route.RouteCatalogEntry entry : repo.loadCatalog()) {
+                    try {
+                        routes.add(repo.loadRoute(entry.routeId));
+                    } catch (IOException e) {
+                        Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
+                    }
+                }
+
+                long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(year);
+                List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches =
+                        nl.paree.climbpro.domain.climb.SeasonClimbFilter.climbsInPeriod(
+                                routes, attempts, range[0], range[1]);
+
+                if (matches.isEmpty()) {
+                    runOnUiThread(() -> Toast.makeText(this,
+                            "Geen klimmen gevonden in " + year, Toast.LENGTH_SHORT).show());
+                    return;
+                }
+
+                Map<String, nl.paree.climbpro.domain.climb.LogbookCalculator.Summary> summaries =
+                        nl.paree.climbpro.domain.climb.LogbookCalculator.summaries(attempts);
+
+                List<nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry> exportEntries =
+                        new ArrayList<>();
+                for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m : matches) {
+                    int segCount = m.climb.segments != null ? m.climb.segments.size() : 0;
+                    int len = m.climb.length > 0 ? m.climb.length
+                            : (m.climb.endDistance - m.climb.startDistance);
+                    String climbId = nl.paree.climbpro.domain.climb.ClimbIdentity.of(
+                            m.climb.startLat, m.climb.startLon, len);
+                    int[] bestSplitSec = nl.paree.climbpro.domain.climb.SegmentPrCalculator
+                            .bestSplits(climbId, segCount, attempts);
+                    nl.paree.climbpro.domain.climb.LogbookCalculator.Summary summary =
+                            summaries.get(climbId);
+                    Integer bestElapsedSec = summary != null ? summary.prSec : null;
+                    exportEntries.add(new nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry(
+                            m.route, m.climb, m.climbIndex, bestSplitSec, bestElapsedSec));
+                }
+
+                String gpx = nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.toGpx(exportEntries);
+                File file = nl.paree.climbpro.ui.climbs.ClimbGpxExportHandoff.writeGpxFile(
+                        this, gpx, "season_" + year);
+                runOnUiThread(() -> shareGpxFile(file, "Exporteer seizoen " + year));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Export mislukt: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void shareGpxFile(File file, String chooserTitle) {
+        android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                this, getPackageName() + ".fileprovider", file);
+        Intent share = nl.paree.climbpro.ui.climbs.ClimbGpxExportHandoff.buildShareIntent(uri);
+        startActivity(Intent.createChooser(share, chooserTitle));
     }
 
     private void importGpx(android.net.Uri uri) {

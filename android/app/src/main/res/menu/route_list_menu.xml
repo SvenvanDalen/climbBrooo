@@ -45,6 +45,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_batch_export"
+        android:title="Exporteer seizoen (GPX)"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
         app:showAsAction="never"/>

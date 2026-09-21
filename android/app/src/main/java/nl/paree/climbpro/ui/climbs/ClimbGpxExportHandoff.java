@@ -31,9 +31,18 @@ public final class ClimbGpxExportHandoff {
      * other before the first share target has finished reading it.
      */
     public static File writeGpxFile(Context ctx, String gpx) throws IOException {
+        return writeGpxFile(ctx, gpx, "climb");
+    }
+
+    /**
+     * Same as {@link #writeGpxFile(Context, String)}, but with a caller-supplied filename
+     * prefix (issue #91's batch/season export uses e.g. {@code "season_2026"} so the shared
+     * file name reflects what's in it, instead of every export looking like a single climb).
+     */
+    public static File writeGpxFile(Context ctx, String gpx, String prefix) throws IOException {
         File dir = new File(ctx.getCacheDir(), CACHE_SUBDIR);
         dir.mkdirs();
-        File file = new File(dir, "climb_" + UUID.randomUUID() + ".gpx");
+        File file = new File(dir, prefix + "_" + UUID.randomUUID() + ".gpx");
         try (FileOutputStream out = new FileOutputStream(file)) {
             out.write(gpx.getBytes(StandardCharsets.UTF_8));
         }

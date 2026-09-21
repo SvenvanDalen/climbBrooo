@@ -19,6 +19,11 @@ import nl.paree.climbpro.data.route.StoredSegment;
  * without Robolectric/instrumentation; the file-write/share-sheet glue lives in {@code
  * ui.climbs.ClimbGpxExportHandoff}. Phone-only — this is a distinct export format from the
  * Connect IQ wire payload the watch consumes, so it does not touch {@code protocol/}.
+ *
+ * <p>{@link #appendClimb} builds just the inner {@code <wpt>}/{@code <trk>} fragment for one
+ * climb; {@link #toGpx} wraps a single fragment in a standalone {@code <gpx>} document.
+ * {@link BatchClimbGpxWriter} reuses {@link #appendClimb} to pack several climbs' fragments
+ * into one multi-track document (issue #91) without duplicating this XML-building logic.
  */
 public final class ClimbGpxWriter {
 
@@ -40,6 +45,26 @@ public final class ClimbGpxWriter {
      */
     public static String toGpx(StoredRoute route, StoredClimb climb, int climbIndex,
             int[] bestSplitSec, Integer bestElapsedSec) {
+        StringBuilder sb = new StringBuilder(768);
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
+                + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+        appendClimb(sb, route, climb, climbIndex, bestSplitSec, bestElapsedSec);
+        sb.append("</gpx>\n");
+        return sb.toString();
+    }
+
+    /**
+     * Appends one climb's {@code <wpt>} markers followed by its {@code <trk>} onto an
+     * already-open {@code <gpx>...</gpx>} envelope. Shared by {@link #toGpx} (one climb,
+     * one document) and {@link BatchClimbGpxWriter} (several climbs, one document).
+     *
+     * @throws IllegalArgumentException if {@code route} has no usable geometry, {@code
+     *         climb} is null, or the climb's start/end distance don't map onto any point
+     *         in {@code route} — the same validation {@link #toGpx} always performed.
+     */
+    static void appendClimb(StringBuilder sb, StoredRoute route, StoredClimb climb,
+            int climbIndex, int[] bestSplitSec, Integer bestElapsedSec) {
         if (route == null || route.lats == null || route.lons == null || route.distances == null
                 || route.lats.length == 0
                 || route.lons.length < route.lats.length
@@ -64,11 +89,6 @@ public final class ClimbGpxWriter {
                 : climb.name != null ? climb.name
                 : "Climb " + (climbIndex + 1);
 
-        StringBuilder sb = new StringBuilder(512 + (endIdx - startIdx + 1) * 64);
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
-                + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
-
         appendWaypoints(sb, route, climb, startIdx, endIdx, bestSplitSec, bestElapsedSec, name);
 
         sb.append("  <trk>\n");
@@ -85,8 +105,6 @@ public final class ClimbGpxWriter {
         }
         sb.append("    </trkseg>\n");
         sb.append("  </trk>\n");
-        sb.append("</gpx>\n");
-        return sb.toString();
     }
 
     private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
