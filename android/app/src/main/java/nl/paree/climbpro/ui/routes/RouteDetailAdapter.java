@@ -156,8 +156,10 @@ public final class RouteDetailAdapter
         double distanceIntoRouteKm = c.startDistance / 1000.0;
         double difficulty = nl.paree.climbpro.domain.climb.DifficultyScoreCalculator
                 .score(c.elevationGain, c.avgGradient, distanceIntoRouteKm);
-        h.statsView.setText(String.format("%d m · %.1f%% gem. · %d m hoogte · moeilijkheid %.0f",
-                c.length, c.avgGradient * 100, c.elevationGain, difficulty));
+        String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(c);
+        String categorySuffix = categoryLabel.isEmpty() ? "" : "  ·  " + categoryLabel;
+        h.statsView.setText(String.format("%d m · %.1f%% gem. · %d m hoogte · moeilijkheid %.0f%s",
+                c.length, c.avgGradient * 100, c.elevationGain, difficulty, categorySuffix));
         if (climbTargetSeconds != null && climbIndex < climbTargetSeconds.length
                 && climbTargetSeconds[climbIndex] >= 0) {
             h.statsView.setText(h.statsView.getText() + "  ·  ⏱ "
