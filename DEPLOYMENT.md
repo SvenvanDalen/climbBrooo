@@ -63,7 +63,19 @@ This prompts for a keystore password, a key password, and your identity details
 
 ## Step 1 — CI/CD: `.github/workflows/build-android.yml`
 
-On every push to `main` (and on manual `workflow_dispatch`), CI:
+The release workflow does **not** run on every push to `main` — it only fires on a
+push to a separate `production` branch (plus manual `workflow_dispatch` for one-off
+runs). This keeps ordinary merges to `main` release-free; you decide when a build
+actually ships by promoting `main` to `production`:
+
+```bash
+git fetch origin
+git push origin origin/main:production
+# or, from a local main checkout:
+#   git checkout production && git merge main && git push origin production
+```
+
+Once `production` moves, CI:
 
 1. Checks out the repo, sets up JDK 17, gives `gradlew` execute permission.
 2. Builds the release APK: `./gradlew assembleRelease`, with `versionCode` set to the
