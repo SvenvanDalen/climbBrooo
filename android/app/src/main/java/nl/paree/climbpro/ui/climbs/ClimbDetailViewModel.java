@@ -182,6 +182,61 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Attaches/updates a note and/or photo on one existing attempt (issue #46). {@code
+     * photoUri}, when non-null, is copied into {@code getFilesDir()/attempt_photos/} via
+     * {@link nl.paree.climbpro.data.route.AttemptPhotoStore}; pass null to leave the attempt's
+     * current photo untouched, and an empty/blank {@code note} to clear it. Identity is
+     * (climbId derived from the loaded climb, activityId, passIndex) — the same key {@link
+     * ClimbAttemptRepository#update} matches on. Reloads the climb afterward so the history
+     * list picks up the change.
+     */
+    public void saveAttemptNote(String routeId, int climbIndex, long activityId, int passIndex,
+                                 String note, android.net.Uri photoUri) {
+        StoredClimb c = lastClimb;
+        if (c == null) {
+            error.postValue("Klim nog niet geladen");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+                String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
+
+                StoredClimbAttempt target = null;
+                for (StoredClimbAttempt a : attemptRepo.loadAll()) {
+                    if (climbId.equals(a.climbId) && a.activityId == activityId
+                            && a.passIndex == passIndex) {
+                        target = a;
+                        break;
+                    }
+                }
+                if (target == null) {
+                    error.postValue("Attempt niet gevonden");
+                    return;
+                }
+
+                target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
+                if (photoUri != null) {
+                    String oldPhoto = target.photoFileName;
+                    target.photoFileName = nl.paree.climbpro.data.route.AttemptPhotoStore
+                            .savePickedPhoto(getApplication(), photoUri);
+                    nl.paree.climbpro.data.route.AttemptPhotoStore
+                            .delete(getApplication(), oldPhoto);
+                }
+
+                if (attemptRepo.update(target)) {
+                    saved.postValue(true);
+                    loadClimb(routeId, climbIndex);
+                } else {
+                    error.postValue("Opslaan mislukt");
+                }
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     /** Recompute using the latest saved rider profile (call from Activity.onResume). */
     public void refreshEstimate() {
         StoredClimb c = lastClimb;

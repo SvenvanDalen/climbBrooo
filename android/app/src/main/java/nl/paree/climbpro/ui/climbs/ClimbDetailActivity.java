@@ -46,6 +46,24 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private StoredClimb loadedClimb;
     private String lastTimeEstimateText;
 
+    // Pending state while the note/photo edit dialog (issue #46) is open: the row being
+    // edited and the photo the user just picked (persisted only on Save).
+    private nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow pendingAttemptRow;
+    private android.net.Uri pendingPhotoUri;
+    private android.widget.ImageView pendingPhotoPreview;
+
+    private final androidx.activity.result.ActivityResultLauncher<String> photoPickerLauncher =
+            registerForActivityResult(
+                    new androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+                    uri -> {
+                        if (uri == null) return;
+                        pendingPhotoUri = uri;
+                        if (pendingPhotoPreview != null) {
+                            pendingPhotoPreview.setImageURI(uri);
+                            pendingPhotoPreview.setVisibility(android.view.View.VISIBLE);
+                        }
+                    });
+
     public static Intent intentFor(Context ctx, String routeId, int climbIndex) {
         Intent i = new Intent(ctx, ClimbDetailActivity.class);
         i.putExtra(EXTRA_ROUTE_ID, routeId);
@@ -134,6 +152,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             java.text.SimpleDateFormat fmt =
                     new java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault());
             for (nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row : rows) {
+                android.widget.LinearLayout rowLayout = new android.widget.LinearLayout(this);
+                rowLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+                rowLayout.setPadding(0, 8, 0, 16);
+
                 android.widget.TextView tv = new android.widget.TextView(this);
                 int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
                 String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
@@ -143,8 +165,37 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 String badge = row.bestOfYear ? "  🏆 Beste van dit jaar" : "";
                 tv.setText(String.format(java.util.Locale.getDefault(),
                         "%s   %d:%02d   (%s)%s", date, m, s, delta, badge));
-                tv.setPadding(0, 8, 0, 8);
-                container.addView(tv);
+                rowLayout.addView(tv);
+
+                if (row.note != null && !row.note.isEmpty()) {
+                    android.widget.TextView noteView = new android.widget.TextView(this);
+                    noteView.setText("“" + row.note + "”");
+                    noteView.setTextSize(13f);
+                    noteView.setPadding(0, 4, 0, 0);
+                    rowLayout.addView(noteView);
+                }
+
+                if (row.photoFileName != null && !row.photoFileName.isEmpty()) {
+                    android.widget.ImageView thumb = new android.widget.ImageView(this);
+                    int sizePx = (int) (72 * getResources().getDisplayMetrics().density);
+                    android.widget.LinearLayout.LayoutParams lp =
+                            new android.widget.LinearLayout.LayoutParams(sizePx, sizePx);
+                    lp.topMargin = 8;
+                    thumb.setLayoutParams(lp);
+                    thumb.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+                    thumb.setImageBitmap(loadAttemptThumbnail(row.photoFileName, sizePx));
+                    rowLayout.addView(thumb);
+                }
+
+                android.widget.TextView editLink = new android.widget.TextView(this);
+                editLink.setText(row.note != null || row.photoFileName != null
+                        ? "Notitie/foto bewerken" : "+ Notitie/foto toevoegen");
+                editLink.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
+                editLink.setPadding(0, 8, 0, 0);
+                editLink.setOnClickListener(v -> showAttemptNoteDialog(row));
+                rowLayout.addView(editLink);
+
+                container.addView(rowLayout);
             }
         });
 
@@ -348,5 +399,84 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Annuleer", null)
                 .show();
+    }
+
+    /**
+     * Small memory/diary edit dialog for one attempt (issue #46) — a free-text note and a
+     * gallery photo picker, both purely phone-side. Reachable from the "+ Notitie/foto" link
+     * on each history row.
+     */
+    private void showAttemptNoteDialog(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row) {
+        pendingAttemptRow = row;
+        pendingPhotoUri = null;
+
+        android.widget.LinearLayout dialogLayout = new android.widget.LinearLayout(this);
+        dialogLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        dialogLayout.setPadding(pad, pad, pad, pad);
+
+        EditText noteInput = new EditText(this);
+        noteInput.setHint("Notitie");
+        noteInput.setText(row.note);
+        dialogLayout.addView(noteInput);
+
+        android.widget.ImageView preview = new android.widget.ImageView(this);
+        int sizePx = (int) (120 * getResources().getDisplayMetrics().density);
+        android.widget.LinearLayout.LayoutParams previewLp =
+                new android.widget.LinearLayout.LayoutParams(sizePx, sizePx);
+        previewLp.topMargin = pad;
+        preview.setLayoutParams(previewLp);
+        preview.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+        if (row.photoFileName != null && !row.photoFileName.isEmpty()) {
+            preview.setImageBitmap(loadAttemptThumbnail(row.photoFileName, sizePx));
+        } else {
+            preview.setVisibility(android.view.View.GONE);
+        }
+        dialogLayout.addView(preview);
+        pendingPhotoPreview = preview;
+
+        android.widget.Button pickPhotoButton = new android.widget.Button(this);
+        pickPhotoButton.setText(row.photoFileName != null ? "Andere foto kiezen" : "Foto kiezen");
+        pickPhotoButton.setOnClickListener(v -> photoPickerLauncher.launch("image/*"));
+        dialogLayout.addView(pickPhotoButton);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Notitie & foto")
+                .setView(dialogLayout)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    viewModel.saveAttemptNote(routeId, climbIndex, row.activityId, row.passIndex,
+                            noteInput.getText().toString(), pendingPhotoUri);
+                    pendingAttemptRow = null;
+                    pendingPhotoUri = null;
+                    pendingPhotoPreview = null;
+                })
+                .setNegativeButton("Annuleer", (d, w) -> {
+                    pendingAttemptRow = null;
+                    pendingPhotoUri = null;
+                    pendingPhotoPreview = null;
+                })
+                .show();
+    }
+
+    /**
+     * Decodes an attempt photo at roughly thumbnail resolution (avoids loading a full-size
+     * gallery photo just to show a small preview). Returns null if the file is missing or
+     * unreadable — callers must tolerate a null bitmap.
+     */
+    private android.graphics.Bitmap loadAttemptThumbnail(String photoFileName, int targetSizePx) {
+        java.io.File file = nl.paree.climbpro.data.route.AttemptPhotoStore.fileFor(this, photoFileName);
+        if (!file.exists()) return null;
+        android.graphics.BitmapFactory.Options bounds = new android.graphics.BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        android.graphics.BitmapFactory.decodeFile(file.getAbsolutePath(), bounds);
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+        int sample = 1;
+        while ((bounds.outWidth / sample) > targetSizePx * 2
+                || (bounds.outHeight / sample) > targetSizePx * 2) {
+            sample *= 2;
+        }
+        android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+        opts.inSampleSize = sample;
+        return android.graphics.BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
     }
 }

@@ -66,6 +66,30 @@ public final class ClimbAttemptRepository {
         writeAtomic(file, mapper.writeValueAsBytes(all));
     }
 
+    /**
+     * Not thread-safe: call only from a single-threaded executor.
+     * Replaces the existing attempt whose (climbId, activityId, passIndex) matches
+     * {@code updated}'s with {@code updated} itself — a plain overwrite-by-identity, unlike
+     * {@link #append}, which is a dedupe-and-add. Used to attach/change a note or photo on an
+     * attempt record that already exists from matching (issue #46). Other attempts are left
+     * untouched. Returns {@code false} without writing anything if no attempt with that
+     * identity exists.
+     */
+    public boolean update(StoredClimbAttempt updated) throws IOException {
+        List<StoredClimbAttempt> all = loadAll();
+        String targetKey = key(updated);
+        boolean found = false;
+        for (int i = 0; i < all.size(); i++) {
+            if (key(all.get(i)).equals(targetKey)) {
+                all.set(i, updated);
+                found = true;
+                break;
+            }
+        }
+        if (found) writeAtomic(file, mapper.writeValueAsBytes(all));
+        return found;
+    }
+
     private static String key(StoredClimbAttempt a) {
         return (a.climbId != null ? a.climbId : "") + "#" + a.activityId + "#" + a.passIndex;
     }

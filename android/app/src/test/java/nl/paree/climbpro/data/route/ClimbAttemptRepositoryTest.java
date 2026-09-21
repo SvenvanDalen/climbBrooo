@@ -88,6 +88,71 @@ public class ClimbAttemptRepositoryTest {
     }
 
     @Test
+    public void update_replacesMatchingAttempt_leavesOthersUntouched() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+
+        repo.append(Arrays.asList(
+                attempt("k1", 100L, 1_700_000_000L, 600),
+                attempt("k2", 100L, 1_700_000_000L, 720)));
+
+        StoredClimbAttempt updated = attempt("k1", 100L, 1_700_000_000L, 600);
+        updated.note = "Zware dag";
+        updated.photoFileName = "photo-1.jpg";
+
+        boolean found = repo.update(updated);
+
+        assertTrue(found);
+        List<StoredClimbAttempt> all = repo.loadAll();
+        assertEquals(2, all.size());
+        StoredClimbAttempt k1 = all.stream().filter(a -> "k1".equals(a.climbId)).findFirst().get();
+        StoredClimbAttempt k2 = all.stream().filter(a -> "k2".equals(a.climbId)).findFirst().get();
+        assertEquals("Zware dag", k1.note);
+        assertEquals("photo-1.jpg", k1.photoFileName);
+        assertEquals(720, k2.elapsedSec);
+        assertEquals(null, k2.note);
+    }
+
+    @Test
+    public void update_matchesByClimbActivityAndPassIndex_notOtherPasses() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+
+        StoredClimbAttempt firstPass = attempt("k1", 100L, 1_700_000_000L, 540);
+        firstPass.passIndex = 0;
+        StoredClimbAttempt secondPass = attempt("k1", 100L, 1_700_000_000L, 560);
+        secondPass.passIndex = 1;
+        repo.append(Arrays.asList(firstPass, secondPass));
+
+        StoredClimbAttempt updatedSecondPass = attempt("k1", 100L, 1_700_000_000L, 560);
+        updatedSecondPass.passIndex = 1;
+        updatedSecondPass.note = "Tweede keer over deze klim";
+
+        boolean found = repo.update(updatedSecondPass);
+
+        assertTrue(found);
+        List<StoredClimbAttempt> all = repo.loadAll();
+        StoredClimbAttempt pass0 = all.stream().filter(a -> a.passIndex == 0).findFirst().get();
+        StoredClimbAttempt pass1 = all.stream().filter(a -> a.passIndex == 1).findFirst().get();
+        assertEquals(null, pass0.note);
+        assertEquals("Tweede keer over deze klim", pass1.note);
+    }
+
+    @Test
+    public void update_returnsFalse_andDoesNotWrite_whenNoMatch() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+
+        repo.append(Arrays.asList(attempt("k1", 100L, 1_700_000_000L, 600)));
+
+        StoredClimbAttempt noMatch = attempt("does-not-exist", 999L, 1_700_000_000L, 0);
+        boolean found = repo.update(noMatch);
+
+        assertTrue(!found);
+        assertEquals(1, repo.loadAll().size());
+    }
+
+    @Test
     public void knownActivityIds_collectsAll() throws Exception {
         Application app = ApplicationProvider.getApplicationContext();
         ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
