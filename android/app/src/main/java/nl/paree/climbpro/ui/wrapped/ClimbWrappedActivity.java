@@ -1,6 +1,5 @@
 package nl.paree.climbpro.ui.wrapped;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -72,25 +71,25 @@ public final class ClimbWrappedActivity extends AppCompatActivity {
         }
         empty.setVisibility(View.GONE);
 
-        addCard("#6C3EF4", "Totale hoogtemeters", formatMeters(s.totalElevationGainM));
-        addCard("#F43E7C", "Klimpogingen", s.totalAttempts + " op " + s.distinctClimbCount + " verschillende klim(men)");
-        addCard("#3EC4F4", "Totale klimtijd", formatDuration(s.totalClimbingTimeSec));
+        addCard("Totale hoogtemeters", formatMeters(s.totalElevationGainM));
+        addCard("Klimpogingen", s.totalAttempts + " op " + s.distinctClimbCount + " verschillende klim(men)");
+        addCard("Totale klimtijd", formatDuration(s.totalClimbingTimeSec));
 
         if (s.favoriteClimbId != null) {
-            addCard("#F4A63E", "Favoriete klim",
+            addCard("Favoriete klim",
                     s.favoriteClimbName + "\n" + s.favoriteClimbAttemptCount + " pogingen");
         }
 
         if (s.biggestImprovementClimbId != null && s.biggestImprovementSec > 0) {
-            addCard("#3EF4A0", "Grootste verbetering",
+            addCard("Grootste verbetering",
                     s.biggestImprovementClimbName + "\n" + formatDuration(s.biggestImprovementSec) + " sneller");
         }
     }
 
-    private void addCard(String colorHex, String title, String value) {
+    private void addCard(String title, String value) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundColor(Color.parseColor(colorHex));
+        card.setBackgroundColor(getResources().getColor(R.color.color_surface, getTheme()));
         int pad = (int) (20 * getResources().getDisplayMetrics().density);
         card.setPadding(pad, pad, pad, pad);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -98,15 +97,17 @@ public final class ClimbWrappedActivity extends AppCompatActivity {
         lp.bottomMargin = (int) (16 * getResources().getDisplayMetrics().density);
         card.setLayoutParams(lp);
 
+        int textColor = getResources().getColor(R.color.color_text_primary, getTheme());
+
         TextView titleView = new TextView(this);
         titleView.setText(title.toUpperCase());
-        titleView.setTextColor(Color.WHITE);
+        titleView.setTextColor(textColor);
         titleView.setTextSize(13);
         titleView.setAlpha(0.85f);
 
         TextView valueView = new TextView(this);
         valueView.setText(value);
-        valueView.setTextColor(Color.WHITE);
+        valueView.setTextColor(textColor);
         valueView.setTextSize(22);
         valueView.setGravity(Gravity.START);
         valueView.setPadding(0, (int) (6 * getResources().getDisplayMetrics().density), 0, 0);
