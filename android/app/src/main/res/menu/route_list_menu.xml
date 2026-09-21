@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_recovery"
+        android:title="Herstel"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_collections"
         android:title="Collecties"
         app:showAsAction="never"/>
