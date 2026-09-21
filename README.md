@@ -180,6 +180,7 @@ Change a threshold in **one** place (`ClimbConstants` / `protocol/colors.md`), n
 | [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) | Module boundaries, data flow, design contract |
 | [Documentation/CONNECTION.md](Documentation/CONNECTION.md) | Phone ⇄ watch Connect IQ connection internals (Dutch) |
 | [Documentation/SETUP.md](Documentation/SETUP.md) | Toolchain install checklist |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Release keystore, signed CI builds, in-app auto-update |
 | [docs/garmin-widget-setup.md](docs/garmin-widget-setup.md) | Building + sideloading the browse widget (Dutch) |
 | [protocol/schema.md](protocol/schema.md) | Why the wire format is shaped the way it is |
 | [Idea.md](Idea.md) | Original product specification |
