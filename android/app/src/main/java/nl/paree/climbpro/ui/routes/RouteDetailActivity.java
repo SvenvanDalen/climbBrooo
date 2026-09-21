@@ -81,7 +81,16 @@ public final class RouteDetailActivity extends AppCompatActivity {
             drawRoute(route);
         });
 
-        viewModel.passport().observe(this, this::renderPassport);
+        // Pre-ride checklist reads passport at click time; until it's loaded (async, see
+        // RouteDetailViewModel.loadRoute), disable the buttons that trigger it so the
+        // checklist can't silently under-report climb data on a not-yet-ready route.
+        binding.btnSelectRoute.setEnabled(false);
+        binding.btnShareToGarmin.setEnabled(false);
+        viewModel.passport().observe(this, p -> {
+            renderPassport(p);
+            binding.btnSelectRoute.setEnabled(p != null);
+            binding.btnShareToGarmin.setEnabled(p != null);
+        });
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
