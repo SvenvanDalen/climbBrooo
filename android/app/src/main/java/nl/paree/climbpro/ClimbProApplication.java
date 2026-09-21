@@ -21,6 +21,8 @@ public final class ClimbProApplication extends Application {
         Configuration.getInstance().setOsmdroidTileCache(
                 new File(getCacheDir(), "osmdroid"));
 
+        nl.paree.climbpro.service.PlannedClimbNotifier.ensureChannel(this);
+
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
         ciqClient.setWatchRequestHandler(new WatchRequestHandler(
