@@ -594,3 +594,80 @@ function etaSeconds_negativeRemaining_returnsZero(logger) {
     Test.assertEqual(d.etaSeconds(-50, 5.0), 0);
     return true;
 }
+
+// ===========================================================================
+// batteryInsufficientForClimb() — pure function, issue #49
+// Drain rate BATTERY_DRAIN_PCT_PER_HOUR = 10.0 %/h -> battery runway (s) = pct * 360.
+// Margin BATTERY_WARNING_MARGIN = 1.2 -> threshold (s) = remainingClimbSec * 1.2.
+// ===========================================================================
+
+// Plenty of battery for a short climb: 50% battery -> 18000 s runway, climb needs 600 s.
+(:test)
+function batteryInsufficientForClimb_ampleBattery_returnsFalse(logger) {
+    var d = new ClimbData();
+    Test.assert(!d.batteryInsufficientForClimb(600, 50.0));
+    return true;
+}
+
+// Low battery, long remaining climb: 1% battery -> 360 s runway, climb needs 600 s
+// (threshold 720 s with margin) -> battery will not last -> warn.
+(:test)
+function batteryInsufficientForClimb_lowBattery_returnsTrue(logger) {
+    var d = new ClimbData();
+    Test.assert(d.batteryInsufficientForClimb(600, 1.0));
+    return true;
+}
+
+// Exactly at the margin threshold (not strictly below it) does not warn -- the check
+// is a strict "<", so equal runway/threshold is still considered sufficient.
+// remainingClimbSec=1200 -> threshold 1440 s; pct=4.0 -> runway 4*360=1440 s (equal).
+(:test)
+function batteryInsufficientForClimb_exactlyAtMargin_returnsFalse(logger) {
+    var d = new ClimbData();
+    Test.assert(!d.batteryInsufficientForClimb(1200, 4.0));
+    return true;
+}
+
+// Just below the margin threshold does warn.
+// remainingClimbSec=1200 -> threshold 1440 s; pct=3.9 -> runway 1404 s < 1440.
+(:test)
+function batteryInsufficientForClimb_justBelowMargin_returnsTrue(logger) {
+    var d = new ClimbData();
+    Test.assert(d.batteryInsufficientForClimb(1200, 3.9));
+    return true;
+}
+
+// Unknown ETA (speed too low/noisy/stopped, etaSeconds() returned -1) must never warn:
+// an unreliable estimate is not a sound basis for a battery alarm.
+(:test)
+function batteryInsufficientForClimb_unknownEta_returnsFalse(logger) {
+    var d = new ClimbData();
+    Test.assert(!d.batteryInsufficientForClimb(-1, 1.0));
+    return true;
+}
+
+// Null battery percentage (stat unavailable) must never warn.
+(:test)
+function batteryInsufficientForClimb_nullBattery_returnsFalse(logger) {
+    var d = new ClimbData();
+    Test.assert(!d.batteryInsufficientForClimb(600, null));
+    return true;
+}
+
+// Zero/negative battery percentage (invalid reading) must never warn rather than
+// false-alarming on a bogus sensor value.
+(:test)
+function batteryInsufficientForClimb_zeroBattery_returnsFalse(logger) {
+    var d = new ClimbData();
+    Test.assert(!d.batteryInsufficientForClimb(600, 0.0));
+    return true;
+}
+
+// Climb already finished (remainingClimbSec == 0, from etaSeconds()'s own zero-remaining
+// short-circuit) never warns, even on a near-empty battery.
+(:test)
+function batteryInsufficientForClimb_zeroRemaining_returnsFalse(logger) {
+    var d = new ClimbData();
+    Test.assert(!d.batteryInsufficientForClimb(0, 1.0));
+    return true;
+}

@@ -40,6 +40,7 @@ class ClimbProView extends Ui.DataField {
     hidden var alertedClimbIndex = -1;
     hidden var lastActiveClimb = -1;
     hidden var lastActiveSeg = -1;
+    hidden var batteryWarnedClimbIndex = -1;
 
     // Ghost / summary state
     hidden var lastGhostTimerMs = 0;
@@ -70,6 +71,8 @@ class ClimbProView extends Ui.DataField {
             lastRouteId = rid;
             lastActiveClimb = -1;
             alertedClimbIndex = -1;
+            batteryWarnedClimbIndex = -1;
+            data.batteryWarningActive = false;
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
             data.climbStartTimerMs = -1;
@@ -135,6 +138,25 @@ class ClimbProView extends Ui.DataField {
                 alertedClimbIndex = data.activeClimbIndex;
             }
         }
+
+        // Battery-vs-remaining-climb-time warning (issue #49): once per climb, mirroring
+        // the climb-start alert's idempotency pattern above -- keep re-checking every
+        // tick until the condition is actually met, then latch it so GPS/pace jitter
+        // around the threshold can't re-fire it for the same climb.
+        if (data.activeClimbIndex < 0) {
+            data.batteryWarningActive = false;
+        } else if (data.activeClimbIndex != batteryWarnedClimbIndex) {
+            var ci2 = data.activeClimbIndex;
+            var remainingClimb = data.climbLength[ci2] - data.progressInClimb;
+            if (remainingClimb < 0) { remainingClimb = 0; }
+            var climbEtaSec = data.etaSeconds(remainingClimb, data.currentSpeedMps);
+            var batteryPct = Sys.getSystemStats().battery;
+            if (data.batteryInsufficientForClimb(climbEtaSec, batteryPct)) {
+                triggerBatteryAlert();
+                data.batteryWarningActive = true;
+                batteryWarnedClimbIndex = ci2;
+            }
+        }
     }
 
     function onUpdate(dc) {
@@ -162,8 +184,12 @@ class ClimbProView extends Ui.DataField {
             drawNoClimbs(dc);
         }
 
+        // Off-route takes priority: it's the more urgent/actionable state and the two
+        // banners would otherwise fight for the same top strip of a very small screen.
         if (data.offRoute) {
             drawOffRouteBanner(dc);
+        } else if (data.batteryWarningActive) {
+            drawBatteryWarningBanner(dc);
         }
     }
 
@@ -174,6 +200,17 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, "OFF ROUTE", Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Orange banner across the top: battery may not last the rest of this climb
+    // (see ClimbData.batteryInsufficientForClimb). Persists for the rest of the climb
+    // once triggered -- the underlying condition (low battery) doesn't resolve itself.
+    hidden function drawBatteryWarningBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_ORANGE, Gfx.COLOR_ORANGE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, "LOW BATTERY", Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // =========================================================================
@@ -481,6 +518,24 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_LAP);
+        }
+    }
+
+    // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
+    // warning apart from a climb-start alert by feel/sound alone.
+    hidden function triggerBatteryAlert() {
+        if (Attention has :vibrate) {
+            var vibePattern = [
+                new Attention.VibeProfile(100, 250),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 250),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 250)
+            ];
+            Attention.vibrate(vibePattern);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
         }
     }
 
