@@ -3,6 +3,7 @@ package nl.paree.climbpro.update;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -35,6 +36,9 @@ public final class UpdateChecker {
 
     private static final String TAG  = "UpdateChecker";
     private static final String REPO = "SvenvanDalen/climbBrooo";
+
+    private static final String PREFS_NAME      = "update_checker";
+    private static final String KEY_DOWNLOAD_ID = "pending_download_id";
     private static final String OWNER;
     private static final String REPO_NAME;
     private static final Pattern TAG_VERSION = Pattern.compile("v?(\\d+)");
@@ -129,7 +133,20 @@ public final class UpdateChecker {
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalFilesDir(appContext, Environment.DIRECTORY_DOWNLOADS, fileName)
                 .setMimeType("application/vnd.android.package-archive");
-        return dm.enqueue(request);
+        long downloadId = dm.enqueue(request);
+        // DownloadCompleteReceiver reacts to ACTION_DOWNLOAD_COMPLETE for *any* download on
+        // the device, not just this one — it reads this id back to ignore unrelated downloads.
+        prefs(appContext).edit().putLong(KEY_DOWNLOAD_ID, downloadId).apply();
+        return downloadId;
+    }
+
+    /** True if {@code downloadId} is the update APK download this checker started. */
+    static boolean isOwnDownload(Context context, long downloadId) {
+        return prefs(context).getLong(KEY_DOWNLOAD_ID, -1L) == downloadId;
+    }
+
+    private static SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     private void postFailure(Callback callback, Exception e) {

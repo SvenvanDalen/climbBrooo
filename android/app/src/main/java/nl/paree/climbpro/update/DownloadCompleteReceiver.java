@@ -27,6 +27,9 @@ public final class DownloadCompleteReceiver extends BroadcastReceiver {
 
         long downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
         if (downloadId < 0) return;
+        // DownloadManager broadcasts ACTION_DOWNLOAD_COMPLETE for every download on the
+        // device, not just ones this app started — ignore anything that isn't our update APK.
+        if (!UpdateChecker.isOwnDownload(context, downloadId)) return;
 
         DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         Cursor cursor = dm.query(new DownloadManager.Query().setFilterById(downloadId));
