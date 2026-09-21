@@ -74,6 +74,18 @@ public final class LogbookCalculator {
         return out;
     }
 
+    /**
+     * All attempts across every climb/route, sorted most-recent-first. Unlike
+     * {@link #summaries}, this does not dedupe or roll up by climb — it is the
+     * per-attempt chronological view ("what did I climb this month"), independent
+     * of route grouping. Does not mutate the input list.
+     */
+    public static List<StoredClimbAttempt> timeline(List<StoredClimbAttempt> attempts) {
+        List<StoredClimbAttempt> out = new ArrayList<>(attempts);
+        out.sort(Comparator.comparingLong((StoredClimbAttempt a) -> a.dateEpochSec).reversed());
+        return out;
+    }
+
     public static List<HistoryRow> historyFor(String climbId, List<StoredClimbAttempt> attempts) {
         return historyFor(climbId, attempts, System.currentTimeMillis() / 1000L);
     }
