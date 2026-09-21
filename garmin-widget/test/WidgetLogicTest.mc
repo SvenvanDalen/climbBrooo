@@ -277,6 +277,17 @@ function widgetData_parseFlatStarred_nonArray_clears(logger) {
     return true;
 }
 
+// ============================ SyncRetryPolicy ===============================
+
+(:test)
+function syncRetryPolicy_initialViewForSavedData_picksRouteListWhenAnythingSaved(logger) {
+    Test.assertEqual(SyncRetryPolicy.initialViewForSavedData(false, false), :sync);
+    Test.assertEqual(SyncRetryPolicy.initialViewForSavedData(true, false), :routeList);
+    Test.assertEqual(SyncRetryPolicy.initialViewForSavedData(false, true), :routeList);
+    Test.assertEqual(SyncRetryPolicy.initialViewForSavedData(true, true), :routeList);
+    return true;
+}
+
 // ============================ App lifecycle ================================
 
 (:test)
@@ -295,5 +306,27 @@ function widgetApp_lifecycle_initGlanceMessageStop(logger) {
     app.onPhoneMessage(new WMsg(widgetPayload()) as Comm.PhoneAppMessage);
     app.onPhoneMessage(new WMsg(null) as Comm.PhoneAppMessage);  // ignored
     app.onStop(null);
+    return true;
+}
+
+// getInitialView() jumps straight to RouteListView when saved data already exists on the
+// watch (issue #88), and only falls back to the SyncView wait when storage is empty.
+(:test)
+function widgetApp_getInitialView_routesOnSavedData_elseSync(logger) {
+    var app = App.getApp() as ClimbWidgetApp;
+
+    StorageManager.deleteRoute("giv_r1");
+    Storage.deleteValue("saved_climb_ids");
+    Test.assertEqual(StorageManager.getSavedRouteIds().size(), 0);
+    Test.assertEqual(StorageManager.getSavedClimbKeys().size(), 0);
+
+    var noneSaved = app.getInitialView();
+    Test.assert(noneSaved[0] instanceof SyncView);
+
+    StorageManager.saveRoute("giv_r1", { "name" => "GIV", "climbs" => [] });
+    var withSaved = app.getInitialView();
+    Test.assert(withSaved[0] instanceof RouteListView);
+
+    StorageManager.deleteRoute("giv_r1");
     return true;
 }

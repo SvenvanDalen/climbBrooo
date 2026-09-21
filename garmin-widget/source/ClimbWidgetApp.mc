@@ -47,6 +47,19 @@ class ClimbWidgetApp extends App.AppBase {
         msgCallback      = new PhoneMessageCallback();
         Comm.registerForPhoneAppMessages(method(:onPhoneMessage));
         Sys.println("ClimbApp: started");
+
+        // Issue #88: give a quick glance at already-synced climbs without waiting through
+        // SyncView's phone-connect timer when the watch already has saved data locally.
+        var decision = SyncRetryPolicy.initialViewForSavedData(
+            StorageManager.getSavedRouteIds().size() > 0,
+            StorageManager.getSavedClimbKeys().size() > 0);
+        if (decision == :routeList) {
+            // Still kick off a background refresh so a live phone list can merge in while the
+            // user browses the cached list — RouteListView already re-reads phoneRouteIndex on
+            // every onUpdate(), so no extra wiring is needed for that to show up.
+            Comm.transmit({ "type" => "LIST_ROUTES" }, null, new CommListener());
+            return [new RouteListView(), new RouteListDelegate()];
+        }
         return [new SyncView(), new SyncDelegate()];
     }
 }
