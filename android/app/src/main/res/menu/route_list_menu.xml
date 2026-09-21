@@ -49,4 +49,9 @@
         android:title="Settings"
         app:showAsAction="never"/>
 
+    <item
+        android:id="@+id/action_check_update"
+        android:title="Controleer op updates"
+        app:showAsAction="never"/>
+
 </menu>
