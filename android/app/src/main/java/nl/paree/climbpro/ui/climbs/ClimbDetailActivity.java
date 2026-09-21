@@ -45,6 +45,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private StoredRoute loadedRoute;
     private StoredClimb loadedClimb;
     private String lastTimeEstimateText;
+    private Integer lastEstimateSeconds;
 
     public static Intent intentFor(Context ctx, String routeId, int climbIndex) {
         Intent i = new Intent(ctx, ClimbDetailActivity.class);
@@ -97,6 +98,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
             loadedClimb = climb;
             tryDrawMap();
+            updateManualRefText();
         });
 
         viewModel.timeEstimate().observe(this, estimate -> {
@@ -105,6 +107,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         "Stel je FTP en gewicht in (Instellingen) voor een tijdschatting");
                 adapter.setSegmentSeconds(null);
                 lastTimeEstimateText = null;
+                lastEstimateSeconds = null;
             } else {
                 lastTimeEstimateText = String.format(java.util.Locale.US,
                         "Geschatte tijd: %s · %.0f W",
@@ -112,7 +115,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         estimate.assumedPowerWatts);
                 binding.climbTimeEstimate.setText(lastTimeEstimateText);
                 adapter.setSegmentSeconds(estimate.segmentSeconds);
+                lastEstimateSeconds = estimate.totalSeconds;
             }
+            updateManualRefText();
         });
 
         viewModel.error().observe(this,
@@ -149,6 +154,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         });
 
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
+        binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
@@ -292,6 +298,94 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                                 input.getText().toString().trim()))
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    /**
+     * Dialog to set/clear a manual WR/pro reference time (issue #59), e.g. "Pogačar 2024"
+     * at "37:15". Time input accepts m:ss or h:mm:ss; an empty time clears the reference.
+     */
+    private void showManualRefDialog() {
+        android.widget.LinearLayout container = new android.widget.LinearLayout(this);
+        container.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        container.setPadding(pad, pad, pad, pad);
+
+        EditText timeInput = new EditText(this);
+        timeInput.setHint("Tijd (m:ss of h:mm:ss)");
+        StoredClimb current = viewModel.climb().getValue();
+        if (current != null && current.manualRefSec != null) {
+            timeInput.setText(DurationFormat.format(current.manualRefSec));
+        }
+        container.addView(timeInput);
+
+        EditText labelInput = new EditText(this);
+        labelInput.setHint("Bron (bv. Pogačar 2024)");
+        if (current != null && current.manualRefLabel != null) {
+            labelInput.setText(current.manualRefLabel);
+        }
+        container.addView(labelInput);
+
+        new AlertDialog.Builder(this)
+                .setTitle("WR/pro-referentietijd")
+                .setView(container)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    Integer sec = parseDurationToSeconds(timeInput.getText().toString().trim());
+                    if (sec == null) {
+                        Toast.makeText(this, "Ongeldige tijd", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.setManualRefTime(routeId, climbIndex, sec,
+                            labelInput.getText().toString().trim());
+                })
+                .setNeutralButton("Wissen", (d, w) ->
+                        viewModel.setManualRefTime(routeId, climbIndex, null, null))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    /** Parses "m:ss" or "h:mm:ss" into total seconds; returns null on invalid/empty input. */
+    private static Integer parseDurationToSeconds(String text) {
+        if (text == null || text.isEmpty()) return null;
+        String[] parts = text.split(":");
+        try {
+            if (parts.length == 2) {
+                int m = Integer.parseInt(parts[0].trim());
+                int s = Integer.parseInt(parts[1].trim());
+                if (m < 0 || s < 0 || s >= 60) return null;
+                return m * 60 + s;
+            } else if (parts.length == 3) {
+                int h = Integer.parseInt(parts[0].trim());
+                int m = Integer.parseInt(parts[1].trim());
+                int s = Integer.parseInt(parts[2].trim());
+                if (h < 0 || m < 0 || m >= 60 || s < 0 || s >= 60) return null;
+                return h * 3600 + m * 60 + s;
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return null;
+    }
+
+    /** Shows the manual reference (and delta vs. the current phone-side time estimate), if set. */
+    private void updateManualRefText() {
+        StoredClimb c = loadedClimb;
+        if (c == null || c.manualRefSec == null) {
+            binding.climbManualRef.setVisibility(android.view.View.GONE);
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Referentie: ").append(DurationFormat.format(c.manualRefSec));
+        if (c.manualRefLabel != null && !c.manualRefLabel.isEmpty()) {
+            sb.append(" (").append(c.manualRefLabel).append(")");
+        }
+        if (lastEstimateSeconds != null) {
+            int deltaSec = lastEstimateSeconds - c.manualRefSec;
+            String sign = deltaSec >= 0 ? "+" : "-";
+            sb.append(" · jouw schatting ").append(sign)
+                    .append(DurationFormat.format(Math.abs(deltaSec)));
+        }
+        binding.climbManualRef.setText(sb.toString());
+        binding.climbManualRef.setVisibility(android.view.View.VISIBLE);
     }
 
     private void showReSegmentDialog() {

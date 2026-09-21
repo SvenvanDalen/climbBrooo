@@ -200,6 +200,30 @@ public final class RouteRepository {
         }
     }
 
+    /**
+     * Sets or clears a climb's manually-entered WR/pro reference time (issue #59). A null
+     * or non-positive {@code refSec} clears both fields; otherwise a blank/whitespace-only
+     * label is normalised to null. Distributed across segments and synced to the watch via
+     * the existing refsec field by {@code ManualRefTimePlanner}/{@code CombinedRefTimePlanner}.
+     */
+    public void setManualRefTime(String routeId, int climbIndex, Integer refSec, String label)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            StoredClimb c = route.climbs.get(climbIndex);
+            if (refSec == null || refSec <= 0) {
+                c.manualRefSec = null;
+                c.manualRefLabel = null;
+            } else {
+                c.manualRefSec = refSec;
+                String trimmed = label != null ? label.trim() : "";
+                c.manualRefLabel = trimmed.isEmpty() ? null : trimmed;
+            }
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
     public void saveNotes(String routeId, String notes) throws IOException {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;
@@ -255,11 +279,11 @@ public final class RouteRepository {
     }
 
     /**
-     * Copies user-supplied climb data (display-name rename + per-segment surface type)
-     * from a route's previous climbs onto the freshly detected ones, matching climbs by
-     * start distance. Per-segment surface is copied by index — segment counts are stable
-     * for unchanged geometry — and only non-UNKNOWN values overwrite, so re-detection
-     * never erases a user's customisation.
+     * Copies user-supplied climb data (display-name rename, manual WR/pro reference time,
+     * and per-segment surface type) from a route's previous climbs onto the freshly
+     * detected ones, matching climbs by start distance. Per-segment surface is copied by
+     * index — segment counts are stable for unchanged geometry — and only non-UNKNOWN
+     * values overwrite, so re-detection never erases a user's customisation.
      */
     private static void mergePreviousClimbUserData(List<StoredClimb> fresh,
                                                    List<StoredClimb> previous) {
@@ -271,6 +295,10 @@ public final class RouteRepository {
             if (p == null) continue;
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
             if (f.name == null && p.name != null) f.name = p.name;
+            if (p.manualRefSec != null) {
+                f.manualRefSec = p.manualRefSec;
+                f.manualRefLabel = p.manualRefLabel;
+            }
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
                 for (int i = 0; i < n; i++) {
