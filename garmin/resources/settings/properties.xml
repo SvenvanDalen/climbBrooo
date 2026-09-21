@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    App-settings backed properties (Connect IQ "properties.xml"), configurable from
+    Garmin Connect Mobile / Garmin Express without a rebuild. See settings.xml for the
+    user-facing setting that maps to darkTheme.
+-->
+<properties>
+    <property id="darkTheme" type="boolean">false</property>
+</properties>
