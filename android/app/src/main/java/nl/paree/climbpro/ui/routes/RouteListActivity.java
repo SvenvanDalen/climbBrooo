@@ -149,6 +149,7 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         ensureBluetoothPermission();
+        checkForAppUpdate();
     }
 
     /**
@@ -189,6 +190,54 @@ public final class RouteListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Checks GitHub Releases for a newer build than the one currently installed and,
+     * if found, asks the user to confirm before downloading + installing it. See
+     * DEPLOYMENT.md for how release APKs are built and signed.
+     */
+    private void checkForAppUpdate() {
+        new nl.paree.climbpro.update.UpdateChecker(this).checkForUpdate(
+                new nl.paree.climbpro.update.UpdateChecker.Callback() {
+                    @Override
+                    public void onUpdateAvailable(String tagName, String apkDownloadUrl) {
+                        new AlertDialog.Builder(RouteListActivity.this)
+                                .setTitle("Update beschikbaar")
+                                .setMessage("ClimbPro " + tagName + " is beschikbaar. Nu downloaden en installeren?")
+                                .setPositiveButton("Installeren",
+                                        (d, w) -> startUpdateDownload(tagName, apkDownloadUrl))
+                                .setNegativeButton("Later", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onUpToDate() {
+                        // Nothing to do — already on the latest release.
+                    }
+
+                    @Override
+                    public void onCheckFailed(Exception e) {
+                        Log.w("RouteListActivity", "Update check failed", e);
+                    }
+                });
+    }
+
+    private void startUpdateDownload(String tagName, String apkDownloadUrl) {
+        nl.paree.climbpro.update.UpdateChecker checker =
+                new nl.paree.climbpro.update.UpdateChecker(this);
+        if (!checker.canRequestPackageInstalls()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Toestemming nodig")
+                    .setMessage("Sta \"apps installeren van deze bron\" toe om de update te installeren.")
+                    .setPositiveButton("Instellingen openen",
+                            (d, w) -> startActivity(checker.unknownAppsSettingsIntent()))
+                    .setNegativeButton("Annuleren", null)
+                    .show();
+            return;
+        }
+        checker.downloadAndInstall(apkDownloadUrl, tagName);
+        Toast.makeText(this, "Update wordt gedownload...", Toast.LENGTH_SHORT).show();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.route_list_menu, menu);
@@ -212,6 +261,10 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_planning) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.planning.PlannedClimbListActivity.class));
+            return true;
+        } else if (id == R.id.action_wrapped) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.wrapped.ClimbWrappedActivity.class));
             return true;
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
