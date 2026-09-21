@@ -115,6 +115,18 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             }
         });
 
+        viewModel.seasonalComparison().observe(this, result -> {
+            if (result == null) {
+                binding.seasonalComparison.setVisibility(android.view.View.GONE);
+                return;
+            }
+            String direction = result.percentFaster >= 0 ? "sneller" : "langzamer";
+            binding.seasonalComparison.setText(String.format(java.util.Locale.getDefault(),
+                    "%.0f%% %s dan in %d rond deze tijd van het jaar",
+                    Math.abs(result.percentFaster), direction, result.priorYear));
+            binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
+        });
+
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
         viewModel.saved().observe(this, isSaved -> {
