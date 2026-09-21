@@ -36,8 +36,11 @@ android {
         if (localPropsFile.exists()) {
             localProps.load(new FileInputStream(localPropsFile))
         }
-        def stravaClientId = localProps.getProperty('strava.client.id', '')
-        def stravaClientSecret = localProps.getProperty('strava.client.secret', '')
+        // CI has no local.properties (gitignored), so fall back to env vars there —
+        // same pattern as VERSION_CODE above. Set STRAVA_CLIENT_ID/STRAVA_CLIENT_SECRET
+        // as GitHub Actions secrets for the release workflow.
+        def stravaClientId = localProps.getProperty('strava.client.id', System.getenv('STRAVA_CLIENT_ID') ?: '')
+        def stravaClientSecret = localProps.getProperty('strava.client.secret', System.getenv('STRAVA_CLIENT_SECRET') ?: '')
         buildConfigField 'String', 'STRAVA_CLIENT_ID', "\"${stravaClientId}\""
         buildConfigField 'String', 'STRAVA_CLIENT_SECRET', "\"${stravaClientSecret}\""
         manifestPlaceholders = [
