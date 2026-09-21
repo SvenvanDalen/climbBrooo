@@ -79,10 +79,15 @@ public final class RouteListActivity extends AppCompatActivity {
             public void onRouteLongClick(nl.paree.climbpro.data.route.RouteCatalogEntry entry) {
                 String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
                 new AlertDialog.Builder(RouteListActivity.this)
-                        .setTitle("Delete \"" + name + "\"?")
-                        .setMessage("This cannot be undone.")
-                        .setPositiveButton("Delete", (d, w) -> viewModel.deleteRoute(entry.routeId))
-                        .setNegativeButton("Cancel", null)
+                        .setTitle(name != null ? name : entry.routeId)
+                        .setItems(new String[]{"Toevoegen aan collectie", "Verwijderen"}, (d, which) -> {
+                            if (which == 0) {
+                                nl.paree.climbpro.ui.collections.CollectionMembershipDialog
+                                        .showForRoute(RouteListActivity.this, entry.routeId);
+                            } else {
+                                confirmDeleteRoute(entry.routeId, name);
+                            }
+                        })
                         .show();
             }
         });
@@ -202,6 +207,9 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbLogbookActivity.class));
             return true;
+        } else if (id == R.id.action_collections) {
+            startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
@@ -222,6 +230,15 @@ public final class RouteListActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         executor.shutdown();
+    }
+
+    private void confirmDeleteRoute(String routeId, String name) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete \"" + name + "\"?")
+                .setMessage("This cannot be undone.")
+                .setPositiveButton("Delete", (d, w) -> viewModel.deleteRoute(routeId))
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showImportDialog() {

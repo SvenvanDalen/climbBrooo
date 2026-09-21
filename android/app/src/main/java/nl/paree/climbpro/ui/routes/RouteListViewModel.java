@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.RouteCollectionRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.service.SyncScheduler;
@@ -21,8 +22,9 @@ import java.util.concurrent.Executors;
 
 public final class RouteListViewModel extends AndroidViewModel {
 
-    private final RouteRepository      routeRepo;
-    private final StravaAuthRepository authRepo;
+    private final RouteRepository           routeRepo;
+    private final RouteCollectionRepository collectionRepo;
+    private final StravaAuthRepository      authRepo;
     private final ExecutorService      executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<RouteCatalogEntry>> allRoutes   = new MutableLiveData<>();
@@ -40,8 +42,9 @@ public final class RouteListViewModel extends AndroidViewModel {
 
     public RouteListViewModel(@NonNull Application app) {
         super(app);
-        routeRepo = new RouteRepository(app);
-        authRepo  = new StravaAuthRepository(app);
+        routeRepo      = new RouteRepository(app);
+        collectionRepo = new RouteCollectionRepository(app);
+        authRepo       = new StravaAuthRepository(app);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         activeSortMode = prefs.getInt(PREF_SORT_MODE, RouteSorting.SORT_IMPORT_ASC);
         loadRoutes();
@@ -84,6 +87,7 @@ public final class RouteListViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 routeRepo.deleteRoute(routeId);
+                collectionRepo.removeRouteEverywhere(routeId); // no dangling refs in collections
                 loadRoutes();
             } catch (Exception e) {
                 error.postValue("Delete failed: " + e.getMessage());

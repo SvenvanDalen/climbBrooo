@@ -68,6 +68,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         adapter.setOnClimbClickListener((climb, index) ->
                 startActivity(ClimbDetailActivity.intentFor(this, routeId, index)));
+        adapter.setOnClimbLongClickListener((climb, index) ->
+                nl.paree.climbpro.ui.collections.CollectionMembershipDialog
+                        .showForClimb(this, routeId, index));
         adapter.setOnFlatClickListener(this::zoomToFlat);
         adapter.setOnFlatLongClickListener(this::showFlatSurfaceDialog);
         adapter.setOnStarredClickListener(this::showStarredSurfaceDialog);

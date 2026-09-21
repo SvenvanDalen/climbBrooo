@@ -39,6 +39,10 @@ public final class RouteDetailAdapter
         void onClimbClick(StoredClimb climb, int climbIndex);
     }
 
+    public interface OnClimbLongClickListener {
+        void onClimbLongClick(StoredClimb climb, int climbIndex);
+    }
+
     public interface OnFlatClickListener {
         void onFlatClick(StoredFlatSegment flat);
     }
@@ -52,7 +56,8 @@ public final class RouteDetailAdapter
     public interface OnSurfaceClickListener { void onSurfaceClick(StoredSurfaceSection section); }
 
     private List<Object> items = new ArrayList<>();
-    private OnClimbClickListener    climbClickListener;
+    private OnClimbClickListener     climbClickListener;
+    private OnClimbLongClickListener climbLongClickListener;
     private OnFlatClickListener     flatClickListener;
     private OnFlatLongClickListener flatLongClickListener;
     private OnStarredClickListener  starredClickListener;
@@ -70,6 +75,7 @@ public final class RouteDetailAdapter
     }
 
     public void setOnClimbClickListener(OnClimbClickListener l)       { climbClickListener = l; }
+    public void setOnClimbLongClickListener(OnClimbLongClickListener l) { climbLongClickListener = l; }
     public void setOnFlatClickListener(OnFlatClickListener l)         { flatClickListener = l; }
     public void setOnFlatLongClickListener(OnFlatLongClickListener l) { flatLongClickListener = l; }
     public void setOnStarredClickListener(OnStarredClickListener l)   { starredClickListener = l; }
@@ -161,6 +167,10 @@ public final class RouteDetailAdapter
         final int ci = climbIndex;
         h.itemView.setOnClickListener(v -> {
             if (climbClickListener != null) climbClickListener.onClimbClick(c, ci);
+        });
+        h.itemView.setOnLongClickListener(v -> {
+            if (climbLongClickListener != null) climbLongClickListener.onClimbLongClick(c, ci);
+            return true;
         });
     }
 
