@@ -34,6 +34,17 @@ class ClimbData {
     // ETA-to-summit
     const MIN_ETA_SPEED_MPS = 0.5;   // below this, treat speed as too noisy/stopped for an ETA
 
+    // Battery-vs-remaining-climb-time warning (issue #49). We have no way to read the
+    // device's actual discharge curve from Monkey C, so this is a deliberately
+    // conservative, hand-picked estimate: FR255M running GPS + backlight + music
+    // playback typically drains well under 10%/hour, so 10%/hour is a pessimistic
+    // (worst-case) assumption that would rather warn a bit early than not warn at all.
+    const BATTERY_DRAIN_PCT_PER_HOUR = 10.0;
+    // Require this much extra battery runway beyond the raw ETA before staying quiet,
+    // to absorb estimate error (pace changes, drain-rate variance) and leave the rider
+    // some margin after the summit rather than cutting it exactly to zero.
+    const BATTERY_WARNING_MARGIN = 1.2;
+
     // Payload state
     var payloadReceived = false;
     var mode = "route";       // "route" or "radius"
@@ -95,6 +106,9 @@ class ClimbData {
     var navDistThisTick = -1;     // navDist for the current tick (-1 = not navigating); set by view
     var climbSkipped;             // bool per climb: rider bypassed it; progression skips over it
     var currentSpeedMps = 0.0;    // most recent Activity.Info.currentSpeed; set by view.compute()
+    var batteryWarningActive = false; // true once the low-battery-vs-climb-time warning has
+                                       // fired for the current climb; cleared when the climb ends
+                                       // or the route changes. Drives the view's persistent banner.
 
     function initialize() {
         climbStartDist = new [MAX_CLIMBS];
@@ -472,5 +486,27 @@ class ClimbData {
         if (remainingM <= 0) { return 0; }
         if (speedMps == null || speedMps < MIN_ETA_SPEED_MPS) { return -1; }
         return (remainingM / speedMps).toNumber();
+    }
+
+    /**
+     * Pure calculation: will the battery plausibly run out before the climb ends?
+     * (issue #49 -- battery-vs-remaining-climb-time warning.)
+     *
+     * remainingClimbSec: ETA to the summit in seconds, as returned by etaSeconds().
+     * A negative value means the ETA itself is unknown (speed too low/noisy/stopped);
+     * in that case we deliberately do NOT warn -- an unreliable ETA is not a sound
+     * basis for a battery alarm, and it also keeps the alert quiet while stationary.
+     *
+     * batteryPct: Toybox.System.Stats.battery (0-100 float). null or <= 0 is treated
+     * as unknown/invalid and also suppresses the warning rather than false-alarming.
+     *
+     * Like etaSeconds(), this is a function of its parameters only (no instance
+     * state), so it stays trivial to unit test.
+     */
+    function batteryInsufficientForClimb(remainingClimbSec, batteryPct) {
+        if (remainingClimbSec < 0) { return false; }
+        if (batteryPct == null || batteryPct <= 0) { return false; }
+        var batterySecRemaining = (batteryPct / BATTERY_DRAIN_PCT_PER_HOUR) * 3600.0;
+        return batterySecRemaining < (remainingClimbSec * BATTERY_WARNING_MARGIN);
     }
 }
