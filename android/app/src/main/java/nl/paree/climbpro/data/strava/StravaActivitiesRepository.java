@@ -4,14 +4,17 @@ import android.content.Context;
 import android.util.Log;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
+import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
+import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample;
+import nl.paree.climbpro.domain.matching.ClimbEntryOnlyDetector;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -45,6 +48,7 @@ public final class StravaActivitiesRepository {
     private final StravaAuthRepository   auth;
     private final RouteRepository        routeRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final IncompleteClimbAttemptRepository incompleteAttemptRepo;
     private final StravaApiClient        api;
     private final android.content.SharedPreferences prefs;
 
@@ -65,6 +69,7 @@ public final class StravaActivitiesRepository {
         this.auth = auth;
         this.routeRepo = routeRepo;
         this.attemptRepo = attemptRepo;
+        this.incompleteAttemptRepo = new IncompleteClimbAttemptRepository(context);
         this.api = api;
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -84,6 +89,7 @@ public final class StravaActivitiesRepository {
         Set<Long> known = attemptRepo.knownActivityIds();
 
         List<StoredClimbAttempt> created = new ArrayList<>();
+        List<StoredIncompleteClimbAttempt> incompleteCreated = new ArrayList<>();
         boolean paginationComplete = false;
         int page = 1;
         while (true) {
@@ -100,12 +106,13 @@ public final class StravaActivitiesRepository {
             }
             for (StravaActivityDto act : resp.body()) {
                 if (known.contains(act.id)) continue;
-                created.addAll(matchActivity(token, act, climbs));
+                created.addAll(matchActivity(token, act, climbs, incompleteCreated));
             }
             page++;
         }
 
         if (!created.isEmpty()) attemptRepo.append(created);
+        if (!incompleteCreated.isEmpty()) incompleteAttemptRepo.append(incompleteCreated);
         if (paginationComplete) {
             prefs.edit().putLong(PREF_LAST, nowSec).apply();
         }
@@ -114,8 +121,15 @@ public final class StravaActivitiesRepository {
         return created.size();
     }
 
+    /**
+     * @param incompleteOut ADDITIONAL, separate output: never-completed passes are appended
+     *                      here for climbs that had zero successful passes matched in this
+     *                      activity — see {@link ClimbEntryOnlyDetector}. The returned list
+     *                      of successful {@link StoredClimbAttempt}s is unaffected.
+     */
     private List<StoredClimbAttempt> matchActivity(
-            String token, StravaActivityDto act, List<KnownClimb> climbs) {
+            String token, StravaActivityDto act, List<KnownClimb> climbs,
+            List<StoredIncompleteClimbAttempt> incompleteOut) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         try {
             Response<StravaStreamsDto> sresp =
@@ -147,6 +161,22 @@ public final class StravaActivitiesRepository {
                     a.passIndex    = i;
                     a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
                     out.add(a);
+                }
+
+                // Only run entry-only detection when this climb had zero successful passes
+                // in this activity — a climb ridden successfully isn't "never completed",
+                // even if the rider also looped back over the start gate afterwards.
+                if (elapsedPasses.isEmpty()) {
+                    int distanceCovered = ClimbEntryOnlyDetector.detectIncomplete(
+                            track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
+                    if (distanceCovered >= 0) {
+                        StoredIncompleteClimbAttempt ia = new StoredIncompleteClimbAttempt();
+                        ia.climbId          = k.climbId;
+                        ia.activityId       = act.id;
+                        ia.dateEpochSec     = dateSec;
+                        ia.distanceCoveredM = distanceCovered;
+                        incompleteOut.add(ia);
+                    }
                 }
             }
         } catch (IOException e) {
