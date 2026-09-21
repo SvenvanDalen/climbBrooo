@@ -126,4 +126,64 @@ public class ClimbAttemptMatcherTest {
         assertNull(ClimbAttemptMatcher.matchSegments(
                 track, 45.000, 6.0, 45.009, 6.0, 1000, null));
     }
+
+    // ---- matchAll / matchAllSegments (issue: climb ridden 2x in one activity) --------
+
+    /**
+     * Builds a track that climbs 45.000 -> 45.009 (indices 0..9), descends only partway
+     * back down to 45.001 — never re-touching the exact start coordinate, so the descent
+     * itself can't be mistaken for a second entry — then climbs 45.000 -> 45.009 again.
+     * Mirrors an out-and-back/loop route riding the same climb twice in one activity.
+     */
+    private static List<TrackSample> twoAscentsTrack() {
+        List<TrackSample> track = new ArrayList<>();
+        for (int i = 0; i <= 9; i++) track.add(new TrackSample(45.000 + i * 0.001, 6.0, i * 60L));
+        for (int i = 1; i <= 8; i++) track.add(new TrackSample(45.009 - i * 0.001, 6.0, 540L + i * 60L));
+        for (int i = 0; i <= 9; i++) track.add(new TrackSample(45.000 + i * 0.001, 6.0, 1200L + i * 60L));
+        return track;
+    }
+
+    @Test
+    public void matchAll_climbRiddenTwice_returnsBothAscents() {
+        List<TrackSample> track = twoAscentsTrack();
+
+        List<Integer> passes = ClimbAttemptMatcher.matchAll(
+                track, 45.000, 6.0, 45.009, 6.0, 1000);
+
+        assertEquals(2, passes.size());
+        assertEquals(540, (int) passes.get(0));
+        assertEquals(540, (int) passes.get(1));
+    }
+
+    @Test
+    public void matchAll_singlePass_returnsOneAscent() {
+        List<TrackSample> track = straightNorthTrack(11, 45.000, 6.0, 0.001, 1_000, 60);
+        List<Integer> passes = ClimbAttemptMatcher.matchAll(
+                track, 45.000, 6.0, 45.009, 6.0, 1000);
+        assertEquals(1, passes.size());
+        assertEquals(540, (int) passes.get(0));
+    }
+
+    @Test
+    public void matchAll_noValidAttempt_returnsEmptyList() {
+        List<TrackSample> track = straightNorthTrack(11, 48.000, 9.0, 0.001, 0, 60);
+        List<Integer> passes = ClimbAttemptMatcher.matchAll(
+                track, 45.000, 6.0, 45.009, 6.0, 1000);
+        assertTrue(passes.isEmpty());
+    }
+
+    @Test
+    public void matchAllSegments_climbRiddenTwice_returnsSplitsForEachAscent() {
+        List<TrackSample> track = twoAscentsTrack();
+        int[] segLengths = {500, 500};
+
+        List<int[]> splits = ClimbAttemptMatcher.matchAllSegments(
+                track, 45.000, 6.0, 45.009, 6.0, 1000, segLengths);
+
+        assertEquals(2, splits.size());
+        for (int[] s : splits) {
+            assertEquals(2, s.length);
+            assertEquals(540, s[0] + s[1]);
+        }
+    }
 }

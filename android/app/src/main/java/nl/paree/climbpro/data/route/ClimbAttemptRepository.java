@@ -54,7 +54,7 @@ public final class ClimbAttemptRepository {
 
     /**
      * Not thread-safe: call only from a single-threaded executor.
-     * Appends attempts, skipping any whose (climbId, activityId) already exists.
+     * Appends attempts, skipping any whose (climbId, activityId, passIndex) already exists.
      */
     public void append(List<StoredClimbAttempt> attempts) throws IOException {
         List<StoredClimbAttempt> all = loadAll();
@@ -67,7 +67,7 @@ public final class ClimbAttemptRepository {
     }
 
     private static String key(StoredClimbAttempt a) {
-        return (a.climbId != null ? a.climbId : "") + "#" + a.activityId;
+        return (a.climbId != null ? a.climbId : "") + "#" + a.activityId + "#" + a.passIndex;
     }
 
     private static void writeAtomic(File target, byte[] data) throws IOException {

@@ -130,17 +130,22 @@ public final class StravaActivitiesRepository {
 
             long dateSec = parseStartDate(act.startDate);
             for (KnownClimb k : climbs) {
-                int elapsed = ClimbAttemptMatcher.match(
+                // matchAll finds every valid ascent in the track, not just the first —
+                // an out-and-back or loop route can pass over the same climb more than
+                // once in a single activity, and each pass should be logged separately.
+                List<Integer> elapsedPasses = ClimbAttemptMatcher.matchAll(
                         track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
-                if (elapsed > 0) {
+                List<int[]> segPasses = ClimbAttemptMatcher.matchAllSegments(
+                        track, k.startLat, k.startLon, k.endLat, k.endLon,
+                        k.lengthM, k.segLengthsM);
+                for (int i = 0; i < elapsedPasses.size(); i++) {
                     StoredClimbAttempt a = new StoredClimbAttempt();
                     a.climbId      = k.climbId;
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
-                    a.elapsedSec   = elapsed;
-                    a.segSplitSec  = ClimbAttemptMatcher.matchSegments(
-                            track, k.startLat, k.startLon, k.endLat, k.endLon,
-                            k.lengthM, k.segLengthsM);
+                    a.elapsedSec   = elapsedPasses.get(i);
+                    a.passIndex    = i;
+                    a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
                     out.add(a);
                 }
             }
