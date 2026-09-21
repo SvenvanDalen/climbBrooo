@@ -68,6 +68,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         adapter.setOnClimbClickListener((climb, index) ->
                 startActivity(ClimbDetailActivity.intentFor(this, routeId, index)));
+        adapter.setOnClimbLongClickListener((climb, index) ->
+                nl.paree.climbpro.ui.collections.CollectionMembershipDialog
+                        .showForClimb(this, routeId, index));
         adapter.setOnFlatClickListener(this::zoomToFlat);
         adapter.setOnFlatLongClickListener(this::showFlatSurfaceDialog);
         adapter.setOnStarredClickListener(this::showStarredSurfaceDialog);
@@ -81,7 +84,16 @@ public final class RouteDetailActivity extends AppCompatActivity {
             drawRoute(route);
         });
 
-        viewModel.passport().observe(this, this::renderPassport);
+        // Pre-ride checklist reads passport at click time; until it's loaded (async, see
+        // RouteDetailViewModel.loadRoute), disable the buttons that trigger it so the
+        // checklist can't silently under-report climb data on a not-yet-ready route.
+        binding.btnSelectRoute.setEnabled(false);
+        binding.btnShareToGarmin.setEnabled(false);
+        viewModel.passport().observe(this, p -> {
+            renderPassport(p);
+            binding.btnSelectRoute.setEnabled(p != null);
+            binding.btnShareToGarmin.setEnabled(p != null);
+        });
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
@@ -97,12 +109,15 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
         binding.btnSaveNotes.setOnClickListener(v ->
                 viewModel.saveNotes(routeId, binding.notesEdit.getText().toString()));
-        binding.btnSelectRoute.setOnClickListener(v -> {
-            viewModel.setActiveRoute(routeId);
-            Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
-        });
+        binding.btnSelectRoute.setOnClickListener(v ->
+                PreRideCheckDialog.show(this, viewModel.passport().getValue(), () -> {
+                    viewModel.setActiveRoute(routeId);
+                    Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
+                }));
         binding.btnSendToOnboard.setOnClickListener(v -> viewModel.sendToOnboard(routeId));
-        binding.btnShareToGarmin.setOnClickListener(v -> shareToGarminConnect());
+        binding.btnShareToGarmin.setOnClickListener(v ->
+                PreRideCheckDialog.show(this, viewModel.passport().getValue(),
+                        this::shareToGarminConnect));
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
 
         viewModel.loadRoute(routeId);

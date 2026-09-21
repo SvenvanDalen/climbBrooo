@@ -1,6 +1,7 @@
 using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Application as App;
+using Toybox.Application.Properties as Properties;
 using Toybox.System as Sys;
 using Toybox.Activity as Activity;
 using Toybox.Attention as Attention;
@@ -17,6 +18,9 @@ class ClimbProView extends Ui.DataField {
 
     // Color palette matching protocol/colors.md
     // FR255M is MIP (64-color), so use closest available colors
+    // NOTE: index -> gradient-band mapping (0-2%, 2-4%, ... 10%+) is the shared
+    // contract from CLAUDE.md and must stay identical between COLORS and
+    // DARK_COLORS below. Only swap RGB values here, never reorder bands.
     hidden const COLORS = [
         0x99FF99,  // 0: light green (0-2%)
         0xFFFF00,  // 1: yellow (2-4%)
@@ -24,6 +28,19 @@ class ClimbProView extends Ui.DataField {
         0xFF5500,  // 3: orange (6-8%)
         0xFF0000,  // 4: dark orange/red (8-10%)
         0xAA0000,  // 5: dark red (10%+)
+    ];
+
+    // Low-light "dark theme" palette (issue #81): same band order as COLORS, but
+    // darker/lower-saturation RGB values so the MIP display is less blinding and
+    // higher-contrast reds/yellows don't wash out night vision. Toggled via the
+    // "darkTheme" Connect IQ app setting (see resources/settings/).
+    hidden const DARK_COLORS = [
+        0x2E4D2E,  // 0: muted dark green (0-2%)
+        0x665C00,  // 1: muted dark yellow (2-4%)
+        0x664400,  // 2: muted dark amber (4-6%)
+        0x662200,  // 3: muted dark orange (6-8%)
+        0x660000,  // 4: muted dark red-orange (8-10%)
+        0x440000,  // 5: muted deep red (10%+)
     ];
 
     // Surface type color palette (indices match SurfaceType constants)
@@ -40,6 +57,7 @@ class ClimbProView extends Ui.DataField {
     hidden var alertedClimbIndex = -1;
     hidden var lastActiveClimb = -1;
     hidden var lastActiveSeg = -1;
+    hidden var batteryWarnedClimbIndex = -1;
 
     // Ghost / summary state
     hidden var lastGhostTimerMs = 0;
@@ -70,6 +88,8 @@ class ClimbProView extends Ui.DataField {
             lastRouteId = rid;
             lastActiveClimb = -1;
             alertedClimbIndex = -1;
+            batteryWarnedClimbIndex = -1;
+            data.batteryWarningActive = false;
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
             data.climbStartTimerMs = -1;
@@ -135,6 +155,25 @@ class ClimbProView extends Ui.DataField {
                 alertedClimbIndex = data.activeClimbIndex;
             }
         }
+
+        // Battery-vs-remaining-climb-time warning (issue #49): once per climb, mirroring
+        // the climb-start alert's idempotency pattern above -- keep re-checking every
+        // tick until the condition is actually met, then latch it so GPS/pace jitter
+        // around the threshold can't re-fire it for the same climb.
+        if (data.activeClimbIndex < 0) {
+            data.batteryWarningActive = false;
+        } else if (data.activeClimbIndex != batteryWarnedClimbIndex) {
+            var ci2 = data.activeClimbIndex;
+            var remainingClimb = data.climbLength[ci2] - data.progressInClimb;
+            if (remainingClimb < 0) { remainingClimb = 0; }
+            var climbEtaSec = data.etaSeconds(remainingClimb, data.currentSpeedMps);
+            var batteryPct = Sys.getSystemStats().battery;
+            if (data.batteryInsufficientForClimb(climbEtaSec, batteryPct)) {
+                triggerBatteryAlert();
+                data.batteryWarningActive = true;
+                batteryWarnedClimbIndex = ci2;
+            }
+        }
     }
 
     function onUpdate(dc) {
@@ -162,8 +201,12 @@ class ClimbProView extends Ui.DataField {
             drawNoClimbs(dc);
         }
 
+        // Off-route takes priority: it's the more urgent/actionable state and the two
+        // banners would otherwise fight for the same top strip of a very small screen.
         if (data.offRoute) {
             drawOffRouteBanner(dc);
+        } else if (data.batteryWarningActive) {
+            drawBatteryWarningBanner(dc);
         }
     }
 
@@ -174,6 +217,17 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, "OFF ROUTE", Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Orange banner across the top: battery may not last the rest of this climb
+    // (see ClimbData.batteryInsufficientForClimb). Persists for the rest of the climb
+    // once triggered -- the underlying condition (low battery) doesn't resolve itself.
+    hidden function drawBatteryWarningBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_ORANGE, Gfx.COLOR_ORANGE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, "LOW BATTERY", Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // =========================================================================
@@ -315,8 +369,24 @@ class ClimbProView extends Ui.DataField {
     // Profile drawing (colored bars like ClimbFinder)
     // =========================================================================
 
+    // Reads the "darkTheme" app setting (resources/settings/) and picks the matching
+    // gradient-color palette. Wrapped in try/catch: Properties.getValue can throw if
+    // the property isn't registered (e.g. a stale/older simulator settings cache),
+    // and this must never crash a per-tick redraw -- fall back to the normal palette.
+    hidden function activeColors() {
+        var dark = false;
+        try {
+            var v = Properties.getValue("darkTheme");
+            dark = (v != null && v == true);
+        } catch (e) {
+            dark = false;
+        }
+        return dark ? DARK_COLORS : COLORS;
+    }
+
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
 
+        var colors = activeColors();
         var totalLen = data.climbLength[ci];
         if (totalLen <= 0) { return; }
 
@@ -354,7 +424,7 @@ class ClimbProView extends Ui.DataField {
             var y1 = baseline - ((startElev * h) / totalElev);
             var y2 = baseline - ((endElev * h) / totalElev);
 
-            dc.setColor(COLORS[colorIdx], Gfx.COLOR_TRANSPARENT);
+            dc.setColor(colors[colorIdx], Gfx.COLOR_TRANSPARENT);
 
             var width = x2 - x1;
 
@@ -481,6 +551,24 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_LAP);
+        }
+    }
+
+    // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
+    // warning apart from a climb-start alert by feel/sound alone.
+    hidden function triggerBatteryAlert() {
+        if (Attention has :vibrate) {
+            var vibePattern = [
+                new Attention.VibeProfile(100, 250),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 250),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 250)
+            ];
+            Attention.vibrate(vibePattern);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
         }
     }
 
