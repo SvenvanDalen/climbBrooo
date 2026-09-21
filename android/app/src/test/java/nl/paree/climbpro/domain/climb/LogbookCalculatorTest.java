@@ -1,6 +1,8 @@
 package nl.paree.climbpro.domain.climb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
@@ -8,6 +10,8 @@ import nl.paree.climbpro.domain.climb.LogbookCalculator.Summary;
 
 import org.junit.Test;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -65,5 +69,37 @@ public class LogbookCalculatorTest {
         List<StoredClimbAttempt> attempts = Arrays.asList(at("k1", 1, 1000, 700));
         List<HistoryRow> rows = LogbookCalculator.historyFor("unknown", attempts);
         assertEquals(0, rows.size());
+    }
+
+    private static long epoch(int year, int month, int day) {
+        return ZonedDateTime.of(year, month, day, 12, 0, 0, 0, ZoneOffset.UTC).toEpochSecond();
+    }
+
+    @Test
+    public void historyFor_flagsMostRecentRow_whenBestOfCurrentYear() {
+        long now = epoch(2026, 6, 15);
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2025, 6, 1), 500),   // faster, but last year -> ignored
+                at("k1", 2, epoch(2026, 2, 1), 680),
+                at("k1", 3, epoch(2026, 5, 1), 650));  // most recent, best of 2026
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", attempts, now);
+
+        assertEquals(3, rows.size());
+        assertTrue(rows.get(0).bestOfYear);   // most recent (2026-05-01)
+        assertFalse(rows.get(1).bestOfYear);
+        assertFalse(rows.get(2).bestOfYear);
+    }
+
+    @Test
+    public void historyFor_doesNotFlagMostRecentRow_whenFasterAttemptEarlierThisYear() {
+        long now = epoch(2026, 6, 15);
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2026, 1, 1), 600),   // faster, earlier this year
+                at("k1", 2, epoch(2026, 5, 1), 650));  // most recent, slower
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", attempts, now);
+
+        assertFalse(rows.get(0).bestOfYear);
     }
 }
