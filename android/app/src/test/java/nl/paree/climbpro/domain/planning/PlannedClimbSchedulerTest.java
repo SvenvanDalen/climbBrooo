@@ -59,7 +59,7 @@ public class PlannedClimbSchedulerTest {
     }
 
     @Test
-    public void dueToday_matchesSameCalendarDayOnly() {
+    public void dueToday_includesTodayAndOverdue_excludesFuture() {
         PlannedClimb today = plan("t", NOW);
         PlannedClimb tomorrow = plan("tm", NOW + DAY);
         PlannedClimb yesterday = plan("y", NOW - DAY);
@@ -67,8 +67,12 @@ public class PlannedClimbSchedulerTest {
         List<PlannedClimb> due = PlannedClimbScheduler.dueToday(
                 Arrays.asList(today, tomorrow, yesterday), NOW, UTC);
 
-        assertEquals(1, due.size());
-        assertEquals("t", due.get(0).id);
+        // A plan whose day has already passed (planned in the past, or a worker run that
+        // slipped past midnight) must still get its reminder, not be silently dropped —
+        // only a genuinely future day is excluded.
+        assertEquals(2, due.size());
+        assertEquals("y", due.get(0).id);
+        assertEquals("t", due.get(1).id);
     }
 
     @Test

@@ -30,9 +30,16 @@ public final class PlannedClimbCalendarWriter {
 
     private PlannedClimbCalendarWriter() {}
 
+    /**
+     * findWritableCalendarId() queries CalendarContract.Calendars, which needs READ_CALENDAR
+     * in addition to WRITE_CALENDAR (the two are separate runtime permissions since API 23) —
+     * both must be granted or insertEvent() fails on the read before it ever gets to insert.
+     */
     public static boolean hasPermission(Context context) {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR)
-                == PackageManager.PERMISSION_GRANTED;
+                        == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR)
+                        == PackageManager.PERMISSION_GRANTED;
     }
 
     /**

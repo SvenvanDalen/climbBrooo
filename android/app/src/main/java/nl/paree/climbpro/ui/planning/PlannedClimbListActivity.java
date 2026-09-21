@@ -41,11 +41,18 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
     private CheckBox pendingCalendarCheckbox;
     private PlannedClimbListViewModel.Pickable pendingTarget;
 
+    private static final String STATE_PENDING_ROUTE_ID    = "pendingRouteId";
+    private static final String STATE_PENDING_CLIMB_INDEX = "pendingClimbIndex";
+    private static final String STATE_PENDING_LABEL       = "pendingLabel";
+    private static final String STATE_PENDING_PLANNED_AT  = "pendingPlannedAtEpochSec";
+
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> { });
-    private final ActivityResultLauncher<String> calendarPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(),
-                    granted -> continueAddFlowAfterCalendarPermission(granted));
+    private final ActivityResultLauncher<String[]> calendarPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+                    result -> continueAddFlowAfterCalendarPermission(
+                            Boolean.TRUE.equals(result.get(Manifest.permission.WRITE_CALENDAR))
+                                    && Boolean.TRUE.equals(result.get(Manifest.permission.READ_CALENDAR))));
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +81,31 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
 
         ensureNotificationPermission();
         viewModel.load();
+
+        if (savedInstanceState != null) {
+            String routeId = savedInstanceState.getString(STATE_PENDING_ROUTE_ID);
+            if (routeId != null) {
+                pendingTarget = new PlannedClimbListViewModel.Pickable(
+                        routeId,
+                        savedInstanceState.getInt(STATE_PENDING_CLIMB_INDEX),
+                        savedInstanceState.getString(STATE_PENDING_LABEL));
+                pendingPlannedAtEpochSec = savedInstanceState.getLong(STATE_PENDING_PLANNED_AT);
+            }
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Bridges the calendar-permission request (async system dialog) to its result callback
+        // across a configuration change — without this, rotating the device while the WRITE/
+        // READ_CALENDAR prompt is up silently drops the plan the user just configured.
+        if (pendingTarget != null) {
+            outState.putString(STATE_PENDING_ROUTE_ID, pendingTarget.routeId);
+            outState.putInt(STATE_PENDING_CLIMB_INDEX, pendingTarget.climbIndex);
+            outState.putString(STATE_PENDING_LABEL, pendingTarget.label);
+            outState.putLong(STATE_PENDING_PLANNED_AT, pendingPlannedAtEpochSec);
+        }
     }
 
     @Override
@@ -157,11 +189,19 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
     }
 
     private void requestCalendarPermissionThenSave() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
-                == PackageManager.PERMISSION_GRANTED) {
+        boolean granted = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
+                        == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
+                        == PackageManager.PERMISSION_GRANTED;
+        if (granted) {
             viewModel.addPlan(pendingTarget, pendingPlannedAtEpochSec, true);
         } else {
-            calendarPermissionLauncher.launch(Manifest.permission.WRITE_CALENDAR);
+            // PlannedClimbCalendarWriter.findWritableCalendarId() needs READ_CALENDAR too,
+            // not just WRITE_CALENDAR — request both so the opt-in actually works.
+            calendarPermissionLauncher.launch(new String[]{
+                    Manifest.permission.WRITE_CALENDAR,
+                    Manifest.permission.READ_CALENDAR
+            });
         }
     }
 

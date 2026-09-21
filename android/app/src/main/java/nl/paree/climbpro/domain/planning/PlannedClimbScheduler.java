@@ -31,10 +31,13 @@ public final class PlannedClimbScheduler {
     }
 
     /**
-     * Plans whose planned local calendar day is exactly "today" (relative to {@code nowEpochSec}
-     * in {@code zone}) and that have not yet had a reminder fired. This is what
-     * PlannedClimbReminderWorker checks before notifying — it must survive being run more than
-     * once on the same day (e.g. WorkManager retries) without re-firing, which {@code
+     * Plans whose planned local calendar day is "today" or earlier (relative to {@code
+     * nowEpochSec} in {@code zone}) and that have not yet had a reminder fired. Includes
+     * overdue plans — not just an exact day match — so a plan scheduled in the past (the date
+     * picker allows this; {@link #delaySeconds} clamps it to fire immediately) or a worker run
+     * that slips past midnight still gets a reminder instead of being silently dropped forever.
+     * This is what PlannedClimbReminderWorker checks before notifying — it must survive being
+     * run more than once (e.g. WorkManager retries) without re-firing, which {@code
      * reminderSent} guards.
      */
     public static List<PlannedClimb> dueToday(List<PlannedClimb> all, long nowEpochSec, ZoneId zone) {
@@ -43,7 +46,7 @@ public final class PlannedClimbScheduler {
         for (PlannedClimb p : all) {
             if (p.reminderSent) continue;
             LocalDate plannedDay = Instant.ofEpochSecond(p.plannedAtEpochSec).atZone(zone).toLocalDate();
-            if (plannedDay.equals(today)) out.add(p);
+            if (!plannedDay.isAfter(today)) out.add(p);
         }
         out.sort(Comparator.comparingLong(p -> p.plannedAtEpochSec));
         return out;
