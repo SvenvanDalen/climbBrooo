@@ -294,6 +294,94 @@ function onUpdate_noClimbsAhead_drawsMessage(logger) {
     return true;
 }
 
+// ===================== battery-vs-climb-time warning (#49) ===================
+// batteryInsufficientForClimb()'s actual true/false logic is covered exhaustively
+// as a pure function in ClimbDataTest.mc. These tests cover the view-level wiring:
+// the persistent-banner state resets, and rendering doesn't crash. They deliberately
+// don't assert on the outcome of the check itself, since Sys.getSystemStats().battery
+// reads the real (simulator) battery level and isn't injectable from a test.
+
+(:test)
+function onUpdate_batteryWarningActive_drawsBanner(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    d.activeClimbIndex = 0;
+    d.activeSegmentIndex = 0;
+    d.progressInClimb = 200;
+    d.batteryWarningActive = true;
+    new ClimbProView().onUpdate(makeDc());
+    return true;
+}
+
+// Off-route is the more urgent state; both banners fire but only the off-route one
+// should occupy the top strip. Smoke-only (renders without throwing).
+(:test)
+function onUpdate_offRouteAndBatteryWarning_bothSet_noThrow(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    d.activeClimbIndex = 0;
+    d.activeSegmentIndex = 0;
+    d.progressInClimb = 200;
+    d.offRoute = true;
+    d.batteryWarningActive = true;
+    new ClimbProView().onUpdate(makeDc());
+    return true;
+}
+
+// Leaving the climb clears a battery warning that was latched during it -- the banner
+// must not persist into the next climb (or the no-active-climb state) by itself.
+(:test)
+function compute_leavingClimb_clearsBatteryWarning(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    var v = new ClimbProView();
+    v.compute(new FakeInfo(1400, 10000, null, null) as Activity.Info);
+    Test.assertEqual(d.activeClimbIndex, 0);
+
+    d.batteryWarningActive = true;   // simulate an earlier low-battery warning firing
+    v.compute(new FakeInfo(2200, 90000, null, null) as Activity.Info); // odometer past the climb
+    Test.assertEqual(d.activeClimbIndex, -1);
+    Test.assertEqual(d.batteryWarningActive, false);
+    return true;
+}
+
+// A route change (new payload/routeId) must also clear a latched battery warning,
+// mirroring the reset the climb-start alert already gets on route change.
+(:test)
+function compute_routeChange_resetsBatteryWarning(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    var v = new ClimbProView();
+    v.compute(new FakeInfo(1400, 10000, null, null) as Activity.Info);
+    d.batteryWarningActive = true;
+
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route", "routeId" => "different", "name" => "Different",
+        "climbs" => [
+            { "sd" => 1000, "ed" => 1800, "len" => 800, "eg" => 60, "ag" => 75,
+              "segs" => [400, 30, 75, 3, 400, 30, 75, 3] }
+        ]
+    });
+    v.compute(new FakeInfo(1400, 10000, null, null) as Activity.Info);
+    Test.assertEqual(d.batteryWarningActive, false);
+    return true;
+}
+
+// The battery check itself runs every tick on an active climb (until latched) -- this
+// exercises that code path (including the real Sys.getSystemStats() call) end to end
+// without throwing. The simulator's battery is typically near-full so this is not
+// expected to latch, but either outcome is acceptable; only a crash would fail this.
+(:test)
+function compute_activeClimb_batteryCheckRuns_noThrow(logger) {
+    var d = viewData();
+    noCalibClimb(d);
+    var v = new ClimbProView();
+    v.compute(new FakeInfo(1400, 10000, null, null) as Activity.Info);
+    Test.assertEqual(d.activeClimbIndex, 0);
+    v.compute(new FakeInfo(1500, 20000, null, null) as Activity.Info); // second tick, still on climb
+    return true;
+}
+
 // =========================== compute() smoke ================================
 
 (:test)

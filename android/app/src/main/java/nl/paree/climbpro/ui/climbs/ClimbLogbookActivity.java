@@ -26,6 +26,7 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
     private ClimbLogbookViewModel viewModel;
     private LogbookAdapter adapter;
     private TextView empty;
+    private TextView streakText;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
 
     @Override
@@ -38,6 +39,7 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         empty = findViewById(R.id.empty);
+        streakText = findViewById(R.id.streak);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
         adapter = new LogbookAdapter(this::openClimb);
@@ -48,11 +50,21 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
             adapter.submit(rows);
             empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
         });
+        viewModel.streak().observe(this, this::renderStreak);
 
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
 
         viewModel.loadLogbook();
+    }
+
+    private void renderStreak(nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak streak) {
+        if (streak.current <= 0) {
+            streakText.setText("Nog geen actieve streak");
+        } else {
+            streakText.setText(String.format(java.util.Locale.getDefault(),
+                    "Streak: %d dag(en) op rij (langste: %d)", streak.current, streak.longest));
+        }
     }
 
     private void openClimb(ClimbLogbookViewModel.LogbookRow row) {
