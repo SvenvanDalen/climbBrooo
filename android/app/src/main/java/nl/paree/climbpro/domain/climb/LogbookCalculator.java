@@ -34,10 +34,19 @@ public final class LogbookCalculator {
         public final int  elapsedSec;
         public final int  deltaToPrSec; // elapsedSec - prSec (>= 0)
 
-        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec) {
+        /**
+         * True only on the most recent attempt of the climb when it is also the fastest
+         * attempt of that climb recorded within the current calendar year (issue #34).
+         * Resets every Jan 1 — independent of {@link #deltaToPrSec}, which tracks the
+         * all-time PR. See {@link BestOfYearCalculator}.
+         */
+        public final boolean bestOfYear;
+
+        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec, boolean bestOfYear) {
             this.dateEpochSec = dateEpochSec;
             this.elapsedSec = elapsedSec;
             this.deltaToPrSec = deltaToPrSec;
+            this.bestOfYear = bestOfYear;
         }
     }
 
@@ -66,6 +75,12 @@ public final class LogbookCalculator {
     }
 
     public static List<HistoryRow> historyFor(String climbId, List<StoredClimbAttempt> attempts) {
+        return historyFor(climbId, attempts, System.currentTimeMillis() / 1000L);
+    }
+
+    /** Overload with an injectable clock so "current calendar year" is testable. */
+    public static List<HistoryRow> historyFor(
+            String climbId, List<StoredClimbAttempt> attempts, long nowEpochSec) {
         List<StoredClimbAttempt> mine = new ArrayList<>();
         int pr = Integer.MAX_VALUE;
         for (StoredClimbAttempt a : attempts) {
@@ -75,9 +90,13 @@ public final class LogbookCalculator {
             }
         }
         mine.sort(Comparator.comparingLong((StoredClimbAttempt a) -> a.dateEpochSec).reversed());
+        boolean mostRecentIsBestOfYear =
+                BestOfYearCalculator.isMostRecentBestOfYear(climbId, attempts, nowEpochSec);
         List<HistoryRow> rows = new ArrayList<>(mine.size());
-        for (StoredClimbAttempt a : mine) {
-            rows.add(new HistoryRow(a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr));
+        for (int i = 0; i < mine.size(); i++) {
+            StoredClimbAttempt a = mine.get(i);
+            boolean bestOfYear = i == 0 && mostRecentIsBestOfYear; // rows are newest-first
+            rows.add(new HistoryRow(a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr, bestOfYear));
         }
         return rows;
     }

@@ -134,8 +134,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 String delta = row.deltaToPrSec == 0
                         ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
                         + String.format(java.util.Locale.getDefault(), "%02d", row.deltaToPrSec % 60);
+                String badge = row.bestOfYear ? "  🏆 Beste van dit jaar" : "";
                 tv.setText(String.format(java.util.Locale.getDefault(),
-                        "%s   %d:%02d   (%s)", date, m, s, delta));
+                        "%s   %d:%02d   (%s)%s", date, m, s, delta, badge));
                 tv.setPadding(0, 8, 0, 8);
                 container.addView(tv);
             }
