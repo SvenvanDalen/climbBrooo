@@ -50,6 +50,11 @@
             android:parentActivityName=".ui.routes.RouteDetailActivity"/>
 
         <activity
+            android:name=".ui.climbs.ClimbBulkRenameActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteDetailActivity"/>
+
+        <activity
             android:name=".ui.climbs.ClimbLogbookActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
