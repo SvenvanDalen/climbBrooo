@@ -44,6 +44,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     private StoredRoute loadedRoute;
     private StoredClimb loadedClimb;
+    private String lastTimeEstimateText;
 
     public static Intent intentFor(Context ctx, String routeId, int climbIndex) {
         Intent i = new Intent(ctx, ClimbDetailActivity.class);
@@ -100,11 +101,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 binding.climbTimeEstimate.setText(
                         "Stel je FTP en gewicht in (Instellingen) voor een tijdschatting");
                 adapter.setSegmentSeconds(null);
+                lastTimeEstimateText = null;
             } else {
-                binding.climbTimeEstimate.setText(String.format(java.util.Locale.US,
+                lastTimeEstimateText = String.format(java.util.Locale.US,
                         "Geschatte tijd: %s · %.0f W",
                         DurationFormat.format(estimate.totalSeconds),
-                        estimate.assumedPowerWatts));
+                        estimate.assumedPowerWatts);
+                binding.climbTimeEstimate.setText(lastTimeEstimateText);
                 adapter.setSegmentSeconds(estimate.segmentSeconds);
             }
         });
@@ -143,6 +146,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
+        binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
 
         setupBulkSurfaceSetter();
 
@@ -230,6 +234,31 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         BoundingBox box = BoundingBox.fromGeoPoints(zoomTarget);
         binding.mapView.post(() -> binding.mapView.zoomToBoundingBox(box, true, 80));
         binding.mapView.invalidate();
+    }
+
+    /**
+     * Renders the climb profile + headline stats into a bitmap (issue #33) and hands it to
+     * the standard Android share sheet via {@link ClimbShareHandoff}.
+     */
+    private void shareClimbAsImage() {
+        if (loadedClimb == null) {
+            Toast.makeText(this, "Klim nog niet geladen", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String title = loadedClimb.userDisplayName != null
+                ? loadedClimb.userDisplayName
+                : (loadedClimb.name != null ? loadedClimb.name : "Klim " + (climbIndex + 1));
+        try {
+            android.graphics.Bitmap bitmap = ClimbShareImageComposer.compose(
+                    this, title, loadedClimb, lastTimeEstimateText);
+            java.io.File file = ClimbShareHandoff.writeShareImage(this, bitmap);
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", file);
+            Intent share = ClimbShareHandoff.buildShareIntent(uri);
+            startActivity(Intent.createChooser(share, "Deel klim"));
+        } catch (java.io.IOException e) {
+            Toast.makeText(this, "Kon afbeelding niet aanmaken", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showRenameDialog() {
