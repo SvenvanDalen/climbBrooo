@@ -12,6 +12,15 @@ public final class StoredClimbAttempt {
     public int    elapsedSec;    // time on the climb
 
     /**
+     * 0-based index of this ascent within the activity, in chronological order.
+     * Most activities cover a climb once (passIndex 0). A higher value means the climb
+     * was ridden more than once in the same activity (out-and-back, loop route) — see
+     * {@link nl.paree.climbpro.domain.matching.ClimbAttemptMatcher#matchAll}. Part of the
+     * dedupe key alongside climbId/activityId so repeat ascents are all kept.
+     */
+    public int    passIndex;
+
+    /**
      * Per-segment elapsed seconds, in climb order, captured at match time against the
      * climb's segmentation as it existed then. Null when splits could not be derived
      * (e.g. climb had no segments yet). Segment count/boundaries may differ across

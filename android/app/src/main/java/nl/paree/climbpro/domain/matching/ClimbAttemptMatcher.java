@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.matching;
 
 import nl.paree.climbpro.domain.route.CumulativeDistance;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -107,6 +108,109 @@ public final class ClimbAttemptMatcher {
         long exitTime  = track.get(exitIdx).timeSec;
         if (exitTime - entryTime <= 0) return null;
 
+        return splitSegments(track, entryIdx, exitIdx, segLengthsM);
+    }
+
+    /** Index of the first sample at/after {@code fromIdx} within GATE_M of (lat,lon), or -1. */
+    private static int firstWithin(List<TrackSample> track,
+                                   double lat, double lon, int fromIdx) {
+        for (int i = fromIdx; i < track.size(); i++) {
+            TrackSample s = track.get(i);
+            if (CumulativeDistance.haversine(lat, lon, s.lat, s.lon) <= GATE_M) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** One validated entry/exit index pair within the track. */
+    private static final class Pass {
+        final int entryIdx;
+        final int exitIdx;
+        Pass(int entryIdx, int exitIdx) {
+            this.entryIdx = entryIdx;
+            this.exitIdx = exitIdx;
+        }
+    }
+
+    /**
+     * Walks the whole track (unlike {@link #match}, which stops at the first candidate),
+     * collecting every valid entry/exit pair — needed when the same climb is ridden more
+     * than once within one activity (out-and-back, loop route). After a valid pass, the
+     * next search starts after its exit; after an invalid candidate (gate hit but length
+     * tolerance failed, e.g. a road crossing), the search resumes after that entry so a
+     * later, genuine pass is still found.
+     */
+    private static List<Pass> findAllPasses(List<TrackSample> track,
+                                            double startLat, double startLon,
+                                            double endLat, double endLon,
+                                            int climbLengthM) {
+        List<Pass> passes = new ArrayList<>();
+        if (track == null || track.size() < 2 || climbLengthM <= 0) return passes;
+
+        double tol = LENGTH_TOLERANCE * climbLengthM;
+        int searchFrom = 0;
+        while (true) {
+            int entryIdx = firstWithin(track, startLat, startLon, searchFrom);
+            if (entryIdx < 0) break;
+
+            int exitIdx = firstWithin(track, endLat, endLon, entryIdx + 1);
+            if (exitIdx < 0 || exitIdx <= entryIdx) break;
+
+            double covered = 0;
+            for (int i = entryIdx; i < exitIdx; i++) {
+                TrackSample a = track.get(i);
+                TrackSample b = track.get(i + 1);
+                covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
+            }
+            long elapsed = track.get(exitIdx).timeSec - track.get(entryIdx).timeSec;
+
+            if (Math.abs(covered - climbLengthM) <= tol && elapsed > 0) {
+                passes.add(new Pass(entryIdx, exitIdx));
+                searchFrom = exitIdx + 1;
+            } else {
+                searchFrom = entryIdx + 1;
+            }
+        }
+        return passes;
+    }
+
+    /**
+     * Like {@link #match}, but returns the elapsed time of every valid ascent found in
+     * the track, in chronological order, instead of only the first.
+     */
+    public static List<Integer> matchAll(List<TrackSample> track,
+                                         double startLat, double startLon,
+                                         double endLat, double endLon,
+                                         int climbLengthM) {
+        List<Integer> out = new ArrayList<>();
+        for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
+            out.add((int) (track.get(p.exitIdx).timeSec - track.get(p.entryIdx).timeSec));
+        }
+        return out;
+    }
+
+    /**
+     * Like {@link #matchSegments}, but returns the per-segment splits of every valid
+     * ascent found in the track, in chronological order, instead of only the first.
+     */
+    public static List<int[]> matchAllSegments(List<TrackSample> track,
+                                               double startLat, double startLon,
+                                               double endLat, double endLon,
+                                               int climbLengthM, int[] segLengthsM) {
+        List<int[]> out = new ArrayList<>();
+        if (segLengthsM == null || segLengthsM.length == 0) return out;
+        for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
+            out.add(splitSegments(track, p.entryIdx, p.exitIdx, segLengthsM));
+        }
+        return out;
+    }
+
+    /** Shared boundary-interpolation logic used by both {@link #matchSegments} and {@link #matchAllSegments}. */
+    private static int[] splitSegments(List<TrackSample> track, int entryIdx, int exitIdx, int[] segLengthsM) {
+        long entryTime = track.get(entryIdx).timeSec;
+        long exitTime  = track.get(exitIdx).timeSec;
+
         // Cumulative segment boundary distances from the climb start.
         double[] boundaries = new double[segLengthsM.length];
         double cum = 0;
@@ -120,8 +224,6 @@ public final class ClimbAttemptMatcher {
         int sampleIdx = entryIdx;
         for (int b = 0; b < boundaries.length; b++) {
             double target = boundaries[b];
-            // Advance until the segment [sampleIdx, sampleIdx+1] straddles `target`,
-            // or we run out of track (clamp to exit).
             while (sampleIdx < exitIdx) {
                 TrackSample a = track.get(sampleIdx);
                 TrackSample bSample = track.get(sampleIdx + 1);
@@ -141,24 +243,11 @@ public final class ClimbAttemptMatcher {
         long prevTime = entryTime;
         for (int b = 0; b < boundaries.length; b++) {
             long t = (b == boundaries.length - 1) ? exitTime : boundaryTime[b];
-            // Clamp: boundary times must be monotonic and within [entryTime, exitTime].
             if (t < prevTime) t = prevTime;
             if (t > exitTime) t = exitTime;
             splits[b] = (int) (t - prevTime);
             prevTime = t;
         }
         return splits;
-    }
-
-    /** Index of the first sample at/after {@code fromIdx} within GATE_M of (lat,lon), or -1. */
-    private static int firstWithin(List<TrackSample> track,
-                                   double lat, double lon, int fromIdx) {
-        for (int i = fromIdx; i < track.size(); i++) {
-            TrackSample s = track.get(i);
-            if (CumulativeDistance.haversine(lat, lon, s.lat, s.lon) <= GATE_M) {
-                return i;
-            }
-        }
-        return -1;
     }
 }

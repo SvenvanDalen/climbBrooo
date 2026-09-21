@@ -59,6 +59,35 @@ public class ClimbAttemptRepositoryTest {
     }
 
     @Test
+    public void append_keepsBothPasses_whenClimbRiddenTwiceInOneActivity() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+
+        StoredClimbAttempt firstPass = attempt("k1", 100L, 1_700_000_000L, 540);
+        firstPass.passIndex = 0;
+        StoredClimbAttempt secondPass = attempt("k1", 100L, 1_700_000_000L, 560);
+        secondPass.passIndex = 1;
+
+        repo.append(Arrays.asList(firstPass, secondPass));
+
+        assertEquals(2, repo.loadAll().size());
+    }
+
+    @Test
+    public void append_dedupesOnClimbActivityAndPassIndex() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+
+        StoredClimbAttempt firstPass = attempt("k1", 100L, 1_700_000_000L, 540);
+        firstPass.passIndex = 0;
+
+        repo.append(Arrays.asList(firstPass));
+        repo.append(Arrays.asList(firstPass)); // same climb/activity/passIndex again
+
+        assertEquals(1, repo.loadAll().size());
+    }
+
+    @Test
     public void knownActivityIds_collectsAll() throws Exception {
         Application app = ApplicationProvider.getApplicationContext();
         ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
