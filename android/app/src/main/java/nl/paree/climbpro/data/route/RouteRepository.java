@@ -200,6 +200,49 @@ public final class RouteRepository {
         }
     }
 
+    /**
+     * Removes one climb from a route (near-duplicate merge, issue #76), leaving every other
+     * climb and all other route data untouched. Updates the catalog's climbCount,
+     * climbStartCoords and surfaceTypes so radius-mode queries and route listings stay
+     * consistent; the bbox is left as-is since removing one climb never changes it.
+     * Out-of-range indices are ignored.
+     */
+    public void removeClimb(String routeId, int climbIndex) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
+            Log.w(TAG, "removeClimb: index out of range: " + climbIndex);
+            return;
+        }
+        route.climbs.remove(climbIndex);
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogAfterClimbRemoval(routeId, route);
+    }
+
+    private void rebuildCatalogAfterClimbRemoval(String routeId, StoredRoute route) throws IOException {
+        List<RouteCatalogEntry> catalog = loadCatalog();
+        for (RouteCatalogEntry e : catalog) {
+            if (e.routeId.equals(routeId)) {
+                List<StoredClimb> climbs = route.climbs;
+                e.climbCount = climbs != null ? climbs.size() : 0;
+                if (climbs != null && !climbs.isEmpty()) {
+                    double[] coords = new double[climbs.size() * 2];
+                    for (int i = 0; i < climbs.size(); i++) {
+                        coords[i * 2]     = climbs.get(i).startLat;
+                        coords[i * 2 + 1] = climbs.get(i).startLon;
+                    }
+                    e.climbStartCoords = coords;
+                } else {
+                    e.climbStartCoords = null;
+                }
+                e.surfaceTypes   = computeSurfaceTypes(route);
+                e.lastModifiedMs = route.lastModifiedMs;
+                break;
+            }
+        }
+        saveCatalog(catalog);
+    }
+
     public void saveNotes(String routeId, String notes) throws IOException {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;

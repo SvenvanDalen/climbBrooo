@@ -66,6 +66,15 @@ public final class ClimbAttemptRepository {
         writeAtomic(file, mapper.writeValueAsBytes(all));
     }
 
+    /**
+     * Overwrites the whole file with {@code attempts}, unlike {@link #append} which only adds
+     * new ones. Used by climb-merge (issue #76) to persist {@code climbId} remaps in place.
+     * Not thread-safe: call only from a single-threaded executor.
+     */
+    public void overwriteAll(List<StoredClimbAttempt> attempts) throws IOException {
+        writeAtomic(file, mapper.writeValueAsBytes(attempts));
+    }
+
     private static String key(StoredClimbAttempt a) {
         return (a.climbId != null ? a.climbId : "") + "#" + a.activityId + "#" + a.passIndex;
     }
