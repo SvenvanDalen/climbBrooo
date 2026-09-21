@@ -1,4 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ClimbPro" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <!-- Bold sport/dark theme — dark-only by design (see issue #115), not DayNight -->
+    <style name="Theme.ClimbPro" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="fontFamily">@font/space_grotesk</item>
+
+        <item name="colorPrimary">@color/color_accent</item>
+        <item name="colorOnPrimary">@color/color_accent_on</item>
+        <item name="colorPrimaryContainer">@color/color_accent</item>
+        <item name="colorOnPrimaryContainer">@color/color_accent_on</item>
+
+        <item name="colorSecondary">@color/color_accent</item>
+        <item name="colorOnSecondary">@color/color_accent_on</item>
+
+        <item name="colorSurface">@color/color_surface</item>
+        <item name="colorOnSurface">@color/color_text_primary</item>
+        <item name="colorSurfaceVariant">@color/color_surface_raised</item>
+        <item name="colorOnSurfaceVariant">@color/color_text_secondary</item>
+
+        <item name="android:colorBackground">@color/color_bg</item>
+        <item name="colorOutline">@color/color_border</item>
+        <item name="colorError">@color/color_error</item>
+
+        <item name="android:textColorPrimary">@color/color_text_primary</item>
+        <item name="android:textColorSecondary">@color/color_text_secondary</item>
+        <item name="android:windowBackground">@color/color_bg</item>
+        <item name="android:statusBarColor">@color/color_bg</item>
+        <item name="android:navigationBarColor">@color/color_bg</item>
+        <item name="android:editTextColor">@color/color_text_primary</item>
+        <item name="android:textColorHint">@color/color_text_tertiary</item>
+    </style>
+
+    <style name="TextAppearance.ClimbPro.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/color_text_primary</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <style name="TextAppearance.ClimbPro.Label" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textColor">@color/color_text_tertiary</item>
+    </style>
+
+    <style name="Widget.ClimbPro.Button.Accent" parent="Widget.Material3.Button">
+        <item name="android:background">@drawable/bg_pill_accent</item>
+        <item name="android:textColor">@color/color_accent_on</item>
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <style name="Widget.ClimbPro.Button.Outline" parent="Widget.Material3.Button">
+        <item name="android:background">@drawable/bg_pill_outline</item>
+        <item name="android:textColor">@color/color_text_primary</item>
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="elevation">0dp</item>
+    </style>
+
 </resources>

@@ -3,7 +3,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/color_bg">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -12,13 +13,16 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:title="Settings"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+            android:background="@color/color_bg"
+            android:titleTextColor="@color/color_text_primary"
+            android:title="Instellingen"
+            app:popupTheme="@style/ThemeOverlay.Material3.Dark"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/color_bg"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -27,134 +31,171 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Watch mode"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
-
-            <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <RadioButton
-                    android:id="@+id/radio_route"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Follow a selected route"/>
-
-                <RadioButton
-                    android:id="@+id/radio_radius"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Radius — detect nearby climbs"/>
-
-            </RadioGroup>
-
             <LinearLayout
-                android:id="@+id/radius_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="8dp"
-                android:visibility="gone">
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
                 <TextView
-                    android:id="@+id/radius_label"
+                    style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="30 km"
-                    android:layout_marginBottom="4dp"/>
+                    android:text="Watch mode"
+                    android:layout_marginBottom="10dp"/>
 
-                <SeekBar
-                    android:id="@+id/radius_seek_bar"
+                <RadioGroup
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:max="100"
-                    android:progress="30"/>
+                    android:orientation="vertical">
 
+                    <RadioButton
+                        android:id="@+id/radio_route"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/color_accent"
+                        android:textColor="@color/color_text_primary"
+                        android:text="Follow a selected route"/>
+
+                    <RadioButton
+                        android:id="@+id/radio_radius"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/color_accent"
+                        android:textColor="@color/color_text_primary"
+                        android:text="Radius — detect nearby climbs"/>
+
+                </RadioGroup>
+
+                <LinearLayout
+                    android:id="@+id/radius_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/radius_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="30 km"
+                        android:textColor="@color/color_accent"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/space_grotesk"
+                        android:layout_marginBottom="4dp"/>
+
+                    <SeekBar
+                        android:id="@+id/radius_seek_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:progressTint="@color/color_accent"
+                        android:thumbTint="@color/color_accent"
+                        android:max="100"
+                        android:progress="30"/>
+
+                </LinearLayout>
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Strava"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
-
-            <Button
-                android:id="@+id/btn_strava_auth"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sign in to Strava"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"/>
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Strava"
+                    android:layout_marginBottom="10dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Rider profile"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
+                <Button
+                    android:id="@+id/btn_strava_auth"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sign in to Strava"/>
+            </LinearLayout>
 
-            <EditText
-                android:id="@+id/input_ftp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="FTP (watts)"
-                android:inputType="number"
-                android:layout_marginBottom="8dp"/>
-
-            <EditText
-                android:id="@+id/input_rider_weight"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Rider weight (kg)"
-                android:inputType="numberDecimal"
-                android:layout_marginBottom="8dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-            <EditText
-                android:id="@+id/input_bike_weight"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Bike weight (kg)"
-                android:inputType="numberDecimal"
-                android:layout_marginBottom="8dp"/>
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rider profile"
+                    android:layout_marginBottom="10dp"/>
 
-            <EditText
-                android:id="@+id/input_ride_intensity"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Rit-intensiteit (% FTP, 40-95)"
-                android:inputType="number"
-                android:layout_marginBottom="8dp"/>
+                <EditText
+                    android:id="@+id/input_ftp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="FTP (watts)"
+                    android:inputType="number"
+                    android:layout_marginBottom="8dp"/>
 
-            <Button
-                android:id="@+id/btn_save_profile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Save rider profile"
-                android:layout_marginBottom="16dp"/>
+                <EditText
+                    android:id="@+id/input_rider_weight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Rider weight (kg)"
+                    android:inputType="numberDecimal"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/input_bike_weight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Bike weight (kg)"
+                    android:inputType="numberDecimal"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/input_ride_intensity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Rit-intensiteit (% FTP, 40-95)"
+                    android:inputType="number"
+                    android:layout_marginBottom="12dp"/>
+
+                <Button
+                    android:id="@+id/btn_save_profile"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Save rider profile"/>
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btn_sync_now"
+                style="@style/Widget.ClimbPro.Button.Accent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Sync now"/>

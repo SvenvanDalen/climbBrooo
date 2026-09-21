@@ -4,13 +4,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
+import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.databinding.ActivityClimbBulkRenameBinding;
 
@@ -75,21 +79,41 @@ public final class ClimbBulkRenameActivity extends AppCompatActivity {
         nameInputs.clear();
         if (climbs == null) return;
 
-        int pad = (int) (4 * getResources().getDisplayMetrics().density);
+        float density = getResources().getDisplayMetrics().density;
+        int cardPad = (int) (14 * density);
+        int cardMarginBottom = (int) (10 * density);
+        int labelColor = ContextCompat.getColor(this, R.color.color_text_tertiary);
+        int cardBg = R.drawable.bg_card;
+        int inputBg = R.drawable.bg_input;
+
         for (int i = 0; i < climbs.size(); i++) {
             StoredClimb climb = climbs.get(i);
             String autoName = climb.name != null ? climb.name : "Klim " + (i + 1);
 
+            LinearLayout card = new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setBackgroundResource(cardBg);
+            card.setPadding(cardPad, cardPad, cardPad, cardPad);
+            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            cardParams.bottomMargin = cardMarginBottom;
+            card.setLayoutParams(cardParams);
+
             TextView label = new TextView(this);
-            label.setText(autoName);
-            label.setPadding(0, pad, 0, 0);
-            binding.climbNameRows.addView(label);
+            label.setText("Gedetecteerd: " + autoName);
+            label.setTextColor(labelColor);
+            label.setTextSize(12f);
+            label.setPadding(0, 0, 0, (int) (6 * density));
+            card.addView(label);
 
             EditText input = new EditText(this);
             input.setHint(autoName);
             input.setSingleLine(true);
+            input.setBackgroundResource(inputBg);
             if (climb.userDisplayName != null) input.setText(climb.userDisplayName);
-            binding.climbNameRows.addView(input);
+            card.addView(input);
+
+            binding.climbNameRows.addView(card);
             nameInputs.add(input);
         }
     }

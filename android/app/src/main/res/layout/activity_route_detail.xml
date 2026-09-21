@@ -3,7 +3,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/color_bg">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -13,14 +14,15 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#02FCCA"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+            android:background="@color/color_bg"
+            android:titleTextColor="@color/color_text_primary"
+            app:popupTheme="@style/ThemeOverlay.Material3.Dark" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:backgroundTint="#02FCCA"
+        android:background="@color/color_bg"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -33,36 +35,41 @@
                 android:id="@+id/map_view"
                 android:layout_width="match_parent"
                 android:layout_height="250dp"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="16dp"/>
 
             <TextView
                 android:id="@+id/passport_title"
+                style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="Pacing-paspoort"
-                android:textStyle="bold"
-                android:textSize="16sp" />
+                android:layout_marginBottom="6dp"
+                android:text="Pacing-paspoort" />
 
             <TextView
                 android:id="@+id/passport_summary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
                 android:textSize="14sp" />
 
             <TextView
+                style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="Notes"
-                android:textStyle="bold" />
+                android:layout_marginBottom="6dp"
+                android:text="Notities" />
 
             <EditText
                 android:id="@+id/notes_edit"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
-                android:background="@android:drawable/edit_text"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_primary"
+                android:textColorHint="@color/color_text_tertiary"
                 android:gravity="top|start"
                 android:hint="Add notes about this route…"
                 android:inputType="textMultiLine" />
@@ -70,11 +77,11 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/btn_rename"
+                    style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
@@ -83,6 +90,7 @@
 
                 <Button
                     android:id="@+id/btn_save_notes"
+                    style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
@@ -93,6 +101,7 @@
 
             <Button
                 android:id="@+id/btn_select_route"
+                style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -100,40 +109,43 @@
 
             <Button
                 android:id="@+id/btn_send_to_onboard"
+                style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:text="Verstuur naar horloge" />
 
             <Button
                 android:id="@+id/btn_share_to_garmin"
+                style="@style/Widget.ClimbPro.Button.Accent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Open in Garmin Connect" />
+                android:layout_marginTop="8dp"
+                android:text="Start navigatie" />
 
             <Button
                 android:id="@+id/btn_surface_sections"
+                style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:text="Ondergrond-stukken" />
 
             <Button
                 android:id="@+id/btn_bulk_rename_climbs"
+                style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:text="Klimmen hernoemen" />
 
             <TextView
+                style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
-                android:text="Klimmen &amp; vlakke stukken"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:text="Klimmen &amp; vlakke stukken" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/climbs_recycler"

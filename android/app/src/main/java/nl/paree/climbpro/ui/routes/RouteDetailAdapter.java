@@ -13,7 +13,9 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.segment.GradientColor;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -153,6 +155,8 @@ public final class RouteDetailAdapter
         StoredClimb c = (StoredClimb) items.get(position);
         String name = c.userDisplayName != null ? c.userDisplayName : c.name;
         h.nameView.setText(name != null ? name : "Klim " + (climbIndex + 1));
+        h.colorBar.setBackgroundColor(
+                SegmentColorPalette.toColor(GradientColor.forGradient(c.avgGradient)));
         double distanceIntoRouteKm = c.startDistance / 1000.0;
         double difficulty = nl.paree.climbpro.domain.climb.DifficultyScoreCalculator
                 .score(c.elevationGain, c.avgGradient, distanceIntoRouteKm);
@@ -192,10 +196,12 @@ public final class RouteDetailAdapter
     static final class ClimbViewHolder extends RecyclerView.ViewHolder {
         TextView nameView;
         TextView statsView;
+        View     colorBar;
         ClimbViewHolder(View v) {
             super(v);
             nameView  = v.findViewById(R.id.climb_name);
             statsView = v.findViewById(R.id.climb_stats);
+            colorBar  = v.findViewById(R.id.climb_color_bar);
         }
     }
 
