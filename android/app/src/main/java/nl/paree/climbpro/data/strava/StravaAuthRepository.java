@@ -53,7 +53,12 @@ public final class StravaAuthRepository {
                 BuildConfig.STRAVA_CLIENT_ID,
                 ResponseTypeValues.CODE,
                 android.net.Uri.parse("climbpro://oauth/callback"))
-                .setScope("read,activity:read_all,profile:read_all")
+                // activity:write added for issue #60 (Strava title template auto-update).
+                // Existing signed-in users authorised under the narrower pre-#60 scope must
+                // re-connect (re-grant) before title updates succeed — Strava returns 401/403
+                // for calls outside the granted scope otherwise; see
+                // StravaActivitiesRepository#titleUpdateAuthExpired().
+                .setScope("read,activity:read_all,activity:write,profile:read_all")
                 .build();
     }
 

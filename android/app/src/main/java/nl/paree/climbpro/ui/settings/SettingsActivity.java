@@ -99,6 +99,9 @@ public final class SettingsActivity extends AppCompatActivity {
         });
 
         binding.btnSyncNow.setOnClickListener(v -> viewModel.syncNow());
+
+        binding.btnStravaTitleTemplate.setOnClickListener(v -> startActivity(
+                new android.content.Intent(this, StravaTitleTemplateActivity.class)));
     }
 
     private static int parseIntSafe(String s) {

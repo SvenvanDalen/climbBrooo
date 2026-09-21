@@ -120,6 +120,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Sign in to Strava"/>
+
+                <Button
+                    android:id="@+id/btn_strava_title_template"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Titel-sjabloon"/>
             </LinearLayout>
 
             <LinearLayout

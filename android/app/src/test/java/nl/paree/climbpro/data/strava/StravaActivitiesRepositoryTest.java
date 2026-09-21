@@ -1,6 +1,8 @@
 package nl.paree.climbpro.data.strava;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -53,6 +55,8 @@ public class StravaActivitiesRepositoryTest {
         // Clean any attempt file + activity-sync prefs from prior tests for isolation.
         new File(app.getFilesDir(), "climb_attempts.json").delete();
         app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
+                .edit().clear().commit();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
                 .edit().clear().commit();
 
         routeRepo   = new RouteRepository(app);
@@ -178,5 +182,67 @@ public class StravaActivitiesRepositoryTest {
         long cursor = app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
                 .getLong("last_sync_epoch_sec", -1L);
         assertEquals(-1L, cursor);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_withTitleTemplateConfigured_putsRenderedTitle() throws Exception {
+        stubActivityWithFullClimbTrack();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb} in {time}")
+                .commit();
+
+        Call<StravaActivityDto> updateCall = mock(Call.class);
+        when(updateCall.execute()).thenReturn(Response.success(new StravaActivityDto()));
+        org.mockito.ArgumentCaptor<StravaUpdateActivityDto> bodyCaptor =
+                org.mockito.ArgumentCaptor.forClass(StravaUpdateActivityDto.class);
+        when(api.updateActivity(anyString(), eq(555L), bodyCaptor.capture()))
+                .thenReturn(updateCall);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncActivities();
+
+        // StoredClimb has no name/userDisplayName in this fixture, so the renderer falls
+        // back to the climbId itself for {climb}.
+        String expectedClimbId = nl.paree.climbpro.domain.climb.ClimbIdentity.of(45.000, 6.0, 1000);
+        assertEquals(expectedClimbId + " in 5:00", bodyCaptor.getValue().name);
+        assertFalse(repo.titleUpdateAuthExpired());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_titleUpdateRejectedByScope_setsAuthExpiredFlagButKeepsAttempt() throws Exception {
+        stubActivityWithFullClimbTrack();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb} in {time}")
+                .commit();
+
+        Call<StravaActivityDto> updateCall = mock(Call.class);
+        when(updateCall.execute()).thenReturn(Response.error(403,
+                okhttp3.ResponseBody.create("missing scope", okhttp3.MediaType.parse("text/plain"))));
+        when(api.updateActivity(anyString(), eq(555L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(updateCall);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        int created = repo.syncActivities();
+
+        assertEquals(1, created);
+        assertEquals(1, attemptRepo.loadAll().size());
+        assertTrue(repo.titleUpdateAuthExpired());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_noTitleTemplateConfigured_doesNotCallUpdateActivity() throws Exception {
+        stubActivityWithFullClimbTrack();
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncActivities();
+
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+                .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
     }
 }
