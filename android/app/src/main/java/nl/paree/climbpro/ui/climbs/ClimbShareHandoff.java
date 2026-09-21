@@ -8,6 +8,7 @@ import android.net.Uri;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Turns a composed climb-share {@link Bitmap} (see {@link ClimbShareImageComposer}) into a
@@ -22,15 +23,18 @@ public final class ClimbShareHandoff {
 
     public static final String IMAGE_MIME = "image/png";
     private static final String CACHE_SUBDIR = "shared_images";
-    private static final String FILE_NAME = "climb_share.png";
 
     private ClimbShareHandoff() {}
 
-    /** Writes {@code bitmap} as a PNG under the app cache and returns the file. */
+    /**
+     * Writes {@code bitmap} as a PNG under the app cache and returns the file. Each call uses
+     * a fresh, uniquely-named file so sharing two climbs back-to-back (before the first share
+     * target has finished reading its file) can't have one overwrite the other's image.
+     */
     public static File writeShareImage(Context ctx, Bitmap bitmap) throws IOException {
         File dir = new File(ctx.getCacheDir(), CACHE_SUBDIR);
         dir.mkdirs();
-        File file = new File(dir, FILE_NAME);
+        File file = new File(dir, "climb_share_" + UUID.randomUUID() + ".png");
         try (FileOutputStream out = new FileOutputStream(file)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
         }
