@@ -14,6 +14,8 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.ClimbStreakCalculator;
+import nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.Summary;
 
@@ -67,6 +69,7 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<LogbookRow>> rows = new MutableLiveData<>();
+    private final MutableLiveData<Streak> streak = new MutableLiveData<>();
 
     public ClimbLogbookViewModel(@NonNull Application app) {
         super(app);
@@ -75,6 +78,9 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<LogbookRow>> rows() { return rows; }
+
+    /** Current + longest consecutive-day climb streak, see {@link ClimbStreakCalculator}. */
+    public LiveData<Streak> streak() { return streak; }
 
     public void loadLogbook() {
         executor.execute(() -> {
@@ -94,6 +100,7 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
             }
             out.sort(Comparator.comparingLong((LogbookRow r) -> r.lastDateSec).reversed());
             rows.postValue(out);
+            streak.postValue(ClimbStreakCalculator.compute(attempts));
         });
     }
 
