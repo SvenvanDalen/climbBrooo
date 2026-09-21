@@ -51,6 +51,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.wrapped.ClimbWrappedActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.collections.CollectionListActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
