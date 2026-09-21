@@ -97,12 +97,15 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
         binding.btnSaveNotes.setOnClickListener(v ->
                 viewModel.saveNotes(routeId, binding.notesEdit.getText().toString()));
-        binding.btnSelectRoute.setOnClickListener(v -> {
-            viewModel.setActiveRoute(routeId);
-            Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
-        });
+        binding.btnSelectRoute.setOnClickListener(v ->
+                PreRideCheckDialog.show(this, viewModel.passport().getValue(), () -> {
+                    viewModel.setActiveRoute(routeId);
+                    Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
+                }));
         binding.btnSendToOnboard.setOnClickListener(v -> viewModel.sendToOnboard(routeId));
-        binding.btnShareToGarmin.setOnClickListener(v -> shareToGarminConnect());
+        binding.btnShareToGarmin.setOnClickListener(v ->
+                PreRideCheckDialog.show(this, viewModel.passport().getValue(),
+                        this::shareToGarminConnect));
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
 
         viewModel.loadRoute(routeId);
