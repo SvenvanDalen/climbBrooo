@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.ClimbNameSuggester;
 import nl.paree.climbpro.domain.climb.ClimbShapeClassifier;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
@@ -48,14 +49,21 @@ public final class RouteRepository {
     private final File routesDir;
     private final File catalogFile;
     private final ObjectMapper mapper;
+    private final ClimbNameSuggester nameSuggester;
 
     public RouteRepository(Context context) {
+        this(context, new GeocoderClimbNameSuggester(context));
+    }
+
+    /** Visible for tests: injects a fake {@link ClimbNameSuggester}. */
+    RouteRepository(Context context, ClimbNameSuggester nameSuggester) {
         this.context  = context.getApplicationContext();
         File base     = this.context.getFilesDir();
         this.routesDir    = new File(base, ROUTES_DIR);
         this.catalogFile  = new File(base, CATALOG_FILE);
         this.mapper = new ObjectMapper()
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        this.nameSuggester = nameSuggester;
         routesDir.mkdirs();
         migrateIfNeeded();
     }
@@ -106,6 +114,7 @@ public final class RouteRepository {
         List<StoredStarredSegment> prevStarred  = prev != null && prev.starredSegments != null
                 ? prev.starredSegments : Collections.emptyList();
         mergePreviousClimbUserData(route.climbs, prevClimbs);
+        fillMissingClimbNames(route.climbs);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
                 : 0;
@@ -237,6 +246,7 @@ public final class RouteRepository {
             StoredClimb p = prevByStart.get(f.startDistance);
             if (p == null) continue;
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
+            if (f.name == null && p.name != null) f.name = p.name;
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
                 for (int i = 0; i < n; i++) {
@@ -249,6 +259,28 @@ public final class RouteRepository {
         }
     }
 
+
+    /**
+     * Fills in a suggested {@link StoredClimb#name} (backlog #109) for climbs that don't have
+     * one yet and that the user hasn't renamed — i.e. first detection only, since a name
+     * carried over by {@link #mergePreviousClimbUserData} is already non-null here. Suggester
+     * failures (no network, no geocoder backend, ...) are swallowed: offline-first means a
+     * missing suggestion is an expected outcome, not a save failure.
+     */
+    private void fillMissingClimbNames(List<StoredClimb> climbs) {
+        if (climbs == null || nameSuggester == null) return;
+        for (StoredClimb c : climbs) {
+            if (c.name != null || c.userDisplayName != null) continue;
+            try {
+                String suggestion = nameSuggester.suggestName(c.startLat, c.startLon);
+                if (suggestion != null && !suggestion.trim().isEmpty()) {
+                    c.name = suggestion.trim();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Climb name suggestion failed, leaving name unset", e);
+            }
+        }
+    }
 
     private static List<StoredStarredSegment> mergePreviousStarredSegmentUserData(
             List<StoredStarredSegment> fresh, List<StoredStarredSegment> previous) {
