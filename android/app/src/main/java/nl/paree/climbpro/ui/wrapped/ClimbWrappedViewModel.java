@@ -33,6 +33,11 @@ public final class ClimbWrappedViewModel extends AndroidViewModel {
 
     private final MutableLiveData<Summary> summary = new MutableLiveData<>();
 
+    // Route/climb metadata rarely changes within one activity session; caching it avoids
+    // re-scanning and re-parsing the whole route catalog on every prev/next-year click.
+    // Cleared so the next load() re-resolves in case routes changed while this screen was open.
+    private volatile Map<String, ClimbInfo> cachedClimbInfo;
+
     public ClimbWrappedViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
@@ -49,7 +54,11 @@ public final class ClimbWrappedViewModel extends AndroidViewModel {
     public void load(int year) {
         executor.execute(() -> {
             java.util.List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-            Map<String, ClimbInfo> climbInfo = resolveClimbInfo();
+            Map<String, ClimbInfo> climbInfo = cachedClimbInfo;
+            if (climbInfo == null) {
+                climbInfo = resolveClimbInfo();
+                cachedClimbInfo = climbInfo;
+            }
             summary.postValue(WrappedCalculator.compute(year, attempts, climbInfo));
         });
     }
