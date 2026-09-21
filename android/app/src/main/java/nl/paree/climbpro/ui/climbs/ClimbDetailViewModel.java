@@ -16,6 +16,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.climb.ClimbGpxWriter;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
 import nl.paree.climbpro.domain.climb.SegmentPrCalculator;
@@ -147,6 +148,23 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     /**
+     * Marks/unmarks the loaded climb as a "thuisklim" (issue #92). Only a phone-side privacy
+     * flag consumed by {@link #exportGpx()} — never sent to the watch, never affects matching
+     * or PR calculations.
+     */
+    public void setHomeClimb(String routeId, int climbIndex, boolean isHome) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbHome(routeId, climbIndex, isHome);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
      * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
      * track, plus waypoints at every segment boundary and, when PR data exists, at the
      * climb's personal-record splits — and writes it to the app cache. Posts the resulting
@@ -173,7 +191,12 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 LogbookCalculator.Summary summary = summaries.get(climbId);
                 if (summary != null) bestElapsedSec = summary.prSec;
 
-                String gpx = ClimbGpxWriter.toGpx(r, c, lastClimbIndex, bestSplitSec, bestElapsedSec);
+                int privacyRadiusM = androidx.preference.PreferenceManager
+                        .getDefaultSharedPreferences(getApplication())
+                        .getInt(CoordinateFuzzer.PREF_PRIVACY_RADIUS_M,
+                                CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M);
+                String gpx = ClimbGpxWriter.toGpx(r, c, lastClimbIndex, bestSplitSec,
+                        bestElapsedSec, privacyRadiusM);
                 File file = ClimbGpxExportHandoff.writeGpxFile(getApplication(), gpx);
                 gpxExportFile.postValue(file);
             } catch (Exception e) {

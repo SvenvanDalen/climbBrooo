@@ -44,6 +44,13 @@ public final class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        viewModel.privacyRadiusM().observe(this, meters -> {
+            if (meters != null) {
+                binding.privacyRadiusSeekBar.setProgress(meters);
+                binding.privacyRadiusLabel.setText(meters + " m");
+            }
+        });
+
         viewModel.syncStatus().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
@@ -84,6 +91,16 @@ public final class SettingsActivity extends AppCompatActivity {
                 int km = Math.max(1, progress);
                 binding.radiusLabel.setText(km + " km");
                 if (user) viewModel.setRadiusKm(km);
+            }
+            public void onStartTrackingTouch(SeekBar sb) {}
+            public void onStopTrackingTouch(SeekBar sb) {}
+        });
+
+        binding.privacyRadiusSeekBar.setMax(2000);
+        binding.privacyRadiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar sb, int progress, boolean user) {
+                binding.privacyRadiusLabel.setText(progress + " m");
+                if (user) viewModel.setPrivacyRadiusM(progress);
             }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}

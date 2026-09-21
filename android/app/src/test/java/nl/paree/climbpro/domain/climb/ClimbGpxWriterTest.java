@@ -222,4 +222,83 @@ public class ClimbGpxWriterTest {
         assertFalse(gpx.contains("<name>PR</name>"));
         assertEquals(4, count(WPT_PATTERN, gpx));
     }
+
+    // -----------------------------------------------------------------------
+    // Home-climb privacy fuzzing (issue #92)
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void nonHomeClimb_startCoordinateIsExactEvenWithPrivacyRadiusSet() {
+        StoredClimb c = climb();
+        c.isHome = false;
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null, 300);
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
+        assertEquals(5.000, Double.parseDouble(m.group(2)), 1e-6);
+    }
+
+    @Test
+    public void homeClimb_startCoordinateDiffersFromExactWhenPrivacyRadiusSet() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        String gpxHome = ClimbGpxWriter.toGpx(route(), c, 0, null, null, 300);
+
+        StoredClimb notHome = climb();
+        notHome.isHome = false;
+        String gpxPlain = ClimbGpxWriter.toGpx(route(), notHome, 0, null, null, 300);
+
+        Matcher home = TRKPT_PATTERN.matcher(gpxHome);
+        assertTrue(home.find());
+        double homeLat = Double.parseDouble(home.group(1));
+        double homeLon = Double.parseDouble(home.group(2));
+
+        Matcher plain = TRKPT_PATTERN.matcher(gpxPlain);
+        assertTrue(plain.find());
+        double plainLat = Double.parseDouble(plain.group(1));
+        double plainLon = Double.parseDouble(plain.group(2));
+
+        assertTrue(homeLat != plainLat || homeLon != plainLon);
+    }
+
+    @Test
+    public void homeClimb_withZeroPrivacyRadiusStaysExact() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null, 0);
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
+        assertEquals(5.000, Double.parseDouble(m.group(2)), 1e-6);
+    }
+
+    @Test
+    public void homeClimb_fuzzingIsDeterministicAcrossExports() {
+        StoredClimb c1 = climb();
+        c1.isHome = true;
+        StoredClimb c2 = climb();
+        c2.isHome = true;
+
+        String gpxA = ClimbGpxWriter.toGpx(route(), c1, 0, null, null, 300);
+        String gpxB = ClimbGpxWriter.toGpx(route(), c2, 0, null, null, 300);
+
+        Matcher a = TRKPT_PATTERN.matcher(gpxA);
+        Matcher b = TRKPT_PATTERN.matcher(gpxB);
+        assertTrue(a.find());
+        assertTrue(b.find());
+        assertEquals(a.group(1), b.group(1));
+        assertEquals(a.group(2), b.group(2));
+    }
+
+    @Test
+    public void fiveArgOverload_stillWorksAndIsUnaffectedByHomeFlag() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        // Old call site (no privacy radius) must keep exporting exact coordinates: it's the
+        // caller's job to pass the configured radius, so omitting it is equivalent to radius=0.
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null);
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
+    }
 }

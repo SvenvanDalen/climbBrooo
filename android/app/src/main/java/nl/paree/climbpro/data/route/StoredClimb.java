@@ -29,4 +29,12 @@ public final class StoredClimb {
      * on the fly rather than treating null as a real category.
      */
     public String shape;
+    /**
+     * User-marked "thuisklim" (home climb, issue #92). Phone-only privacy flag: when true,
+     * {@code ClimbGpxWriter} obscures the start location on export/share. Never sent to the
+     * watch and never affects matching, PR calculation or any other internal logic — those
+     * always use the real {@link #startLat}/{@link #startLon}. Defaults to false so existing
+     * stored routes (field absent from older JSON) come back unmarked.
+     */
+    public boolean isHome = false;
 }

@@ -10,6 +10,7 @@ import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
+import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
@@ -23,6 +24,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     private final MutableLiveData<String>  syncMode       = new MutableLiveData<>();
     private final MutableLiveData<Integer> radiusKm       = new MutableLiveData<>();
     private final MutableLiveData<String>  syncStatus     = new MutableLiveData<>();
+    private final MutableLiveData<Integer> privacyRadiusM = new MutableLiveData<>();
 
     public SettingsViewModel(@NonNull Application app) {
         super(app);
@@ -36,6 +38,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     public LiveData<Integer>     radiusKm()       { return radiusKm; }
     public LiveData<String>      syncStatus()     { return syncStatus; }
     public LiveData<RiderProfile> riderProfile()  { return riderProfile; }
+    public LiveData<Integer>     privacyRadiusM() { return privacyRadiusM; }
 
     public void reload() {
         stravaSignedIn.postValue(authRepo.isAuthorised());
@@ -43,6 +46,8 @@ public final class SettingsViewModel extends AndroidViewModel {
         syncMode.postValue(prefs.getString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_ROUTE));
         int r = prefs.getInt(RouteSyncWorker.PREF_RADIUS_M, 30_000) / 1000;
         radiusKm.postValue(r);
+        privacyRadiusM.postValue(prefs.getInt(
+                CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M));
         riderProfile.postValue(riderRepo.load());
     }
 
@@ -56,6 +61,13 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(RouteSyncWorker.PREF_RADIUS_M, km * 1000).apply();
         radiusKm.postValue(km);
+    }
+
+    /** Privacy-zone radius (issue #92) for fuzzing home-climb start locations on export. */
+    public void setPrivacyRadiusM(int meters) {
+        PreferenceManager.getDefaultSharedPreferences(getApplication())
+                .edit().putInt(CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, meters).apply();
+        privacyRadiusM.postValue(meters);
     }
 
     public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg, int rideIntensityPct) {

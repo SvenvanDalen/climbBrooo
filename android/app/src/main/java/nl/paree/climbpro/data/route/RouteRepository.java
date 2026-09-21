@@ -177,6 +177,20 @@ public final class RouteRepository {
     }
 
     /**
+     * Marks/unmarks a climb as a "thuisklim" (home climb, issue #92). Only flips the privacy
+     * flag consumed at export time by {@code ClimbGpxWriter}; never touches the wire payload
+     * or internal calculations, which keep using the real coordinates.
+     */
+    public void setClimbHome(String routeId, int climbIndex, boolean isHome) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            route.climbs.get(climbIndex).isHome = isHome;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
      * Renames multiple climbs in one load/write cycle, for the bulk rename screen. Out-of-range
      * indices (including negatives) are silently skipped, matching {@link #renameClimb}. A blank
      * name clears {@code userDisplayName} back to null so the climb falls back to its auto name.
@@ -271,6 +285,7 @@ public final class RouteRepository {
             if (p == null) continue;
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
             if (f.name == null && p.name != null) f.name = p.name;
+            f.isHome = p.isHome;
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
                 for (int i = 0; i < n; i++) {

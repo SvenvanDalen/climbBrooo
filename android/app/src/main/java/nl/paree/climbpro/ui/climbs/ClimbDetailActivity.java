@@ -96,6 +96,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             adapter.setItems(climb.segments);
 
             loadedClimb = climb;
+            binding.btnToggleHomeClimb.setText(climb.isHome
+                    ? "Thuisklim — startlocatie wordt gewazigd bij export"
+                    : "Markeer als thuisklim");
             tryDrawMap();
         });
 
@@ -152,6 +155,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
+        binding.btnToggleHomeClimb.setOnClickListener(v -> {
+            if (loadedClimb == null) return;
+            viewModel.setHomeClimb(routeId, climbIndex, !loadedClimb.isHome);
+        });
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
 
