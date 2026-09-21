@@ -85,10 +85,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
             String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
             binding.toolbar.setTitle(name != null ? name : "Climb " + (climbIndex + 1));
-            binding.climbStats.setText(String.format(
+            String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
+            String statsText = String.format(
                     "%d m total · %.1f%% avg gradient · %d m elevation gain · %s",
                     climb.length, climb.avgGradient * 100, climb.elevationGain,
-                    nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb)));
+                    nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb));
+            if (!surfaceLabel.isEmpty()) {
+                statsText += " · " + surfaceLabel;
+            }
+            binding.climbStats.setText(statsText);
             binding.climbProfile.setSegments(climb.segments);
             adapter.setItems(climb.segments);
 
