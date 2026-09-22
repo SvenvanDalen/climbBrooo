@@ -7,9 +7,14 @@ import android.os.Looper;
 
 import androidx.preference.PreferenceManager;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.work.Configuration;
+import androidx.work.Data;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -28,11 +33,16 @@ import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Regression test for the fix to issue where tapping "apply suggested FTP" silently
@@ -44,6 +54,23 @@ import static org.junit.Assert.assertNotNull;
  */
 @RunWith(RobolectricTestRunner.class)
 public class SettingsViewModelTest {
+
+    /**
+     * The real app initialises WorkManager via the androidx.startup content provider
+     * (AndroidManifest.xml explicitly removes the legacy {@code WorkManagerInitializer}
+     * provider entry in favor of it), but Robolectric doesn't run that provider, so
+     * {@code SettingsViewModel}'s constructor — which now observes
+     * {@code SyncScheduler.manualSyncInfo} to know when a manual sync finishes — would
+     * throw {@code IllegalStateException} without this. Mirrors what the real startup
+     * path does, using WorkManager's own public init API (no extra test dependency).
+     */
+    @Before
+    public void initWorkManagerForTest() {
+        Application app = ApplicationProvider.getApplicationContext();
+        if (!WorkManager.isInitialized()) {
+            WorkManager.initialize(app, new Configuration.Builder().build());
+        }
+    }
 
     @Test
     public void applySuggestedFtp_usesGivenFieldsNotStaleStoredProfile() throws Exception {
@@ -158,6 +185,110 @@ public class SettingsViewModelTest {
         assertEquals("reload() must reuse the cached efforts, not rescan the on-disk "
                         + "attempts/climbs on every call",
                 firstSuggestion, secondSuggestion);
+    }
+
+    /**
+     * Regression test for bug 1 (third review pass): {@code syncNow()} never actually
+     * forced a rebuild of the cached effort list once its triggered sync completed, so
+     * newly-synced climb attempts could never affect the FTP suggestion for the rest of
+     * the Settings screen visit. This simulates the manual-sync WorkInfo LiveData
+     * reaching a finished state (SUCCEEDED) directly via the package-private
+     * {@link SettingsViewModel#handleManualSyncUpdate}, since Robolectric has no
+     * lightweight shadow for driving WorkManager's unique-work LiveData through real
+     * state transitions. After that simulated completion, the next suggestion must
+     * reflect freshly-written attempt data rather than the stale pre-sync cache.
+     */
+    @Test
+    public void syncCompletion_rebuildsEffortCacheWithFreshAttemptData() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+
+        SharedPreferences repoPrefs = app.getSharedPreferences("route_repo", Context.MODE_PRIVATE);
+        repoPrefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
+
+        RiderProfile profile = new RiderProfile(150, 70.0, 8.0, 60);
+        new RiderProfileRepository(app).save(profile);
+
+        seedClimb(app, "r1", 51.00, 5.00, 1200, 0.09, "climb-a");
+        seedClimb(app, "r2", 52.00, 6.00, 6000, 0.08, "climb-b");
+
+        writeAttempts(app, 250, 1400); // SHORT + LONG bucket -> some suggestion A
+
+        SettingsViewModel vm = new SettingsViewModel(app);
+
+        final Integer[] suggestion = {null};
+        vm.suggestedFtpWatts().observeForever(s -> suggestion[0] = s);
+        drainUntil(() -> suggestion[0] != null);
+        int preSync = suggestion[0];
+
+        // Fresh attempt data becomes available (e.g. a background/manual Strava sync
+        // pulled new activities): much faster times on the same climbs, which implies a
+        // clearly different (higher) FTP suggestion IF the cache is rebuilt from it.
+        writeAttempts(app, 200, 950);
+
+        // Tapping "Sync Now" must not immediately rebuild (no new data exists yet at tap
+        // time), but must arm the rebuild for when the sync actually finishes.
+        vm.syncNow();
+
+        suggestion[0] = null;
+        WorkInfo finished = new WorkInfo(
+                UUID.randomUUID(), WorkInfo.State.SUCCEEDED, Collections.emptySet(),
+                Data.EMPTY, Data.EMPTY, 0);
+        vm.handleManualSyncUpdate(new ArrayList<>(Collections.singletonList(finished)));
+
+        drainUntil(() -> suggestion[0] != null);
+        int postSync = suggestion[0];
+
+        assertNotEquals("the suggestion after a completed sync must reflect the freshly "
+                + "written attempt data, not the stale pre-sync cache", preSync, postSync);
+    }
+
+    /**
+     * Regression test for bug 2 (third review pass): {@code refreshSuggestedFtp} used to
+     * unconditionally {@code postValue(null)} synchronously before recomputing, which
+     * made the "Voorgestelde FTP" button visibly flicker away and back on every trivial
+     * {@code reload()} (fired on every {@code onResume()}), even when the recomputed
+     * suggestion is identical to what's already shown. This asserts two consecutive
+     * {@code reload()} calls that both resolve to the same non-null suggestion never
+     * emit an intermediate {@code null} on the LiveData between them.
+     */
+    @Test
+    public void reload_doesNotEmitIntermediateNullWhenSuggestionUnchanged() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+
+        SharedPreferences repoPrefs = app.getSharedPreferences("route_repo", Context.MODE_PRIVATE);
+        repoPrefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
+
+        RiderProfile profile = new RiderProfile(150, 70.0, 8.0, 60);
+        new RiderProfileRepository(app).save(profile);
+
+        seedClimb(app, "r1", 51.00, 5.00, 1200, 0.09, "climb-a");
+        seedClimb(app, "r2", 52.00, 6.00, 6000, 0.08, "climb-b");
+        writeAttempts(app, 250, 1400);
+
+        SettingsViewModel vm = new SettingsViewModel(app);
+
+        List<Integer> emitted = new ArrayList<>();
+        vm.suggestedFtpWatts().observeForever(emitted::add);
+        drainUntil(() -> !emitted.isEmpty() && emitted.get(emitted.size() - 1) != null);
+        int firstSuggestion = emitted.get(emitted.size() - 1);
+
+        // A second, trivial reload() (data on disk is unchanged, so the cached-efforts
+        // path is taken and the suggestion must resolve to the exact same value).
+        int emittedCountBeforeSecondReload = emitted.size();
+        vm.reload();
+        drainUntil(() -> emitted.size() > emittedCountBeforeSecondReload);
+        int secondSuggestion = emitted.get(emitted.size() - 1);
+
+        assertEquals("cached-path reload() must resolve to the same suggestion",
+                firstSuggestion, secondSuggestion);
+
+        List<Integer> emittedDuringSecondReload =
+                emitted.subList(emittedCountBeforeSecondReload, emitted.size());
+        assertFalse("no intermediate null may be emitted between two reload() calls that "
+                        + "resolve to the same non-null suggestion",
+                emittedDuringSecondReload.contains(null));
+        assertTrue("the second reload() must actually have posted something",
+                !emittedDuringSecondReload.isEmpty());
     }
 
     private static void writeAttempts(Application app, int shortElapsedSec, int longElapsedSec)

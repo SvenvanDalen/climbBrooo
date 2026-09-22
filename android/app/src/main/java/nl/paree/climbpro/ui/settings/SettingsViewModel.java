@@ -6,7 +6,9 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.preference.PreferenceManager;
+import androidx.work.WorkInfo;
 
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
@@ -22,6 +24,7 @@ import nl.paree.climbpro.service.SyncScheduler;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class SettingsViewModel extends AndroidViewModel {
 
@@ -51,12 +54,41 @@ public final class SettingsViewModel extends AndroidViewModel {
      */
     private List<FtpEstimator.Effort> cachedEfforts;
 
+    /**
+     * Set by {@link #syncNow()} to mark that a manual sync is in flight and its
+     * eventual completion should force-rebuild {@link #cachedEfforts}. Without this,
+     * {@code rebuildEfforts=true} was never actually passed anywhere: freshly-synced
+     * climb attempts could never affect the FTP suggestion for the rest of the
+     * Settings screen visit. Cleared once the completion is observed and handled.
+     */
+    private final AtomicBoolean pendingSyncRebuild = new AtomicBoolean(false);
+    private final LiveData<List<WorkInfo>> manualSyncInfo;
+    private final Observer<List<WorkInfo>> manualSyncObserver = this::handleManualSyncUpdate;
+
+    /**
+     * Package-private so it can be exercised directly in tests without needing a real
+     * WorkManager-backed {@link WorkInfo} list (Robolectric has no lightweight shadow for
+     * driving a unique-work LiveData through state transitions).
+     */
+    void handleManualSyncUpdate(List<WorkInfo> infos) {
+        if (infos == null || infos.isEmpty() || !pendingSyncRebuild.get()) return;
+        WorkInfo info = infos.get(infos.size() - 1);
+        if (info.getState().isFinished() && pendingSyncRebuild.compareAndSet(true, false)) {
+            refreshSuggestedFtp(riderProfile.getValue(), true);
+        }
+    }
+
     public SettingsViewModel(@NonNull Application app) {
         super(app);
         authRepo = new StravaAuthRepository(app);
         riderRepo = new RiderProfileRepository(app);
         routeRepo = new RouteRepository(app);
         attemptRepo = new ClimbAttemptRepository(app);
+        manualSyncInfo = SyncScheduler.manualSyncInfo(app);
+        // ViewModels have no LifecycleOwner of their own, so observe forever and remove
+        // the observer in onCleared() — the standard pattern for a ViewModel watching a
+        // WorkManager LiveData for a background sync's completion.
+        manualSyncInfo.observeForever(manualSyncObserver);
         reload();
     }
 
@@ -93,7 +125,13 @@ public final class SettingsViewModel extends AndroidViewModel {
     }
 
     private void refreshSuggestedFtp(RiderProfile profile, boolean rebuildEfforts) {
-        suggestedFtpWatts.postValue(null);
+        // Deliberately does NOT postValue(null) synchronously here before recomputing.
+        // reload() runs on every onResume() (including trivial ones), so when the cache
+        // is reused and the recomputation lands on the same suggestion as before,
+        // interposing a null here would make the "Voorgestelde FTP" button visibly
+        // disappear and reappear on every trivial resume. Instead the background task
+        // below posts the final answer directly — if it's unchanged, observers never see
+        // an intermediate null.
         executor.execute(() -> {
             try {
                 List<FtpEstimator.Effort> efforts = cachedEfforts;
@@ -106,9 +144,12 @@ public final class SettingsViewModel extends AndroidViewModel {
                 if (suggestion != null
                         && FtpEstimator.isMeaningfullyDifferent(suggestion, profile.ftpWatts)) {
                     suggestedFtpWatts.postValue(suggestion);
+                } else {
+                    suggestedFtpWatts.postValue(null);
                 }
             } catch (Exception e) {
-                // Best-effort suggestion — never blocks Settings on failure.
+                // Best-effort suggestion — never blocks Settings on failure, and leaves
+                // whatever was previously shown (if anything) as-is.
             }
         });
     }
@@ -155,11 +196,17 @@ public final class SettingsViewModel extends AndroidViewModel {
 
     public void syncNow() {
         syncStatus.postValue("Syncing…");
+        // Mark that the effort cache must be rebuilt once this sync actually finishes —
+        // NOT now, since no new attempt data exists yet at the moment the button is
+        // tapped. manualSyncObserver forces the rebuild when the triggered work reaches
+        // a finished state.
+        pendingSyncRebuild.set(true);
         SyncScheduler.triggerImmediateSync(getApplication());
     }
 
     @Override
     protected void onCleared() {
         executor.shutdown();
+        manualSyncInfo.removeObserver(manualSyncObserver);
     }
 }
