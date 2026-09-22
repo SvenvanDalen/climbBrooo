@@ -144,7 +144,13 @@ public final class StravaActivitiesRepository {
                 if (known.contains(act.id)) continue;
                 List<StoredClimbAttempt> matched = matchActivity(token, act, climbs);
                 created.addAll(matched);
-                if (StravaTitleUpdateDecision.shouldUpdateTitle(matched, titleTemplate)) {
+                // Attempts are always recorded above regardless of auth state; only the
+                // title-update HTTP call is skipped once we know the scope is missing —
+                // every remaining activity in this sync run would fail with the same
+                // 401/403 (it's an account-level scope problem, not per-activity), so
+                // calling it again would just waste a doomed request and spam the logs.
+                if (!titleUpdateAuthExpired
+                        && StravaTitleUpdateDecision.shouldUpdateTitle(matched, titleTemplate)) {
                     updateActivityTitle(token, act, matched, titleTemplate,
                             climbsById, priorSummaries);
                 }
@@ -162,16 +168,22 @@ public final class StravaActivitiesRepository {
     }
 
     /**
-     * Renders the title template for the first matched climb attempt of {@code act} (v1: an
-     * activity that ascends several known climbs picks the first match — good enough for the
-     * common single-climb-ride case) and PUTs it to Strava. Never throws — a failure here must
-     * not undo the already-computed attempt matches for this activity.
+     * Renders the title template for the genuinely first-encountered climb attempt of
+     * {@code act} — the match with the lowest {@link StoredClimbAttempt#entryTimeSec}, i.e.
+     * whichever climb the rider actually reached first on this ride, not whatever order
+     * {@code matched} happens to be in (that order ultimately traces back to
+     * {@code enumerateKnownClimbs()}'s {@code HashMap.values()}, which is arbitrary hash-bucket
+     * order and unrelated to ride-encounter order) — and PUTs it to Strava. Never throws — a
+     * failure here must not undo the already-computed attempt matches for this activity.
      */
     private void updateActivityTitle(String token, StravaActivityDto act,
             List<StoredClimbAttempt> matched, String template,
             Map<String, StoredClimb> climbsById,
             Map<String, LogbookCalculator.Summary> priorSummaries) {
         StoredClimbAttempt best = matched.get(0);
+        for (StoredClimbAttempt a : matched) {
+            if (a.entryTimeSec < best.entryTimeSec) best = a;
+        }
         StoredClimb climb = climbsById.get(best.climbId);
         String climbName = best.climbId;
         if (climb != null) {
@@ -225,20 +237,23 @@ public final class StravaActivitiesRepository {
 
             long dateSec = parseStartDate(act.startDate);
             for (KnownClimb k : climbs) {
-                // matchAll finds every valid ascent in the track, not just the first —
-                // an out-and-back or loop route can pass over the same climb more than
-                // once in a single activity, and each pass should be logged separately.
-                List<Integer> elapsedPasses = ClimbAttemptMatcher.matchAll(
+                // matchAllWithEntryTime finds every valid ascent in the track, not just the
+                // first — an out-and-back or loop route can pass over the same climb more
+                // than once in a single activity, and each pass should be logged separately.
+                // It also carries each pass's entry time so callers can determine true
+                // ride-encounter order across DIFFERENT climbs (see StoredClimbAttempt#entryTimeSec).
+                List<ClimbAttemptMatcher.PassResult> passes = ClimbAttemptMatcher.matchAllWithEntryTime(
                         track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
                 List<int[]> segPasses = ClimbAttemptMatcher.matchAllSegments(
                         track, k.startLat, k.startLon, k.endLat, k.endLon,
                         k.lengthM, k.segLengthsM);
-                for (int i = 0; i < elapsedPasses.size(); i++) {
+                for (int i = 0; i < passes.size(); i++) {
                     StoredClimbAttempt a = new StoredClimbAttempt();
                     a.climbId      = k.climbId;
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
-                    a.elapsedSec   = elapsedPasses.get(i);
+                    a.elapsedSec   = passes.get(i).elapsedSec;
+                    a.entryTimeSec = passes.get(i).entryTimeSec;
                     a.passIndex    = i;
                     a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
                     out.add(a);

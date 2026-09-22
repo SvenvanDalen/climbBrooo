@@ -190,6 +190,43 @@ public final class ClimbAttemptMatcher {
         return out;
     }
 
+    /** One matched ascent's elapsed time plus WHEN it was entered on the track. */
+    public static final class PassResult {
+        /** Elapsed seconds on the climb — same value {@link #matchAll} returns. */
+        public final int elapsedSec;
+        /**
+         * {@code timeSec} of the track sample where this ascent was entered — i.e. the
+         * ride-encounter signal. Comparable across different climbs matched against the
+         * SAME track, since it uses that track's own time base (see {@link TrackSample}):
+         * the ascent with the lower {@code entryTimeSec} was genuinely reached first on
+         * the ride, regardless of any incidental iteration order over the climbs.
+         */
+        public final long entryTimeSec;
+
+        public PassResult(int elapsedSec, long entryTimeSec) {
+            this.elapsedSec = elapsedSec;
+            this.entryTimeSec = entryTimeSec;
+        }
+    }
+
+    /**
+     * Like {@link #matchAll}, but also carries each ascent's entry time so callers can
+     * order/select ascents from DIFFERENT climbs by when they were actually encountered
+     * on the ride (not by whatever order the climbs happened to be iterated in).
+     */
+    public static List<PassResult> matchAllWithEntryTime(List<TrackSample> track,
+                                                          double startLat, double startLon,
+                                                          double endLat, double endLon,
+                                                          int climbLengthM) {
+        List<PassResult> out = new ArrayList<>();
+        for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
+            out.add(new PassResult(
+                    (int) (track.get(p.exitIdx).timeSec - track.get(p.entryIdx).timeSec),
+                    track.get(p.entryIdx).timeSec));
+        }
+        return out;
+    }
+
     /**
      * Like {@link #matchSegments}, but returns the per-segment splits of every valid
      * ascent found in the track, in chronological order, instead of only the first.

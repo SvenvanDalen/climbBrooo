@@ -1,5 +1,6 @@
 package nl.paree.climbpro.data.route;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /** Serialised form of a single matched climb attempt. */
@@ -28,4 +29,16 @@ public final class StoredClimbAttempt {
      * whose segSplitSec.length matches the current segment count.
      */
     public int[]  segSplitSec;
+
+    /**
+     * {@code timeSec} (track time base) at which this ascent was entered — set at match
+     * time from {@link nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.PassResult}.
+     * Purely an in-memory, within-sync-run signal used to pick the genuinely
+     * first-encountered climb when an activity matches several different climbs (issue
+     * #60 title rendering) — NOT persisted (a freshly matched attempt always has this set;
+     * an attempt loaded back from disk will have it default to 0, so this field must only
+     * be relied on for attempts still in the current sync run's {@code created} list).
+     */
+    @JsonIgnore
+    public long entryTimeSec;
 }
