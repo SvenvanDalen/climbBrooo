@@ -28,14 +28,16 @@ public final class ClimbAttemptRepository {
     private static final String FILE = "climb_attempts.json";
 
     /**
-     * Multiple {@link ClimbAttemptRepository} instances are constructed across the app
-     * (e.g. one in {@code ClimbDetailViewModel}'s single-thread executor, another in
-     * {@code RouteSyncWorker}/{@code StravaActivitiesRepository} on WorkManager's executor),
-     * all pointing at the same {@code climb_attempts.json} file. A per-instance lock would not
-     * prevent two different instances from interleaving their read-modify-write cycles, so this
-     * lock is static/class-level: it serializes every read-modify-write critical section
-     * (append/update, and loadAll snapshots taken as part of one) across the whole process,
-     * regardless of which instance or executor calls it.
+     * Guards the read-modify-write critical sections of {@link #append}, {@link #update},
+     * {@link #overwriteAll}, and {@link #remapClimbId} — all of which touch the same
+     * {@link #FILE} but can be invoked from different executors (background Strava sync, a
+     * user-confirmed climb merge, or a note/photo edit). Without a shared lock these
+     * read-modify-write cycles can interleave and one write silently clobbers another. Static
+     * (not per-instance) since multiple {@code ClimbAttemptRepository} instances are constructed
+     * across the app (e.g. one in {@code ClimbDetailViewModel}'s single-thread executor, another
+     * in {@code RouteSyncWorker}/{@code StravaActivitiesRepository} on WorkManager's executor),
+     * all pointing at the same file — a per-instance lock would not prevent two different
+     * instances from interleaving.
      */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
@@ -67,11 +69,11 @@ public final class ClimbAttemptRepository {
 
     /**
      * Appends attempts, skipping any whose (climbId, activityId, passIndex) already exists.
-     * Thread-safe across every {@link ClimbAttemptRepository} instance in the process: the
-     * whole read-modify-write cycle runs under {@link #WRITE_LOCK}, so a concurrent {@link
-     * #update} (e.g. the user editing a note on one executor while a background sync appends
-     * newly-matched attempts on another) can't interleave with this and silently lose either
-     * side's write.
+     * Thread-safe across every {@link ClimbAttemptRepository} instance in the process: the whole
+     * read-modify-write cycle runs under {@link #WRITE_LOCK}, so a concurrent {@link #update},
+     * {@link #overwriteAll}, or {@link #remapClimbId} call (e.g. the user editing a note or
+     * confirming a climb merge on one executor while a background sync appends newly-matched
+     * attempts on another) can't interleave with this and silently lose either side's write.
      */
     public void append(List<StoredClimbAttempt> attempts) throws IOException {
         WRITE_LOCK.lock();
@@ -83,6 +85,53 @@ public final class ClimbAttemptRepository {
                 if (seen.add(key(a))) all.add(a);
             }
             writeAtomic(file, mapper.writeValueAsBytes(all));
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Overwrites the whole file with {@code attempts}, unlike {@link #append} which only adds
+     * new ones. Used by climb-merge (issue #76) to persist {@code climbId} remaps in place.
+     * Thread-safe with respect to the other methods via the shared {@link #WRITE_LOCK} — see
+     * {@link #append} for why this matters.
+     */
+    public void overwriteAll(List<StoredClimbAttempt> attempts) throws IOException {
+        WRITE_LOCK.lock();
+        try {
+            writeAtomic(file, mapper.writeValueAsBytes(attempts));
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Reassigns every stored attempt's {@code climbId} from {@code fromClimbId} to
+     * {@code toClimbId} (climb-merge remap, issue #76) as a single load-modify-write cycle
+     * performed entirely under {@link #WRITE_LOCK}. This is what actually closes the race with
+     * {@link #append}: doing the {@link #loadAll()} read as a separate, unlocked step before
+     * calling {@link #overwriteAll} (as the merge flow originally did) would still let an
+     * {@link #append} land in between — the read used for the remap would be stale, and writing
+     * it back would silently discard the concurrently-appended attempts even though
+     * {@code overwriteAll}'s own write is locked. Returns {@code true} if any attempt was
+     * changed (and therefore written).
+     */
+    public boolean remapClimbId(String fromClimbId, String toClimbId) throws IOException {
+        if (fromClimbId == null || fromClimbId.equals(toClimbId)) return false;
+        WRITE_LOCK.lock();
+        try {
+            List<StoredClimbAttempt> all = loadAll();
+            boolean changed = false;
+            for (StoredClimbAttempt a : all) {
+                if (fromClimbId.equals(a.climbId)) {
+                    a.climbId = toClimbId;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                writeAtomic(file, mapper.writeValueAsBytes(all));
+            }
+            return changed;
         } finally {
             WRITE_LOCK.unlock();
         }

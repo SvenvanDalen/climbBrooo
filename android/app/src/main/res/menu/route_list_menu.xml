@@ -50,6 +50,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_climb_hygiene"
+        android:title="Klim-opschoning"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
         app:showAsAction="never"/>
