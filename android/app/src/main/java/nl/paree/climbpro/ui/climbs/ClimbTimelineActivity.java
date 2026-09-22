@@ -23,6 +23,7 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
     private ClimbTimelineViewModel viewModel;
     private TimelineAdapter adapter;
     private TextView empty;
+    private TextView longPressHint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +35,7 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         empty = findViewById(R.id.empty);
+        longPressHint = findViewById(R.id.longPressHint);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
         adapter = new TimelineAdapter(this::openAttempt, this::openRideFatigue);
@@ -42,7 +44,9 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(ClimbTimelineViewModel.class);
         viewModel.rows().observe(this, rows -> {
             adapter.submit(rows);
-            empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+            boolean hasRows = !rows.isEmpty();
+            empty.setVisibility(hasRows ? View.GONE : View.VISIBLE);
+            longPressHint.setVisibility(hasRows ? View.VISIBLE : View.GONE);
         });
 
         viewModel.loadTimeline();

@@ -30,6 +30,7 @@ public final class RideFatigueActivity extends AppCompatActivity {
     private RideFatiguePointAdapter adapter;
     private RideFatigueChartView chart;
     private View empty;
+    private View directionCaveat;
 
     public static Intent intentFor(Context ctx, long activityId) {
         Intent i = new Intent(ctx, RideFatigueActivity.class);
@@ -48,6 +49,7 @@ public final class RideFatigueActivity extends AppCompatActivity {
 
         empty = findViewById(R.id.empty);
         chart = findViewById(R.id.chart);
+        directionCaveat = findViewById(R.id.directionCaveat);
 
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
@@ -59,6 +61,7 @@ public final class RideFatigueActivity extends AppCompatActivity {
             boolean hasCurve = points != null && !points.isEmpty();
             empty.setVisibility(hasCurve ? View.GONE : View.VISIBLE);
             chart.setVisibility(hasCurve ? View.VISIBLE : View.GONE);
+            directionCaveat.setVisibility(hasCurve ? View.VISIBLE : View.GONE);
             chart.setPoints(points);
             adapter.submit(points);
         });

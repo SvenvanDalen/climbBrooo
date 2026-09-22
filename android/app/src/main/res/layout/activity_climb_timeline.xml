@@ -20,12 +20,14 @@
         android:text="Nog geen klimpogingen." />
 
     <TextView
+        android:id="@+id/longPressHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
         android:paddingBottom="4dp"
         android:textSize="12sp"
         android:textColor="?android:attr/textColorSecondary"
+        android:visibility="gone"
         android:text="Houd een poging ingedrukt voor de vermoeidheidscurve van die rit." />
 
     <androidx.recyclerview.widget.RecyclerView

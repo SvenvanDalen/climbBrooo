@@ -33,11 +33,25 @@ import java.util.Map;
  * ClimbRef#orderIndex}, the climb's index in {@code StoredRoute#climbs} — climbs are detected
  * walking the route start-to-end, so this index is a start-distance-along-route proxy for ride
  * order), then by {@link StoredClimbAttempt#passIndex} for repeat ascents of the same climb.
- * This is exact for rides that follow a single route; for a ride that touches climbs from more
- * than one route (e.g. rides that leave and rejoin a known route, or free-roam rides that
- * happen to cross two mapped routes) it is a best-effort approximation, grouped by route id
- * first. Getting a true chronological order would require recording each attempt's start
- * offset within the activity track, which is out of scope for this bounded, phone-only change.
+ *
+ * <p><b>This is a directional, not chronological, ordering.</b> It only matches true ride order
+ * when the rider actually rode the route in the same direction the route was originally
+ * recorded/stored in (start-to-end). Nothing in {@link StoredClimbAttempt} distinguishes a ride
+ * that covered the route in reverse (e.g. an out-and-back, or a rider starting from what the
+ * stored route considers its "end") from a normal forward ride: {@link
+ * StoredClimbAttempt#dateEpochSec} is the activity-level start time (identical for every attempt
+ * in the same activity, see {@code StravaActivitiesRepository#matchActivity}) and there is no
+ * per-attempt start-offset within the track recorded anywhere upstream ({@code
+ * ClimbAttemptMatcher#matchAll} does not persist one). For a reversed ride, the climb ridden
+ * last in reality is assigned ordinal 1 and used as the 100% VAM baseline, which inverts the
+ * resulting curve. Detecting/correcting this would require recording each attempt's start
+ * offset within the activity track — a larger, out-of-scope data-plumbing change for now — so
+ * callers must instead surface this as a caveat to the user (see {@code RideFatigueActivity}'s
+ * layout) rather than presenting the curve as unconditionally reliable.
+ *
+ * <p>Separately, for a ride that touches climbs from more than one route (e.g. rides that leave
+ * and rejoin a known route, or free-roam rides that happen to cross two mapped routes) the
+ * ordering is a best-effort approximation, grouped by route id first.
  *
  * Pure and stateless, like {@link VamCalculator}.
  */
