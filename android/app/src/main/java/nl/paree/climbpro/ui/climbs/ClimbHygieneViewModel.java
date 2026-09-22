@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.ClimbMergeService;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.RouteCollectionRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.NearDuplicateClimbFinder;
@@ -27,9 +28,10 @@ import java.util.concurrent.Executors;
  */
 public final class ClimbHygieneViewModel extends AndroidViewModel {
 
-    private final RouteRepository       routeRepo;
-    private final ClimbAttemptRepository attemptRepo;
-    private final ExecutorService       executor = Executors.newSingleThreadExecutor();
+    private final RouteRepository           routeRepo;
+    private final ClimbAttemptRepository    attemptRepo;
+    private final RouteCollectionRepository collectionRepo;
+    private final ExecutorService           executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<NearDuplicateClimbFinder.Candidate>> candidates =
             new MutableLiveData<>();
@@ -39,8 +41,9 @@ public final class ClimbHygieneViewModel extends AndroidViewModel {
 
     public ClimbHygieneViewModel(@NonNull Application app) {
         super(app);
-        routeRepo   = new RouteRepository(app);
-        attemptRepo = new ClimbAttemptRepository(app);
+        routeRepo      = new RouteRepository(app);
+        attemptRepo    = new ClimbAttemptRepository(app);
+        collectionRepo = new RouteCollectionRepository(app);
     }
 
     public LiveData<List<NearDuplicateClimbFinder.Candidate>> candidates() { return candidates; }
@@ -102,7 +105,7 @@ public final class ClimbHygieneViewModel extends AndroidViewModel {
                        NearDuplicateClimbFinder.ClimbRef remove) {
         executor.execute(() -> {
             try {
-                new ClimbMergeService(routeRepo, attemptRepo).merge(keep, remove);
+                new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keep, remove);
                 mergeSuccess.postValue(new Event<>("Samengevoegd"));
             } catch (Exception e) {
                 error.postValue("Samenvoegen mislukt: " + e.getMessage());

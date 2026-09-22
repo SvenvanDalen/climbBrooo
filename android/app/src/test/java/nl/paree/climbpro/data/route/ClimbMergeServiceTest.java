@@ -90,13 +90,14 @@ public class ClimbMergeServiceTest {
 
         RouteRepository routeRepo = new RouteRepository(app);
         ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
 
         NearDuplicateClimbFinder.ClimbRef keepRef =
                 refFor(routeRepo, "keepRoute", 0);
         NearDuplicateClimbFinder.ClimbRef removeRef =
                 refFor(routeRepo, "removeRoute", 0);
 
-        new ClimbMergeService(routeRepo, attemptRepo).merge(keepRef, removeRef);
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
 
         StoredRoute keepAfter = routeRepo.loadRoute("keepRoute");
         assertEquals(1, keepAfter.climbs.size());
@@ -115,11 +116,12 @@ public class ClimbMergeServiceTest {
 
         RouteRepository routeRepo = new RouteRepository(app);
         ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
 
         NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
         NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
 
-        new ClimbMergeService(routeRepo, attemptRepo).merge(keepRef, removeRef);
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
 
         StoredRoute keepAfter = routeRepo.loadRoute("keepRoute");
         assertEquals("Mont Ventoux", keepAfter.climbs.get(0).userDisplayName);
@@ -138,11 +140,12 @@ public class ClimbMergeServiceTest {
 
         RouteRepository routeRepo = new RouteRepository(app);
         ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
 
         NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
         NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
 
-        new ClimbMergeService(routeRepo, attemptRepo).merge(keepRef, removeRef);
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
 
         List<StoredClimbAttempt> attemptsAfter = attemptRepo.loadAll();
         assertEquals(2, attemptsAfter.size());
@@ -161,11 +164,12 @@ public class ClimbMergeServiceTest {
 
         RouteRepository routeRepo = new RouteRepository(app);
         ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
 
         NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
         NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
 
-        new ClimbMergeService(routeRepo, attemptRepo).merge(keepRef, removeRef);
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
 
         StoredRoute removeAfter = routeRepo.loadRoute("removeRoute");
         assertEquals(1, removeAfter.climbs.size());
@@ -197,7 +201,8 @@ public class ClimbMergeServiceTest {
 
         RouteRepository routeRepo = new RouteRepository(app);
         ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
-        ClimbMergeService service = new ClimbMergeService(routeRepo, attemptRepo);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+        ClimbMergeService service = new ClimbMergeService(routeRepo, attemptRepo, collectionRepo);
 
         // Snapshot BOTH candidate refs up front, as the UI would from a single scan of R at
         // indices 0 and 1 — before either merge has happened.
@@ -236,7 +241,8 @@ public class ClimbMergeServiceTest {
 
         RouteRepository routeRepo = new RouteRepository(app);
         ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
-        ClimbMergeService service = new ClimbMergeService(routeRepo, attemptRepo);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+        ClimbMergeService service = new ClimbMergeService(routeRepo, attemptRepo, collectionRepo);
 
         NearDuplicateClimbFinder.ClimbRef removeXRef = refFor(routeRepo, "routeR", 0);
         NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "routeOther", 0);
@@ -245,6 +251,104 @@ public class ClimbMergeServiceTest {
         routeRepo.removeClimb("routeR", 0);
 
         service.merge(keepRef, removeXRef);
+    }
+
+    /**
+     * Regression test for the collection-membership-corruption bug found in the second review
+     * pass on top of PR #121: route R holds climbs A (index 0), B (index 1), C (index 2). A
+     * climb-collection has memberships pointing at (R, 1) [B] and (R, 2) [C]. Merging away A
+     * (removed at index 0) shifts B and C down by one; the collection's memberships must be
+     * updated in lock-step so they still resolve to B and C, not silently to the wrong climb
+     * (index 1 now pointing at what used to be C) or silently dropped (index 2 now out of range).
+     */
+    @Test
+    public void merge_shiftsCollectionMembershipIndicesAfterAnEarlierClimbIsRemoved() throws Exception {
+        StoredClimb a = climb(45.0005, 6.0000, 2000, 0.050, null);
+        StoredClimb b = climb(45.2000, 6.2000, 2100, 0.055, null);
+        StoredClimb c = climb(45.3000, 6.3000, 2200, 0.060, null);
+        seedRoute("routeR", a, b, c);
+        StoredClimb aDuplicate = climb(45.0015, 6.0000, 2050, 0.052, null); // near-dup of A
+        seedRoute("routeOther", aDuplicate);
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+
+        RouteCollection collection = collectionRepo.create("Favorieten");
+        collectionRepo.addClimb(collection.id, "routeR", 1); // B
+        collectionRepo.addClimb(collection.id, "routeR", 2); // C
+
+        NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "routeOther", 0);
+        NearDuplicateClimbFinder.ClimbRef removeARef = refFor(routeRepo, "routeR", 0);
+
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeARef);
+
+        StoredRoute afterMerge = routeRepo.loadRoute("routeR");
+        assertEquals(2, afterMerge.climbs.size());
+        assertEquals(b.startLat, afterMerge.climbs.get(0).startLat, 0.00001); // B now at index 0
+        assertEquals(c.startLat, afterMerge.climbs.get(1).startLat, 0.00001); // C now at index 1
+
+        List<ClimbMembership> memberships = collectionRepo.get(collection.id).climbs;
+        assertEquals(2, memberships.size());
+        assertTrue("membership must now point at B's shifted index (0)",
+                memberships.contains(new ClimbMembership("routeR", 0)));
+        assertTrue("membership must now point at C's shifted index (1)",
+                memberships.contains(new ClimbMembership("routeR", 1)));
+    }
+
+    /**
+     * Regression test for the resync-durability bug found alongside the collection-index one: a
+     * merged-away climb must not silently reappear the next time {@link RouteRepository#saveRoute}
+     * runs fresh climb (re-)detection (e.g. from a Strava resync). Simulates that by calling
+     * {@code saveRoute} again after the merge with a freshly "re-detected" domain climb list that
+     * includes a climb matching the removed one's identity (same start coordinate + length) — it
+     * must be filtered out, not written back into the route.
+     */
+    @Test
+    public void merge_removalSurvivesASubsequentSaveRouteReDetectionPass() throws Exception {
+        StoredClimb keep = climb(45.0005, 6.0000, 2000, 0.050, null);
+        StoredClimb remove = climb(45.0015, 6.0000, 2050, 0.052, null);
+        seedRoute("keepRoute", keep);
+        seedRoute("removeRoute", remove);
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+
+        NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
+        NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
+
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
+
+        StoredRoute afterMerge = routeRepo.loadRoute("removeRoute");
+        assertTrue(afterMerge.climbs.isEmpty());
+        assertTrue("removeClimb must have recorded a tombstone for the removed climb",
+                afterMerge.removedClimbIds != null && !afterMerge.removedClimbIds.isEmpty());
+
+        // Simulate a Strava resync: fresh geometry-based re-detection finds the same climb again
+        // (same start coordinate + length as the one that was merged away).
+        nl.paree.climbpro.domain.climb.Climb reDetected = nl.paree.climbpro.domain.climb.Climb.builder()
+                .startDistance(0)
+                .endDistance(remove.length)
+                .length(remove.length)
+                .elevationGain(100)
+                .avgGradient(remove.avgGradient)
+                .startLat(remove.startLat)
+                .startLon(remove.startLon)
+                .build();
+
+        List<nl.paree.climbpro.domain.route.RoutePoint> points = new ArrayList<>();
+        points.add(new nl.paree.climbpro.domain.route.RoutePoint(
+                remove.startLat, remove.startLon, 100, 0));
+        points.add(new nl.paree.climbpro.domain.route.RoutePoint(
+                remove.startLat + 0.02, remove.startLon, 200, remove.length));
+
+        StoredRoute routeForResave = routeRepo.loadRoute("removeRoute");
+        routeRepo.saveRoute(routeForResave, points, java.util.Collections.singletonList(reDetected));
+
+        StoredRoute afterResync = routeRepo.loadRoute("removeRoute");
+        assertTrue("the merged-away climb must not be silently reintroduced by resync",
+                afterResync.climbs.isEmpty());
     }
 
     private static NearDuplicateClimbFinder.ClimbRef refFor(

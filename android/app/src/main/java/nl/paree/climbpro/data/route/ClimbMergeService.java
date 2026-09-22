@@ -18,10 +18,20 @@ public final class ClimbMergeService {
 
     private final RouteRepository routeRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final RouteCollectionRepository collectionRepo;
 
-    public ClimbMergeService(RouteRepository routeRepo, ClimbAttemptRepository attemptRepo) {
-        this.routeRepo   = routeRepo;
-        this.attemptRepo = attemptRepo;
+    /**
+     * @param collectionRepo used to keep {@link ClimbMembership} indices consistent after a
+     *                        climb is removed (issue: merges corrupted collection membership
+     *                        indices). {@code RouteRepository} intentionally does not depend on
+     *                        {@code RouteCollectionRepository} itself, so this orchestration
+     *                        happens here, where a merge already touches multiple repositories.
+     */
+    public ClimbMergeService(RouteRepository routeRepo, ClimbAttemptRepository attemptRepo,
+                              RouteCollectionRepository collectionRepo) {
+        this.routeRepo      = routeRepo;
+        this.attemptRepo    = attemptRepo;
+        this.collectionRepo = collectionRepo;
     }
 
     /**
@@ -60,6 +70,7 @@ public final class ClimbMergeService {
         remapAttempts(removeClimbId, keepClimbId);
 
         routeRepo.removeClimb(remove.routeId, removeResolved.index);
+        collectionRepo.onClimbRemoved(remove.routeId, removeResolved.index);
     }
 
     /** A climb re-located inside the current route state, paired with its up-to-date index. */

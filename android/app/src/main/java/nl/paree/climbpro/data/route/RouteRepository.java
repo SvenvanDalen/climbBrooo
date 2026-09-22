@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ClimbNameSuggester;
 import nl.paree.climbpro.domain.climb.ClimbShapeClassifier;
 import nl.paree.climbpro.domain.route.RoutePoint;
@@ -26,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * JSON-file persistence for routes.
@@ -113,6 +116,12 @@ public final class RouteRepository {
                 ? prev.surfaceSections : Collections.emptyList();
         List<StoredStarredSegment> prevStarred  = prev != null && prev.starredSegments != null
                 ? prev.starredSegments : Collections.emptyList();
+        List<String> prevRemovedClimbIds = prev != null && prev.removedClimbIds != null
+                ? prev.removedClimbIds : Collections.emptyList();
+        // Carry the tombstone list forward across resync so a user-confirmed merge/removal
+        // (recorded by removeClimb) stays removed even after fresh re-detection below.
+        route.removedClimbIds = new ArrayList<>(prevRemovedClimbIds);
+        filterOutTombstonedClimbs(route.climbs, route.removedClimbIds);
         mergePreviousClimbUserData(route.climbs, prevClimbs);
         fillMissingClimbNames(route.climbs);
         int routeLength = (points != null && !points.isEmpty())
@@ -131,7 +140,10 @@ public final class RouteRepository {
 
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(route.routeId));
-        catalog.add(toCatalogEntry(route, points, climbs));
+        // Build the catalog entry from route.climbs (post-tombstone-filter) rather than the raw
+        // freshly detected `climbs` param, so a merged-away climb doesn't reappear in the
+        // catalog's climbCount/climbStartCoords (the latter drives radius-mode matching).
+        catalog.add(toCatalogEntry(route, points));
         saveCatalog(catalog);
     }
 
@@ -213,10 +225,28 @@ public final class RouteRepository {
             Log.w(TAG, "removeClimb: index out of range: " + climbIndex);
             return;
         }
-        route.climbs.remove(climbIndex);
+        StoredClimb removed = route.climbs.remove(climbIndex);
+        // Tombstone the removed climb's identity so a later Strava resync's fresh re-detection
+        // (see saveRoute/filterOutTombstonedClimbs) doesn't silently reintroduce it.
+        String removedId = ClimbIdentity.of(removed.startLat, removed.startLon, removed.length);
+        if (route.removedClimbIds == null) route.removedClimbIds = new ArrayList<>();
+        if (!route.removedClimbIds.contains(removedId)) route.removedClimbIds.add(removedId);
         route.lastModifiedMs = System.currentTimeMillis();
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogAfterClimbRemoval(routeId, route);
+    }
+
+    /**
+     * Removes any freshly (re-)detected climb whose {@link ClimbIdentity} matches an entry in
+     * {@code removedIds} — the durable record of climbs the user explicitly removed (see
+     * {@link StoredRoute#removedClimbIds}). Called from {@link #saveRoute} so a Strava resync's
+     * from-scratch re-detection respects a prior merge/removal decision.
+     */
+    private static void filterOutTombstonedClimbs(List<StoredClimb> climbs, List<String> removedIds) {
+        if (climbs == null || removedIds == null || removedIds.isEmpty()) return;
+        Set<String> removedSet = new HashSet<>(removedIds);
+        climbs.removeIf(c -> removedSet.contains(
+                ClimbIdentity.of(c.startLat, c.startLon, c.length)));
     }
 
     private void rebuildCatalogAfterClimbRemoval(String routeId, StoredRoute route) throws IOException {
@@ -487,8 +517,8 @@ public final class RouteRepository {
         return new double[]{best.lat, best.lon};
     }
 
-    private static RouteCatalogEntry toCatalogEntry(
-            StoredRoute route, List<RoutePoint> points, List<Climb> climbs) {
+    private static RouteCatalogEntry toCatalogEntry(StoredRoute route, List<RoutePoint> points) {
+        List<StoredClimb> climbs = route.climbs;
         RouteCatalogEntry e = new RouteCatalogEntry();
         e.routeId         = route.routeId;
         e.name            = route.name;
