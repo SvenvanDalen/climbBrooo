@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Response;
@@ -294,5 +295,39 @@ public class StravaActivitiesRepositoryTest {
         long cursor = app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
                 .getLong("last_sync_epoch_sec", -1L);
         assertEquals(-1L, cursor);
+    }
+
+    /**
+     * Regression test for Bug 3: PREF_KNOWN_CLIMB_IDS must NOT be persisted when the sync
+     * aborts before pagination completes — mirroring the pre-existing PREF_LAST guard. Without
+     * the fix, an aborted run (e.g. the very first listActivities call failing) would still
+     * overwrite the known-climb-id set with the new, larger set, so the NEXT (successful) sync
+     * would incorrectly conclude the climb set "didn't grow" and fold previously-recorded
+     * incomplete-only activities back into the permanent skip-list.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_abortsOnFirstPage_doesNotPersistKnownClimbIds() throws Exception {
+        // Pre-seed a known-climb-id set smaller than what enumerateKnownClimbs() will now see
+        // (the route seeded in setUp() has one climb) — simulates "a new climb was added
+        // elsewhere" just before this aborted run.
+        app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
+                .edit().putStringSet("known_climb_ids_for_incomplete_skip",
+                        new java.util.HashSet<>()).commit();
+
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.error(500,
+                okhttp3.ResponseBody.create("server error", okhttp3.MediaType.parse("text/plain"))));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        int created = repo.syncActivities();
+
+        assertEquals(0, created);
+        Set<String> persisted = app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
+                .getStringSet("known_climb_ids_for_incomplete_skip", null);
+        assertEquals("aborted sync must not persist the known-climb-id set",
+                0, persisted == null ? 0 : persisted.size());
     }
 }

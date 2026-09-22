@@ -140,10 +140,16 @@ public final class StravaActivitiesRepository {
         if (!incompleteCreated.isEmpty()) incompleteAttemptRepo.append(incompleteCreated);
         if (paginationComplete) {
             prefs.edit().putLong(PREF_LAST, nowSec).apply();
+            // Record the climb set this run evaluated incomplete-only activities against, so
+            // the NEXT run can tell whether new climbs have shown up in the meantime (see
+            // above). Guarded by paginationComplete exactly like PREF_LAST: if the sync aborted
+            // early, we must not commit a currentClimbIds snapshot that may already be bigger
+            // than priorClimbIds (e.g. a climb was added elsewhere just before this aborted
+            // run) — doing so would make the NEXT (successful) sync see knownClimbSetGrew ==
+            // false and incorrectly fold previously-recorded incomplete-only activities back
+            // into the permanent skip-list, defeating the re-check guarantee.
+            prefs.edit().putStringSet(PREF_KNOWN_CLIMB_IDS, currentClimbIds).apply();
         }
-        // Record the climb set this run evaluated incomplete-only activities against, so the
-        // NEXT run can tell whether new climbs have shown up in the meantime (see above).
-        prefs.edit().putStringSet(PREF_KNOWN_CLIMB_IDS, currentClimbIds).apply();
         Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)"
                 + (paginationComplete ? "" : " (incomplete — cursor not advanced)"));
         return created.size();

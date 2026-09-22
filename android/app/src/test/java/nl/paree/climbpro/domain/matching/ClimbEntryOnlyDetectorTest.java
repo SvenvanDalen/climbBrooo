@@ -118,6 +118,61 @@ public class ClimbEntryOnlyDetectorTest {
     }
 
     @Test
+    public void spuriousEarlyGateHit_thenGenuineLaterAttempt_detectsTheRealOne() {
+        // Climb: (45.000,6.000) -> (45.009,6.000), length 1000 m.
+        // Track: passes within GATE_M of the climb start early (an incidental junction hit),
+        // heads off in an unrelated direction for a while (never getting closer to the climb's
+        // end — so the spurious entry alone would not be flagged), returns to the start, and
+        // THEN genuinely climbs partway before the track ends. Without entry-gate retry, the
+        // detector would lock onto the spurious first entry and report garbage/no progress;
+        // with retry, it must find the genuine later attempt.
+        List<TrackSample> track = new ArrayList<>();
+        long t = 0;
+        // Spurious hit at climb start, then diverge east (away from the end, which is north).
+        track.add(new TrackSample(45.000, 6.000, t)); t += 60;
+        track.add(new TrackSample(45.000, 6.010, t)); t += 60;
+        track.add(new TrackSample(45.000, 6.020, t)); t += 60;
+        // Return to the start and make a genuine attempt: climb ~330 m north before stopping.
+        track.add(new TrackSample(45.000, 6.000, t)); t += 60;
+        track.add(new TrackSample(45.001, 6.000, t)); t += 60;
+        track.add(new TrackSample(45.002, 6.000, t)); t += 60;
+        track.add(new TrackSample(45.003, 6.000, t));
+
+        int distance = ClimbEntryOnlyDetector.detectIncomplete(
+                track, 45.000, 6.000, 45.009, 6.000, 1000);
+
+        assertTrue("expected the genuine later attempt to be flagged, got " + distance,
+                distance > 0 && distance < 1000);
+    }
+
+    @Test
+    public void backtracking_reportsFarthestProgressNotRawPathLength() {
+        // Climb: (45.000,6.000) -> (45.009,6.000), length ~1000 m. Rider climbs ~300 m up
+        // (45.000 -> 45.0027), then rides back down ~300 m toward the start (45.0027 ->
+        // 45.0000) before the track ends. Raw accumulated path length would be ~600 m (300 up
+        // + 300 down), but real farthest progress toward the end was only ~300 m — the
+        // reported distance must reflect the latter, not the former.
+        List<TrackSample> track = new ArrayList<>();
+        track.add(new TrackSample(45.0000, 6.000, 0));
+        track.add(new TrackSample(45.0010, 6.000, 60));
+        track.add(new TrackSample(45.0020, 6.000, 120));
+        track.add(new TrackSample(45.0027, 6.000, 180)); // farthest point reached (~300 m in)
+        track.add(new TrackSample(45.0017, 6.000, 240)); // backtracking
+        track.add(new TrackSample(45.0007, 6.000, 300));
+        track.add(new TrackSample(45.0000, 6.000, 360)); // back near the start
+
+        int distance = ClimbEntryOnlyDetector.detectIncomplete(
+                track, 45.000, 6.000, 45.009, 6.000, 1000);
+
+        assertTrue("expected a flagged incomplete pass, got " + distance, distance >= 0);
+        // Farthest progress is ~300 m (45.0027 in, ~ 0.0027 * 111320 ≈ 300.6 m); raw path
+        // length traveled would have been nearly double that (~600 m). Assert we're close to
+        // the farthest-progress figure, well under the raw-path-length figure.
+        assertTrue("expected progress-based distance (~300 m), not raw path length (~600 m), got "
+                + distance, distance > 200 && distance < 400);
+    }
+
+    @Test
     public void nullOrTinyTrack_isNotFlagged() {
         assertEquals(-1, ClimbEntryOnlyDetector.detectIncomplete(
                 null, 45.000, 6.0, 45.009, 6.0, 1000));

@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * JSON-file persistence for detected "entered but never exited" climb passes (issue #37).
@@ -27,6 +28,19 @@ public final class IncompleteClimbAttemptRepository {
 
     private static final String TAG  = "IncompleteAttemptRepo";
     private static final String FILE = "incomplete_climb_attempts.json";
+
+    /**
+     * Static/class-level lock, mirroring {@link ClimbAttemptRepository#WRITE_LOCK}: multiple
+     * {@link IncompleteClimbAttemptRepository} instances may exist across the app (e.g. one
+     * built inside {@code StravaActivitiesRepository.syncActivities()}, which can plausibly run
+     * concurrently if a manual "sync now" tap races a WorkManager periodic sync), all pointed
+     * at the same underlying file. A per-instance lock would not prevent two different
+     * instances from interleaving their read-modify-write cycles, so this lock is static: it
+     * serializes {@link #append}'s read-modify-write critical section across the whole process,
+     * regardless of which instance calls it. Scoped to this class only — it does not need to be
+     * shared with {@link ClimbAttemptRepository#WRITE_LOCK} since they guard different files.
+     */
+    private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
     private final File file;
     private final ObjectMapper mapper;
@@ -62,19 +76,27 @@ public final class IncompleteClimbAttemptRepository {
     }
 
     /**
-     * Not thread-safe: call only from a single-threaded executor.
      * Appends passes, skipping any whose (climbId, activityId) already exists — one
      * incomplete record per climb per activity is enough for the overview.
+     * <p>Thread-safe across every {@link IncompleteClimbAttemptRepository} instance in the
+     * process: the whole read-modify-write cycle runs under {@link #WRITE_LOCK}, so two
+     * concurrent syncs (e.g. a manual "sync now" racing a WorkManager periodic sync) can't
+     * interleave their read-modify-write and silently lose one side's write.
      */
     public void append(List<StoredIncompleteClimbAttempt> passes) throws IOException {
         if (passes == null || passes.isEmpty()) return;
-        List<StoredIncompleteClimbAttempt> all = loadAll();
-        Set<String> seen = new HashSet<>();
-        for (StoredIncompleteClimbAttempt a : all) seen.add(key(a));
-        for (StoredIncompleteClimbAttempt a : passes) {
-            if (seen.add(key(a))) all.add(a);
+        WRITE_LOCK.lock();
+        try {
+            List<StoredIncompleteClimbAttempt> all = loadAll();
+            Set<String> seen = new HashSet<>();
+            for (StoredIncompleteClimbAttempt a : all) seen.add(key(a));
+            for (StoredIncompleteClimbAttempt a : passes) {
+                if (seen.add(key(a))) all.add(a);
+            }
+            writeAtomic(file, mapper.writeValueAsBytes(all));
+        } finally {
+            WRITE_LOCK.unlock();
         }
-        writeAtomic(file, mapper.writeValueAsBytes(all));
     }
 
     private static String key(StoredIncompleteClimbAttempt a) {
