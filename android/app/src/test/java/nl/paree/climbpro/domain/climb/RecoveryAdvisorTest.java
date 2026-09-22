@@ -110,7 +110,11 @@ public class RecoveryAdvisorTest {
 
         // baselineGain = 10 + 6 = 16, baselineWeeklyAvg = 4.0, threshold = 6.0.
         // recentGain = 6 -> exactly at threshold, not strictly above it.
+        // "history" attempt (unresolvable climb, contributes no gain) just pushes the
+        // logbook span past MIN_BASELINE_HISTORY_DAYS so this test exercises the ratio
+        // check itself rather than the minimum-history guard.
         List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("history", 0, today.minusDays(25)),
                 at("old", 1, today.minusDays(10)),
                 at("recent", 2, today));
 
@@ -130,7 +134,11 @@ public class RecoveryAdvisorTest {
 
         // baselineGain = 10 + 7 = 17, baselineWeeklyAvg = 4.25, threshold = 6.375.
         // recentGain = 7 -> just above the threshold.
+        // "history" attempt (unresolvable climb, contributes no gain) just pushes the
+        // logbook span past MIN_BASELINE_HISTORY_DAYS so this test exercises the ratio
+        // check itself rather than the minimum-history guard.
         List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("history", 0, today.minusDays(25)),
                 at("old", 1, today.minusDays(10)),
                 at("recent", 2, today));
 
@@ -157,5 +165,53 @@ public class RecoveryAdvisorTest {
         Advice advice = RecoveryAdvisor.compute(attempts, gains, ZONE, today);
 
         assertFalse(advice.suggestRest);
+    }
+
+    @Test
+    public void newUser_onlyOneWeekOfHistory_noSuggestion_regardlessOfGain() {
+        // Regression for the false "take a rest day" after a first ride: a brand-new
+        // user's logbook only spans the last 7 days, so the 28-day baseline sum equals
+        // the 7-day acute sum exactly -- without a minimum-history guard the ratio check
+        // (recentGain > baselineWeeklyAvg * 1.5) reduces to recentGain > 0.375*recentGain,
+        // which is true for ANY positive gain. No amount of climbing in week one should
+        // trigger a rest-day suggestion.
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        Map<String, Integer> gains = new HashMap<>();
+        gains.put("huge", 5000);
+
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("huge", 1, today.minusDays(6)),
+                at("huge", 2, today.minusDays(3)),
+                at("huge", 3, today));
+
+        Advice advice = RecoveryAdvisor.compute(attempts, gains, ZONE, today);
+
+        assertFalse(advice.suggestRest);
+        assertTrue(advice.rodeRecently);
+    }
+
+    @Test
+    public void rodeRecently_butNothingResolvesToGain_distinguishableFromNoHistory() {
+        // The rider has real, recent ride history, but every attempt references a climb
+        // that no longer resolves to a known elevation gain (e.g. routes were re-imported
+        // and climb ids shifted). RecoveryAdvisor correctly reports "calm" (nothing to
+        // flag), but the UI must be able to tell this apart from genuinely never having
+        // ridden -- both look identical if you only look at recentGainM/baselineWeeklyAvgGainM
+        // being zero, so callers must key off rodeRecently instead.
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("orphaned-1", 1, today.minusDays(1)),
+                at("orphaned-2", 2, today));
+
+        Advice recentButUnresolved = RecoveryAdvisor.compute(attempts, Collections.emptyMap(), ZONE, today);
+        Advice genuinelyEmpty = RecoveryAdvisor.compute(Collections.emptyList(), Collections.emptyMap(), ZONE, today);
+
+        assertFalse(recentButUnresolved.suggestRest);
+        assertEquals(0, recentButUnresolved.recentGainM);
+        assertTrue(recentButUnresolved.rodeRecently);
+
+        assertFalse(genuinelyEmpty.suggestRest);
+        assertEquals(0, genuinelyEmpty.recentGainM);
+        assertFalse(genuinelyEmpty.rodeRecently);
     }
 }

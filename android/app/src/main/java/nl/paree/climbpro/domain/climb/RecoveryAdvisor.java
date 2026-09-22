@@ -59,18 +59,38 @@ public final class RecoveryAdvisor {
     /** "Today or yesterday" — how recent a ride must be for the suggestion to still be timely. */
     static final int RECENT_RIDE_LOOKBACK_DAYS = 1;
 
+    /**
+     * Minimum span, in days, that the rider's logbook must cover before the acute:chronic
+     * ratio is trusted at all. Without this, a brand-new user's {@code baselineGain} sum
+     * over {@link #BASELINE_WINDOW_DAYS} is silently zero-filled for every day before their
+     * first ride, collapsing {@code baselineWeeklyAvg} down towards {@code recentGain /
+     * BASELINE_WEEKS} — which makes the overload check fire on essentially any positive
+     * first-week gain. Requiring history to span at least 3 of the 4 baseline weeks (21
+     * days) means there has to be at least one full "off week" of real (possibly zero)
+     * data behind the acute window before we call anything a spike relative to it.
+     */
+    static final int MIN_BASELINE_HISTORY_DAYS = 21;
+
     /** Result of {@link #compute}: whether to suggest rest, the numbers behind it, and a Dutch rationale. */
     public static final class Advice {
         public final boolean suggestRest;
         public final int recentGainM;
         public final double baselineWeeklyAvgGainM;
         public final String rationale;
+        /** Whether the rider had any ride (attempt of any kind) within {@link #RECENT_RIDE_LOOKBACK_DAYS}
+         * days of the reference date — true even if none of those attempts resolved to elevation
+         * gain. Lets callers distinguish "genuinely no recent activity" from "rode recently but we
+         * have nothing concerning (or nothing resolvable) to report", which look identical if you
+         * only look at {@link #recentGainM} / {@link #baselineWeeklyAvgGainM} being zero. */
+        public final boolean rodeRecently;
 
-        Advice(boolean suggestRest, int recentGainM, double baselineWeeklyAvgGainM, String rationale) {
+        Advice(boolean suggestRest, int recentGainM, double baselineWeeklyAvgGainM, String rationale,
+               boolean rodeRecently) {
             this.suggestRest = suggestRest;
             this.recentGainM = recentGainM;
             this.baselineWeeklyAvgGainM = baselineWeeklyAvgGainM;
             this.rationale = rationale;
+            this.rodeRecently = rodeRecently;
         }
     }
 
@@ -97,16 +117,20 @@ public final class RecoveryAdvisor {
                                   Map<String, Integer> elevationGainByClimbId,
                                   ZoneId zone, LocalDate referenceDate) {
         if (attempts == null || attempts.isEmpty()) {
-            return calm(0, 0);
+            return calm(0, 0, false);
         }
         Map<String, Integer> gainLookup = elevationGainByClimbId != null
                 ? elevationGainByClimbId : new HashMap<>();
 
         Map<LocalDate, Integer> gainByDay = new HashMap<>();
         Set<LocalDate> rideDays = new HashSet<>();
+        LocalDate earliestDay = null;
         for (StoredClimbAttempt a : attempts) {
             LocalDate day = Instant.ofEpochSecond(a.dateEpochSec).atZone(zone).toLocalDate();
             rideDays.add(day);
+            if (earliestDay == null || day.isBefore(earliestDay)) {
+                earliestDay = day;
+            }
             Integer gain = gainLookup.get(a.climbId);
             if (gain != null && gain > 0) {
                 gainByDay.merge(day, gain, Integer::sum);
@@ -125,7 +149,13 @@ public final class RecoveryAdvisor {
             }
         }
 
+        long historySpanDays = earliestDay != null
+                ? java.time.temporal.ChronoUnit.DAYS.between(earliestDay, referenceDate) + 1
+                : 0;
+        boolean hasEnoughBaselineHistory = historySpanDays >= MIN_BASELINE_HISTORY_DAYS;
+
         boolean overloaded = rodeRecently
+                && hasEnoughBaselineHistory
                 && baselineWeeklyAvg > 0
                 && recentGain > baselineWeeklyAvg * OVERLOAD_RATIO;
 
@@ -135,14 +165,14 @@ public final class RecoveryAdvisor {
                             + "gemiddelde van %.0f hm per week over de laatste %d weken. "
                             + "Overweeg vandaag een rustdag.",
                     RECENT_WINDOW_DAYS, recentGain, baselineWeeklyAvg, BASELINE_WEEKS);
-            return new Advice(true, recentGain, baselineWeeklyAvg, rationale);
+            return new Advice(true, recentGain, baselineWeeklyAvg, rationale, rodeRecently);
         }
-        return calm(recentGain, baselineWeeklyAvg);
+        return calm(recentGain, baselineWeeklyAvg, rodeRecently);
     }
 
-    private static Advice calm(int recentGain, double baselineWeeklyAvg) {
+    private static Advice calm(int recentGain, double baselineWeeklyAvg, boolean rodeRecently) {
         return new Advice(false, recentGain, baselineWeeklyAvg,
-                "Je belasting is in lijn met je gemiddelde. Geen rustdag nodig.");
+                "Je belasting is in lijn met je gemiddelde. Geen rustdag nodig.", rodeRecently);
     }
 
     /** Sum of gainByDay values for every day in [start, end], inclusive. */

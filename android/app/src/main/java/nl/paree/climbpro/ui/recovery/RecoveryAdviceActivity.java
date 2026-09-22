@@ -51,7 +51,7 @@ public final class RecoveryAdviceActivity extends AppCompatActivity {
     }
 
     private void render(Advice advice) {
-        if (advice == null || (advice.recentGainM == 0 && advice.baselineWeeklyAvgGainM == 0)) {
+        if (advice == null || !advice.rodeRecently) {
             emptyText.setVisibility(View.VISIBLE);
             statusText.setText("");
             rationaleText.setText("");
