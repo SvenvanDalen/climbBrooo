@@ -22,21 +22,14 @@ public final class ClimbShapeLabel {
     }
 
     /**
-     * @param climb a stored climb; {@link StoredClimb#shape} may be null on routes stored
-     *              before this field existed, in which case it is classified on the fly from
-     *              the currently stored segments rather than shown as blank.
+     * @param climb a stored climb; prefers the user's manual override
+     *              ({@link StoredClimb#shapeOverride}, issue #36) when set, otherwise falls
+     *              back to {@link StoredClimb#shape} or, if that's null (routes stored before
+     *              the field existed), a fresh classification of the currently stored segments.
+     *              See {@link ClimbShapeClassifier#effectiveShape}.
      */
     public static String forStoredClimb(StoredClimb climb) {
         if (climb == null) return "";
-        ClimbShape shape;
-        try {
-            shape = climb.shape != null ? ClimbShape.valueOf(climb.shape) : null;
-        } catch (IllegalArgumentException unknownValue) {
-            shape = null;
-        }
-        if (shape == null) {
-            shape = ClimbShapeClassifier.classifyStored(climb.segments);
-        }
-        return forShape(shape);
+        return forShape(ClimbShapeClassifier.effectiveShape(climb));
     }
 }

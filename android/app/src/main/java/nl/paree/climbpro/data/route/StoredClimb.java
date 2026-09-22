@@ -26,7 +26,18 @@ public final class StoredClimb {
      * Auto-computed shape classification (see {@code domain.climb.ClimbShape}), stored as the
      * enum name. Phone-only for now — not part of the wire payload. Null on routes stored
      * before this field existed; callers should fall back to classifying {@link #segments}
-     * on the fly rather than treating null as a real category.
+     * on the fly rather than treating null as a real category. Overwritten by re-detection /
+     * re-segmentation, so it always reflects the current auto classification — never the
+     * user's choice. See {@link #shapeOverride}.
      */
     public String shape;
+    /**
+     * User-supplied override of {@link #shape} (issue #36), stored as the enum name. Null means
+     * "no override — use the auto-computed {@link #shape}". Set/cleared only via explicit user
+     * action (never by detection/re-segmentation) and carried across resync/re-import by
+     * {@code RouteRepository#mergePreviousClimbUserData}, the same way {@link #userDisplayName}
+     * survives a rename. Read through {@code ClimbShapeClassifier#effectiveShape}, never
+     * directly, so override-wins-over-auto logic lives in one place.
+     */
+    public String shapeOverride;
 }

@@ -150,6 +150,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
+        binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
 
@@ -306,6 +307,45 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .setView(picker)
                 .setPositiveButton("Herbereken", (dialog, which) ->
                         viewModel.reSegment(routeId, climbIndex, picker.getValue()))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    /**
+     * Lets the user manually override the auto-computed shape tag (issue #36), e.g. when the
+     * heuristic in {@code ClimbShapeClassifier} mislabels a climb. "Automatisch" clears the
+     * override, falling back to the auto classification again — same shape as clearing a rename
+     * back to the auto name.
+     */
+    private void showShapeOverrideDialog() {
+        nl.paree.climbpro.domain.climb.ClimbShape[] shapes =
+                nl.paree.climbpro.domain.climb.ClimbShape.values();
+        String[] labels = new String[shapes.length + 1];
+        labels[0] = "Automatisch";
+        for (int i = 0; i < shapes.length; i++) {
+            labels[i + 1] = nl.paree.climbpro.domain.climb.ClimbShapeLabel.forShape(shapes[i]);
+        }
+
+        int current = 0;
+        if (loadedClimb != null && loadedClimb.shapeOverride != null) {
+            for (int i = 0; i < shapes.length; i++) {
+                if (shapes[i].name().equals(loadedClimb.shapeOverride)) {
+                    current = i + 1;
+                    break;
+                }
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Vorm van de klim")
+                .setSingleChoiceItems(labels, current, null)
+                .setPositiveButton("Opslaan", (dialog, which) -> {
+                    android.widget.ListView lv = ((AlertDialog) dialog).getListView();
+                    int chosen = lv.getCheckedItemPosition();
+                    String shapeName = (chosen >= 1 && chosen <= shapes.length)
+                            ? shapes[chosen - 1].name() : null;
+                    viewModel.setShapeOverride(routeId, climbIndex, shapeName);
+                })
                 .setNegativeButton("Annuleer", null)
                 .show();
     }

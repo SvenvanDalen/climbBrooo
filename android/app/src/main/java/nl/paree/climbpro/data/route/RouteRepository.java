@@ -177,6 +177,31 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets (or clears, when {@code shapeName} is null/blank/"auto") a manual override of a
+     * climb's shape tag (issue #36). Mirrors {@link #renameClimb}'s pattern exactly, including
+     * surviving resync via {@link #mergePreviousClimbUserData}. An unrecognised
+     * {@code shapeName} is treated the same as clearing the override, since
+     * {@code ClimbShapeClassifier#effectiveShape} would ignore it anyway.
+     */
+    public void setClimbShapeOverride(String routeId, int climbIndex, String shapeName)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            String normalised = null;
+            if (shapeName != null) {
+                try {
+                    normalised = nl.paree.climbpro.domain.climb.ClimbShape.valueOf(shapeName).name();
+                } catch (IllegalArgumentException unknownValue) {
+                    normalised = null;
+                }
+            }
+            route.climbs.get(climbIndex).shapeOverride = normalised;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
      * Renames multiple climbs in one load/write cycle, for the bulk rename screen. Out-of-range
      * indices (including negatives) are silently skipped, matching {@link #renameClimb}. A blank
      * name clears {@code userDisplayName} back to null so the climb falls back to its auto name.
@@ -255,10 +280,10 @@ public final class RouteRepository {
     }
 
     /**
-     * Copies user-supplied climb data (display-name rename + per-segment surface type)
-     * from a route's previous climbs onto the freshly detected ones, matching climbs by
-     * start distance. Per-segment surface is copied by index — segment counts are stable
-     * for unchanged geometry — and only non-UNKNOWN values overwrite, so re-detection
+     * Copies user-supplied climb data (display-name rename + shape-tag override + per-segment
+     * surface type) from a route's previous climbs onto the freshly detected ones, matching
+     * climbs by start distance. Per-segment surface is copied by index — segment counts are
+     * stable for unchanged geometry — and only non-UNKNOWN values overwrite, so re-detection
      * never erases a user's customisation.
      */
     private static void mergePreviousClimbUserData(List<StoredClimb> fresh,
@@ -270,6 +295,7 @@ public final class RouteRepository {
             StoredClimb p = prevByStart.get(f.startDistance);
             if (p == null) continue;
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
+            if (p.shapeOverride != null) f.shapeOverride = p.shapeOverride;
             if (f.name == null && p.name != null) f.name = p.name;
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
