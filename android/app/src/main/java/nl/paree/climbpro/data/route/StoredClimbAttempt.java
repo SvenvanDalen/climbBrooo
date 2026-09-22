@@ -28,4 +28,13 @@ public final class StoredClimbAttempt {
      * whose segSplitSec.length matches the current segment count.
      */
     public int[]  segSplitSec;
+
+    /**
+     * Phone-only diary fields (issue #46): a short free-text memory of the attempt, and/or the
+     * filename (not a full path) of a photo persisted under
+     * {@code getFilesDir()/attempt_photos/} via {@link AttemptPhotoStore}. Both null by default.
+     * Never shipped to the watch — same phone-only treatment as route notes/tags.
+     */
+    public String note;
+    public String photoFileName;
 }
