@@ -1,0 +1,137 @@
+package nl.paree.climbpro.domain.climb;
+
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Post-ride "fatigue curve" (issue #21, "Vermoeidheidscurve visualisatie na de rit"): shows how
+ * a rider's climbing pace changed across consecutive climbs within the same Strava activity.
+ *
+ * <h2>Why actual VAM instead of {@link nl.paree.climbpro.domain.power.RouteAwareClimbEstimator}</h2>
+ * {@code RouteAwareClimbEstimator}/{@link nl.paree.climbpro.domain.power.ClimbTimeEstimator}
+ * build a fatigue-aware *prediction* of climb time from a {@link
+ * nl.paree.climbpro.domain.power.RiderProfile} (FTP, mass, W'). Reusing that machinery
+ * post-ride would require every rider to have a complete profile and would compare real data
+ * against a modelled estimate, which compounds two sources of error. This screen instead uses
+ * only data that always exists once an activity is synced: elapsed time per climb attempt
+ * ({@link StoredClimbAttempt#elapsedSec}) and the climb's elevation gain. The ratio
+ * (elevation gain / elapsed time -> VAM, vertical metres/hour) needs no rider profile at all,
+ * and its trend across a ride is exactly the "fatigue curve" the issue asks for: a rider going
+ * slower up later climbs, relative to how they went up the first one, is fatigue made visible.
+ *
+ * <h2>Ordering climbs within a ride</h2>
+ * {@link StoredClimbAttempt#dateEpochSec} is the *activity* start time (see {@code
+ * StravaActivitiesRepository#matchActivity}), so every attempt from one activity carries the
+ * same timestamp — it cannot be used to order distinct climbs chronologically within the ride.
+ * Attempts are instead ordered by the position of their climb within its route ({@link
+ * ClimbRef#orderIndex}, the climb's index in {@code StoredRoute#climbs} — climbs are detected
+ * walking the route start-to-end, so this index is a start-distance-along-route proxy for ride
+ * order), then by {@link StoredClimbAttempt#passIndex} for repeat ascents of the same climb.
+ * This is exact for rides that follow a single route; for a ride that touches climbs from more
+ * than one route (e.g. rides that leave and rejoin a known route, or free-roam rides that
+ * happen to cross two mapped routes) it is a best-effort approximation, grouped by route id
+ * first. Getting a true chronological order would require recording each attempt's start
+ * offset within the activity track, which is out of scope for this bounded, phone-only change.
+ *
+ * Pure and stateless, like {@link VamCalculator}.
+ */
+public final class RideFatigueCurveCalculator {
+
+    private RideFatigueCurveCalculator() {}
+
+    /** Per-climb reference data the caller resolves (route lookup) before calling {@link #computeForActivity}. */
+    public static final class ClimbRef {
+        public final String displayName;
+        public final int    elevationGainM;
+        public final String routeId;
+        /** Index of this climb within its route's climb list; used as a ride-order proxy (see class Javadoc). */
+        public final int    orderIndex;
+
+        public ClimbRef(String displayName, int elevationGainM, String routeId, int orderIndex) {
+            this.displayName = displayName;
+            this.elevationGainM = elevationGainM;
+            this.routeId = routeId;
+            this.orderIndex = orderIndex;
+        }
+    }
+
+    /** One point on the fatigue curve: one climb attempt within the ride, in ride order. */
+    public static final class FatiguePoint {
+        public final int    ordinal; // 1-based position within the ride
+        public final String label;
+        public final int    elapsedSec;
+        /** Actual VAM for this attempt: elevationGainM / elapsedSec * 3600 (vertical m/h). */
+        public final double vamMPerHour;
+        /** vamMPerHour relative to the ride's first climb, as a percentage (100 = same pace, &lt;100 = slower). */
+        public final double relativeToFirstPct;
+
+        FatiguePoint(int ordinal, String label, int elapsedSec, double vamMPerHour, double relativeToFirstPct) {
+            this.ordinal = ordinal;
+            this.label = label;
+            this.elapsedSec = elapsedSec;
+            this.vamMPerHour = vamMPerHour;
+            this.relativeToFirstPct = relativeToFirstPct;
+        }
+    }
+
+    /** Groups attempts by {@link StoredClimbAttempt#activityId}, preserving first-seen activity order. */
+    public static Map<Long, List<StoredClimbAttempt>> groupByActivity(List<StoredClimbAttempt> attempts) {
+        Map<Long, List<StoredClimbAttempt>> out = new LinkedHashMap<>();
+        if (attempts == null) return out;
+        for (StoredClimbAttempt a : attempts) {
+            out.computeIfAbsent(a.activityId, k -> new ArrayList<>()).add(a);
+        }
+        return out;
+    }
+
+    /**
+     * Builds the fatigue curve for a single activity's attempts.
+     *
+     * @param attemptsForOneActivity attempts sharing one {@code activityId} (not enforced —
+     *                               caller is expected to have grouped via {@link #groupByActivity}).
+     * @param climbInfoById          climbId -> {@link ClimbRef}, resolved by the caller from the route catalog.
+     * @return the ride's fatigue curve, in ride order; empty when fewer than 2 climbs have
+     *         usable data (nothing meaningful to chart) or no attempts/lookup were given.
+     */
+    public static List<FatiguePoint> computeForActivity(
+            List<StoredClimbAttempt> attemptsForOneActivity, Map<String, ClimbRef> climbInfoById) {
+        if (attemptsForOneActivity == null || attemptsForOneActivity.isEmpty() || climbInfoById == null) {
+            return Collections.emptyList();
+        }
+
+        List<StoredClimbAttempt> usable = new ArrayList<>();
+        for (StoredClimbAttempt a : attemptsForOneActivity) {
+            ClimbRef ref = climbInfoById.get(a.climbId);
+            // elapsedSec/elevationGainM must both be positive or VAM is undefined/meaningless.
+            if (ref == null || a.elapsedSec <= 0 || ref.elevationGainM <= 0) continue;
+            usable.add(a);
+        }
+        if (usable.size() < 2) {
+            return Collections.emptyList();
+        }
+
+        usable.sort(Comparator
+                .comparing((StoredClimbAttempt a) -> String.valueOf(climbInfoById.get(a.climbId).routeId))
+                .thenComparingInt(a -> climbInfoById.get(a.climbId).orderIndex)
+                .thenComparingInt(a -> a.passIndex)
+                .thenComparing(a -> a.climbId));
+
+        List<FatiguePoint> out = new ArrayList<>(usable.size());
+        double firstVam = 0;
+        for (int i = 0; i < usable.size(); i++) {
+            StoredClimbAttempt a = usable.get(i);
+            ClimbRef ref = climbInfoById.get(a.climbId);
+            double vam = ref.elevationGainM / (double) a.elapsedSec * 3600.0;
+            if (i == 0) firstVam = vam;
+            double relPct = firstVam > 0 ? (vam / firstVam) * 100.0 : 100.0;
+            out.add(new FatiguePoint(i + 1, ref.displayName, a.elapsedSec, vam, relPct));
+        }
+        return out;
+    }
+}

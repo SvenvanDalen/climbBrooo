@@ -36,7 +36,7 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
         empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TimelineAdapter(this::openAttempt);
+        adapter = new TimelineAdapter(this::openAttempt, this::openRideFatigue);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(ClimbTimelineViewModel.class);
@@ -54,5 +54,14 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
             return;
         }
         startActivity(ClimbDetailActivity.intentFor(this, row.routeId, row.climbIndex));
+    }
+
+    /**
+     * Long-press entry point (issue #21) to the post-ride fatigue curve for the ride this
+     * attempt belongs to. Rides with fewer than 2 climbs with usable data are handled inside
+     * {@link RideFatigueActivity} itself, so no pre-check is needed here.
+     */
+    private void openRideFatigue(ClimbTimelineViewModel.TimelineRow row) {
+        startActivity(RideFatigueActivity.intentFor(this, row.activityId));
     }
 }
