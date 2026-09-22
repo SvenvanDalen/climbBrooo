@@ -64,4 +64,18 @@ public final class ClimbConstants {
      * more than simplification jitter alone.
      */
     public static final double DUPLICATE_CLIMB_MATCH_RADIUS_M = 150.0;
+
+    /**
+     * Minimum number of distinct matched ride attempts for a climb to count as "vaak herhaald"
+     * (repeated often) and classify TRAINING (issue #44). Used by {@link ClimbUsageClassifier}.
+     */
+    public static final int    USAGE_TRAINING_MIN_ATTEMPTS  = 3;
+    /**
+     * Radius (metres) around a once-ridden climb's start within which another frequently-ridden
+     * climb (attemptCount &gt;= {@link #USAGE_TRAINING_MIN_ATTEMPTS}) counts as the same "local
+     * training area" — the practical "dicht bij huis" proxy used because no general
+     * home-location field exists yet (see {@link ClimbUsageClassifier} doc comment). Used by
+     * {@link ClimbUsageClassifier}.
+     */
+    public static final double USAGE_LOCAL_CLUSTER_RADIUS_M = 5_000.0;
 }

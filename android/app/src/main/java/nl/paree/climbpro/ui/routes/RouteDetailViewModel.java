@@ -10,12 +10,16 @@ import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
+import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.climb.ClimbUsageClassifier;
+import nl.paree.climbpro.domain.climb.ClimbUsageType;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
@@ -32,6 +36,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
+    private final ClimbAttemptRepository attemptRepo;
     private final OnboardPushService onboardPushService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -42,12 +47,14 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<List<StoredSurfaceSection>> surfaceSections = new MutableLiveData<>();
     private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
     private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
+    private final MutableLiveData<ClimbUsageType[]> climbUsageTypes = new MutableLiveData<>();
     private final MutableLiveData<String> onboardPushMessage = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
         riderRepo = new RiderProfileRepository(app);
+        attemptRepo = new ClimbAttemptRepository(app);
         onboardPushService = new OnboardPushService(
                 ((ClimbProApplication) app).connectIqClient());
     }
@@ -59,6 +66,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<StoredSurfaceSection>> surfaceSections() { return surfaceSections; }
     public LiveData<RoutePassport> passport()           { return passport; }
     public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
+    public LiveData<ClimbUsageType[]> climbUsageTypes()  { return climbUsageTypes; }
     public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
 
     public void loadRoute(String routeId) {
@@ -71,6 +79,9 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 int[][] plan = RoutePacingPlanner.plan(r, profile);
                 passport.postValue(RoutePassport.from(r, plan));
                 climbTargetSeconds.postValue(perClimbTotals(r, plan));
+                List<StoredClimb> climbs = r.climbs != null ? r.climbs : Collections.emptyList();
+                List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                climbUsageTypes.postValue(ClimbUsageClassifier.classifyAll(climbs, attempts));
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
             } catch (Exception e) {
