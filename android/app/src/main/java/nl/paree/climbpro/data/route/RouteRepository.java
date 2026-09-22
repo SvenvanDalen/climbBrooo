@@ -6,6 +6,7 @@ import android.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbNameSuggester;
@@ -133,6 +134,18 @@ public final class RouteRepository {
         catalog.removeIf(e -> e.routeId.equals(route.routeId));
         catalog.add(toCatalogEntry(route, points, climbs));
         saveCatalog(catalog);
+
+        // A climb's elevationGain/avgGradient (and thus its historic difficulty score) can
+        // only change here — a fresh import or resync — never via the rename/notes/surface
+        // mutators below, so this is the one place that needs to invalidate the cache.
+        invalidateHistoricScoreCache();
+    }
+
+    /** No-op when {@code context} isn't a {@link ClimbProApplication} (e.g. an unusual test setup). */
+    private void invalidateHistoricScoreCache() {
+        if (context instanceof ClimbProApplication) {
+            ((ClimbProApplication) context).historicClimbScoreCache().invalidate();
+        }
     }
 
     public StoredRoute loadRoute(String routeId) throws IOException {

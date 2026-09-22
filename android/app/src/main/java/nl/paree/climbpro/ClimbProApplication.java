@@ -9,10 +9,12 @@ import java.io.File;
 import nl.paree.climbpro.connectiq.ConnectIqClient;
 import nl.paree.climbpro.connectiq.WatchRequestHandler;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
 
 public final class ClimbProApplication extends Application {
 
     private ConnectIqClient ciqClient;
+    private final HistoricClimbScoreCache historicClimbScoreCache = new HistoricClimbScoreCache();
 
     @Override
     public void onCreate() {
@@ -47,5 +49,14 @@ public final class ClimbProApplication extends Application {
     /** App-scoped Connect IQ client. Reused by RouteSyncWorker — never construct your own. */
     public ConnectIqClient connectIqClient() {
         return ciqClient;
+    }
+
+    /**
+     * App-scoped cache of the rider's historic per-climb difficulty scores; see
+     * {@link HistoricClimbScoreCache} for why this must outlive a single ViewModel/screen.
+     * Invalidate it wherever route or climb-attempt data actually changes on disk.
+     */
+    public HistoricClimbScoreCache historicClimbScoreCache() {
+        return historicClimbScoreCache;
     }
 }

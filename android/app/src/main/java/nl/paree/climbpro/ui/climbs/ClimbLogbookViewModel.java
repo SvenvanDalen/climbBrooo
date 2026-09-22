@@ -8,12 +8,10 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
-import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
-import nl.paree.climbpro.data.route.StoredRoute;
-import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.ClimbCatalogIndex;
 import nl.paree.climbpro.domain.climb.ClimbStreakCalculator;
 import nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
@@ -107,23 +105,13 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
     /** Maps each wanted climbId to the first route+index that contains it, with a display name. */
     private Map<String, Location> resolveLocations(Set<String> wanted) {
         Map<String, Location> map = new HashMap<>();
-        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
-            try {
-                StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                if (route.climbs == null) continue;
-                for (int i = 0; i < route.climbs.size(); i++) {
-                    StoredClimb c = route.climbs.get(i);
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
-                    if (wanted.contains(id) && !map.containsKey(id)) {
-                        String name = c.userDisplayName != null ? c.userDisplayName
-                                : (c.name != null ? c.name : "Klim");
-                        map.put(id, new Location(entry.routeId, i, name));
-                    }
-                }
-            } catch (Exception ignored) {
-                // A route that fails to load just won't resolve its climbs' names/links.
-            }
+        for (Map.Entry<String, ClimbCatalogIndex.Entry> en
+                : ClimbCatalogIndex.resolve(routeRepo, wanted).entrySet()) {
+            ClimbCatalogIndex.Entry located = en.getValue();
+            StoredClimb c = located.climb;
+            String name = c.userDisplayName != null ? c.userDisplayName
+                    : (c.name != null ? c.name : "Klim");
+            map.put(en.getKey(), new Location(located.routeId, located.index, name));
         }
         return map;
     }

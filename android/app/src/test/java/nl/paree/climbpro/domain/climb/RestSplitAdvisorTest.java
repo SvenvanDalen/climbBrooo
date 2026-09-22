@@ -67,9 +67,12 @@ public class RestSplitAdvisorTest {
 
     @Test
     public void hardButTooShortClimb_isNotFlagged() {
-        // Same gradient/steepness profile as the flagged case above but under
-        // MIN_SPLITTABLE_LENGTH_M, so there's no room for a meaningful rest split.
-        StoredClimb hardButShort = climb(0, RestSplitAdvisor.MIN_SPLITTABLE_LENGTH_M - 1, 200, 0.10);
+        // Difficulty score = 1000 * 0.10 = 100, well above moderateHistory()'s p90 threshold
+        // (28.0), so the length gate is the ONLY thing preventing this from being flagged —
+        // unlike a lower score, which would be excluded by the difficulty check alone and
+        // would leave the length gate untested. Length is kept just under
+        // MIN_SPLITTABLE_LENGTH_M so there's no room for a meaningful rest split.
+        StoredClimb hardButShort = climb(0, RestSplitAdvisor.MIN_SPLITTABLE_LENGTH_M - 1, 1000, 0.10);
         List<StoredClimb> climbs = Collections.singletonList(hardButShort);
 
         List<RestSplitAdvisor.Suggestion> suggestions =

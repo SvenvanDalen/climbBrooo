@@ -6,6 +6,8 @@ import android.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import nl.paree.climbpro.ClimbProApplication;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,13 +28,14 @@ public final class ClimbAttemptRepository {
     private static final String TAG  = "ClimbAttemptRepo";
     private static final String FILE = "climb_attempts.json";
 
+    private final Context context;
     private final File file;
     private final ObjectMapper mapper;
 
     public ClimbAttemptRepository(Context context) {
-        Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
-        this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        this.context = context.getApplicationContext();
+        this.file    = new File(this.context.getFilesDir(), FILE);
+        this.mapper  = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
     public List<StoredClimbAttempt> loadAll() {
@@ -64,6 +67,12 @@ public final class ClimbAttemptRepository {
             if (seen.add(key(a))) all.add(a);
         }
         writeAtomic(file, mapper.writeValueAsBytes(all));
+
+        // New attempts can change the rider's historic-difficulty baseline (see
+        // HistoricClimbScoreCache), so it must be dropped whenever we actually add one.
+        if (context instanceof ClimbProApplication) {
+            ((ClimbProApplication) context).historicClimbScoreCache().invalidate();
+        }
     }
 
     private static String key(StoredClimbAttempt a) {
