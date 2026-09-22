@@ -92,12 +92,21 @@ public final class ClimbGpxWriter {
         // Strava's privacy zones hide the approach to a saved place rather than just its pin.
         // The rest of the climb (beyond the radius) stays precise, per the issue's scope.
         int trackStartIdx = startIdx;
+        // Whole climb inside the privacy zone: no index in [startIdx, endIdx] is ever a safe
+        // distance from the true start, including endIdx itself. This is its own explicit
+        // case (rather than letting the "walk forward, then clamp" loop below silently
+        // degenerate to trackStartIdx == endIdx) precisely because trackStartIdx == endIdx
+        // must NOT be treated as "found the exit point" — endIdx is still inside the zone.
+        boolean wholeClimbInZone = false;
         if (fuzzStart) {
             while (trackStartIdx <= endIdx
                     && route.distances[trackStartIdx] - climb.startDistance < privacyRadiusMeters) {
                 trackStartIdx++;
             }
-            if (trackStartIdx > endIdx) trackStartIdx = endIdx; // whole climb inside the zone
+            if (trackStartIdx > endIdx) {
+                trackStartIdx = endIdx;
+                wholeClimbInZone = true;
+            }
         }
 
         StringBuilder sb = new StringBuilder(512 + (endIdx - startIdx + 1) * 64);
@@ -105,8 +114,8 @@ public final class ClimbGpxWriter {
         sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
                 + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
 
-        appendWaypoints(sb, route, climb, startIdx, endIdx, trackStartIdx, fuzzedStart,
-                bestSplitSec, bestElapsedSec, name);
+        appendWaypoints(sb, route, climb, startIdx, endIdx, trackStartIdx, wholeClimbInZone,
+                fuzzedStart, bestSplitSec, bestElapsedSec, name);
 
         sb.append("  <trk>\n");
         sb.append("    <name>").append(escape(name)).append("</name>\n");
@@ -122,14 +131,20 @@ public final class ClimbGpxWriter {
             }
             sb.append("</trkpt>\n");
         }
-        for (int i = trackStartIdx; i <= endIdx; i++) {
-            sb.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
-              .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
-            if (route.elevations != null && i < route.elevations.length
-                    && !Double.isNaN(route.elevations[i])) {
-                sb.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
+        if (!wholeClimbInZone) {
+            // Safe to walk the real geometry: every index from trackStartIdx onward is
+            // outside the privacy radius (that's how trackStartIdx was found above). When
+            // the whole climb is inside the zone instead, there is no such safe index —
+            // the polyline stops at the single fuzzed point emitted above.
+            for (int i = trackStartIdx; i <= endIdx; i++) {
+                sb.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
+                  .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
+                if (route.elevations != null && i < route.elevations.length
+                        && !Double.isNaN(route.elevations[i])) {
+                    sb.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
+                }
+                sb.append("</trkpt>\n");
             }
-            sb.append("</trkpt>\n");
         }
         sb.append("    </trkseg>\n");
         sb.append("  </trk>\n");
@@ -138,8 +153,8 @@ public final class ClimbGpxWriter {
     }
 
     private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
-            int startIdx, int endIdx, int trackStartIdx, double[] fuzzedStart,
-            int[] bestSplitSec, Integer bestElapsedSec, String climbName) {
+            int startIdx, int endIdx, int trackStartIdx, boolean wholeClimbInZone,
+            double[] fuzzedStart, int[] bestSplitSec, Integer bestElapsedSec, String climbName) {
         List<StoredSegment> segments = climb.segments;
         if (segments == null || segments.isEmpty()) return;
 
@@ -165,7 +180,13 @@ public final class ClimbGpxWriter {
             StoredSegment seg = segments.get(i);
             boundary += seg.distance;
             int idx = nearestIndex(route, startIdx, endIdx, boundary);
-            if (idx < 0 || idx < trackStartIdx) {
+            // wholeClimbInZone: trackStartIdx == endIdx and that point is itself still
+            // inside the zone (see the comment where wholeClimbInZone is computed), so the
+            // comparison must include idx == trackStartIdx here — unlike the normal case,
+            // where trackStartIdx is the first index confirmed to be outside the zone and a
+            // waypoint landing exactly on it is safe to keep precise.
+            boolean inZone = wholeClimbInZone ? idx <= trackStartIdx : idx < trackStartIdx;
+            if (idx < 0 || inZone) {
                 // Inside the trimmed privacy zone: skip rather than expose a precise point.
                 if (havePr) cumulativeSplitSec += bestSplitSec[i];
                 continue;

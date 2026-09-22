@@ -301,4 +301,86 @@ public class ClimbGpxWriterTest {
         assertTrue(m.find());
         assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
     }
+
+    // -----------------------------------------------------------------------
+    // Whole climb inside the privacy zone (regression for the leak where a home
+    // climb shorter than the configured radius still exposed its real end coordinate).
+    // -----------------------------------------------------------------------
+
+    /** Formats a coordinate exactly the way ClimbGpxWriter does, for exact-match checks. */
+    private static String fmt(double coord) {
+        return String.format(java.util.Locale.US, "%.7f", coord);
+    }
+
+    @Test
+    public void homeClimb_entirelyInsidePrivacyRadius_leaksNoRealCoordinate() {
+        // Climb spans distance 0..1000m; radius 1500m covers the entire climb, including its
+        // endpoint (endIdx) — exactly the case that used to clamp trackStartIdx to endIdx and
+        // then emit the real, unfuzzed endpoint as both a <trkpt> and the "Top" <wpt>.
+        StoredRoute r = route();
+        StoredClimb c = climb();
+        c.isHome = true;
+        double radius = 1500;
+
+        String gpx = ClimbGpxWriter.toGpx(r, c, 0, null, null, radius);
+
+        // Core privacy guarantee: none of the route's real (unfuzzed) coordinates — every one
+        // of which sits within the privacy radius of the true start here — may appear anywhere
+        // in the exported GPX, neither as a <trkpt> nor as a <wpt>.
+        for (int i = 0; i < r.lats.length; i++) {
+            String realLat = fmt(r.lats[i]);
+            String realLon = fmt(r.lons[i]);
+            assertFalse("real point " + i + " (lat) leaked into GPX", gpx.contains(realLat));
+            assertFalse("real point " + i + " (lon) leaked into GPX", gpx.contains(realLon));
+        }
+
+        // Only the single fuzzed start point should be emitted as track geometry — no real
+        // trackpoints, since every real point on this climb is inside the privacy zone.
+        assertEquals(1, count(TRKPT_PATTERN, gpx));
+        Matcher trk = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(trk.find());
+        double[] fuzzedStart = CoordinateFuzzer.fuzz(c.startLat, c.startLon, radius);
+        assertEquals(fuzzedStart[0], Double.parseDouble(trk.group(1)), 1e-6);
+        assertEquals(fuzzedStart[1], Double.parseDouble(trk.group(2)), 1e-6);
+
+        // No "Top" (or any other segment-boundary) waypoint: every boundary, including the
+        // final one that used to leak, falls inside the privacy zone and must be omitted.
+        assertEquals(0, count(WPT_PATTERN, gpx));
+        assertFalse(gpx.contains("<name>Top</name>"));
+    }
+
+    @Test
+    public void homeClimb_entirelyInsidePrivacyRadius_stillProducesWellFormedXml() throws Exception {
+        StoredClimb c = climb();
+        c.isHome = true;
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null, 1500);
+        javax.xml.parsers.DocumentBuilderFactory factory =
+                javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
+        builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+    }
+
+    @Test
+    public void homeClimb_partiallyInsidePrivacyRadius_keepsBoundaryExactlyAtZoneExitPrecise() {
+        // Non-degenerate case: trackStartIdx (1) < endIdx (4). The segment-1 boundary sits
+        // exactly at trackStartIdx, i.e. the first point confirmed to be outside the privacy
+        // zone — this must stay precise (idx < trackStartIdx should still be false here),
+        // unlike the whole-climb-in-zone case where idx == trackStartIdx is still in the zone.
+        StoredRoute r = route();
+        StoredClimb c = climb();
+        c.isHome = true;
+        double radius = 250; // exits the zone right at route point index 1 (distance 250m)
+
+        String gpx = ClimbGpxWriter.toGpx(r, c, 0, null, null, radius);
+
+        assertTrue(gpx.contains("<name>Segment 1</name>"));
+        Matcher m = WPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(r.lats[1], Double.parseDouble(m.group(1)), 1e-6);
+        assertEquals(r.lons[1], Double.parseDouble(m.group(2)), 1e-6);
+
+        // Remaining 3 boundaries (segments 2, 3, Top) also stay precise; all 4 are present.
+        assertEquals(4, count(WPT_PATTERN, gpx));
+        assertTrue(gpx.contains("<name>Top</name>"));
+    }
 }
