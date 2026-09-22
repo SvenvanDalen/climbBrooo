@@ -104,7 +104,6 @@ public final class RouteRepository {
         route.lons       = toDoubleArray(points, "lon");
         route.elevations = toDoubleArray(points, "ele");
         route.distances  = toDoubleArray(points, "dist");
-        route.climbs     = toStoredClimbs(climbs);
         // Load existing stored data once to preserve user customisation (renames, surface types).
         // A single read avoids the TOCTOU race that three separate reads created.
         StoredRoute prev = loadPreviousRoute(route.routeId);
@@ -121,14 +120,22 @@ public final class RouteRepository {
         // Carry the tombstone list forward across resync so a user-confirmed merge/removal
         // (recorded by removeClimb) stays removed even after fresh re-detection below.
         route.removedClimbIds = new ArrayList<>(prevRemovedClimbIds);
-        filterOutTombstonedClimbs(route.climbs, route.removedClimbIds);
+        // Filter the freshly (re-)detected climbs against the tombstone list BEFORE deriving
+        // BOTH route.climbs and the flat-segment coverage from them, so a merged-away climb's
+        // distance range is consistently treated as "not a climb" by both. Previously
+        // FlatSegmentDetector was fed the raw, unfiltered `climbs` list, so it saw the
+        // tombstoned climb as still climb-covered and skipped emitting a flat segment for it —
+        // leaving a silent gap in the route (missing from both route.climbs AND
+        // route.flatSegments) after a merge survived a resync.
+        List<Climb> filteredClimbs = filterOutTombstonedClimbs(
+                climbs != null ? climbs : Collections.<Climb>emptyList(), route.removedClimbIds);
+        route.climbs = toStoredClimbs(filteredClimbs);
         mergePreviousClimbUserData(route.climbs, prevClimbs);
         fillMissingClimbNames(route.climbs);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
                 : 0;
-        List<FlatSegment> flatDomain = FlatSegmentDetector.detect(
-                routeLength, climbs != null ? climbs : Collections.emptyList());
+        List<FlatSegment> flatDomain = FlatSegmentDetector.detect(routeLength, filteredClimbs);
         List<RoutePoint> pts = points != null ? points : Collections.emptyList();
         route.flatSegments    = toStoredFlatSegments(flatDomain, pts, prevFlats);
         route.surfaceSections = new ArrayList<>(prevSections);
@@ -237,16 +244,26 @@ public final class RouteRepository {
     }
 
     /**
-     * Removes any freshly (re-)detected climb whose {@link ClimbIdentity} matches an entry in
-     * {@code removedIds} — the durable record of climbs the user explicitly removed (see
-     * {@link StoredRoute#removedClimbIds}). Called from {@link #saveRoute} so a Strava resync's
-     * from-scratch re-detection respects a prior merge/removal decision.
+     * Returns {@code climbs} with any freshly (re-)detected climb removed whose
+     * {@link ClimbIdentity} matches an entry in {@code removedIds} — the durable record of
+     * climbs the user explicitly removed (see {@link StoredRoute#removedClimbIds}). Called from
+     * {@link #saveRoute} so a Strava resync's from-scratch re-detection respects a prior
+     * merge/removal decision. The result feeds BOTH {@code route.climbs} and
+     * {@link FlatSegmentDetector#detect}, so a tombstoned climb's distance range is consistently
+     * treated as non-climb-covered in both, rather than leaving a route-coverage gap.
      */
-    private static void filterOutTombstonedClimbs(List<StoredClimb> climbs, List<String> removedIds) {
-        if (climbs == null || removedIds == null || removedIds.isEmpty()) return;
+    private static List<Climb> filterOutTombstonedClimbs(List<Climb> climbs, List<String> removedIds) {
+        if (climbs == null || climbs.isEmpty() || removedIds == null || removedIds.isEmpty()) {
+            return climbs != null ? climbs : Collections.<Climb>emptyList();
+        }
         Set<String> removedSet = new HashSet<>(removedIds);
-        climbs.removeIf(c -> removedSet.contains(
-                ClimbIdentity.of(c.startLat, c.startLon, c.length)));
+        List<Climb> result = new ArrayList<>(climbs.size());
+        for (Climb c : climbs) {
+            if (!removedSet.contains(ClimbIdentity.of(c.startLat, c.startLon, c.length))) {
+                result.add(c);
+            }
+        }
+        return result;
     }
 
     private void rebuildCatalogAfterClimbRemoval(String routeId, StoredRoute route) throws IOException {

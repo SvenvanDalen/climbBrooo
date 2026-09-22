@@ -18,6 +18,7 @@ import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.NearDuplicateClimbFinder;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -349,6 +350,117 @@ public class ClimbMergeServiceTest {
         StoredRoute afterResync = routeRepo.loadRoute("removeRoute");
         assertTrue("the merged-away climb must not be silently reintroduced by resync",
                 afterResync.climbs.isEmpty());
+    }
+
+    /**
+     * Regression test for the flat-segment coverage gap found in the third review pass: when a
+     * merged-away (tombstoned) climb is re-detected on resync and correctly filtered out of
+     * {@code route.climbs}, its distance range must still be covered by {@code route.flatSegments}
+     * — {@link RouteRepository#saveRoute} must feed {@link nl.paree.climbpro.domain.segment.FlatSegmentDetector}
+     * the SAME tombstone-filtered climb list, not the raw re-detected one, otherwise that stretch
+     * of the route silently disappears from both lists.
+     */
+    @Test
+    public void merge_removalLeavesAFlatSegmentCoveringTheTombstonedRangeAfterResync() throws Exception {
+        StoredClimb keep = climb(45.0005, 6.0000, 2000, 0.050, null);
+        StoredClimb remove = climb(45.0015, 6.0000, 2050, 0.052, null);
+        seedRoute("keepRoute", keep);
+        seedRoute("removeRoute", remove);
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+
+        NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
+        NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
+
+        new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
+
+        // Simulate a Strava resync: fresh geometry-based re-detection finds the same climb again
+        // (same start coordinate + length as the one that was merged away).
+        nl.paree.climbpro.domain.climb.Climb reDetected = nl.paree.climbpro.domain.climb.Climb.builder()
+                .startDistance(0)
+                .endDistance(remove.length)
+                .length(remove.length)
+                .elevationGain(100)
+                .avgGradient(remove.avgGradient)
+                .startLat(remove.startLat)
+                .startLon(remove.startLon)
+                .build();
+
+        int routeLength = remove.length + 500; // extra flat tail beyond the (would-be) climb
+        List<nl.paree.climbpro.domain.route.RoutePoint> points = new ArrayList<>();
+        points.add(new nl.paree.climbpro.domain.route.RoutePoint(
+                remove.startLat, remove.startLon, 100, 0));
+        points.add(new nl.paree.climbpro.domain.route.RoutePoint(
+                remove.startLat + 0.02, remove.startLon, 200, routeLength));
+
+        StoredRoute routeForResave = routeRepo.loadRoute("removeRoute");
+        routeRepo.saveRoute(routeForResave, points, java.util.Collections.singletonList(reDetected));
+
+        StoredRoute afterResync = routeRepo.loadRoute("removeRoute");
+        assertTrue("the merged-away climb must not be silently reintroduced by resync",
+                afterResync.climbs.isEmpty());
+
+        assertTrue("the tombstoned climb's distance range must not be a coverage gap — it must "
+                        + "show up as a flat segment instead",
+                afterResync.flatSegments != null && afterResync.flatSegments.stream()
+                        .anyMatch(fs -> fs.startDistance == 0 && fs.endDistance >= remove.length));
+    }
+
+    /**
+     * Regression test for the merge()-atomicity bug found in the third review pass: if
+     * {@code routeRepo.removeClimb(...)} throws partway through {@code merge()}, the system must
+     * be left in a coherent state rather than a partially-inconsistent one. The fix reorders
+     * {@code merge()} to perform {@code removeClimb} BEFORE {@code remapAttempts}, so a failure in
+     * {@code removeClimb} means nothing has happened yet — the removed climb must still be present
+     * in its route AND its attempt history must NOT have been remapped. (The original order risked
+     * the opposite: history silently reassigned while the climb was still present.)
+     */
+    @Test
+    public void merge_leavesConsistentStateWhenRemoveClimbFailsPartway() throws Exception {
+        // keep already has a display name so the rename-carry-over step (which also writes) is
+        // skipped, isolating the failure to removeClimb's write.
+        StoredClimb keep = climb(45.0005, 6.0000, 2000, 0.050, "Keep Name");
+        StoredClimb remove = climb(45.0015, 6.0000, 2050, 0.052, null);
+        seedRoute("keepRoute", keep);
+        seedRoute("removeRoute", remove);
+
+        String removeId = ClimbIdentity.of(remove.startLat, remove.startLon, remove.length);
+        seedAttempts(attempt(removeId, 111L));
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+
+        NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
+        NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
+
+        // Force removeClimb's write to fail: writeAtomic() opens a FileOutputStream at
+        // "<routeId>.json.tmp" before renaming it over the real file. Pre-creating a DIRECTORY at
+        // that exact path makes that open throw an IOException, simulating disk-full/permission
+        // failures without relying on OS-specific file permission bits (portable to Windows CI).
+        File tmp = new File(new File(app.getFilesDir(), "routes"), "removeRoute.json.tmp");
+        assertTrue(tmp.mkdirs());
+
+        try {
+            new ClimbMergeService(routeRepo, attemptRepo, collectionRepo).merge(keepRef, removeRef);
+            org.junit.Assert.fail("expected removeClimb's write failure to propagate out of merge()");
+        } catch (IOException expected) {
+            // expected: removeClimb's write failed and the exception propagated.
+        } finally {
+            tmp.delete();
+        }
+
+        // Nothing should have happened yet: the climb must still be present in its route...
+        StoredRoute removeAfter = routeRepo.loadRoute("removeRoute");
+        assertEquals(1, removeAfter.climbs.size());
+
+        // ...and its attempt history must NOT have been remapped, since removeClimb (which now
+        // runs before remapAttempts) failed first and remapAttempts was never reached.
+        List<StoredClimbAttempt> attemptsAfter = attemptRepo.loadAll();
+        assertEquals(1, attemptsAfter.size());
+        assertEquals(removeId, attemptsAfter.get(0).climbId);
     }
 
     private static NearDuplicateClimbFinder.ClimbRef refFor(

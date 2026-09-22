@@ -4,7 +4,6 @@ import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.NearDuplicateClimbFinder;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Executes a user-confirmed merge of two near-duplicate stored climbs (issue #76): keeps one
@@ -63,14 +62,24 @@ public final class ClimbMergeService {
             routeRepo.renameClimb(keep.routeId, keepResolved.index, removeClimb.userDisplayName);
         }
 
+        // Order matters for failure-safety: removeClimb() is performed BEFORE remapAttempts() so
+        // that if remapAttempts() (or the collection-membership update) throws, the climb is
+        // already gone and its history simply hasn't been re-pointed at the kept climb yet — a
+        // safe, easily-understood partial state (attempts with an orphaned climbId are tolerated
+        // elsewhere, e.g. LogbookCalculator/history lookups just won't surface them under any
+        // current climb). Doing it the other way around (as before) risked the opposite: history
+        // silently reassigned to the kept climb while the "removed" climb still exists in its
+        // route — a retry would see the duplicate still present but its history already gone,
+        // which is far more confusing. If removeClimb() itself throws, nothing has happened yet
+        // and the whole merge is safely retryable from scratch.
+        routeRepo.removeClimb(remove.routeId, removeResolved.index);
+        collectionRepo.onClimbRemoved(remove.routeId, removeResolved.index);
+
         String removeClimbId = ClimbIdentity.of(
                 removeClimb.startLat, removeClimb.startLon, removeClimb.length);
         String keepClimbId = ClimbIdentity.of(
                 keepClimb.startLat, keepClimb.startLon, keepClimb.length);
         remapAttempts(removeClimbId, keepClimbId);
-
-        routeRepo.removeClimb(remove.routeId, removeResolved.index);
-        collectionRepo.onClimbRemoved(remove.routeId, removeResolved.index);
     }
 
     /** A climb re-located inside the current route state, paired with its up-to-date index. */
@@ -128,15 +137,11 @@ public final class ClimbMergeService {
     }
 
     private void remapAttempts(String fromClimbId, String toClimbId) throws IOException {
-        if (fromClimbId.equals(toClimbId)) return;
-        List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-        boolean changed = false;
-        for (StoredClimbAttempt a : attempts) {
-            if (fromClimbId.equals(a.climbId)) {
-                a.climbId = toClimbId;
-                changed = true;
-            }
-        }
-        if (changed) attemptRepo.overwriteAll(attempts);
+        // Delegates to a single load-modify-write cycle inside ClimbAttemptRepository, done
+        // entirely under its WRITE_LOCK, rather than loading here and writing back via
+        // overwriteAll separately — the latter would still leave a window for a concurrent
+        // background-sync append() to land in between the (unlocked) load and the write,
+        // silently discarding the appended attempts.
+        attemptRepo.remapClimbId(fromClimbId, toClimbId);
     }
 }
