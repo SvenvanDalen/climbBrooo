@@ -28,12 +28,16 @@ public final class ClimbAttemptRepository {
     private static final String FILE = "climb_attempts.json";
 
     /**
-     * Guards the read-modify-write critical sections of {@link #append} and
-     * {@link #overwriteAll}, both of which touch the same {@link #FILE} but can be invoked from
-     * different executors (background Strava sync vs. a user-confirmed climb merge). Without a
-     * shared lock the two read-modify-write cycles can interleave and one write silently clobbers
-     * the other. Static (not per-instance) since callers may hold different
-     * {@code ClimbAttemptRepository} instances backed by the same file.
+     * Guards the read-modify-write critical sections of {@link #append}, {@link #update},
+     * {@link #overwriteAll}, and {@link #remapClimbId} — all of which touch the same
+     * {@link #FILE} but can be invoked from different executors (background Strava sync, a
+     * user-confirmed climb merge, or a note/photo edit). Without a shared lock these
+     * read-modify-write cycles can interleave and one write silently clobbers another. Static
+     * (not per-instance) since multiple {@code ClimbAttemptRepository} instances are constructed
+     * across the app (e.g. one in {@code ClimbDetailViewModel}'s single-thread executor, another
+     * in {@code RouteSyncWorker}/{@code StravaActivitiesRepository} on WorkManager's executor),
+     * all pointing at the same file — a per-instance lock would not prevent two different
+     * instances from interleaving.
      */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
@@ -65,9 +69,11 @@ public final class ClimbAttemptRepository {
 
     /**
      * Appends attempts, skipping any whose (climbId, activityId, passIndex) already exists.
-     * Thread-safe with respect to {@link #overwriteAll}: both share {@link #WRITE_LOCK} so
-     * background sync appends and a climb-merge's remap can never interleave and clobber each
-     * other's write.
+     * Thread-safe across every {@link ClimbAttemptRepository} instance in the process: the whole
+     * read-modify-write cycle runs under {@link #WRITE_LOCK}, so a concurrent {@link #update},
+     * {@link #overwriteAll}, or {@link #remapClimbId} call (e.g. the user editing a note or
+     * confirming a climb merge on one executor while a background sync appends newly-matched
+     * attempts on another) can't interleave with this and silently lose either side's write.
      */
     public void append(List<StoredClimbAttempt> attempts) throws IOException {
         WRITE_LOCK.lock();
@@ -87,7 +93,7 @@ public final class ClimbAttemptRepository {
     /**
      * Overwrites the whole file with {@code attempts}, unlike {@link #append} which only adds
      * new ones. Used by climb-merge (issue #76) to persist {@code climbId} remaps in place.
-     * Thread-safe with respect to {@link #append} via the shared {@link #WRITE_LOCK} — see
+     * Thread-safe with respect to the other methods via the shared {@link #WRITE_LOCK} — see
      * {@link #append} for why this matters.
      */
     public void overwriteAll(List<StoredClimbAttempt> attempts) throws IOException {
@@ -126,6 +132,36 @@ public final class ClimbAttemptRepository {
                 writeAtomic(file, mapper.writeValueAsBytes(all));
             }
             return changed;
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Replaces the existing attempt whose (climbId, activityId, passIndex) matches
+     * {@code updated}'s with {@code updated} itself — a plain overwrite-by-identity, unlike
+     * {@link #append}, which is a dedupe-and-add. Used to attach/change a note or photo on an
+     * attempt record that already exists from matching (issue #46). Other attempts are left
+     * untouched. Returns {@code false} without writing anything if no attempt with that
+     * identity exists.
+     * <p>Thread-safe across every {@link ClimbAttemptRepository} instance in the process: see
+     * {@link #append}.
+     */
+    public boolean update(StoredClimbAttempt updated) throws IOException {
+        WRITE_LOCK.lock();
+        try {
+            List<StoredClimbAttempt> all = loadAll();
+            String targetKey = key(updated);
+            boolean found = false;
+            for (int i = 0; i < all.size(); i++) {
+                if (key(all.get(i)).equals(targetKey)) {
+                    all.set(i, updated);
+                    found = true;
+                    break;
+                }
+            }
+            if (found) writeAtomic(file, mapper.writeValueAsBytes(all));
+            return found;
         } finally {
             WRITE_LOCK.unlock();
         }
