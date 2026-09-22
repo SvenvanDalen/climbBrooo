@@ -60,6 +60,22 @@ public final class SettingsActivity extends AppCompatActivity {
                             : nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT));
         });
 
+        // Issue #20: suggested FTP re-estimate from repeated climb performances. Shown
+        // only when computable and meaningfully different (SettingsViewModel gates this);
+        // tapping it explicitly saves the suggestion — it is never applied automatically.
+        viewModel.suggestedFtpWatts().observe(this, suggestion -> {
+            if (suggestion == null) {
+                binding.suggestedFtp.setVisibility(android.view.View.GONE);
+                return;
+            }
+            binding.suggestedFtp.setText("Voorgestelde FTP: " + suggestion + " W (toepassen?)");
+            binding.suggestedFtp.setVisibility(android.view.View.VISIBLE);
+        });
+        binding.suggestedFtp.setOnClickListener(v -> {
+            viewModel.applySuggestedFtp();
+            Toast.makeText(this, "FTP bijgewerkt", Toast.LENGTH_SHORT).show();
+        });
+
         binding.btnSaveProfile.setOnClickListener(v -> {
             int ftp = parseIntSafe(binding.inputFtp.getText().toString());
             double rider = parseDoubleSafe(binding.inputRiderWeight.getText().toString());
