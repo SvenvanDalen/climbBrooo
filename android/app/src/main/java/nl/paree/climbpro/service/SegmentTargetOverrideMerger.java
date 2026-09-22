@@ -23,6 +23,30 @@ public final class SegmentTargetOverrideMerger {
 
     private SegmentTargetOverrideMerger() {}
 
+    /**
+     * Stable signature of every segment's {@link StoredSegment#manualTargetSec} across the
+     * whole route, in climb/segment order. Used by {@code RouteSyncWorker} as part of its
+     * "does the watch need a re-sync" hash — {@link nl.paree.climbpro.data.route.RouteRepository
+     * #setSegmentManualTargetSec} only bumps {@code lastModifiedMs}, not {@code sourceHash}
+     * (which must stay a pure hash of the *source* data, e.g. from Strava/GPX, for re-import
+     * dedup to keep working), so a manual override needs to change something else the sync
+     * worker's "wantHash" accounts for.
+     */
+    public static String signature(StoredRoute route) {
+        if (route == null || route.climbs == null || route.climbs.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (StoredClimb climb : route.climbs) {
+            if (climb.segments == null) continue;
+            for (StoredSegment s : climb.segments) {
+                sb.append(s.manualTargetSec == null ? "-" : s.manualTargetSec).append(',');
+            }
+            sb.append(';');
+        }
+        return sb.toString();
+    }
+
     public static int[][] merge(StoredRoute route, int[][] plannerResult) {
         if (route == null || route.climbs == null || route.climbs.isEmpty()) {
             return plannerResult;

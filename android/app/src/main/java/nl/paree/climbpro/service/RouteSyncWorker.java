@@ -125,6 +125,20 @@ public final class RouteSyncWorker extends Worker {
     }
 
     /**
+     * Hash the periodic sync compares against {@code SyncState#lastSyncedHash} to decide
+     * whether the watch needs a re-sync. Besides the route's source data and rider profile
+     * (which drive the auto-computed pacing plan), it also folds in every segment's manual
+     * target-time override ({@link SegmentTargetOverrideMerger#signature}) — those overrides
+     * only bump {@code StoredRoute#lastModifiedMs}, not {@code sourceHash}, so without this
+     * a manual edit would never trigger a re-sync on its own (only an unrelated change that
+     * happens to move {@code sourceHash} or the profile would surface it).
+     */
+    private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile) {
+        return route.sourceHash + "|" + profile.signature()
+                + "|" + SegmentTargetOverrideMerger.signature(route);
+    }
+
+    /**
      * Builds the appropriate {@link SyncOrchestrator.PayloadJob} for the active mode.
      * {@link SyncOrchestrator.PayloadJob#build()} returns {@code null} when there is
      * nothing to send (no route selected, or unchanged).
@@ -166,7 +180,7 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-                String wantHash = route.sourceHash + "|" + profile.signature();
+                String wantHash = wantHash(route, profile);
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -187,7 +201,7 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, route.sourceHash + "|" + profile.signature());
+                    syncStateRepo.markSynced(routeId, wantHash(route, profile));
                 }
             }
         };

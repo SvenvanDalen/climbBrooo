@@ -143,4 +143,62 @@ public class SegmentTargetOverrideMergerTest {
         int[][] merged = SegmentTargetOverrideMerger.merge(r, planner);
         assertArrayEquals(new int[]{1, 2, 3}, merged[0]);
     }
+
+    // -- signature(): used by RouteSyncWorker's wantHash so a manual segment-target edit
+    // (which only bumps StoredRoute#lastModifiedMs, not #sourceHash) still triggers a resync.
+
+    @Test
+    public void signature_changesWhenAManualOverrideIsSet() {
+        StoredClimb c = climb(3);
+        StoredRoute r = routeOf(c);
+        String before = SegmentTargetOverrideMerger.signature(r);
+
+        c.segments.get(1).manualTargetSec = 123;
+        String after = SegmentTargetOverrideMerger.signature(r);
+
+        assertNotEquals("setting a manual target must change the signature so a sync-needed "
+                + "check (wantHash) picks it up", before, after);
+    }
+
+    @Test
+    public void signature_changesWhenAnOverrideValueChanges() {
+        StoredClimb c = climb(2);
+        c.segments.get(0).manualTargetSec = 100;
+        StoredRoute r = routeOf(c);
+        String before = SegmentTargetOverrideMerger.signature(r);
+
+        c.segments.get(0).manualTargetSec = 200;
+        String after = SegmentTargetOverrideMerger.signature(r);
+
+        assertNotEquals(before, after);
+    }
+
+    @Test
+    public void signature_changesWhenAnOverrideIsCleared() {
+        StoredClimb c = climb(2);
+        c.segments.get(0).manualTargetSec = 100;
+        StoredRoute r = routeOf(c);
+        String before = SegmentTargetOverrideMerger.signature(r);
+
+        c.segments.get(0).manualTargetSec = null;
+        String after = SegmentTargetOverrideMerger.signature(r);
+
+        assertNotEquals(before, after);
+    }
+
+    @Test
+    public void signature_stableWhenNothingChanges() {
+        StoredClimb c = climb(3);
+        c.segments.get(0).manualTargetSec = 42;
+        StoredRoute r = routeOf(c);
+        assertEquals(SegmentTargetOverrideMerger.signature(r),
+                SegmentTargetOverrideMerger.signature(r));
+    }
+
+    @Test
+    public void signature_emptyForNoClimbs() {
+        StoredRoute r = new StoredRoute();
+        r.climbs = new ArrayList<>();
+        assertEquals("", SegmentTargetOverrideMerger.signature(r));
+    }
 }

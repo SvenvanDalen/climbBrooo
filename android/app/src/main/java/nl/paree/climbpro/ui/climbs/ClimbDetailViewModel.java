@@ -239,6 +239,19 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
             estimate = ClimbTimeEstimator.estimate(dist, grad, surface, profile);
         }
 
+        // Apply any per-segment manual overrides (issue #23) so the header total shown here
+        // stays consistent with ClimbSegmentAdapter's per-row display, which already reads
+        // StoredSegment#manualTargetSec directly.
+        if (estimate != null) {
+            int[] merged = nl.paree.climbpro.service.SegmentTargetOverrideMerger
+                    .mergeClimb(c, estimate.segmentSeconds);
+            if (merged != estimate.segmentSeconds) {
+                int total = 0;
+                for (int sec : merged) total += sec;
+                estimate = new ClimbTimeEstimate(total, merged, estimate.assumedPowerWatts);
+            }
+        }
+
         timeEstimate.postValue(estimate);
     }
 
