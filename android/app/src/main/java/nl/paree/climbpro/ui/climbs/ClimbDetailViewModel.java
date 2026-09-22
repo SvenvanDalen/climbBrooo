@@ -217,18 +217,50 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 }
 
                 target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
+
+                // Write the NEW photo first, but don't touch the OLD one yet — if the JSON
+                // record update below fails, we must be able to roll back to a state where
+                // the attempt still has a valid, working photo reference (see saveAttemptNote
+                // javadoc). Only once attemptRepo.update() confirms success do we delete the
+                // old file; only on failure do we delete the new one instead.
+                String oldPhoto = target.photoFileName;
+                String newPhoto = oldPhoto;
+                boolean photoChanged = false;
                 if (photoUri != null) {
-                    String oldPhoto = target.photoFileName;
-                    target.photoFileName = nl.paree.climbpro.data.route.AttemptPhotoStore
+                    newPhoto = nl.paree.climbpro.data.route.AttemptPhotoStore
                             .savePickedPhoto(getApplication(), photoUri);
-                    nl.paree.climbpro.data.route.AttemptPhotoStore
-                            .delete(getApplication(), oldPhoto);
+                    photoChanged = true;
+                }
+                target.photoFileName = newPhoto;
+
+                boolean updateSucceeded;
+                try {
+                    updateSucceeded = attemptRepo.update(target);
+                } catch (java.io.IOException writeFailure) {
+                    // Write itself blew up (e.g. disk full) — same rollback as an explicit
+                    // false return: the new photo never becomes referenced by anything.
+                    if (photoChanged) {
+                        nl.paree.climbpro.data.route.AttemptPhotoStore
+                                .delete(getApplication(), newPhoto);
+                    }
+                    error.postValue("Opslaan mislukt: " + writeFailure.getMessage());
+                    return;
                 }
 
-                if (attemptRepo.update(target)) {
+                if (updateSucceeded) {
+                    if (photoChanged) {
+                        nl.paree.climbpro.data.route.AttemptPhotoStore
+                                .delete(getApplication(), oldPhoto);
+                    }
                     saved.postValue(true);
                     loadClimb(routeId, climbIndex);
                 } else {
+                    if (photoChanged) {
+                        // Roll back the just-written new photo; leave the old photo + old
+                        // JSON record untouched so the attempt still has a working reference.
+                        nl.paree.climbpro.data.route.AttemptPhotoStore
+                                .delete(getApplication(), newPhoto);
+                    }
                     error.postValue("Opslaan mislukt");
                 }
             } catch (Exception e) {

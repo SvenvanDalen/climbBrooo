@@ -52,16 +52,33 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private android.net.Uri pendingPhotoUri;
     private android.widget.ImageView pendingPhotoPreview;
 
+    // Background executor for decoding attempt-photo thumbnails (history rows + the
+    // picker preview) off the main thread — avoids UI-thread jank/ANR from synchronous
+    // BitmapFactory decodes of on-disk/content-uri photos.
+    private final java.util.concurrent.ExecutorService thumbnailExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+
     private final androidx.activity.result.ActivityResultLauncher<String> photoPickerLauncher =
             registerForActivityResult(
                     new androidx.activity.result.contract.ActivityResultContracts.GetContent(),
                     uri -> {
                         if (uri == null) return;
                         pendingPhotoUri = uri;
-                        if (pendingPhotoPreview != null) {
-                            pendingPhotoPreview.setImageURI(uri);
-                            pendingPhotoPreview.setVisibility(android.view.View.VISIBLE);
-                        }
+                        android.widget.ImageView preview = pendingPhotoPreview;
+                        if (preview == null) return;
+                        int sizePx = (int) (120 * getResources().getDisplayMetrics().density);
+                        // Downsample instead of setImageURI(uri): a full-resolution gallery
+                        // photo decoded just for a small preview can OOM on lower-memory
+                        // devices (same risk loadAttemptThumbnail() already guards against).
+                        thumbnailExecutor.execute(() -> {
+                            android.graphics.Bitmap bmp =
+                                    decodeSampledBitmapFromUri(this, uri, sizePx);
+                            runOnUiThread(() -> {
+                                if (pendingPhotoPreview != preview) return;
+                                preview.setImageBitmap(bmp);
+                                preview.setVisibility(android.view.View.VISIBLE);
+                            });
+                        });
                     });
 
     public static Intent intentFor(Context ctx, String routeId, int climbIndex) {
@@ -183,8 +200,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     lp.topMargin = 8;
                     thumb.setLayoutParams(lp);
                     thumb.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
-                    thumb.setImageBitmap(loadAttemptThumbnail(row.photoFileName, sizePx));
                     rowLayout.addView(thumb);
+                    loadAttemptThumbnailAsync(row.photoFileName, sizePx, thumb);
                 }
 
                 android.widget.TextView editLink = new android.widget.TextView(this);
@@ -428,7 +445,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         preview.setLayoutParams(previewLp);
         preview.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
         if (row.photoFileName != null && !row.photoFileName.isEmpty()) {
-            preview.setImageBitmap(loadAttemptThumbnail(row.photoFileName, sizePx));
+            loadAttemptThumbnailAsync(row.photoFileName, sizePx, preview);
         } else {
             preview.setVisibility(android.view.View.GONE);
         }
@@ -462,6 +479,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
      * Decodes an attempt photo at roughly thumbnail resolution (avoids loading a full-size
      * gallery photo just to show a small preview). Returns null if the file is missing or
      * unreadable — callers must tolerate a null bitmap.
+     *
+     * <p>Runs the actual {@link android.graphics.BitmapFactory} decode on disk I/O, so callers
+     * on the main thread must go through {@link #loadAttemptThumbnailAsync} instead of calling
+     * this directly.
      */
     private android.graphics.Bitmap loadAttemptThumbnail(String photoFileName, int targetSizePx) {
         java.io.File file = nl.paree.climbpro.data.route.AttemptPhotoStore.fileFor(this, photoFileName);
@@ -470,13 +491,67 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         bounds.inJustDecodeBounds = true;
         android.graphics.BitmapFactory.decodeFile(file.getAbsolutePath(), bounds);
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
-        int sample = 1;
-        while ((bounds.outWidth / sample) > targetSizePx * 2
-                || (bounds.outHeight / sample) > targetSizePx * 2) {
-            sample *= 2;
-        }
+        int sample = sampleSizeFor(bounds.outWidth, bounds.outHeight, targetSizePx);
         android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
         opts.inSampleSize = sample;
         return android.graphics.BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
+    }
+
+    /**
+     * Decodes {@link #loadAttemptThumbnail} off the main thread and posts the resulting
+     * bitmap (possibly null) back onto {@code target} on the UI thread. History rows and the
+     * note/photo dialog both have their own photo per attempt — decoding synchronously on the
+     * main thread, once per row, risked visible jank/ANR on slower devices/storage.
+     */
+    private void loadAttemptThumbnailAsync(String photoFileName, int targetSizePx,
+                                            android.widget.ImageView target) {
+        thumbnailExecutor.execute(() -> {
+            android.graphics.Bitmap bmp = loadAttemptThumbnail(photoFileName, targetSizePx);
+            runOnUiThread(() -> target.setImageBitmap(bmp));
+        });
+    }
+
+    /**
+     * Same downsampling approach as {@link #loadAttemptThumbnail}, but decoding straight from
+     * a content {@link android.net.Uri} (the photo picker result) instead of a file on disk —
+     * used for the picker preview so a full-resolution gallery photo isn't decoded just to
+     * fill a small {@code ImageView}. Returns null if the uri can't be opened/decoded.
+     */
+    private static android.graphics.Bitmap decodeSampledBitmapFromUri(
+            Context ctx, android.net.Uri uri, int targetSizePx) {
+        android.content.ContentResolver resolver = ctx.getContentResolver();
+        android.graphics.BitmapFactory.Options bounds = new android.graphics.BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        try (java.io.InputStream in = resolver.openInputStream(uri)) {
+            if (in == null) return null;
+            android.graphics.BitmapFactory.decodeStream(in, null, bounds);
+        } catch (java.io.IOException e) {
+            return null;
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+
+        android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+        opts.inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight, targetSizePx);
+        try (java.io.InputStream in = resolver.openInputStream(uri)) {
+            if (in == null) return null;
+            return android.graphics.BitmapFactory.decodeStream(in, null, opts);
+        } catch (java.io.IOException e) {
+            return null;
+        }
+    }
+
+    /** Smallest power-of-two {@code inSampleSize} that keeps both dimensions under 2x target. */
+    private static int sampleSizeFor(int outWidth, int outHeight, int targetSizePx) {
+        int sample = 1;
+        while ((outWidth / sample) > targetSizePx * 2 || (outHeight / sample) > targetSizePx * 2) {
+            sample *= 2;
+        }
+        return sample;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        thumbnailExecutor.shutdown();
     }
 }
