@@ -121,11 +121,11 @@ public final class UnfinishedClimbsViewModel extends AndroidViewModel {
                 if (route.climbs == null) continue;
                 for (int i = 0; i < route.climbs.size(); i++) {
                     StoredClimb c = route.climbs.get(i);
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
+                    String id = ClimbIdentity.of(c);
                     if (wanted.contains(id) && !map.containsKey(id)) {
                         String name = c.userDisplayName != null ? c.userDisplayName
                                 : (c.name != null ? c.name : "Klim");
+                        int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
                         map.put(id, new ClimbInfo(entry.routeId, i, name, len));
                     }
                 }

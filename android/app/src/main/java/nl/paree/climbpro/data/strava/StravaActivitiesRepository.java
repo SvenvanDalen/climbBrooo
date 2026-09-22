@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -86,7 +87,12 @@ public final class StravaActivitiesRepository {
         List<KnownClimb> climbs = enumerateKnownClimbs();
         if (climbs.isEmpty()) return 0;
 
-        Set<Long> known = attemptRepo.knownActivityIds();
+        // An activity is "known" (skip re-fetch/re-match) once it's been fully processed and
+        // produced EITHER a successful attempt OR only incomplete passes — otherwise an
+        // activity whose climbs are never finished gets re-fetched and re-matched on every
+        // sync forever, burning Strava API quota for no new data (append() dedupes anyway).
+        Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
+        known.addAll(incompleteAttemptRepo.knownActivityIds());
 
         List<StoredClimbAttempt> created = new ArrayList<>();
         List<StoredIncompleteClimbAttempt> incompleteCreated = new ArrayList<>();

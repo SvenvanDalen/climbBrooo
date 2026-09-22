@@ -50,6 +50,18 @@ public final class IncompleteClimbAttemptRepository {
     }
 
     /**
+     * Activity ids that already have at least one recorded incomplete pass. Combined with
+     * {@link ClimbAttemptRepository#knownActivityIds()} by callers, this lets an activity that
+     * was fully processed and produced only incomplete passes (never a successful attempt) be
+     * treated as already-synced too, instead of being re-fetched and re-matched on every sync.
+     */
+    public Set<Long> knownActivityIds() {
+        Set<Long> ids = new HashSet<>();
+        for (StoredIncompleteClimbAttempt a : loadAll()) ids.add(a.activityId);
+        return ids;
+    }
+
+    /**
      * Not thread-safe: call only from a single-threaded executor.
      * Appends passes, skipping any whose (climbId, activityId) already exists — one
      * incomplete record per climb per activity is enough for the overview.

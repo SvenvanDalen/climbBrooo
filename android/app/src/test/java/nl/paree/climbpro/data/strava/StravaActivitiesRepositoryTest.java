@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
@@ -17,6 +19,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
+import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -52,6 +55,7 @@ public class StravaActivitiesRepositoryTest {
         prefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
         // Clean any attempt file + activity-sync prefs from prior tests for isolation.
         new File(app.getFilesDir(), "climb_attempts.json").delete();
+        new File(app.getFilesDir(), "incomplete_climb_attempts.json").delete();
         app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
                 .edit().clear().commit();
 
@@ -141,6 +145,57 @@ public class StravaActivitiesRepositoryTest {
 
         assertEquals(0, created);
         assertEquals(1, attemptRepo.loadAll().size());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubActivityWithIncompleteClimbTrack() throws Exception {
+        StravaActivityDto act = new StravaActivityDto();
+        act.id = 777L; act.type = "Ride"; act.startDate = "2026-03-01T08:00:00Z";
+
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Collections.singletonList(act)));
+        Call<List<StravaActivityDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(new ArrayList<>()));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listActivities(anyString(), anyLong(), eq(2), anyInt())).thenReturn(page2);
+
+        // Enters the climb's start gate but stops well short of the end gate — an
+        // entered-but-never-exited pass (ClimbEntryOnlyDetector), not a successful attempt.
+        StravaStreamsDto streams = new StravaStreamsDto();
+        streams.latlng = new StravaStreamsDto.LatLngStream();
+        streams.latlng.data = Arrays.asList(
+                Arrays.asList(45.000, 6.0),
+                Arrays.asList(45.001, 6.0),
+                Arrays.asList(45.003, 6.0));
+        streams.time = new StravaStreamsDto.TimeStream();
+        streams.time.data = Arrays.asList(0, 60, 120);
+
+        Call<StravaStreamsDto> streamCall = mock(Call.class);
+        when(streamCall.execute()).thenReturn(Response.success(streams));
+        when(api.getStreams(anyString(), eq(777L), anyString())).thenReturn(streamCall);
+    }
+
+    @Test
+    public void sync_incompleteOnlyActivity_isTreatedAsKnownOnNextSync() throws Exception {
+        stubActivityWithIncompleteClimbTrack();
+        IncompleteClimbAttemptRepository incompleteRepo = new IncompleteClimbAttemptRepository(app);
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        int created = repo.syncActivities(); // no successful attempt, one incomplete pass
+
+        assertEquals(0, created);
+        assertEquals(0, attemptRepo.loadAll().size());
+        assertEquals(1, incompleteRepo.loadAll().size());
+        // The activity streams were fetched exactly once so far.
+        verify(api, times(1)).getStreams(anyString(), eq(777L), anyString());
+
+        int createdAgain = repo.syncActivities(); // same activity should now be skipped
+
+        assertEquals(0, createdAgain);
+        assertEquals(1, incompleteRepo.loadAll().size()); // unchanged, not re-appended
+        // Streams must NOT have been re-fetched for the already-processed activity.
+        verify(api, times(1)).getStreams(anyString(), eq(777L), anyString());
     }
 
     @Test

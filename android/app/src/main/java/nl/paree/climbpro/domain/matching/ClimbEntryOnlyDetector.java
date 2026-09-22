@@ -30,6 +30,19 @@ public final class ClimbEntryOnlyDetector {
      */
     private static final double CUTOFF_LENGTH_MULTIPLIER = 1.5;
 
+    /**
+     * Minimum improvement (m) in straight-line distance to the climb's END coordinate,
+     * relative to the distance at the entry point, required before a track is considered a
+     * plausible (if unfinished) attempt at the climb. Without this, a track that merely
+     * passes within {@link ClimbAttemptMatcher#GATE_M} of the climb's start — e.g. a shared
+     * road junction unrelated to the climb — and then heads off in a completely different
+     * direction for the rest of the ride would still get flagged as "never completed" once it
+     * had covered {@link #CUTOFF_LENGTH_MULTIPLIER}x the climb length in ANY direction. Mirrors
+     * {@link ClimbAttemptMatcher#GATE_M} as the tolerance budget so ordinary GPS jitter near
+     * the entry point doesn't itself fail the check.
+     */
+    private static final double MIN_PROGRESS_TOWARD_END_M = ClimbAttemptMatcher.GATE_M;
+
     private ClimbEntryOnlyDetector() {}
 
     /**
@@ -48,25 +61,47 @@ public final class ClimbEntryOnlyDetector {
         int entryIdx = firstWithin(track, startLat, startLon, 0);
         if (entryIdx < 0) return -1; // never entered
 
+        TrackSample entry = track.get(entryIdx);
+        double distToEndAtEntry = CumulativeDistance.haversine(endLat, endLon, entry.lat, entry.lon);
+        double minDistToEnd = distToEndAtEntry;
+
         double cutoff = CUTOFF_LENGTH_MULTIPLIER * climbLengthM;
         double covered = 0;
         for (int i = entryIdx; i < track.size() - 1; i++) {
             TrackSample a = track.get(i);
-            if (CumulativeDistance.haversine(endLat, endLon, a.lat, a.lon) <= ClimbAttemptMatcher.GATE_M) {
+            double distToEnd = CumulativeDistance.haversine(endLat, endLon, a.lat, a.lon);
+            if (distToEnd <= ClimbAttemptMatcher.GATE_M) {
                 return -1; // reached the exit gate — not an incomplete pass
             }
+            if (distToEnd < minDistToEnd) minDistToEnd = distToEnd;
             TrackSample b = track.get(i + 1);
             covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
             if (covered >= cutoff) {
-                return (int) Math.round(covered); // rode well past the climb, never exited
+                // rode well past the climb, never exited — but only flag if the track was
+                // plausibly heading toward the climb's end, not just accumulating distance
+                // in some unrelated direction after an incidental entry-gate pass.
+                return madeProgressTowardEnd(distToEndAtEntry, minDistToEnd)
+                        ? (int) Math.round(covered) : -1;
             }
         }
         // Final sample: check it too, then either flag (track just ran out) or clear.
         TrackSample last = track.get(track.size() - 1);
-        if (CumulativeDistance.haversine(endLat, endLon, last.lat, last.lon) <= ClimbAttemptMatcher.GATE_M) {
+        double lastDistToEnd = CumulativeDistance.haversine(endLat, endLon, last.lat, last.lon);
+        if (lastDistToEnd <= ClimbAttemptMatcher.GATE_M) {
             return -1;
         }
-        return (int) Math.round(covered);
+        if (lastDistToEnd < minDistToEnd) minDistToEnd = lastDistToEnd;
+        return madeProgressTowardEnd(distToEndAtEntry, minDistToEnd) ? (int) Math.round(covered) : -1;
+    }
+
+    /**
+     * @return true if the closest the track ever got to the climb's end, after entry, was
+     *         meaningfully closer than the entry point itself was — i.e. the track was
+     *         plausibly trending toward the climb's end, not diverging away from it.
+     */
+    private static boolean madeProgressTowardEnd(double distToEndAtEntry, double minDistToEnd) {
+        double requiredProgress = Math.min(MIN_PROGRESS_TOWARD_END_M, distToEndAtEntry);
+        return minDistToEnd <= distToEndAtEntry - requiredProgress;
     }
 
     /** Duplicated from {@link ClimbAttemptMatcher}'s private helper — see class javadoc. */

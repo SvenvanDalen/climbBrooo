@@ -23,7 +23,7 @@ public final class KnownClimbs {
             int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
             int endIdx = nearestIndex(route.distances, c.endDistance);
             out.add(new KnownClimb(
-                    ClimbIdentity.of(c.startLat, c.startLon, len),
+                    ClimbIdentity.of(c),
                     c.startLat, c.startLon,
                     route.lats[endIdx], route.lons[endIdx],
                     len, segmentLengths(c)));

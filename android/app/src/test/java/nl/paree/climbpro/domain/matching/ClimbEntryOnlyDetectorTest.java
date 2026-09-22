@@ -38,14 +38,37 @@ public class ClimbEntryOnlyDetectorTest {
 
     @Test
     public void enteredButNeverExited_turnedBackPastCutoff_isFlagged() {
-        // Track enters, rides well past 1.5x the climb length without ever hitting the
-        // exit gate (simulates riding straight past / turning back on a parallel road).
+        // Track enters and keeps heading toward the climb's end (straight north, same
+        // direction as start->end), covering well past 1.5x the climb length without ever
+        // getting within the exit gate (simulates riding straight past on a parallel road
+        // slightly to the side, or a route whose real end is a bit further than climbLengthM
+        // suggests). Genuine progress toward the end, so it should still be flagged.
         List<TrackSample> track = straightNorthTrack(20, 45.000, 6.0, 0.001, 0, 60);
 
         int distance = ClimbEntryOnlyDetector.detectIncomplete(
-                track, 45.000, 6.0, 999.0, 999.0, 1000); // end coord unreachable
+                track, 45.000, 6.0, 45.020, 6.0, 1000); // end further north than the track reaches
 
         assertTrue("expected a flagged incomplete pass, got " + distance, distance >= 0);
+    }
+
+    @Test
+    public void enteredNearStart_thenDivergedAwayFromEnd_isNotFlagged() {
+        // Track enters within GATE_M of the climb start (an incidental pass near a shared
+        // junction), but then heads due EAST for the rest of the ride instead of continuing
+        // toward the climb's end (due north of the start). It covers well past 1.5x the
+        // climb length, but never gets meaningfully closer to the end — this is not a genuine
+        // (even if unfinished) attempt at the climb and must not be flagged.
+        List<TrackSample> track = new ArrayList<>();
+        long t = 0;
+        for (int i = 0; i < 20; i++) {
+            track.add(new TrackSample(45.000, 6.0 + i * 0.001, t));
+            t += 60;
+        }
+
+        int distance = ClimbEntryOnlyDetector.detectIncomplete(
+                track, 45.000, 6.0, 45.020, 6.0, 1000); // end is north; track goes east
+
+        assertEquals(-1, distance);
     }
 
     @Test
