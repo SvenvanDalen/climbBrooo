@@ -176,6 +176,35 @@ public class FtpEstimatorTest {
                 FtpEstimator.suggestFtpWatts(efforts, RIDER));
     }
 
+    @Test
+    public void implausibleButUnsaturatedEffortInOneBucketDoesNotDiscardGoodSuggestionFromAnother() {
+        // Short-bucket effort: implied power is comfortably below MAX_POWER_WATTS (not
+        // saturated), but the implied FTP is still absurdly high (e.g. a mistimed
+        // ClimbAttemptMatcher pairing) -- well above MAX_PLAUSIBLE_FTP_WATTS.
+        Effort implausibleShort = climbEffort(2200, 0.13, 210);
+        double implausiblePower = FtpEstimator.impliedPowerWatts(implausibleShort, RIDER.totalMassKg());
+        assertTrue("effort must not be saturated near the bisection ceiling",
+                implausiblePower < 1900);
+        double implausibleFtp = FtpEstimator.impliedFtpWatts(implausibleShort, RIDER.totalMassKg());
+        assertTrue("effort's implied FTP must itself be implausibly high",
+                implausibleFtp > FtpEstimator.MAX_PLAUSIBLE_FTP_WATTS);
+
+        // Medium-bucket effort: a perfectly reasonable ~250 W-class implied FTP.
+        Effort reasonableMedium = climbEffort(4000, 0.055, 850);
+        double reasonableFtp = FtpEstimator.impliedFtpWatts(reasonableMedium, RIDER.totalMassKg());
+        assertTrue("sanity: the medium-bucket effort must itself be plausible",
+                reasonableFtp > 0 && reasonableFtp < FtpEstimator.MAX_PLAUSIBLE_FTP_WATTS);
+
+        List<Effort> efforts = new ArrayList<>();
+        efforts.add(implausibleShort);
+        efforts.add(reasonableMedium);
+
+        Integer suggestion = FtpEstimator.suggestFtpWatts(efforts, RIDER);
+        assertNotNull("a good suggestion in one bucket must survive a bad one in another",
+                suggestion);
+        assertEquals(Math.round(reasonableFtp), suggestion.intValue());
+    }
+
     // ---- meaningful-difference gating ----
 
     @Test

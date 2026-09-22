@@ -188,6 +188,9 @@ public final class FtpEstimator {
         Double bestShort = null;
         Double bestMedium = null;
         Double bestLong = null;
+        boolean seenShort = false;
+        boolean seenMedium = false;
+        boolean seenLong = false;
         int qualifying = 0;
 
         for (Effort e : efforts) {
@@ -201,7 +204,24 @@ public final class FtpEstimator {
             if (power <= 0 || isSaturated(power)) continue;
             double ftp = power - PowerConstants.W_PRIME / e.elapsedSec;
             if (ftp <= 0) continue;
+            // This effort was genuinely solvable (not saturated) and produced a positive
+            // FTP, so it counts as qualifying data and populates its duration bucket for the
+            // minimum-data gates below, regardless of whether it turns out to be plausible.
             qualifying++;
+            switch (bucket) {
+                case SHORT: seenShort = true; break;
+                case MEDIUM: seenMedium = true; break;
+                case LONG: seenLong = true; break;
+            }
+            // An implausibly high implied FTP (e.g. a mistimed ClimbAttemptMatcher pairing
+            // that's unsaturated but still absurd) must not be trusted as this bucket's best
+            // effort, the same way a saturated effort is excluded above — but unlike a
+            // saturated effort it still counted as qualifying data just above, so a good
+            // suggestion from a *different* bucket isn't starved of the minimum-data gates.
+            // Excluding it here (per bucket) rather than only on the final overall value
+            // means one implausible bucket can no longer wipe out a good suggestion from
+            // another bucket.
+            if (ftp > MAX_PLAUSIBLE_FTP_WATTS) continue;
             switch (bucket) {
                 case SHORT:
                     bestShort = (bestShort == null) ? ftp : Math.max(bestShort, ftp);
@@ -215,9 +235,7 @@ public final class FtpEstimator {
             }
         }
 
-        int distinctBuckets = (bestShort != null ? 1 : 0)
-                + (bestMedium != null ? 1 : 0)
-                + (bestLong != null ? 1 : 0);
+        int distinctBuckets = (seenShort ? 1 : 0) + (seenMedium ? 1 : 0) + (seenLong ? 1 : 0);
         if (qualifying < MIN_QUALIFYING_EFFORTS || distinctBuckets < MIN_DISTINCT_BUCKETS) {
             return null;
         }
@@ -226,9 +244,14 @@ public final class FtpEstimator {
         if (bestShort != null) overall = Math.max(overall, bestShort);
         if (bestMedium != null) overall = Math.max(overall, bestMedium);
         if (bestLong != null) overall = Math.max(overall, bestLong);
+        // Every bucket's best effort may have been excluded above (all saturated or all
+        // implausibly high) even though the minimum-data gates passed — same "no usable
+        // data" outcome as not having enough efforts at all.
+        if (overall == Double.NEGATIVE_INFINITY) return null;
         int rounded = (int) Math.round(overall);
-        // Final sanity guard: even if a bad-but-not-saturated effort slipped through the
-        // per-effort check above, never surface a wildly implausible FTP to the user.
+        // Defense-in-depth: MAX_PLAUSIBLE_FTP_WATTS is already enforced per-bucket above (so
+        // one implausible bucket can no longer wipe out a good suggestion from another), but
+        // keep this as a final belt-and-braces guard on the selected overall value too.
         if (rounded > MAX_PLAUSIBLE_FTP_WATTS) return null;
         return rounded;
     }
