@@ -540,7 +540,26 @@ class ClimbProView extends Ui.DataField {
         return m + ":" + (s < 10 ? "0" + s : "" + s);
     }
 
+    // Reads the "climbAlertDistinctTone" app setting (resources/settings/, issue #83)
+    // the same defensive way activeColors() reads "darkTheme": Properties.getValue can
+    // throw on a stale/older simulator settings cache, and this must never crash the
+    // climb-start-alert trigger path -- fall back to the default (off) alert style.
+    hidden function useDistinctClimbAlertTone() {
+        var distinct = false;
+        try {
+            var v = Properties.getValue("climbAlertDistinctTone");
+            distinct = (v != null && v == true);
+        } catch (e) {
+            distinct = false;
+        }
+        return distinct;
+    }
+
     hidden function triggerClimbAlert() {
+        if (useDistinctClimbAlertTone()) {
+            triggerClimbAlertDistinctTone();
+            return;
+        }
         if (Attention has :vibrate) {
             var vibePattern = [
                 new Attention.VibeProfile(100, 500),
@@ -551,6 +570,37 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_LAP);
+        }
+    }
+
+    // Issue #83: riders wearing earbuds/headphones can miss the wrist vibration
+    // climb-start alert. The literal ask was a spoken "voice prompt", but
+    // Toybox.Attention exposes no TTS / audio-clip-playback API on the FR255M --
+    // it only offers vibrate(), playTone() (from a fixed set of built-in tone
+    // constants) and backlight(). There is no way for a third-party Connect IQ
+    // datafield to speak arbitrary words on this device/SDK tier.
+    //
+    // This is the most faithful available approximation: an opt-in, more
+    // attention-grabbing ALERT-style tone sequence (two announcement-style beeps
+    // then a distinct alert-hi tone, spaced like a "heads up, here it comes"
+    // cadence) layered on top of the normal vibration, instead of the single
+    // TONE_LAP chime used by the default alert. Purely additive -- default
+    // (setting off/unset) keeps today's vibrate+TONE_LAP behavior unchanged.
+    hidden function triggerClimbAlertDistinctTone() {
+        if (Attention has :vibrate) {
+            var vibePattern = [
+                new Attention.VibeProfile(100, 400),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 400),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 400)
+            ];
+            Attention.vibrate(vibePattern);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_LAP);
+            Attention.playTone(Attention.TONE_LAP);
+            Attention.playTone(Attention.TONE_ALERT_HI);
         }
     }
 
