@@ -302,7 +302,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     /**
      * Dialog to set/clear a manual WR/pro reference time (issue #59), e.g. "Pogačar 2024"
-     * at "37:15". Time input accepts m:ss or h:mm:ss; an empty time clears the reference.
+     * at "37:15". Time input accepts m:ss or h:mm:ss. "Opslaan" requires a valid, non-empty
+     * time and shows an error otherwise; use the separate "Wissen" button to clear the
+     * reference.
      */
     private void showManualRefDialog() {
         android.widget.LinearLayout container = new android.widget.LinearLayout(this);
@@ -331,7 +333,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .setPositiveButton("Opslaan", (d, w) -> {
                     Integer sec = parseDurationToSeconds(timeInput.getText().toString().trim());
                     if (sec == null) {
-                        Toast.makeText(this, "Ongeldige tijd", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Ongeldige tijd (gebruik Wissen om te legen)",
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                     viewModel.setManualRefTime(routeId, climbIndex, sec,
