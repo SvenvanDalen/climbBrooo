@@ -134,6 +134,22 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Sets or clears the climb's manually-entered WR/pro reference time (issue #59).
+     * Pass a null/non-positive {@code refSec} to clear.
+     */
+    public void setManualRefTime(String routeId, int climbIndex, Integer refSec, String label) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setManualRefTime(routeId, climbIndex, refSec, label);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     public void setBulkSurfaceType(String routeId, int climbIndex, int surfaceType) {
         executor.execute(() -> {
             try {
