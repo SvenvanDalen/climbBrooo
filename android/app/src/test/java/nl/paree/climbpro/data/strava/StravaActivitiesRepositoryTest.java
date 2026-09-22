@@ -198,6 +198,67 @@ public class StravaActivitiesRepositoryTest {
         verify(api, times(1)).getStreams(anyString(), eq(777L), anyString());
     }
 
+    /** A second route with a short climb the incomplete-activity's own track actually finishes:
+     *  (45.000,6.0) -> (45.003,6.0), matching the track's first two legs used in
+     *  {@link #stubActivityWithIncompleteClimbTrack()}. */
+    private void seedSecondRouteWithClimbThatTrackCompletes() throws Exception {
+        StoredRoute route = new StoredRoute();
+        route.routeId    = "r2";
+        route.lats       = new double[]{45.000, 45.003};
+        route.lons       = new double[]{6.0,    6.0};
+        route.elevations = new double[]{100,    130};
+        route.distances  = new double[]{0,      333};
+        StoredClimb c = new StoredClimb();
+        c.startDistance = 0; c.endDistance = 333; c.length = 333;
+        c.startLat = 45.000; c.startLon = 6.0;
+        c.segments = Collections.emptyList();
+        route.climbs = Collections.singletonList(c);
+
+        File dir = new File(app.getFilesDir(), "routes");
+        dir.mkdirs();
+        new ObjectMapper().writeValue(new File(dir, "r2.json"), route);
+
+        // Append to the existing catalog rather than overwrite it.
+        nl.paree.climbpro.data.route.RouteCatalogEntry existing =
+                new nl.paree.climbpro.data.route.RouteCatalogEntry();
+        existing.routeId = "r1";
+        nl.paree.climbpro.data.route.RouteCatalogEntry added =
+                new nl.paree.climbpro.data.route.RouteCatalogEntry();
+        added.routeId = "r2";
+        new ObjectMapper().writeValue(
+                new File(app.getFilesDir(), "catalog.json"),
+                new nl.paree.climbpro.data.route.RouteCatalogEntry[]{existing, added});
+    }
+
+    @Test
+    public void sync_incompleteOnlyActivity_isReCheckedOnceNewClimbIsAdded() throws Exception {
+        // First sync: activity 777 only produces an incomplete pass on climb1 (r1) — no
+        // successful attempt, so it risks being permanently skipped by the incomplete-only
+        // "known" skip-list.
+        stubActivityWithIncompleteClimbTrack();
+        IncompleteClimbAttemptRepository incompleteRepo = new IncompleteClimbAttemptRepository(app);
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        int created = repo.syncActivities();
+        assertEquals(0, created);
+        assertEquals(1, incompleteRepo.loadAll().size());
+        verify(api, times(1)).getStreams(anyString(), eq(777L), anyString());
+
+        // A NEW route/climb is imported that this SAME activity's track actually rode in
+        // full (its first two track legs exactly cover climb2's start->end).
+        seedSecondRouteWithClimbThatTrackCompletes();
+        stubActivityWithIncompleteClimbTrack(); // re-stub: page/stream mocks are call-count based
+
+        int createdAfterNewClimb = repo.syncActivities();
+
+        // The activity must be re-fetched/re-matched now that the known-climb set grew...
+        verify(api, times(2)).getStreams(anyString(), eq(777L), anyString());
+        // ...and the genuine successful attempt on the newly-added climb must be created.
+        assertEquals(1, createdAfterNewClimb);
+        assertEquals(1, attemptRepo.loadAll().size());
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     public void sync_rateLimitedMidPagination_doesNotAdvanceCursor() throws Exception {

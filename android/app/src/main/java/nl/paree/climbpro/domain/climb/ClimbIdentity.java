@@ -63,7 +63,17 @@ public final class ClimbIdentity {
      * breaks climb/route lookups. See {@link KnownClimbs#fromRoute}.
      */
     public static String of(StoredClimb c) {
-        int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-        return of(c.startLat, c.startLon, len);
+        return of(c.startLat, c.startLon, effectiveLength(c));
+    }
+
+    /**
+     * The "effective length" fallback shared by {@link #of(StoredClimb)}: the stored climb
+     * length if present, else the end-minus-start distance. Exposed separately so callers
+     * that need this length for something other than the identity key (e.g. display/UI code)
+     * can reuse the exact same computation instead of keeping their own copy of the ternary,
+     * which would risk silently diverging from the value {@link #of(StoredClimb)} uses.
+     */
+    public static int effectiveLength(StoredClimb c) {
+        return c.length > 0 ? c.length : (c.endDistance - c.startDistance);
     }
 }

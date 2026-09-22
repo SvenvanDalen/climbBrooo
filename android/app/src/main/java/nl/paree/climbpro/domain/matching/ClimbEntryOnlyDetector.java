@@ -64,6 +64,9 @@ public final class ClimbEntryOnlyDetector {
         TrackSample entry = track.get(entryIdx);
         double distToEndAtEntry = CumulativeDistance.haversine(endLat, endLon, entry.lat, entry.lon);
         double minDistToEnd = distToEndAtEntry;
+        if (distToEndAtEntry <= ClimbAttemptMatcher.GATE_M) {
+            return -1; // entry point itself is already within the exit gate
+        }
 
         double cutoff = CUTOFF_LENGTH_MULTIPLIER * climbLengthM;
         double covered = 0;
@@ -76,6 +79,18 @@ public final class ClimbEntryOnlyDetector {
             if (distToEnd < minDistToEnd) minDistToEnd = distToEnd;
             TrackSample b = track.get(i + 1);
             covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
+            // Check b — the point that may have just pushed `covered` past the cutoff —
+            // against the exit gate BEFORE applying the cutoff early-return. Otherwise a
+            // track that wandered past the cutoff distance but whose very last processed
+            // sample actually landed inside the exit gate (a genuine, if untidy,
+            // completion) would be misflagged as incomplete purely because the cutoff
+            // check ran against `a` (the point before the crossing) and never evaluated
+            // `b` (the point that actually crossed it).
+            double bDistToEnd = CumulativeDistance.haversine(endLat, endLon, b.lat, b.lon);
+            if (bDistToEnd <= ClimbAttemptMatcher.GATE_M) {
+                return -1; // b reached the exit gate — not an incomplete pass
+            }
+            if (bDistToEnd < minDistToEnd) minDistToEnd = bDistToEnd;
             if (covered >= cutoff) {
                 // rode well past the climb, never exited — but only flag if the track was
                 // plausibly heading toward the climb's end, not just accumulating distance
@@ -84,13 +99,9 @@ public final class ClimbEntryOnlyDetector {
                         ? (int) Math.round(covered) : -1;
             }
         }
-        // Final sample: check it too, then either flag (track just ran out) or clear.
-        TrackSample last = track.get(track.size() - 1);
-        double lastDistToEnd = CumulativeDistance.haversine(endLat, endLon, last.lat, last.lon);
-        if (lastDistToEnd <= ClimbAttemptMatcher.GATE_M) {
-            return -1;
-        }
-        if (lastDistToEnd < minDistToEnd) minDistToEnd = lastDistToEnd;
+        // Track ran out (app closed / GPS lost) without ever reaching the exit gate or the
+        // cutoff — every sample from entry to the last one was already checked against the
+        // exit gate above (as either `a` or `b`).
         return madeProgressTowardEnd(distToEndAtEntry, minDistToEnd) ? (int) Math.round(covered) : -1;
     }
 

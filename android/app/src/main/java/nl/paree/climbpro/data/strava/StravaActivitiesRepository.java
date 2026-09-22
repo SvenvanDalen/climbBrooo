@@ -43,6 +43,12 @@ public final class StravaActivitiesRepository {
     private static final String TAG       = "StravaActivitiesRepo";
     private static final String PREFS     = "strava_activities";
     private static final String PREF_LAST = "last_sync_epoch_sec";
+    /**
+     * The set of {@link KnownClimb#climbId}s that were known the last time we let
+     * incomplete-only activities be skipped as "known". See the comment above
+     * {@link #syncActivities()}'s use of this for why a plain permanent skip-list is wrong.
+     */
+    private static final String PREF_KNOWN_CLIMB_IDS = "known_climb_ids_for_incomplete_skip";
     private static final long   ONE_YEAR_SEC = 365L * 24 * 60 * 60;
     private static final String STREAM_KEYS  = "latlng,time";
 
@@ -87,12 +93,25 @@ public final class StravaActivitiesRepository {
         List<KnownClimb> climbs = enumerateKnownClimbs();
         if (climbs.isEmpty()) return 0;
 
-        // An activity is "known" (skip re-fetch/re-match) once it's been fully processed and
-        // produced EITHER a successful attempt OR only incomplete passes — otherwise an
-        // activity whose climbs are never finished gets re-fetched and re-matched on every
-        // sync forever, burning Strava API quota for no new data (append() dedupes anyway).
+        // An activity that only ever produced incomplete passes must NOT be treated as
+        // permanently "known" the way a fully-successful activity is: a later sync may add a
+        // brand-new route/climb that this same old activity's track actually rode in full, and
+        // that legitimate successful attempt would never be detected if the activity is never
+        // re-fetched/re-matched again. So we only let the incomplete-only skip-list apply when
+        // the set of known climbs hasn't grown since the last time we evaluated it — if new
+        // climbs showed up, incomplete-only activities are re-checked against them this run
+        // (some redundant re-fetching of long-incomplete activities is an acceptable trade-off
+        // for not getting permanently stuck). A fully successful activity (attemptRepo) is
+        // unaffected by this — it's a pre-existing, out-of-scope skip-list.
+        Set<String> currentClimbIds = new HashSet<>();
+        for (KnownClimb k : climbs) currentClimbIds.add(k.climbId);
+        Set<String> priorClimbIds = prefs.getStringSet(PREF_KNOWN_CLIMB_IDS, java.util.Collections.<String>emptySet());
+        boolean knownClimbSetGrew = !priorClimbIds.containsAll(currentClimbIds);
+
         Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
-        known.addAll(incompleteAttemptRepo.knownActivityIds());
+        if (!knownClimbSetGrew) {
+            known.addAll(incompleteAttemptRepo.knownActivityIds());
+        }
 
         List<StoredClimbAttempt> created = new ArrayList<>();
         List<StoredIncompleteClimbAttempt> incompleteCreated = new ArrayList<>();
@@ -122,6 +141,9 @@ public final class StravaActivitiesRepository {
         if (paginationComplete) {
             prefs.edit().putLong(PREF_LAST, nowSec).apply();
         }
+        // Record the climb set this run evaluated incomplete-only activities against, so the
+        // NEXT run can tell whether new climbs have shown up in the meantime (see above).
+        prefs.edit().putStringSet(PREF_KNOWN_CLIMB_IDS, currentClimbIds).apply();
         Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)"
                 + (paginationComplete ? "" : " (incomplete — cursor not advanced)"));
         return created.size();

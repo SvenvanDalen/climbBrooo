@@ -94,6 +94,30 @@ public class ClimbEntryOnlyDetectorTest {
     }
 
     @Test
+    public void wanderedPastCutoff_butFinalSampleReachesExitGate_isNotFlagged() {
+        // Regression for the off-by-one where the `covered >= cutoff` early-return only ever
+        // checked sample `a` (the point BEFORE the segment that pushed `covered` past cutoff),
+        // never `b` (the point that actually crossed it) — so a track that detoured east away
+        // from the climb before straightening out and landing exactly on the climb's end
+        // coordinate on its very last processed sample got misflagged as "incomplete" even
+        // though it genuinely finished the climb (just via an untidy, longer-than-tolerance
+        // route). Climb: (45.000,6.000) -> (45.009,6.000), length 1000 m, cutoff = 1500 m.
+        List<TrackSample> track = new ArrayList<>();
+        track.add(new TrackSample(45.000, 6.000, 0));   // entry: exactly at climb start
+        track.add(new TrackSample(45.000, 6.012, 60));  // detour east; covered so far < cutoff
+        track.add(new TrackSample(45.009, 6.000, 120)); // final sample: exactly at climb end —
+                                                          // this segment is what pushes covered
+                                                          // past the 1500 m cutoff.
+
+        int distance = ClimbEntryOnlyDetector.detectIncomplete(
+                track, 45.000, 6.000, 45.009, 6.000, 1000);
+
+        assertEquals("a track that actually finished the climb on its final sample must not "
+                + "be flagged as incomplete just because the cutoff also fired on that segment",
+                -1, distance);
+    }
+
+    @Test
     public void nullOrTinyTrack_isNotFlagged() {
         assertEquals(-1, ClimbEntryOnlyDetector.detectIncomplete(
                 null, 45.000, 6.0, 45.009, 6.0, 1000));

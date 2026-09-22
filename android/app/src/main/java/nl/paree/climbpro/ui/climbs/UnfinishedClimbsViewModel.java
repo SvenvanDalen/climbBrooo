@@ -125,7 +125,7 @@ public final class UnfinishedClimbsViewModel extends AndroidViewModel {
                     if (wanted.contains(id) && !map.containsKey(id)) {
                         String name = c.userDisplayName != null ? c.userDisplayName
                                 : (c.name != null ? c.name : "Klim");
-                        int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+                        int len = ClimbIdentity.effectiveLength(c);
                         map.put(id, new ClimbInfo(entry.routeId, i, name, len));
                     }
                 }
