@@ -9,6 +9,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -51,6 +54,32 @@ public final class AttemptPhotoStore {
     public static void delete(Context ctx, String filename) {
         if (filename == null || filename.isEmpty()) return;
         fileFor(ctx, filename).delete();
+    }
+
+    /**
+     * Best-effort cleanup for orphaned photo files: if the process dies between {@link
+     * #savePickedPhoto} writing a new photo and {@code ClimbAttemptRepository.update()}
+     * completing the JSON record that references it, nothing else ever points at that file
+     * again, and it would otherwise sit there forever (a slow, unbounded disk leak across
+     * repeated aborted edits). Deletes every file under {@code attempt_photos/} that isn't
+     * referenced by any attempt's {@link StoredClimbAttempt#photoFileName}. Intentionally
+     * simple — a straightforward list/diff/delete pass, not a transaction log — and meant to be
+     * run once at app startup (see {@code ClimbProApplication#onCreate}) off the main thread.
+     * Not fully race-free against a save in flight at the exact same instant (a very small,
+     * self-limited window), which is an acceptable trade-off for this severity of bug.
+     */
+    public static void cleanupOrphans(Context ctx, List<StoredClimbAttempt> attempts) {
+        File[] files = dir(ctx).listFiles();
+        if (files == null) return;
+        Set<String> referenced = new HashSet<>();
+        for (StoredClimbAttempt a : attempts) {
+            if (a.photoFileName != null) referenced.add(a.photoFileName);
+        }
+        for (File f : files) {
+            if (!referenced.contains(f.getName())) {
+                f.delete();
+            }
+        }
     }
 
     private static File dir(Context ctx) {
