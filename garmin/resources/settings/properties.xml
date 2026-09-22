@@ -2,8 +2,12 @@
 <!--
     App-settings backed properties (Connect IQ "properties.xml"), configurable from
     Garmin Connect Mobile / Garmin Express without a rebuild. See settings.xml for the
-    user-facing setting that maps to darkTheme.
+    user-facing settings that map to darkTheme / largeTextMode.
 -->
 <properties>
     <property id="darkTheme" type="boolean">false</property>
+    <!-- Issue #82: accessibility mode (larger fonts, fewer secondary stats per
+         screen), for low-vision users or bright-sunlight legibility. Independent of
+         darkTheme; both can be on at once. -->
+    <property id="largeTextMode" type="boolean">false</property>
 </properties>

@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Connect IQ app settings: exposes darkTheme (from properties.xml) as a single
-    on/off toggle in Garmin Connect Mobile / Garmin Express ("Low-light dark theme").
+    Connect IQ app settings: exposes darkTheme and largeTextMode (from properties.xml)
+    as on/off toggles in Garmin Connect Mobile / Garmin Express ("Low-light dark theme",
+    "Large text mode").
 -->
 <settings>
     <setting propertyKey="@Properties.darkTheme" title="@Strings.SettingsDarkThemeTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.largeTextMode" title="@Strings.SettingsLargeTextModeTitle">
         <settingConfig type="boolean"/>
     </setting>
 </settings>

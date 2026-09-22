@@ -242,6 +242,7 @@ class ClimbProView extends Ui.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ci = data.activeClimbIndex;
+        var large = largeTextModeActive();
 
         // Header (same slot as the next-climb page, text swapped)
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
@@ -253,7 +254,7 @@ class ClimbProView extends Ui.DataField {
             name = "Climb " + (ci + 1);
         }
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, (h * 0.15).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.15).toNumber(), nameFont(large), name, Gfx.TEXT_JUSTIFY_CENTER);
 
         // Profile (same geometry as the next-climb preview)
         var profileTop = (h * 0.30).toNumber();
@@ -303,16 +304,23 @@ class ClimbProView extends Ui.DataField {
         var gradFrac = curGrad % 10;
         if (gradFrac < 0) { gradFrac = -gradFrac; }
 
+        var sf = statFont(large);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, Gfx.FONT_XTINY, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(w / 2, statsY, Gfx.FONT_XTINY, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
-        dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
+        dc.drawText(32, statsY, sf, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
+        // Remaining elevation is the "nice to have" middle stat -- dropped in
+        // large-text mode so distance and gradient can be drawn bigger without
+        // crowding the small FR255M screen (issue #82).
+        if (showSecondaryStat(large)) {
+            dc.drawText(w / 2, statsY, sf, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+        }
+        dc.drawText(w - 32, statsY, sf,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
         // Current segment's gradient-implied VAM (vertical ascent m/h), complementary to the
         // gradient stat above. Data-plumbing only: no new computation happens on the watch, this
         // just renders the avg/peak pair CommListener already parsed into segVamAvg/segVamPeak.
-        if (data.hasVam[ci] && data.activeSegmentIndex >= 0
+        // Secondary stat: skipped in large-text mode (issue #82).
+        if (showSecondaryStat(large) && data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
             var vamAvg = data.segVamAvg[ci][data.activeSegmentIndex];
             var vamPeak = data.segVamPeak[ci][data.activeSegmentIndex];
@@ -335,13 +343,13 @@ class ClimbProView extends Ui.DataField {
             if (data.hasRefTargets[ci]) {
                 var ref = data.refSecondsAt();
                 if (ref >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR");
+                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR", large);
                     ghostDrawn = true;
                 }
             } else if (data.hasTargets[ci]) {
                 var target = data.targetSecondsAt();
                 if (target >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan");
+                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan", large);
                     ghostDrawn = true;
                 }
             }
@@ -349,19 +357,20 @@ class ClimbProView extends Ui.DataField {
         if (!ghostDrawn) {
             var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
+            dc.drawText(w / 2, ghostY, statFont(large),
                 "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
     // + = behind (red), - or 0 = ahead/on pace (green).
-    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix) {
+    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix, large) {
+        var f = statFont(large);
         if (deltaSec > 0) {
             dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, Gfx.FONT_XTINY, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, y, f, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         } else {
             dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, Gfx.FONT_XTINY, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, y, f, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -382,6 +391,50 @@ class ClimbProView extends Ui.DataField {
             dark = false;
         }
         return dark ? DARK_COLORS : COLORS;
+    }
+
+    // Reads the "largeTextMode" app setting (issue #82, resources/settings/) the same
+    // defensive way activeColors() reads "darkTheme" -- Properties.getValue can throw
+    // on a stale/older simulator settings cache and this must never crash a per-tick
+    // redraw. Independent of darkTheme; the two settings compose freely.
+    hidden function largeTextModeActive() {
+        var large = false;
+        try {
+            var v = Properties.getValue("largeTextMode");
+            large = (v != null && v == true);
+        } catch (e) {
+            large = false;
+        }
+        return large;
+    }
+
+    // =========================================================================
+    // Large-text-mode font/layout decisions (issue #82)
+    // =========================================================================
+    // Kept as small pure functions (no Dc/Properties access) so they're directly
+    // unit-testable -- see garmin/test/LargeTextModeTest.mc. Not "hidden" so tests
+    // can call them straight, the way ClimbData's targetSecondsAt()/refSecondsAt()
+    // are tested directly rather than only smoke-tested through onUpdate().
+
+    // Climb/route name: the single most important line to make legible for a
+    // low-vision or bright-sunlight rider, so it gets the biggest bump.
+    function nameFont(large) {
+        return large ? Gfx.FONT_MEDIUM : Gfx.FONT_TINY;
+    }
+
+    // Stat-row numbers (remaining distance, gradient, ETA/ghost line, etc.).
+    function statFont(large) {
+        return large ? Gfx.FONT_SMALL : Gfx.FONT_XTINY;
+    }
+
+    // Whether to draw a "secondary" stat/line this tick. Per issue #82 ("minder
+    // informatie per scherm ten gunste van leesbaarheid"), large-text mode shows
+    // LESS information rather than cramming bigger text into the same layout: it
+    // drops nice-to-have items (VAM numbers, the middle elevation stat column) and
+    // keeps only what's most critical to a glancing rider (climb name, primary
+    // progress stat, remaining distance, current gradient, pacing/ETA line).
+    function showSecondaryStat(large) {
+        return !large;
     }
 
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
@@ -466,6 +519,7 @@ class ClimbProView extends Ui.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ni = data.nextClimbIndex;
+        var large = largeTextModeActive();
 
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "NEXT CLIMB", Gfx.TEXT_JUSTIFY_CENTER);
@@ -476,7 +530,7 @@ class ClimbProView extends Ui.DataField {
             name = "Climb " + (ni + 1);
         }
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, (h * 0.15).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.15).toNumber(), nameFont(large), name, Gfx.TEXT_JUSTIFY_CENTER);
 
         // Mini profile
         var profileTop = (h * 0.30).toNumber();
@@ -489,19 +543,25 @@ class ClimbProView extends Ui.DataField {
         var elev = data.climbElevGain[ni];
         var grad = data.climbAvgGrad[ni];
 
+        var sf = statFont(large);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, Gfx.FONT_XTINY, formatDist(length), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(w / 2, statsY, Gfx.FONT_XTINY, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(32, statsY, sf, formatDist(length), Gfx.TEXT_JUSTIFY_LEFT);
+        // Elevation gain is the "nice to have" middle stat -- dropped in large-text
+        // mode, same rationale as the active-climb stat row (issue #82).
+        if (showSecondaryStat(large)) {
+            dc.drawText(w / 2, statsY, sf, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+        }
         var nGrad = grad / 10;
         var nGradF = grad % 10;
-        dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
+        dc.drawText(w - 32, statsY, sf,
             nGrad + "." + nGradF + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
-        // Distance to climb
+        // Distance to climb -- kept in large-text mode, it's the key "when do I
+        // need to be ready" stat on this screen, not a nice-to-have.
         if (data.distToNextClimb >= 0) {
             var distY = (h * 0.88).toNumber();
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, distY, Gfx.FONT_XTINY,
+            dc.drawText(w / 2, distY, sf,
                 "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -583,6 +643,8 @@ class ClimbProView extends Ui.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ci = summaryClimbIndex;
+        var large = largeTextModeActive();
+        var sf = statFont(large);
 
         var name = data.climbName[ci];
         if (name == null) { name = "Climb " + (ci + 1); }
@@ -591,7 +653,7 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "KLIM KLAAR", Gfx.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, (h * 0.18).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.18).toNumber(), nameFont(large), name, Gfx.TEXT_JUSTIFY_CENTER);
 
         var mins = summaryActualSec / 60;
         var secs = summaryActualSec % 60;
@@ -599,18 +661,18 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w / 2, (h * 0.40).toNumber(), Gfx.FONT_NUMBER_MEDIUM,
                 mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
 
-        dc.drawText(w / 2, (h * 0.62).toNumber(), Gfx.FONT_XTINY,
+        dc.drawText(w / 2, (h * 0.62).toNumber(), sf,
                 data.climbElevGain[ci] + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.hasTargets[ci]) {
             var d = summaryDeltaSec;
             if (d > 0) {
                 dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(w / 2, (h * 0.78).toNumber(), Gfx.FONT_XTINY,
+                dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         "+" + d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             } else {
                 dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(w / 2, (h * 0.78).toNumber(), Gfx.FONT_XTINY,
+                dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             }
         }
