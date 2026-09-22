@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:title="Hoogtemeter-doel" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            style="@style/TextAppearance.ClimbPro.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Deze week" />
+
+        <TextView
+            android:id="@+id/weekProgressText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            tools:text="1240 / 3000 m" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/weekProgressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            app:trackCornerRadius="6dp"
+            tools:progress="41" />
+
+        <TextView
+            style="@style/TextAppearance.ClimbPro.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Deze maand" />
+
+        <TextView
+            android:id="@+id/monthProgressText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            tools:text="4200 / 12000 m" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/monthProgressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            app:trackCornerRadius="6dp"
+            tools:progress="35" />
+
+        <TextView
+            android:id="@+id/noGoalText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:visibility="gone"
+            android:text="Nog geen doel ingesteld. Stel een wekelijks hoogtemeter-doel in." />
+
+        <Button
+            android:id="@+id/setGoalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Doel instellen" />
+
+    </LinearLayout>
+</LinearLayout>

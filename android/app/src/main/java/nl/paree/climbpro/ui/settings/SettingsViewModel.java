@@ -16,6 +16,9 @@ import nl.paree.climbpro.service.SyncScheduler;
 
 public final class SettingsViewModel extends AndroidViewModel {
 
+    /** Issue #42: weekly elevation-gain training goal, in metres. 0 means "not set". */
+    public static final String PREF_ELEVATION_GOAL_WEEKLY_M = "elevation_goal_weekly_m";
+
     private final StravaAuthRepository authRepo;
     private final RiderProfileRepository riderRepo;
     private final MutableLiveData<Boolean> stravaSignedIn = new MutableLiveData<>();
@@ -23,6 +26,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     private final MutableLiveData<String>  syncMode       = new MutableLiveData<>();
     private final MutableLiveData<Integer> radiusKm       = new MutableLiveData<>();
     private final MutableLiveData<String>  syncStatus     = new MutableLiveData<>();
+    private final MutableLiveData<Integer> elevationGoalWeeklyM = new MutableLiveData<>();
 
     public SettingsViewModel(@NonNull Application app) {
         super(app);
@@ -36,6 +40,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     public LiveData<Integer>     radiusKm()       { return radiusKm; }
     public LiveData<String>      syncStatus()     { return syncStatus; }
     public LiveData<RiderProfile> riderProfile()  { return riderProfile; }
+    public LiveData<Integer>     elevationGoalWeeklyM() { return elevationGoalWeeklyM; }
 
     public void reload() {
         stravaSignedIn.postValue(authRepo.isAuthorised());
@@ -44,6 +49,7 @@ public final class SettingsViewModel extends AndroidViewModel {
         int r = prefs.getInt(RouteSyncWorker.PREF_RADIUS_M, 30_000) / 1000;
         radiusKm.postValue(r);
         riderProfile.postValue(riderRepo.load());
+        elevationGoalWeeklyM.postValue(prefs.getInt(PREF_ELEVATION_GOAL_WEEKLY_M, 0));
     }
 
     public void setSyncMode(String mode) {
@@ -56,6 +62,13 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(RouteSyncWorker.PREF_RADIUS_M, km * 1000).apply();
         radiusKm.postValue(km);
+    }
+
+    /** @param metres 0 clears the goal ("not set"). */
+    public void setElevationGoalWeeklyM(int metres) {
+        PreferenceManager.getDefaultSharedPreferences(getApplication())
+                .edit().putInt(PREF_ELEVATION_GOAL_WEEKLY_M, Math.max(0, metres)).apply();
+        elevationGoalWeeklyM.postValue(Math.max(0, metres));
     }
 
     public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg, int rideIntensityPct) {
