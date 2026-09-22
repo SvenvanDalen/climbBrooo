@@ -23,6 +23,11 @@ public final class ClimbSegmentAdapter
         void onSegmentLongClick(int position, StoredSegment segment);
     }
 
+    /** Tap (short click) on a segment row — used to edit its manual target time. */
+    public interface OnSegmentClickListener {
+        void onSegmentClick(int position, StoredSegment segment);
+    }
+
     private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
 
     // Surface badge background colors (match SurfaceType constants)
@@ -35,8 +40,9 @@ public final class ClimbSegmentAdapter
     };
 
     private List<StoredSegment> items = new ArrayList<>();
-    private int[] segmentSeconds; // null when no estimate available
+    private int[] segmentSeconds; // auto (planner) estimate, null when unavailable
     private OnSegmentLongClickListener longClickListener;
+    private OnSegmentClickListener clickListener;
 
     public void setItems(List<StoredSegment> list) {
         items = list != null ? list : new ArrayList<>();
@@ -52,6 +58,10 @@ public final class ClimbSegmentAdapter
         longClickListener = l;
     }
 
+    public void setOnSegmentClickListener(OnSegmentClickListener l) {
+        clickListener = l;
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -65,12 +75,25 @@ public final class ClimbSegmentAdapter
         StoredSegment s = items.get(position);
         h.gradientView.setText(String.format("%.1f%%", s.gradient * 100));
         h.distView.setText(s.distance + " m");
-        if (segmentSeconds != null && position < segmentSeconds.length) {
+        if (s.manualTargetSec != null) {
+            h.timeView.setVisibility(View.VISIBLE);
+            h.timeView.setText(DurationFormat.format(s.manualTargetSec) + " ✎");
+            h.timeView.setTextColor(0xFFE8C400); // manual override — accent yellow
+            h.timeView.setTypeface(null, android.graphics.Typeface.BOLD);
+        } else if (segmentSeconds != null && position < segmentSeconds.length) {
             h.timeView.setVisibility(View.VISIBLE);
             h.timeView.setText(DurationFormat.format(segmentSeconds[position]));
+            h.timeView.setTextColor(h.defaultTimeColor);
+            h.timeView.setTypeface(null, android.graphics.Typeface.NORMAL);
         } else {
             h.timeView.setVisibility(View.GONE);
         }
+
+        h.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onSegmentClick(position, s);
+            }
+        });
         int ci = Math.max(0, Math.min(5, s.colorIndex));
         h.colorBar.setBackgroundColor(SEGMENT_COLORS[ci]);
 
@@ -105,6 +128,7 @@ public final class ClimbSegmentAdapter
         TextView timeView;
         View     colorBar;
         TextView surfaceBadge;
+        int defaultTimeColor;
         ViewHolder(View v) {
             super(v);
             gradientView  = v.findViewById(R.id.segment_gradient);
@@ -112,6 +136,7 @@ public final class ClimbSegmentAdapter
             timeView      = v.findViewById(R.id.segment_time);
             colorBar      = v.findViewById(R.id.segment_color_bar);
             surfaceBadge  = v.findViewById(R.id.segment_surface_badge);
+            defaultTimeColor = timeView.getCurrentTextColor();
         }
     }
 }

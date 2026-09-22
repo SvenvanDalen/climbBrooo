@@ -535,6 +535,26 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets (or clears, when {@code targetSec} is null) the manual pacing target of a single
+     * segment (issue #23) — overrides {@code RoutePacingPlanner}'s computed 'tsec' value for
+     * that segment only when the route is next synced to the watch.
+     */
+    public void setSegmentManualTargetSec(String routeId, int climbIndex, int segmentIndex,
+                                           Integer targetSec) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
+            throw new IOException("Climb index out of range: " + climbIndex);
+        }
+        StoredClimb sc = route.climbs.get(climbIndex);
+        if (sc.segments == null || segmentIndex < 0 || segmentIndex >= sc.segments.size()) {
+            throw new IOException("Segment index out of range: " + segmentIndex);
+        }
+        sc.segments.get(segmentIndex).manualTargetSec = targetSec;
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+    }
+
+    /**
      * Sets the surface type of every segment in one climb, then updates the catalog.
      */
     public void setBulkClimbSurfaceType(String routeId, int climbIndex,

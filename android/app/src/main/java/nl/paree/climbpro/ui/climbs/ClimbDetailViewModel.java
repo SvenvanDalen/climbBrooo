@@ -134,6 +134,23 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Sets or clears a segment's manual pacing target (issue #23). {@code targetSec} null
+     * reverts the segment to the automatic {@code RoutePacingPlanner} value.
+     */
+    public void setSegmentManualTargetSec(String routeId, int climbIndex, int segmentIndex,
+                                           Integer targetSec) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setSegmentManualTargetSec(routeId, climbIndex, segmentIndex, targetSec);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     public void setBulkSurfaceType(String routeId, int climbIndex, int surfaceType) {
         executor.execute(() -> {
             try {

@@ -51,9 +51,12 @@ public final class WatchRequestHandler {
 
     /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
     private int[][] pacingPlan(StoredRoute route) {
-        if (riderRepo == null) return null;
-        RiderProfile profile = riderRepo.load();
-        return RoutePacingPlanner.plan(route, profile);
+        int[][] plan = null;
+        if (riderRepo != null) {
+            RiderProfile profile = riderRepo.load();
+            plan = RoutePacingPlanner.plan(route, profile);
+        }
+        return nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
     }
 
     /** Per-climb per-segment PR reference seconds, or null when no attempt repo is wired up. */

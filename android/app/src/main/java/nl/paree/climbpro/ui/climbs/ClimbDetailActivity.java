@@ -159,6 +159,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         adapter.setOnSegmentLongClickListener((position, segment) ->
                 showSegmentSurfaceDialog(position, segment));
+        adapter.setOnSegmentClickListener((position, segment) ->
+                showSegmentTargetTimeDialog(position, segment));
 
         viewModel.loadClimb(routeId, climbIndex);
     }
@@ -329,6 +331,56 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         .show();
             }
         });
+    }
+
+    /**
+     * Lets the user set (or clear) a manual pacing target for one segment (issue #23),
+     * overriding {@code RoutePacingPlanner}'s automatic 'tsec' value for that segment only.
+     */
+    private void showSegmentTargetTimeDialog(int segmentIndex, StoredSegment segment) {
+        EditText input = new EditText(this);
+        input.setHint("mm:ss");
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+        if (segment.manualTargetSec != null) {
+            input.setText(DurationFormat.format(segment.manualTargetSec));
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle("Doeltijd segment " + (segmentIndex + 1))
+                .setMessage("Laat leeg en kies \"Automatisch\" om de berekende tijd te gebruiken.")
+                .setView(input)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    Integer seconds = parseMmSs(input.getText().toString().trim());
+                    if (seconds == null) {
+                        Toast.makeText(this, "Ongeldige tijd, gebruik mm:ss", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.setSegmentManualTargetSec(routeId, climbIndex, segmentIndex, seconds);
+                })
+                .setNegativeButton("Annuleer", null);
+        if (segment.manualTargetSec != null) {
+            builder.setNeutralButton("Automatisch",
+                    (d, w) -> viewModel.setSegmentManualTargetSec(
+                            routeId, climbIndex, segmentIndex, null));
+        }
+        builder.show();
+    }
+
+    /** Parses "mm:ss" or a bare seconds count; returns null on anything unparsable/negative. */
+    private static Integer parseMmSs(String text) {
+        if (text == null || text.isEmpty()) return null;
+        try {
+            if (text.contains(":")) {
+                String[] parts = text.split(":", 2);
+                int minutes = Integer.parseInt(parts[0].trim());
+                int seconds = Integer.parseInt(parts[1].trim());
+                if (minutes < 0 || seconds < 0 || seconds >= 60) return null;
+                return minutes * 60 + seconds;
+            }
+            int seconds = Integer.parseInt(text);
+            return seconds >= 0 ? seconds : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void showSegmentSurfaceDialog(int segmentIndex, nl.paree.climbpro.data.route.StoredSegment segment) {
