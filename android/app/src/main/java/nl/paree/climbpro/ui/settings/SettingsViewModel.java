@@ -39,9 +39,13 @@ public final class SettingsViewModel extends AndroidViewModel {
 
     /**
      * Cached {@link FtpEffortJoiner#build} result. Rebuilding this walks every stored
-     * route's climbs, so we only pay that cost when the screen (re)opens ({@link #reload()})
-     * and reuse it for every re-suggestion triggered by a profile save — the underlying
-     * climb/route/attempt data doesn't change just because the FTP field changed.
+     * route's climbs, so it is built lazily at most once per ViewModel instance — i.e.
+     * once per Settings screen visit, the first time {@link #refreshSuggestedFtp} runs
+     * with a null cache — and reused for every subsequent {@link #reload()} (which fires
+     * on every {@code onResume()}, including trivial ones like a permission dialog or
+     * lock-screen unlock) and every re-suggestion triggered by a profile save. A fresh
+     * screen visit gets a fresh ViewModel and therefore a fresh cache, so data synced
+     * while Settings was closed is still picked up the next time it's opened.
      * Only ever touched from within {@link #executor} (single-threaded), so no extra
      * synchronization is needed.
      */
@@ -78,9 +82,14 @@ public final class SettingsViewModel extends AndroidViewModel {
         radiusKm.postValue(r);
         RiderProfile profile = riderRepo.load();
         riderProfile.postValue(profile);
-        // Screen (re)opened: the on-disk climb/route/attempt data may have changed
-        // since we last built the effort cache, so rebuild it.
-        refreshSuggestedFtp(profile, true);
+        // reload() is called from onResume() on EVERY resume (permission dialogs,
+        // notification shade, lock-screen unlock, not just a genuine screen (re)open),
+        // so it must NOT force a rebuild each time — that would re-scan the whole route
+        // catalog on every trivial resume. Build the effort cache lazily, once per
+        // ViewModel instance (i.e. once per Settings screen visit); a fresh visit gets a
+        // fresh ViewModel and therefore a fresh cache, so data synced while the screen
+        // was closed is still picked up next time it's opened.
+        refreshSuggestedFtp(profile, false);
     }
 
     private void refreshSuggestedFtp(RiderProfile profile, boolean rebuildEfforts) {

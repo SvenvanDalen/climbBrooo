@@ -108,6 +108,72 @@ public class SettingsViewModelTest {
         assertEquals(85, persisted.rideIntensityPct);
     }
 
+    /**
+     * Regression test for the fix to the bug where {@link SettingsViewModel#reload()}
+     * unconditionally rebuilt the cached effort list on EVERY call (passing
+     * {@code rebuildEfforts=true} always), even though {@code SettingsActivity.onResume()}
+     * calls {@code reload()} on every resume — including trivial ones like returning from
+     * a permission dialog — defeating the whole point of the effort cache (re-scanning
+     * every stored route's climbs on every resume).
+     *
+     * <p>This writes a different, clearly-distinguishable set of climb attempts to disk
+     * AFTER the ViewModel's cache has already been built once, then calls
+     * {@link SettingsViewModel#reload()} again. If {@code reload()} still force-rebuilt
+     * the cache, the second suggestion would reflect the NEW on-disk data; since it must
+     * instead reuse the cache built on construction, the suggestion after the second
+     * {@code reload()} must be unchanged.
+     */
+    @Test
+    public void reload_doesNotRebuildEffortCacheOnSubsequentCalls() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+
+        SharedPreferences repoPrefs = app.getSharedPreferences("route_repo", Context.MODE_PRIVATE);
+        repoPrefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
+
+        RiderProfile profile = new RiderProfile(150, 70.0, 8.0, 60);
+        new RiderProfileRepository(app).save(profile);
+
+        seedClimb(app, "r1", 51.00, 5.00, 1200, 0.09, "climb-a");
+        seedClimb(app, "r2", 52.00, 6.00, 6000, 0.08, "climb-b");
+
+        writeAttempts(app, 250, 1400); // SHORT + LONG bucket -> some suggestion A
+
+        SettingsViewModel vm = new SettingsViewModel(app);
+
+        final Integer[] suggestion = {null};
+        vm.suggestedFtpWatts().observeForever(s -> suggestion[0] = s);
+        drainUntil(() -> suggestion[0] != null);
+        int firstSuggestion = suggestion[0];
+
+        // Rewrite the attempts on disk with much faster times on the SAME climbs, which
+        // would imply a clearly different (higher) FTP suggestion IF the cache were
+        // rebuilt from this new data.
+        writeAttempts(app, 200, 950);
+
+        suggestion[0] = null;
+        vm.reload();
+        drainUntil(() -> suggestion[0] != null);
+        int secondSuggestion = suggestion[0];
+
+        assertEquals("reload() must reuse the cached efforts, not rescan the on-disk "
+                        + "attempts/climbs on every call",
+                firstSuggestion, secondSuggestion);
+    }
+
+    private static void writeAttempts(Application app, int shortElapsedSec, int longElapsedSec)
+            throws Exception {
+        StoredClimbAttempt short_ = new StoredClimbAttempt();
+        short_.climbId = ClimbIdentity.of(51.00, 5.00, 1200);
+        short_.elapsedSec = shortElapsedSec;
+        StoredClimbAttempt long_ = new StoredClimbAttempt();
+        long_.climbId = ClimbIdentity.of(52.00, 6.00, 6000);
+        long_.elapsedSec = longElapsedSec;
+
+        ObjectMapper mapper = new ObjectMapper();
+        File attemptsFile = new File(app.getFilesDir(), "climb_attempts.json");
+        mapper.writeValue(attemptsFile, new StoredClimbAttempt[]{short_, long_});
+    }
+
     private static void seedClimb(Application app, String routeId, double lat, double lon,
                                    int lengthM, double gradient, String name) throws Exception {
         StoredSegment seg = new StoredSegment();

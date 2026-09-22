@@ -68,6 +68,24 @@ public final class FtpEstimator {
     private static final double MAX_POWER_WATTS = 2000.0;
     private static final int BISECTION_ITERATIONS = 60;
 
+    /**
+     * If the bisection in {@link #impliedPowerWatts} lands within this many watts of
+     * {@link #MAX_POWER_WATTS}, the effort's elapsed time was too fast for its segment
+     * geometry to be solved at all (e.g. a resync re-segmented the climb underneath a
+     * stored attempt, or {@code ClimbAttemptMatcher} mistimed the pass) — the bisection
+     * "solution" is really just the loop hitting its ceiling, not a real implied power.
+     * Such efforts are treated as unusable, the same way insufficient data is.
+     */
+    private static final double SATURATION_EPSILON_WATTS = 1.0;
+
+    /**
+     * A generous upper bound on real-world sustainable climbing FTP (elite pro climbers
+     * top out well under this). Used as a final sanity guard in {@link #suggestFtpWatts}
+     * so that even if some combination of bad efforts slips past the per-effort
+     * saturation check, a wildly implausible number is never surfaced to the user.
+     */
+    public static final int MAX_PLAUSIBLE_FTP_WATTS = 600;
+
     /** Which duration bucket an elapsed time falls in, or null if outside all buckets. */
     public enum Bucket { SHORT, MEDIUM, LONG }
 
@@ -149,6 +167,15 @@ public final class FtpEstimator {
     }
 
     /**
+     * True when {@code impliedPower} is the bisection ceiling rather than a real solve —
+     * see {@link #SATURATION_EPSILON_WATTS}. Such a power (and the FTP derived from it)
+     * must never be trusted as a real result.
+     */
+    private static boolean isSaturated(double impliedPower) {
+        return impliedPower >= MAX_POWER_WATTS - SATURATION_EPSILON_WATTS;
+    }
+
+    /**
      * Suggests a re-estimated FTP from the rider's best efforts across duration buckets,
      * or returns null when there isn't enough duration-spread data to trust a suggestion
      * (see {@link #MIN_QUALIFYING_EFFORTS}, {@link #MIN_DISTINCT_BUCKETS}).
@@ -167,7 +194,12 @@ public final class FtpEstimator {
             if (e == null || e.elapsedSec <= 0 || e.segDistMeters.length == 0) continue;
             Bucket bucket = bucketFor(e.elapsedSec);
             if (bucket == null) continue;
-            double ftp = impliedFtpWatts(e, massKg);
+            double power = impliedPowerWatts(e, massKg);
+            // A saturated bisection means the elapsed time didn't plausibly match this
+            // climb's segment geometry (e.g. a resync re-segmented it under a stored
+            // attempt) — treat it as unsolvable, not as a real (absurdly high) result.
+            if (power <= 0 || isSaturated(power)) continue;
+            double ftp = power - PowerConstants.W_PRIME / e.elapsedSec;
             if (ftp <= 0) continue;
             qualifying++;
             switch (bucket) {
@@ -194,7 +226,11 @@ public final class FtpEstimator {
         if (bestShort != null) overall = Math.max(overall, bestShort);
         if (bestMedium != null) overall = Math.max(overall, bestMedium);
         if (bestLong != null) overall = Math.max(overall, bestLong);
-        return (int) Math.round(overall);
+        int rounded = (int) Math.round(overall);
+        // Final sanity guard: even if a bad-but-not-saturated effort slipped through the
+        // per-effort check above, never surface a wildly implausible FTP to the user.
+        if (rounded > MAX_PLAUSIBLE_FTP_WATTS) return null;
+        return rounded;
     }
 
     /** True when a suggestion differs enough from the current value to be worth surfacing. */

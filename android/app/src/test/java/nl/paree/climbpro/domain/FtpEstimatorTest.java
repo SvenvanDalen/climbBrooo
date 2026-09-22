@@ -130,6 +130,52 @@ public class FtpEstimatorTest {
         assertEquals(Math.round(expected), suggestion.intValue());
     }
 
+    // ---- implausible/mismatched efforts must never produce absurd suggestions ----
+
+    @Test
+    public void implausiblyFastEffortImpliesSaturatedNearMaxPower() {
+        // 8 km at 10% covered in 200s (40 m/s uphill) is physically impossible — the
+        // geometry doesn't match the elapsed time at all (e.g. a resync re-segmented the
+        // climb underneath a stored attempt). The bisection has nowhere to go but its
+        // ceiling.
+        Effort impossible = climbEffort(8000, 0.10, 200);
+        double power = FtpEstimator.impliedPowerWatts(impossible, RIDER.totalMassKg());
+        assertTrue("mismatched geometry/time must saturate the bisection near its ceiling",
+                power > 1900);
+    }
+
+    @Test
+    public void implausibleEffortIsExcludedRatherThanSkewingSuggestion() {
+        // A normal medium-bucket and long-bucket effort give a sane, expected suggestion.
+        List<Effort> sane = new ArrayList<>();
+        sane.add(climbEffort(3000, 0.06, 700));   // medium bucket
+        sane.add(climbEffort(6000, 0.07, 1400));  // long bucket
+        Integer saneSuggestion = FtpEstimator.suggestFtpWatts(sane, RIDER);
+        assertNotNull(saneSuggestion);
+        assertTrue(saneSuggestion < FtpEstimator.MAX_PLAUSIBLE_FTP_WATTS);
+
+        // Adding a geometry-mismatched short-bucket effort (implied power saturates at
+        // ~MAX_POWER_WATTS) must NOT change the outcome — it must be excluded from bucket
+        // selection entirely, not trusted as a real (huge) implied FTP.
+        List<Effort> withBadEffort = new ArrayList<>(sane);
+        withBadEffort.add(climbEffort(8000, 0.10, 200)); // short bucket, impossible pace
+        Integer suggestionWithBad = FtpEstimator.suggestFtpWatts(withBadEffort, RIDER);
+
+        assertEquals("a saturated/implausible effort must be excluded, not change the result",
+                saneSuggestion, suggestionWithBad);
+    }
+
+    @Test
+    public void onlyImplausibleEffortsAcrossBucketsYieldsNoSuggestion() {
+        // Every candidate effort is a geometry/time mismatch (saturated) — even though
+        // they nominally span buckets, none is usable, so there must be no suggestion.
+        List<Effort> efforts = new ArrayList<>();
+        efforts.add(climbEffort(8000, 0.10, 200));   // short bucket, impossible pace
+        efforts.add(climbEffort(20000, 0.10, 900));  // medium bucket, impossible pace
+        assertNull("only-saturated efforts must never produce a suggestion",
+                FtpEstimator.suggestFtpWatts(efforts, RIDER));
+    }
+
     // ---- meaningful-difference gating ----
 
     @Test
