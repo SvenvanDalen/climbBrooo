@@ -10,12 +10,18 @@ import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
+import nl.paree.climbpro.data.route.ClimbAttemptRepository;
+import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.DifficultyScoreCalculator;
+import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
@@ -24,7 +30,11 @@ import nl.paree.climbpro.service.SyncScheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,6 +42,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
+    private final ClimbAttemptRepository attemptRepo;
     private final OnboardPushService onboardPushService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -43,11 +54,14 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
     private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
     private final MutableLiveData<String> onboardPushMessage = new MutableLiveData<>();
+    private final MutableLiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions =
+            new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
         riderRepo = new RiderProfileRepository(app);
+        attemptRepo = new ClimbAttemptRepository(app);
         onboardPushService = new OnboardPushService(
                 ((ClimbProApplication) app).connectIqClient());
     }
@@ -60,6 +74,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<RoutePassport> passport()           { return passport; }
     public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
     public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
+    /** Rest-split suggestions (issue #22); see {@link RestSplitAdvisor}. */
+    public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -73,10 +89,54 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 climbTargetSeconds.postValue(perClimbTotals(r, plan));
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
+                restSuggestions.postValue(computeRestSuggestions(r));
             } catch (Exception e) {
                 error.postValue("Could not load route: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * Builds the rider's historic per-climb difficulty baseline from stored attempts, then asks
+     * {@link RestSplitAdvisor} which of this route's climbs are long + unusually hard for this
+     * rider relative to that baseline. See {@link RestSplitAdvisor} class doc for the rationale.
+     */
+    private List<RestSplitAdvisor.Suggestion> computeRestSuggestions(StoredRoute r) {
+        if (r == null || r.climbs == null || r.climbs.isEmpty()) return Collections.emptyList();
+        List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+        List<Double> historicScores = riderHistoricClimbScores(attempts);
+        return RestSplitAdvisor.suggest(r.climbs, historicScores);
+    }
+
+    /**
+     * One base difficulty score (distanceIntoRouteKm = 0) per distinct climb the rider has an
+     * attempt for, resolved against whichever stored route still carries that climb's own
+     * elevationGain/avgGradient (attempts themselves don't carry those). Mirrors the
+     * climbId -> route/index resolution pattern used by ClimbLogbookViewModel.
+     */
+    private List<Double> riderHistoricClimbScores(List<StoredClimbAttempt> attempts) {
+        Set<String> wanted = new HashSet<>();
+        for (StoredClimbAttempt a : attempts) wanted.add(a.climbId);
+        if (wanted.isEmpty()) return Collections.emptyList();
+
+        Map<String, Double> scoreByClimbId = new HashMap<>();
+        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
+            try {
+                StoredRoute route = routeRepo.loadRoute(entry.routeId);
+                if (route.climbs == null) continue;
+                for (StoredClimb c : route.climbs) {
+                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
+                    if (wanted.contains(id) && !scoreByClimbId.containsKey(id)) {
+                        scoreByClimbId.put(id,
+                                DifficultyScoreCalculator.score(c.elevationGain, c.avgGradient, 0));
+                    }
+                }
+            } catch (Exception ignored) {
+                // A route that fails to load just won't contribute to the baseline.
+            }
+        }
+        return new ArrayList<>(scoreByClimbId.values());
     }
 
     public void renameRoute(String routeId, String newName) {

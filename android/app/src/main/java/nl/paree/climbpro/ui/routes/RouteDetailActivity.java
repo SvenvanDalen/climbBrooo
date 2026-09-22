@@ -96,6 +96,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnShareToGarmin.setEnabled(p != null);
         });
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
+        viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
 
