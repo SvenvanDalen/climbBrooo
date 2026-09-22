@@ -126,7 +126,8 @@ public final class FtpEstimator {
         double hi = MAX_POWER_WATTS;
         for (int i = 0; i < BISECTION_ITERATIONS; i++) {
             double mid = 0.5 * (lo + hi);
-            double t = totalSecondsAtPower(effort, crr, massKg, mid);
+            double t = PowerSpeedSolver.totalSecondsAtPower(
+                    effort.segDistMeters, effort.segGradient, crr, massKg, mid);
             // Higher power -> shorter time. If the trial time is still slower than the
             // real effort, we need more power.
             if (t > effort.elapsedSec) {
@@ -136,15 +137,6 @@ public final class FtpEstimator {
             }
         }
         return 0.5 * (lo + hi);
-    }
-
-    private static double totalSecondsAtPower(Effort effort, double[] crr, double massKg, double power) {
-        double total = 0;
-        for (int i = 0; i < effort.segDistMeters.length; i++) {
-            double v = PowerSpeedSolver.speedMetersPerSecond(power, massKg, effort.segGradient[i], crr[i]);
-            total += effort.segDistMeters[i] / v;
-        }
-        return total;
     }
 
     /**

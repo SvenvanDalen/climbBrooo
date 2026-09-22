@@ -37,6 +37,16 @@ public final class SettingsViewModel extends AndroidViewModel {
     private final MutableLiveData<String>  syncStatus     = new MutableLiveData<>();
     private final MutableLiveData<Integer> suggestedFtpWatts = new MutableLiveData<>();
 
+    /**
+     * Cached {@link FtpEffortJoiner#build} result. Rebuilding this walks every stored
+     * route's climbs, so we only pay that cost when the screen (re)opens ({@link #reload()})
+     * and reuse it for every re-suggestion triggered by a profile save — the underlying
+     * climb/route/attempt data doesn't change just because the FTP field changed.
+     * Only ever touched from within {@link #executor} (single-threaded), so no extra
+     * synchronization is needed.
+     */
+    private List<FtpEstimator.Effort> cachedEfforts;
+
     public SettingsViewModel(@NonNull Application app) {
         super(app);
         authRepo = new StravaAuthRepository(app);
@@ -68,15 +78,21 @@ public final class SettingsViewModel extends AndroidViewModel {
         radiusKm.postValue(r);
         RiderProfile profile = riderRepo.load();
         riderProfile.postValue(profile);
-        refreshSuggestedFtp(profile);
+        // Screen (re)opened: the on-disk climb/route/attempt data may have changed
+        // since we last built the effort cache, so rebuild it.
+        refreshSuggestedFtp(profile, true);
     }
 
-    private void refreshSuggestedFtp(RiderProfile profile) {
+    private void refreshSuggestedFtp(RiderProfile profile, boolean rebuildEfforts) {
         suggestedFtpWatts.postValue(null);
         executor.execute(() -> {
             try {
-                List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-                List<FtpEstimator.Effort> efforts = FtpEffortJoiner.build(routeRepo, attempts);
+                List<FtpEstimator.Effort> efforts = cachedEfforts;
+                if (rebuildEfforts || efforts == null) {
+                    List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                    efforts = FtpEffortJoiner.build(routeRepo, attempts);
+                    cachedEfforts = efforts;
+                }
                 Integer suggestion = FtpEstimator.suggestFtpWatts(efforts, profile);
                 if (suggestion != null
                         && FtpEstimator.isMeaningfullyDifferent(suggestion, profile.ftpWatts)) {
@@ -104,19 +120,23 @@ public final class SettingsViewModel extends AndroidViewModel {
         RiderProfile profile = new RiderProfile(ftpWatts, riderKg, bikeKg, rideIntensityPct);
         riderRepo.save(profile);
         riderProfile.postValue(profile);
-        refreshSuggestedFtp(profile);
+        // Only ftpWatts (potentially) changed — the climb/route/attempt data behind the
+        // effort cache did not, so reuse it instead of rescanning the whole catalog.
+        refreshSuggestedFtp(profile, false);
     }
 
     /**
-     * Applies the currently shown suggestion to the *stored* rider profile, keeping every
-     * other field as-is. Only ever called from an explicit user tap (issue #20) — never
-     * invoked on the caller's behalf.
+     * Applies the currently shown suggestion to the rider profile, combined with the
+     * given weight/bike/intensity values. Callers MUST pass the values currently shown
+     * on screen (not necessarily the last-saved profile) so that tapping "apply suggested
+     * FTP" behaves like a normal "save profile" tap with this FTP value substituted in —
+     * it must never silently discard unsaved edits to the other fields. Only ever called
+     * from an explicit user tap (issue #20) — never invoked on the caller's behalf.
      */
-    public void applySuggestedFtp() {
+    public void applySuggestedFtp(double riderKg, double bikeKg, int rideIntensityPct) {
         Integer suggestion = suggestedFtpWatts.getValue();
-        RiderProfile current = riderProfile.getValue();
-        if (suggestion == null || current == null) return;
-        saveRiderProfile(suggestion, current.riderWeightKg, current.bikeWeightKg, current.rideIntensityPct);
+        if (suggestion == null) return;
+        saveRiderProfile(suggestion, riderKg, bikeKg, rideIntensityPct);
     }
 
     public void signOutStrava() {
