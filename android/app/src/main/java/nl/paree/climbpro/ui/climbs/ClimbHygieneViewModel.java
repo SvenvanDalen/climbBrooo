@@ -35,6 +35,7 @@ public final class ClimbHygieneViewModel extends AndroidViewModel {
             new MutableLiveData<>();
     private final MutableLiveData<String>  error    = new MutableLiveData<>();
     private final MutableLiveData<Boolean> scanning  = new MutableLiveData<>(false);
+    private final MutableLiveData<Event<String>> mergeSuccess = new MutableLiveData<>();
 
     public ClimbHygieneViewModel(@NonNull Application app) {
         super(app);
@@ -45,6 +46,27 @@ public final class ClimbHygieneViewModel extends AndroidViewModel {
     public LiveData<List<NearDuplicateClimbFinder.Candidate>> candidates() { return candidates; }
     public LiveData<String>  error()    { return error; }
     public LiveData<Boolean> scanning() { return scanning; }
+    /**
+     * Fires once per merge that {@link ClimbMergeService#merge} actually completed without
+     * throwing — this is the only signal the activity should use to show a success toast.
+     * Wrapped in {@link Event} so a config-change re-subscription doesn't replay a stale success.
+     */
+    public LiveData<Event<String>> mergeSuccess() { return mergeSuccess; }
+
+    /** One-shot LiveData payload: consumed at most once via {@link #consume}. */
+    public static final class Event<T> {
+        private final T value;
+        private boolean consumed;
+
+        Event(T value) { this.value = value; }
+
+        /** Returns the payload the first time it's called, null on every call after that. */
+        public T consume() {
+            if (consumed) return null;
+            consumed = true;
+            return value;
+        }
+    }
 
     public void scan() {
         scanning.postValue(true);
@@ -70,12 +92,18 @@ public final class ClimbHygieneViewModel extends AndroidViewModel {
         });
     }
 
-    /** Merges {@code remove} into {@code keep}, then re-scans so the list reflects the change. */
+    /**
+     * Merges {@code remove} into {@code keep}, then re-scans so the list reflects the change.
+     * Only posts to {@link #mergeSuccess()} once {@link ClimbMergeService#merge} has returned
+     * without throwing — the activity must not show a success toast before this fires, since the
+     * merge can fail (I/O error, or the climb having already been merged away by a stale index).
+     */
     public void merge(NearDuplicateClimbFinder.ClimbRef keep,
                        NearDuplicateClimbFinder.ClimbRef remove) {
         executor.execute(() -> {
             try {
                 new ClimbMergeService(routeRepo, attemptRepo).merge(keep, remove);
+                mergeSuccess.postValue(new Event<>("Samengevoegd"));
             } catch (Exception e) {
                 error.postValue("Samenvoegen mislukt: " + e.getMessage());
             }

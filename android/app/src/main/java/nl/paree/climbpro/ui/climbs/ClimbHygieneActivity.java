@@ -49,6 +49,10 @@ public final class ClimbHygieneActivity extends AppCompatActivity {
         viewModel.candidates().observe(this, this::renderCandidates);
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_LONG).show());
+        viewModel.mergeSuccess().observe(this, event -> {
+            String msg = event != null ? event.consume() : null;
+            if (msg != null) Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        });
 
         viewModel.scan();
     }
@@ -128,10 +132,7 @@ public final class ClimbHygieneActivity extends AppCompatActivity {
                 .setMessage("\"" + climbLabel(remove) + "\" wordt verwijderd en zijn geschiedenis "
                         + "wordt overgezet naar \"" + climbLabel(keep) + "\". Dit kan niet ongedaan "
                         + "worden gemaakt.")
-                .setPositiveButton("Samenvoegen", (d, w) -> {
-                    viewModel.merge(keep, remove);
-                    Toast.makeText(this, "Samengevoegd", Toast.LENGTH_SHORT).show();
-                })
+                .setPositiveButton("Samenvoegen", (d, w) -> viewModel.merge(keep, remove))
                 .setNegativeButton("Annuleren", null)
                 .show();
     }

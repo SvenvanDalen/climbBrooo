@@ -172,6 +172,81 @@ public class ClimbMergeServiceTest {
         assertEquals("Untouched", removeAfter.climbs.get(0).userDisplayName);
     }
 
+    /**
+     * Regression test for issue #76's stale-index race: route R holds two climbs, X (index 0)
+     * and Y (index 1), each independently paired against a climb in a different route. The user
+     * confirms the X merge first, which removes X from R and shifts Y down to index 0. The
+     * second candidate card still carries its ORIGINAL snapshot — a {@code ClimbRef} for Y with
+     * {@code climbIndex == 1}, which is now out of range for R's shortened climb list. Before the
+     * fix, {@code RouteRepository.removeClimb} silently no-op'd on the out-of-range index (just a
+     * log warning), so Y was never actually removed even though the merge "succeeded". The fix
+     * re-locates Y by its immutable detection fields instead of trusting the stale index, so the
+     * second merge must still remove Y.
+     */
+    @Test
+    public void merge_reLocatesClimbWhenCapturedIndexGoesStaleAfterAnEarlierMergeOnSameRoute()
+            throws Exception {
+        StoredClimb x = climb(45.0005, 6.0000, 2000, 0.050, null);
+        StoredClimb y = climb(45.1000, 6.1000, 2200, 0.060, null);
+        seedRoute("routeR", x, y);
+
+        StoredClimb otherA = climb(45.0015, 6.0000, 2050, 0.052, null); // near-dup of x
+        StoredClimb otherB = climb(45.1010, 6.1000, 2220, 0.061, null); // near-dup of y
+        seedRoute("routeA", otherA);
+        seedRoute("routeB", otherB);
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        ClimbMergeService service = new ClimbMergeService(routeRepo, attemptRepo);
+
+        // Snapshot BOTH candidate refs up front, as the UI would from a single scan of R at
+        // indices 0 and 1 — before either merge has happened.
+        NearDuplicateClimbFinder.ClimbRef removeXRef = refFor(routeRepo, "routeR", 0); // X
+        NearDuplicateClimbFinder.ClimbRef removeYRef = refFor(routeRepo, "routeR", 1); // Y, stale after first merge
+        NearDuplicateClimbFinder.ClimbRef keepARef = refFor(routeRepo, "routeA", 0);
+        NearDuplicateClimbFinder.ClimbRef keepBRef = refFor(routeRepo, "routeB", 0);
+
+        // First confirm: keep otherA, remove X. This shifts Y from index 1 to index 0 in routeR.
+        service.merge(keepARef, removeXRef);
+
+        StoredRoute afterFirst = routeRepo.loadRoute("routeR");
+        assertEquals(1, afterFirst.climbs.size());
+        assertEquals(y.startLat, afterFirst.climbs.get(0).startLat, 0.00001);
+
+        // Second confirm uses the STALE removeYRef (climbIndex == 1), captured before the first
+        // merge. It must still find and remove Y, not silently no-op.
+        service.merge(keepBRef, removeYRef);
+
+        StoredRoute afterSecond = routeRepo.loadRoute("routeR");
+        assertTrue("Y should have been removed despite the stale captured index",
+                afterSecond.climbs.isEmpty());
+    }
+
+    /**
+     * If the climb a {@code ClimbRef} points at is genuinely gone (already merged away by a
+     * previous confirm, not just shifted), the merge must surface an explicit failure instead of
+     * quietly doing nothing.
+     */
+    @Test(expected = java.io.IOException.class)
+    public void merge_throwsInsteadOfSilentNoOpWhenClimbCanNoLongerBeFound() throws Exception {
+        StoredClimb x = climb(45.0005, 6.0000, 2000, 0.050, null);
+        seedRoute("routeR", x);
+        StoredClimb other = climb(45.0015, 6.0000, 2050, 0.052, null);
+        seedRoute("routeOther", other);
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        ClimbMergeService service = new ClimbMergeService(routeRepo, attemptRepo);
+
+        NearDuplicateClimbFinder.ClimbRef removeXRef = refFor(routeRepo, "routeR", 0);
+        NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "routeOther", 0);
+
+        // Directly remove X out from under the service, simulating "already merged elsewhere".
+        routeRepo.removeClimb("routeR", 0);
+
+        service.merge(keepRef, removeXRef);
+    }
+
     private static NearDuplicateClimbFinder.ClimbRef refFor(
             RouteRepository repo, String routeId, int index) throws Exception {
         StoredRoute route = repo.loadRoute(routeId);
