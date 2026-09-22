@@ -581,26 +581,44 @@ class ClimbProView extends Ui.DataField {
     // datafield to speak arbitrary words on this device/SDK tier.
     //
     // This is the most faithful available approximation: an opt-in, more
-    // attention-grabbing ALERT-style tone sequence (two announcement-style beeps
-    // then a distinct alert-hi tone, spaced like a "heads up, here it comes"
-    // cadence) layered on top of the normal vibration, instead of the single
-    // TONE_LAP chime used by the default alert. Purely additive -- default
-    // (setting off/unset) keeps today's vibrate+TONE_LAP behavior unchanged.
+    // attention-grabbing alert layered on top of the normal vibration, instead
+    // of the single TONE_LAP chime used by the default alert. Purely additive --
+    // default (setting off/unset) keeps today's vibrate+TONE_LAP behavior
+    // unchanged.
+    //
+    // Code review on PR #133 flagged that the first version of this alert was too
+    // similar to triggerBatteryAlert(): both used a 5-entry, evenly-spaced
+    // (3 pulses / 2 gaps) vibe pattern with identical 150ms gaps and the same
+    // terminal TONE_ALERT_HI tone -- differing only in pulse length (400ms vs
+    // 250ms), which is not reliably distinguishable by feel mid-ride. Fixed by
+    // using a genuinely different vibe SHAPE (short-short-short-long "here it
+    // comes" rhythm, 4 pulses / 3 gaps, 80ms gaps instead of 150ms) and a
+    // different terminal tone (TONE_START, which also fits the "climb start"
+    // semantics -- distinct from both TONE_LAP and TONE_ALERT_HI).
+    //
+    // Also fixed: the original used three back-to-back playTone() calls
+    // (TONE_LAP, TONE_LAP, TONE_ALERT_HI) with no gap between them. Toybox.Attention
+    // on real hardware does not reliably queue playTone() calls -- a later call
+    // can cut off/interrupt an earlier one's playback, so a rider was likely to
+    // hear only the final tone rather than the intended 3-tone cadence. The
+    // "distinct pattern" signal now lives entirely in the VIBE profile (which IS
+    // a proper timed sequence on this API), and the tone is reduced to a single
+    // playTone() call so there is nothing to race/drop.
     hidden function triggerClimbAlertDistinctTone() {
         if (Attention has :vibrate) {
             var vibePattern = [
-                new Attention.VibeProfile(100, 400),
-                new Attention.VibeProfile(0, 150),
-                new Attention.VibeProfile(100, 400),
-                new Attention.VibeProfile(0, 150),
-                new Attention.VibeProfile(100, 400)
+                new Attention.VibeProfile(100, 120),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 120),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 120),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 600)
             ];
             Attention.vibrate(vibePattern);
         }
         if (Attention has :playTone) {
-            Attention.playTone(Attention.TONE_LAP);
-            Attention.playTone(Attention.TONE_LAP);
-            Attention.playTone(Attention.TONE_ALERT_HI);
+            Attention.playTone(Attention.TONE_START);
         }
     }
 
