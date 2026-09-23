@@ -149,7 +149,7 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         ensureBluetoothPermission();
-        checkForAppUpdate();
+        checkForAppUpdate(false);
     }
 
     /**
@@ -195,7 +195,7 @@ public final class RouteListActivity extends AppCompatActivity {
      * if found, asks the user to confirm before downloading + installing it. See
      * DEPLOYMENT.md for how release APKs are built and signed.
      */
-    private void checkForAppUpdate() {
+    private void checkForAppUpdate(boolean verbose) {
         new nl.paree.climbpro.update.UpdateChecker(this).checkForUpdate(
                 new nl.paree.climbpro.update.UpdateChecker.Callback() {
                     @Override
@@ -211,12 +211,25 @@ public final class RouteListActivity extends AppCompatActivity {
 
                     @Override
                     public void onUpToDate() {
-                        // Nothing to do — already on the latest release.
+                        // The silent startup check stays silent when there's nothing new;
+                        // a manually triggered check still confirms it actually ran.
+                        if (verbose) {
+                            Toast.makeText(RouteListActivity.this,
+                                    "Je hebt al de nieuwste versie (build "
+                                            + nl.paree.climbpro.BuildConfig.VERSION_CODE + ")",
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
                     public void onCheckFailed(Exception e) {
                         Log.w("RouteListActivity", "Update check failed", e);
+                        // Previously fully silent, which made a real failure (network,
+                        // GitHub API rate limit, ...) indistinguishable from "no update
+                        // available" — always surface it so it's not a mystery.
+                        Toast.makeText(RouteListActivity.this,
+                                "Update-check mislukt: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -266,6 +279,10 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbTimelineActivity.class));
             return true;
+        } else if (id == R.id.action_unfinished_climbs) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
+            return true;
         } else if (id == R.id.action_wrapped) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.wrapped.ClimbWrappedActivity.class));
@@ -273,11 +290,17 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_climb_hygiene) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         } else if (id == R.id.action_sort) {
             showSortDialog();
+            return true;
+        } else if (id == R.id.action_check_update) {
+            checkForAppUpdate(true);
             return true;
         }
         return super.onOptionsItemSelected(item);

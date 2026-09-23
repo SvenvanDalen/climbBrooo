@@ -3,23 +3,44 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="?android:attr/selectableItemBackground">
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="10dp"
+    android:padding="14dp"
+    android:background="@drawable/bg_card"
+    android:foreground="?android:attr/selectableItemBackground">
 
-    <TextView
-        android:id="@+id/climb_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="15sp"
-        android:textStyle="bold"/>
+    <View
+        android:id="@+id/climb_color_bar"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:minHeight="36dp"
+        android:layout_marginEnd="12dp"/>
 
-    <TextView
-        android:id="@+id/climb_stats"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="13sp"
-        android:layout_marginTop="2dp"
-        android:textColor="?android:attr/textColorSecondary"/>
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/climb_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/space_grotesk"
+            android:textStyle="bold"
+            android:textColor="@color/color_text_primary"
+            android:textSize="15sp"/>
+
+        <TextView
+            android:id="@+id/climb_stats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/space_grotesk"
+            android:textSize="13sp"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/color_text_secondary"/>
+
+    </LinearLayout>
 
 </LinearLayout>

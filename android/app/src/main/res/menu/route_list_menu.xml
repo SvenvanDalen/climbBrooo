@@ -35,6 +35,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_unfinished_climbs"
+        android:title="Nooit voltooide klimmen"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_wrapped"
         android:title="Jaaroverzicht"
         app:showAsAction="never"/>
@@ -45,8 +50,18 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_climb_hygiene"
+        android:title="Klim-opschoning"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_check_update"
+        android:title="Controleer op updates"
         app:showAsAction="never"/>
 
 </menu>

@@ -4,15 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1B1030">
+    android:background="@color/color_bg">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#1B1030"
-        app:titleTextColor="#FFFFFF"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+        android:background="@color/color_bg"
+        app:titleTextColor="@color/color_text_primary"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="48dp"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/color_text_primary"
                 android:textSize="16sp"
                 android:visibility="gone"
                 android:text="Nog geen klimpogingen dit jaar." />

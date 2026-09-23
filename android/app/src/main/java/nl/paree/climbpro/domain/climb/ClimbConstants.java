@@ -71,4 +71,26 @@ public final class ClimbConstants {
      * the climb is classified MIXED instead. Used by {@link ClimbSurfaceClassifier}.
      */
     public static final double SURFACE_MIXED_MINORITY_FRACTION = 0.2;
+
+    /**
+     * Max distance (metres) between the start coordinates of two already-STORED climbs
+     * (different {@link ClimbIdentity} keys, so the automatic bucketing already missed them)
+     * for {@link NearDuplicateClimbFinder} to flag them as a manual-merge candidate (issue #76).
+     * Wider than {@link #DUPLICATE_CLIMB_MATCH_RADIUS_M} since this catches
+     * {@link ClimbIdentity}'s documented bucket-boundary gap, which needs more slack than the
+     * import-time exact-duplicate check.
+     */
+    public static final double NEAR_DUPLICATE_MATCH_RADIUS_M     = 200.0;
+    /**
+     * Max relative difference in climb length (e.g. 0.20 = 20%) for two nearby climbs to still
+     * count as the same physical climb in {@link NearDuplicateClimbFinder}. Guards against
+     * flagging a short spur next to the start of a much longer climb as a near-duplicate.
+     */
+    public static final double NEAR_DUPLICATE_LENGTH_TOLERANCE   = 0.20;
+    /**
+     * Max absolute difference in average gradient (fraction, e.g. 0.02 = 2 percentage points)
+     * for two nearby, similarly-sized climbs to count as the same physical climb in
+     * {@link NearDuplicateClimbFinder}.
+     */
+    public static final double NEAR_DUPLICATE_GRADIENT_TOLERANCE = 0.02;
 }
