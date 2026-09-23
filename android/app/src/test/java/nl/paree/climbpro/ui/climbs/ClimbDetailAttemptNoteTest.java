@@ -121,6 +121,13 @@ public class ClimbDetailAttemptNoteTest {
 
     private static Application setUpRoute() throws Exception {
         Application app = ApplicationProvider.getApplicationContext();
+        // ClimbProApplication#onCreate starts a real background thread ("attempt-photo-
+        // cleanup") that deletes any attempt_photos/ file not yet referenced by
+        // climb_attempts.json. Left unsynchronized, it races the fixture writes below and can
+        // delete the freshly-written old photo before this test appends its referencing
+        // record — rare locally, but frequent enough under CI load to make this test flaky.
+        // Joining it here forces that startup cleanup to finish before any test fixture exists.
+        joinAppStartupCleanupThread();
         SharedPreferences prefs = app.getSharedPreferences("route_repo", Context.MODE_PRIVATE);
         prefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
         new File(app.getFilesDir(), "climb_attempts.json").delete();
@@ -193,6 +200,18 @@ public class ClimbDetailAttemptNoteTest {
             Thread.sleep(10);
         }
         Shadows.shadowOf(Looper.getMainLooper()).idle();
+    }
+
+    /** See the comment in {@link #setUpRoute}. Best-effort: if the thread can't be found
+     *  (e.g. it already finished), there's nothing to join. */
+    private static void joinAppStartupCleanupThread() throws InterruptedException {
+        Thread[] threads = new Thread[Thread.activeCount() + 16];
+        int count = Thread.enumerate(threads);
+        for (int i = 0; i < count; i++) {
+            if ("attempt-photo-cleanup".equals(threads[i].getName())) {
+                threads[i].join(5000);
+            }
+        }
     }
 
     private static void deleteRecursively(File f) {
