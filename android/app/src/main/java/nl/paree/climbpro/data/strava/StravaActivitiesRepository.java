@@ -131,29 +131,23 @@ public final class StravaActivitiesRepository {
 
             long dateSec = parseStartDate(act.startDate);
             for (KnownClimb k : climbs) {
-                // matchAll finds every valid ascent in the track, not just the first —
+                // matchAllPasses finds every valid ascent in the track, not just the first —
                 // an out-and-back or loop route can pass over the same climb more than
                 // once in a single activity, and each pass should be logged separately.
-                List<Integer> elapsedPasses = ClimbAttemptMatcher.matchAll(
-                        track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
-                List<int[]> segPasses = ClimbAttemptMatcher.matchAllSegments(
+                List<ClimbAttemptMatcher.PassResult> passes = ClimbAttemptMatcher.matchAllPasses(
                         track, k.startLat, k.startLon, k.endLat, k.endLon,
                         k.lengthM, k.segLengthsM);
-                List<int[]> passIndices = ClimbAttemptMatcher.matchAllPassIndices(
-                        track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
-                for (int i = 0; i < elapsedPasses.size(); i++) {
+                for (int i = 0; i < passes.size(); i++) {
+                    ClimbAttemptMatcher.PassResult p = passes.get(i);
                     StoredClimbAttempt a = new StoredClimbAttempt();
                     a.climbId      = k.climbId;
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
-                    a.elapsedSec   = elapsedPasses.get(i);
+                    a.elapsedSec   = p.elapsedSec;
                     a.passIndex    = i;
-                    a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
-                    if (i < passIndices.size()) {
-                        int[] idx = passIndices.get(i);
-                        a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
-                                track, idx[0], idx[1], k.calibLats, k.calibLons);
-                    }
+                    a.segSplitSec  = p.segSplitSec;
+                    a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
+                            track, p.entryIdx, p.exitIdx, k.calibLats, k.calibLons);
                     out.add(a);
                 }
             }

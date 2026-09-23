@@ -175,51 +175,41 @@ public final class ClimbAttemptMatcher {
         return passes;
     }
 
-    /**
-     * Like {@link #match}, but returns the elapsed time of every valid ascent found in
-     * the track, in chronological order, instead of only the first.
-     */
-    public static List<Integer> matchAll(List<TrackSample> track,
-                                         double startLat, double startLon,
-                                         double endLat, double endLon,
-                                         int climbLengthM) {
-        List<Integer> out = new ArrayList<>();
-        for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
-            out.add((int) (track.get(p.exitIdx).timeSec - track.get(p.entryIdx).timeSec));
+    /** One valid ascent, bundling its track index range, elapsed time and (optionally)
+     *  per-segment splits — everything a caller needs about one pass, from one
+     *  {@link #findAllPasses} walk, instead of pairing separate lists positionally. */
+    public static final class PassResult {
+        public final int entryIdx;
+        public final int exitIdx;
+        public final int elapsedSec;
+        /** Null when {@code segLengthsM} was null/empty. */
+        public final int[] segSplitSec;
+
+        PassResult(int entryIdx, int exitIdx, int elapsedSec, int[] segSplitSec) {
+            this.entryIdx = entryIdx;
+            this.exitIdx = exitIdx;
+            this.elapsedSec = elapsedSec;
+            this.segSplitSec = segSplitSec;
         }
-        return out;
     }
 
     /**
-     * Same passes as {@link #matchAll}, in the same order, but returns each pass's track
-     * index range ({@code {entryIdx, exitIdx}}) instead of its elapsed time. Used by
-     * route-deviation checks ({@link ClimbRouteDeviationDetector}) that need the actual
-     * track slice of a pass, not just its timing — callers pair this list positionally
-     * with {@link #matchAll}'s output for the same arguments.
+     * Like {@link #match}/{@link #matchSegments}, but returns every valid ascent found in
+     * the track (in chronological order) instead of only the first — needed when the same
+     * climb is ridden more than once within one activity (out-and-back, loop route).
+     *
+     * @param segLengthsM per-segment lengths, or null/empty to skip segment splitting.
      */
-    public static List<int[]> matchAllPassIndices(List<TrackSample> track,
+    public static List<PassResult> matchAllPasses(List<TrackSample> track,
                                                    double startLat, double startLon,
                                                    double endLat, double endLon,
-                                                   int climbLengthM) {
-        List<int[]> out = new ArrayList<>();
+                                                   int climbLengthM, int[] segLengthsM) {
+        boolean wantSegments = segLengthsM != null && segLengthsM.length > 0;
+        List<PassResult> out = new ArrayList<>();
         for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
-            out.add(new int[]{p.entryIdx, p.exitIdx});
-        }
-        return out;
-    }
-
-    /**
-     * Like {@link #matchSegments}, but returns the per-segment splits of every valid
-     * ascent found in the track, in chronological order, instead of only the first.
-     */
-    public static List<int[]> matchAllSegments(List<TrackSample> track,
-                                               double startLat, double startLon,
-                                               double endLat, double endLon,
-                                               int climbLengthM, int[] segLengthsM) {
-        List<int[]> out = new ArrayList<>();
-        if (segLengthsM == null || segLengthsM.length == 0) return out;
-        for (Pass p : findAllPasses(track, startLat, startLon, endLat, endLon, climbLengthM)) {
-            out.add(splitSegments(track, p.entryIdx, p.exitIdx, segLengthsM));
+            int elapsed = (int) (track.get(p.exitIdx).timeSec - track.get(p.entryIdx).timeSec);
+            int[] splits = wantSegments ? splitSegments(track, p.entryIdx, p.exitIdx, segLengthsM) : null;
+            out.add(new PassResult(p.entryIdx, p.exitIdx, elapsed, splits));
         }
         return out;
     }

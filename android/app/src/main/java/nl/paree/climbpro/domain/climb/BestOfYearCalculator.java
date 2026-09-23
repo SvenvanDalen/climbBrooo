@@ -64,7 +64,9 @@ public final class BestOfYearCalculator {
         return isMostRecentBestOfYear(climbId, attempts, nowEpochSec, ZoneId.systemDefault());
     }
 
-    private static int yearOf(long epochSec, ZoneId zone) {
+    /** Package-visible so {@link LogbookCalculator} can locate the exact attempt this badge
+     *  applies to, using the same calendar-year rule as {@link #isMostRecentBestOfYear}. */
+    static int yearOf(long epochSec, ZoneId zone) {
         return Instant.ofEpochSecond(epochSec).atZone(zone).getYear();
     }
 }

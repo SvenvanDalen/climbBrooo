@@ -191,4 +191,24 @@ public class LogbookCalculatorTest {
 
         assertFalse(rows.get(0).bestOfYear);
     }
+
+    @Test
+    public void historyFor_flagsCleanAttempt_notNewerDeviatedRow_whenDeviatedIsMostRecent() {
+        // issue #122 regression: row 0 is newest overall (a deviated attempt), but the
+        // badge must land on the most recent CLEAN attempt this year, wherever that row is.
+        long now = epoch(2026, 6, 15);
+        StoredClimbAttempt deviatedNewest = at("k1", 1, epoch(2026, 5, 1), 620);
+        deviatedNewest.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                deviatedNewest,
+                at("k1", 2, epoch(2026, 2, 1), 650)); // clean, most recent clean attempt this year
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", attempts, now);
+
+        assertEquals(2, rows.size());
+        assertFalse("the newer but deviated attempt must not get the badge",
+                rows.get(0).bestOfYear);
+        assertTrue("the most recent clean attempt this year earns the badge",
+                rows.get(1).bestOfYear);
+    }
 }
