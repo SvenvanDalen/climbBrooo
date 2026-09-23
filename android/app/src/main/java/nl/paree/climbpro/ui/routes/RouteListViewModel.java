@@ -40,6 +40,9 @@ public final class RouteListViewModel extends AndroidViewModel {
     /** Sort mode from {@link RouteSorting}; defaults to newest-at-bottom. */
     private volatile int activeSortMode = RouteSorting.SORT_IMPORT_ASC;
 
+    /** Bucket-list filter from {@link RouteStatusFilter}; not persisted, starts at "Alle". */
+    private volatile int activeStatusFilter = RouteStatusFilter.FILTER_ALL;
+
     public RouteListViewModel(@NonNull Application app) {
         super(app);
         routeRepo      = new RouteRepository(app);
@@ -59,7 +62,7 @@ public final class RouteListViewModel extends AndroidViewModel {
         executor.execute(() -> {
             List<RouteCatalogEntry> all = routeRepo.loadCatalog();
             allRoutes.postValue(all);
-            routes.postValue(applyView(all, activeSurfaceFilter, activeSortMode));
+            routes.postValue(applyView(all, activeSurfaceFilter, activeStatusFilter, activeSortMode));
         });
     }
 
@@ -67,7 +70,7 @@ public final class RouteListViewModel extends AndroidViewModel {
         activeSurfaceFilter = surfaceType;
         List<RouteCatalogEntry> all = allRoutes.getValue();
         if (all != null) {
-            routes.postValue(applyView(all, surfaceType, activeSortMode));
+            routes.postValue(applyView(all, surfaceType, activeStatusFilter, activeSortMode));
         }
     }
 
@@ -79,7 +82,17 @@ public final class RouteListViewModel extends AndroidViewModel {
                 .edit().putInt(PREF_SORT_MODE, sortMode).apply();
         List<RouteCatalogEntry> all = allRoutes.getValue();
         if (all != null) {
-            routes.postValue(applyView(all, activeSurfaceFilter, sortMode));
+            routes.postValue(applyView(all, activeSurfaceFilter, activeStatusFilter, sortMode));
+        }
+    }
+
+    public int getStatusFilter() { return activeStatusFilter; }
+
+    public void setStatusFilter(int statusFilter) {
+        activeStatusFilter = statusFilter;
+        List<RouteCatalogEntry> all = allRoutes.getValue();
+        if (all != null) {
+            routes.postValue(applyView(all, activeSurfaceFilter, statusFilter, activeSortMode));
         }
     }
 
@@ -99,9 +112,12 @@ public final class RouteListViewModel extends AndroidViewModel {
         SyncScheduler.triggerImmediateSync(getApplication());
     }
 
-    /** Applies the surface-type filter, then sorts according to {@code sortMode}. */
+    /**
+     * Applies the surface-type filter and the bucket-list status filter, then sorts
+     * according to {@code sortMode}.
+     */
     private static List<RouteCatalogEntry> applyView(
-            List<RouteCatalogEntry> all, int surfaceType, int sortMode) {
+            List<RouteCatalogEntry> all, int surfaceType, int statusFilter, int sortMode) {
         List<RouteCatalogEntry> filtered;
         if (surfaceType == -1) {
             filtered = new ArrayList<>(all);
@@ -111,7 +127,7 @@ public final class RouteListViewModel extends AndroidViewModel {
                 if (hasSurfaceType(e, surfaceType)) filtered.add(e);
             }
         }
-        return RouteSorting.sort(filtered, sortMode);
+        return RouteSorting.sort(RouteStatusFilter.apply(filtered, statusFilter), sortMode);
     }
 
     private static boolean hasSurfaceType(RouteCatalogEntry e, int surfaceType) {

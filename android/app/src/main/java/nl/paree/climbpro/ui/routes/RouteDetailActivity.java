@@ -19,6 +19,7 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
 import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
@@ -95,6 +96,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnSelectRoute.setEnabled(p != null);
             binding.btnShareToGarmin.setEnabled(p != null);
         });
+        viewModel.rideStatus().observe(this, status ->
+                binding.btnRideStatus.setText("Status: " + RouteRideStatus.label(status)));
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
@@ -108,6 +111,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
+        binding.btnRideStatus.setOnClickListener(v -> showRideStatusDialog());
         binding.btnSaveNotes.setOnClickListener(v ->
                 viewModel.saveNotes(routeId, binding.notesEdit.getText().toString()));
         binding.btnSelectRoute.setOnClickListener(v ->
@@ -217,6 +221,26 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
             binding.mapView.getOverlays().add(overlay);
         }
+    }
+
+    /** Bucket-list status picker (issue #158); purely manual, never changed automatically. */
+    private void showRideStatusDialog() {
+        final String[] values = {null, RouteRideStatus.WANT_TO_RIDE, RouteRideStatus.RIDDEN};
+        final String[] labels = new String[values.length];
+        for (int i = 0; i < values.length; i++) labels[i] = RouteRideStatus.label(values[i]);
+        String current = RouteRideStatus.normalize(viewModel.rideStatus().getValue());
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (java.util.Objects.equals(values[i], current)) checked = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Route-status")
+                .setSingleChoiceItems(labels, checked, (d, which) -> {
+                    viewModel.setRideStatus(routeId, values[which]);
+                    d.dismiss();
+                })
+                .setNegativeButton("Annuleren", null)
+                .show();
     }
 
     private void showRenameDialog() {

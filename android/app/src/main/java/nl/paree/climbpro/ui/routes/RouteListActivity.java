@@ -51,6 +51,9 @@ public final class RouteListActivity extends AppCompatActivity {
     private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
+    /** Status filter labels; index order matches {@link RouteStatusFilter}. */
+    private static final String[] STATUS_FILTER_LABELS = {"Alle", "Wil ik rijden", "Gereden"};
+
     private final ActivityResultLauncher<String[]> gpxPicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                     uri -> { if (uri != null) importGpx(uri); });
@@ -67,6 +70,7 @@ public final class RouteListActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
 
         viewModel = new ViewModelProvider(this).get(RouteListViewModel.class);
+        updateStatusFilterSubtitle(viewModel.getStatusFilter()); // survives rotation via the ViewModel
         adapter   = new RouteListAdapter();
 
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -299,6 +303,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_sort) {
             showSortDialog();
             return true;
+        } else if (id == R.id.action_status_filter) {
+            showStatusFilterDialog();
+            return true;
         } else if (id == R.id.action_check_update) {
             checkForAppUpdate(true);
             return true;
@@ -358,6 +365,26 @@ public final class RouteListActivity extends AppCompatActivity {
                     d.dismiss();
                 })
                 .show();
+    }
+
+    /** Bucket-list filter (issue #158): Alle / Wil ik rijden / Gereden. */
+    private void showStatusFilterDialog() {
+        int current = viewModel.getStatusFilter();
+        new AlertDialog.Builder(this)
+                .setTitle("Filter op status")
+                .setSingleChoiceItems(STATUS_FILTER_LABELS, current, (d, which) -> {
+                    viewModel.setStatusFilter(which);
+                    updateStatusFilterSubtitle(which);
+                    d.dismiss();
+                })
+                .show();
+    }
+
+    /** Shows the active status filter in the toolbar so a filtered list isn't mistaken for missing routes. */
+    private void updateStatusFilterSubtitle(int filter) {
+        if (getSupportActionBar() == null) return;
+        boolean filtered = filter > RouteStatusFilter.FILTER_ALL && filter < STATUS_FILTER_LABELS.length;
+        getSupportActionBar().setSubtitle(filtered ? "Filter: " + STATUS_FILTER_LABELS[filter] : null);
     }
 
     private void importGpx(android.net.Uri uri) {
