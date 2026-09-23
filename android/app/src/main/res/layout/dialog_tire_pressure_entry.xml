@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="8dp">
+
+    <Button
+        android:id="@+id/btn_date"
+        style="@style/Widget.ClimbPro.Button.Outline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/input_front"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Voorband (bar)"
+        android:importantForAutofill="no"
+        android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/input_rear"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Achterband (bar)"
+        android:importantForAutofill="no"
+        android:inputType="numberDecimal" />
+
+    <EditText
+        android:id="@+id/input_note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Notitie (optioneel)"
+        android:importantForAutofill="no"
+        android:inputType="textCapSentences" />
+</LinearLayout>
