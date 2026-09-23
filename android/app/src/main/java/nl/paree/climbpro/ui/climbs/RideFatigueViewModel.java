@@ -41,6 +41,7 @@ public final class RideFatigueViewModel extends AndroidViewModel {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<FatiguePoint>> curve = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> chronological = new MutableLiveData<>();
 
     public RideFatigueViewModel(@NonNull Application app) {
         super(app);
@@ -49,6 +50,8 @@ public final class RideFatigueViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<FatiguePoint>> curve() { return curve; }
+    /** False when the curve uses the route-position ordering fallback (show the caveat). */
+    public LiveData<Boolean> chronological() { return chronological; }
 
     public void loadForActivity(long activityId) {
         executor.execute(() -> {
@@ -61,6 +64,7 @@ public final class RideFatigueViewModel extends AndroidViewModel {
             for (StoredClimbAttempt a : forActivity) wanted.add(a.climbId);
             Map<String, ClimbRef> refs = resolveClimbRefs(wanted);
 
+            chronological.postValue(RideFatigueCurveCalculator.isChronological(forActivity, refs));
             curve.postValue(RideFatigueCurveCalculator.computeForActivity(forActivity, refs));
         });
     }
@@ -74,8 +78,7 @@ public final class RideFatigueViewModel extends AndroidViewModel {
                 if (route.climbs == null) continue;
                 for (int i = 0; i < route.climbs.size(); i++) {
                     StoredClimb c = route.climbs.get(i);
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
+                    String id = ClimbIdentity.of(c);
                     if (wanted.contains(id) && !map.containsKey(id)) {
                         String name = c.userDisplayName != null ? c.userDisplayName
                                 : (c.name != null ? c.name : "Klim");

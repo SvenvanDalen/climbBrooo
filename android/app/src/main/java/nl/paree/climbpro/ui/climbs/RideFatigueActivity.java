@@ -61,7 +61,9 @@ public final class RideFatigueActivity extends AppCompatActivity {
             boolean hasCurve = points != null && !points.isEmpty();
             empty.setVisibility(hasCurve ? View.GONE : View.VISIBLE);
             chart.setVisibility(hasCurve ? View.VISIBLE : View.GONE);
-            directionCaveat.setVisibility(hasCurve ? View.VISIBLE : View.GONE);
+            directionCaveat.setVisibility(hasCurve
+                    && !Boolean.TRUE.equals(viewModel.chronological().getValue())
+                    ? View.VISIBLE : View.GONE);
             chart.setPoints(points);
             adapter.submit(points);
         });

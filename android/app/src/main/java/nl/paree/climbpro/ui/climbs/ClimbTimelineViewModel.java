@@ -43,9 +43,17 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
         public final double avgGradient;      // 0 if unresolved
         public final String routeId;          // null if no longer resolvable to a route
         public final int    climbIndex;       // -1 if unresolved
+        /**
+         * True when this attempt's GPS track diverged from the climb's known geometry
+         * and was excluded from PR calculations — see
+         * {@link nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector} (issue #77).
+         * Still shown here, just marked, since this is the plain chronological view.
+         */
+        public final boolean routeDeviation;
 
-        TimelineRow(long dateEpochSec, long activityId, int elapsedSec, String displayName, int lengthM,
-                    double avgGradient, String routeId, int climbIndex) {
+        TimelineRow(long dateEpochSec, long activityId, int elapsedSec, String displayName,
+                    int lengthM, double avgGradient, String routeId, int climbIndex,
+                    boolean routeDeviation) {
             this.dateEpochSec = dateEpochSec;
             this.activityId = activityId;
             this.elapsedSec = elapsedSec;
@@ -54,6 +62,7 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
             this.avgGradient = avgGradient;
             this.routeId = routeId;
             this.climbIndex = climbIndex;
+            this.routeDeviation = routeDeviation;
         }
     }
 
@@ -107,7 +116,8 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
                         info != null ? info.lengthM : 0,
                         info != null ? info.avgGradient : 0,
                         info != null ? info.routeId : null,
-                        info != null ? info.index : -1));
+                        info != null ? info.index : -1,
+                        a.routeDeviation));
             }
             rows.postValue(out);
         });

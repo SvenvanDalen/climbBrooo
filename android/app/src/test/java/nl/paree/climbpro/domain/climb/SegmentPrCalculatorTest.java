@@ -71,4 +71,27 @@ public class SegmentPrCalculatorTest {
         assertNull(SegmentPrCalculator.bestSplits(null, 2, attempts));
         assertNull(SegmentPrCalculator.bestSplits("c1", 0, attempts));
     }
+
+    @Test
+    public void bestSplits_excludesRouteDeviatedAttempts() {
+        // The fastest attempt per segment is deviated (cut a corner) and must not count.
+        StoredClimbAttempt deviated = attempt("c1", new int[]{10, 10});
+        deviated.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                deviated,
+                attempt("c1", new int[]{60, 60}));
+
+        int[] best = SegmentPrCalculator.bestSplits("c1", 2, attempts);
+
+        assertArrayEquals(new int[]{60, 60}, best);
+    }
+
+    @Test
+    public void bestSplits_onlyRouteDeviatedAttempts_returnsNull() {
+        StoredClimbAttempt deviated = attempt("c1", new int[]{10, 10});
+        deviated.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(deviated);
+
+        assertNull(SegmentPrCalculator.bestSplits("c1", 2, attempts));
+    }
 }

@@ -94,9 +94,10 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         TimelineRow row = entry.row;
         h.name.setText(row.displayName);
         String date = dateFormat.format(new Date(row.dateEpochSec * 1000L));
+        String deviationMarker = row.routeDeviation ? "  ⚠️ afwijkende route" : "";
         h.stats.setText(String.format(Locale.getDefault(),
-                "%s  •  %d m  •  %.1f%%  •  %s",
-                date, row.lengthM, row.avgGradient, formatTime(row.elapsedSec)));
+                "%s  •  %d m  •  %.1f%%  •  %s%s",
+                date, row.lengthM, row.avgGradient, formatTime(row.elapsedSec), deviationMarker));
         h.itemView.setOnClickListener(v -> {
             if (onClick != null) onClick.onAttempt(row);
         });

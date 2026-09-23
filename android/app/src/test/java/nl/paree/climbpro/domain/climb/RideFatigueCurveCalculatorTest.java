@@ -144,4 +144,40 @@ public class RideFatigueCurveCalculatorTest {
         // Only c1 has usable data -> fewer than 2 usable points -> empty.
         assertTrue(RideFatigueCurveCalculator.computeForActivity(attempts, refs).isEmpty());
     }
+
+    @Test
+    public void startOffsets_orderRideChronologically_evenAgainstRouteDirection() {
+        java.util.Map<String, RideFatigueCurveCalculator.ClimbRef> refs = new java.util.HashMap<>();
+        refs.put("first", new RideFatigueCurveCalculator.ClimbRef("Eerste", 200, "r1", 5));
+        refs.put("second", new RideFatigueCurveCalculator.ClimbRef("Tweede", 200, "r1", 0));
+        // Route stores "second" before "first" (index 0 vs 5): a reversed ride.
+        StoredClimbAttempt later = new StoredClimbAttempt();
+        later.climbId = "second"; later.activityId = 7; later.elapsedSec = 800; later.startOffsetSec = 5400;
+        StoredClimbAttempt earlier = new StoredClimbAttempt();
+        earlier.climbId = "first"; earlier.activityId = 7; earlier.elapsedSec = 600; earlier.startOffsetSec = 1200;
+        java.util.List<StoredClimbAttempt> attempts = java.util.Arrays.asList(later, earlier);
+
+        java.util.List<RideFatigueCurveCalculator.FatiguePoint> curve =
+                RideFatigueCurveCalculator.computeForActivity(attempts, refs);
+
+        org.junit.Assert.assertTrue(RideFatigueCurveCalculator.isChronological(attempts, refs));
+        org.junit.Assert.assertEquals("Eerste", curve.get(0).label);
+        org.junit.Assert.assertEquals("Tweede", curve.get(1).label);
+    }
+
+    @Test
+    public void legacyAttemptWithoutOffset_fallsBackToRouteOrder() {
+        java.util.Map<String, RideFatigueCurveCalculator.ClimbRef> refs = new java.util.HashMap<>();
+        refs.put("a", new RideFatigueCurveCalculator.ClimbRef("A", 200, "r1", 0));
+        refs.put("b", new RideFatigueCurveCalculator.ClimbRef("B", 200, "r1", 1));
+        StoredClimbAttempt a = new StoredClimbAttempt();
+        a.climbId = "a"; a.activityId = 7; a.elapsedSec = 600; // startOffsetSec stays -1
+        StoredClimbAttempt b = new StoredClimbAttempt();
+        b.climbId = "b"; b.activityId = 7; b.elapsedSec = 600; b.startOffsetSec = 10;
+        java.util.List<StoredClimbAttempt> attempts = java.util.Arrays.asList(b, a);
+
+        org.junit.Assert.assertFalse(RideFatigueCurveCalculator.isChronological(attempts, refs));
+        org.junit.Assert.assertEquals("A",
+                RideFatigueCurveCalculator.computeForActivity(attempts, refs).get(0).label);
+    }
 }

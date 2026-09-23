@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Yellow/black theme — see Documentation/ARCHITECTURE.md and issue #115 -->
-    <color name="color_bg">#FFD400</color>
-    <color name="color_surface">#FFDC33</color>
-    <color name="color_surface_raised">#FFE466</color>
-    <color name="color_border">#000000</color>
+    <!-- Black/yellow theme — see Documentation/ARCHITECTURE.md and issue #115 -->
+    <color name="color_bg">#000000</color>
+    <color name="color_surface">#1A1A1A</color>
+    <color name="color_surface_raised">#262626</color>
+    <color name="color_border">#FFD400</color>
 
-    <color name="color_text_primary">#000000</color>
-    <color name="color_text_secondary">#1A1A1A</color>
-    <color name="color_text_tertiary">#333333</color>
-    <color name="color_text_disabled">#666666</color>
+    <color name="color_text_primary">#FFFFFF</color>
+    <color name="color_text_secondary">#E0E0E0</color>
+    <color name="color_text_tertiary">#B3B3B3</color>
+    <color name="color_text_disabled">#808080</color>
 
-    <color name="color_accent">#000000</color>
-    <color name="color_accent_on">#FFD400</color>
+    <color name="color_accent">#FFD400</color>
+    <color name="color_accent_on">#000000</color>
 
-    <color name="color_success">#0A7D2C</color>
-    <color name="color_error">#B00020</color>
+    <color name="color_success">#3DDC61</color>
+    <color name="color_error">#FF5C5C</color>
     <color name="color_strava">#FC5200</color>
 </resources>

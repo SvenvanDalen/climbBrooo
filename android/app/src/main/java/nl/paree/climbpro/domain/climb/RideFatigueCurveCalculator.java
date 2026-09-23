@@ -29,7 +29,13 @@ import java.util.Map;
  * {@link StoredClimbAttempt#dateEpochSec} is the *activity* start time (see {@code
  * StravaActivitiesRepository#matchActivity}), so every attempt from one activity carries the
  * same timestamp — it cannot be used to order distinct climbs chronologically within the ride.
- * Attempts are instead ordered by the position of their climb within its route ({@link
+ * Attempts matched since {@link StoredClimbAttempt#startOffsetSec} exists carry their entry
+ * offset within the activity, and when every usable attempt of the ride has one they are
+ * ordered by it: true ride order, whatever direction or routes were ridden
+ * ({@link #isChronological}).
+ *
+ * <p>For older attempts (offset -1) the fallback below applies: they are ordered by the
+ * position of their climb within its route ({@link
  * ClimbRef#orderIndex}, the climb's index in {@code StoredRoute#climbs} — climbs are detected
  * walking the route start-to-end, so this index is a start-distance-along-route proxy for ride
  * order), then by {@link StoredClimbAttempt#passIndex} for repeat ascents of the same climb.
@@ -45,9 +51,9 @@ import java.util.Map;
  * ClimbAttemptMatcher#matchAll} does not persist one). For a reversed ride, the climb ridden
  * last in reality is assigned ordinal 1 and used as the 100% VAM baseline, which inverts the
  * resulting curve. Detecting/correcting this would require recording each attempt's start
- * offset within the activity track — a larger, out-of-scope data-plumbing change for now — so
- * callers must instead surface this as a caveat to the user (see {@code RideFatigueActivity}'s
- * layout) rather than presenting the curve as unconditionally reliable.
+ * offset within the activity track, which only newer attempts have — so for this fallback
+ * callers must surface a caveat to the user (see {@code RideFatigueActivity}'s layout) rather
+ * than presenting the curve as unconditionally reliable.
  *
  * <p>Separately, for a ride that touches climbs from more than one route (e.g. rides that leave
  * and rejoin a known route, or free-roam rides that happen to cross two mapped routes) the
@@ -119,22 +125,22 @@ public final class RideFatigueCurveCalculator {
             return Collections.emptyList();
         }
 
-        List<StoredClimbAttempt> usable = new ArrayList<>();
-        for (StoredClimbAttempt a : attemptsForOneActivity) {
-            ClimbRef ref = climbInfoById.get(a.climbId);
-            // elapsedSec/elevationGainM must both be positive or VAM is undefined/meaningless.
-            if (ref == null || a.elapsedSec <= 0 || ref.elevationGainM <= 0) continue;
-            usable.add(a);
-        }
+        List<StoredClimbAttempt> usable = usableAttempts(attemptsForOneActivity, climbInfoById);
         if (usable.size() < 2) {
             return Collections.emptyList();
         }
 
-        usable.sort(Comparator
-                .comparing((StoredClimbAttempt a) -> String.valueOf(climbInfoById.get(a.climbId).routeId))
-                .thenComparingInt(a -> climbInfoById.get(a.climbId).orderIndex)
-                .thenComparingInt(a -> a.passIndex)
-                .thenComparing(a -> a.climbId));
+        if (allHaveStartOffset(usable)) {
+            usable.sort(Comparator
+                    .comparingInt((StoredClimbAttempt a) -> a.startOffsetSec)
+                    .thenComparing(a -> a.climbId));
+        } else {
+            usable.sort(Comparator
+                    .comparing((StoredClimbAttempt a) -> String.valueOf(climbInfoById.get(a.climbId).routeId))
+                    .thenComparingInt(a -> climbInfoById.get(a.climbId).orderIndex)
+                    .thenComparingInt(a -> a.passIndex)
+                    .thenComparing(a -> a.climbId));
+        }
 
         List<FatiguePoint> out = new ArrayList<>(usable.size());
         double firstVam = 0;
@@ -147,5 +153,36 @@ public final class RideFatigueCurveCalculator {
             out.add(new FatiguePoint(i + 1, ref.displayName, a.elapsedSec, vam, relPct));
         }
         return out;
+    }
+
+    /**
+     * True when {@link #computeForActivity} will order this ride chronologically (every usable
+     * attempt has a {@link StoredClimbAttempt#startOffsetSec}); false when it falls back to the
+     * route-position proxy, whose direction caveat the UI must then show.
+     */
+    public static boolean isChronological(
+            List<StoredClimbAttempt> attemptsForOneActivity, Map<String, ClimbRef> climbInfoById) {
+        if (attemptsForOneActivity == null || climbInfoById == null) return false;
+        List<StoredClimbAttempt> usable = usableAttempts(attemptsForOneActivity, climbInfoById);
+        return !usable.isEmpty() && allHaveStartOffset(usable);
+    }
+
+    private static List<StoredClimbAttempt> usableAttempts(
+            List<StoredClimbAttempt> attempts, Map<String, ClimbRef> climbInfoById) {
+        List<StoredClimbAttempt> usable = new ArrayList<>();
+        for (StoredClimbAttempt a : attempts) {
+            ClimbRef ref = climbInfoById.get(a.climbId);
+            // elapsedSec/elevationGainM must both be positive or VAM is undefined/meaningless.
+            if (ref == null || a.elapsedSec <= 0 || ref.elevationGainM <= 0) continue;
+            usable.add(a);
+        }
+        return usable;
+    }
+
+    private static boolean allHaveStartOffset(List<StoredClimbAttempt> attempts) {
+        for (StoredClimbAttempt a : attempts) {
+            if (a.startOffsetSec < 0) return false;
+        }
+        return true;
     }
 }
