@@ -35,6 +35,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_rides"
+        android:title="Ritten"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_unfinished_climbs"
         android:title="Nooit voltooide klimmen"
         app:showAsAction="never"/>

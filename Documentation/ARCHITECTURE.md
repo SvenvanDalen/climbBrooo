@@ -676,6 +676,8 @@ Out-and-back rides are handled by picking the earliest gate entry: this ensures 
 
 ### Persistence
 
+The phone also keeps a **ride archive** (`rides.json`, `data/ride/RideRepository`, issue #160): one `StoredRide` summary per synced Strava cycling activity (distance, moving time, elevation, speeds, commute flag, start/end point). It is filled from the activity *list* endpoint only (no streams), with its own sync cursor that backfills the past year on first run, and never blocks climb matching. `domain/ride/RideClassifier` classifies each ride as woon-werk / training / toerrit on the fly (not persisted). Phone-only; never part of the wire payload.
+
 Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, following the same JSON-file pattern used for routes. `ClimbAttemptRepository` deduplicates on `(climbId, activityId)` so re-running a sync never creates duplicate entries. Reads are on demand; writes are atomic (temp + rename).
 
 ### Logbook view
