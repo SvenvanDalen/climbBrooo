@@ -10,7 +10,8 @@ import nl.paree.climbpro.data.route.StoredRoute;
  * Batch-exports several climbs into one GPX 1.1 document (issue #91), for the "export a
  * whole season at once" feature. GPX 1.1 allows multiple {@code <trk>} elements per
  * document, so this is one {@code <gpx>} envelope with one {@code <trk>} + waypoint set
- * per climb — reusing {@link ClimbGpxWriter#appendClimb} for the per-climb XML so the
+ * per climb (all waypoints first, as the schema requires; waypoint names prefixed with the
+ * climb name) — reusing {@link ClimbGpxWriter#appendClimb} for the per-climb XML so the
  * single-climb export path ({@link ClimbGpxWriter#toGpx}) and its fragment-building logic
  * stay in one place.
  *
@@ -58,17 +59,22 @@ public final class BatchClimbGpxWriter {
         sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
                 + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
 
+        // GPX 1.1 is a strict sequence (all <wpt>, then <rte>, then <trk>), so collect every
+        // climb's waypoints and tracks separately and emit them in that order.
+        StringBuilder waypoints = new StringBuilder(256 * entries.size());
+        StringBuilder tracks = new StringBuilder(512 * entries.size());
         int written = 0;
         List<String> skipped = new ArrayList<>();
         for (Entry e : entries) {
             try {
-                ClimbGpxWriter.appendClimb(
-                        sb, e.route, e.climb, e.climbIndex, e.bestSplitSec, e.bestElapsedSec);
+                ClimbGpxWriter.appendClimb(waypoints, tracks, e.route, e.climb, e.climbIndex,
+                        e.bestSplitSec, e.bestElapsedSec, true);
                 written++;
             } catch (IllegalArgumentException ex) {
                 skipped.add(ex.getMessage());
             }
         }
+        sb.append(waypoints).append(tracks);
         sb.append("</gpx>\n");
 
         if (written == 0) {

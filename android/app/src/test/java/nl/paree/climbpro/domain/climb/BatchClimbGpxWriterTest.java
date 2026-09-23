@@ -146,6 +146,43 @@ public class BatchClimbGpxWriterTest {
     }
 
     @Test
+    public void allWaypointsPrecedeAllTracksPerGpx11Schema() {
+        // GPX 1.1 xsd is a sequence: every <wpt>, then <rte>, then <trk>. Interleaving
+        // wpt/trk per climb makes strict importers reject the file or drop late waypoints.
+        List<BatchClimbGpxWriter.Entry> entries = new ArrayList<>();
+        entries.add(new BatchClimbGpxWriter.Entry(route("r1", 0), climb("Climb A"), 0, null, 137));
+        entries.add(new BatchClimbGpxWriter.Entry(route("r2", 1), climb("Climb B"), 0, null, null));
+
+        String gpx = BatchClimbGpxWriter.toGpx(entries);
+
+        assertTrue("last <wpt> must come before first <trk>",
+                gpx.lastIndexOf("<wpt ") < gpx.indexOf("<trk>"));
+    }
+
+    @Test
+    public void waypointNamesArePrefixedWithClimbNameInBatch() {
+        List<BatchClimbGpxWriter.Entry> entries = new ArrayList<>();
+        entries.add(new BatchClimbGpxWriter.Entry(route("r1", 0), climb("Climb A"), 0, null, 137));
+        entries.add(new BatchClimbGpxWriter.Entry(route("r2", 1), climb("Climb B"), 0, null, null));
+
+        String gpx = BatchClimbGpxWriter.toGpx(entries);
+
+        assertTrue(gpx.contains("<name>Climb A — PR</name>"));
+        assertTrue(gpx.contains("<name>Climb A — Segment 1</name>"));
+        assertTrue(gpx.contains("<name>Climb A — Top</name>"));
+        assertTrue(gpx.contains("<name>Climb B — Top</name>"));
+        assertTrue("no unprefixed waypoint names in a batch", !gpx.contains("<name>Top</name>"));
+    }
+
+    @Test
+    public void singleClimbExportKeepsShortWaypointNames() {
+        String gpx = ClimbGpxWriter.toGpx(route("r1", 0), climb("Solo climb"), 0, null, null);
+
+        assertTrue(gpx.contains("<name>Top</name>"));
+        assertTrue(gpx.contains("<name>Segment 1</name>"));
+    }
+
+    @Test
     public void nullOrEmptyEntriesThrows() {
         assertThrows(IllegalArgumentException.class, () -> BatchClimbGpxWriter.toGpx(null));
         assertThrows(IllegalArgumentException.class,

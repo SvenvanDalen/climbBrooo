@@ -49,22 +49,29 @@ public final class ClimbGpxWriter {
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
                 + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
-        appendClimb(sb, route, climb, climbIndex, bestSplitSec, bestElapsedSec);
+        // One builder for both: a single climb's waypoints already precede its track.
+        appendClimb(sb, sb, route, climb, climbIndex, bestSplitSec, bestElapsedSec, false);
         sb.append("</gpx>\n");
         return sb.toString();
     }
 
     /**
-     * Appends one climb's {@code <wpt>} markers followed by its {@code <trk>} onto an
-     * already-open {@code <gpx>...</gpx>} envelope. Shared by {@link #toGpx} (one climb,
-     * one document) and {@link BatchClimbGpxWriter} (several climbs, one document).
+     * Appends one climb's {@code <wpt>} markers to {@code wptOut} and its {@code <trk>} to
+     * {@code trkOut}, both destined for an already-open {@code <gpx>...</gpx>} envelope.
+     * Shared by {@link #toGpx} (one climb, one document) and {@link BatchClimbGpxWriter}
+     * (several climbs, one document). The two outputs are separate because GPX 1.1 requires
+     * every {@code <wpt>} to precede every {@code <trk>}, so a batch must collect all
+     * waypoints before writing any track. Nothing is appended if validation throws.
      *
+     * @param prefixWaypointNames prefix each waypoint name with the climb name ("Climb — Top")
+     *                            so waypoints stay distinguishable in a multi-climb file.
      * @throws IllegalArgumentException if {@code route} has no usable geometry, {@code
      *         climb} is null, or the climb's start/end distance don't map onto any point
      *         in {@code route} — the same validation {@link #toGpx} always performed.
      */
-    static void appendClimb(StringBuilder sb, StoredRoute route, StoredClimb climb,
-            int climbIndex, int[] bestSplitSec, Integer bestElapsedSec) {
+    static void appendClimb(StringBuilder wptOut, StringBuilder trkOut, StoredRoute route,
+            StoredClimb climb, int climbIndex, int[] bestSplitSec, Integer bestElapsedSec,
+            boolean prefixWaypointNames) {
         if (route == null || route.lats == null || route.lons == null || route.distances == null
                 || route.lats.length == 0
                 || route.lons.length < route.lats.length
@@ -89,33 +96,36 @@ public final class ClimbGpxWriter {
                 : climb.name != null ? climb.name
                 : "Climb " + (climbIndex + 1);
 
-        appendWaypoints(sb, route, climb, startIdx, endIdx, bestSplitSec, bestElapsedSec, name);
+        String wptPrefix = prefixWaypointNames ? name + " — " : "";
+        appendWaypoints(wptOut, route, climb, startIdx, endIdx, bestSplitSec, bestElapsedSec,
+                name, wptPrefix);
 
-        sb.append("  <trk>\n");
-        sb.append("    <name>").append(escape(name)).append("</name>\n");
-        sb.append("    <trkseg>\n");
+        trkOut.append("  <trk>\n");
+        trkOut.append("    <name>").append(escape(name)).append("</name>\n");
+        trkOut.append("    <trkseg>\n");
         for (int i = startIdx; i <= endIdx; i++) {
-            sb.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
-              .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
+            trkOut.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
+                  .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
             if (route.elevations != null && i < route.elevations.length
                     && !Double.isNaN(route.elevations[i])) {
-                sb.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
+                trkOut.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
             }
-            sb.append("</trkpt>\n");
+            trkOut.append("</trkpt>\n");
         }
-        sb.append("    </trkseg>\n");
-        sb.append("  </trk>\n");
+        trkOut.append("    </trkseg>\n");
+        trkOut.append("  </trk>\n");
     }
 
     private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
             int startIdx, int endIdx, int[] bestSplitSec, Integer bestElapsedSec,
-            String climbName) {
+            String climbName, String wptPrefix) {
         List<StoredSegment> segments = climb.segments;
         if (segments == null || segments.isEmpty()) return;
 
         if (bestElapsedSec != null && bestElapsedSec > 0) {
             appendWaypoint(sb, route, nearestIndex(route, startIdx, endIdx, climb.startDistance),
-                    "PR", climbName + " — personal record " + formatDuration(bestElapsedSec),
+                    wptPrefix + "PR",
+                    climbName + " — personal record " + formatDuration(bestElapsedSec),
                     "Flag, Green");
         }
 
@@ -129,7 +139,7 @@ public final class ClimbGpxWriter {
             if (idx < 0) continue;
 
             boolean isTop = i == segments.size() - 1;
-            String wptName = isTop ? "Top" : "Segment " + (i + 1);
+            String wptName = wptPrefix + (isTop ? "Top" : "Segment " + (i + 1));
             StringBuilder desc = new StringBuilder();
             desc.append(String.format(Locale.US, "%.1f%% gradient", seg.gradient * 100));
             if (havePr) {

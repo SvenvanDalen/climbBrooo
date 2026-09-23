@@ -372,7 +372,7 @@ public final class RouteListActivity extends AppCompatActivity {
             nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
                     new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
             List<Integer> years = nl.paree.climbpro.domain.climb.SeasonClimbFilter
-                    .yearsWithAttempts(attemptRepo.loadAll());
+                    .yearsWithAttempts(attemptRepo.loadAll(), java.util.TimeZone.getDefault());
             runOnUiThread(() -> {
                 if (years.isEmpty()) {
                     Toast.makeText(this, "Geen ritten met datum gevonden om te exporteren",
@@ -406,7 +406,8 @@ public final class RouteListActivity extends AppCompatActivity {
                     }
                 }
 
-                long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(year);
+                long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(
+                        year, java.util.TimeZone.getDefault());
                 List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches =
                         nl.paree.climbpro.domain.climb.SeasonClimbFilter.climbsInPeriod(
                                 routes, attempts, range[0], range[1]);

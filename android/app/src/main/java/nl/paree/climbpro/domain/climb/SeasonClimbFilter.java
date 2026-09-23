@@ -18,7 +18,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
  * stored route and every stored climb attempt, picks out the (route, climb) pairs that
  * were actually ridden within a chosen period, for {@link BatchClimbGpxWriter} to export.
  *
- * <p>"Season" is modelled as a calendar year (UTC) via {@link #yearRange}, which turns a
+ * <p>"Season" is modelled as a local calendar year via {@link #yearRange}, which turns a
  * year into the {@code [from, to)} epoch-second bounds {@link #climbsInPeriod} takes; a
  * caller wanting an arbitrary date range (not a whole year) can build those bounds itself
  * and call {@link #climbsInPeriod} directly.
@@ -87,9 +87,13 @@ public final class SeasonClimbFilter {
         return out;
     }
 
-    /** {@code [fromInclusive, toExclusive)} epoch-second bounds for calendar year {@code year}, UTC. */
-    public static long[] yearRange(int year) {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    /**
+     * {@code [fromInclusive, toExclusive)} epoch-second bounds for calendar year {@code year}
+     * in {@code zone} — pass the rider's local zone so a New Year's Eve/Day ride lands in the
+     * year the rider experienced it in, not the UTC one.
+     */
+    public static long[] yearRange(int year, TimeZone zone) {
+        Calendar cal = Calendar.getInstance(zone);
         cal.clear();
         cal.set(year, Calendar.JANUARY, 1, 0, 0, 0);
         long from = cal.getTimeInMillis() / 1000L;
@@ -99,13 +103,15 @@ public final class SeasonClimbFilter {
     }
 
     /**
-     * Distinct calendar years (UTC) that have at least one dated attempt, newest first —
-     * feeds the year picker so it only ever offers years that actually have data.
+     * Distinct calendar years (in {@code zone}, same as {@link #yearRange}) that have at
+     * least one dated attempt, newest first — feeds the year picker so it only ever offers
+     * years that actually have data.
      */
-    public static List<Integer> yearsWithAttempts(List<StoredClimbAttempt> attempts) {
+    public static List<Integer> yearsWithAttempts(List<StoredClimbAttempt> attempts,
+            TimeZone zone) {
         if (attempts == null || attempts.isEmpty()) return Collections.emptyList();
         TreeSet<Integer> years = new TreeSet<>(Collections.reverseOrder());
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        Calendar cal = Calendar.getInstance(zone);
         for (StoredClimbAttempt a : attempts) {
             if (a == null || a.dateEpochSec <= 0) continue;
             cal.setTimeInMillis(a.dateEpochSec * 1000L);

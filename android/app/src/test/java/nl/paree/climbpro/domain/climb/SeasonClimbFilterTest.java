@@ -20,6 +20,9 @@ import nl.paree.climbpro.data.route.StoredRoute;
  */
 public class SeasonClimbFilterTest {
 
+    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+    private static final TimeZone AMSTERDAM = TimeZone.getTimeZone("Europe/Amsterdam");
+
     private static long epochSec(int year, int month, int day) {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
         cal.clear();
@@ -61,7 +64,7 @@ public class SeasonClimbFilterTest {
 
         List<StoredClimbAttempt> attempts =
                 java.util.Collections.singletonList(attempt(climbId, epochSec(2026, 6, 15)));
-        long[] range = SeasonClimbFilter.yearRange(2026);
+        long[] range = SeasonClimbFilter.yearRange(2026, UTC);
 
         List<SeasonClimbFilter.Match> matches = SeasonClimbFilter.climbsInPeriod(
                 java.util.Collections.singletonList(route), attempts, range[0], range[1]);
@@ -80,7 +83,7 @@ public class SeasonClimbFilterTest {
         // Attempt exists, but in a different year.
         List<StoredClimbAttempt> attempts =
                 java.util.Collections.singletonList(attempt(climbId, epochSec(2025, 6, 15)));
-        long[] range = SeasonClimbFilter.yearRange(2026);
+        long[] range = SeasonClimbFilter.yearRange(2026, UTC);
 
         List<SeasonClimbFilter.Match> matches = SeasonClimbFilter.climbsInPeriod(
                 java.util.Collections.singletonList(route), attempts, range[0], range[1]);
@@ -97,7 +100,7 @@ public class SeasonClimbFilterTest {
 
         List<StoredClimbAttempt> attempts =
                 java.util.Collections.singletonList(attempt(riddenId, epochSec(2026, 3, 1)));
-        long[] range = SeasonClimbFilter.yearRange(2026);
+        long[] range = SeasonClimbFilter.yearRange(2026, UTC);
 
         List<SeasonClimbFilter.Match> matches = SeasonClimbFilter.climbsInPeriod(
                 java.util.Collections.singletonList(route), attempts, range[0], range[1]);
@@ -111,7 +114,7 @@ public class SeasonClimbFilterTest {
         StoredClimb c = climb(50.500, 5.500, 1200);
         StoredRoute route = routeWith("r1", c);
         String climbId = ClimbIdentity.of(c.startLat, c.startLon, c.length);
-        long[] range = SeasonClimbFilter.yearRange(2026);
+        long[] range = SeasonClimbFilter.yearRange(2026, UTC);
 
         // Exactly at the start of the next year -> not in 2026.
         List<StoredClimbAttempt> attempts =
@@ -135,7 +138,7 @@ public class SeasonClimbFilterTest {
         List<StoredClimbAttempt> attempts = new ArrayList<>();
         attempts.add(attempt(id1, epochSec(2026, 4, 1)));
         attempts.add(attempt(id2, epochSec(2026, 8, 1)));
-        long[] range = SeasonClimbFilter.yearRange(2026);
+        long[] range = SeasonClimbFilter.yearRange(2026, UTC);
 
         List<SeasonClimbFilter.Match> matches = SeasonClimbFilter.climbsInPeriod(
                 java.util.Arrays.asList(r1, r2), attempts, range[0], range[1]);
@@ -147,9 +150,9 @@ public class SeasonClimbFilterTest {
 
     @Test
     public void yearRangeSpansExactlyOneCalendarYear() {
-        long[] range2026 = SeasonClimbFilter.yearRange(2026);
+        long[] range2026 = SeasonClimbFilter.yearRange(2026, UTC);
         assertEquals(epochSec(2026, 1, 1) - 12 * 3600, range2026[0]); // midnight, not noon
-        assertEquals(range2026[1], SeasonClimbFilter.yearRange(2027)[0]);
+        assertEquals(range2026[1], SeasonClimbFilter.yearRange(2027, UTC)[0]);
     }
 
     @Test
@@ -160,14 +163,36 @@ public class SeasonClimbFilterTest {
         attempts.add(attempt("c3", epochSec(2025, 5, 1)));
         attempts.add(attempt("c4", epochSec(2025, 9, 1))); // duplicate year
 
-        List<Integer> years = SeasonClimbFilter.yearsWithAttempts(attempts);
+        List<Integer> years = SeasonClimbFilter.yearsWithAttempts(attempts, UTC);
 
         assertEquals(java.util.Arrays.asList(2026, 2025, 2024), years);
     }
 
     @Test
     public void yearsWithAttemptsEmptyWhenNoAttempts() {
-        assertTrue(SeasonClimbFilter.yearsWithAttempts(new ArrayList<>()).isEmpty());
-        assertTrue(SeasonClimbFilter.yearsWithAttempts(null).isEmpty());
+        assertTrue(SeasonClimbFilter.yearsWithAttempts(new ArrayList<>(), UTC).isEmpty());
+        assertTrue(SeasonClimbFilter.yearsWithAttempts(null, UTC).isEmpty());
+    }
+
+    @Test
+    public void yearBoundaryFollowsRidersLocalTimeZone() {
+        // 1 Jan 2026 00:30 CET == 31 Dec 2025 23:30 UTC: a Dutch New Year's ride belongs to 2026.
+        long newYearsRideUtc = epochSec(2025, 12, 31) + 11 * 3600 + 30 * 60;
+        StoredClimb c = climb(50.500, 5.500, 1200);
+        StoredRoute route = routeWith("r1", c);
+        String climbId = ClimbIdentity.of(c.startLat, c.startLon, c.length);
+        List<StoredClimbAttempt> attempts =
+                java.util.Collections.singletonList(attempt(climbId, newYearsRideUtc));
+
+        assertEquals(java.util.Collections.singletonList(2026),
+                SeasonClimbFilter.yearsWithAttempts(attempts, AMSTERDAM));
+        long[] range2026 = SeasonClimbFilter.yearRange(2026, AMSTERDAM);
+        assertEquals(1, SeasonClimbFilter.climbsInPeriod(
+                java.util.Collections.singletonList(route), attempts,
+                range2026[0], range2026[1]).size());
+        long[] range2025 = SeasonClimbFilter.yearRange(2025, AMSTERDAM);
+        assertTrue(SeasonClimbFilter.climbsInPeriod(
+                java.util.Collections.singletonList(route), attempts,
+                range2025[0], range2025[1]).isEmpty());
     }
 }
