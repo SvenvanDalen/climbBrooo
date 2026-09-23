@@ -59,7 +59,7 @@ public class ClimbUsageClassifierTest {
     }
 
     @Test
-    public void classifyAll_usesOtherClimbsInRouteAsClusterPool() {
+    public void classifyAll_combinesFrequencyAndClusterSignals() {
         // Climb A: ridden 4x (TRAINING). Climb B: ridden once, right next to A -> UNKNOWN
         // (near a frequent cluster). Climb C: ridden once, far from both -> RECREATIONAL.
         StoredClimb a = climb(AMS_LAT, AMS_LON, 1000);
@@ -79,6 +79,43 @@ public class ClimbUsageClassifierTest {
         assertEquals(ClimbUsageType.TRAINING, result[0]);
         assertEquals(ClimbUsageType.UNKNOWN, result[1]);
         assertEquals(ClimbUsageType.RECREATIONAL, result[2]);
+    }
+
+    @Test
+    public void classifyAll_multiplePassesInOneRide_countAsOneRide() {
+        StoredClimb a = climb(FAR_LAT, FAR_LON, 1000);
+        String id = ClimbIdentity.of(a.startLat, a.startLon, a.length);
+        List<StoredClimbAttempt> attempts = new ArrayList<>();
+        for (int pass = 0; pass < 4; pass++) {  // hill repeats within one activity
+            StoredClimbAttempt at = attempt(id, 0);
+            at.passIndex = pass;
+            attempts.add(at);
+        }
+
+        ClimbUsageType[] result =
+                ClimbUsageClassifier.classifyAll(Collections.singletonList(a), attempts);
+
+        assertEquals(ClimbUsageType.RECREATIONAL, result[0]);
+    }
+
+    @Test
+    public void classifyAll_frequentClimbOnAnotherRoute_countsAsLocalCluster() {
+        // The frequently-ridden climb is not part of this route at all, only its attempts
+        // are in the logbook. A once-ridden climb next to it must not read as a one-off.
+        StoredClimb elsewhere = climb(AMS_LAT, AMS_LON, 1500);
+        StoredClimb onThisRoute = climb(AMS_LAT + 0.01, AMS_LON, 1000); // ~1.1 km away
+        List<StoredClimbAttempt> attempts = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            attempts.add(attempt(
+                    ClimbIdentity.of(elsewhere.startLat, elsewhere.startLon, elsewhere.length), i));
+        }
+        attempts.add(attempt(
+                ClimbIdentity.of(onThisRoute.startLat, onThisRoute.startLon, onThisRoute.length), 9));
+
+        ClimbUsageType[] result =
+                ClimbUsageClassifier.classifyAll(Collections.singletonList(onThisRoute), attempts);
+
+        assertEquals(ClimbUsageType.UNKNOWN, result[0]);
     }
 
     @Test

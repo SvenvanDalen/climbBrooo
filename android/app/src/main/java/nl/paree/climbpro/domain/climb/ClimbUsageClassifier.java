@@ -5,8 +5,10 @@ import nl.paree.climbpro.data.route.StoredClimbAttempt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Classifies a climb as a habitually-ridden {@link ClimbUsageType#TRAINING} climb vs. a one-off
@@ -27,8 +29,9 @@ import java.util.Map;
  *
  * <h2>Frequency threshold</h2>
  * {@link ClimbConstants#USAGE_TRAINING_MIN_ATTEMPTS} (3) was chosen as a modest bar: twice could
- * still be an out-and-back within a single activity or a coincidental repeat, three distinct
- * ascents is a reasonably confident "this is part of my regular riding" signal.
+ * still be a coincidental repeat, three distinct rides is a reasonably confident "this is part of
+ * my regular riding" signal. Rides are counted as distinct activities, not passes: hill repeats
+ * or an out-and-back within one activity are still one ride.
  *
  * <p>Pure and static, mirroring {@link ClimbShapeClassifier}'s style: safe to unit-test in a
  * plain JVM test, no Android framework dependency.
@@ -38,7 +41,8 @@ public final class ClimbUsageClassifier {
     private ClimbUsageClassifier() {}
 
     /**
-     * @param attemptCount             number of distinct matched ride attempts for this exact climb.
+     * @param attemptCount             number of distinct rides (activities) with at least one
+     *                                 matched ascent of this exact climb.
      * @param startLat                 climb start latitude.
      * @param startLon                 climb start longitude.
      * @param otherFrequentClimbCoords start coordinates ({@code {lat, lon}} pairs) of OTHER
@@ -72,10 +76,10 @@ public final class ClimbUsageClassifier {
 
     /**
      * Convenience overload: classifies every climb in {@code climbs} against the ride-attempt
-     * log, using the OTHER climbs in the same list as the frequent-climb clustering pool. A
-     * route's own climb set is a cheap, always-available proxy for "the rider's usual area" —
-     * scanning every stored route on every list render would be needless phone-side compute for
-     * what is, per the issue, a bounded/phone-only hint feature.
+     * log. The frequent-climb clustering pool is every climb in the whole logbook ridden on
+     * at least {@link ClimbConstants#USAGE_TRAINING_MIN_ATTEMPTS} distinct rides (not just
+     * this route's climbs), with start coordinates decoded from the climb id itself
+     * ({@link ClimbIdentity#approxStart}), so no other route needs to be loaded.
      *
      * @return classifications parallel to {@code climbs} (same order and length); empty array
      *         when {@code climbs} is null or empty.
@@ -86,26 +90,23 @@ public final class ClimbUsageClassifier {
         ClimbUsageType[] result = new ClimbUsageType[n];
         if (n == 0) return result;
 
-        Map<String, Integer> countByClimbId = attemptCountsByClimbId(attempts);
-        int[] counts = new int[n];
-        for (int i = 0; i < n; i++) {
-            StoredClimb c = climbs.get(i);
-            String climbId = climbIdOf(c);
-            Integer cnt = countByClimbId.get(climbId);
-            counts[i] = cnt != null ? cnt : 0;
+        Map<String, Integer> ridesByClimbId = rideCountsByClimbId(attempts);
+        Map<String, double[]> frequentStarts = new HashMap<>();
+        for (Map.Entry<String, Integer> e : ridesByClimbId.entrySet()) {
+            if (e.getValue() < ClimbConstants.USAGE_TRAINING_MIN_ATTEMPTS) continue;
+            double[] start = ClimbIdentity.approxStart(e.getKey());
+            if (start != null) frequentStarts.put(e.getKey(), start);
         }
 
         for (int i = 0; i < n; i++) {
-            List<double[]> otherFrequent = new ArrayList<>();
-            for (int j = 0; j < n; j++) {
-                if (j == i) continue;
-                if (counts[j] >= ClimbConstants.USAGE_TRAINING_MIN_ATTEMPTS) {
-                    StoredClimb other = climbs.get(j);
-                    otherFrequent.add(new double[]{other.startLat, other.startLon});
-                }
-            }
             StoredClimb c = climbs.get(i);
-            result[i] = classify(counts[i], c.startLat, c.startLon, otherFrequent);
+            String climbId = climbIdOf(c);
+            Integer rides = ridesByClimbId.get(climbId);
+            List<double[]> otherFrequent = new ArrayList<>();
+            for (Map.Entry<String, double[]> e : frequentStarts.entrySet()) {
+                if (!e.getKey().equals(climbId)) otherFrequent.add(e.getValue());
+            }
+            result[i] = classify(rides != null ? rides : 0, c.startLat, c.startLon, otherFrequent);
         }
         return result;
     }
@@ -115,13 +116,27 @@ public final class ClimbUsageClassifier {
         return ClimbIdentity.of(c.startLat, c.startLon, len);
     }
 
-    private static Map<String, Integer> attemptCountsByClimbId(List<StoredClimbAttempt> attempts) {
+    /**
+     * Distinct rides per climb: passes of one activity share its {@code activityId}. An attempt
+     * without an activity id (0) falls back to its start date as the ride key.
+     */
+    private static Map<String, Integer> rideCountsByClimbId(List<StoredClimbAttempt> attempts) {
+        Map<String, Set<Long>> rides = new HashMap<>();
+        if (attempts != null) {
+            for (StoredClimbAttempt a : attempts) {
+                if (a == null || a.climbId == null) continue;
+                long rideKey = a.activityId != 0 ? a.activityId : -a.dateEpochSec - 1;
+                Set<Long> set = rides.get(a.climbId);
+                if (set == null) {
+                    set = new HashSet<>();
+                    rides.put(a.climbId, set);
+                }
+                set.add(rideKey);
+            }
+        }
         Map<String, Integer> counts = new HashMap<>();
-        if (attempts == null) return counts;
-        for (StoredClimbAttempt a : attempts) {
-            if (a.climbId == null) continue;
-            Integer prev = counts.get(a.climbId);
-            counts.put(a.climbId, prev == null ? 1 : prev + 1);
+        for (Map.Entry<String, Set<Long>> e : rides.entrySet()) {
+            counts.put(e.getKey(), e.getValue().size());
         }
         return counts;
     }
