@@ -188,6 +188,42 @@ public class RecoveryAdvisorTest {
 
         assertFalse(advice.suggestRest);
         assertTrue(advice.rodeRecently);
+        // There is no average yet, so the advice must not claim the load matches it.
+        assertTrue(advice.hasData);
+        assertFalse(advice.enoughHistory);
+        assertFalse(advice.rationale.contains("in lijn met je gemiddelde"));
+        assertTrue(advice.rationale.contains("te weinig"));
+    }
+
+    @Test
+    public void longHistory_noRideInLastTwoDays_stillReportsNumbers() {
+        // A rider with weeks of history who last rode three days ago: a normal state to open
+        // the screen in, not "no data".
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        Map<String, Integer> gains = new HashMap<>();
+        gains.put("steady", 300);
+        gains.put("big", 2000);
+        List<StoredClimbAttempt> attempts = new java.util.ArrayList<>();
+        for (int i = 27; i >= 7; i--) attempts.add(at("steady", i, today.minusDays(i)));
+        attempts.add(at("big", 100, today.minusDays(3)));
+
+        Advice advice = RecoveryAdvisor.compute(attempts, gains, ZONE, today);
+
+        assertTrue(advice.hasData);
+        assertTrue(advice.enoughHistory);
+        assertFalse(advice.rodeRecently);
+        assertFalse(advice.suggestRest);
+        assertEquals(2000, advice.recentGainM);
+        assertEquals((21 * 300 + 2000) / 4.0, advice.baselineWeeklyAvgGainM, 0.001);
+    }
+
+    @Test
+    public void noAttempts_hasNoData() {
+        Advice advice = RecoveryAdvisor.compute(Collections.emptyList(), Collections.emptyMap(),
+                ZONE, LocalDate.of(2026, 9, 21));
+
+        assertFalse(advice.hasData);
+        assertFalse(advice.enoughHistory);
     }
 
     @Test

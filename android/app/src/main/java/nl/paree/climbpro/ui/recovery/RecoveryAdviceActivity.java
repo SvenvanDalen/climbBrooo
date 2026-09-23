@@ -51,7 +51,9 @@ public final class RecoveryAdviceActivity extends AppCompatActivity {
     }
 
     private void render(Advice advice) {
-        if (advice == null || !advice.rodeRecently) {
+        // Only "no rides logged at all" is the empty state. Not having ridden today or
+        // yesterday is normal (e.g. after a rest day) and the numbers are still meaningful.
+        if (advice == null || !advice.hasData) {
             emptyText.setVisibility(View.VISIBLE);
             statusText.setText("");
             rationaleText.setText("");
@@ -61,10 +63,17 @@ public final class RecoveryAdviceActivity extends AppCompatActivity {
         }
         emptyText.setVisibility(View.GONE);
 
-        statusText.setText(advice.suggestRest ? "Overweeg een rustdag" : "Alles in balans");
+        String status;
+        if (!advice.enoughHistory) status = "Nog te weinig geschiedenis";
+        else if (advice.suggestRest) status = "Overweeg een rustdag";
+        else status = "Alles in balans";
+        statusText.setText(status);
         rationaleText.setText(advice.rationale);
         recentGainText.setText(advice.recentGainM + " hm");
-        baselineText.setText(String.format(java.util.Locale.getDefault(),
-                "%.0f hm", advice.baselineWeeklyAvgGainM));
+        // Without enough history the "average" is mostly zero-filled days, so don't show it.
+        baselineText.setText(advice.enoughHistory
+                ? String.format(java.util.Locale.getDefault(),
+                        "%.0f hm", advice.baselineWeeklyAvgGainM)
+                : "—");
     }
 }

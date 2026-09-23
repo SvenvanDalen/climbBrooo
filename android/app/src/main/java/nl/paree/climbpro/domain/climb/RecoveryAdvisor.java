@@ -83,14 +83,21 @@ public final class RecoveryAdvisor {
          * have nothing concerning (or nothing resolvable) to report", which look identical if you
          * only look at {@link #recentGainM} / {@link #baselineWeeklyAvgGainM} being zero. */
         public final boolean rodeRecently;
+        /** Whether there is any logged attempt at all; false means the screen has nothing to show. */
+        public final boolean hasData;
+        /** Whether the logbook spans {@link #MIN_BASELINE_HISTORY_DAYS} days, i.e. whether
+         * {@link #baselineWeeklyAvgGainM} is a real average the load can be compared against. */
+        public final boolean enoughHistory;
 
         Advice(boolean suggestRest, int recentGainM, double baselineWeeklyAvgGainM, String rationale,
-               boolean rodeRecently) {
+               boolean rodeRecently, boolean hasData, boolean enoughHistory) {
             this.suggestRest = suggestRest;
             this.recentGainM = recentGainM;
             this.baselineWeeklyAvgGainM = baselineWeeklyAvgGainM;
             this.rationale = rationale;
             this.rodeRecently = rodeRecently;
+            this.hasData = hasData;
+            this.enoughHistory = enoughHistory;
         }
     }
 
@@ -117,7 +124,8 @@ public final class RecoveryAdvisor {
                                   Map<String, Integer> elevationGainByClimbId,
                                   ZoneId zone, LocalDate referenceDate) {
         if (attempts == null || attempts.isEmpty()) {
-            return calm(0, 0, false);
+            return new Advice(false, 0, 0,
+                    "Nog geen ritten gevonden om je belasting te beoordelen.", false, false, false);
         }
         Map<String, Integer> gainLookup = elevationGainByClimbId != null
                 ? elevationGainByClimbId : new HashMap<>();
@@ -154,8 +162,17 @@ public final class RecoveryAdvisor {
                 : 0;
         boolean hasEnoughBaselineHistory = historySpanDays >= MIN_BASELINE_HISTORY_DAYS;
 
+        if (!hasEnoughBaselineHistory) {
+            // No real average exists yet, so don't claim the load is "in line" with it.
+            String rationale = String.format(Locale.ROOT,
+                    "Nog te weinig geschiedenis om je belasting met je gemiddelde te vergelijken "
+                            + "(%d van %d dagen).",
+                    historySpanDays, MIN_BASELINE_HISTORY_DAYS);
+            return new Advice(false, recentGain, baselineWeeklyAvg, rationale, rodeRecently,
+                    true, false);
+        }
+
         boolean overloaded = rodeRecently
-                && hasEnoughBaselineHistory
                 && baselineWeeklyAvg > 0
                 && recentGain > baselineWeeklyAvg * OVERLOAD_RATIO;
 
@@ -165,14 +182,12 @@ public final class RecoveryAdvisor {
                             + "gemiddelde van %.0f hm per week over de laatste %d weken. "
                             + "Overweeg vandaag een rustdag.",
                     RECENT_WINDOW_DAYS, recentGain, baselineWeeklyAvg, BASELINE_WEEKS);
-            return new Advice(true, recentGain, baselineWeeklyAvg, rationale, rodeRecently);
+            return new Advice(true, recentGain, baselineWeeklyAvg, rationale, rodeRecently,
+                    true, true);
         }
-        return calm(recentGain, baselineWeeklyAvg, rodeRecently);
-    }
-
-    private static Advice calm(int recentGain, double baselineWeeklyAvg, boolean rodeRecently) {
         return new Advice(false, recentGain, baselineWeeklyAvg,
-                "Je belasting is in lijn met je gemiddelde. Geen rustdag nodig.", rodeRecently);
+                "Je belasting is in lijn met je gemiddelde. Geen rustdag nodig.", rodeRecently,
+                true, true);
     }
 
     /** Sum of gainByDay values for every day in [start, end], inclusive. */
