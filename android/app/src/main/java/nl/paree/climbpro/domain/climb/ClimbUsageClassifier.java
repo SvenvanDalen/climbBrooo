@@ -100,7 +100,7 @@ public final class ClimbUsageClassifier {
 
         for (int i = 0; i < n; i++) {
             StoredClimb c = climbs.get(i);
-            String climbId = climbIdOf(c);
+            String climbId = ClimbIdentity.of(c);
             Integer rides = ridesByClimbId.get(climbId);
             List<double[]> otherFrequent = new ArrayList<>();
             for (Map.Entry<String, double[]> e : frequentStarts.entrySet()) {
@@ -109,11 +109,6 @@ public final class ClimbUsageClassifier {
             result[i] = classify(rides != null ? rides : 0, c.startLat, c.startLon, otherFrequent);
         }
         return result;
-    }
-
-    private static String climbIdOf(StoredClimb c) {
-        int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-        return ClimbIdentity.of(c.startLat, c.startLon, len);
     }
 
     /**
