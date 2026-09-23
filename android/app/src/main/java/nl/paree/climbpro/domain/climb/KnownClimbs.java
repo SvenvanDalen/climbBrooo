@@ -20,12 +20,12 @@ public final class KnownClimbs {
         }
         List<KnownClimb> out = new ArrayList<>(route.climbs.size());
         for (StoredClimb c : route.climbs) {
-            int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+            int len = ClimbIdentity.effectiveLength(c);
             int endIdx = nearestIndex(route.distances, c.endDistance);
             double[] calibLats = calibLats(c);
             double[] calibLons = calibLons(c);
             out.add(new KnownClimb(
-                    ClimbIdentity.of(c.startLat, c.startLon, len),
+                    ClimbIdentity.of(c),
                     c.startLat, c.startLon,
                     route.lats[endIdx], route.lons[endIdx],
                     len, segmentLengths(c), calibLats, calibLons));

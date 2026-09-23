@@ -50,13 +50,38 @@ public final class LogbookCalculator {
          */
         public final boolean routeDeviation;
 
+        /**
+         * (activityId, passIndex) alongside the climbId already known by the caller of
+         * {@link #historyFor} — together the identity key {@code ClimbAttemptRepository} uses
+         * to find and replace this row's underlying {@link
+         * nl.paree.climbpro.data.route.StoredClimbAttempt} when the user attaches a note/photo
+         * (issue #46).
+         */
+        public final long activityId;
+        public final int  passIndex;
+
+        /** Phone-only diary fields carried straight through for display; see issue #46. */
+        public final String note;
+        public final String photoFileName;
+
         public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
                           boolean routeDeviation, boolean bestOfYear) {
+            this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
+                    0L, 0, null, null);
+        }
+
+        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
+                           boolean routeDeviation, boolean bestOfYear,
+                           long activityId, int passIndex, String note, String photoFileName) {
             this.dateEpochSec = dateEpochSec;
             this.elapsedSec = elapsedSec;
             this.deltaToPrSec = deltaToPrSec;
             this.routeDeviation = routeDeviation;
             this.bestOfYear = bestOfYear;
+            this.activityId = activityId;
+            this.passIndex = passIndex;
+            this.note = note;
+            this.photoFileName = photoFileName;
         }
     }
 
@@ -150,8 +175,9 @@ public final class LogbookCalculator {
         for (int i = 0; i < mine.size(); i++) {
             StoredClimbAttempt a = mine.get(i);
             boolean bestOfYear = i == bestOfYearIndex;
-            rows.add(new HistoryRow(
-                    a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr, a.routeDeviation, bestOfYear));
+            rows.add(new HistoryRow(a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr,
+                    a.routeDeviation, bestOfYear,
+                    a.activityId, a.passIndex, a.note, a.photoFileName));
         }
         return rows;
     }
