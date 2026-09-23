@@ -1,12 +1,13 @@
 package nl.paree.climbpro.domain.advice;
 
+import java.util.List;
 import java.util.Locale;
 
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
-import nl.paree.climbpro.data.route.StoredSegment;
-import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.power.RouteTile;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.service.RouteEffortProfileBuilder;
 
 /**
  * Simple rule-of-thumb tire pressure / setup suggestion, derived from surface data the app
@@ -83,28 +84,35 @@ public final class TirePressureAdvisor {
         return new TirePressureAdvice(minPsi, maxPsi, rationale.toString());
     }
 
-    /** Distance (metres) per {@link SurfaceType}, aggregated over climb segments and
-     *  route-level surface sections. UNKNOWN is excluded so it never dilutes the fraction. */
+    /** Distance (metres) per {@link SurfaceType}, aggregated over the whole route — climb
+     *  segments plus the non-climb stretches between/around them (which carry whichever
+     *  surface {@link RouteEffortProfileBuilder} resolves via its surfaceSection ->
+     *  flatSegment -> asphalt precedence, so a surfaceSection overriding a climb segment or
+     *  flat segment is never double-counted). UNKNOWN is excluded so it never dilutes the
+     *  fraction. Falls back to climb segments only when the route lacks the distance/
+     *  elevation arrays {@link RouteEffortProfileBuilder} needs to cover non-climb stretches. */
     private static long[] surfaceDistances(StoredRoute route) {
         long[] byType = new long[6];
         if (route == null) return byType;
 
+        List<RouteTile> tiles = RouteEffortProfileBuilder.build(route);
+        if (tiles != null) {
+            for (RouteTile tile : tiles) {
+                int type = SurfaceType.fromInt(tile.surfaceType);
+                if (type == SurfaceType.UNKNOWN) continue;
+                byType[type] += Math.max(0, tile.distanceMeters);
+            }
+            return byType;
+        }
+
         if (route.climbs != null) {
             for (StoredClimb climb : route.climbs) {
                 if (climb.segments == null) continue;
-                for (StoredSegment seg : climb.segments) {
+                for (nl.paree.climbpro.data.route.StoredSegment seg : climb.segments) {
                     int type = SurfaceType.fromInt(seg.surfaceType);
                     if (type == SurfaceType.UNKNOWN) continue;
                     byType[type] += Math.max(0, seg.distance);
                 }
-            }
-        }
-        if (route.surfaceSections != null) {
-            for (StoredSurfaceSection s : route.surfaceSections) {
-                int type = SurfaceType.fromInt(s.surfaceType);
-                if (type == SurfaceType.UNKNOWN) continue;
-                long len = s.endDistance - s.startDistance;
-                if (len > 0) byType[type] += len;
             }
         }
         return byType;

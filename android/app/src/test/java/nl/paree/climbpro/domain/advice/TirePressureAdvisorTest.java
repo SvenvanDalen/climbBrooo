@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.segment.SurfaceType;
@@ -123,6 +124,34 @@ public class TirePressureAdvisorTest {
         TirePressureAdvice advice = TirePressureAdvisor.advise(route);
 
         assertTrue(advice.minPsi >= TirePressureConstants.MIN_SENSIBLE_PSI);
+    }
+
+    @Test
+    public void gravelFlatSegmentsOutsideClimb_dominateOffRoadFraction() {
+        // A short asphalt climb followed by a long gravel stretch: the gravel flat segment
+        // must count toward the off-road fraction, not just the climb's own segments.
+        StoredRoute route = new StoredRoute();
+        route.distances = new double[] {0, 2000, 20000};
+        route.elevations = new double[] {0, 20, 20};
+
+        StoredClimb climb = climb(0.03, segment(1000, SurfaceType.ASPHALT),
+                segment(1000, SurfaceType.ASPHALT));
+        climb.startDistance = 0;
+        climb.endDistance = 2000;
+        route.climbs = new ArrayList<>();
+        route.climbs.add(climb);
+
+        StoredFlatSegment gravelFlat = new StoredFlatSegment();
+        gravelFlat.startDistance = 2000;
+        gravelFlat.endDistance = 20000;
+        gravelFlat.surfaceType = SurfaceType.GRAVEL;
+        route.flatSegments = new ArrayList<>();
+        route.flatSegments.add(gravelFlat);
+
+        TirePressureAdvice advice = TirePressureAdvisor.advise(route);
+
+        assertEquals(TirePressureConstants.OFFROAD_MIN_PSI, advice.minPsi);
+        assertEquals(TirePressureConstants.OFFROAD_MAX_PSI, advice.maxPsi);
     }
 
     @Test
