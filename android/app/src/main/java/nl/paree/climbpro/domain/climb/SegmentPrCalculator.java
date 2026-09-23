@@ -22,7 +22,10 @@ public final class SegmentPrCalculator {
      *                 Only attempts whose segSplitSec array has exactly this length are
      *                 considered — a climb re-segmented after a resync silently stops
      *                 contributing stale splits rather than misaligning them.
-     * @param attempts all stored attempts (any climb).
+     * @param attempts all stored attempts (any climb). Attempts flagged
+     *                 {@link StoredClimbAttempt#routeDeviation} are excluded — see
+     *                 {@link nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector}
+     *                 (issue #77).
      * @return per-segment fastest-ever split (length == segCount), or null when no
      *         attempt for this climb has a matching-length segSplitSec.
      */
@@ -31,6 +34,7 @@ public final class SegmentPrCalculator {
         int[] best = null;
         for (StoredClimbAttempt a : attempts) {
             if (!climbId.equals(a.climbId)) continue;
+            if (a.routeDeviation) continue;
             if (a.segSplitSec == null || a.segSplitSec.length != segCount) continue;
             if (best == null) {
                 best = a.segSplitSec.clone();

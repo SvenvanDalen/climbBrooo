@@ -72,6 +72,12 @@ public final class WrappedCalculator {
 
     private static final class Acc {
         int    attemptCount = 0;
+        /**
+         * Count of non-{@link StoredClimbAttempt#routeDeviation} attempts — gates
+         * biggest-improvement eligibility below, since that comparison is PR-like
+         * (issue #77) and a deviated attempt must not contribute to it.
+         */
+        int    validCount = 0;
         int    fastestSec = Integer.MAX_VALUE;
         long   earliestDateSec = Long.MAX_VALUE;
         int    earliestSec = 0;
@@ -110,10 +116,16 @@ public final class WrappedCalculator {
             }
             acc.attemptCount++;
             acc.totalElapsedSec += a.elapsedSec;
-            if (a.elapsedSec < acc.fastestSec) acc.fastestSec = a.elapsedSec;
-            if (a.dateEpochSec < acc.earliestDateSec) {
-                acc.earliestDateSec = a.dateEpochSec;
-                acc.earliestSec = a.elapsedSec;
+            // fastestSec/earliestSec feed biggestImprovement below, a PR-like comparison —
+            // deviated attempts don't contribute to it (issue #77), though they still
+            // count toward attemptCount/totalElapsedSec/favorite-climb tallying above.
+            if (!a.routeDeviation) {
+                acc.validCount++;
+                if (a.elapsedSec < acc.fastestSec) acc.fastestSec = a.elapsedSec;
+                if (a.dateEpochSec < acc.earliestDateSec) {
+                    acc.earliestDateSec = a.dateEpochSec;
+                    acc.earliestSec = a.elapsedSec;
+                }
             }
         }
 
@@ -136,7 +148,7 @@ public final class WrappedCalculator {
                 favoriteCount = acc.attemptCount;
             }
 
-            if (acc.attemptCount >= 2) {
+            if (acc.validCount >= 2) {
                 int candidate = acc.earliestSec - acc.fastestSec;
                 if (improvementId == null
                         || candidate > improvementSec

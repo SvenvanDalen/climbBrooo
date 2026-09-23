@@ -134,6 +134,22 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Sets or clears the climb's manually-entered WR/pro reference time (issue #59).
+     * Pass a null/non-positive {@code refSec} to clear.
+     */
+    public void setManualRefTime(String routeId, int climbIndex, Integer refSec, String label) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setManualRefTime(routeId, climbIndex, refSec, label);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     public void setBulkSurfaceType(String routeId, int climbIndex, int surfaceType) {
         executor.execute(() -> {
             try {
@@ -178,6 +194,93 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 gpxExportFile.postValue(file);
             } catch (Exception e) {
                 error.postValue("GPX-export mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Attaches/updates a note and/or photo on one existing attempt (issue #46). {@code
+     * photoUri}, when non-null, is copied into {@code getFilesDir()/attempt_photos/} via
+     * {@link nl.paree.climbpro.data.route.AttemptPhotoStore}; pass null to leave the attempt's
+     * current photo untouched, and an empty/blank {@code note} to clear it. Identity is
+     * (climbId derived from the loaded climb, activityId, passIndex) — the same key {@link
+     * ClimbAttemptRepository#update} matches on. Reloads the climb afterward so the history
+     * list picks up the change.
+     */
+    public void saveAttemptNote(String routeId, int climbIndex, long activityId, int passIndex,
+                                 String note, android.net.Uri photoUri) {
+        StoredClimb c = lastClimb;
+        if (c == null) {
+            error.postValue("Klim nog niet geladen");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+                String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
+
+                StoredClimbAttempt target = null;
+                for (StoredClimbAttempt a : attemptRepo.loadAll()) {
+                    if (climbId.equals(a.climbId) && a.activityId == activityId
+                            && a.passIndex == passIndex) {
+                        target = a;
+                        break;
+                    }
+                }
+                if (target == null) {
+                    error.postValue("Attempt niet gevonden");
+                    return;
+                }
+
+                target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
+
+                // Write the NEW photo first, but don't touch the OLD one yet — if the JSON
+                // record update below fails, we must be able to roll back to a state where
+                // the attempt still has a valid, working photo reference (see saveAttemptNote
+                // javadoc). Only once attemptRepo.update() confirms success do we delete the
+                // old file; only on failure do we delete the new one instead.
+                String oldPhoto = target.photoFileName;
+                String newPhoto = oldPhoto;
+                boolean photoChanged = false;
+                if (photoUri != null) {
+                    newPhoto = nl.paree.climbpro.data.route.AttemptPhotoStore
+                            .savePickedPhoto(getApplication(), photoUri);
+                    photoChanged = true;
+                }
+                target.photoFileName = newPhoto;
+
+                boolean updateSucceeded;
+                try {
+                    updateSucceeded = attemptRepo.update(target);
+                } catch (java.io.IOException writeFailure) {
+                    // Write itself blew up (e.g. disk full) — same rollback as an explicit
+                    // false return: the new photo never becomes referenced by anything.
+                    if (photoChanged) {
+                        nl.paree.climbpro.data.route.AttemptPhotoStore
+                                .delete(getApplication(), newPhoto);
+                    }
+                    error.postValue("Opslaan mislukt: " + writeFailure.getMessage());
+                    return;
+                }
+
+                if (updateSucceeded) {
+                    if (photoChanged) {
+                        nl.paree.climbpro.data.route.AttemptPhotoStore
+                                .delete(getApplication(), oldPhoto);
+                    }
+                    saved.postValue(true);
+                    loadClimb(routeId, climbIndex);
+                } else {
+                    if (photoChanged) {
+                        // Roll back the just-written new photo; leave the old photo + old
+                        // JSON record untouched so the attempt still has a working reference.
+                        nl.paree.climbpro.data.route.AttemptPhotoStore
+                                .delete(getApplication(), newPhoto);
+                    }
+                    error.postValue("Opslaan mislukt");
+                }
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
             }
         });
     }
