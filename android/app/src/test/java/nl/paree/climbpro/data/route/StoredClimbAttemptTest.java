@@ -67,4 +67,17 @@ public class StoredClimbAttemptTest {
         assertNull(back.note);
         assertNull(back.photoFileName);
     }
+
+    @Test
+    public void avgTempC_roundTrips_andLegacyJsonLoadsAsNull() throws Exception {
+        StoredClimbAttempt a = new StoredClimbAttempt();
+        a.climbId = "k1";
+        a.avgTempC = 31.5;
+        StoredClimbAttempt back =
+                mapper.readValue(mapper.writeValueAsBytes(a), StoredClimbAttempt.class);
+        assertEquals(31.5, back.avgTempC, 1e-9);
+
+        String legacyJson = "{\"climbId\":\"k1\",\"activityId\":100,\"elapsedSec\":600}";
+        assertNull(mapper.readValue(legacyJson, StoredClimbAttempt.class).avgTempC);
+    }
 }

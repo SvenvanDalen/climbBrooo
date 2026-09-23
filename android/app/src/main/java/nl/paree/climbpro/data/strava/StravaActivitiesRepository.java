@@ -10,6 +10,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.domain.climb.AttemptTemperature;
 import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher;
@@ -51,7 +52,7 @@ public final class StravaActivitiesRepository {
      */
     private static final String PREF_KNOWN_CLIMB_IDS = "known_climb_ids_for_incomplete_skip";
     private static final long   ONE_YEAR_SEC = 365L * 24 * 60 * 60;
-    private static final String STREAM_KEYS  = "latlng,time";
+    private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
 
     private final StravaAuthRepository   auth;
     private final RouteRepository        routeRepo;
@@ -174,7 +175,8 @@ public final class StravaActivitiesRepository {
             if (s.latlng == null || s.time == null
                     || s.latlng.data == null || s.time.data == null) return out;
 
-            List<TrackSample> track = toTrack(s);
+            List<Double> trackTemps = new ArrayList<>();
+            List<TrackSample> track = toTrack(s, trackTemps);
             if (track.size() < 2) return out;
 
             long dateSec = parseStartDate(act.startDate);
@@ -196,6 +198,8 @@ public final class StravaActivitiesRepository {
                     a.segSplitSec  = p.segSplitSec;
                     a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
                             track, p.entryIdx, p.exitIdx, k.calibLats, k.calibLons);
+                    a.avgTempC = AttemptTemperature.averageOverPass(
+                            trackTemps, p.entryIdx, p.exitIdx);
                     out.add(a);
                 }
 
@@ -236,13 +240,21 @@ public final class StravaActivitiesRepository {
         return new ArrayList<>(byId.values());
     }
 
-    private static List<TrackSample> toTrack(StravaStreamsDto s) {
+    /**
+     * @param tempsOut filled index-aligned with the returned track: one entry per kept sample,
+     *                 the {@code temp} reading for that raw stream index, or null when the temp
+     *                 stream is absent or shorter. Built in the same loop so skipped (malformed)
+     *                 latlng samples can never shift temperatures onto the wrong track index.
+     */
+    static List<TrackSample> toTrack(StravaStreamsDto s, List<Double> tempsOut) {
         int n = Math.min(s.latlng.data.size(), s.time.data.size());
+        List<Double> rawTemps = s.temp != null ? s.temp.data : null;
         List<TrackSample> track = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             List<Double> ll = s.latlng.data.get(i);
             if (ll == null || ll.size() < 2) continue;
             track.add(new TrackSample(ll.get(0), ll.get(1), s.time.data.get(i)));
+            tempsOut.add(rawTemps != null && i < rawTemps.size() ? rawTemps.get(i) : null);
         }
         return track;
     }

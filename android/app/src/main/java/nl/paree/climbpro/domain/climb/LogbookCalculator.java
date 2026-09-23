@@ -64,6 +64,12 @@ public final class LogbookCalculator {
         public final String note;
         public final String photoFileName;
 
+        /**
+         * Average device temperature over the pass (°C), null when unknown — see
+         * {@link AttemptTemperature} for the extreme-heat/cold note shown from it (issue #80).
+         */
+        public final Double avgTempC;
+
         public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
                           boolean routeDeviation, boolean bestOfYear) {
             this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
@@ -73,6 +79,14 @@ public final class LogbookCalculator {
         public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
                            boolean routeDeviation, boolean bestOfYear,
                            long activityId, int passIndex, String note, String photoFileName) {
+            this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
+                    activityId, passIndex, note, photoFileName, null);
+        }
+
+        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
+                           boolean routeDeviation, boolean bestOfYear,
+                           long activityId, int passIndex, String note, String photoFileName,
+                           Double avgTempC) {
             this.dateEpochSec = dateEpochSec;
             this.elapsedSec = elapsedSec;
             this.deltaToPrSec = deltaToPrSec;
@@ -82,6 +96,7 @@ public final class LogbookCalculator {
             this.passIndex = passIndex;
             this.note = note;
             this.photoFileName = photoFileName;
+            this.avgTempC = avgTempC;
         }
     }
 
@@ -177,7 +192,7 @@ public final class LogbookCalculator {
             boolean bestOfYear = i == bestOfYearIndex;
             rows.add(new HistoryRow(a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr,
                     a.routeDeviation, bestOfYear,
-                    a.activityId, a.passIndex, a.note, a.photoFileName));
+                    a.activityId, a.passIndex, a.note, a.photoFileName, a.avgTempC));
         }
         return rows;
     }

@@ -96,7 +96,7 @@ public class StravaActivitiesRepositoryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void stubActivityWithFullClimbTrack() throws Exception {
+    private StravaStreamsDto stubActivityWithFullClimbTrack() throws Exception {
         StravaActivityDto act = new StravaActivityDto();
         act.id = 555L; act.type = "Ride"; act.startDate = "2026-03-01T08:00:00Z";
 
@@ -119,6 +119,53 @@ public class StravaActivitiesRepositoryTest {
         Call<StravaStreamsDto> streamCall = mock(Call.class);
         when(streamCall.execute()).thenReturn(Response.success(streams));
         when(api.getStreams(anyString(), eq(555L), anyString())).thenReturn(streamCall);
+        return streams; // callers may still mutate it (e.g. add a temp stream) before syncing
+    }
+
+    @Test
+    public void sync_requestsTempStreamInSameStreamsCall_andStoresPassAverage() throws Exception {
+        StravaStreamsDto streams = stubActivityWithFullClimbTrack();
+        streams.temp = new StravaStreamsDto.TempStream();
+        streams.temp.data = Arrays.asList(30.0, 32.0, 34.0);
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        assertEquals(1, repo.syncActivities());
+
+        verify(api, times(1)).getStreams(anyString(), eq(555L), eq("latlng,time,temp"));
+        assertEquals(32.0, attemptRepo.loadAll().get(0).avgTempC, 1e-9);
+    }
+
+    @Test
+    public void sync_withoutTempStream_storesNullTemperature_noError() throws Exception {
+        stubActivityWithFullClimbTrack(); // device without temperature sensor: no temp stream
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        assertEquals(1, repo.syncActivities());
+        assertEquals(null, attemptRepo.loadAll().get(0).avgTempC);
+    }
+
+    @Test
+    public void toTrack_keepsTempsAlignedWhenMalformedLatlngSamplesAreSkipped() {
+        StravaStreamsDto s = new StravaStreamsDto();
+        s.latlng = new StravaStreamsDto.LatLngStream();
+        s.latlng.data = Arrays.asList(
+                Arrays.asList(45.0, 6.0),
+                Collections.<Double>singletonList(45.0), // malformed -> skipped
+                Arrays.asList(45.001, 6.0),
+                Arrays.asList(45.002, 6.0));
+        s.time = new StravaStreamsDto.TimeStream();
+        s.time.data = Arrays.asList(0, 10, 20, 30);
+        s.temp = new StravaStreamsDto.TempStream();
+        s.temp.data = Arrays.asList(10.0, 99.0, 12.0); // one shorter than latlng/time
+
+        List<Double> temps = new ArrayList<>();
+        List<nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample> track =
+                StravaActivitiesRepository.toTrack(s, temps);
+
+        assertEquals(3, track.size());
+        assertEquals(Arrays.asList(10.0, 12.0, null), temps);
     }
 
     @Test
