@@ -462,9 +462,37 @@ contribute to the catalog `surfaceTypes` index.
 **Auto-seeding vs. user edits.** `StravaRoutesRepository` seeds per-climb-segment surface
 from the Strava `sub_type` (e.g. road → asphalt) **only on first import** (`existing == null`).
 On any re-sync, `RouteRepository.saveRoute` has already preserved the user's manual
-per-segment surface edits (matched by climb `startDistance`, copied by segment index for
-non-UNKNOWN values), so the seeding step is skipped to avoid clobbering them. This upholds
-the "user customisation survives resync" rule for surfaces, the same way renames are kept.
+per-segment surface edits (non-UNKNOWN values, remapped by `SegmentRemapper` — see below),
+so the seeding step is skipped to avoid clobbering them. This upholds the "user
+customisation survives resync" rule for surfaces, the same way renames are kept.
+
+**Robust re-mapping when segment boundaries move (issue #87).** A re-import of the same
+route can shift segment boundaries: the route start moves (every distance offset), a climb
+is trimmed/extended differently (its 8% grid moves), or climbs appear/disappear. All
+carry-over rules live in one pure class, `data/route/SegmentRemapper` (phone-only; no wire
+change), applied by `RouteRepository.saveRoute`:
+
+- **Climb matching** is one-to-one, greedy by score: exact `startDistance` with a near (or
+  unknown) start coordinate first (the legacy rule, so unchanged geometry behaves exactly as
+  before), then start coordinates within 150 m (survives a shifted route start); only for
+  the leftovers, `[startDistance,endDistance]` overlap ≥ 50% of the longer climb, compared
+  after the route-wide shift revealed by the anchored matches (survives a moved climb start).
+  An old climb never feeds two fresh climbs. Matched climbs carry rename, suggested name and
+  manual reference time.
+- **Alignment offset**: when starts coincide geometrically but start distances differ by
+  more than the start point moved (+50 m slack), the route start shifted and segment
+  positions are compared after subtracting that offset; otherwise on absolute route position.
+- **Position-bound segment data** (surface — it describes the road) goes to each fresh
+  segment from the previous segment it overlaps most, only if that covers ≥ 50% of the fresh
+  segment; else the default stays. On an identical grid this is the old index copy.
+- **Grid-bound segment data** (e.g. a per-segment target time) is only meaningful for exactly
+  the same boundaries: carry it by index only when `SegmentRemapper.isSameGrid` (same count,
+  every aligned boundary within 10 m), otherwise drop it — never interpolate.
+  `StoredClimbAttempt.segSplitSec` follows the same principle: `SegmentPrCalculator` ignores
+  splits whose length differs from the current grid.
+- **Flat stretches** keep name/surface by exact `startDistance`, else by ≥ 50% overlap after
+  the route-wide offset (median of the matched climbs' offsets). User-drawn surface sections
+  are still copied verbatim (absolute distances).
 
 ### Climb time estimate (phone-only)
 
