@@ -37,4 +37,11 @@ public final class StoredClimb {
      * stored routes (field absent from older JSON) come back unmarked.
      */
     public boolean isHome = false;
+    /**
+     * Centre of this home climb's privacy zone (see {@code CoordinateFuzzer}): drawn once from
+     * a SecureRandom and reused on every export so repeated exports can't be intersected.
+     * Null until the first home-climb export. Phone-only, preserved across resync.
+     */
+    public Double privacyCentreLat;
+    public Double privacyCentreLon;
 }

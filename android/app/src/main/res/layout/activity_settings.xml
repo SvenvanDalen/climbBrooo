@@ -233,8 +233,8 @@
                     android:layout_height="wrap_content"
                     android:progressTint="@color/color_accent"
                     android:thumbTint="@color/color_accent"
-                    android:max="2000"
-                    android:progress="500"/>
+                    android:max="1900"
+                    android:progress="400"/>
 
             </LinearLayout>
 

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
+import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 
 public final class SettingsActivity extends AppCompatActivity {
 
@@ -46,7 +47,8 @@ public final class SettingsActivity extends AppCompatActivity {
 
         viewModel.privacyRadiusM().observe(this, meters -> {
             if (meters != null) {
-                binding.privacyRadiusSeekBar.setProgress(meters);
+                binding.privacyRadiusSeekBar.setProgress(
+                        meters - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
                 binding.privacyRadiusLabel.setText(meters + " m");
             }
         });
@@ -96,11 +98,15 @@ public final class SettingsActivity extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar sb) {}
         });
 
-        binding.privacyRadiusSeekBar.setMax(2000);
+        // SeekBar has no API-24-safe min, so progress is an offset above the minimum radius:
+        // a 0 m zone would silently disable privacy while the climb still says "gewazigd".
+        binding.privacyRadiusSeekBar.setMax(
+                CoordinateFuzzer.MAX_PRIVACY_RADIUS_M - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
         binding.privacyRadiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar sb, int progress, boolean user) {
-                binding.privacyRadiusLabel.setText(progress + " m");
-                if (user) viewModel.setPrivacyRadiusM(progress);
+                int meters = CoordinateFuzzer.MIN_PRIVACY_RADIUS_M + progress;
+                binding.privacyRadiusLabel.setText(meters + " m");
+                if (user) viewModel.setPrivacyRadiusM(meters);
             }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}

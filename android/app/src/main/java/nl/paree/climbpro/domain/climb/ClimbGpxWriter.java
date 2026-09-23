@@ -51,6 +51,9 @@ public final class ClimbGpxWriter {
      *                            CoordinateFuzzer}), in meters. Ignored unless {@code
      *                            climb.isHome} is true; a value {@code <= 0} disables fuzzing
      *                            even for a home climb (feature off).
+     * @throws IllegalArgumentException also when a home climb is exported with a positive
+     *         radius but has no {@link CoordinateFuzzer#isUsableZoneCentre usable} stored
+     *         zone centre — the export fails closed rather than leak the start.
      */
     public static String toGpx(StoredRoute route, StoredClimb climb, int climbIndex,
             int[] bestSplitSec, Integer bestElapsedSec, double privacyRadiusMeters) {
@@ -78,35 +81,24 @@ public final class ClimbGpxWriter {
                 : climb.name != null ? climb.name
                 : "Climb " + (climbIndex + 1);
 
-        boolean fuzzStart = climb.isHome && privacyRadiusMeters > 0;
-        double[] fuzzedStart = fuzzStart
-                ? CoordinateFuzzer.fuzz(climb.startLat, climb.startLon, privacyRadiusMeters)
-                : null;
-
-        // WHY trim, not just relabel: only fuzzing the start *waypoint* would leave the real
-        // approach to the climb sitting right there in the <trkseg> polyline, which pinpoints
-        // the true location just as precisely as an unfuzzed waypoint would — the issue asks
-        // to obscure the "startlocatie", and the track geometry near the start IS the start
-        // location. So for a home climb we cut the leading trackpoints that fall inside the
-        // privacy radius and splice in the fuzzed point as the new track start, the same way
-        // Strava's privacy zones hide the approach to a saved place rather than just its pin.
-        // The rest of the climb (beyond the radius) stays precise, per the issue's scope.
-        int trackStartIdx = startIdx;
-        // Whole climb inside the privacy zone: no index in [startIdx, endIdx] is ever a safe
-        // distance from the true start, including endIdx itself. This is its own explicit
-        // case (rather than letting the "walk forward, then clamp" loop below silently
-        // degenerate to trackStartIdx == endIdx) precisely because trackStartIdx == endIdx
-        // must NOT be treated as "found the exit point" — endIdx is still inside the zone.
-        boolean wholeClimbInZone = false;
-        if (fuzzStart) {
-            while (trackStartIdx <= endIdx
-                    && route.distances[trackStartIdx] - climb.startDistance < privacyRadiusMeters) {
-                trackStartIdx++;
+        // WHY drop geometry, not just relabel the start: the track polyline near the start IS
+        // the start location, so for a home climb every trackpoint and waypoint inside the
+        // privacy zone is dropped and the zone centre stands in for the start — the way
+        // Strava's privacy zones hide the approach to a saved place, not just its pin. The
+        // zone is tested by straight-line distance (a hairpin that loops back near the start
+        // is hidden too) and centred on the stored random centre, not on the real start, so
+        // the edge where the visible track begins doesn't point back at the start either.
+        double[] zoneCentre = null;
+        if (climb.isHome && privacyRadiusMeters > 0) {
+            // Fail closed: exporting a home climb without a usable centre would either leak
+            // the start or need a centre derived from it (reversible). The caller persists a
+            // SecureRandom centre first (see ClimbDetailViewModel#exportGpx).
+            if (!CoordinateFuzzer.isUsableZoneCentre(climb.privacyCentreLat,
+                    climb.privacyCentreLon, climb.startLat, climb.startLon, privacyRadiusMeters)) {
+                throw new IllegalArgumentException(
+                        "home climb has no usable privacy zone centre for this radius");
             }
-            if (trackStartIdx > endIdx) {
-                trackStartIdx = endIdx;
-                wholeClimbInZone = true;
-            }
+            zoneCentre = new double[] {climb.privacyCentreLat, climb.privacyCentreLon};
         }
 
         StringBuilder sb = new StringBuilder(512 + (endIdx - startIdx + 1) * 64);
@@ -114,37 +106,32 @@ public final class ClimbGpxWriter {
         sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
                 + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
 
-        appendWaypoints(sb, route, climb, startIdx, endIdx, trackStartIdx, wholeClimbInZone,
-                fuzzedStart, bestSplitSec, bestElapsedSec, name);
+        appendWaypoints(sb, route, climb, startIdx, endIdx, zoneCentre, privacyRadiusMeters,
+                bestSplitSec, bestElapsedSec, name);
 
         sb.append("  <trk>\n");
         sb.append("    <name>").append(escape(name)).append("</name>\n");
         sb.append("    <trkseg>\n");
-        if (fuzzedStart != null) {
-            sb.append("      <trkpt lat=\"").append(fmt(fuzzedStart[0]))
-              .append("\" lon=\"").append(fmt(fuzzedStart[1])).append("\">");
+        if (zoneCentre != null) {
+            sb.append("      <trkpt lat=\"").append(fmt(zoneCentre[0]))
+              .append("\" lon=\"").append(fmt(zoneCentre[1])).append("\">");
             if (route.elevations != null && startIdx < route.elevations.length
                     && !Double.isNaN(route.elevations[startIdx])) {
                 // Elevation alone doesn't pinpoint a location, so the true value at the climb
-                // start is kept — only lat/lon within the privacy radius are obscured/dropped.
+                // start is kept — only lat/lon within the privacy zone are obscured/dropped.
                 sb.append("<ele>").append(fmtEle(route.elevations[startIdx])).append("</ele>");
             }
             sb.append("</trkpt>\n");
         }
-        if (!wholeClimbInZone) {
-            // Safe to walk the real geometry: every index from trackStartIdx onward is
-            // outside the privacy radius (that's how trackStartIdx was found above). When
-            // the whole climb is inside the zone instead, there is no such safe index —
-            // the polyline stops at the single fuzzed point emitted above.
-            for (int i = trackStartIdx; i <= endIdx; i++) {
-                sb.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
-                  .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
-                if (route.elevations != null && i < route.elevations.length
-                        && !Double.isNaN(route.elevations[i])) {
-                    sb.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
-                }
-                sb.append("</trkpt>\n");
+        for (int i = startIdx; i <= endIdx; i++) {
+            if (isHidden(route, i, zoneCentre, privacyRadiusMeters)) continue;
+            sb.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
+              .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
+            if (route.elevations != null && i < route.elevations.length
+                    && !Double.isNaN(route.elevations[i])) {
+                sb.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
             }
+            sb.append("</trkpt>\n");
         }
         sb.append("    </trkseg>\n");
         sb.append("  </trk>\n");
@@ -153,17 +140,17 @@ public final class ClimbGpxWriter {
     }
 
     private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
-            int startIdx, int endIdx, int trackStartIdx, boolean wholeClimbInZone,
-            double[] fuzzedStart, int[] bestSplitSec, Integer bestElapsedSec, String climbName) {
+            int startIdx, int endIdx, double[] zoneCentre, double privacyRadiusMeters,
+            int[] bestSplitSec, Integer bestElapsedSec, String climbName) {
         List<StoredSegment> segments = climb.segments;
         if (segments == null || segments.isEmpty()) return;
 
         if (bestElapsedSec != null && bestElapsedSec > 0) {
-            if (fuzzedStart != null) {
+            if (zoneCentre != null) {
                 Double ele = route.elevations != null && startIdx < route.elevations.length
                         && !Double.isNaN(route.elevations[startIdx])
                         ? route.elevations[startIdx] : null;
-                appendWaypoint(sb, fuzzedStart[0], fuzzedStart[1], ele,
+                appendWaypoint(sb, zoneCentre[0], zoneCentre[1], ele,
                         "PR", climbName + " — personal record " + formatDuration(bestElapsedSec),
                         "Flag, Green");
             } else {
@@ -180,13 +167,7 @@ public final class ClimbGpxWriter {
             StoredSegment seg = segments.get(i);
             boundary += seg.distance;
             int idx = nearestIndex(route, startIdx, endIdx, boundary);
-            // wholeClimbInZone: trackStartIdx == endIdx and that point is itself still
-            // inside the zone (see the comment where wholeClimbInZone is computed), so the
-            // comparison must include idx == trackStartIdx here — unlike the normal case,
-            // where trackStartIdx is the first index confirmed to be outside the zone and a
-            // waypoint landing exactly on it is safe to keep precise.
-            boolean inZone = wholeClimbInZone ? idx <= trackStartIdx : idx < trackStartIdx;
-            if (idx < 0 || inZone) {
+            if (idx < 0 || isHidden(route, idx, zoneCentre, privacyRadiusMeters)) {
                 // Inside the trimmed privacy zone: skip rather than expose a precise point.
                 if (havePr) cumulativeSplitSec += bestSplitSec[i];
                 continue;
@@ -203,6 +184,13 @@ public final class ClimbGpxWriter {
             appendWaypoint(sb, route, idx, wptName, desc.toString(),
                     isTop ? "Summit" : "Flag, Blue");
         }
+    }
+
+    /** True when route point {@code i} lies inside the privacy zone (none when centre is null). */
+    private static boolean isHidden(StoredRoute route, int i, double[] zoneCentre,
+            double radiusMeters) {
+        return zoneCentre != null && CoordinateFuzzer.isInZone(
+                route.lats[i], route.lons[i], zoneCentre[0], zoneCentre[1], radiusMeters);
     }
 
     private static void appendWaypoint(StringBuilder sb, StoredRoute route, int idx,

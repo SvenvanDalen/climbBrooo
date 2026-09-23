@@ -1,5 +1,6 @@
 package nl.paree.climbpro.data.route;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -105,6 +106,23 @@ public class RouteRepositoryHomeClimbTest {
         repo.saveRoute(r2, points(), Collections.singletonList(climb()));
 
         assertTrue(repo.loadRoute("r1").climbs.get(0).isHome);
+    }
+
+    @Test
+    public void setClimbPrivacyCentre_storesAndSurvivesResync() throws Exception {
+        StoredRoute r1 = new StoredRoute();
+        r1.routeId = "r1"; r1.name = "R";
+        repo.saveRoute(r1, points(), Collections.singletonList(climb()));
+        repo.setClimbHome("r1", 0, true);
+        repo.setClimbPrivacyCentre("r1", 0, 50.0012, 5.0034);
+
+        StoredRoute r2 = new StoredRoute();
+        r2.routeId = "r1"; r2.name = "R";
+        repo.saveRoute(r2, points(), Collections.singletonList(climb()));
+
+        StoredClimb c = repo.loadRoute("r1").climbs.get(0);
+        assertEquals(50.0012, c.privacyCentreLat, 0.0);
+        assertEquals(5.0034, c.privacyCentreLon, 0.0);
     }
 
     @Test

@@ -46,8 +46,8 @@ public final class SettingsViewModel extends AndroidViewModel {
         syncMode.postValue(prefs.getString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_ROUTE));
         int r = prefs.getInt(RouteSyncWorker.PREF_RADIUS_M, 30_000) / 1000;
         radiusKm.postValue(r);
-        privacyRadiusM.postValue(prefs.getInt(
-                CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M));
+        privacyRadiusM.postValue(CoordinateFuzzer.effectiveRadius(prefs.getInt(
+                CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M)));
         riderProfile.postValue(riderRepo.load());
     }
 
@@ -64,7 +64,8 @@ public final class SettingsViewModel extends AndroidViewModel {
     }
 
     /** Privacy-zone radius (issue #92) for fuzzing home-climb start locations on export. */
-    public void setPrivacyRadiusM(int meters) {
+    public void setPrivacyRadiusM(int requestedMeters) {
+        int meters = CoordinateFuzzer.effectiveRadius(requestedMeters);
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, meters).apply();
         privacyRadiusM.postValue(meters);

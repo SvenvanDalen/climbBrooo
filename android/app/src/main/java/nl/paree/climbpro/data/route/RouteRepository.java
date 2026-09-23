@@ -191,6 +191,22 @@ public final class RouteRepository {
     }
 
     /**
+     * Stores a home climb's privacy-zone centre (issue #92), so every later export reuses the
+     * same centre. Out-of-range indices are silently skipped, matching {@link #setClimbHome}.
+     */
+    public void setClimbPrivacyCentre(String routeId, int climbIndex, double lat, double lon)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            StoredClimb c = route.climbs.get(climbIndex);
+            c.privacyCentreLat = lat;
+            c.privacyCentreLon = lon;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
      * Renames multiple climbs in one load/write cycle, for the bulk rename screen. Out-of-range
      * indices (including negatives) are silently skipped, matching {@link #renameClimb}. A blank
      * name clears {@code userDisplayName} back to null so the climb falls back to its auto name.
@@ -286,6 +302,8 @@ public final class RouteRepository {
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
             if (f.name == null && p.name != null) f.name = p.name;
             f.isHome = p.isHome;
+            f.privacyCentreLat = p.privacyCentreLat;
+            f.privacyCentreLon = p.privacyCentreLon;
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
                 for (int i = 0; i < n; i++) {
