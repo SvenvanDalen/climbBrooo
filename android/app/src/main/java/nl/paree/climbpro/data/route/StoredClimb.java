@@ -29,4 +29,13 @@ public final class StoredClimb {
      * on the fly rather than treating null as a real category.
      */
     public String shape;
+    /**
+     * Manually-entered world-record/pro reference time in seconds (issue #59), e.g.
+     * Pogačar's Alpe d'Huez time. Null when unset. Distributed across segments by
+     * {@code ManualRefTimePlanner} and fed into the same wire {@code refsec} field as
+     * the rider's own PR, taking priority over it when set.
+     */
+    public Integer manualRefSec;
+    /** Short label shown alongside {@link #manualRefSec}, e.g. "Pogačar 2024". Null when unset. */
+    public String manualRefLabel;
 }
