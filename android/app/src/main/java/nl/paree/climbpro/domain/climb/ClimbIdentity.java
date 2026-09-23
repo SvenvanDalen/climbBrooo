@@ -1,5 +1,7 @@
 package nl.paree.climbpro.domain.climb;
 
+import nl.paree.climbpro.data.route.StoredClimb;
+
 /**
  * Route-independent identity for a climb, so the same climb appearing in several
  * routes collapses onto one logbook record. Built from the climb start coordinate
@@ -50,5 +52,28 @@ public final class ClimbIdentity {
         long lonBucket = Math.round(startLon / COORD_BUCKET_DEG);
         long lenBucket = Math.round(lengthM / LENGTH_BUCKET_M);
         return latBucket + ":" + lonBucket + ":" + lenBucket;
+    }
+
+    /**
+     * Same as {@link #of(double, double, int)}, but takes a {@link StoredClimb} directly and
+     * applies the shared "effective length" fallback (stored length if present, else
+     * end-minus-start distance). Callers that need a climb's identity key from a
+     * {@code StoredClimb} MUST go through this overload rather than re-deriving the fallback
+     * themselves — a divergent copy of this fallback computes a different key and silently
+     * breaks climb/route lookups. See {@link KnownClimbs#fromRoute}.
+     */
+    public static String of(StoredClimb c) {
+        return of(c.startLat, c.startLon, effectiveLength(c));
+    }
+
+    /**
+     * The "effective length" fallback shared by {@link #of(StoredClimb)}: the stored climb
+     * length if present, else the end-minus-start distance. Exposed separately so callers
+     * that need this length for something other than the identity key (e.g. display/UI code)
+     * can reuse the exact same computation instead of keeping their own copy of the ternary,
+     * which would risk silently diverging from the value {@link #of(StoredClimb)} uses.
+     */
+    public static int effectiveLength(StoredClimb c) {
+        return c.length > 0 ? c.length : (c.endDistance - c.startDistance);
     }
 }

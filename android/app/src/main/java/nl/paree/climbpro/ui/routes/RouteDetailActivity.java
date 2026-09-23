@@ -122,6 +122,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
         binding.btnBulkRenameClimbs.setOnClickListener(v ->
                 startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));
+        binding.btnTirePressure.setOnClickListener(v -> {
+            StoredRoute r = viewModel.route().getValue();
+            if (r != null) TirePressureAdviceDialog.show(this, r);
+        });
 
         viewModel.loadRoute(routeId);
     }

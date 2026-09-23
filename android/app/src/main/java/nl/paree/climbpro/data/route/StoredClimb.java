@@ -30,6 +30,15 @@ public final class StoredClimb {
      */
     public String shape;
     /**
+     * Manually-entered world-record/pro reference time in seconds (issue #59), e.g.
+     * Pogačar's Alpe d'Huez time. Null when unset. Distributed across segments by
+     * {@code ManualRefTimePlanner} and fed into the same wire {@code refsec} field as
+     * the rider's own PR, taking priority over it when set.
+     */
+    public Integer manualRefSec;
+    /** Short label shown alongside {@link #manualRefSec}, e.g. "Pogačar 2024". Null when unset. */
+    public String manualRefLabel;
+    /**
      * User-marked "thuisklim" (home climb, issue #92). Phone-only privacy flag: when true,
      * {@code ClimbGpxWriter} obscures the start location on export/share. Never sent to the
      * watch and never affects matching, PR calculation or any other internal logic — those
