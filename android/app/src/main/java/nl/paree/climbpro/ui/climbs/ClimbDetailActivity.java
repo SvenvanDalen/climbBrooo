@@ -121,13 +121,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
             String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
             binding.toolbar.setTitle(name != null ? name : "Climb " + (climbIndex + 1));
+            String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
             String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(climb);
-            String categorySuffix = categoryLabel.isEmpty() ? "" : " · " + categoryLabel;
-            binding.climbStats.setText(String.format(
-                    "%d m total · %.1f%% avg gradient · %d m elevation gain · %s%s",
+            String statsText = String.format(
+                    "%d m total · %.1f%% avg gradient · %d m elevation gain · %s",
                     climb.length, climb.avgGradient * 100, climb.elevationGain,
-                    nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb),
-                    categorySuffix));
+                    nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb));
+            if (!categoryLabel.isEmpty()) {
+                statsText += " · " + categoryLabel;
+            }
+            if (!surfaceLabel.isEmpty()) {
+                statsText += " · " + surfaceLabel;
+            }
+            binding.climbStats.setText(statsText);
             binding.climbProfile.setSegments(climb.segments);
             adapter.setItems(climb.segments);
 

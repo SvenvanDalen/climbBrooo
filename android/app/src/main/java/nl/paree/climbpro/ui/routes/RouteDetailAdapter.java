@@ -162,8 +162,13 @@ public final class RouteDetailAdapter
                 .score(c.elevationGain, c.avgGradient, distanceIntoRouteKm);
         String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(c);
         String categorySuffix = categoryLabel.isEmpty() ? "" : "  ·  " + categoryLabel;
-        h.statsView.setText(String.format("%d m · %.1f%% gem. · %d m hoogte · moeilijkheid %.0f%s",
-                c.length, c.avgGradient * 100, c.elevationGain, difficulty, categorySuffix));
+        String statsText = String.format("%d m · %.1f%% gem. · %d m hoogte · moeilijkheid %.0f%s",
+                c.length, c.avgGradient * 100, c.elevationGain, difficulty, categorySuffix);
+        String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(c);
+        if (!surfaceLabel.isEmpty()) {
+            statsText += " · " + surfaceLabel;
+        }
+        h.statsView.setText(statsText);
         if (climbTargetSeconds != null && climbIndex < climbTargetSeconds.length
                 && climbTargetSeconds[climbIndex] >= 0) {
             h.statsView.setText(h.statsView.getText() + "  ·  ⏱ "

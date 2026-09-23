@@ -64,6 +64,13 @@ public final class ClimbConstants {
      * more than simplification jitter alone.
      */
     public static final double DUPLICATE_CLIMB_MATCH_RADIUS_M = 150.0;
+    /**
+     * Minimum share (fraction of known-surface distance) either the paved or the unpaved
+     * group must fall below for a climb to still count as purely PAVED/GRAVEL. If both groups
+     * meet or exceed this minority share, or the climb has segments explicitly tagged MIXED,
+     * the climb is classified MIXED instead. Used by {@link ClimbSurfaceClassifier}.
+     */
+    public static final double SURFACE_MIXED_MINORITY_FRACTION = 0.2;
 
     /**
      * Max distance (metres) between the start coordinates of two already-STORED climbs
