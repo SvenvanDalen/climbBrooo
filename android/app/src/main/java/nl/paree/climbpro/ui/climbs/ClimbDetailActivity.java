@@ -191,8 +191,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
                         + String.format(java.util.Locale.getDefault(), "%02d", row.deltaToPrSec % 60);
                 String badge = row.bestOfYear ? "  🏆 Beste van dit jaar" : "";
+                String deviationBadge = row.routeDeviation
+                        ? "  ⚠️ Afwijkende route (niet meegeteld voor PR)" : "";
                 tv.setText(String.format(java.util.Locale.getDefault(),
-                        "%s   %d:%02d   (%s)%s", date, m, s, delta, badge));
+                        "%s   %d:%02d   (%s)%s%s", date, m, s, delta, badge, deviationBadge));
                 rowLayout.addView(tv);
 
                 if (row.note != null && !row.note.isEmpty()) {

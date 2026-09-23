@@ -31,6 +31,8 @@ public final class BestOfYearCalculator {
      *         that year's most recent attempt is tied-or-faster than every other attempt of
      *         that climb dated within the same calendar year. False for unknown climbs, empty
      *         attempt lists, or when no attempt for this climb falls in the current year.
+     *         Attempts flagged {@link StoredClimbAttempt#routeDeviation} are ignored entirely
+     *         (issue #77) — a deviated attempt can never earn or block this badge.
      */
     public static boolean isMostRecentBestOfYear(
             String climbId, List<StoredClimbAttempt> attempts, long nowEpochSec, ZoneId zone) {
@@ -43,6 +45,7 @@ public final class BestOfYearCalculator {
 
         for (StoredClimbAttempt a : attempts) {
             if (!climbId.equals(a.climbId)) continue;
+            if (a.routeDeviation) continue;
             if (yearOf(a.dateEpochSec, zone) != currentYear) continue;
 
             if (a.elapsedSec < bestElapsedThisYear) bestElapsedThisYear = a.elapsedSec;
@@ -61,7 +64,9 @@ public final class BestOfYearCalculator {
         return isMostRecentBestOfYear(climbId, attempts, nowEpochSec, ZoneId.systemDefault());
     }
 
-    private static int yearOf(long epochSec, ZoneId zone) {
+    /** Package-visible so {@link LogbookCalculator} can locate the exact attempt this badge
+     *  applies to, using the same calendar-year rule as {@link #isMostRecentBestOfYear}. */
+    static int yearOf(long epochSec, ZoneId zone) {
         return Instant.ofEpochSecond(epochSec).atZone(zone).getYear();
     }
 }

@@ -132,6 +132,89 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(1, created);
         assertEquals(1, attemptRepo.loadAll().size());
         assertEquals(300, attemptRepo.loadAll().get(0).elapsedSec);
+        assertEquals(false, attemptRepo.loadAll().get(0).routeDeviation);
+    }
+
+    /** A climb with calibration points straight along the known line, for deviation checks. */
+    private void seedRouteWithCalibratedClimb() throws Exception {
+        StoredRoute route = new StoredRoute();
+        route.routeId    = "r1";
+        route.lats       = new double[]{45.000, 45.009};
+        route.lons       = new double[]{6.0,    6.0};
+        route.elevations = new double[]{100,    200};
+        route.distances  = new double[]{0,      1000};
+        StoredClimb c = new StoredClimb();
+        c.startDistance = 0; c.endDistance = 1000; c.length = 1000;
+        c.startLat = 45.000; c.startLon = 6.0;
+        c.segments = Collections.emptyList();
+
+        nl.paree.climbpro.data.route.StoredCalibrationPoint p1 =
+                new nl.paree.climbpro.data.route.StoredCalibrationPoint();
+        p1.distanceFromClimbStart = 0; p1.lat = 45.000; p1.lon = 6.0;
+        nl.paree.climbpro.data.route.StoredCalibrationPoint p2 =
+                new nl.paree.climbpro.data.route.StoredCalibrationPoint();
+        p2.distanceFromClimbStart = 1000; p2.lat = 45.009; p2.lon = 6.0;
+        c.calibrationPoints = Arrays.asList(p1, p2);
+
+        route.climbs = Collections.singletonList(c);
+
+        File dir = new File(app.getFilesDir(), "routes");
+        dir.mkdirs();
+        new ObjectMapper().writeValue(new File(dir, "r1.json"), route);
+
+        nl.paree.climbpro.data.route.RouteCatalogEntry entry =
+                new nl.paree.climbpro.data.route.RouteCatalogEntry();
+        entry.routeId = "r1";
+        new ObjectMapper().writeValue(
+                new File(app.getFilesDir(), "catalog.json"),
+                new nl.paree.climbpro.data.route.RouteCatalogEntry[]{entry});
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubActivityWithCornerCuttingTrack() throws Exception {
+        StravaActivityDto act = new StravaActivityDto();
+        act.id = 555L; act.type = "Ride"; act.startDate = "2026-03-01T08:00:00Z";
+
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Collections.singletonList(act)));
+        Call<List<StravaActivityDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(new ArrayList<>()));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listActivities(anyString(), anyLong(), eq(2), anyInt())).thenReturn(page2);
+
+        // Track veers ~95m east of the known straight line for a sustained (two-sample)
+        // stretch in the middle of the climb, then rejoins — past MAX_DEVIATION_M (75m),
+        // while total covered distance (~1052m) still stays within the matcher's length
+        // tolerance around the 1000m climb.
+        StravaStreamsDto streams = new StravaStreamsDto();
+        streams.latlng = new StravaStreamsDto.LatLngStream();
+        streams.latlng.data = Arrays.asList(
+                Arrays.asList(45.000,  6.0),
+                Arrays.asList(45.003,  6.0),
+                Arrays.asList(45.0045, 6.0012),
+                Arrays.asList(45.006,  6.0012),
+                Arrays.asList(45.0075, 6.0),
+                Arrays.asList(45.009,  6.0));
+        streams.time = new StravaStreamsDto.TimeStream();
+        streams.time.data = Arrays.asList(0, 150, 225, 300, 375, 450);
+
+        Call<StravaStreamsDto> streamCall = mock(Call.class);
+        when(streamCall.execute()).thenReturn(Response.success(streams));
+        when(api.getStreams(anyString(), eq(555L), anyString())).thenReturn(streamCall);
+    }
+
+    @Test
+    public void sync_cornerCuttingTrack_flagsRouteDeviation() throws Exception {
+        seedRouteWithCalibratedClimb();
+        stubActivityWithCornerCuttingTrack();
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        int created = repo.syncActivities();
+
+        assertEquals(1, created);
+        assertEquals(1, attemptRepo.loadAll().size());
+        assertEquals(true, attemptRepo.loadAll().get(0).routeDeviation);
     }
 
     @Test

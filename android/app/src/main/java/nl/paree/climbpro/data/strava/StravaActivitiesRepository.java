@@ -15,6 +15,7 @@ import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample;
 import nl.paree.climbpro.domain.matching.ClimbEntryOnlyDetector;
+import nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -178,29 +179,30 @@ public final class StravaActivitiesRepository {
 
             long dateSec = parseStartDate(act.startDate);
             for (KnownClimb k : climbs) {
-                // matchAll finds every valid ascent in the track, not just the first —
+                // matchAllPasses finds every valid ascent in the track, not just the first —
                 // an out-and-back or loop route can pass over the same climb more than
                 // once in a single activity, and each pass should be logged separately.
-                List<Integer> elapsedPasses = ClimbAttemptMatcher.matchAll(
-                        track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
-                List<int[]> segPasses = ClimbAttemptMatcher.matchAllSegments(
+                List<ClimbAttemptMatcher.PassResult> passes = ClimbAttemptMatcher.matchAllPasses(
                         track, k.startLat, k.startLon, k.endLat, k.endLon,
                         k.lengthM, k.segLengthsM);
-                for (int i = 0; i < elapsedPasses.size(); i++) {
+                for (int i = 0; i < passes.size(); i++) {
+                    ClimbAttemptMatcher.PassResult p = passes.get(i);
                     StoredClimbAttempt a = new StoredClimbAttempt();
                     a.climbId      = k.climbId;
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
-                    a.elapsedSec   = elapsedPasses.get(i);
+                    a.elapsedSec   = p.elapsedSec;
                     a.passIndex    = i;
-                    a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
+                    a.segSplitSec  = p.segSplitSec;
+                    a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
+                            track, p.entryIdx, p.exitIdx, k.calibLats, k.calibLons);
                     out.add(a);
                 }
 
                 // Only run entry-only detection when this climb had zero successful passes
                 // in this activity — a climb ridden successfully isn't "never completed",
                 // even if the rider also looped back over the start gate afterwards.
-                if (elapsedPasses.isEmpty()) {
+                if (passes.isEmpty()) {
                     int distanceCovered = ClimbEntryOnlyDetector.detectIncomplete(
                             track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
                     if (distanceCovered >= 0) {
