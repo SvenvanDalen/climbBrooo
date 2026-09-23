@@ -18,7 +18,6 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Progress;
-import nl.paree.climbpro.ui.settings.SettingsViewModel;
 
 import java.util.Locale;
 
@@ -29,7 +28,6 @@ import java.util.Locale;
 public final class ElevationGoalActivity extends AppCompatActivity {
 
     private ElevationGoalViewModel viewModel;
-    private SettingsViewModel settingsViewModel;
     private TextView weekProgressText;
     private TextView monthProgressText;
     private LinearProgressIndicator weekProgressBar;
@@ -47,6 +45,7 @@ public final class ElevationGoalActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
 
         weekProgressText = findViewById(R.id.weekProgressText);
@@ -59,7 +58,6 @@ public final class ElevationGoalActivity extends AppCompatActivity {
         setGoalButton.setOnClickListener(v -> showSetGoalDialog());
 
         viewModel = new ViewModelProvider(this).get(ElevationGoalViewModel.class);
-        settingsViewModel = new ViewModelProvider(this).get(SettingsViewModel.class);
         viewModel.weekProgress().observe(this, this::renderWeek);
         viewModel.monthProgress().observe(this, this::renderMonth);
         viewModel.load();
@@ -97,8 +95,7 @@ public final class ElevationGoalActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Opslaan", (d, w) -> {
                     int metres = parseIntOrZero(input.getText().toString());
-                    settingsViewModel.setElevationGoalWeeklyM(metres);
-                    viewModel.load();
+                    viewModel.setWeeklyGoalM(metres);
                 })
                 .setNegativeButton("Annuleren", null)
                 .show();

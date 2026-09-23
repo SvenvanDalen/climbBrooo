@@ -18,7 +18,6 @@ import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Period;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Progress;
-import nl.paree.climbpro.ui.settings.SettingsViewModel;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,14 +29,15 @@ import java.util.concurrent.Executors;
  * Issue #42: elevation-gain goal per week/month, tracked against attempts synced so far.
  * Phone-only, no wire-format impact — see {@link ElevationGoalCalculator}.
  *
- * <p>The weekly goal is the one user-configured setting ({@code SettingsViewModel}'s
- * {@code PREF_ELEVATION_GOAL_WEEKLY_M}); the monthly view derives its goal as 4x the weekly
- * goal (a simple, explainable approximation of ~4.3 weeks/month) rather than adding a second
+ * <p>The weekly goal is the one user-configured setting ({@link #PREF_ELEVATION_GOAL_WEEKLY_M});
+ * the monthly view derives its goal from it, scaled to the current month's length (see
+ * {@link ElevationGoalCalculator#monthlyGoalFromWeekly}), rather than adding a second
  * independent setting.
  */
 public final class ElevationGoalViewModel extends AndroidViewModel {
 
-    private static final int WEEKS_PER_MONTH_APPROX = 4;
+    /** Issue #42: weekly elevation-gain training goal, in metres. 0 means "not set". */
+    public static final String PREF_ELEVATION_GOAL_WEEKLY_M = "elevation_goal_weekly_m";
 
     private final RouteRepository routeRepo;
     private final ClimbAttemptRepository attemptRepo;
@@ -55,11 +55,19 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
     public LiveData<Progress> weekProgress()  { return weekProgress; }
     public LiveData<Progress> monthProgress() { return monthProgress; }
 
+    /** @param metres 0 clears the goal ("not set"). Reloads progress afterwards. */
+    public void setWeeklyGoalM(int metres) {
+        PreferenceManager.getDefaultSharedPreferences(getApplication())
+                .edit().putInt(PREF_ELEVATION_GOAL_WEEKLY_M, Math.max(0, metres)).apply();
+        load();
+    }
+
     public void load() {
         executor.execute(() -> {
             int weeklyGoalM = PreferenceManager.getDefaultSharedPreferences(getApplication())
-                    .getInt(SettingsViewModel.PREF_ELEVATION_GOAL_WEEKLY_M, 0);
-            int monthlyGoalM = weeklyGoalM * WEEKS_PER_MONTH_APPROX;
+                    .getInt(PREF_ELEVATION_GOAL_WEEKLY_M, 0);
+            int monthlyGoalM = ElevationGoalCalculator.monthlyGoalFromWeekly(
+                    weeklyGoalM, java.time.LocalDate.now());
 
             List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
             Map<String, Integer> elevationByClimbId = resolveElevationGains();

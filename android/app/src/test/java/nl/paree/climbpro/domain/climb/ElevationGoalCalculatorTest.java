@@ -133,4 +133,14 @@ public class ElevationGoalCalculatorTest {
         Progress p = new Progress(4000, 3000);
         assertTrue(p.fraction() > 1.0);
     }
+
+    @Test
+    public void monthlyGoalScalesWithMonthLength() {
+        assertEquals(4000, ElevationGoalCalculator.monthlyGoalFromWeekly(1000,
+                java.time.LocalDate.of(2026, 2, 10)));  // 28 days = exactly 4 weeks
+        assertEquals(4429, ElevationGoalCalculator.monthlyGoalFromWeekly(1000,
+                java.time.LocalDate.of(2026, 7, 10)));  // 31 days
+        assertEquals(0, ElevationGoalCalculator.monthlyGoalFromWeekly(0,
+                java.time.LocalDate.of(2026, 7, 10)));
+    }
 }

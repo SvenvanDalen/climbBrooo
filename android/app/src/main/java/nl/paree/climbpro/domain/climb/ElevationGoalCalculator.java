@@ -95,6 +95,16 @@ public final class ElevationGoalCalculator {
         return period == Period.WEEK ? start.plusDays(7) : start.plusMonths(1);
     }
 
+    /**
+     * Monthly goal implied by a weekly goal for the month containing {@code referenceDate}:
+     * the weekly goal per day times the month's length, so hitting the weekly goal every week
+     * lands exactly on the monthly goal (a flat 4x would be 7-11% too low).
+     */
+    public static int monthlyGoalFromWeekly(int weeklyGoalM, LocalDate referenceDate) {
+        if (weeklyGoalM <= 0) return 0;
+        return (int) Math.round(weeklyGoalM * referenceDate.lengthOfMonth() / 7.0);
+    }
+
     /** Number of whole/partial days elapsed so far in the period, for pace displays (1-based). */
     public static long daysElapsedInPeriod(LocalDate referenceDate, Period period) {
         return ChronoUnit.DAYS.between(periodStart(referenceDate, period), referenceDate) + 1;
