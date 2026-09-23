@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ClimbNameSuggester;
 import nl.paree.climbpro.domain.climb.ClimbShapeClassifier;
 import nl.paree.climbpro.domain.route.RoutePoint;
@@ -26,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * JSON-file persistence for routes.
@@ -101,7 +104,6 @@ public final class RouteRepository {
         route.lons       = toDoubleArray(points, "lon");
         route.elevations = toDoubleArray(points, "ele");
         route.distances  = toDoubleArray(points, "dist");
-        route.climbs     = toStoredClimbs(climbs);
         // Load existing stored data once to preserve user customisation (renames, surface types).
         // A single read avoids the TOCTOU race that three separate reads created.
         StoredRoute prev = loadPreviousRoute(route.routeId);
@@ -113,13 +115,27 @@ public final class RouteRepository {
                 ? prev.surfaceSections : Collections.emptyList();
         List<StoredStarredSegment> prevStarred  = prev != null && prev.starredSegments != null
                 ? prev.starredSegments : Collections.emptyList();
+        List<String> prevRemovedClimbIds = prev != null && prev.removedClimbIds != null
+                ? prev.removedClimbIds : Collections.emptyList();
+        // Carry the tombstone list forward across resync so a user-confirmed merge/removal
+        // (recorded by removeClimb) stays removed even after fresh re-detection below.
+        route.removedClimbIds = new ArrayList<>(prevRemovedClimbIds);
+        // Filter the freshly (re-)detected climbs against the tombstone list BEFORE deriving
+        // BOTH route.climbs and the flat-segment coverage from them, so a merged-away climb's
+        // distance range is consistently treated as "not a climb" by both. Previously
+        // FlatSegmentDetector was fed the raw, unfiltered `climbs` list, so it saw the
+        // tombstoned climb as still climb-covered and skipped emitting a flat segment for it —
+        // leaving a silent gap in the route (missing from both route.climbs AND
+        // route.flatSegments) after a merge survived a resync.
+        List<Climb> filteredClimbs = filterOutTombstonedClimbs(
+                climbs != null ? climbs : Collections.<Climb>emptyList(), route.removedClimbIds);
+        route.climbs = toStoredClimbs(filteredClimbs);
         mergePreviousClimbUserData(route.climbs, prevClimbs);
         fillMissingClimbNames(route.climbs);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
                 : 0;
-        List<FlatSegment> flatDomain = FlatSegmentDetector.detect(
-                routeLength, climbs != null ? climbs : Collections.emptyList());
+        List<FlatSegment> flatDomain = FlatSegmentDetector.detect(routeLength, filteredClimbs);
         List<RoutePoint> pts = points != null ? points : Collections.emptyList();
         route.flatSegments    = toStoredFlatSegments(flatDomain, pts, prevFlats);
         route.surfaceSections = new ArrayList<>(prevSections);
@@ -131,7 +147,10 @@ public final class RouteRepository {
 
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(route.routeId));
-        catalog.add(toCatalogEntry(route, points, climbs));
+        // Build the catalog entry from route.climbs (post-tombstone-filter) rather than the raw
+        // freshly detected `climbs` param, so a merged-away climb doesn't reappear in the
+        // catalog's climbCount/climbStartCoords (the latter drives radius-mode matching).
+        catalog.add(toCatalogEntry(route, points));
         saveCatalog(catalog);
     }
 
@@ -225,6 +244,101 @@ public final class RouteRepository {
         }
     }
 
+    /**
+     * Removes one climb from a route (near-duplicate merge, issue #76), leaving every other
+     * climb and all other route data untouched. Updates the catalog's climbCount,
+     * climbStartCoords and surfaceTypes so radius-mode queries and route listings stay
+     * consistent; the bbox is left as-is since removing one climb never changes it.
+     * Out-of-range indices are ignored.
+     */
+    public void removeClimb(String routeId, int climbIndex) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
+            Log.w(TAG, "removeClimb: index out of range: " + climbIndex);
+            return;
+        }
+        StoredClimb removed = route.climbs.remove(climbIndex);
+        // Tombstone the removed climb's identity so a later Strava resync's fresh re-detection
+        // (see saveRoute/filterOutTombstonedClimbs) doesn't silently reintroduce it.
+        String removedId = ClimbIdentity.of(removed.startLat, removed.startLon, removed.length);
+        if (route.removedClimbIds == null) route.removedClimbIds = new ArrayList<>();
+        if (!route.removedClimbIds.contains(removedId)) route.removedClimbIds.add(removedId);
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        rebuildCatalogAfterClimbRemoval(routeId, route);
+    }
+
+    /**
+     * Returns {@code climbs} with any freshly (re-)detected climb removed whose
+     * {@link ClimbIdentity} matches an entry in {@code removedIds} — the durable record of
+     * climbs the user explicitly removed (see {@link StoredRoute#removedClimbIds}). Called from
+     * {@link #saveRoute} so a Strava resync's from-scratch re-detection respects a prior
+     * merge/removal decision. The result feeds BOTH {@code route.climbs} and
+     * {@link FlatSegmentDetector#detect}, so a tombstoned climb's distance range is consistently
+     * treated as non-climb-covered in both, rather than leaving a route-coverage gap.
+     */
+    private static List<Climb> filterOutTombstonedClimbs(List<Climb> climbs, List<String> removedIds) {
+        if (climbs == null || climbs.isEmpty() || removedIds == null || removedIds.isEmpty()) {
+            return climbs != null ? climbs : Collections.<Climb>emptyList();
+        }
+        Set<String> removedSet = new HashSet<>(removedIds);
+        List<Climb> result = new ArrayList<>(climbs.size());
+        for (Climb c : climbs) {
+            if (!removedSet.contains(ClimbIdentity.of(c.startLat, c.startLon, c.length))) {
+                result.add(c);
+            }
+        }
+        return result;
+    }
+
+    private void rebuildCatalogAfterClimbRemoval(String routeId, StoredRoute route) throws IOException {
+        List<RouteCatalogEntry> catalog = loadCatalog();
+        for (RouteCatalogEntry e : catalog) {
+            if (e.routeId.equals(routeId)) {
+                List<StoredClimb> climbs = route.climbs;
+                e.climbCount = climbs != null ? climbs.size() : 0;
+                if (climbs != null && !climbs.isEmpty()) {
+                    double[] coords = new double[climbs.size() * 2];
+                    for (int i = 0; i < climbs.size(); i++) {
+                        coords[i * 2]     = climbs.get(i).startLat;
+                        coords[i * 2 + 1] = climbs.get(i).startLon;
+                    }
+                    e.climbStartCoords = coords;
+                } else {
+                    e.climbStartCoords = null;
+                }
+                e.surfaceTypes   = computeSurfaceTypes(route);
+                e.lastModifiedMs = route.lastModifiedMs;
+                break;
+            }
+        }
+        saveCatalog(catalog);
+    }
+
+    /**
+     * Sets or clears a climb's manually-entered WR/pro reference time (issue #59). A null
+     * or non-positive {@code refSec} clears both fields; otherwise a blank/whitespace-only
+     * label is normalised to null. Distributed across segments and synced to the watch via
+     * the existing refsec field by {@code ManualRefTimePlanner}/{@code CombinedRefTimePlanner}.
+     */
+    public void setManualRefTime(String routeId, int climbIndex, Integer refSec, String label)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            StoredClimb c = route.climbs.get(climbIndex);
+            if (refSec == null || refSec <= 0) {
+                c.manualRefSec = null;
+                c.manualRefLabel = null;
+            } else {
+                c.manualRefSec = refSec;
+                String trimmed = label != null ? label.trim() : "";
+                c.manualRefLabel = trimmed.isEmpty() ? null : trimmed;
+            }
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
     public void saveNotes(String routeId, String notes) throws IOException {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;
@@ -280,11 +394,11 @@ public final class RouteRepository {
     }
 
     /**
-     * Copies user-supplied climb data (display-name rename + shape-tag override + per-segment
-     * surface type) from a route's previous climbs onto the freshly detected ones, matching
-     * climbs by start distance. Per-segment surface is copied by index — segment counts are
-     * stable for unchanged geometry — and only non-UNKNOWN values overwrite, so re-detection
-     * never erases a user's customisation.
+     * Copies user-supplied climb data (display-name rename, shape-tag override, manual WR/pro
+     * reference time, and per-segment surface type) from a route's previous climbs onto the
+     * freshly detected ones, matching climbs by start distance. Per-segment surface is copied
+     * by index — segment counts are stable for unchanged geometry — and only non-UNKNOWN
+     * values overwrite, so re-detection never erases a user's customisation.
      */
     private static void mergePreviousClimbUserData(List<StoredClimb> fresh,
                                                    List<StoredClimb> previous) {
@@ -297,6 +411,10 @@ public final class RouteRepository {
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
             if (p.shapeOverride != null) f.shapeOverride = p.shapeOverride;
             if (f.name == null && p.name != null) f.name = p.name;
+            if (p.manualRefSec != null) {
+                f.manualRefSec = p.manualRefSec;
+                f.manualRefLabel = p.manualRefLabel;
+            }
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
                 for (int i = 0; i < n; i++) {
@@ -470,8 +588,8 @@ public final class RouteRepository {
         return new double[]{best.lat, best.lon};
     }
 
-    private static RouteCatalogEntry toCatalogEntry(
-            StoredRoute route, List<RoutePoint> points, List<Climb> climbs) {
+    private static RouteCatalogEntry toCatalogEntry(StoredRoute route, List<RoutePoint> points) {
+        List<StoredClimb> climbs = route.climbs;
         RouteCatalogEntry e = new RouteCatalogEntry();
         e.routeId         = route.routeId;
         e.name            = route.name;
