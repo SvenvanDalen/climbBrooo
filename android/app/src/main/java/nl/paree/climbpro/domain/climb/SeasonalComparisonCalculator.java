@@ -31,7 +31,11 @@ import java.util.List;
  *       the issue's literal phrasing ("vorig jaar") rather than an all-time-best comparison.</li>
  *   <li>Within the chosen window, the fastest attempt is used (a rider may have ridden the
  *       climb more than once in that window).</li>
- *   <li>Undated attempts (start date failed to parse) are ignored.</li>
+ *   <li>Undated attempts (start date failed to parse) and attempts without a positive
+ *       elapsed time are ignored.</li>
+ *   <li>Attempts flagged {@link StoredClimbAttempt#routeDeviation} are ignored entirely
+ *       (issue #77), both as "this climb" and as the prior-year reference — a shortcut or
+ *       detour would make the percentage meaningless.</li>
  * </ul>
  *
  * Pure presentation/derivation logic over {@link StoredClimbAttempt}, same layer as
@@ -76,7 +80,7 @@ public final class SeasonalComparisonCalculator {
         StoredClimbAttempt mostRecent = null;
         long oldestEpochSec = Long.MAX_VALUE;
         for (StoredClimbAttempt a : attempts) {
-            if (!isDatedAttemptOf(climbId, a)) continue;
+            if (!isComparableAttemptOf(climbId, a)) continue;
             if (a.dateEpochSec < oldestEpochSec) oldestEpochSec = a.dateEpochSec;
             if (isMoreRecent(a, mostRecent)) mostRecent = a;
         }
@@ -94,7 +98,7 @@ public final class SeasonalComparisonCalculator {
 
             StoredClimbAttempt best = null;
             for (StoredClimbAttempt a : attempts) {
-                if (!isDatedAttemptOf(climbId, a)) continue;
+                if (!isComparableAttemptOf(climbId, a)) continue;
                 long daysOff = ChronoUnit.DAYS.between(
                         anniversary, localDate(a.dateEpochSec, zone));
                 if (Math.abs(daysOff) > windowDays) continue;
@@ -111,9 +115,13 @@ public final class SeasonalComparisonCalculator {
         return null; // no attempt found in any prior anniversary window
     }
 
-    /** Attempts with no parseable start date (epoch <= 0) can't be placed in a season. */
-    private static boolean isDatedAttemptOf(String climbId, StoredClimbAttempt a) {
-        return a != null && climbId.equals(a.climbId) && a.dateEpochSec > 0;
+    /**
+     * Attempts with no parseable start date (epoch <= 0) can't be placed in a season; a
+     * non-positive elapsed time would divide by zero; deviated attempts aren't comparable.
+     */
+    private static boolean isComparableAttemptOf(String climbId, StoredClimbAttempt a) {
+        return a != null && climbId.equals(a.climbId) && a.dateEpochSec > 0
+                && a.elapsedSec > 0 && !a.routeDeviation;
     }
 
     /**

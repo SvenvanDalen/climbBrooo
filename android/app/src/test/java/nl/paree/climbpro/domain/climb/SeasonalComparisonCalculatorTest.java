@@ -199,6 +199,47 @@ public class SeasonalComparisonCalculatorTest {
     }
 
     @Test
+    public void deviatedPriorYearAttempt_isNotUsedAsReference() {
+        StoredClimbAttempt shortcut = at("k1", 1, epoch(2025, 6, 12), 300);
+        shortcut.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                shortcut,
+                at("k1", 2, epoch(2025, 6, 10), 700),
+                at("k1", 3, epoch(2026, 6, 15), 600));
+
+        SeasonalComparisonCalculator.Result r =
+                SeasonalComparisonCalculator.compare("k1", attempts, UTC, 21);
+
+        assertNotNull(r);
+        assertEquals(700, r.priorYearElapsedSec);
+    }
+
+    @Test
+    public void deviatedMostRecentAttempt_fallsBackToLatestCleanAttempt() {
+        StoredClimbAttempt detour = at("k1", 3, epoch(2026, 6, 20), 900);
+        detour.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2025, 6, 10), 700),
+                at("k1", 2, epoch(2026, 6, 15), 600),
+                detour);
+
+        SeasonalComparisonCalculator.Result r =
+                SeasonalComparisonCalculator.compare("k1", attempts, UTC, 21);
+
+        assertNotNull(r);
+        assertEquals(600, r.recentElapsedSec);
+    }
+
+    @Test
+    public void zeroElapsedPriorAttempt_isIgnoredInsteadOfDividingByZero() {
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2025, 6, 10), 0),
+                at("k1", 2, epoch(2026, 6, 15), 600));
+
+        assertNull(SeasonalComparisonCalculator.compare("k1", attempts, UTC, 21));
+    }
+
+    @Test
     public void defaultOverload_usesSystemZoneAndDefaultWindow() {
         List<StoredClimbAttempt> attempts = Arrays.asList(
                 at("k1", 1, epoch(2025, 6, 10), 700),
