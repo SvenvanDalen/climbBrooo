@@ -188,7 +188,7 @@ public final class RouteSyncWorker extends Worker {
                 }
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
-                int[][] refPlan = nl.paree.climbpro.service.RouteRefTimePlanner.plan(
+                int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
                         route, attemptRepo.loadAll());
                 byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan);
                 if (payload.length > PayloadBudget.MAX_BYTES) {

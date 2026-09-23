@@ -60,15 +60,34 @@ public final class SettingsActivity extends AppCompatActivity {
                             : nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT));
         });
 
+        // Issue #20: suggested FTP re-estimate from repeated climb performances. Shown
+        // only when computable and meaningfully different (SettingsViewModel gates this);
+        // tapping it explicitly saves the suggestion — it is never applied automatically.
+        viewModel.suggestedFtpWatts().observe(this, suggestion -> {
+            if (suggestion == null) {
+                binding.suggestedFtp.setVisibility(android.view.View.GONE);
+                return;
+            }
+            binding.suggestedFtp.setText("Voorgestelde FTP: " + suggestion + " W (toepassen?)");
+            binding.suggestedFtp.setVisibility(android.view.View.VISIBLE);
+        });
+        // Issue #20 fix: apply the suggestion using whatever is currently typed in the
+        // weight/bike/intensity fields (not the last-*saved* profile), exactly like a
+        // normal "Opslaan profiel" tap would — otherwise unsaved edits to those fields
+        // get silently reverted the moment the FTP suggestion is applied.
+        binding.suggestedFtp.setOnClickListener(v -> {
+            double rider = parseDoubleSafe(binding.inputRiderWeight.getText().toString());
+            double bike = parseDoubleSafe(binding.inputBikeWeight.getText().toString());
+            int intensity = currentRideIntensityPct();
+            viewModel.applySuggestedFtp(rider, bike, intensity);
+            Toast.makeText(this, "FTP bijgewerkt", Toast.LENGTH_SHORT).show();
+        });
+
         binding.btnSaveProfile.setOnClickListener(v -> {
             int ftp = parseIntSafe(binding.inputFtp.getText().toString());
             double rider = parseDoubleSafe(binding.inputRiderWeight.getText().toString());
             double bike = parseDoubleSafe(binding.inputBikeWeight.getText().toString());
-            int intensityRaw = parseIntSafe(binding.inputRideIntensity.getText().toString());
-            int intensity = intensityRaw <= 0
-                    ? nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT
-                    : Math.max(nl.paree.climbpro.domain.power.RiderProfile.RIDE_INTENSITY_MIN_PCT,
-                        Math.min(nl.paree.climbpro.domain.power.RiderProfile.RIDE_INTENSITY_MAX_PCT, intensityRaw));
+            int intensity = currentRideIntensityPct();
             viewModel.saveRiderProfile(ftp, rider, bike, intensity);
             Toast.makeText(this, "Profiel opgeslagen", Toast.LENGTH_SHORT).show();
         });
@@ -99,6 +118,15 @@ public final class SettingsActivity extends AppCompatActivity {
         });
 
         binding.btnSyncNow.setOnClickListener(v -> viewModel.syncNow());
+    }
+
+    /** Current ride-intensity field, normalized/clamped exactly like btnSaveProfile does. */
+    private int currentRideIntensityPct() {
+        int intensityRaw = parseIntSafe(binding.inputRideIntensity.getText().toString());
+        return intensityRaw <= 0
+                ? nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT
+                : Math.max(nl.paree.climbpro.domain.power.RiderProfile.RIDE_INTENSITY_MIN_PCT,
+                    Math.min(nl.paree.climbpro.domain.power.RiderProfile.RIDE_INTENSITY_MAX_PCT, intensityRaw));
     }
 
     private static int parseIntSafe(String s) {

@@ -48,7 +48,8 @@ public final class ClimbTimeEstimator {
         double durationGuess = totalDistance / INITIAL_GUESS_SPEED_MPS;
         for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
             double power = PowerDurationModel.sustainablePower(profile.ftpWatts, durationGuess);
-            double total = totalSecondsAtPower(segmentDistancesMeters, segmentGradients, crr, mass, power);
+            double total = PowerSpeedSolver.totalSecondsAtPower(
+                    segmentDistancesMeters, segmentGradients, crr, mass, power);
             if (Math.abs(total - durationGuess) < CONVERGENCE_SECONDS) {
                 durationGuess = total;
                 break;
@@ -79,15 +80,5 @@ public final class ClimbTimeEstimator {
             total += secs;
         }
         return new ClimbTimeEstimate(total, segSeconds, power);
-    }
-
-    private static double totalSecondsAtPower(int[] dist, double[] grad, double[] crr,
-                                              double mass, double power) {
-        double total = 0;
-        for (int i = 0; i < dist.length; i++) {
-            double v = PowerSpeedSolver.speedMetersPerSecond(power, mass, grad[i], crr[i]);
-            total += dist[i] / v;
-        }
-        return total;
     }
 }

@@ -42,6 +42,20 @@ public final class ClimbProApplication extends Application {
             android.util.Log.w("ClimbProApplication",
                     "WorkManager not initialised — skipping rebind schedule", e);
         }
+
+        // Best-effort cleanup of photo files orphaned by a process death between a photo
+        // write and its climb_attempts.json record being saved (see AttemptPhotoStore#
+        // cleanupOrphans). Off the main thread; failure here must never block startup.
+        new Thread(() -> {
+            try {
+                nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
+                        new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
+                nl.paree.climbpro.data.route.AttemptPhotoStore
+                        .cleanupOrphans(this, attemptRepo.loadAll());
+            } catch (Exception e) {
+                android.util.Log.w("ClimbProApplication", "Orphan photo cleanup failed", e);
+            }
+        }, "attempt-photo-cleanup").start();
     }
 
     /** App-scoped Connect IQ client. Reused by RouteSyncWorker — never construct your own. */

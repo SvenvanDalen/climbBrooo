@@ -106,6 +106,19 @@ public class RouteRepositoryReimportTest {
     }
 
     @Test
+    public void saveRoutePreservesSegmentManualTargetAcrossReimport() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setSegmentManualTargetSec("r1", 0, 1, 95);
+
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+
+        StoredRoute reloaded = repo.loadRoute("r1");
+        assertEquals("manual segment target must survive re-import",
+                Integer.valueOf(95), reloaded.climbs.get(0).segments.get(1).manualTargetSec);
+    }
+
+    @Test
     public void saveRoutePersistsClimbCalibrationPoints() throws Exception {
         RouteRepository repo = new RouteRepository(app);
 
