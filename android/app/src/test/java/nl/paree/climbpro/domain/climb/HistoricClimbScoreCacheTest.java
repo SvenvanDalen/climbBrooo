@@ -23,8 +23,8 @@ import java.util.List;
 /**
  * Verifies the caching behaviour that fixes the full-catalog rescan-on-every-open bug: a second
  * {@link HistoricClimbScoreCache#get} call must not re-scan the catalog (RouteRepository) unless
- * {@link HistoricClimbScoreCache#invalidate()} was called in between (e.g. after a resync/attempt
- * write, mirroring RouteRepository#saveRoute / ClimbAttemptRepository#append in production).
+ * the underlying data version changed (any catalog or attempts write) or
+ * {@link HistoricClimbScoreCache#invalidate()} was called in between.
  */
 public class HistoricClimbScoreCacheTest {
 
@@ -79,6 +79,37 @@ public class HistoricClimbScoreCacheTest {
 
         // After invalidation the scan runs again.
         verify(routeRepo, times(2)).loadCatalog();
+    }
+
+    @Test
+    public void get_rescansWhenAnyUnderlyingFileChanged() throws Exception {
+        RouteRepository routeRepo = mock(RouteRepository.class);
+        ClimbAttemptRepository attemptRepo = mock(ClimbAttemptRepository.class);
+        String climbId = ClimbIdentity.of(50.5, 5.8, 1000);
+        when(attemptRepo.loadAll()).thenReturn(Collections.singletonList(attempt(climbId)));
+        RouteCatalogEntry entry = new RouteCatalogEntry();
+        entry.routeId = "r1";
+        when(routeRepo.loadCatalog()).thenReturn(new ArrayList<>(Collections.singletonList(entry)));
+        StoredRoute route = new StoredRoute();
+        route.climbs = Arrays.asList(climb(50.5, 5.8, 1000, 300, 0.08));
+        when(routeRepo.loadRoute("r1")).thenReturn(route);
+        when(routeRepo.dataVersion()).thenReturn("cat-1");
+        when(attemptRepo.dataVersion()).thenReturn("att-1");
+
+        HistoricClimbScoreCache cache = new HistoricClimbScoreCache();
+        cache.get(routeRepo, attemptRepo);
+        cache.get(routeRepo, attemptRepo);
+        verify(routeRepo, times(1)).loadCatalog();
+
+        // e.g. an attempt remap from a climb merge, which never called invalidate()
+        when(attemptRepo.dataVersion()).thenReturn("att-2");
+        cache.get(routeRepo, attemptRepo);
+        verify(routeRepo, times(2)).loadCatalog();
+
+        // e.g. a route delete rewriting catalog.json
+        when(routeRepo.dataVersion()).thenReturn("cat-2");
+        cache.get(routeRepo, attemptRepo);
+        verify(routeRepo, times(3)).loadCatalog();
     }
 
     @Test

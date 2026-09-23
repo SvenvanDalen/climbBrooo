@@ -80,3 +80,9 @@ fr255m-*.html
 **/*.developer_key
 developer_key
 strava-client-secret*
+
+# Replit workspace leftovers (not part of this project)
+.local/
+.replit
+replit.nix
+attached_assets/

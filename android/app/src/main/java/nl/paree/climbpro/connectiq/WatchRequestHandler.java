@@ -9,14 +9,16 @@ import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
+import nl.paree.climbpro.service.CombinedRefTimePlanner;
 import nl.paree.climbpro.service.RoutePacingPlanner;
-import nl.paree.climbpro.service.RouteRefTimePlanner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,10 +58,15 @@ public final class WatchRequestHandler {
         return RoutePacingPlanner.plan(route, profile);
     }
 
-    /** Per-climb per-segment PR reference seconds, or null when no attempt repo is wired up. */
+    /**
+     * Per-climb per-segment refsec: manual WR/pro reference (issue #59) takes priority over
+     * the rider's own PR when set for that climb. Own PR is unavailable (null) when no
+     * attempt repo is wired up, but a manual reference still works in that case.
+     */
     private int[][] refPlan(StoredRoute route) {
-        if (attemptRepo == null) return null;
-        return RouteRefTimePlanner.plan(route, attemptRepo.loadAll());
+        List<StoredClimbAttempt> attempts = attemptRepo != null
+                ? attemptRepo.loadAll() : Collections.emptyList();
+        return CombinedRefTimePlanner.plan(route, attempts);
     }
 
     public void handleMessage(Map<String, Object> message) {

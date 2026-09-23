@@ -76,7 +76,7 @@ public final class RestSplitAdvisor {
         List<Suggestion> out = new ArrayList<>();
         for (int i = 0; i < climbsInRoute.size(); i++) {
             StoredClimb c = climbsInRoute.get(i);
-            if (c.length < MIN_SPLITTABLE_LENGTH_M) continue;
+            if (ClimbIdentity.effectiveLength(c) < MIN_SPLITTABLE_LENGTH_M) continue;
 
             double distanceIntoRouteKm = c.startDistance / 1000.0;
             double score = DifficultyScoreCalculator.score(
@@ -113,7 +113,7 @@ public final class RestSplitAdvisor {
      * boundary already rendered/synced), else the raw midpoint.
      */
     static int splitPoint(StoredClimb c) {
-        int midpoint = c.length / 2;
+        int midpoint = ClimbIdentity.effectiveLength(c) / 2;
         if (c.segments == null || c.segments.isEmpty()) return midpoint;
 
         int cumulative = 0;

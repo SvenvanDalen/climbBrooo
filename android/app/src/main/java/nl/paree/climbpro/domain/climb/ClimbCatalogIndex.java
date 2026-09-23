@@ -53,8 +53,7 @@ public final class ClimbCatalogIndex {
                 if (route.climbs == null) continue;
                 for (int i = 0; i < route.climbs.size(); i++) {
                     StoredClimb c = route.climbs.get(i);
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
+                    String id = ClimbIdentity.of(c);
                     if (wantedClimbIds.contains(id) && !map.containsKey(id)) {
                         map.put(id, new Entry(entry.routeId, i, c));
                     }
