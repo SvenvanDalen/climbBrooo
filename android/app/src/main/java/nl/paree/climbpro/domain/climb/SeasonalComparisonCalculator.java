@@ -3,7 +3,9 @@ package nl.paree.climbpro.domain.climb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -20,13 +22,16 @@ import java.util.List;
  *       summarised) — there is no post-climb-summary screen yet (issue #8), so this is
  *       surfaced on the climb detail screen instead, using the latest logged attempt.</li>
  *   <li>"Rond deze tijd van het jaar" = a +/- {@link #DEFAULT_WINDOW_DAYS}-day window around
- *       the most recent attempt's day-of-year, compared circularly so windows spanning
- *       New Year's don't break.</li>
- *   <li>When multiple prior years have attempts in that window, the most recent prior year
+ *       the anniversary of the most recent attempt (same date one year back), measured in
+ *       real calendar days so windows spanning New Year's work and a ride a few days earlier
+ *       across New Year never counts as "last year". {@link Result#priorYear} is the
+ *       anniversary's year.</li>
+ *   <li>When several prior years have attempts in their window, the most recent one
  *       (closest to "vorig jaar") is used, not the best time across all prior years — matches
  *       the issue's literal phrasing ("vorig jaar") rather than an all-time-best comparison.</li>
- *   <li>Within the chosen prior year, the fastest attempt in the window is used (a rider may
- *       have ridden the climb more than once in that window).</li>
+ *   <li>Within the chosen window, the fastest attempt is used (a rider may have ridden the
+ *       climb more than once in that window).</li>
+ *   <li>Undated attempts (start date failed to parse) are ignored.</li>
  * </ul>
  *
  * Pure presentation/derivation logic over {@link StoredClimbAttempt}, same layer as
@@ -69,49 +74,59 @@ public final class SeasonalComparisonCalculator {
         if (climbId == null || attempts == null || attempts.isEmpty()) return null;
 
         StoredClimbAttempt mostRecent = null;
-        int minYearSeen = Integer.MAX_VALUE;
+        long oldestEpochSec = Long.MAX_VALUE;
         for (StoredClimbAttempt a : attempts) {
-            if (!climbId.equals(a.climbId)) continue;
-            int y = yearOf(a.dateEpochSec, zone);
-            if (y < minYearSeen) minYearSeen = y;
-            if (mostRecent == null || a.dateEpochSec > mostRecent.dateEpochSec) mostRecent = a;
+            if (!isDatedAttemptOf(climbId, a)) continue;
+            if (a.dateEpochSec < oldestEpochSec) oldestEpochSec = a.dateEpochSec;
+            if (isMoreRecent(a, mostRecent)) mostRecent = a;
         }
         if (mostRecent == null) return null;
 
-        int recentYear = yearOf(mostRecent.dateEpochSec, zone);
-        int recentDoy = dayOfYear(mostRecent.dateEpochSec, zone);
+        LocalDate recentDate = localDate(mostRecent.dateEpochSec, zone);
+        LocalDate oldestDate = localDate(oldestEpochSec, zone);
 
-        for (int year = recentYear - 1; year >= minYearSeen; year--) {
+        // Anchor each window on the anniversary date (same date k years back, +/- windowDays
+        // in real calendar days). Anchoring on calendar year + day-of-year instead would let a
+        // ride a few days earlier across New Year count as "last year".
+        for (int yearsBack = 1; ; yearsBack++) {
+            LocalDate anniversary = recentDate.minusYears(yearsBack);
+            if (anniversary.plusDays(windowDays).isBefore(oldestDate)) break;
+
             StoredClimbAttempt best = null;
             for (StoredClimbAttempt a : attempts) {
-                if (!climbId.equals(a.climbId)) continue;
-                if (yearOf(a.dateEpochSec, zone) != year) continue;
-                if (circularDayDistance(dayOfYear(a.dateEpochSec, zone), recentDoy) > windowDays) {
-                    continue;
-                }
+                if (!isDatedAttemptOf(climbId, a)) continue;
+                long daysOff = ChronoUnit.DAYS.between(
+                        anniversary, localDate(a.dateEpochSec, zone));
+                if (Math.abs(daysOff) > windowDays) continue;
                 if (best == null || a.elapsedSec < best.elapsedSec) best = a;
             }
             if (best != null) {
                 double percentFaster =
                         (best.elapsedSec - mostRecent.elapsedSec) * 100.0 / best.elapsedSec;
-                return new Result(year, best.elapsedSec, mostRecent.elapsedSec,
-                        mostRecent.dateEpochSec, best.dateEpochSec, percentFaster);
+                return new Result(anniversary.getYear(), best.elapsedSec,
+                        mostRecent.elapsedSec, mostRecent.dateEpochSec, best.dateEpochSec,
+                        percentFaster);
             }
         }
-        return null; // no prior-year attempt found in any matching-season window
+        return null; // no attempt found in any prior anniversary window
     }
 
-    private static int yearOf(long epochSec, ZoneId zone) {
-        return Instant.ofEpochSecond(epochSec).atZone(zone).getYear();
+    /** Attempts with no parseable start date (epoch <= 0) can't be placed in a season. */
+    private static boolean isDatedAttemptOf(String climbId, StoredClimbAttempt a) {
+        return a != null && climbId.equals(a.climbId) && a.dateEpochSec > 0;
     }
 
-    private static int dayOfYear(long epochSec, ZoneId zone) {
-        return Instant.ofEpochSecond(epochSec).atZone(zone).getDayOfYear();
+    /**
+     * All passes of one activity share its start time, so ties break on the later pass —
+     * keeps "most recent" independent of storage order on loop/out-and-back rides.
+     */
+    private static boolean isMoreRecent(StoredClimbAttempt a, StoredClimbAttempt current) {
+        if (current == null) return true;
+        if (a.dateEpochSec != current.dateEpochSec) return a.dateEpochSec > current.dateEpochSec;
+        return a.passIndex > current.passIndex;
     }
 
-    /** Shortest distance between two days-of-year, wrapping around the New Year boundary. */
-    private static int circularDayDistance(int doyA, int doyB) {
-        int diff = Math.abs(doyA - doyB);
-        return Math.min(diff, 366 - diff);
+    private static LocalDate localDate(long epochSec, ZoneId zone) {
+        return Instant.ofEpochSecond(epochSec).atZone(zone).toLocalDate();
     }
 }

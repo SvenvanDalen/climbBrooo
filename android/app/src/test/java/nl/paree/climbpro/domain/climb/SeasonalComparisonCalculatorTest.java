@@ -126,6 +126,79 @@ public class SeasonalComparisonCalculatorTest {
     }
 
     @Test
+    public void attemptDaysBeforeAcrossNewYear_isNotLastYear() {
+        // Dec 30 is in the previous calendar year and only 4 days away by day-of-year, but it
+        // is not "a year ago": the window must be anchored on the anniversary date.
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2025, 12, 30), 500),
+                at("k1", 2, epoch(2026, 1, 3), 600));
+
+        assertNull(SeasonalComparisonCalculator.compare("k1", attempts, UTC,
+                SeasonalComparisonCalculator.DEFAULT_WINDOW_DAYS));
+    }
+
+    @Test
+    public void anniversaryWindowSpansNewYear_picksAttemptFromAYearAgo() {
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2024, 12, 28), 660), // 1 year + 6 days back: in window
+                at("k1", 2, epoch(2025, 12, 30), 500), // 4 days back: not "last year"
+                at("k1", 3, epoch(2026, 1, 3), 600));
+
+        SeasonalComparisonCalculator.Result r =
+                SeasonalComparisonCalculator.compare("k1", attempts, UTC,
+                        SeasonalComparisonCalculator.DEFAULT_WINDOW_DAYS);
+
+        assertNotNull(r);
+        assertEquals(2025, r.priorYear); // the anniversary (2025-01-03) year
+        assertEquals(660, r.priorYearElapsedSec);
+    }
+
+    @Test
+    public void windowEdgeIsExactInNonLeapYear() {
+        // 2025-01-03 anniversary; Dec 13 2024 is exactly 21 days before, Dec 12 is 22.
+        List<StoredClimbAttempt> inside = Arrays.asList(
+                at("k1", 1, epoch(2024, 12, 13), 700),
+                at("k1", 2, epoch(2026, 1, 3), 600));
+        List<StoredClimbAttempt> outside = Arrays.asList(
+                at("k1", 1, epoch(2024, 12, 12), 700),
+                at("k1", 2, epoch(2026, 1, 3), 600));
+
+        assertNotNull(SeasonalComparisonCalculator.compare("k1", inside, UTC, 21));
+        assertNull(SeasonalComparisonCalculator.compare("k1", outside, UTC, 21));
+    }
+
+    @Test
+    public void samePassDate_mostRecentIsHighestPassIndexRegardlessOfOrder() {
+        StoredClimbAttempt pass0 = at("k1", 9, epoch(2026, 6, 15), 600);
+        pass0.passIndex = 0;
+        StoredClimbAttempt pass1 = at("k1", 9, epoch(2026, 6, 15), 640);
+        pass1.passIndex = 1;
+        StoredClimbAttempt prior = at("k1", 1, epoch(2025, 6, 15), 700);
+
+        SeasonalComparisonCalculator.Result a = SeasonalComparisonCalculator.compare(
+                "k1", Arrays.asList(pass0, pass1, prior), UTC, 21);
+        SeasonalComparisonCalculator.Result b = SeasonalComparisonCalculator.compare(
+                "k1", Arrays.asList(pass1, pass0, prior), UTC, 21);
+
+        assertEquals(640, a.recentElapsedSec);
+        assertEquals(640, b.recentElapsedSec);
+    }
+
+    @Test
+    public void undatedAttemptsAreIgnored() {
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, 0, 100), // start date failed to parse
+                at("k1", 2, epoch(2025, 6, 10), 700),
+                at("k1", 3, epoch(2026, 6, 15), 600));
+
+        SeasonalComparisonCalculator.Result r =
+                SeasonalComparisonCalculator.compare("k1", attempts, UTC, 21);
+
+        assertNotNull(r);
+        assertEquals(700, r.priorYearElapsedSec);
+    }
+
+    @Test
     public void defaultOverload_usesSystemZoneAndDefaultWindow() {
         List<StoredClimbAttempt> attempts = Arrays.asList(
                 at("k1", 1, epoch(2025, 6, 10), 700),
