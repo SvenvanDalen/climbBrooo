@@ -24,4 +24,17 @@ class SyncRetryPolicy {
     static function initialViewForSavedData(hasSavedRoutes, hasSavedClimbs) {
         return (hasSavedRoutes || hasSavedClimbs) ? :routeList : :sync;
     }
+
+    // Fast-path variant of actionForTick (issue #131 review): getInitialView()'s
+    // background LIST_ROUTES refresh, fired when the widget jumps straight to the
+    // cached RouteListView, previously had no retry at all — unlike SyncView's wait
+    // loop it partially replaces. This reuses the exact same tick 3/6/10 schedule so a
+    // transient BT hiccup doesn't strand the user on stale data. The only difference
+    // from actionForTick is vocabulary: the fast path never switches views (it's
+    // already showing RouteListView), so :giveUp is renamed :stop to mean "stop
+    // polling", not "fall back to another view".
+    static function fastPathActionForTick(tick, received) {
+        var action = actionForTick(tick, received);
+        return (action == :giveUp) ? :stop : action;
+    }
 }

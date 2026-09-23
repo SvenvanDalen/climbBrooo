@@ -288,6 +288,43 @@ function syncRetryPolicy_initialViewForSavedData_picksRouteListWhenAnythingSaved
     return true;
 }
 
+// fastPathActionForTick backs getInitialView()'s background LIST_ROUTES retry (issue
+// #131 review): same tick 3/6 retransmit schedule as actionForTick, but :giveUp is
+// surfaced as :stop since the fast path never switches views.
+(:test)
+function syncRetryPolicy_fastPathActionForTick_retransmitsAt3And6(logger) {
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(3, false), :retransmit);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(6, false), :retransmit);
+    return true;
+}
+
+(:test)
+function syncRetryPolicy_fastPathActionForTick_waitsOnOtherTicksBeforeStop(logger) {
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(1, false), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(2, false), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(4, false), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(5, false), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(7, false), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(9, false), :wait);
+    return true;
+}
+
+(:test)
+function syncRetryPolicy_fastPathActionForTick_stopsFromTick10_neverGivesUp(logger) {
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(10, false), :stop);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(11, false), :stop);
+    Test.assert(SyncRetryPolicy.fastPathActionForTick(10, false) != :giveUp);
+    return true;
+}
+
+(:test)
+function syncRetryPolicy_fastPathActionForTick_neverActsOnceReceived(logger) {
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(3, true), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(6, true), :wait);
+    Test.assertEqual(SyncRetryPolicy.fastPathActionForTick(10, true), :wait);
+    return true;
+}
+
 // ============================ App lifecycle ================================
 
 (:test)
@@ -328,5 +365,26 @@ function widgetApp_getInitialView_routesOnSavedData_elseSync(logger) {
     Test.assert(withSaved[0] instanceof RouteListView);
 
     StorageManager.deleteRoute("giv_r1");
+    return true;
+}
+
+// getInitialView()'s fast-path arms a background retry timer (issue #131 review); its
+// 1 Hz tick handler must be safe to invoke directly (retransmit ticks, stop tick, and
+// the "already received" early-stop) without throwing.
+(:test)
+function widgetApp_onFastPathRetryTick_retransmitsThenStops_doesNotThrow(logger) {
+    var app = App.getApp() as ClimbWidgetApp;
+
+    StorageManager.saveRoute("giv_r2", { "name" => "GIV2", "climbs" => [] });
+    app.getInitialView();                         // arms the fast-path retry timer
+
+    app.phoneRouteIndex.received = false;
+    for (var t = 0; t < 3; t++) { app.onFastPathRetryTick(); }  // ticks 1..3 -> retransmit at 3
+    for (var t = 0; t < 10; t++) { app.onFastPathRetryTick(); } // runs past tick 10 -> stop
+
+    app.phoneRouteIndex.received = true;
+    app.onFastPathRetryTick();                    // already-received early stop, no throw
+
+    StorageManager.deleteRoute("giv_r2");
     return true;
 }
