@@ -149,6 +149,25 @@ public class SeasonClimbFilterTest {
     }
 
     @Test
+    public void sameClimbInTwoRoutes_exportedOnceFromFirstRoute() {
+        StoredClimb inR1 = climb(50.500, 5.500, 1200);
+        StoredClimb inR2 = climb(50.500, 5.500, 1200); // same climb, re-imported route
+        StoredRoute r1 = routeWith("r1", inR1);
+        StoredRoute r2 = routeWith("r2", inR2);
+        String id = ClimbIdentity.of(inR1.startLat, inR1.startLon, inR1.length);
+
+        List<StoredClimbAttempt> attempts = new ArrayList<>();
+        attempts.add(attempt(id, epochSec(2026, 4, 1)));
+        long[] range = SeasonClimbFilter.yearRange(2026, UTC);
+
+        List<SeasonClimbFilter.Match> matches = SeasonClimbFilter.climbsInPeriod(
+                java.util.Arrays.asList(r1, r2), attempts, range[0], range[1]);
+
+        assertEquals(1, matches.size());
+        assertEquals(r1, matches.get(0).route);
+    }
+
+    @Test
     public void yearRangeSpansExactlyOneCalendarYear() {
         long[] range2026 = SeasonClimbFilter.yearRange(2026, UTC);
         assertEquals(epochSec(2026, 1, 1) - 12 * 3600, range2026[0]); // midnight, not noon

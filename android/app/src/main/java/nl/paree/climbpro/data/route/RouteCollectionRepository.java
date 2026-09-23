@@ -132,6 +132,58 @@ public final class RouteCollectionRepository {
         saveAll(all);
     }
 
+    /**
+     * Keeps every {@link ClimbMembership} pointing into {@code routeId}'s climb list consistent
+     * with a single climb having been removed at {@code removedIndex} (e.g. by
+     * {@link ClimbMergeService#merge}, which calls this right after
+     * {@link RouteRepository#removeClimb}). {@code climbIndex} is a raw index into
+     * {@code StoredRoute#climbs}, not a stable climb identity, so removing element
+     * {@code removedIndex} shifts every later climb's index down by one:
+     * <ul>
+     *   <li>a membership pointing exactly at {@code removedIndex} referenced the climb that was
+     *       just removed — that membership is dropped, since the climb it points to no longer
+     *       exists;</li>
+     *   <li>a membership pointing after {@code removedIndex} is decremented by one so it keeps
+     *       resolving to the same climb it did before the removal;</li>
+     *   <li>a membership pointing before {@code removedIndex}, or belonging to a different route,
+     *       is untouched.</li>
+     * </ul>
+     * Without this, {@link nl.paree.climbpro.ui.collections.CollectionDetailViewModel#resolveMembers}
+     * — which only bounds-checks {@code climbIndex} against the current climb list — would
+     * silently resolve a shifted membership to the WRONG climb, or silently drop an
+     * out-of-range one, with no error surfaced to the user.
+     */
+    public void onClimbRemoved(String routeId, int removedIndex) {
+        List<RouteCollection> all = loadAll();
+        boolean changed = false;
+        for (RouteCollection c : all) {
+            if (c.climbs == null || c.climbs.isEmpty()) continue;
+            List<ClimbMembership> updated = new ArrayList<>(c.climbs.size());
+            boolean localChanged = false;
+            for (ClimbMembership m : c.climbs) {
+                if (!routeId.equals(m.routeId)) {
+                    updated.add(m);
+                    continue;
+                }
+                if (m.climbIndex == removedIndex) {
+                    localChanged = true; // the climb this pointed at is gone; drop the membership
+                    continue;
+                }
+                if (m.climbIndex > removedIndex) {
+                    m.climbIndex -= 1;
+                    localChanged = true;
+                }
+                updated.add(m);
+            }
+            if (localChanged) {
+                c.climbs = updated;
+                c.lastModifiedMs = System.currentTimeMillis();
+                changed = true;
+            }
+        }
+        if (changed) saveAll(all);
+    }
+
     /** Every route that was deleted must be cleared from all collections it belonged to. */
     public void removeRouteEverywhere(String routeId) {
         List<RouteCollection> all = loadAll();

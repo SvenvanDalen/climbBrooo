@@ -25,9 +25,9 @@ import nl.paree.climbpro.data.route.StoredRoute;
  *
  * <p>A climb "was ridden in the period" is decided via {@link ClimbIdentity}, the same
  * route-independent key {@link SegmentPrCalculator} and {@link LogbookCalculator} already
- * match attempts against — so a climb whose geometry appears in more than one stored route
- * (e.g. re-imported, or ridden as part of two different GPX files) is matched independently
- * per route it currently lives in, and each occurrence is exported as its own track.
+ * match attempts against. A climb whose geometry appears in more than one stored route
+ * (e.g. re-imported, or ridden as part of two different GPX files) is exported once, from
+ * the first route it is found in — a season export lists climbs ridden, not route copies.
  */
 public final class SeasonClimbFilter {
 
@@ -53,8 +53,9 @@ public final class SeasonClimbFilter {
      * @param fromEpochSecInclusive period start, inclusive.
      * @param toEpochSecExclusive   period end, exclusive.
      * @return one {@link Match} per (route, climb) that has at least one attempt whose
-     *         {@link StoredClimbAttempt#dateEpochSec} falls in {@code [from, to)}. Order
-     *         follows {@code routes}, then climb order within each route.
+     *         {@link StoredClimbAttempt#dateEpochSec} falls in {@code [from, to)}, at most
+     *         one per climb identity (first occurrence wins). Order follows {@code routes},
+     *         then climb order within each route.
      */
     public static List<Match> climbsInPeriod(List<StoredRoute> routes,
             List<StoredClimbAttempt> attempts, long fromEpochSecInclusive,
@@ -72,6 +73,7 @@ public final class SeasonClimbFilter {
 
         List<Match> out = new ArrayList<>();
         if (routes == null || climbIdsInPeriod.isEmpty()) return out;
+        Set<String> emitted = new HashSet<>();
         for (StoredRoute route : routes) {
             if (route == null || route.climbs == null) continue;
             for (int i = 0; i < route.climbs.size(); i++) {
@@ -79,7 +81,7 @@ public final class SeasonClimbFilter {
                 if (c == null) continue;
                 int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
                 String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
-                if (climbIdsInPeriod.contains(climbId)) {
+                if (climbIdsInPeriod.contains(climbId) && emitted.add(climbId)) {
                     out.add(new Match(route, c, i));
                 }
             }

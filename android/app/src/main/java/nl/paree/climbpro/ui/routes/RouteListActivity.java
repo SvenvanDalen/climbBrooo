@@ -282,12 +282,19 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbTimelineActivity.class));
             return true;
+        } else if (id == R.id.action_unfinished_climbs) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
+            return true;
         } else if (id == R.id.action_wrapped) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.wrapped.ClimbWrappedActivity.class));
             return true;
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_climb_hygiene) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_batch_export) {
             showBatchExportDialog();
