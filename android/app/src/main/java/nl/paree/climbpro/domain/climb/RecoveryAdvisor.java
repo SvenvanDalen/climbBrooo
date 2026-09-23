@@ -24,7 +24,8 @@ import java.util.Set;
  * monitoring: the "acute" load is the trailing 7-day cumulative elevation gain, the
  * "chronic" load is that same trailing window averaged over a longer {@link
  * #BASELINE_WEEKS}-week horizon (the acute week is intentionally part of the chronic
- * window — it is a rolling ratio, not two disjoint periods). A ratio above ~1.5 is the
+ * window — it is a rolling ratio, not two disjoint periods). While the logbook covers
+ * fewer than {@link #BASELINE_WINDOW_DAYS} days the average is taken over the covered weeks. A ratio above ~1.5 is the
  * commonly cited threshold in that literature for meaningfully elevated
  * overtraining/injury risk, so it doubles as a deliberately simple, already-validated
  * rule of thumb rather than a bespoke one invented for this feature. The suggestion
@@ -134,6 +135,9 @@ public final class RecoveryAdvisor {
         Set<LocalDate> rideDays = new HashSet<>();
         LocalDate earliestDay = null;
         for (StoredClimbAttempt a : attempts) {
+            // Undated attempts (start date failed to parse) would land on 1970-01-01 and make
+            // a brand-new logbook look years deep, bypassing the history gate below.
+            if (a == null || a.dateEpochSec <= 0) continue;
             LocalDate day = Instant.ofEpochSecond(a.dateEpochSec).atZone(zone).toLocalDate();
             rideDays.add(day);
             if (earliestDay == null || day.isBefore(earliestDay)) {
@@ -145,9 +149,23 @@ public final class RecoveryAdvisor {
             }
         }
 
+        if (earliestDay == null) {
+            return new Advice(false, 0, 0,
+                    "Nog geen ritten gevonden om je belasting te beoordelen.", false, false, false);
+        }
+
+        long historySpanDays =
+                java.time.temporal.ChronoUnit.DAYS.between(earliestDay, referenceDate) + 1;
+        boolean hasEnoughBaselineHistory = historySpanDays >= MIN_BASELINE_HISTORY_DAYS;
+
         int recentGain = sumRange(gainByDay, referenceDate.minusDays(RECENT_WINDOW_DAYS - 1), referenceDate);
         int baselineGain = sumRange(gainByDay, referenceDate.minusDays(BASELINE_WINDOW_DAYS - 1), referenceDate);
-        double baselineWeeklyAvg = baselineGain / (double) BASELINE_WEEKS;
+        // Average over the weeks the logbook actually covers: with 21-27 days of history,
+        // dividing by the full BASELINE_WEEKS would count the not-yet-logged days as rest days
+        // and understate the baseline, making the overload check fire too easily.
+        double coveredWeeks = Math.min(historySpanDays, BASELINE_WINDOW_DAYS)
+                / (double) RECENT_WINDOW_DAYS;
+        double baselineWeeklyAvg = baselineGain / Math.max(coveredWeeks, 1.0);
 
         boolean rodeRecently = false;
         for (int i = 0; i <= RECENT_RIDE_LOOKBACK_DAYS; i++) {
@@ -156,11 +174,6 @@ public final class RecoveryAdvisor {
                 break;
             }
         }
-
-        long historySpanDays = earliestDay != null
-                ? java.time.temporal.ChronoUnit.DAYS.between(earliestDay, referenceDate) + 1
-                : 0;
-        boolean hasEnoughBaselineHistory = historySpanDays >= MIN_BASELINE_HISTORY_DAYS;
 
         if (!hasEnoughBaselineHistory) {
             // No real average exists yet, so don't claim the load is "in line" with it.

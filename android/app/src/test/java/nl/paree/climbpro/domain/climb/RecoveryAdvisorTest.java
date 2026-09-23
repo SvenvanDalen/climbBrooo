@@ -114,7 +114,7 @@ public class RecoveryAdvisorTest {
         // logbook span past MIN_BASELINE_HISTORY_DAYS so this test exercises the ratio
         // check itself rather than the minimum-history guard.
         List<StoredClimbAttempt> attempts = Arrays.asList(
-                at("history", 0, today.minusDays(25)),
+                at("history", 0, today.minusDays(27)), // full 28-day baseline
                 at("old", 1, today.minusDays(10)),
                 at("recent", 2, today));
 
@@ -138,7 +138,7 @@ public class RecoveryAdvisorTest {
         // logbook span past MIN_BASELINE_HISTORY_DAYS so this test exercises the ratio
         // check itself rather than the minimum-history guard.
         List<StoredClimbAttempt> attempts = Arrays.asList(
-                at("history", 0, today.minusDays(25)),
+                at("history", 0, today.minusDays(27)), // full 28-day baseline
                 at("old", 1, today.minusDays(10)),
                 at("recent", 2, today));
 
@@ -249,5 +249,48 @@ public class RecoveryAdvisorTest {
         assertFalse(genuinelyEmpty.suggestRest);
         assertEquals(0, genuinelyEmpty.recentGainM);
         assertFalse(genuinelyEmpty.rodeRecently);
+    }
+
+    @Test
+    public void undatedAttempts_doNotCountAsHistory() {
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        Map<String, Integer> gains = new HashMap<>();
+        gains.put("heavy", 2000);
+        StoredClimbAttempt undated = at("heavy", 1, today);
+        undated.dateEpochSec = 0; // start date failed to parse
+        List<StoredClimbAttempt> attempts = Arrays.asList(undated, at("heavy", 2, today));
+
+        Advice advice = RecoveryAdvisor.compute(attempts, gains, ZONE, today);
+
+        assertFalse(advice.enoughHistory);
+        assertFalse(advice.suggestRest);
+    }
+
+    @Test
+    public void onlyUndatedAttempts_isEmptyState() {
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        StoredClimbAttempt undated = at("x", 1, today);
+        undated.dateEpochSec = 0;
+
+        Advice advice = RecoveryAdvisor.compute(
+                Collections.singletonList(undated), new HashMap<>(), ZONE, today);
+
+        assertFalse(advice.hasData);
+    }
+
+    @Test
+    public void threeWeeksOfHistory_averagesOverCoveredWeeksNotFour() {
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        Map<String, Integer> gains = new HashMap<>();
+        gains.put("steady", 100);
+        // Exactly 21 days of 100 hm/day: a perfectly even load, 700 hm every week.
+        List<StoredClimbAttempt> attempts = new java.util.ArrayList<>();
+        for (int i = 20; i >= 0; i--) attempts.add(at("steady", i, today.minusDays(i)));
+
+        Advice advice = RecoveryAdvisor.compute(attempts, gains, ZONE, today);
+
+        assertTrue(advice.enoughHistory);
+        assertEquals(700.0, advice.baselineWeeklyAvgGainM, 0.001);
+        assertFalse(advice.suggestRest);
     }
 }
