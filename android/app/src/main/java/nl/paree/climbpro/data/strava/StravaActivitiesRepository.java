@@ -6,10 +6,12 @@ import android.util.Log;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
+import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
+import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.climb.KnownClimbs;
@@ -19,6 +21,8 @@ import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample;
 import nl.paree.climbpro.domain.strava.StravaTitleTemplateRenderer;
 import nl.paree.climbpro.domain.strava.StravaTitleUpdateDecision;
+import nl.paree.climbpro.domain.matching.ClimbEntryOnlyDetector;
+import nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -31,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,6 +52,12 @@ public final class StravaActivitiesRepository {
     private static final String TAG       = "StravaActivitiesRepo";
     private static final String PREFS     = "strava_activities";
     private static final String PREF_LAST = "last_sync_epoch_sec";
+    /**
+     * The set of {@link KnownClimb#climbId}s that were known the last time we let
+     * incomplete-only activities be skipped as "known". See the comment above
+     * {@link #syncActivities()}'s use of this for why a plain permanent skip-list is wrong.
+     */
+    private static final String PREF_KNOWN_CLIMB_IDS = "known_climb_ids_for_incomplete_skip";
     private static final long   ONE_YEAR_SEC = 365L * 24 * 60 * 60;
     private static final String STREAM_KEYS  = "latlng,time";
 
@@ -55,11 +66,21 @@ public final class StravaActivitiesRepository {
      * {@code ui.settings.StravaTitleTemplateActivity}. Blank/absent = feature off.
      */
     public static final String PREF_TITLE_TEMPLATE = "strava_title_template";
+    /**
+     * Default-shared-prefs key: epoch seconds at which the current title template was
+     * configured. Only activities started after this get retitled (see
+     * {@link StravaTitleUpdateDecision#isEligibleActivity}).
+     */
+    public static final String PREF_TITLE_TEMPLATE_SINCE = "strava_title_template_since";
+
+    /** Clock in epoch seconds; package-private so tests can pin "now". */
+    java.util.function.LongSupplier clock = () -> System.currentTimeMillis() / 1000L;
 
     private final Context                context;
     private final StravaAuthRepository   auth;
     private final RouteRepository        routeRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final IncompleteClimbAttemptRepository incompleteAttemptRepo;
     private final StravaApiClient        api;
     private final android.content.SharedPreferences prefs;
 
@@ -89,6 +110,7 @@ public final class StravaActivitiesRepository {
         this.auth = auth;
         this.routeRepo = routeRepo;
         this.attemptRepo = attemptRepo;
+        this.incompleteAttemptRepo = new IncompleteClimbAttemptRepository(context);
         this.api = api;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -104,21 +126,47 @@ public final class StravaActivitiesRepository {
         titleUpdateAuthExpired = false;
 
         long lastSync = prefs.getLong(PREF_LAST, 0L);
-        long nowSec   = System.currentTimeMillis() / 1000L;
+        long nowSec   = clock.getAsLong();
         long after    = lastSync > 0 ? lastSync : nowSec - ONE_YEAR_SEC;
 
         List<KnownClimb> climbs = enumerateKnownClimbs();
         if (climbs.isEmpty()) return 0;
 
-        Set<Long> known = attemptRepo.knownActivityIds();
+        // An activity that only ever produced incomplete passes must NOT be treated as
+        // permanently "known" the way a fully-successful activity is: a later sync may add a
+        // brand-new route/climb that this same old activity's track actually rode in full, and
+        // that legitimate successful attempt would never be detected if the activity is never
+        // re-fetched/re-matched again. So we only let the incomplete-only skip-list apply when
+        // the set of known climbs hasn't grown since the last time we evaluated it — if new
+        // climbs showed up, incomplete-only activities are re-checked against them this run
+        // (some redundant re-fetching of long-incomplete activities is an acceptable trade-off
+        // for not getting permanently stuck). A fully successful activity (attemptRepo) is
+        // unaffected by this — it's a pre-existing, out-of-scope skip-list.
+        Set<String> currentClimbIds = new HashSet<>();
+        for (KnownClimb k : climbs) currentClimbIds.add(k.climbId);
+        Set<String> priorClimbIds = prefs.getStringSet(PREF_KNOWN_CLIMB_IDS, java.util.Collections.<String>emptySet());
+        boolean knownClimbSetGrew = !priorClimbIds.containsAll(currentClimbIds);
+
+        Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
+        if (!knownClimbSetGrew) {
+            known.addAll(incompleteAttemptRepo.knownActivityIds());
+        }
 
         // Title-update inputs (issue #60): resolved once per sync so per-activity title
         // rendering doesn't re-scan routes/attempts. priorPrByClimb reflects state BEFORE this
         // sync's own new attempts, since Strava's title should read "here's your new time vs.
         // your old best" — comparing against attempts created earlier in the same batch is a
         // v1 simplification left for a follow-up if it proves confusing in practice.
-        String titleTemplate = PreferenceManager.getDefaultSharedPreferences(context)
-                .getString(PREF_TITLE_TEMPLATE, null);
+        android.content.SharedPreferences defaultPrefs =
+                PreferenceManager.getDefaultSharedPreferences(context);
+        String titleTemplate = defaultPrefs.getString(PREF_TITLE_TEMPLATE, null);
+        long templateSinceSec = defaultPrefs.getLong(PREF_TITLE_TEMPLATE_SINCE, 0L);
+        if (titleTemplate != null && !titleTemplate.trim().isEmpty() && templateSinceSec <= 0) {
+            // Template present without an opt-in timestamp (set outside the editor): fail
+            // safe by treating "now" as the opt-in moment, so no past activity is renamed.
+            templateSinceSec = nowSec;
+            defaultPrefs.edit().putLong(PREF_TITLE_TEMPLATE_SINCE, nowSec).apply();
+        }
         Map<String, StoredClimb> climbsById = titleTemplate != null && !titleTemplate.trim().isEmpty()
                 ? enumerateStoredClimbsById()
                 : Collections.emptyMap();
@@ -126,6 +174,7 @@ public final class StravaActivitiesRepository {
                 LogbookCalculator.summaries(attemptRepo.loadAll());
 
         List<StoredClimbAttempt> created = new ArrayList<>();
+        List<StoredIncompleteClimbAttempt> incompleteCreated = new ArrayList<>();
         boolean paginationComplete = false;
         int page = 1;
         while (true) {
@@ -142,7 +191,7 @@ public final class StravaActivitiesRepository {
             }
             for (StravaActivityDto act : resp.body()) {
                 if (known.contains(act.id)) continue;
-                List<StoredClimbAttempt> matched = matchActivity(token, act, climbs);
+                List<StoredClimbAttempt> matched = matchActivity(token, act, climbs, incompleteCreated);
                 created.addAll(matched);
                 // Attempts are always recorded above regardless of auth state; only the
                 // title-update HTTP call is skipped once we know the scope is missing —
@@ -150,7 +199,9 @@ public final class StravaActivitiesRepository {
                 // 401/403 (it's an account-level scope problem, not per-activity), so
                 // calling it again would just waste a doomed request and spam the logs.
                 if (!titleUpdateAuthExpired
-                        && StravaTitleUpdateDecision.shouldUpdateTitle(matched, titleTemplate)) {
+                        && StravaTitleUpdateDecision.shouldUpdateTitle(matched, titleTemplate)
+                        && StravaTitleUpdateDecision.isEligibleActivity(
+                                parseStartDate(act.startDate), templateSinceSec, nowSec)) {
                     updateActivityTitle(token, act, matched, titleTemplate,
                             climbsById, priorSummaries);
                 }
@@ -159,8 +210,18 @@ public final class StravaActivitiesRepository {
         }
 
         if (!created.isEmpty()) attemptRepo.append(created);
+        if (!incompleteCreated.isEmpty()) incompleteAttemptRepo.append(incompleteCreated);
         if (paginationComplete) {
             prefs.edit().putLong(PREF_LAST, nowSec).apply();
+            // Record the climb set this run evaluated incomplete-only activities against, so
+            // the NEXT run can tell whether new climbs have shown up in the meantime (see
+            // above). Guarded by paginationComplete exactly like PREF_LAST: if the sync aborted
+            // early, we must not commit a currentClimbIds snapshot that may already be bigger
+            // than priorClimbIds (e.g. a climb was added elsewhere just before this aborted
+            // run) — doing so would make the NEXT (successful) sync see knownClimbSetGrew ==
+            // false and incorrectly fold previously-recorded incomplete-only activities back
+            // into the permanent skip-list, defeating the re-check guarantee.
+            prefs.edit().putStringSet(PREF_KNOWN_CLIMB_IDS, currentClimbIds).apply();
         }
         Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)"
                 + (paginationComplete ? "" : " (incomplete — cursor not advanced)"));
@@ -198,7 +259,8 @@ public final class StravaActivitiesRepository {
         Integer delta = prior != null ? best.elapsedSec - prior.prSec : null;
 
         StravaTitleTemplateRenderer.TitleContext ctx =
-                StravaTitleTemplateRenderer.TitleContext.of(climbName, best.elapsedSec, delta, vam);
+                StravaTitleTemplateRenderer.TitleContext.of(climbName, best.elapsedSec, delta, vam,
+                        !best.routeDeviation);
         String title = StravaTitleTemplateRenderer.render(template, ctx);
         if (title.isEmpty()) return;
 
@@ -221,8 +283,15 @@ public final class StravaActivitiesRepository {
         }
     }
 
+    /**
+     * @param incompleteOut ADDITIONAL, separate output: never-completed passes are appended
+     *                      here for climbs that had zero successful passes matched in this
+     *                      activity — see {@link ClimbEntryOnlyDetector}. The returned list
+     *                      of successful {@link StoredClimbAttempt}s is unaffected.
+     */
     private List<StoredClimbAttempt> matchActivity(
-            String token, StravaActivityDto act, List<KnownClimb> climbs) {
+            String token, StravaActivityDto act, List<KnownClimb> climbs,
+            List<StoredIncompleteClimbAttempt> incompleteOut) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         try {
             Response<StravaStreamsDto> sresp =
@@ -237,26 +306,41 @@ public final class StravaActivitiesRepository {
 
             long dateSec = parseStartDate(act.startDate);
             for (KnownClimb k : climbs) {
-                // matchAllWithEntryTime finds every valid ascent in the track, not just the
-                // first — an out-and-back or loop route can pass over the same climb more
-                // than once in a single activity, and each pass should be logged separately.
-                // It also carries each pass's entry time so callers can determine true
-                // ride-encounter order across DIFFERENT climbs (see StoredClimbAttempt#entryTimeSec).
-                List<ClimbAttemptMatcher.PassResult> passes = ClimbAttemptMatcher.matchAllWithEntryTime(
-                        track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
-                List<int[]> segPasses = ClimbAttemptMatcher.matchAllSegments(
+                // matchAllPasses finds every valid ascent in the track, not just the first —
+                // an out-and-back or loop route can pass over the same climb more than
+                // once in a single activity, and each pass should be logged separately.
+                List<ClimbAttemptMatcher.PassResult> passes = ClimbAttemptMatcher.matchAllPasses(
                         track, k.startLat, k.startLon, k.endLat, k.endLon,
                         k.lengthM, k.segLengthsM);
                 for (int i = 0; i < passes.size(); i++) {
+                    ClimbAttemptMatcher.PassResult p = passes.get(i);
                     StoredClimbAttempt a = new StoredClimbAttempt();
                     a.climbId      = k.climbId;
                     a.activityId   = act.id;
                     a.dateEpochSec = dateSec;
-                    a.elapsedSec   = passes.get(i).elapsedSec;
-                    a.entryTimeSec = passes.get(i).entryTimeSec;
+                    a.elapsedSec   = p.elapsedSec;
+                    a.entryTimeSec = track.get(p.entryIdx).timeSec;
                     a.passIndex    = i;
-                    a.segSplitSec  = i < segPasses.size() ? segPasses.get(i) : null;
+                    a.segSplitSec  = p.segSplitSec;
+                    a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
+                            track, p.entryIdx, p.exitIdx, k.calibLats, k.calibLons);
                     out.add(a);
+                }
+
+                // Only run entry-only detection when this climb had zero successful passes
+                // in this activity — a climb ridden successfully isn't "never completed",
+                // even if the rider also looped back over the start gate afterwards.
+                if (passes.isEmpty()) {
+                    int distanceCovered = ClimbEntryOnlyDetector.detectIncomplete(
+                            track, k.startLat, k.startLon, k.endLat, k.endLon, k.lengthM);
+                    if (distanceCovered >= 0) {
+                        StoredIncompleteClimbAttempt ia = new StoredIncompleteClimbAttempt();
+                        ia.climbId          = k.climbId;
+                        ia.activityId       = act.id;
+                        ia.dateEpochSec     = dateSec;
+                        ia.distanceCoveredM = distanceCovered;
+                        incompleteOut.add(ia);
+                    }
                 }
             }
         } catch (IOException e) {

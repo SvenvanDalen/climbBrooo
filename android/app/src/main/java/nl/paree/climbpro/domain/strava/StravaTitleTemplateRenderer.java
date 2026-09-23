@@ -65,10 +65,22 @@ public final class StravaTitleTemplateRenderer {
          */
         public static TitleContext of(String climbName, int elapsedSec,
                                        Integer deltaToPrSec, Integer vamMPerH) {
+            return of(climbName, elapsedSec, deltaToPrSec, vamMPerH, true);
+        }
+
+        /**
+         * @param prEligible false for a route-deviated attempt (issue #77): it can't set a PR,
+         *                   so {@code {delta}} renders empty instead of "PR" when it would
+         *                   otherwise claim one; a slower-than-PR delta still renders.
+         */
+        public static TitleContext of(String climbName, int elapsedSec,
+                                       Integer deltaToPrSec, Integer vamMPerH,
+                                       boolean prEligible) {
             TitleContext ctx = new TitleContext();
             ctx.values.put("climb", climbName != null ? climbName : "");
             ctx.values.put("time", formatDuration(elapsedSec));
-            ctx.values.put("delta", formatDelta(deltaToPrSec));
+            boolean claimsPr = deltaToPrSec == null || deltaToPrSec <= 0;
+            ctx.values.put("delta", claimsPr && !prEligible ? "" : formatDelta(deltaToPrSec));
             ctx.values.put("vam", vamMPerH != null ? vamMPerH + " m/h" : "");
             return ctx;
         }

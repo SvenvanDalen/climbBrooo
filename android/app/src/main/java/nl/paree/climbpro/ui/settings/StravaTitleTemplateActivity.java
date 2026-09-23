@@ -54,10 +54,22 @@ public final class StravaTitleTemplateActivity extends AppCompatActivity {
             }
 
             @Override public void afterTextChanged(Editable s) {
-                PreferenceManager.getDefaultSharedPreferences(StravaTitleTemplateActivity.this)
-                        .edit()
-                        .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, s.toString())
-                        .apply();
+                android.content.SharedPreferences prefs = PreferenceManager
+                        .getDefaultSharedPreferences(StravaTitleTemplateActivity.this);
+                String previous = prefs.getString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "");
+                boolean wasOn = previous != null && !previous.trim().isEmpty();
+                boolean isOn = !s.toString().trim().isEmpty();
+                android.content.SharedPreferences.Editor edit = prefs.edit()
+                        .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, s.toString());
+                // Opt-in moment: only rides started after this get retitled, so switching
+                // the feature on never rewrites titles of rides already on Strava.
+                if (isOn && !wasOn) {
+                    edit.putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE,
+                            System.currentTimeMillis() / 1000L);
+                } else if (!isOn) {
+                    edit.remove(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE);
+                }
+                edit.apply();
             }
         });
     }

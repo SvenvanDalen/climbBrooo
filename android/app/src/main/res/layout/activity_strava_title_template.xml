@@ -61,7 +61,7 @@
                     android:textColor="@color/color_text_tertiary"
                     android:fontFamily="@font/space_grotesk"
                     android:textSize="12sp"
-                    android:text="Onbekende placeholders worden letterlijk overgenomen. {power} wordt (nog) niet ondersteund — er is nog geen vermogensdata per klim-poging beschikbaar."/>
+                    android:text="Onbekende placeholders worden letterlijk overgenomen. {power} wordt (nog) niet ondersteund — er is nog geen vermogensdata per klim-poging beschikbaar. Alleen ritten die je ná het instellen van het sjabloon maakt (max. 7 dagen oud) krijgen een nieuwe titel; bestaande titels blijven staan."/>
             </LinearLayout>
 
             <LinearLayout

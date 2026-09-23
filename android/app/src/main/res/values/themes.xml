@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Yellow/black theme — light-only by design (see issue #115), not DayNight -->
-    <style name="Theme.ClimbPro" parent="Theme.Material3.Light.NoActionBar">
+    <!-- Black/yellow theme — dark-only by design (see issue #115), not DayNight -->
+    <style name="Theme.ClimbPro" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:fontFamily">@font/space_grotesk</item>
         <item name="fontFamily">@font/space_grotesk</item>
 

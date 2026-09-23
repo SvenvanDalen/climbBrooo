@@ -93,4 +93,18 @@ public class StravaTitleTemplateRendererTest {
 
         assertEquals("VAM: ", result);
     }
+
+    @Test
+    public void deviatedAttempt_neverClaimsPr() {
+        StravaTitleTemplateRenderer.TitleContext faster =
+                StravaTitleTemplateRenderer.TitleContext.of("Col", 300, -20, null, false);
+        StravaTitleTemplateRenderer.TitleContext first =
+                StravaTitleTemplateRenderer.TitleContext.of("Col", 300, null, null, false);
+        StravaTitleTemplateRenderer.TitleContext slower =
+                StravaTitleTemplateRenderer.TitleContext.of("Col", 300, 15, null, false);
+
+        assertEquals("Col []", StravaTitleTemplateRenderer.render("{climb} [{delta}]", faster));
+        assertEquals("Col []", StravaTitleTemplateRenderer.render("{climb} [{delta}]", first));
+        assertEquals("Col [+0:15]", StravaTitleTemplateRenderer.render("{climb} [{delta}]", slower));
+    }
 }
