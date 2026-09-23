@@ -18,6 +18,23 @@
             android:title="@string/app_name"
             app:popupTheme="@style/ThemeOverlay.Material3.Dark"/>
 
+        <!-- Maintenance-due banner (issue #154); shown only when a component is due. -->
+        <TextView
+            android:id="@+id/maintenance_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/color_accent"
+            android:textColor="@color/color_accent_on"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
+
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

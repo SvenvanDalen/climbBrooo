@@ -100,6 +100,11 @@
             android:parentActivityName=".ui.collections.CollectionListActivity" />
 
         <activity
+            android:name=".ui.maintenance.MaintenanceActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity"/>
