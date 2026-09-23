@@ -184,7 +184,10 @@ public class ClimbDetailAttemptNoteTest {
     private interface Condition { boolean met(); }
 
     private static void idleUntil(Condition condition) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 2000;
+        // Generous deadline: CI runners can be slow enough under load that the background
+        // save/rollback executor hasn't finished within a tighter window, which previously
+        // made this test flaky in CI without ever failing locally.
+        long deadline = System.currentTimeMillis() + 10000;
         while (!condition.met() && System.currentTimeMillis() < deadline) {
             Shadows.shadowOf(Looper.getMainLooper()).idle();
             Thread.sleep(10);
