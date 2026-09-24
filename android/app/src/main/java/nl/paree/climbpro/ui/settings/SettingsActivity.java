@@ -214,7 +214,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 int n = new HealthConnectGateway(this).exportRides();
                 msg = n == 0 ? "Geen nieuwe ritten" : n + " rit(ten) naar Health Connect geschreven";
             } catch (Exception e) {
-                msg = "Schrijven mislukt: " + e.getMessage();
+                msg = "Schrijven mislukt: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
             }
             String toast = msg;
             runOnUiThread(() -> Toast.makeText(this, toast, Toast.LENGTH_LONG).show());

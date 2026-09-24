@@ -125,7 +125,7 @@ public final class HealthConnectGateway {
             if (e == null) continue;
             rides++;
             newest = Math.max(newest, e.start.getEpochSecond());
-            records.addAll(toRecords(e, granted));
+            records.addAll(toRecords(e, granted, nowSec * 1000L));
         }
         if (!records.isEmpty()) {
             List<Record> batch = records;
@@ -167,30 +167,35 @@ public final class HealthConnectGateway {
         return HealthConnectClient.getOrCreate(ctx);
     }
 
-    private static List<Record> toRecords(RideHealthEntry e, Set<String> granted) {
+    private static List<Record> toRecords(RideHealthEntry e, Set<String> granted, long version) {
         List<Record> out = new ArrayList<>();
         out.add(new ExerciseSessionRecord(e.start, e.offset, e.end, e.offset,
                 e.stationary ? ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY
                         : ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
-                e.title, null, metadata(e.clientRecordId + "-session")));
+                e.title, null, metadata(e.clientRecordId + "-session", version)));
         if (granted.contains(HealthPermission.WRITE_DISTANCE) && e.distanceM > 0) {
             out.add(new DistanceRecord(e.start, e.offset, e.end, e.offset,
-                    Length.meters(e.distanceM), metadata(e.clientRecordId + "-distance")));
+                    Length.meters(e.distanceM), metadata(e.clientRecordId + "-distance", version)));
         }
         if (granted.contains(HealthPermission.WRITE_ELEVATION_GAINED) && e.elevationM > 0) {
             out.add(new ElevationGainedRecord(e.start, e.offset, e.end, e.offset,
-                    Length.meters(e.elevationM), metadata(e.clientRecordId + "-elevation")));
+                    Length.meters(e.elevationM), metadata(e.clientRecordId + "-elevation", version)));
         }
         if (granted.contains(HealthPermission.WRITE_TOTAL_CALORIES_BURNED) && e.kcal != null) {
             out.add(new TotalCaloriesBurnedRecord(e.start, e.offset, e.end, e.offset,
-                    Energy.kilocalories(e.kcal), metadata(e.clientRecordId + "-calories")));
+                    Energy.kilocalories(e.kcal), metadata(e.clientRecordId + "-calories", version)));
         }
         return out;
     }
 
-    /** Client id + version 1: re-inserting the same id replaces instead of duplicating. */
-    private static Metadata metadata(String clientRecordId) {
-        return new Metadata("", new DataOrigin(""), Instant.EPOCH, clientRecordId, 1L, null,
+    /**
+     * Stable client id, so re-inserting a ride never duplicates it. Health Connect only
+     * replaces an existing record when the new clientRecordVersion is <em>higher</em> (an equal
+     * version is silently ignored), so the write time is used as the version: a re-export
+     * then updates the ride, e.g. once Strava has computed its kJ.
+     */
+    private static Metadata metadata(String clientRecordId, long version) {
+        return new Metadata("", new DataOrigin(""), Instant.EPOCH, clientRecordId, version, null,
                 Metadata.RECORDING_METHOD_ACTIVELY_RECORDED);
     }
 }
