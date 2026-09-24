@@ -181,6 +181,8 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(1, attemptRepo.loadAll().size());
         assertEquals(300, attemptRepo.loadAll().get(0).elapsedSec);
         assertEquals(false, attemptRepo.loadAll().get(0).routeDeviation);
+        // Entered at the first track sample (t = 0 s into the activity); persisted, not -1.
+        assertEquals(0, attemptRepo.loadAll().get(0).startOffsetSec);
     }
 
     /** A climb with calibration points straight along the known line, for deviation checks. */

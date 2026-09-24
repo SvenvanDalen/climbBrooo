@@ -55,6 +55,10 @@ public final class ActivityClimbMatcher {
                 a.activityId   = activityId;
                 a.dateEpochSec = dateSec;
                 a.elapsedSec   = p.elapsedSec;
+                // Relative to the first track sample: Strava streams already count from the
+                // activity start, file imports carry absolute Unix times (issue #21).
+                a.startOffsetSec = (int) Math.max(0,
+                        track.get(p.entryIdx).timeSec - track.get(0).timeSec);
                 a.passIndex    = i;
                 a.segSplitSec  = p.segSplitSec;
                 a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(

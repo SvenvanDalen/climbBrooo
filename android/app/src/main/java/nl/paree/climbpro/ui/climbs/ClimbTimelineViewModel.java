@@ -36,6 +36,7 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
     /** One row in the chronological timeline: a single attempt, resolved for display. */
     public static final class TimelineRow {
         public final long   dateEpochSec;
+        public final long   activityId;      // Strava activity id; groups rows from the same ride
         public final int    elapsedSec;
         public final String displayName;
         public final int    lengthM;         // 0 if unresolved
@@ -52,10 +53,11 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
         /** Average device temperature over the pass (°C), null when unknown (issue #80). */
         public final Double avgTempC;
 
-        TimelineRow(long dateEpochSec, int elapsedSec, String displayName, int lengthM,
-                    double avgGradient, String routeId, int climbIndex, boolean routeDeviation,
-                    Double avgTempC) {
+        TimelineRow(long dateEpochSec, long activityId, int elapsedSec, String displayName,
+                    int lengthM, double avgGradient, String routeId, int climbIndex,
+                    boolean routeDeviation, Double avgTempC) {
             this.dateEpochSec = dateEpochSec;
+            this.activityId = activityId;
             this.elapsedSec = elapsedSec;
             this.displayName = displayName;
             this.lengthM = lengthM;
@@ -111,6 +113,7 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
                 ClimbInfo info = resolved.get(a.climbId);
                 out.add(new TimelineRow(
                         a.dateEpochSec,
+                        a.activityId,
                         a.elapsedSec,
                         info != null ? info.displayName : "Klim",
                         info != null ? info.lengthM : 0,
