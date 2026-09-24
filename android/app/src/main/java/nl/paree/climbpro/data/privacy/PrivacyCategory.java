@@ -19,6 +19,9 @@ public enum PrivacyCategory {
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
                     + "start- en eindpunt.",
             "rides.json"),
+    TIRE_PRESSURE("Bandenspanning-logboek",
+            "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",
+            "tire_pressure_log.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),

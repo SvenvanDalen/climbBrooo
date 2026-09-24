@@ -143,6 +143,8 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         binding.fab.setOnClickListener(v -> showImportDialog());
+        binding.tirePressureBanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this)));
 
         viewModel.yearlyGoal().observe(this, this::renderYearlyGoal);
         binding.yearlyGoalCard.setOnClickListener(v -> showYearlyGoalDialog());
@@ -331,6 +333,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_records) {
             startActivity(nl.paree.climbpro.ui.records.RideRecordsActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_tire_pressure_log) {
+            startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
@@ -375,6 +380,25 @@ public final class RouteListActivity extends AppCompatActivity {
         super.onResume();
         viewModel.loadRoutes();
         viewModel.loadYearlyGoal();
+        refreshTirePressureBanner();
+    }
+
+    /**
+     * Shows the in-app tire-pressure reminder (issue #155) when a check is due. Evaluated on
+     * every resume, off the main thread; no notification or worker involved.
+     */
+    private void refreshTirePressureBanner() {
+        executor.execute(() -> {
+            String text = nl.paree.climbpro.ui.tire.TirePressureStatusLoader
+                    .load(getApplicationContext(), System.currentTimeMillis() / 1000L)
+                    .bannerText();
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                binding.tirePressureBanner.setText(text);
+                binding.tirePressureBanner.setVisibility(
+                        text != null ? android.view.View.VISIBLE : android.view.View.GONE);
+            });
+        });
     }
 
     @Override
