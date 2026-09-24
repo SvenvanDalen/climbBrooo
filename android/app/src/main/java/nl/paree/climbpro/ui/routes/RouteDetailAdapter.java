@@ -15,12 +15,15 @@ import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.climb.ClimbUsageLabel;
 import nl.paree.climbpro.domain.climb.ClimbUsageType;
+import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
 import nl.paree.climbpro.domain.segment.GradientColor;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class RouteDetailAdapter
         extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -68,6 +71,7 @@ public final class RouteDetailAdapter
     private OnSurfaceClickListener  surfaceClickListener;
     private int[] climbTargetSeconds; // index = climb position; -1 = none
     private ClimbUsageType[] climbUsageTypes; // index = climb position
+    private Map<Integer, RestSplitAdvisor.Suggestion> restSuggestions = new HashMap<>();
 
     public void setClimbTargetSeconds(int[] secs) {
         this.climbTargetSeconds = secs;
@@ -76,6 +80,16 @@ public final class RouteDetailAdapter
 
     public void setClimbUsageTypes(ClimbUsageType[] types) {
         this.climbUsageTypes = types;
+        notifyDataSetChanged();
+    }
+
+    /** Rest-split suggestions (issue #22), keyed by climb position in the route's climb list. */
+    public void setRestSuggestions(List<RestSplitAdvisor.Suggestion> suggestions) {
+        Map<Integer, RestSplitAdvisor.Suggestion> byIndex = new HashMap<>();
+        if (suggestions != null) {
+            for (RestSplitAdvisor.Suggestion s : suggestions) byIndex.put(s.climbIndex, s);
+        }
+        this.restSuggestions = byIndex;
         notifyDataSetChanged();
     }
 
@@ -189,6 +203,20 @@ public final class RouteDetailAdapter
                 h.statsView.setText(h.statsView.getText() + "  ·  " + usageLabel);
             }
         }
+        RestSplitAdvisor.Suggestion rest = restSuggestions.get(climbIndex);
+        if (rest != null) {
+            h.restBadge.setVisibility(View.VISIBLE);
+            h.restBadge.setOnClickListener(v -> android.widget.Toast.makeText(
+                    v.getContext(),
+                    String.format(java.util.Locale.US,
+                            "Zwaar voor jou — overweeg een rustpunt na %.1f km klimmen",
+                            rest.splitDistanceM / 1000.0),
+                    android.widget.Toast.LENGTH_LONG).show());
+        } else {
+            h.restBadge.setVisibility(View.GONE);
+            h.restBadge.setOnClickListener(null);
+        }
+
         final int ci = climbIndex;
         h.itemView.setOnClickListener(v -> {
             if (climbClickListener != null) climbClickListener.onClimbClick(c, ci);
@@ -216,11 +244,13 @@ public final class RouteDetailAdapter
         TextView nameView;
         TextView statsView;
         View     colorBar;
+        TextView restBadge;
         ClimbViewHolder(View v) {
             super(v);
             nameView  = v.findViewById(R.id.climb_name);
             statsView = v.findViewById(R.id.climb_stats);
             colorBar  = v.findViewById(R.id.climb_color_bar);
+            restBadge = v.findViewById(R.id.climb_rest_badge);
         }
     }
 

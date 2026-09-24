@@ -23,6 +23,7 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
     private ClimbTimelineViewModel viewModel;
     private TimelineAdapter adapter;
     private TextView empty;
+    private TextView longPressHint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,15 +35,18 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         empty = findViewById(R.id.empty);
+        longPressHint = findViewById(R.id.longPressHint);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TimelineAdapter(this::openAttempt);
+        adapter = new TimelineAdapter(this::openAttempt, this::openRideFatigue);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(ClimbTimelineViewModel.class);
         viewModel.rows().observe(this, rows -> {
             adapter.submit(rows);
-            empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+            boolean hasRows = !rows.isEmpty();
+            empty.setVisibility(hasRows ? View.GONE : View.VISIBLE);
+            longPressHint.setVisibility(hasRows ? View.VISIBLE : View.GONE);
         });
 
         viewModel.loadTimeline();
@@ -54,5 +58,14 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
             return;
         }
         startActivity(ClimbDetailActivity.intentFor(this, row.routeId, row.climbIndex));
+    }
+
+    /**
+     * Long-press entry point (issue #21) to the post-ride fatigue curve for the ride this
+     * attempt belongs to. Rides with fewer than 2 climbs with usable data are handled inside
+     * {@link RideFatigueActivity} itself, so no pre-check is needed here.
+     */
+    private void openRideFatigue(ClimbTimelineViewModel.TimelineRow row) {
+        startActivity(RideFatigueActivity.intentFor(this, row.activityId));
     }
 }

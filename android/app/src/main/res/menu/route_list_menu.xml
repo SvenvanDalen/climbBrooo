@@ -105,6 +105,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_elevation_goal"
+        android:title="Hoogtemeters per week/maand"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
         app:showAsAction="never"/>
