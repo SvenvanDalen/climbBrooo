@@ -1,19 +1,56 @@
 package nl.paree.climbpro.ui.settings;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.health.connect.client.PermissionController;
 import androidx.lifecycle.ViewModelProvider;
 
+import androidx.preference.PreferenceManager;
+
+import nl.paree.climbpro.data.backup.BackupArchive;
+import nl.paree.climbpro.data.backup.BackupRetention;
+import nl.paree.climbpro.data.backup.LocalBackupService;
+import nl.paree.climbpro.data.health.HealthConnectGateway;
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
+import nl.paree.climbpro.service.AutoBackupWorker;
+
+import java.time.ZoneId;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class SettingsActivity extends AppCompatActivity {
 
     private ActivitySettingsBinding binding;
     private SettingsViewModel       viewModel;
+    private final ExecutorService healthExecutor = Executors.newSingleThreadExecutor();
+    private final ActivityResultLauncher<Set<String>> healthPermissionLauncher =
+            registerForActivityResult(
+                    PermissionController.createRequestPermissionResultContract(),
+                    granted -> renderHealthStatus());
+    private final ExecutorService backupExecutor = Executors.newSingleThreadExecutor();
+
+    // Back-up (issue #257): Storage Access Framework pickers, so the target can be a local
+    // folder or a cloud provider such as Google Drive.
+    private final ActivityResultLauncher<String> backupCreator = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument(BackupRetention.MIME),
+            uri -> { if (uri != null) createBackup(uri); });
+    private final ActivityResultLauncher<String[]> backupPicker = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(),
+            uri -> { if (uri != null) confirmRestore(uri); });
+    private final ActivityResultLauncher<Uri> backupFolderPicker = registerForActivityResult(
+            new ActivityResultContracts.OpenDocumentTree(),
+            uri -> { if (uri != null) enableAutoBackup(uri); });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,6 +155,234 @@ public final class SettingsActivity extends AppCompatActivity {
         });
 
         binding.btnSyncNow.setOnClickListener(v -> viewModel.syncNow());
+
+        binding.btnBackupCreate.setOnClickListener(v -> backupCreator.launch(
+                BackupRetention.fileName(System.currentTimeMillis(), ZoneId.systemDefault())));
+        binding.btnBackupRestore.setOnClickListener(v -> backupPicker.launch(
+                new String[]{"application/zip", "application/octet-stream"}));
+        binding.btnBackupAuto.setOnClickListener(v -> {
+            if (new LocalBackupService(this).autoBackupEnabled()) {
+                disableAutoBackup();
+            } else {
+                backupFolderPicker.launch(null);
+            }
+        });
+        renderBackupStatus();
+
+        // Health Connect (issue #255).
+        binding.btnHealthConnect.setOnClickListener(v -> connectHealth());
+        binding.btnHealthExport.setOnClickListener(v -> exportRidesToHealth());
+        binding.btnHealthWeight.setOnClickListener(v -> importWeightFromHealth());
+        binding.switchHealthAuto.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(HealthConnectGateway.PREF_AUTO, false));
+        binding.switchHealthAuto.setOnCheckedChangeListener((b, on) ->
+                PreferenceManager.getDefaultSharedPreferences(this).edit()
+                        .putBoolean(HealthConnectGateway.PREF_AUTO, on).apply());
+        renderHealthStatus();
+    }
+
+    private void renderBackupStatus() {
+        LocalBackupService service = new LocalBackupService(this);
+        binding.backupStatus.setText(String.join("\n", service.status()));
+        binding.btnBackupAuto.setText(service.autoBackupEnabled()
+                ? "Automatische back-up uitzetten" : "Automatische back-up aanzetten");
+    }
+
+    private void createBackup(Uri uri) {
+        backupExecutor.execute(() -> {
+            String msg;
+            try {
+                BackupArchive.Summary s = new LocalBackupService(this).writeTo(uri);
+                msg = "Back-up gemaakt: " + s.fileCount + " bestand(en)";
+            } catch (Exception e) {
+                msg = "Back-up mislukt: " + LocalBackupService.reason(e);
+            }
+            String toast = msg;
+            runOnUiThread(() -> Toast.makeText(this, toast, Toast.LENGTH_LONG).show());
+        });
+    }
+
+    private void confirmRestore(Uri uri) {
+        new AlertDialog.Builder(this)
+                .setTitle("Back-up terugzetten?")
+                .setMessage("Routes, pogingen, foto's, collecties, planning en instellingen "
+                        + "worden vervangen door die uit de back-up. Strava moet je daarna "
+                        + "opnieuw koppelen.")
+                .setPositiveButton("Terugzetten", (d, w) -> restoreBackup(uri))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    private void restoreBackup(Uri uri) {
+        backupExecutor.execute(() -> {
+            String msg;
+            try {
+                BackupArchive.Summary s = new LocalBackupService(this).restoreFrom(uri);
+                msg = "Back-up teruggezet: " + s.fileCount + " bestand(en)";
+            } catch (Exception e) {
+                msg = "Terugzetten mislukt: " + LocalBackupService.reason(e);
+            }
+            String toast = msg;
+            runOnUiThread(() -> {
+                Toast.makeText(this, toast, Toast.LENGTH_LONG).show();
+                viewModel.reload();
+                renderBackupStatus();
+            });
+        });
+    }
+
+    private void enableAutoBackup(Uri treeUri) {
+        try {
+            getContentResolver().takePersistableUriPermission(treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        } catch (SecurityException e) {
+            Toast.makeText(this, "Geen blijvende toegang tot deze map", Toast.LENGTH_LONG).show();
+            return;
+        }
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putString(LocalBackupService.PREF_TREE_URI, treeUri.toString())
+                .apply();
+        AutoBackupWorker.schedule(this);
+        renderBackupStatus();
+        // First backup right away so the user sees it works.
+        backupExecutor.execute(() -> {
+            String msg;
+            try {
+                new LocalBackupService(this).writeAutoBackup();
+                msg = "Automatische back-up staat aan; eerste back-up gemaakt";
+            } catch (Exception e) {
+                msg = "Automatische back-up staat aan, maar de eerste back-up mislukte: "
+                        + LocalBackupService.reason(e);
+            }
+            String toast = msg;
+            runOnUiThread(() -> {
+                Toast.makeText(this, toast, Toast.LENGTH_LONG).show();
+                renderBackupStatus();
+            });
+        });
+    }
+
+    private void disableAutoBackup() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String tree = prefs.getString(LocalBackupService.PREF_TREE_URI, null);
+        if (tree != null) {
+            try {
+                getContentResolver().releasePersistableUriPermission(Uri.parse(tree),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } catch (SecurityException ignored) {
+                // already revoked by the user or the system
+            }
+        }
+        prefs.edit().remove(LocalBackupService.PREF_TREE_URI).apply();
+        AutoBackupWorker.cancel(this);
+        renderBackupStatus();
+        Toast.makeText(this, "Automatische back-up uitgezet", Toast.LENGTH_SHORT).show();
+    }
+
+    private void renderHealthStatus() {
+        HealthConnectGateway gateway = new HealthConnectGateway(this);
+        healthExecutor.execute(() -> {
+            HealthConnectGateway.Availability availability = gateway.availability();
+            int granted = 0;
+            if (availability == HealthConnectGateway.Availability.AVAILABLE) {
+                try {
+                    Set<String> g = gateway.grantedPermissions();
+                    for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
+                } catch (Exception e) {
+                    granted = -1;
+                }
+            }
+            int grantedCount = granted;
+            runOnUiThread(() -> {
+                boolean linked = availability == HealthConnectGateway.Availability.AVAILABLE
+                        && grantedCount > 0;
+                String status;
+                switch (availability) {
+                    case UNAVAILABLE:
+                        status = "Health Connect is niet beschikbaar op deze telefoon.";
+                        break;
+                    case NEEDS_UPDATE:
+                        status = "Installeer of update de Health Connect-app om te koppelen.";
+                        break;
+                    default:
+                        status = linked
+                                ? "Gekoppeld (" + grantedCount + " van "
+                                        + HealthConnectGateway.PERMISSIONS.size() + " toestemmingen)"
+                                : "Nog niet gekoppeld.";
+                }
+                binding.healthStatus.setText(status);
+                binding.btnHealthConnect.setEnabled(
+                        availability != HealthConnectGateway.Availability.UNAVAILABLE);
+                binding.btnHealthConnect.setText(availability
+                        == HealthConnectGateway.Availability.NEEDS_UPDATE
+                        ? "Health Connect installeren"
+                        : linked ? "Toestemmingen wijzigen" : "Koppelen met Health Connect");
+                binding.btnHealthExport.setEnabled(linked);
+                binding.btnHealthWeight.setEnabled(linked);
+                binding.switchHealthAuto.setEnabled(linked);
+            });
+        });
+    }
+
+    private void connectHealth() {
+        if (new HealthConnectGateway(this).availability()
+                == HealthConnectGateway.Availability.NEEDS_UPDATE) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(
+                        "market://details?id=com.google.android.apps.healthdata")));
+            } catch (android.content.ActivityNotFoundException e) {
+                Toast.makeText(this, "Open de Play Store en installeer Health Connect",
+                        Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        healthPermissionLauncher.launch(HealthConnectGateway.PERMISSIONS);
+    }
+
+    private void exportRidesToHealth() {
+        Toast.makeText(this, "Ritten ophalen uit Strava…", Toast.LENGTH_SHORT).show();
+        healthExecutor.execute(() -> {
+            String msg;
+            try {
+                int n = new HealthConnectGateway(this).exportRides();
+                msg = n == 0 ? "Geen nieuwe ritten" : n + " rit(ten) naar Health Connect geschreven";
+            } catch (Exception e) {
+                msg = "Schrijven mislukt: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+            }
+            String toast = msg;
+            runOnUiThread(() -> Toast.makeText(this, toast, Toast.LENGTH_LONG).show());
+        });
+    }
+
+    private void importWeightFromHealth() {
+        healthExecutor.execute(() -> {
+            Double kg;
+            try {
+                kg = new HealthConnectGateway(this).latestWeightKg();
+            } catch (Exception e) {
+                kg = null;
+            }
+            Double weight = kg;
+            runOnUiThread(() -> {
+                if (weight == null) {
+                    Toast.makeText(this, "Geen gewicht gevonden in Health Connect (laatste 90 dagen)",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                // Only fills the field; the user still saves the profile, like any edit.
+                binding.inputRiderWeight.setText(formatKg(weight));
+                Toast.makeText(this, "Gewicht " + formatKg(weight)
+                        + " kg ingevuld; tik op Save rider profile", Toast.LENGTH_LONG).show();
+            });
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        backupExecutor.shutdown();
+        healthExecutor.shutdown();
     }
 
     /** Current ride-intensity field, normalized/clamped exactly like btnSaveProfile does. */

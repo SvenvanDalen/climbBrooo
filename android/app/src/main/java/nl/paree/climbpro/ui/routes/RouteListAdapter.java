@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,13 @@ public final class RouteListAdapter
         String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
         h.nameView.setText(name != null ? name : entry.routeId);
         h.climbCountView.setText(entry.climbCount + " climb(s)");
+        String status = RouteRideStatus.normalize(entry.rideStatus);
+        if (status != null) {
+            h.rideStatusView.setText(RouteRideStatus.label(status));
+            h.rideStatusView.setVisibility(View.VISIBLE);
+        } else {
+            h.rideStatusView.setVisibility(View.GONE);
+        }
         h.itemView.setOnClickListener(v -> { if (listener != null) listener.onRouteClick(entry); });
         h.itemView.setOnLongClickListener(v -> {
             if (listener != null) listener.onRouteLongClick(entry);
@@ -59,10 +67,12 @@ public final class RouteListAdapter
     static final class ViewHolder extends RecyclerView.ViewHolder {
         TextView nameView;
         TextView climbCountView;
+        TextView rideStatusView;
         ViewHolder(View v) {
             super(v);
             nameView      = v.findViewById(R.id.route_name);
             climbCountView = v.findViewById(R.id.route_climb_count);
+            rideStatusView = v.findViewById(R.id.route_ride_status);
         }
     }
 }
