@@ -84,8 +84,9 @@ public final class LocalBackupService {
         ContentResolver resolver = ctx.getContentResolver();
         Uri dirDoc = DocumentsContract.buildDocumentUriUsingTree(
                 treeUri, DocumentsContract.getTreeDocumentId(treeUri));
+        Uri file = null;
         try {
-            Uri file = DocumentsContract.createDocument(resolver, dirDoc, BackupRetention.MIME,
+            file = DocumentsContract.createDocument(resolver, dirDoc, BackupRetention.MIME,
                     BackupRetention.fileName(System.currentTimeMillis(), ZoneId.systemDefault()));
             if (file == null) throw new IOException("Map niet beschrijfbaar");
             writeTo(file);
@@ -93,9 +94,23 @@ public final class LocalBackupService {
             prefs.edit().putLong(PREF_LAST_MS, System.currentTimeMillis())
                     .remove(PREF_LAST_ERROR).apply();
         } catch (IOException | RuntimeException e) {
-            prefs.edit().putString(PREF_LAST_ERROR, String.valueOf(e.getMessage())).apply();
+            // A half-written zip carries a valid backup name, so it would count towards KEEP
+            // and could push a good backup out on the next prune: remove it.
+            if (file != null) {
+                try {
+                    DocumentsContract.deleteDocument(resolver, file);
+                } catch (Exception ignored) {
+                    // best effort
+                }
+            }
+            prefs.edit().putString(PREF_LAST_ERROR, reason(e)).apply();
             throw e instanceof IOException ? (IOException) e : new IOException(e);
         }
+    }
+
+    /** Exception message for the user, or its class name when there is no message. */
+    public static String reason(Exception e) {
+        return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
     }
 
     private void prune(ContentResolver resolver, Uri treeUri) {

@@ -176,7 +176,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 BackupArchive.Summary s = new LocalBackupService(this).writeTo(uri);
                 msg = "Back-up gemaakt: " + s.fileCount + " bestand(en)";
             } catch (Exception e) {
-                msg = "Back-up mislukt: " + e.getMessage();
+                msg = "Back-up mislukt: " + LocalBackupService.reason(e);
             }
             String toast = msg;
             runOnUiThread(() -> Toast.makeText(this, toast, Toast.LENGTH_LONG).show());
@@ -201,7 +201,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 BackupArchive.Summary s = new LocalBackupService(this).restoreFrom(uri);
                 msg = "Back-up teruggezet: " + s.fileCount + " bestand(en)";
             } catch (Exception e) {
-                msg = "Terugzetten mislukt: " + e.getMessage();
+                msg = "Terugzetten mislukt: " + LocalBackupService.reason(e);
             }
             String toast = msg;
             runOnUiThread(() -> {
@@ -233,7 +233,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 msg = "Automatische back-up staat aan; eerste back-up gemaakt";
             } catch (Exception e) {
                 msg = "Automatische back-up staat aan, maar de eerste back-up mislukte: "
-                        + e.getMessage();
+                        + LocalBackupService.reason(e);
             }
             String toast = msg;
             runOnUiThread(() -> {
