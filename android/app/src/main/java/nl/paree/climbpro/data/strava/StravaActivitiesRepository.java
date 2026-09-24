@@ -43,7 +43,7 @@ import java.util.TimeZone;
 public final class StravaActivitiesRepository {
 
     private static final String TAG       = "StravaActivitiesRepo";
-    private static final String PREFS     = "strava_activities";
+    public  static final String PREFS     = "strava_activities";
     private static final String PREF_LAST = "last_sync_epoch_sec";
     /**
      * The set of {@link KnownClimb#climbId}s that were known the last time we let
@@ -155,6 +155,28 @@ public final class StravaActivitiesRepository {
         Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)"
                 + (paginationComplete ? "" : " (incomplete — cursor not advanced)"));
         return created.size();
+    }
+
+    /**
+     * All activities started after {@code afterEpochSec}, oldest pages first (Health Connect
+     * export, issue #255). Unlike {@link #syncActivities()} this only lists; no streams are
+     * fetched and nothing is matched or stored.
+     *
+     * @throws IOException when a page fails, so the caller does not advance its cursor
+     */
+    public List<StravaActivityDto> listActivitiesSince(long afterEpochSec) throws IOException {
+        String token = "Bearer " + auth.getAccessToken();
+        List<StravaActivityDto> out = new ArrayList<>();
+        for (int page = 1; ; page++) {
+            Response<List<StravaActivityDto>> resp =
+                    api.listActivities(token, afterEpochSec, page, 50).execute();
+            if (!resp.isSuccessful()) {
+                throw new IOException("Strava activities page " + page + " failed (HTTP "
+                        + resp.code() + ")");
+            }
+            if (resp.body() == null || resp.body().isEmpty()) return out;
+            out.addAll(resp.body());
+        }
     }
 
     /**

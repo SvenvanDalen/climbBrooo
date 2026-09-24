@@ -15,17 +15,44 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- In-app update checker: install a downloaded release APK from outside the Play Store. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Health Connect (issue #255): write rides, read the latest weight. -->
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
+    <uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+    <uses-permission android:name="android.permission.health.WRITE_ELEVATION_GAINED" />
+    <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
 
     <!-- Required on Android 11+ (targetSdk 30+) so the CIQ SDK can bind to
          the Garmin Connect Mobile service. Without this, initialize() reports
          GCM_NOT_INSTALLED even when Garmin Connect is installed. -->
     <queries>
         <package android:name="com.garmin.android.apps.connectmobile" />
+        <!-- Text-to-speech engine for the spoken voice-shortcut answers (issue #260). -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!-- Find the Wahoo / Hammerhead companion apps among GPX share targets (issue #254). -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="application/gpx+xml" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="application/octet-stream" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <!-- Health Connect app (Android 13 and lower). -->
+        <package android:name="com.google.android.apps.healthdata" />
     </queries>
 
     <application
         android:name=".ClimbProApplication"
-        android:allowBackup="false"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.ClimbPro">
@@ -36,6 +63,26 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!-- Voice-assistant / launcher shortcuts (issue #260). Exported so Google Assistant
+             can open it via OPEN_APP_FEATURE; it only reads/activates the user's own route.
+             configChanges: recreation would run the command (e.g. start ride + sync) twice. -->
+        <activity
+            android:name=".ui.voice.VoiceShortcutActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.ClimbPro.Translucent">
+            <intent-filter>
+                <action android:name="nl.paree.climbpro.action.START_RIDE" />
+                <action android:name="nl.paree.climbpro.action.NEXT_CLIMB" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
@@ -70,6 +117,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.planning.MultiDayTourActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.planning.PlannedClimbListActivity" />
+
+        <activity
             android:name=".ui.climbs.ClimbTimelineActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
@@ -93,6 +145,37 @@
             android:name=".ui.collections.CollectionDetailActivity"
             android:exported="false"
             android:parentActivityName=".ui.collections.CollectionListActivity" />
+
+        <!-- Health Connect permission rationale (issue #255): Android 13 and lower use the
+             intent filter, Android 14+ the activity-alias below. -->
+        <activity
+            android:name=".ui.health.HealthConnectRationaleActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".ui.health.HealthConnectRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity
+            android:name=".ui.privacy.PrivacyDashboardActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.quiz.PhotoQuizActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <!-- Garmin Connect ride import (issue #253): share or open a FIT / GPX / export zip. -->
         <!-- configChanges: a recreated translucent instance would sit invisibly over the app. -->
@@ -180,6 +263,19 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
+        </receiver>
+
+        <!-- Home-screen widget: week totals + next planned climb (issue #259). -->
+        <receiver
+            android:name=".widget.WeekWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_week_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/week_widget_info" />
         </receiver>
 
         <!-- Launches the install prompt once the update-checker's APK download finishes. -->
