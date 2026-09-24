@@ -3,6 +3,7 @@ package nl.paree.climbpro.ui.routes;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -10,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -19,13 +21,16 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
 import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
+import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,6 +100,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnSelectRoute.setEnabled(p != null);
             binding.btnShareToGarmin.setEnabled(p != null);
         });
+        viewModel.rideStatus().observe(this, status ->
+                binding.btnRideStatus.setText("Status: " + RouteRideStatus.label(status)));
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
@@ -108,6 +115,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
+        binding.btnRideStatus.setOnClickListener(v -> showRideStatusDialog());
         binding.btnSaveNotes.setOnClickListener(v ->
                 viewModel.saveNotes(routeId, binding.notesEdit.getText().toString()));
         binding.btnSelectRoute.setOnClickListener(v ->
@@ -119,6 +127,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnShareToGarmin.setOnClickListener(v ->
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(),
                         this::shareToGarminConnect));
+        binding.btnExportBikeComputer.setOnClickListener(v -> showBikeComputerExport());
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
         binding.btnBulkRenameClimbs.setOnClickListener(v ->
                 startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));
@@ -154,6 +163,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append(p.climbCount).append(" klimmen · ")
           .append(p.totalElevationGain).append(" hm");
+        String cmp = ElevationComparisons.describe(p.totalElevationGain);
+        if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
         if (p.hardestClimbName != null) {
             sb.append("\nZwaarste: ").append(p.hardestClimbName)
               .append(String.format(java.util.Locale.US, " (%.1f%%)", p.hardestClimbGradient * 100));
@@ -217,6 +228,26 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
             binding.mapView.getOverlays().add(overlay);
         }
+    }
+
+    /** Bucket-list status picker (issue #158); purely manual, never changed automatically. */
+    private void showRideStatusDialog() {
+        final String[] values = {null, RouteRideStatus.WANT_TO_RIDE, RouteRideStatus.RIDDEN};
+        final String[] labels = new String[values.length];
+        for (int i = 0; i < values.length; i++) labels[i] = RouteRideStatus.label(values[i]);
+        String current = RouteRideStatus.normalize(viewModel.rideStatus().getValue());
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (java.util.Objects.equals(values[i], current)) checked = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Route-status")
+                .setSingleChoiceItems(labels, checked, (d, which) -> {
+                    viewModel.setRideStatus(routeId, values[which]);
+                    d.dismiss();
+                })
+                .setNegativeButton("Annuleren", null)
+                .show();
     }
 
     private void showRenameDialog() {
@@ -469,6 +500,46 @@ public final class RouteDetailActivity extends AppCompatActivity {
             return (int) Math.round(Double.parseDouble(text.trim()) * 1000.0);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    /** Issue #254: route + climb waypoints as GPX to the Wahoo or Hammerhead companion app. */
+    private void showBikeComputerExport() {
+        StoredRoute route = viewModel.route().getValue();
+        if (route == null || route.lats == null || route.lats.length == 0) {
+            Toast.makeText(this, "Route heeft nog geen geometrie om te exporteren",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BikeComputerExport.Target[] targets = BikeComputerExport.Target.values();
+        String[] labels = new String[targets.length + 1];
+        for (int i = 0; i < targets.length; i++) {
+            labels[i] = targets[i].label + (BikeComputerExport.isInstalled(this, targets[i])
+                    ? "" : " (app niet gevonden)");
+        }
+        labels[targets.length] = "Ander apparaat of bestand";
+        new AlertDialog.Builder(this)
+                .setTitle("Exporteer route met klimmen")
+                .setItems(labels, (d, which) ->
+                        exportToBikeComputer(route, which < targets.length ? targets[which] : null))
+                .show();
+    }
+
+    private void exportToBikeComputer(StoredRoute route, BikeComputerExport.Target target) {
+        try {
+            File gpx = BikeComputerExport.writeGpx(this, route);
+            Uri uri = FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", gpx);
+            Intent share = BikeComputerExport.buildShareIntent(this, uri, target);
+            if (target != null && share.getPackage() == null) {
+                Toast.makeText(this, target.label + "-app niet gevonden; kies zelf een app",
+                        Toast.LENGTH_LONG).show();
+            }
+            startActivity(share.getPackage() != null ? share
+                    : Intent.createChooser(share, "Exporteer route"));
+        } catch (Exception e) {
+            String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            Toast.makeText(this, "Exporteren mislukt: " + reason, Toast.LENGTH_LONG).show();
         }
     }
 

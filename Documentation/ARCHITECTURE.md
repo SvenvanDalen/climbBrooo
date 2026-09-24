@@ -343,6 +343,20 @@ Key types — names should match across modules where possible.
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 - Calibration points are a **subset of the segment-end positions** (same 8%-fraction grid), spaced ≥ 200 m apart with the final segment end always included. `Segmenter.calibrationPoints(climbPoints)` and `Segmenter.segment(climbPoints)` must walk identical boundaries.
 
+### Route bucket-list status (issue #158)
+
+`StoredRoute.rideStatus` holds a user-set route status: `null` (geen status — also the
+value for route files written before the field existed), `"WANT_TO_RIDE"` or `"RIDDEN"`
+(constants + Dutch labels in `data/route/RouteRideStatus`). It is mirrored to
+`RouteCatalogEntry.rideStatus` because the route list reads only `catalog.json`; every
+catalog write path (`toCatalogEntry` in `saveRoute`, the stub in
+`rebuildCatalogSurfaceTypes`, and `setRideStatus`) copies it. `saveRoute` carries the
+previous value forward when the incoming route shell has none, so a Strava resync or
+re-import never resets it. The status is purely manual (no automatic change from climb
+attempts), phone-only and never part of the wire payload. The route list filters on it
+via the pure `ui/routes/RouteStatusFilter` (Alle / Wil ik rijden / Gereden), applied
+alongside the surface filter and before sorting.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
@@ -704,7 +718,15 @@ Out-and-back rides are handled by picking the earliest gate entry: this ensures 
 
 ### Persistence
 
+The phone also keeps a **ride archive** (`rides.json`, `data/ride/RideRepository`, issue #160): one `StoredRide` summary per synced Strava cycling activity (distance, moving time, elevation, speeds, commute flag, start/end point). It is filled from the activity *list* endpoint only (no streams), with its own sync cursor that backfills the past year on first run, and never blocks climb matching. `domain/ride/RideClassifier` classifies each ride as woon-werk / training / toerrit on the fly (not persisted). Phone-only; never part of the wire payload.
+
+A **Records** screen (issue #156, `ui/records/RideRecordsActivity`) reads the same archive: `domain/ride/RideRecordsCalculator` derives longest ride, highest average speed (only rides >= 20 km, never `VirtualRide`), most elevation, longest moving time and most consecutive local calendar days with a ride. Ties go to the earliest ride. Computed on the fly, not persisted; phone-only.
+
+**Tire-pressure log** (`tire_pressure_log.json`, `data/tire/TirePressureLogRepository`, issue #155): one JSON object holding the manual checks (timestamp, front/rear pressure in bar with one decimal — the UI shows the psi equivalent next to it to line up with the psi ranges of the #90 tire-pressure advice — optional note) plus the reminder settings (every X days / every X km, 0 = off; defaults 7 days / 300 km). Atomic writes with a static write lock, like `RideRepository`. `domain/tire/TirePressureReminderCalculator` marks a check due when either threshold since the latest entry is reached; km = sum of archived `StoredRide.distanceM` that started after that entry, **excluding `VirtualRide`** (indoor km don't wear road tyres). With no entries yet it is not due (no permanent banner for riders who don't use the feature; the log screen prompts for a first check instead). The reminder is in-app and offline only: a banner on the route list (re-evaluated on resume) plus status on the log screen — no notification permission or worker (possible follow-up). Km only advance when the ride archive syncs from Strava. Phone-only; never part of the wire payload.
+
 Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, following the same JSON-file pattern used for routes. `ClimbAttemptRepository` deduplicates on `(climbId, activityId)` so re-running a sync never creates duplicate entries. Reads are on demand; writes are atomic (temp + rename).
+
+**Maintenance tracker** (`maintenance.json`, `data/maintenance/MaintenanceRepository`, issue #154): one JSON object with the user's components (defaults Ketting 3000 km, Banden 4000 km, Remblokken 2000 km, Service 5000 km / 12 months; the user can add, rename, re-interval and delete components, and an emptied list is not re-seeded). Each component has an interval in km and/or calendar months (0 = off), a last-serviced date and a small history of service dates (max 10). Atomic writes with a static write lock, like `RideRepository`; a missing or corrupt file loads as the default set. `domain/maintenance/MaintenanceCalculator` (pure, explicit now + zone) computes km since service = sum of archived `StoredRide.distanceM` that started after the last-serviced date, **excluding `VirtualRide`** unless the component opts in (trainer km don't wear a road chain/tyres the same way); undated rides are skipped. Due when either interval is reached, "bijna" from 90 %; a component without a known service date is never due (no permanent banner for new users). "Gedaan" appends now to the history and restarts the count. Surfaced in-app only: a banner on the route list (re-evaluated on resume, off the main thread) opening the "Onderhoud" screen (overflow menu). Independent of climb logic; km only advance when the ride archive syncs. Phone-only; never part of the wire payload.
 
 ### Logbook view
 
