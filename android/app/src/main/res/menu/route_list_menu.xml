@@ -35,6 +35,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_elevation_target"
+        android:title="Hoogtemeter-doel"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_timeline"
         android:title="Tijdlijn"
         app:showAsAction="never"/>
