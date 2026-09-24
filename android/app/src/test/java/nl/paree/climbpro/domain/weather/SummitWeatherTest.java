@@ -37,6 +37,17 @@ public class SummitWeatherTest {
                 + "Tip: Neem een windvestje mee voor de afdaling. Let op: harde wind op de top", top);
     }
 
+    @Test public void missingValuesShowUnknownInsteadOfNaN() throws IOException {
+        String gaps = "{\"hourly\":{\"time\":[\"2026-09-24T10:00\"],"
+                + "\"temperature_2m\":[null],\"apparent_temperature\":[null],"
+                + "\"wind_speed_10m\":[null],\"precipitation_probability\":[null]}}";
+        String text = SummitWeather.describe(HourlyForecast.parse(gaps), HourlyForecast.parse(gaps),
+                Instant.parse("2026-09-24T10:15:00Z"), Double.NaN, Double.NaN);
+        assertEquals("Dal: onbekend\nTop: onbekend, voelt als onbekend\n"
+                + "Wind op de top onbekend · regenkans onbekend\n"
+                + "Tip: Geen kledingadvies, gevoelstemperatuur onbekend", text);
+    }
+
     @Test public void clothingThresholds() {
         assertEquals("Winterkleding: lange broek, winterjack en handschoenen", SummitWeather.clothingTip(4.9, 0));
         assertEquals("Arm- en beenstukken plus een windjack", SummitWeather.clothingTip(5, 0));

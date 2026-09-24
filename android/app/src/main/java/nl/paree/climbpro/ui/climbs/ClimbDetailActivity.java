@@ -26,8 +26,13 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.domain.weather.SummitWeather;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -369,22 +374,23 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         StoredRoute r = viewModel.route().getValue();
         StoredClimb c = viewModel.climb().getValue();
         if (r == null || c == null) return;
+        binding.btnSummitWeather.setEnabled(false); // one request at a time, no stacked dialogs
         Toast.makeText(this, "Weer ophalen…", Toast.LENGTH_SHORT).show();
-        nl.paree.climbpro.domain.weather.ClimbEndpoints.Point foot =
-                nl.paree.climbpro.domain.weather.ClimbEndpoints.foot(r, c);
-        nl.paree.climbpro.domain.weather.ClimbEndpoints.Point top =
-                nl.paree.climbpro.domain.weather.ClimbEndpoints.top(r, c);
+        ClimbEndpoints.Point foot =
+                ClimbEndpoints.foot(r, c);
+        ClimbEndpoints.Point top =
+                ClimbEndpoints.top(r, c);
         new Thread(() -> {
             String msg;
             try {
-                nl.paree.climbpro.data.weather.OpenMeteoClient client =
-                        new nl.paree.climbpro.data.weather.OpenMeteoClient();
-                nl.paree.climbpro.domain.weather.HourlyForecast f = client.fetch(foot);
-                nl.paree.climbpro.domain.weather.HourlyForecast t = client.fetch(top);
-                java.time.Instant now = java.time.Instant.now();
-                String nowText = nl.paree.climbpro.domain.weather.SummitWeather.describe(
+                OpenMeteoClient client =
+                        new OpenMeteoClient();
+                HourlyForecast f = client.fetch(foot);
+                HourlyForecast t = client.fetch(top);
+                Instant now = Instant.now();
+                String nowText = SummitWeather.describe(
                         f, t, now, foot.elevationM, top.elevationM);
-                String laterText = nl.paree.climbpro.domain.weather.SummitWeather.describe(
+                String laterText = SummitWeather.describe(
                         f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM);
                 StringBuilder sb = new StringBuilder();
                 if (nowText != null) sb.append("NU\n").append(nowText);
@@ -393,11 +399,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 }
                 msg = sb.length() > 0 ? sb.toString() : "Geen verwachting beschikbaar voor dit moment";
             } catch (Exception e) {
-                msg = "Weer ophalen mislukt: " + e.getMessage();
+                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                msg = "Weer ophalen mislukt: " + reason;
             }
             String text = msg + "\n\nBron: Open-Meteo";
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
+                binding.btnSummitWeather.setEnabled(true);
                 new AlertDialog.Builder(this)
                         .setTitle("Weer op de top")
                         .setMessage(text)
