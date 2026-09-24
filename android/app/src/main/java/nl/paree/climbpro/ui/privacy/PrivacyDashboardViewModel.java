@@ -14,6 +14,7 @@ import nl.paree.climbpro.data.planning.PlannedClimb;
 import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.data.privacy.PrivacyCategory;
 import nl.paree.climbpro.data.privacy.PrivacyInventory;
+import nl.paree.climbpro.data.ride.RideRepository;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
@@ -255,6 +256,9 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 // Photos only exist as part of an attempt, so they go with it.
                 return failed + inventory.deleteFiles(c) + inventory.deleteFiles(PrivacyCategory.PHOTOS);
             }
+            case RIDES:
+                // Through the repository's write lock, like ATTEMPTS.
+                return (new RideRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
             case PHOTOS:
                 new ClimbAttemptRepository(app).clearPhotoReferences();
                 return inventory.deleteFiles(c);
