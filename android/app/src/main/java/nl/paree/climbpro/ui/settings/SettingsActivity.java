@@ -156,6 +156,9 @@ public final class SettingsActivity extends AppCompatActivity {
 
         binding.btnSyncNow.setOnClickListener(v -> viewModel.syncNow());
 
+        binding.btnStravaTitleTemplate.setOnClickListener(v -> startActivity(
+                new android.content.Intent(this, StravaTitleTemplateActivity.class)));
+
         binding.btnBackupCreate.setOnClickListener(v -> backupCreator.launch(
                 BackupRetention.fileName(System.currentTimeMillis(), ZoneId.systemDefault())));
         binding.btnBackupRestore.setOnClickListener(v -> backupPicker.launch(

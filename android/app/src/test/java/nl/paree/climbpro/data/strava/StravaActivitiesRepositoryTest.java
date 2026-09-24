@@ -1,6 +1,8 @@
 package nl.paree.climbpro.data.strava;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -43,6 +45,10 @@ import retrofit2.Response;
 @RunWith(RobolectricTestRunner.class)
 public class StravaActivitiesRepositoryTest {
 
+    /** "Now" for title-update tests: a day after the fixture rides (2026-03-01/02). */
+    private static final long RIDES_PLUS_ONE_DAY_SEC =
+            java.time.Instant.parse("2026-03-03T08:00:00Z").getEpochSecond();
+
     private Application app;
     private RouteRepository routeRepo;
     private ClimbAttemptRepository attemptRepo;
@@ -59,6 +65,8 @@ public class StravaActivitiesRepositoryTest {
         new File(app.getFilesDir(), "incomplete_climb_attempts.json").delete();
         new File(app.getFilesDir(), "rides.json").delete();
         app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
+                .edit().clear().commit();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
                 .edit().clear().commit();
 
         routeRepo   = new RouteRepository(app);
@@ -430,6 +438,234 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(-1L, cursor);
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_withTitleTemplateConfigured_putsRenderedTitle() throws Exception {
+        stubActivityWithFullClimbTrack();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE, 1L)
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb} in {time}")
+                .commit();
+
+        Call<StravaActivityDto> updateCall = mock(Call.class);
+        when(updateCall.execute()).thenReturn(Response.success(new StravaActivityDto()));
+        org.mockito.ArgumentCaptor<StravaUpdateActivityDto> bodyCaptor =
+                org.mockito.ArgumentCaptor.forClass(StravaUpdateActivityDto.class);
+        when(api.updateActivity(anyString(), eq(555L), bodyCaptor.capture()))
+                .thenReturn(updateCall);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
+        repo.syncActivities();
+
+        // StoredClimb has no name/userDisplayName in this fixture, so the renderer falls
+        // back to the climbId itself for {climb}.
+        String expectedClimbId = nl.paree.climbpro.domain.climb.ClimbIdentity.of(45.000, 6.0, 1000);
+        assertEquals(expectedClimbId + " in 5:00", bodyCaptor.getValue().name);
+        assertFalse(repo.titleUpdateAuthExpired());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_titleUpdateRejectedByScope_setsAuthExpiredFlagButKeepsAttempt() throws Exception {
+        stubActivityWithFullClimbTrack();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE, 1L)
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb} in {time}")
+                .commit();
+
+        Call<StravaActivityDto> updateCall = mock(Call.class);
+        when(updateCall.execute()).thenReturn(Response.error(403,
+                okhttp3.ResponseBody.create("missing scope", okhttp3.MediaType.parse("text/plain"))));
+        when(api.updateActivity(anyString(), eq(555L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(updateCall);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
+        int created = repo.syncActivities();
+
+        assertEquals(1, created);
+        assertEquals(1, attemptRepo.loadAll().size());
+        assertTrue(repo.titleUpdateAuthExpired());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_noTitleTemplateConfigured_doesNotCallUpdateActivity() throws Exception {
+        stubActivityWithFullClimbTrack();
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncActivities();
+
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+                .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * A route with two disjoint climbs (start coordinates a degree of latitude apart) that
+     * the same activity's track ascends in a single pass each. {@code climbId} is derived
+     * from lat/lon/length (see {@link nl.paree.climbpro.domain.climb.ClimbIdentity}), and
+     * {@code enumerateKnownClimbs()} collects climbs into a {@code HashMap} before listing
+     * them — i.e. the order {@code updateActivityTitle} used to see them in (via
+     * {@code matched.get(0)}) is arbitrary hash-bucket order, unrelated to which climb the
+     * track actually reaches first. This fixture exists to prove title selection no longer
+     * depends on that order.
+     */
+    private void seedRouteWithTwoClimbs() throws Exception {
+        StoredRoute route = new StoredRoute();
+        route.routeId    = "r2";
+        route.lats       = new double[]{45.000, 45.009, 46.000, 46.009};
+        route.lons       = new double[]{6.0,    6.0,    6.0,    6.0};
+        route.elevations = new double[]{100,    200,    100,    200};
+        route.distances  = new double[]{0,      1000,   2000,   3000};
+
+        StoredClimb early = new StoredClimb();
+        early.startDistance = 0; early.endDistance = 1000; early.length = 1000;
+        early.startLat = 45.000; early.startLon = 6.0;
+        early.userDisplayName = "Climb Early";
+        early.segments = Collections.emptyList();
+
+        StoredClimb late = new StoredClimb();
+        late.startDistance = 2000; late.endDistance = 3000; late.length = 1000;
+        late.startLat = 46.000; late.startLon = 6.0;
+        late.userDisplayName = "Climb Late";
+        late.segments = Collections.emptyList();
+
+        route.climbs = Arrays.asList(early, late);
+
+        File dir = new File(app.getFilesDir(), "routes");
+        dir.mkdirs();
+        new ObjectMapper().writeValue(new File(dir, "r2.json"), route);
+
+        nl.paree.climbpro.data.route.RouteCatalogEntry entry =
+                new nl.paree.climbpro.data.route.RouteCatalogEntry();
+        entry.routeId = "r2";
+        new ObjectMapper().writeValue(
+                new File(app.getFilesDir(), "catalog.json"),
+                new nl.paree.climbpro.data.route.RouteCatalogEntry[]{entry});
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubActivityAscendingLateClimbFirstThenEarlyClimb() throws Exception {
+        // Deliberately named to describe the TRACK order: the activity's GPS track visits
+        // "Climb Late"'s coordinates first (t=0..300) and "Climb Early"'s coordinates
+        // second (t=350..650) — the reverse of their startDistance order on the route, and
+        // independent of any HashMap iteration order — so the title must follow the track's
+        // chronology, not list position.
+        StravaActivityDto act = new StravaActivityDto();
+        act.id = 777L; act.type = "Ride"; act.startDate = "2026-03-01T08:00:00Z";
+
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Collections.singletonList(act)));
+        Call<List<StravaActivityDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(new ArrayList<>()));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listActivities(anyString(), anyLong(), eq(2), anyInt())).thenReturn(page2);
+
+        StravaStreamsDto streams = new StravaStreamsDto();
+        streams.latlng = new StravaStreamsDto.LatLngStream();
+        streams.latlng.data = Arrays.asList(
+                Arrays.asList(46.000, 6.0), Arrays.asList(46.0045, 6.0), Arrays.asList(46.009, 6.0),
+                Arrays.asList(45.000, 6.0), Arrays.asList(45.0045, 6.0), Arrays.asList(45.009, 6.0));
+        streams.time = new StravaStreamsDto.TimeStream();
+        streams.time.data = Arrays.asList(0, 150, 300, 350, 500, 650);
+
+        Call<StravaStreamsDto> streamCall = mock(Call.class);
+        when(streamCall.execute()).thenReturn(Response.success(streams));
+        when(api.getStreams(anyString(), eq(777L), anyString())).thenReturn(streamCall);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_multipleClimbsMatched_titleReflectsTrackEncounterOrder_notListOrder()
+            throws Exception {
+        seedRouteWithTwoClimbs();
+        stubActivityAscendingLateClimbFirstThenEarlyClimb();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE, 1L)
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb}")
+                .commit();
+
+        Call<StravaActivityDto> updateCall = mock(Call.class);
+        when(updateCall.execute()).thenReturn(Response.success(new StravaActivityDto()));
+        org.mockito.ArgumentCaptor<StravaUpdateActivityDto> bodyCaptor =
+                org.mockito.ArgumentCaptor.forClass(StravaUpdateActivityDto.class);
+        when(api.updateActivity(anyString(), eq(777L), bodyCaptor.capture()))
+                .thenReturn(updateCall);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
+        int created = repo.syncActivities();
+
+        // Both climbs matched...
+        assertEquals(2, created);
+        // ...but the title must reflect "Climb Late" — the climb the TRACK reaches first
+        // (t=0), even though it is named "Late" (later startDistance on the route) and
+        // even though "Climb Early" would win under the old matched.get(0)/HashMap-order
+        // selection whenever hash order happened to put it first.
+        assertEquals("Climb Late", bodyCaptor.getValue().name);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_authExpiredMidRun_skipsUpdateActivityForLaterActivitiesButKeepsAttempts()
+            throws Exception {
+        StravaActivityDto act1 = new StravaActivityDto();
+        act1.id = 111L; act1.type = "Ride"; act1.startDate = "2026-03-01T08:00:00Z";
+        StravaActivityDto act2 = new StravaActivityDto();
+        act2.id = 222L; act2.type = "Ride"; act2.startDate = "2026-03-02T08:00:00Z";
+
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(Arrays.asList(act1, act2)));
+        Call<List<StravaActivityDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(new ArrayList<>()));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listActivities(anyString(), anyLong(), eq(2), anyInt())).thenReturn(page2);
+
+        StravaStreamsDto streams = new StravaStreamsDto();
+        streams.latlng = new StravaStreamsDto.LatLngStream();
+        streams.latlng.data = Arrays.asList(
+                Arrays.asList(45.000, 6.0), Arrays.asList(45.0045, 6.0), Arrays.asList(45.009, 6.0));
+        streams.time = new StravaStreamsDto.TimeStream();
+        streams.time.data = Arrays.asList(0, 150, 300);
+        Call<StravaStreamsDto> streamCall = mock(Call.class);
+        when(streamCall.execute()).thenReturn(Response.success(streams));
+        when(api.getStreams(anyString(), eq(111L), anyString())).thenReturn(streamCall);
+        when(api.getStreams(anyString(), eq(222L), anyString())).thenReturn(streamCall);
+
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE, 1L)
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb} in {time}")
+                .commit();
+
+        Call<StravaActivityDto> update1 = mock(Call.class);
+        when(update1.execute()).thenReturn(Response.error(401,
+                okhttp3.ResponseBody.create("missing scope", okhttp3.MediaType.parse("text/plain"))));
+        when(api.updateActivity(anyString(), eq(111L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(update1);
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
+        int created = repo.syncActivities();
+
+        // Both activities' attempts are still recorded...
+        assertEquals(2, created);
+        assertEquals(2, attemptRepo.loadAll().size());
+        assertTrue(repo.titleUpdateAuthExpired());
+        // ...the first activity's title update was attempted (and failed with 401)...
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.times(1))
+                .updateActivity(anyString(), eq(111L), org.mockito.ArgumentMatchers.any());
+        // ...but the second activity's title update must NOT be attempted at all, since the
+        // 401 already proved the scope is missing for the whole sync run.
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+                .updateActivity(anyString(), eq(222L), org.mockito.ArgumentMatchers.any());
+    }
+
     /**
      * Regression test for Bug 3: PREF_KNOWN_CLIMB_IDS must NOT be persisted when the sync
      * aborts before pagination completes — mirroring the pre-existing PREF_LAST guard. Without
@@ -462,6 +698,65 @@ public class StravaActivitiesRepositoryTest {
                 .getStringSet("known_climb_ids_for_incomplete_skip", null);
         assertEquals("aborted sync must not persist the known-climb-id set",
                 0, persisted == null ? 0 : persisted.size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_activityOlderThanMaxAge_titleNotOverwritten() throws Exception {
+        stubActivityWithFullClimbTrack(); // starts 2026-03-01
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE, 1L)
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb}")
+                .commit();
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> java.time.Instant.parse("2026-09-01T00:00:00Z").getEpochSecond();
+        int created = repo.syncActivities();
+
+        assertEquals(1, created); // matching still happens
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+                .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_activityStartedBeforeTemplateWasConfigured_titleNotOverwritten()
+            throws Exception {
+        stubActivityWithFullClimbTrack(); // starts 2026-03-01T08:00Z
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE,
+                        java.time.Instant.parse("2026-03-02T00:00:00Z").getEpochSecond())
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb}")
+                .commit();
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
+        repo.syncActivities();
+
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+                .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void sync_templateWithoutOptInTimestamp_treatsNowAsOptIn() throws Exception {
+        stubActivityWithFullClimbTrack();
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(app).edit()
+                .putString(StravaActivitiesRepository.PREF_TITLE_TEMPLATE, "{climb}")
+                .commit();
+
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
+        repo.syncActivities();
+
+        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+                .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
+        assertEquals(RIDES_PLUS_ONE_DAY_SEC,
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
+                        .getLong(StravaActivitiesRepository.PREF_TITLE_TEMPLATE_SINCE, 0L));
     }
 
     // ---- ride archive (issue #160) ----

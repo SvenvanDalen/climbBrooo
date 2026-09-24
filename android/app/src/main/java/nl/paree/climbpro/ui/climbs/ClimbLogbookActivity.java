@@ -106,8 +106,15 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
                         new RouteRepository(this),
                         new ClimbAttemptRepository(this));
                 int created = repo.syncActivities();
+                boolean reauthNeeded = repo.titleUpdateAuthExpired();
                 runOnUiThread(() -> {
                     Toast.makeText(this, created + " nieuwe poging(en)", Toast.LENGTH_SHORT).show();
+                    if (reauthNeeded) {
+                        Toast.makeText(this,
+                                "Strava-titel bijwerken mislukt — verbind Strava opnieuw "
+                                        + "om titel-sjablonen te gebruiken",
+                                Toast.LENGTH_LONG).show();
+                    }
                     viewModel.loadLogbook();
                 });
             } catch (Exception e) {
