@@ -132,6 +132,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.climbs.RideFatigueActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.climbs.ClimbTimelineActivity" />
+
+        <activity
             android:name=".ui.climbs.UnfinishedClimbsActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
@@ -163,6 +168,11 @@
 
         <activity
             android:name=".ui.collections.CollectionListActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.goals.ElevationGoalActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 

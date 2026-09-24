@@ -41,6 +41,14 @@ public final class StoredClimbAttempt {
     public boolean routeDeviation = false;
 
     /**
+     * Seconds from the activity's first track sample to where this ascent was entered (the
+     * matched pass's entry sample). Orders different climbs of one ride
+     * chronologically — {@link #dateEpochSec} is the activity start and identical for every
+     * attempt of that ride. -1 for attempts recorded before this field existed.
+     */
+    public int startOffsetSec = -1;
+
+    /**
      * Phone-only diary fields (issue #46): a short free-text memory of the attempt, and/or the
      * filename (not a full path) of a photo persisted under
      * {@code getFilesDir()/attempt_photos/} via {@link AttemptPhotoStore}. Both null by default.

@@ -103,6 +103,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         viewModel.rideStatus().observe(this, status ->
                 binding.btnRideStatus.setText("Status: " + RouteRideStatus.label(status)));
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
+        viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
 
