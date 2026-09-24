@@ -85,6 +85,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 routeItems.postValue(buildRouteItems(r));
                 RiderProfile profile = riderRepo.load();
                 int[][] plan = RoutePacingPlanner.plan(r, profile);
+                plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(r, plan);
                 passport.postValue(RoutePassport.from(r, plan));
                 climbTargetSeconds.postValue(perClimbTotals(r, plan));
                 surfaceSections.postValue(

@@ -20,6 +20,7 @@ import nl.paree.climbpro.domain.planning.TourStop;
 import nl.paree.climbpro.domain.planning.TourStopFactory;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.RoutePacingPlanner;
+import nl.paree.climbpro.service.SegmentTargetOverrideMerger;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -124,8 +125,10 @@ public final class MultiDayTourViewModel extends AndroidViewModel {
                     route = null; // deleted/corrupt route: skip this plan entry
                 }
                 routes.put(p.routeId, route);
+                // Manual per-segment targets (issue #23) win, like on the watch and route screen.
                 pacing.put(p.routeId, route != null && profile.isComplete()
-                        ? RoutePacingPlanner.plan(route, profile) : null);
+                        ? SegmentTargetOverrideMerger.merge(route,
+                                RoutePacingPlanner.plan(route, profile)) : null);
             }
             if (route == null) continue;
             int[][] perClimb = pacing.get(p.routeId);

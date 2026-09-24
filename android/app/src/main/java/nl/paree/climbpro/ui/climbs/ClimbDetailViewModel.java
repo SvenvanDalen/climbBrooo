@@ -135,6 +135,23 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     /**
+     * Sets or clears a segment's manual pacing target (issue #23). {@code targetSec} null
+     * reverts the segment to the automatic {@code RoutePacingPlanner} value.
+     */
+    public void setSegmentManualTargetSec(String routeId, int climbIndex, int segmentIndex,
+                                           Integer targetSec) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setSegmentManualTargetSec(routeId, climbIndex, segmentIndex, targetSec);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
      * Sets or clears the climb's manually-entered WR/pro reference time (issue #59).
      * Pass a null/non-positive {@code refSec} to clear.
      */
@@ -323,6 +340,19 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 surface[i] = segs.get(i).surfaceType;
             }
             estimate = ClimbTimeEstimator.estimate(dist, grad, surface, profile);
+        }
+
+        // Apply any per-segment manual overrides (issue #23) so the header total shown here
+        // stays consistent with ClimbSegmentAdapter's per-row display, which already reads
+        // StoredSegment#manualTargetSec directly.
+        if (estimate != null) {
+            int[] merged = nl.paree.climbpro.service.SegmentTargetOverrideMerger
+                    .mergeClimb(c, estimate.segmentSeconds);
+            if (merged != estimate.segmentSeconds) {
+                int total = 0;
+                for (int sec : merged) total += sec;
+                estimate = new ClimbTimeEstimate(total, merged, estimate.assumedPowerWatts);
+            }
         }
 
         timeEstimate.postValue(estimate);

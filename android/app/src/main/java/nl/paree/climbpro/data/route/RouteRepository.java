@@ -407,13 +407,14 @@ public final class RouteRepository {
 
     /**
      * Copies user-supplied climb data (display-name rename, manual WR/pro reference time,
-     * and per-segment surface type) from a route's previous climbs onto the freshly
-     * detected ones. Which previous climb/segment feeds which fresh one is decided by
-     * {@link SegmentRemapper} (issue #87): climbs are matched one-to-one by start distance,
-     * start coordinate or distance-range overlap, and per-segment surface follows geometric
-     * overlap along the route, so user data survives a shifted route start or a changed
-     * segment grid. Only non-UNKNOWN surfaces overwrite, so re-detection never erases a
-     * user's customisation.
+     * per-segment surface type and per-segment manual target time) from a route's previous
+     * climbs onto the freshly detected ones. Which previous climb/segment feeds which fresh one
+     * is decided by {@link SegmentRemapper} (issue #87): climbs are matched one-to-one by start
+     * distance, start coordinate or distance-range overlap, and per-segment surface follows
+     * geometric overlap along the route, so user data survives a shifted route start or a
+     * changed segment grid. Only non-UNKNOWN surfaces overwrite, so re-detection never erases a
+     * user's customisation. Manual segment target times (issue #23) are grid-bound and only
+     * carry over when {@link SegmentRemapper#isSameGrid} holds.
      *
      * @return the route-wide start shift ({@code freshPos = prevPos + offset}) inferred from
      *         the climb matches, used to realign flat stretches; 0 when unknown.
@@ -432,9 +433,14 @@ public final class RouteRepository {
                 f.manualRefLabel = p.manualRefLabel;
             }
             // Surface describes the road, so it is position-bound: carry by overlap.
-            // Grid-bound per-segment data must additionally check SegmentRemapper.isSameGrid.
+            // Manual target times (issue #23) are grid-bound: segments are 8% of the climb, so a
+            // lengthened/trimmed climb keeps 12-13 segments while every boundary moves.
             int[] segMap = SegmentRemapper.mapSegments(f, p, m.offsetM);
+            boolean sameGrid = SegmentRemapper.isSameGrid(f, p, m.offsetM);
             for (int i = 0; i < segMap.length; i++) {
+                if (sameGrid && p.segments.get(i).manualTargetSec != null) {
+                    f.segments.get(i).manualTargetSec = p.segments.get(i).manualTargetSec;
+                }
                 if (segMap[i] < 0) continue;
                 int prevSurface = p.segments.get(segMap[i]).surfaceType;
                 if (prevSurface != SurfaceType.UNKNOWN) {
@@ -690,6 +696,26 @@ public final class RouteRepository {
         route.lastModifiedMs = System.currentTimeMillis();
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /**
+     * Sets (or clears, when {@code targetSec} is null) the manual pacing target of a single
+     * segment (issue #23) — overrides {@code RoutePacingPlanner}'s computed 'tsec' value for
+     * that segment only when the route is next synced to the watch.
+     */
+    public void setSegmentManualTargetSec(String routeId, int climbIndex, int segmentIndex,
+                                           Integer targetSec) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
+            throw new IOException("Climb index out of range: " + climbIndex);
+        }
+        StoredClimb sc = route.climbs.get(climbIndex);
+        if (sc.segments == null || segmentIndex < 0 || segmentIndex >= sc.segments.size()) {
+            throw new IOException("Segment index out of range: " + segmentIndex);
+        }
+        sc.segments.get(segmentIndex).manualTargetSec = targetSec;
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
     }
 
     /**
