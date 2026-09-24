@@ -79,13 +79,17 @@ public class CsvExporterTest {
         StoredClimbAttempt a = attempt(ClimbIdentity.of(c), 1_700_000_000L, 240);
         a.routeDeviation = true;
         a.note = "wind tegen";
+        a.companions = "Anna, Bas";
 
         String[] lines = CsvExporter.attemptsCsv(
                 Collections.singletonList(a), Collections.singletonList(r), UTC).split("\r\n");
 
+        assertEquals("datum,klim,route,klim_id,tijd_sec,tijd,lengte_m,hoogtemeters,"
+                + "gem_snelheid_kmh,vam_m_per_uur,doorgang,afwijkend_gereden,activiteit_id,"
+                + "notitie,meegereden_met", lines[0]);
         // 1200 m in 240 s = 18.0 km/h; 60 m in 240 s = 900 m/h.
         assertEquals("2023-11-14 22:13,Cauberg (eigen),Rondje," + ClimbIdentity.of(c)
-                + ",240,0:04:00,1200,60,18.0,900,1,ja,42,wind tegen", lines[1]);
+                + ",240,0:04:00,1200,60,18.0,900,1,ja,42,wind tegen,\"Anna, Bas\"", lines[1]);
     }
 
     @Test
@@ -95,7 +99,7 @@ public class CsvExporterTest {
         String[] lines = CsvExporter.attemptsCsv(
                 Collections.singletonList(a), Collections.emptyList(), UTC).split("\r\n");
 
-        assertEquals("2023-11-14 22:13,,,gone,300,0:05:00,,,,,1,nee,42,", lines[1]);
+        assertEquals("2023-11-14 22:13,,,gone,300,0:05:00,,,,,1,nee,42,,", lines[1]);
     }
 
     @Test
