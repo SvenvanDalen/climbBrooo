@@ -141,6 +141,8 @@ public final class RouteListActivity extends AppCompatActivity {
         binding.chipMixed.setOnCheckedChangeListener((btn, checked) -> {
             if (checked) viewModel.setSurfaceFilter(SurfaceType.MIXED);
         });
+        binding.maintenanceBanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this)));
 
         binding.fab.setOnClickListener(v -> showImportDialog());
         binding.tirePressureBanner.setOnClickListener(v -> startActivity(
@@ -350,6 +352,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_maintenance) {
+            startActivity(nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
             return true;
@@ -378,6 +383,7 @@ public final class RouteListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        refreshMaintenanceBanner();
         viewModel.loadRoutes();
         viewModel.loadYearlyGoal();
         refreshTirePressureBanner();
@@ -468,6 +474,24 @@ public final class RouteListActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Annuleren", null)
                 .show();
+    }
+
+    /**
+     * Shows the maintenance-due banner (issue #154) when a component needs service. Evaluated
+     * on every resume, off the main thread; no notification or worker involved.
+     */
+    private void refreshMaintenanceBanner() {
+        executor.execute(() -> {
+            String text = nl.paree.climbpro.ui.maintenance.MaintenanceStatusLoader
+                    .load(getApplicationContext(), System.currentTimeMillis() / 1000L)
+                    .bannerText();
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                binding.maintenanceBanner.setText(text);
+                binding.maintenanceBanner.setVisibility(
+                        text != null ? android.view.View.VISIBLE : android.view.View.GONE);
+            });
+        });
     }
 
     private void updateQuickStartButton() {
