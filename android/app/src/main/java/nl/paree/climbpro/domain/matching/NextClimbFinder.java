@@ -127,7 +127,8 @@ public final class NextClimbFinder {
 
     /** "850 meter" below 1 km, else "3,4 kilometer" — written out for text-to-speech. */
     static String distance(int metres) {
-        if (metres < 1000) return (Math.round(metres / 10.0) * 10) + " meter";
+        long rounded = Math.round(metres / 10.0) * 10; // 995 m rounds to 1000: say "1,0 kilometer"
+        if (rounded < 1000) return rounded + " meter";
         return String.format(new Locale("nl"), "%.1f", metres / 1000.0) + " kilometer";
     }
 }

@@ -47,9 +47,11 @@
         </activity>
 
         <!-- Voice-assistant / launcher shortcuts (issue #260). Exported so Google Assistant
-             can open it via OPEN_APP_FEATURE; it only reads/activates the user's own route. -->
+             can open it via OPEN_APP_FEATURE; it only reads/activates the user's own route.
+             configChanges: recreation would run the command (e.g. start ride + sync) twice. -->
         <activity
             android:name=".ui.voice.VoiceShortcutActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:exported="true"
             android:excludeFromRecents="true"
             android:taskAffinity=""

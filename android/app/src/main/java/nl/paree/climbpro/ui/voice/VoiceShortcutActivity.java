@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 
 import androidx.appcompat.app.AlertDialog;
@@ -30,6 +31,9 @@ import java.util.concurrent.Executors;
  * spoken, so it works hands-free. Translucent: no screen of its own besides the answer.
  */
 public final class VoiceShortcutActivity extends AppCompatActivity {
+
+    /** An older last-known fix says where the phone was, not where the rider is now. */
+    private static final long MAX_FIX_AGE_NANOS = 15L * 60 * 1_000_000_000L;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private TextToSpeech tts;
@@ -61,6 +65,7 @@ public final class VoiceShortcutActivity extends AppCompatActivity {
         executor.execute(() -> {
             String answer = cmd == VoiceCommand.START_RIDE ? startRide() : nextClimb();
             runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
                 if (answer == null) {
                     openApp();
                 } else {
@@ -94,7 +99,10 @@ public final class VoiceShortcutActivity extends AppCompatActivity {
                 loc != null ? loc.getLongitude() : null).toSpeech();
     }
 
-    /** Freshest of the GPS/network fixes Android already has; never starts a new fix. */
+    /**
+     * Freshest of the GPS/network fixes Android already has, if it is recent; never starts a
+     * new fix. A stale fix (e.g. from yesterday's ride) would put the rider on the wrong climb.
+     */
     private Location lastKnownLocation() {
         boolean fine = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
@@ -108,7 +116,10 @@ public final class VoiceShortcutActivity extends AppCompatActivity {
                 LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
             try {
                 Location l = lm.getLastKnownLocation(provider);
-                if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
+                if (l == null) continue;
+                long age = SystemClock.elapsedRealtimeNanos() - l.getElapsedRealtimeNanos();
+                if (age > MAX_FIX_AGE_NANOS) continue;
+                if (best == null || l.getTime() > best.getTime()) best = l;
             } catch (SecurityException | IllegalArgumentException ignored) {
                 // provider missing or permission revoked mid-call: try the next one
             }

@@ -106,6 +106,7 @@ public class NextClimbFinderTest {
     public void distance_roundsForSpeech() {
         assertEquals("850 meter", NextClimbFinder.distance(846));
         assertEquals("1,0 kilometer", NextClimbFinder.distance(1000));
+        assertEquals("1,0 kilometer", NextClimbFinder.distance(995)); // not "1000 meter"
         assertEquals("12,3 kilometer", NextClimbFinder.distance(12_345));
     }
 }
