@@ -28,7 +28,6 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -78,15 +77,14 @@ public final class WeekWidgetProvider extends AppWidgetProvider {
 
         WeekSummaryCalculator.WeekSummary week = WeekSummaryCalculator.compute(
                 new ClimbAttemptRepository(ctx).loadAll(), gainByClimbId(ctx), nowSec, zone);
-        List<PlannedClimb> upcoming = PlannedClimbScheduler.upcoming(
-                new PlannedClimbRepository(ctx).loadAll(), nowSec, zone);
+        PlannedClimb next = PlannedClimbScheduler.next(
+                new PlannedClimbRepository(ctx).loadAll(), nowSec);
 
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_week);
         v.setTextViewText(R.id.widget_week_total, week.label());
-        if (upcoming.isEmpty()) {
+        if (next == null) {
             v.setTextViewText(R.id.widget_next_climb, "Geen klim gepland");
         } else {
-            PlannedClimb next = upcoming.get(0);
             String when = new SimpleDateFormat("EEE d MMM HH:mm", new Locale("nl"))
                     .format(new Date(next.plannedAtEpochSec * 1000L));
             v.setTextViewText(R.id.widget_next_climb, next.displayName + " · " + when);
