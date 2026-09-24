@@ -32,9 +32,9 @@ import java.util.Locale;
 public final class RideRecordsActivity extends AppCompatActivity {
 
     private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
     private final DateTimeFormatter dayFormat =
-            DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault());
+            DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
 
     private RideRecordsViewModel viewModel;
 

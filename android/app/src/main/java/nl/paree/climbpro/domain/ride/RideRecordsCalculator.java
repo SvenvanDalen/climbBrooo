@@ -18,8 +18,10 @@ import java.util.function.ToDoubleFunction;
  * <ul>
  *   <li><b>Highest average speed</b> only counts rides of at least
  *       {@link #SPEED_MIN_DISTANCE_M} (a 2 km sprint to the bakery is not a speed record) and
- *       never {@code VirtualRide}s — indoor trainer "speed" is a simulation, not road speed.
- *       Indoor rides do count for the other records and the streak: they are real rides.</li>
+ *       never {@code VirtualRide}s — indoor trainer "speed" is a simulation, not road speed —
+ *       nor e-bike rides ({@code EBikeRide}, {@code EMountainBikeRide}), whose assisted speed
+ *       would beat every unassisted ride. These rides do count for the other records and the
+ *       streak: they are real rides.</li>
  *   <li>Rides with a zero/negative value never hold that record (no "0 km" longest ride).</li>
  *   <li><b>Streak</b> skips undated rides ({@code startEpochSec <= 0}). Days are local calendar
  *       days in the supplied zone; several rides on one day count as one day.</li>
@@ -87,7 +89,13 @@ public final class RideRecordsCalculator {
     }
 
     static boolean qualifiesForSpeed(StoredRide r) {
-        return r.distanceM >= SPEED_MIN_DISTANCE_M && !VIRTUAL_RIDE_TYPE.equals(r.type);
+        return r.distanceM >= SPEED_MIN_DISTANCE_M && !VIRTUAL_RIDE_TYPE.equals(r.type)
+                && !isEBike(r.type);
+    }
+
+    /** Strava's assisted types: "EBikeRide", "EMountainBikeRide". */
+    static boolean isEBike(String type) {
+        return type != null && (type.startsWith("EBike") || type.startsWith("EMountainBike"));
     }
 
     private static StoredRide best(List<StoredRide> rides, ToDoubleFunction<StoredRide> value,

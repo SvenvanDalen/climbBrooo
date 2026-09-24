@@ -104,6 +104,18 @@ public class RideRecordsCalculatorTest {
     }
 
     @Test
+    public void fastestSpeed_excludesEBikeRides_butOtherRecordsIncludeThem() {
+        StoredRide ebike = ride(1, "2026-05-01T10:00", 90, 32);
+        ebike.type = "EBikeRide";
+        StoredRide emtb = ride(2, "2026-05-02T10:00", 30, 31);
+        emtb.type = "EMountainBikeRide";
+        StoredRide road = ride(3, "2026-05-03T10:00", 60, 28);
+        Records rec = compute(ebike, emtb, road);
+        assertSame(road, rec.fastestAvgSpeed);
+        assertSame(ebike, rec.longestDistance);
+    }
+
+    @Test
     public void fastestSpeed_noneWhenOnlyShortOrVirtualRides() {
         StoredRide zwift = ride(1, "2026-05-01T10:00", 40, 38);
         zwift.type = "VirtualRide";
