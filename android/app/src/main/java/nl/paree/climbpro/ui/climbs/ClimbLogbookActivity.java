@@ -11,6 +11,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
@@ -52,6 +53,17 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
             empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
         });
         viewModel.streak().observe(this, this::renderStreak);
+
+        TextView levelTitle = findViewById(R.id.levelTitle);
+        TextView levelXp = findViewById(R.id.levelXp);
+        LinearProgressIndicator bar =
+                findViewById(R.id.levelProgress);
+        viewModel.progress().observe(this, p -> {
+            levelTitle.setText(p.label());
+            bar.setProgress((int) (100 * p.xpIntoLevel / Math.max(1, p.xpForNextLevel)));
+            levelXp.setText(p.totalXp + " XP · nog " + (p.xpForNextLevel - p.xpIntoLevel)
+                    + " XP tot level " + (p.level + 1));
+        });
 
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
