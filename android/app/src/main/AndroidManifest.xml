@@ -21,6 +21,10 @@
          GCM_NOT_INSTALLED even when Garmin Connect is installed. -->
     <queries>
         <package android:name="com.garmin.android.apps.connectmobile" />
+        <!-- Text-to-speech engine for the spoken voice-shortcut answers (issue #260). -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
     </queries>
 
     <application
@@ -36,6 +40,24 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!-- Voice-assistant / launcher shortcuts (issue #260). Exported so Google Assistant
+             can open it via OPEN_APP_FEATURE; it only reads/activates the user's own route. -->
+        <activity
+            android:name=".ui.voice.VoiceShortcutActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.ClimbPro.Translucent">
+            <intent-filter>
+                <action android:name="nl.paree.climbpro.action.START_RIDE" />
+                <action android:name="nl.paree.climbpro.action.NEXT_CLIMB" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
