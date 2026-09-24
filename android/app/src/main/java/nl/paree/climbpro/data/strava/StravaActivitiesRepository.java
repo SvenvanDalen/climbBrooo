@@ -42,7 +42,7 @@ import java.util.TimeZone;
 public final class StravaActivitiesRepository {
 
     private static final String TAG       = "StravaActivitiesRepo";
-    private static final String PREFS     = "strava_activities";
+    public  static final String PREFS     = "strava_activities";
     private static final String PREF_LAST = "last_sync_epoch_sec";
     /**
      * The set of {@link KnownClimb#climbId}s that were known the last time we let

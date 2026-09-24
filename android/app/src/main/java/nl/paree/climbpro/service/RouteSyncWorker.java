@@ -21,6 +21,7 @@ import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.data.strava.StravaRoutesRepository;
 import nl.paree.climbpro.data.sync.SyncState;
 import nl.paree.climbpro.data.sync.SyncStateRepository;
+import nl.paree.climbpro.widget.WeekWidgetProvider;
 
 import java.io.IOException;
 
@@ -113,6 +114,9 @@ public final class RouteSyncWorker extends Worker {
                 .putInt(KEY_CHANGED, r.routesChanged)
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
                 .build();
+
+        // New attempts may have been matched during the pull: keep the widget's week total fresh.
+        WeekWidgetProvider.refresh(ctx);
 
         // Opportunistic, never fails the sync: new Strava rides to Health Connect (issue #255).
         new HealthConnectGateway(ctx).exportIfEnabled();

@@ -61,6 +61,19 @@ public final class PlannedClimbScheduler {
         return Math.max(0L, plan.plannedAtEpochSec - nowEpochSec);
     }
 
+    /**
+     * The next plan that hasn't started yet (planned at or after {@code nowEpochSec}), or
+     * null. Unlike {@link #upcoming}, a plan from earlier today is not "next" any more.
+     */
+    public static PlannedClimb next(List<PlannedClimb> all, long nowEpochSec) {
+        PlannedClimb best = null;
+        for (PlannedClimb p : all) {
+            if (p.plannedAtEpochSec < nowEpochSec) continue;
+            if (best == null || p.plannedAtEpochSec < best.plannedAtEpochSec) best = p;
+        }
+        return best;
+    }
+
     private static long startOfDay(long epochSec, ZoneId zone) {
         return Instant.ofEpochSecond(epochSec).atZone(zone).toLocalDate()
                 .atStartOfDay(zone).toEpochSecond();
