@@ -40,6 +40,16 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_records"
+        android:title="Records"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_tire_pressure_log"
+        android:title="Bandenspanning"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_unfinished_climbs"
         android:title="Nooit voltooide klimmen"
         app:showAsAction="never"/>

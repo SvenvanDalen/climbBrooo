@@ -18,6 +18,57 @@
             android:title="@string/app_name"
             app:popupTheme="@style/ThemeOverlay.Material3.Dark"/>
 
+        <!-- Yearly km goal (issue #157). Always visible: without a goal it shows the km ridden
+             this year plus a prompt to set one. Tap to set/clear the goal. -->
+        <LinearLayout
+            android:id="@+id/yearly_goal_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/bg_card"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/yearly_goal_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textStyle="bold"
+                android:textColor="@color/color_text_primary"
+                android:textSize="14sp"/>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/yearly_goal_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:max="1000"
+                app:indicatorColor="@color/color_accent"
+                app:trackColor="@color/color_surface_raised"
+                app:trackThickness="6dp"
+                app:trackCornerRadius="3dp"/>
+
+            <TextView
+                android:id="@+id/yearly_goal_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="12sp"/>
+        </LinearLayout>
+
         <!-- Maintenance-due banner (issue #154); shown only when a component is due. -->
         <TextView
             android:id="@+id/maintenance_banner"
@@ -126,6 +177,23 @@
                 android:contentDescription="Andere route kiezen voor snelle start"
                 android:text="Wijzig"/>
         </LinearLayout>
+
+        <!-- Tire-pressure reminder banner (issue #155); shown only when a check is due. -->
+        <TextView
+            android:id="@+id/tire_pressure_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/color_accent"
+            android:textColor="@color/color_accent_on"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
