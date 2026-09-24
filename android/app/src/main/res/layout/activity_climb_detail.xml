@@ -106,6 +106,14 @@
                 android:text="Exporteer als GPX"/>
 
             <Button
+                android:id="@+id/btn_sunrise_ride"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Zonsopkomst-rit plannen"/>
+
+            <Button
                 android:id="@+id/btn_summit_weather"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

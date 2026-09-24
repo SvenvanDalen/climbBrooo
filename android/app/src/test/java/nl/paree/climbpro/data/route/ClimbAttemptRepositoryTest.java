@@ -334,4 +334,33 @@ public class ClimbAttemptRepositoryTest {
         assertTrue(repo.knownActivityIds().contains(100L));
         assertTrue(repo.knownActivityIds().contains(101L));
     }
+
+    @Test
+    public void clearPhotoReferences_unlinksEveryPhotoAndKeepsTheRest() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+        StoredClimbAttempt withPhoto = attempt("k1", 1L, 1_700_000_000L, 600);
+        withPhoto.photoFileName = "a.jpg";
+        withPhoto.note = "blijft";
+        repo.append(Arrays.asList(withPhoto, attempt("k2", 2L, 1_700_000_000L, 700)));
+
+        assertEquals(1, repo.clearPhotoReferences());
+
+        List<StoredClimbAttempt> all = repo.loadAll();
+        assertEquals(2, all.size());
+        for (StoredClimbAttempt a : all) assertEquals(null, a.photoFileName);
+        assertEquals("blijft", all.get(0).note);
+        assertEquals(0, repo.clearPhotoReferences());
+    }
+
+    @Test
+    public void deleteAll_removesEveryAttemptAndIsIdempotent() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+        repo.append(Arrays.asList(attempt("k1", 1L, 1_700_000_000L, 600)));
+
+        assertTrue(repo.deleteAll());
+        assertTrue(repo.loadAll().isEmpty());
+        assertTrue(repo.deleteAll()); // nothing left: still fine
+    }
 }

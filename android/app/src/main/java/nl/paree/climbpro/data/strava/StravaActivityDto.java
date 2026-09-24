@@ -21,4 +21,20 @@ public final class StravaActivityDto {
 
     @JsonProperty("distance")
     public float distance;       // metres
+
+    // Used by the Health Connect export (issue #255).
+    @JsonProperty("start_date_local")
+    public String startDateLocal; // local wall time, ISO-8601 with a misleading "Z"
+
+    @JsonProperty("elapsed_time")
+    public int elapsedTime;      // seconds
+
+    @JsonProperty("moving_time")
+    public int movingTime;       // seconds
+
+    @JsonProperty("total_elevation_gain")
+    public float totalElevationGain; // metres
+
+    @JsonProperty("kilojoules")
+    public Double kilojoules;    // work done; rides only, null when unknown
 }
