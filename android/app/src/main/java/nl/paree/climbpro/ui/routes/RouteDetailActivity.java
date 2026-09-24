@@ -22,6 +22,7 @@ import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
+import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
@@ -154,7 +155,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append(p.climbCount).append(" klimmen · ")
           .append(p.totalElevationGain).append(" hm");
-        String cmp = nl.paree.climbpro.domain.climb.ElevationComparisons.describe(p.totalElevationGain);
+        String cmp = ElevationComparisons.describe(p.totalElevationGain);
         if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
         if (p.hardestClimbName != null) {
             sb.append("\nZwaarste: ").append(p.hardestClimbName)

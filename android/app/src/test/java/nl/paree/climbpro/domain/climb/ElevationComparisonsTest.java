@@ -34,6 +34,10 @@ public class ElevationComparisonsTest {
         assertEquals("3,0× Mont Ventoux", ElevationComparisons.describe(4_766));  // 2,96
     }
 
+    @Test public void ratioThatRoundsToTenIsAWholeNumber() {
+        assertEquals("10× Mount Everest", ElevationComparisons.describe(88_140)); // 9,96 would print "10,0×"
+    }
+
     @Test public void largeRatiosAreWholeNumbers() {
         assertEquals("11× Mount Everest", ElevationComparisons.describe(100_000)); // 11,3
     }

@@ -49,7 +49,9 @@ public final class ElevationComparisons {
             return Math.round(100.0 * metres / LANDMARKS[0].heightM) + "% van de " + LANDMARKS[0].name;
         }
         double ratio = (double) metres / pick.heightM;
-        String r = ratio < 10 ? String.format(new Locale("nl"), "%.1f", ratio)
+        // Round first: 9,96 must read "10×", not "10,0×".
+        double oneDecimal = Math.round(ratio * 10) / 10.0;
+        String r = oneDecimal < 10 ? String.format(new Locale("nl"), "%.1f", oneDecimal)
                 : String.valueOf(Math.round(ratio));
         return r + "× " + (pick.building ? "de " : "") + pick.name;
     }
