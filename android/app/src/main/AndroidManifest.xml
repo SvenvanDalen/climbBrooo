@@ -177,6 +177,34 @@
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
+        <!-- Garmin Connect ride import (issue #253): share or open a FIT / GPX / export zip. -->
+        <!-- configChanges: a recreated translucent instance would sit invisibly over the app. -->
+        <activity
+            android:name=".ui.activity.ActivityImportActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="Rit importeren in ClimbPro"
+            android:theme="@style/Theme.ClimbPro.Translucent">
+            <intent-filter android:label="Rit importeren in ClimbPro">
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.ant.fit" />
+                <data android:mimeType="application/fit" />
+                <data android:mimeType="application/gpx+xml" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+            <intent-filter android:label="Rit importeren in ClimbPro">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.ant.fit" />
+                <data android:mimeType="application/fit" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="false"

@@ -42,4 +42,13 @@
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         android:text="Ritten ophalen uit Strava" />
+
+    <Button
+        android:id="@+id/importGarminButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:text="Garmin-rit importeren (FIT / GPX / zip)" />
 </LinearLayout>

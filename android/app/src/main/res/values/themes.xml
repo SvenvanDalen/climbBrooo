@@ -32,7 +32,8 @@
         <item name="android:textColorHint">@color/color_text_tertiary</item>
     </style>
 
-    <!-- Voice shortcuts (issue #260): only the answer dialog shows, over whatever was open. -->
+    <!-- Dialog-only screens (ride import #253, voice shortcuts #260): only the dialog shows,
+         over whatever was open. -->
     <style name="Theme.ClimbPro.Translucent">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
