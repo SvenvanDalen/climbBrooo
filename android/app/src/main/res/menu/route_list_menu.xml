@@ -45,6 +45,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_photo_quiz"
+        android:title="Fotoquiz"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_collections"
         android:title="Collecties"
         app:showAsAction="never"/>
@@ -52,6 +57,16 @@
     <item
         android:id="@+id/action_climb_hygiene"
         android:title="Klim-opschoning"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_export_csv"
+        android:title="Exporteer CSV"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_privacy"
+        android:title="Privacy-dashboard"
         app:showAsAction="never"/>
 
     <item
