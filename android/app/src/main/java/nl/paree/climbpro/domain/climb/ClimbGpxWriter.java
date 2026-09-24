@@ -19,6 +19,11 @@ import nl.paree.climbpro.data.route.StoredSegment;
  * without Robolectric/instrumentation; the file-write/share-sheet glue lives in {@code
  * ui.climbs.ClimbGpxExportHandoff}. Phone-only — this is a distinct export format from the
  * Connect IQ wire payload the watch consumes, so it does not touch {@code protocol/}.
+ *
+ * <p>{@link #appendClimb} builds just the inner {@code <wpt>}/{@code <trk>} fragment for one
+ * climb; {@link #toGpx} wraps a single fragment in a standalone {@code <gpx>} document.
+ * {@link BatchClimbGpxWriter} reuses {@link #appendClimb} to pack several climbs' fragments
+ * into one multi-track document (issue #91) without duplicating this XML-building logic.
  */
 public final class ClimbGpxWriter {
 
@@ -57,6 +62,37 @@ public final class ClimbGpxWriter {
      */
     public static String toGpx(StoredRoute route, StoredClimb climb, int climbIndex,
             int[] bestSplitSec, Integer bestElapsedSec, double privacyRadiusMeters) {
+        StringBuilder sb = new StringBuilder(768);
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
+                + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+        // One builder for both: a single climb's waypoints already precede its track.
+        appendClimb(sb, sb, route, climb, climbIndex, bestSplitSec, bestElapsedSec, false,
+                privacyRadiusMeters);
+        sb.append("</gpx>\n");
+        return sb.toString();
+    }
+
+    /**
+     * Appends one climb's {@code <wpt>} markers to {@code wptOut} and its {@code <trk>} to
+     * {@code trkOut}, both destined for an already-open {@code <gpx>...</gpx>} envelope.
+     * Shared by {@link #toGpx} (one climb, one document) and {@link BatchClimbGpxWriter}
+     * (several climbs, one document). The two outputs are separate because GPX 1.1 requires
+     * every {@code <wpt>} to precede every {@code <trk>}, so a batch must collect all
+     * waypoints before writing any track. Nothing is appended if validation throws.
+     *
+     * @param prefixWaypointNames prefix each waypoint name with the climb name ("Climb — Top")
+     *                            so waypoints stay distinguishable in a multi-climb file.
+     * @param privacyRadiusMeters home-climb privacy radius (issue #92), see {@link
+     *                            #toGpx(StoredRoute, StoredClimb, int, int[], Integer, double)}.
+     * @throws IllegalArgumentException if {@code route} has no usable geometry, {@code
+     *         climb} is null, the climb's start/end distance don't map onto any point
+     *         in {@code route} — the same validation {@link #toGpx} always performed — or a
+     *         home climb has no usable privacy zone centre for a positive radius.
+     */
+    static void appendClimb(StringBuilder wptOut, StringBuilder trkOut, StoredRoute route,
+            StoredClimb climb, int climbIndex, int[] bestSplitSec, Integer bestElapsedSec,
+            boolean prefixWaypointNames, double privacyRadiusMeters) {
         if (route == null || route.lats == null || route.lons == null || route.distances == null
                 || route.lats.length == 0
                 || route.lons.length < route.lats.length
@@ -91,7 +127,7 @@ public final class ClimbGpxWriter {
         double[] zoneCentre = null;
         if (climb.isHome && privacyRadiusMeters > 0) {
             // Fail closed: exporting a home climb without a usable centre would either leak
-            // the start or need a centre derived from it (reversible). The caller persists a
+            // the start or need a centre derived from it (reversible). Callers persist a
             // SecureRandom centre first (see ClimbDetailViewModel#exportGpx).
             if (!CoordinateFuzzer.isUsableZoneCentre(climb.privacyCentreLat,
                     climb.privacyCentreLon, climb.startLat, climb.startLon, privacyRadiusMeters)) {
@@ -101,62 +137,56 @@ public final class ClimbGpxWriter {
             zoneCentre = new double[] {climb.privacyCentreLat, climb.privacyCentreLon};
         }
 
-        StringBuilder sb = new StringBuilder(512 + (endIdx - startIdx + 1) * 64);
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
-                + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+        String wptPrefix = prefixWaypointNames ? name + " — " : "";
+        appendWaypoints(wptOut, route, climb, startIdx, endIdx, zoneCentre, privacyRadiusMeters,
+                bestSplitSec, bestElapsedSec, name, wptPrefix);
 
-        appendWaypoints(sb, route, climb, startIdx, endIdx, zoneCentre, privacyRadiusMeters,
-                bestSplitSec, bestElapsedSec, name);
-
-        sb.append("  <trk>\n");
-        sb.append("    <name>").append(escape(name)).append("</name>\n");
-        sb.append("    <trkseg>\n");
+        trkOut.append("  <trk>\n");
+        trkOut.append("    <name>").append(escape(name)).append("</name>\n");
+        trkOut.append("    <trkseg>\n");
         if (zoneCentre != null) {
-            sb.append("      <trkpt lat=\"").append(fmt(zoneCentre[0]))
-              .append("\" lon=\"").append(fmt(zoneCentre[1])).append("\">");
+            trkOut.append("      <trkpt lat=\"").append(fmt(zoneCentre[0]))
+                  .append("\" lon=\"").append(fmt(zoneCentre[1])).append("\">");
             if (route.elevations != null && startIdx < route.elevations.length
                     && !Double.isNaN(route.elevations[startIdx])) {
                 // Elevation alone doesn't pinpoint a location, so the true value at the climb
                 // start is kept — only lat/lon within the privacy zone are obscured/dropped.
-                sb.append("<ele>").append(fmtEle(route.elevations[startIdx])).append("</ele>");
+                trkOut.append("<ele>").append(fmtEle(route.elevations[startIdx])).append("</ele>");
             }
-            sb.append("</trkpt>\n");
+            trkOut.append("</trkpt>\n");
         }
         for (int i = startIdx; i <= endIdx; i++) {
             if (isHidden(route, i, zoneCentre, privacyRadiusMeters)) continue;
-            sb.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
-              .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
+            trkOut.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
+                  .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
             if (route.elevations != null && i < route.elevations.length
                     && !Double.isNaN(route.elevations[i])) {
-                sb.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
+                trkOut.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
             }
-            sb.append("</trkpt>\n");
+            trkOut.append("</trkpt>\n");
         }
-        sb.append("    </trkseg>\n");
-        sb.append("  </trk>\n");
-        sb.append("</gpx>\n");
-        return sb.toString();
+        trkOut.append("    </trkseg>\n");
+        trkOut.append("  </trk>\n");
     }
 
     private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
             int startIdx, int endIdx, double[] zoneCentre, double privacyRadiusMeters,
-            int[] bestSplitSec, Integer bestElapsedSec, String climbName) {
+            int[] bestSplitSec, Integer bestElapsedSec, String climbName, String wptPrefix) {
         List<StoredSegment> segments = climb.segments;
         if (segments == null || segments.isEmpty()) return;
 
         if (bestElapsedSec != null && bestElapsedSec > 0) {
+            String prDesc = climbName + " — personal record " + formatDuration(bestElapsedSec);
             if (zoneCentre != null) {
                 Double ele = route.elevations != null && startIdx < route.elevations.length
                         && !Double.isNaN(route.elevations[startIdx])
                         ? route.elevations[startIdx] : null;
                 appendWaypoint(sb, zoneCentre[0], zoneCentre[1], ele,
-                        "PR", climbName + " — personal record " + formatDuration(bestElapsedSec),
-                        "Flag, Green");
+                        wptPrefix + "PR", prDesc, "Flag, Green");
             } else {
-                appendWaypoint(sb, route, nearestIndex(route, startIdx, endIdx, climb.startDistance),
-                        "PR", climbName + " — personal record " + formatDuration(bestElapsedSec),
-                        "Flag, Green");
+                appendWaypoint(sb, route,
+                        nearestIndex(route, startIdx, endIdx, climb.startDistance),
+                        wptPrefix + "PR", prDesc, "Flag, Green");
             }
         }
 
@@ -174,7 +204,7 @@ public final class ClimbGpxWriter {
             }
 
             boolean isTop = i == segments.size() - 1;
-            String wptName = isTop ? "Top" : "Segment " + (i + 1);
+            String wptName = wptPrefix + (isTop ? "Top" : "Segment " + (i + 1));
             StringBuilder desc = new StringBuilder();
             desc.append(String.format(Locale.US, "%.1f%% gradient", seg.gradient * 100));
             if (havePr) {

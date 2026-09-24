@@ -61,6 +61,10 @@ public final class ClimbMergeService {
         if (keepClimb.userDisplayName == null && removeClimb.userDisplayName != null) {
             routeRepo.renameClimb(keep.routeId, keepResolved.index, removeClimb.userDisplayName);
         }
+        if (keepClimb.shapeOverride == null && removeClimb.shapeOverride != null) {
+            routeRepo.setClimbShapeOverride(keep.routeId, keepResolved.index,
+                    removeClimb.shapeOverride);
+        }
 
         // Order matters for failure-safety: removeClimb() is performed BEFORE remapAttempts() so
         // that if remapAttempts() (or the collection-membership update) throws, the climb is

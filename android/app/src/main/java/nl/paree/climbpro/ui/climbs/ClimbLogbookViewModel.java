@@ -8,16 +8,16 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
-import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
-import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.domain.climb.ClimbCatalogIndex;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ClimbStreakCalculator;
 import nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.Summary;
+import nl.paree.climbpro.domain.climb.XpCalculator;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,10 +57,14 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
         final String routeId;
         final int    index;
         final String displayName;
-        Location(String routeId, int index, String displayName) {
+        final int    gainM;
+        final int    lengthM;
+        Location(String routeId, int index, String displayName, int gainM, int lengthM) {
             this.routeId = routeId;
             this.index = index;
             this.displayName = displayName;
+            this.gainM = gainM;
+            this.lengthM = lengthM;
         }
     }
 
@@ -70,6 +74,7 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
 
     private final MutableLiveData<List<LogbookRow>> rows = new MutableLiveData<>();
     private final MutableLiveData<Streak> streak = new MutableLiveData<>();
+    private final MutableLiveData<XpCalculator.Progress> progress = new MutableLiveData<>();
 
     public ClimbLogbookViewModel(@NonNull Application app) {
         super(app);
@@ -81,6 +86,9 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
 
     /** Current + longest consecutive-day climb streak, see {@link ClimbStreakCalculator}. */
     public LiveData<Streak> streak() { return streak; }
+
+    /** Level + XP derived from all attempts, see {@link XpCalculator}. */
+    public LiveData<XpCalculator.Progress> progress() { return progress; }
 
     public void loadLogbook() {
         executor.execute(() -> {
@@ -101,29 +109,28 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
             out.sort(Comparator.comparingLong((LogbookRow r) -> r.lastDateSec).reversed());
             rows.postValue(out);
             streak.postValue(ClimbStreakCalculator.compute(attempts));
+
+            Map<String, XpCalculator.ClimbStats> stats = new HashMap<>();
+            for (Map.Entry<String, Location> e : located.entrySet()) {
+                stats.put(e.getKey(),
+                        new XpCalculator.ClimbStats(e.getValue().gainM, e.getValue().lengthM));
+            }
+            progress.postValue(XpCalculator.compute(attempts, stats));
         });
     }
 
     /** Maps each wanted climbId to the first route+index that contains it, with a display name. */
     private Map<String, Location> resolveLocations(Set<String> wanted) {
         Map<String, Location> map = new HashMap<>();
-        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
-            try {
-                StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                if (route.climbs == null) continue;
-                for (int i = 0; i < route.climbs.size(); i++) {
-                    StoredClimb c = route.climbs.get(i);
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
-                    if (wanted.contains(id) && !map.containsKey(id)) {
-                        String name = c.userDisplayName != null ? c.userDisplayName
-                                : (c.name != null ? c.name : "Klim");
-                        map.put(id, new Location(entry.routeId, i, name));
-                    }
-                }
-            } catch (Exception ignored) {
-                // A route that fails to load just won't resolve its climbs' names/links.
-            }
+        for (Map.Entry<String, ClimbCatalogIndex.Entry> en
+                : ClimbCatalogIndex.resolve(routeRepo, wanted).entrySet()) {
+            ClimbCatalogIndex.Entry located = en.getValue();
+            StoredClimb c = located.climb;
+            String name = c.userDisplayName != null ? c.userDisplayName
+                    : (c.name != null ? c.name : "Klim");
+            int len = ClimbIdentity.effectiveLength(c);
+            map.put(en.getKey(), new Location(located.routeId, located.index, name,
+                    c.elevationGain, len));
         }
         return map;
     }

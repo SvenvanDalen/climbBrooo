@@ -14,12 +14,18 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
 
+import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
+import nl.paree.climbpro.domain.power.RiderProfile;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -70,5 +76,66 @@ public class ClimbDetailViewModelTest {
 
         assertNotNull(received[0]);
         assertEquals("r1", received[0].routeId);
+    }
+
+    @Test
+    public void computeEstimate_totalReflectsManualSegmentOverride() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+
+        SharedPreferences prefs = app.getSharedPreferences("route_repo", Context.MODE_PRIVATE);
+        prefs.edit().putInt("segment_version", ClimbConstants.SEGMENT_VERSION).commit();
+
+        new RiderProfileRepository(app).save(new RiderProfile(250, 70, 8, 70));
+
+        StoredRoute route = new StoredRoute();
+        route.routeId = "r2";
+        // No distances/elevations array -> RouteEffortProfileBuilder.build() returns null,
+        // forcing the per-climb ClimbTimeEstimator fallback path used by computeEstimate().
+        StoredClimb climb = new StoredClimb();
+        climb.startDistance = 0;
+        climb.endDistance = 2000;
+        List<StoredSegment> segs = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            StoredSegment s = new StoredSegment();
+            s.distance = 500;
+            s.gradient = 0.06;
+            segs.add(s);
+        }
+        climb.segments = segs;
+        route.climbs = Collections.singletonList(climb);
+
+        File dir = new File(app.getFilesDir(), "routes");
+        dir.mkdirs();
+        new ObjectMapper().writeValue(new File(dir, "r2.json"), route);
+
+        ClimbDetailViewModel vm = new ClimbDetailViewModel(app);
+        final ClimbTimeEstimate[] autoEstimate = {null};
+        vm.timeEstimate().observeForever(e -> autoEstimate[0] = e);
+        vm.loadClimb("r2", 0);
+        waitFor(() -> autoEstimate[0] != null);
+
+        int[] autoSegSeconds = autoEstimate[0].segmentSeconds.clone();
+        int autoTotal = autoEstimate[0].totalSeconds;
+
+        // Manually override the middle segment's target time to something the auto planner
+        // would not have produced.
+        int overriddenSec = autoSegSeconds[1] + 999;
+        vm.setSegmentManualTargetSec("r2", 0, 1, overriddenSec);
+        waitFor(() -> autoEstimate[0] != null
+                && autoEstimate[0].segmentSeconds[1] == overriddenSec);
+
+        int expectedTotal = autoSegSeconds[0] + overriddenSec + autoSegSeconds[2];
+        assertEquals("header total must reflect the manual override, matching the per-row sum",
+                expectedTotal, autoEstimate[0].totalSeconds);
+        // Sanity: the override actually changed the total vs. the pure auto estimate.
+        org.junit.Assert.assertNotEquals(autoTotal, autoEstimate[0].totalSeconds);
+    }
+
+    private static void waitFor(java.util.function.BooleanSupplier condition) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 2000;
+        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle();
+            Thread.sleep(10);
+        }
     }
 }

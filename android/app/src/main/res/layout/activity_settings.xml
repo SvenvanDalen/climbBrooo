@@ -206,6 +206,7 @@
                     android:text="Save rider profile"/>
             </LinearLayout>
 
+            <!-- Home-climb privacy zone (issue #92). -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -249,6 +250,108 @@
                     android:max="1900"
                     android:progress="400"/>
 
+            </LinearLayout>
+
+            <!-- Health Connect (issue #255). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Health Connect"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/health_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_health_connect"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Koppelen met Health Connect"/>
+
+                <Button
+                    android:id="@+id/btn_health_export"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Ritten nu naar Health Connect"/>
+
+                <Button
+                    android:id="@+id/btn_health_weight"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Gewicht overnemen"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_health_auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Nieuwe ritten automatisch na elke sync"/>
+            </LinearLayout>
+
+            <!-- Back-up (issue #257): manual zip + daily automatic copy to a picked folder. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Back-up"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/backup_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_backup_create"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Back-up maken"/>
+
+                <Button
+                    android:id="@+id/btn_backup_restore"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Back-up terugzetten"/>
+
+                <Button
+                    android:id="@+id/btn_backup_auto"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Automatische back-up aanzetten"/>
             </LinearLayout>
 
             <Button
