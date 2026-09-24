@@ -154,6 +154,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append(p.climbCount).append(" klimmen · ")
           .append(p.totalElevationGain).append(" hm");
+        String cmp = nl.paree.climbpro.domain.climb.ElevationComparisons.describe(p.totalElevationGain);
+        if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
         if (p.hardestClimbName != null) {
             sb.append("\nZwaarste: ").append(p.hardestClimbName)
               .append(String.format(java.util.Locale.US, " (%.1f%%)", p.hardestClimbGradient * 100));
