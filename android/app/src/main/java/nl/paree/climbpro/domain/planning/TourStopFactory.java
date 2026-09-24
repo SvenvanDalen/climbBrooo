@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.planning;
 
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.domain.climb.ClimbIdentity;
 
 /**
  * Builds {@link TourStop}s from stored routes for {@link MultiDayTourPlanner}. Pure: the caller
@@ -40,19 +41,22 @@ public final class TourStopFactory {
 
     /**
      * A whole planned route as one indivisible stop: from its first to its last point, with the
-     * summed climb elevation gain as load (the same "klim-hm" unit as single climbs). Returns
-     * null when the route has no usable geometry to place it.
+     * summed climb elevation gain as load and the summed climb length as length (the same
+     * "klim" units as single climbs, so a day's "Klimmen: x km" never mixes in the flat
+     * kilometres of a whole route). Returns null when the route has no usable geometry.
      */
     public static TourStop fromWholeRoute(StoredRoute route, int wholeRouteIndex, String name,
                                           Integer climbSeconds) {
         if (route == null || !hasGeometry(route)) return null;
         int last = route.lats.length - 1;
         int hm = 0;
+        int length = 0;
         if (route.climbs != null) {
-            for (StoredClimb c : route.climbs) hm += Math.max(0, c.elevationGain);
+            for (StoredClimb c : route.climbs) {
+                hm += Math.max(0, c.elevationGain);
+                length += Math.max(0, ClimbIdentity.effectiveLength(c));
+            }
         }
-        int length = route.distances != null && route.distances.length > 0
-                ? (int) Math.round(route.distances[route.distances.length - 1]) : 0;
         return new TourStop(key(route.routeId, wholeRouteIndex), name,
                 route.lats[0], route.lons[0], route.lats[last], route.lons[last],
                 hm, length, climbSeconds);

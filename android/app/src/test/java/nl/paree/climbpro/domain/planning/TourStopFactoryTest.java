@@ -68,7 +68,7 @@ public class TourStopFactoryTest {
         assertEquals(45.0, s.startLat, 1e-9);
         assertEquals(45.3, s.endLat, 1e-9);
         assertEquals(200, s.elevationGainM);
-        assertEquals(3000, s.lengthM);
+        assertEquals(900, s.lengthM); // climb km only, not the route's 3 km
 
         StoredRoute noGeo = route();
         noGeo.lats = null;
