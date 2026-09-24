@@ -24,7 +24,8 @@ import nl.paree.climbpro.data.route.AttemptPhotoStore;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
-import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.quiz.PhotoQuizBuilder;
@@ -99,8 +100,16 @@ public final class PhotoQuizActivity extends AppCompatActivity {
         options.removeAllViews();
         next.setVisibility(View.GONE);
         executor.execute(() -> {
-            List<Question> qs = PhotoQuizBuilder.build(
-                    new ClimbAttemptRepository(this).loadAll(), climbNames(),
+            // Skip photos whose file is gone (e.g. data restored without the photo folder);
+            // they would give a question with a blank picture.
+            List<StoredClimbAttempt> withPhoto = new ArrayList<>();
+            for (StoredClimbAttempt a : new ClimbAttemptRepository(this).loadAll()) {
+                if (a.photoFileName == null || a.photoFileName.isEmpty()
+                        || AttemptPhotoStore.fileFor(this, a.photoFileName).exists()) {
+                    withPhoto.add(a);
+                }
+            }
+            List<Question> qs = PhotoQuizBuilder.build(withPhoto, climbNames(),
                     ROUND_LENGTH, new Random());
             runOnUiThread(() -> {
                 questions = qs;
@@ -128,7 +137,8 @@ public final class PhotoQuizActivity extends AppCompatActivity {
         executor.execute(() -> {
             Bitmap bmp = decode(AttemptPhotoStore.fileFor(this, q.photoFileName), target);
             runOnUiThread(() -> {
-                if (questions.isEmpty() || questions.get(index) != q) return; // moved on
+                // moved on: next question, the result screen (index == size) or a new round
+                if (index >= questions.size() || questions.get(index) != q) return;
                 photo.setImageBitmap(bmp);
             });
         });
@@ -147,6 +157,7 @@ public final class PhotoQuizActivity extends AppCompatActivity {
     }
 
     private void answer(Question q, String chosen) {
+        if (next.getVisibility() == View.VISIBLE) return; // already answered (double tap)
         boolean right = q.answer.equals(chosen);
         if (right) score++;
         message.setText(right ? "Goed! Dit is " + q.answer : "Helaas, dit is " + q.answer);
