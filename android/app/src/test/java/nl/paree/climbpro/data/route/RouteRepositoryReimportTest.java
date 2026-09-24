@@ -119,6 +119,29 @@ public class RouteRepositoryReimportTest {
     }
 
     @Test
+    public void manualSegmentTargetDroppedWhenGridMovesWithSameSegmentCount() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setSegmentManualTargetSec("r1", 0, 1, 95);
+
+        // Same start and still two segments, but the climb got longer: the boundary moved.
+        List<Segment> segs = new ArrayList<>();
+        segs.add(new Segment(600, 36, 0.06, 3));
+        segs.add(new Segment(600, 36, 0.06, 3));
+        List<Climb> longer = new ArrayList<>();
+        longer.add(Climb.builder()
+                .startDistance(0).endDistance(1200)
+                .length(1200).elevationGain(72).avgGradient(0.06)
+                .startLat(51.0).startLon(5.0)
+                .segments(segs)
+                .build());
+        repo.saveRoute(routeShell("r1"), points(), longer);
+
+        assertEquals("a target must not move onto a different stretch of road",
+                null, repo.loadRoute("r1").climbs.get(0).segments.get(1).manualTargetSec);
+    }
+
+    @Test
     public void saveRoutePersistsClimbCalibrationPoints() throws Exception {
         RouteRepository repo = new RouteRepository(app);
 

@@ -419,9 +419,9 @@ public final class RouteRepository {
             if (f.segments != null && p.segments != null) {
                 int n = Math.min(f.segments.size(), p.segments.size());
                 // Manual segment target times (issue #23) are only meaningful on the exact
-                // same segment grid: with a different segment count every boundary moved, so
-                // an old per-segment target would pace a different stretch of road.
-                boolean sameGrid = f.segments.size() == p.segments.size();
+                // same segment grid. The count alone isn't enough: segments are 8% of the climb,
+                // so a lengthened/trimmed climb keeps 12-13 segments while every boundary moves.
+                boolean sameGrid = sameSegmentGrid(f.segments, p.segments);
                 for (int i = 0; i < n; i++) {
                     int prevSurface = p.segments.get(i).surfaceType;
                     if (prevSurface != SurfaceType.UNKNOWN) {
@@ -685,6 +685,21 @@ public final class RouteRepository {
         route.lastModifiedMs = System.currentTimeMillis();
         writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
+    }
+
+    /** Grid tolerance, like SegmentRemapper's in #87: GPS/elevation noise, not a new grid. */
+    static final int SAME_GRID_TOLERANCE_M = 10;
+
+    /**
+     * Same count and every segment length within {@link #SAME_GRID_TOLERANCE_M}; climbs are
+     * matched by identical start distance, so equal lengths mean equal boundaries.
+     */
+    static boolean sameSegmentGrid(List<StoredSegment> a, List<StoredSegment> b) {
+        if (a == null || b == null || a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (Math.abs(a.get(i).distance - b.get(i).distance) > SAME_GRID_TOLERANCE_M) return false;
+        }
+        return true;
     }
 
     /**
