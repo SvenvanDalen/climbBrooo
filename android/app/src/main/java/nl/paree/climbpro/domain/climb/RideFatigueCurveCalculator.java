@@ -174,6 +174,9 @@ public final class RideFatigueCurveCalculator {
             ClimbRef ref = climbInfoById.get(a.climbId);
             // elapsedSec/elevationGainM must both be positive or VAM is undefined/meaningless.
             if (ref == null || a.elapsedSec <= 0 || ref.elevationGainM <= 0) continue;
+            // A pass that left the climb's line (issue #77) has a time that isn't comparable,
+            // like elsewhere in the app where it's excluded from PRs.
+            if (a.routeDeviation) continue;
             usable.add(a);
         }
         return usable;

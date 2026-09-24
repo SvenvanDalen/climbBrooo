@@ -130,6 +130,26 @@ public class RideFatigueCurveCalculatorTest {
     }
 
     @Test
+    public void computeForActivity_skipsRouteDeviationAttempts() {
+        List<StoredClimbAttempt> attempts = new ArrayList<>();
+        attempts.add(attempt("c1", 111L, 300, 0));
+        StoredClimbAttempt shortcut = attempt("c2", 111L, 120, 0); // cut the corner: fake-fast
+        shortcut.routeDeviation = true;
+        attempts.add(shortcut);
+        attempts.add(attempt("c3", 111L, 400, 0));
+
+        Map<String, ClimbRef> refs = refs(
+                "c1", new ClimbRef("Climb 1", 500, "route1", 0),
+                "c2", new ClimbRef("Climb 2", 500, "route1", 1),
+                "c3", new ClimbRef("Climb 3", 500, "route1", 2));
+
+        List<FatiguePoint> curve = RideFatigueCurveCalculator.computeForActivity(attempts, refs);
+        assertEquals(2, curve.size());
+        assertEquals("Climb 1", curve.get(0).label);
+        assertEquals("Climb 3", curve.get(1).label);
+    }
+
+    @Test
     public void computeForActivity_skipsAttemptsWithoutUsableData() {
         List<StoredClimbAttempt> attempts = new ArrayList<>();
         attempts.add(attempt("c1", 111L, 300, 0));
