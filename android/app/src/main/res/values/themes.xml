@@ -32,6 +32,14 @@
         <item name="android:textColorHint">@color/color_text_tertiary</item>
     </style>
 
+    <!-- Dialog-only screens (ride import, issue #253): shown over whatever was open. -->
+    <style name="Theme.ClimbPro.Translucent">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
     <style name="TextAppearance.ClimbPro.Title" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:fontFamily">@font/space_grotesk</item>
         <item name="android:textStyle">bold</item>

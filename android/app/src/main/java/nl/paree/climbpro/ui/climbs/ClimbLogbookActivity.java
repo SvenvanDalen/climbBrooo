@@ -54,8 +54,16 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
 
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
+        findViewById(R.id.importGarminButton).setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.activity.ActivityImportActivity.pickIntent(this)));
 
         viewModel.loadLogbook();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        viewModel.loadLogbook(); // back from a Garmin import
     }
 
     private void renderStreak(nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak streak) {
