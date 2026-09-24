@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">ClimbPro</string>
     <string name="placeholder_main">ClimbPro</string>
+    <string name="widget_week_label">ClimbPro week</string>
+    <string name="widget_week_description">Klimmen van deze week en je volgende geplande klim</string>
 </resources>

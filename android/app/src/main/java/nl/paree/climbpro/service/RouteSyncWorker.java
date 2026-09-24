@@ -13,6 +13,7 @@ import androidx.work.WorkerParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.connectiq.ConnectIqClient;
+import nl.paree.climbpro.data.health.HealthConnectGateway;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -20,6 +21,7 @@ import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.data.strava.StravaRoutesRepository;
 import nl.paree.climbpro.data.sync.SyncState;
 import nl.paree.climbpro.data.sync.SyncStateRepository;
+import nl.paree.climbpro.widget.WeekWidgetProvider;
 
 import java.io.IOException;
 
@@ -112,6 +114,12 @@ public final class RouteSyncWorker extends Worker {
                 .putInt(KEY_CHANGED, r.routesChanged)
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
                 .build();
+
+        // New attempts may have been matched during the pull: keep the widget's week total fresh.
+        WeekWidgetProvider.refresh(ctx);
+
+        // Opportunistic, never fails the sync: new Strava rides to Health Connect (issue #255).
+        new HealthConnectGateway(ctx).exportIfEnabled();
 
         boolean shouldRetry = (r.pullAttempted && !r.pullSucceeded)
                 || (r.sendAttempted && !r.sendSucceeded)

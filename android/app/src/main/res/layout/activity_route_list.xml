@@ -80,6 +80,35 @@
 
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
+
+        <!-- Quick start (issue #263): one tap activates the route on the watch and syncs. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp">
+
+            <Button
+                android:id="@+id/btn_quick_start"
+                style="@style/Widget.ClimbPro.Button.Accent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Rit nu starten"/>
+
+            <Button
+                android:id="@+id/btn_quick_start_change"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Andere route kiezen voor snelle start"
+                android:text="Wijzig"/>
+        </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
