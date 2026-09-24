@@ -38,7 +38,9 @@ class ClimbWidgetApp extends App.AppBase {
         }
     }
 
-    function onStop(state) {}
+    function onStop(state) {
+        if (fastPathRetryTimer != null) { fastPathRetryTimer.stop(); fastPathRetryTimer = null; }
+    }
 
     function getGlanceView() {
         return [ new ClimbGlanceView() ];
