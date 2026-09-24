@@ -57,6 +57,7 @@ public class StravaActivitiesRepositoryTest {
         // Clean any attempt file + activity-sync prefs from prior tests for isolation.
         new File(app.getFilesDir(), "climb_attempts.json").delete();
         new File(app.getFilesDir(), "incomplete_climb_attempts.json").delete();
+        new File(app.getFilesDir(), "rides.json").delete();
         app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
                 .edit().clear().commit();
 
@@ -96,7 +97,7 @@ public class StravaActivitiesRepositoryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void stubActivityWithFullClimbTrack() throws Exception {
+    private StravaStreamsDto stubActivityWithFullClimbTrack() throws Exception {
         StravaActivityDto act = new StravaActivityDto();
         act.id = 555L; act.type = "Ride"; act.startDate = "2026-03-01T08:00:00Z";
 
@@ -119,6 +120,53 @@ public class StravaActivitiesRepositoryTest {
         Call<StravaStreamsDto> streamCall = mock(Call.class);
         when(streamCall.execute()).thenReturn(Response.success(streams));
         when(api.getStreams(anyString(), eq(555L), anyString())).thenReturn(streamCall);
+        return streams; // callers may still mutate it (e.g. add a temp stream) before syncing
+    }
+
+    @Test
+    public void sync_requestsTempStreamInSameStreamsCall_andStoresPassAverage() throws Exception {
+        StravaStreamsDto streams = stubActivityWithFullClimbTrack();
+        streams.temp = new StravaStreamsDto.TempStream();
+        streams.temp.data = Arrays.asList(30.0, 32.0, 34.0);
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        assertEquals(1, repo.syncActivities());
+
+        verify(api, times(1)).getStreams(anyString(), eq(555L), eq("latlng,time,temp"));
+        assertEquals(32.0, attemptRepo.loadAll().get(0).avgTempC, 1e-9);
+    }
+
+    @Test
+    public void sync_withoutTempStream_storesNullTemperature_noError() throws Exception {
+        stubActivityWithFullClimbTrack(); // device without temperature sensor: no temp stream
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        assertEquals(1, repo.syncActivities());
+        assertEquals(null, attemptRepo.loadAll().get(0).avgTempC);
+    }
+
+    @Test
+    public void toTrack_keepsTempsAlignedWhenMalformedLatlngSamplesAreSkipped() {
+        StravaStreamsDto s = new StravaStreamsDto();
+        s.latlng = new StravaStreamsDto.LatLngStream();
+        s.latlng.data = Arrays.asList(
+                Arrays.asList(45.0, 6.0),
+                Collections.<Double>singletonList(45.0), // malformed -> skipped
+                Arrays.asList(45.001, 6.0),
+                Arrays.asList(45.002, 6.0));
+        s.time = new StravaStreamsDto.TimeStream();
+        s.time.data = Arrays.asList(0, 10, 20, 30);
+        s.temp = new StravaStreamsDto.TempStream();
+        s.temp.data = Arrays.asList(10.0, 99.0, 12.0); // one shorter than latlng/time
+
+        List<Double> temps = new ArrayList<>();
+        List<nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample> track =
+                StravaActivitiesRepository.toTrack(s, temps);
+
+        assertEquals(3, track.size());
+        assertEquals(Arrays.asList(10.0, 12.0, null), temps);
     }
 
     @Test
@@ -414,5 +462,78 @@ public class StravaActivitiesRepositoryTest {
                 .getStringSet("known_climb_ids_for_incomplete_skip", null);
         assertEquals("aborted sync must not persist the known-climb-id set",
                 0, persisted == null ? 0 : persisted.size());
+    }
+
+    // ---- ride archive (issue #160) ----
+
+    private static StravaActivityDto activity(long id, String type, float distance) {
+        StravaActivityDto a = new StravaActivityDto();
+        a.id = id; a.type = type; a.name = "Act " + id;
+        a.startDate = "2026-03-01T08:00:00Z";
+        a.distance = distance;
+        a.movingTime = 3600; a.elapsedTime = 3900;
+        a.totalElevationGain = 420f; a.averageSpeed = 8.5f; a.maxSpeed = 16f;
+        a.startLatLng = Arrays.asList(52.09, 5.12);
+        a.endLatLng = Arrays.asList(52.19, 5.18);
+        return a;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubActivityList(List<StravaActivityDto> page1Items) throws Exception {
+        Call<List<StravaActivityDto>> page1 = mock(Call.class);
+        when(page1.execute()).thenReturn(Response.success(page1Items));
+        Call<List<StravaActivityDto>> page2 = mock(Call.class);
+        when(page2.execute()).thenReturn(Response.success(new ArrayList<>()));
+        when(api.listActivities(anyString(), anyLong(), eq(1), anyInt())).thenReturn(page1);
+        when(api.listActivities(anyString(), anyLong(), eq(2), anyInt())).thenReturn(page2);
+    }
+
+    @Test
+    public void syncRideArchive_storesCyclingSummariesOnly_withoutFetchingStreams() throws Exception {
+        stubActivityList(Arrays.asList(
+                activity(1L, "Ride", 42_000f),
+                activity(2L, "Run", 10_000f),
+                activity(3L, "VirtualRide", 30_000f)));
+
+        int n = new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api)
+                .syncRideArchive();
+
+        List<nl.paree.climbpro.data.ride.StoredRide> rides =
+                new nl.paree.climbpro.data.ride.RideRepository(app).loadAll();
+        assertEquals(2, n);
+        assertEquals(2, rides.size());
+        nl.paree.climbpro.data.ride.StoredRide r = rides.get(0);
+        assertEquals(1L, r.activityId);
+        assertEquals(42_000f, r.distanceM, 0.01f);
+        assertEquals(420f, r.elevationGainM, 0.01f);
+        assertEquals(52.19, r.endLat, 1e-9);
+        assertEquals(java.time.Instant.parse("2026-03-01T08:00:00Z").getEpochSecond(),
+                r.startEpochSec);
+        verify(api, org.mockito.Mockito.never()).getStreams(anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    public void syncRideArchive_twice_upsertsInsteadOfDuplicating() throws Exception {
+        stubActivityList(Collections.singletonList(activity(1L, "Ride", 42_000f)));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        repo.syncRideArchive();
+        repo.syncRideArchive();
+
+        assertEquals(1, new nl.paree.climbpro.data.ride.RideRepository(app).loadAll().size());
+    }
+
+    @Test
+    public void syncActivities_archivesRidesEvenWhenNoClimbIsKnown() throws Exception {
+        new File(app.getFilesDir(), "catalog.json").delete();
+        new File(new File(app.getFilesDir(), "routes"), "r1.json").delete();
+        stubActivityList(Collections.singletonList(activity(1L, "Ride", 42_000f)));
+
+        int created = new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api)
+                .syncActivities();
+
+        assertEquals(0, created);
+        assertEquals(1, new nl.paree.climbpro.data.ride.RideRepository(app).loadAll().size());
     }
 }

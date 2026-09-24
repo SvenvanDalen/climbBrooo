@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.domain.climb.AttemptTemperature;
 import nl.paree.climbpro.ui.climbs.ClimbTimelineViewModel.TimelineRow;
 
 import java.text.SimpleDateFormat;
@@ -95,9 +96,12 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         h.name.setText(row.displayName);
         String date = dateFormat.format(new Date(row.dateEpochSec * 1000L));
         String deviationMarker = row.routeDeviation ? "  ⚠️ afwijkende route" : "";
+        String tempNote = AttemptTemperature.label(row.avgTempC);
+        String tempMarker = tempNote != null ? "  " + tempNote : "";
         h.stats.setText(String.format(Locale.getDefault(),
-                "%s  •  %d m  •  %.1f%%  •  %s%s",
-                date, row.lengthM, row.avgGradient, formatTime(row.elapsedSec), deviationMarker));
+                "%s  •  %d m  •  %.1f%%  •  %s%s%s",
+                date, row.lengthM, row.avgGradient, formatTime(row.elapsedSec), deviationMarker,
+                tempMarker));
         h.itemView.setOnClickListener(v -> {
             if (onClick != null) onClick.onAttempt(row);
         });

@@ -41,8 +41,8 @@ public final class StoredClimbAttempt {
     public boolean routeDeviation = false;
 
     /**
-     * Seconds from the activity's start to where this ascent was entered (the matched pass's
-     * entry sample in the Strava time stream). Orders different climbs of one ride
+     * Seconds from the activity's first track sample to where this ascent was entered (the
+     * matched pass's entry sample). Orders different climbs of one ride
      * chronologically — {@link #dateEpochSec} is the activity start and identical for every
      * attempt of that ride. -1 for attempts recorded before this field existed.
      */
@@ -56,4 +56,12 @@ public final class StoredClimbAttempt {
      */
     public String note;
     public String photoFileName;
+
+    /**
+     * Average device temperature (°C) over this pass, from the Strava {@code temp} stream at
+     * match time (issue #80). Null = unknown: the device recorded no temperature, or the attempt
+     * was matched before this field existed (no backfill). Classified for display by
+     * {@link nl.paree.climbpro.domain.climb.AttemptTemperature}. Phone-only.
+     */
+    public Double avgTempC;
 }
