@@ -31,6 +31,7 @@ import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
 import nl.paree.climbpro.domain.climb.DuplicateClimbMatcher;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
@@ -50,6 +51,11 @@ public final class RouteListActivity extends AppCompatActivity {
     private RouteListViewModel viewModel;
     private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
+
+    /** Quick start (issue #263) is waiting for its sync to finish to report the outcome. */
+    private boolean quickStartPending;
+    /** The pending quick-start sync has been seen running, so a finished state is ours. */
+    private boolean quickStartSawRunning;
 
     private final ActivityResultLauncher<String[]> gpxPicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
@@ -82,8 +88,11 @@ public final class RouteListActivity extends AppCompatActivity {
                 String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
                 new AlertDialog.Builder(RouteListActivity.this)
                         .setTitle(name != null ? name : entry.routeId)
-                        .setItems(new String[]{"Toevoegen aan collectie", "Verwijderen"}, (d, which) -> {
-                            if (which == 0) {
+                        .setItems(new String[]{"Toevoegen aan collectie", "Verwijderen",
+                                "Nu rijden (naar horloge)"}, (d, which) -> {
+                            if (which == 2) {
+                                startQuickStart(entry);
+                            } else if (which == 0) {
                                 nl.paree.climbpro.ui.collections.CollectionMembershipDialog
                                         .showForRoute(RouteListActivity.this, entry.routeId);
                             } else {
@@ -95,6 +104,18 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         viewModel.routes().observe(this, adapter::setItems);
+        viewModel.catalog().observe(this, catalog -> updateQuickStartButton());
+
+        binding.btnQuickStart.setOnClickListener(v -> {
+            RouteCatalogEntry route = QuickStart.resolve(
+                    QuickStart.activeRouteId(this), viewModel.catalog().getValue());
+            if (route != null) {
+                startQuickStart(route);
+            } else {
+                pickQuickStartRoute();
+            }
+        });
+        binding.btnQuickStartChange.setOnClickListener(v -> pickQuickStartRoute());
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
@@ -130,6 +151,20 @@ public final class RouteListActivity extends AppCompatActivity {
                             nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false);
             if (pullDone) {
                 viewModel.loadRoutes(); // new routes appear immediately (at the bottom with default sort)
+            }
+
+            if (quickStartPending) {
+                if (!info.getState().isFinished()) {
+                    quickStartSawRunning = true;
+                } else if (quickStartSawRunning) {
+                    quickStartPending = false;
+                    boolean sent = info.getOutputData().getBoolean(
+                            nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
+                    Toast.makeText(this, sent
+                                    ? "Route staat klaar op je horloge"
+                                    : "Horloge niet bereikt; de sync probeert het later opnieuw",
+                            Toast.LENGTH_LONG).show();
+                }
             }
 
             if (info.getState().isFinished()) {
@@ -316,6 +351,38 @@ public final class RouteListActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         executor.shutdown();
+    }
+
+    private void updateQuickStartButton() {
+        RouteCatalogEntry route = QuickStart.resolve(
+                QuickStart.activeRouteId(this), viewModel.catalog().getValue());
+        binding.btnQuickStart.setText(QuickStart.buttonLabel(route));
+    }
+
+    /** Lets the user choose which route quick start sends; the pick starts the ride at once. */
+    private void pickQuickStartRoute() {
+        List<RouteCatalogEntry> catalog = viewModel.catalog().getValue();
+        if (catalog == null || catalog.isEmpty()) {
+            Toast.makeText(this, "Importeer eerst een route", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        List<RouteCatalogEntry> sorted = RouteSorting.sort(
+                new java.util.ArrayList<>(catalog), RouteSorting.SORT_NAME_ASC);
+        String[] names = new String[sorted.size()];
+        for (int i = 0; i < sorted.size(); i++) names[i] = QuickStart.displayName(sorted.get(i));
+        new AlertDialog.Builder(this)
+                .setTitle("Welke route rij je?")
+                .setItems(names, (d, which) -> startQuickStart(sorted.get(which)))
+                .show();
+    }
+
+    private void startQuickStart(RouteCatalogEntry route) {
+        QuickStart.start(this, route.routeId);
+        quickStartPending = true;
+        quickStartSawRunning = false;
+        updateQuickStartButton();
+        Toast.makeText(this, QuickStart.displayName(route) + " wordt naar je horloge gestuurd",
+                Toast.LENGTH_SHORT).show();
     }
 
     private void confirmDeleteRoute(String routeId, String name) {
