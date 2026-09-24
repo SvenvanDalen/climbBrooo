@@ -2,4 +2,5 @@
 <strings>
     <string id="AppName">ClimbPro</string>
     <string id="SettingsDarkThemeTitle">Low-light dark theme</string>
+    <string id="SettingsClimbAlertDistinctToneTitle">Distinct climb alert tone</string>
 </strings>

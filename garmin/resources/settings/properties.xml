@@ -2,8 +2,14 @@
 <!--
     App-settings backed properties (Connect IQ "properties.xml"), configurable from
     Garmin Connect Mobile / Garmin Express without a rebuild. See settings.xml for the
-    user-facing setting that maps to darkTheme.
+    user-facing setting that maps to darkTheme / climbAlertDistinctTone.
 -->
 <properties>
     <property id="darkTheme" type="boolean">false</property>
+    <!-- Issue #83: opt-in alternative climb-start alert for earbud/headphone wearers
+         who can miss the wrist vibration. Toybox.Attention has no spoken-voice/TTS
+         API on this device tier, so this plays a distinct, more attention-grabbing
+         tone sequence instead of the single default TONE_LAP; see
+         triggerClimbAlertDistinctTone() in ClimbProView.mc. -->
+    <property id="climbAlertDistinctTone" type="boolean">false</property>
 </properties>

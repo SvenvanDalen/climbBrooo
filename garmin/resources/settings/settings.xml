@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Connect IQ app settings: exposes darkTheme (from properties.xml) as a single
-    on/off toggle in Garmin Connect Mobile / Garmin Express ("Low-light dark theme").
+    on/off toggle in Garmin Connect Mobile / Garmin Express ("Low-light dark theme"),
+    and climbAlertDistinctTone as the opt-in alternative climb-start alert (issue #83).
 -->
 <settings>
     <setting propertyKey="@Properties.darkTheme" title="@Strings.SettingsDarkThemeTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.climbAlertDistinctTone" title="@Strings.SettingsClimbAlertDistinctToneTitle">
         <settingConfig type="boolean"/>
     </setting>
 </settings>
