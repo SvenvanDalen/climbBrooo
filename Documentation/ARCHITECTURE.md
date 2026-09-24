@@ -343,6 +343,20 @@ Key types — names should match across modules where possible.
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 - Calibration points are a **subset of the segment-end positions** (same 8%-fraction grid), spaced ≥ 200 m apart with the final segment end always included. `Segmenter.calibrationPoints(climbPoints)` and `Segmenter.segment(climbPoints)` must walk identical boundaries.
 
+### Route bucket-list status (issue #158)
+
+`StoredRoute.rideStatus` holds a user-set route status: `null` (geen status — also the
+value for route files written before the field existed), `"WANT_TO_RIDE"` or `"RIDDEN"`
+(constants + Dutch labels in `data/route/RouteRideStatus`). It is mirrored to
+`RouteCatalogEntry.rideStatus` because the route list reads only `catalog.json`; every
+catalog write path (`toCatalogEntry` in `saveRoute`, the stub in
+`rebuildCatalogSurfaceTypes`, and `setRideStatus`) copies it. `saveRoute` carries the
+previous value forward when the incoming route shell has none, so a Strava resync or
+re-import never resets it. The status is purely manual (no automatic change from climb
+attempts), phone-only and never part of the wire payload. The route list filters on it
+via the pure `ui/routes/RouteStatusFilter` (Alle / Wil ik rijden / Gereden), applied
+alongside the surface filter and before sorting.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as

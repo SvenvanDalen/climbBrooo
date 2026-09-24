@@ -20,6 +20,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_status_filter"
+        android:title="Filter op status"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_logbook"
         android:title="Logboek"
         app:showAsAction="never"/>
