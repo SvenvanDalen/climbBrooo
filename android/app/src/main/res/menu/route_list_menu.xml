@@ -70,6 +70,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_recovery"
+        android:title="Herstel"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_photo_quiz"
         android:title="Fotoquiz"
         app:showAsAction="never"/>

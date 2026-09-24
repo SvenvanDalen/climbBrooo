@@ -353,6 +353,10 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.wrapped.ClimbWrappedActivity.class));
             return true;
+        } else if (id == R.id.action_recovery) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.recovery.RecoveryAdviceActivity.class));
+            return true;
         } else if (id == R.id.action_photo_quiz) {
             startActivity(nl.paree.climbpro.ui.quiz.PhotoQuizActivity.intentFor(this));
             return true;

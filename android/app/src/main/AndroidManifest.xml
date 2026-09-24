@@ -167,6 +167,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.recovery.RecoveryAdviceActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.collections.CollectionListActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
