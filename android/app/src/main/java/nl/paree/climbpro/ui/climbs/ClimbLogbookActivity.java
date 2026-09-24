@@ -52,6 +52,17 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
         });
         viewModel.streak().observe(this, this::renderStreak);
 
+        TextView levelTitle = findViewById(R.id.levelTitle);
+        TextView levelXp = findViewById(R.id.levelXp);
+        com.google.android.material.progressindicator.LinearProgressIndicator bar =
+                findViewById(R.id.levelProgress);
+        viewModel.progress().observe(this, p -> {
+            levelTitle.setText(p.label());
+            bar.setProgress((int) (100 * p.xpIntoLevel / Math.max(1, p.xpForNextLevel)));
+            levelXp.setText(p.totalXp + " XP · nog " + (p.xpForNextLevel - p.xpIntoLevel)
+                    + " XP tot level " + (p.level + 1));
+        });
+
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
 

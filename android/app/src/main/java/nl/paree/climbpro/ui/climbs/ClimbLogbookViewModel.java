@@ -18,6 +18,7 @@ import nl.paree.climbpro.domain.climb.ClimbStreakCalculator;
 import nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.Summary;
+import nl.paree.climbpro.domain.climb.XpCalculator;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,10 +58,14 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
         final String routeId;
         final int    index;
         final String displayName;
-        Location(String routeId, int index, String displayName) {
+        final int    gainM;
+        final int    lengthM;
+        Location(String routeId, int index, String displayName, int gainM, int lengthM) {
             this.routeId = routeId;
             this.index = index;
             this.displayName = displayName;
+            this.gainM = gainM;
+            this.lengthM = lengthM;
         }
     }
 
@@ -70,6 +75,7 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
 
     private final MutableLiveData<List<LogbookRow>> rows = new MutableLiveData<>();
     private final MutableLiveData<Streak> streak = new MutableLiveData<>();
+    private final MutableLiveData<XpCalculator.Progress> progress = new MutableLiveData<>();
 
     public ClimbLogbookViewModel(@NonNull Application app) {
         super(app);
@@ -81,6 +87,9 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
 
     /** Current + longest consecutive-day climb streak, see {@link ClimbStreakCalculator}. */
     public LiveData<Streak> streak() { return streak; }
+
+    /** Level + XP derived from all attempts, see {@link XpCalculator}. */
+    public LiveData<XpCalculator.Progress> progress() { return progress; }
 
     public void loadLogbook() {
         executor.execute(() -> {
@@ -101,6 +110,13 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
             out.sort(Comparator.comparingLong((LogbookRow r) -> r.lastDateSec).reversed());
             rows.postValue(out);
             streak.postValue(ClimbStreakCalculator.compute(attempts));
+
+            Map<String, XpCalculator.ClimbStats> stats = new HashMap<>();
+            for (Map.Entry<String, Location> e : located.entrySet()) {
+                stats.put(e.getKey(),
+                        new XpCalculator.ClimbStats(e.getValue().gainM, e.getValue().lengthM));
+            }
+            progress.postValue(XpCalculator.compute(attempts, stats));
         });
     }
 
@@ -118,7 +134,7 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
                     if (wanted.contains(id) && !map.containsKey(id)) {
                         String name = c.userDisplayName != null ? c.userDisplayName
                                 : (c.name != null ? c.name : "Klim");
-                        map.put(id, new Location(entry.routeId, i, name));
+                        map.put(id, new Location(entry.routeId, i, name, c.elevationGain, len));
                     }
                 }
             } catch (Exception ignored) {
