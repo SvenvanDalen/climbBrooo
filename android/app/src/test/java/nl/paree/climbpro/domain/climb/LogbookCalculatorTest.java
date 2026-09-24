@@ -59,6 +59,47 @@ public class LogbookCalculatorTest {
     }
 
     @Test
+    public void summaries_excludesRouteDeviatedAttemptFromPr() {
+        StoredClimbAttempt deviatedFast = at("k1", 1, 2000, 400); // fastest, but deviated
+        deviatedFast.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                deviatedFast,
+                at("k1", 2, 1000, 650));
+
+        Map<String, Summary> s = LogbookCalculator.summaries(attempts);
+
+        assertEquals(650, s.get("k1").prSec);   // ignores the deviated 400s
+        assertEquals(2,   s.get("k1").attemptCount); // still counts both attempts
+    }
+
+    @Test
+    public void summaries_onlyDeviatedAttempts_fallsBackToFastestAny() {
+        StoredClimbAttempt deviated = at("k1", 1, 1000, 400);
+        deviated.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(deviated);
+
+        Map<String, Summary> s = LogbookCalculator.summaries(attempts);
+
+        assertEquals(400, s.get("k1").prSec); // no clean attempt -> fall back, never leave PR unset
+    }
+
+    @Test
+    public void historyFor_excludesRouteDeviatedAttemptFromPrBaseline() {
+        StoredClimbAttempt deviatedFast = at("k1", 1, 2000, 400);
+        deviatedFast.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                deviatedFast,
+                at("k1", 2, 1000, 650));
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", attempts);
+
+        assertEquals(2, rows.size());
+        // Newest first: the deviated 400s row, then the clean 650s row.
+        assertTrue(rows.get(0).routeDeviation);
+        assertEquals(0, rows.get(1).deltaToPrSec); // clean 650s is the PR baseline, not 400s
+    }
+
+    @Test
     public void summaries_emptyInput_returnsEmptyMap() {
         Map<String, Summary> s = LogbookCalculator.summaries(Collections.emptyList());
         assertEquals(0, s.size());
@@ -149,5 +190,37 @@ public class LogbookCalculatorTest {
         List<HistoryRow> rows = LogbookCalculator.historyFor("k1", attempts, now);
 
         assertFalse(rows.get(0).bestOfYear);
+    }
+
+    @Test
+    public void historyFor_flagsCleanAttempt_notNewerDeviatedRow_whenDeviatedIsMostRecent() {
+        // issue #122 regression: row 0 is newest overall (a deviated attempt), but the
+        // badge must land on the most recent CLEAN attempt this year, wherever that row is.
+        long now = epoch(2026, 6, 15);
+        StoredClimbAttempt deviatedNewest = at("k1", 1, epoch(2026, 5, 1), 620);
+        deviatedNewest.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                deviatedNewest,
+                at("k1", 2, epoch(2026, 2, 1), 650)); // clean, most recent clean attempt this year
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", attempts, now);
+
+        assertEquals(2, rows.size());
+        assertFalse("the newer but deviated attempt must not get the badge",
+                rows.get(0).bestOfYear);
+        assertTrue("the most recent clean attempt this year earns the badge",
+                rows.get(1).bestOfYear);
+    }
+
+    @Test
+    public void historyFor_carriesAvgTempC_nullWhenUnknown() {
+        StoredClimbAttempt hot = at("k1", 1, 2000, 700);
+        hot.avgTempC = 33.0;
+        StoredClimbAttempt unknown = at("k1", 2, 1000, 650);
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", Arrays.asList(hot, unknown));
+
+        assertEquals(33.0, rows.get(0).avgTempC, 1e-9);   // most recent first
+        assertEquals(null, rows.get(1).avgTempC);
     }
 }

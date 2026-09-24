@@ -82,6 +82,21 @@ public class GpxParserTest {
     }
 
     @Test
+    public void waypointsNextToATrackAreNotRouteGeometry() throws Exception {
+        String gpx = "<gpx>"
+                + "<wpt lat='52.0' lon='6.0'><name>Top</name></wpt>"
+                + "<trk><trkseg>"
+                + "<trkpt lat='51.0' lon='5.0'/><trkpt lat='51.1' lon='5.0'/>"
+                + "</trkseg></trk>"
+                + "<wpt lat='53.0' lon='7.0'/>"
+                + "</gpx>";
+        List<RoutePoint> pts = parse(gpx);
+        assertEquals(2, pts.size());
+        assertEquals(51.0, pts.get(0).lat, 1e-9);
+        assertEquals(51.1, pts.get(1).lat, 1e-9);
+    }
+
+    @Test
     public void noPointsThrows() {
         assertThrows(GpxParseException.class,
                 () -> parse("<gpx><trk><trkseg></trkseg></trk></gpx>"));

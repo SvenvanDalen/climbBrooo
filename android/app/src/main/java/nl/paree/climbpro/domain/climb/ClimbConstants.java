@@ -64,4 +64,47 @@ public final class ClimbConstants {
      * more than simplification jitter alone.
      */
     public static final double DUPLICATE_CLIMB_MATCH_RADIUS_M = 150.0;
+    /**
+     * Minimum share (fraction of known-surface distance) either the paved or the unpaved
+     * group must fall below for a climb to still count as purely PAVED/GRAVEL. If both groups
+     * meet or exceed this minority share, or the climb has segments explicitly tagged MIXED,
+     * the climb is classified MIXED instead. Used by {@link ClimbSurfaceClassifier}.
+     */
+    public static final double SURFACE_MIXED_MINORITY_FRACTION = 0.2;
+
+    /**
+     * Max distance (metres) between the start coordinates of two already-STORED climbs
+     * (different {@link ClimbIdentity} keys, so the automatic bucketing already missed them)
+     * for {@link NearDuplicateClimbFinder} to flag them as a manual-merge candidate (issue #76).
+     * Wider than {@link #DUPLICATE_CLIMB_MATCH_RADIUS_M} since this catches
+     * {@link ClimbIdentity}'s documented bucket-boundary gap, which needs more slack than the
+     * import-time exact-duplicate check.
+     */
+    public static final double NEAR_DUPLICATE_MATCH_RADIUS_M     = 200.0;
+    /**
+     * Max relative difference in climb length (e.g. 0.20 = 20%) for two nearby climbs to still
+     * count as the same physical climb in {@link NearDuplicateClimbFinder}. Guards against
+     * flagging a short spur next to the start of a much longer climb as a near-duplicate.
+     */
+    public static final double NEAR_DUPLICATE_LENGTH_TOLERANCE   = 0.20;
+    /**
+     * Max absolute difference in average gradient (fraction, e.g. 0.02 = 2 percentage points)
+     * for two nearby, similarly-sized climbs to count as the same physical climb in
+     * {@link NearDuplicateClimbFinder}.
+     */
+    public static final double NEAR_DUPLICATE_GRADIENT_TOLERANCE = 0.02;
+
+    /**
+     * Minimum number of distinct matched ride attempts for a climb to count as "vaak herhaald"
+     * (repeated often) and classify TRAINING (issue #44). Used by {@link ClimbUsageClassifier}.
+     */
+    public static final int    USAGE_TRAINING_MIN_ATTEMPTS  = 3;
+    /**
+     * Radius (metres) around a once-ridden climb's start within which another frequently-ridden
+     * climb (attemptCount &gt;= {@link #USAGE_TRAINING_MIN_ATTEMPTS}) counts as the same "local
+     * training area" — the practical "dicht bij huis" proxy used because no general
+     * home-location field exists yet (see {@link ClimbUsageClassifier} doc comment). Used by
+     * {@link ClimbUsageClassifier}.
+     */
+    public static final double USAGE_LOCAL_CLUSTER_RADIUS_M = 5_000.0;
 }

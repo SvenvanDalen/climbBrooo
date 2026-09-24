@@ -1,0 +1,141 @@
+package nl.paree.climbpro.data.route;
+
+import android.content.Context;
+import android.util.Log;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * JSON-file persistence for detected "entered but never exited" climb passes (issue #37).
+ * Layout: getFilesDir()/incomplete_climb_attempts.json — a flat array of
+ * {@link StoredIncompleteClimbAttempt}. Writes are atomic (temp file + rename), mirroring
+ * {@link ClimbAttemptRepository} exactly, but deliberately backed by a separate file so this
+ * feature cannot interfere with any code path reading climb_attempts.json.
+ */
+public final class IncompleteClimbAttemptRepository {
+
+    private static final String TAG  = "IncompleteAttemptRepo";
+    private static final String FILE = "incomplete_climb_attempts.json";
+
+    /**
+     * Static/class-level lock, mirroring {@link ClimbAttemptRepository#WRITE_LOCK}: multiple
+     * {@link IncompleteClimbAttemptRepository} instances may exist across the app (e.g. one
+     * built inside {@code StravaActivitiesRepository.syncActivities()}, which can plausibly run
+     * concurrently if a manual "sync now" tap races a WorkManager periodic sync), all pointed
+     * at the same underlying file. A per-instance lock would not prevent two different
+     * instances from interleaving their read-modify-write cycles, so this lock is static: it
+     * serializes {@link #append}'s read-modify-write critical section across the whole process,
+     * regardless of which instance calls it. Scoped to this class only — it does not need to be
+     * shared with {@link ClimbAttemptRepository#WRITE_LOCK} since they guard different files.
+     */
+    private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
+
+    private final File file;
+    private final ObjectMapper mapper;
+
+    public IncompleteClimbAttemptRepository(Context context) {
+        Context app = context.getApplicationContext();
+        this.file   = new File(app.getFilesDir(), FILE);
+        this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    }
+
+    public List<StoredIncompleteClimbAttempt> loadAll() {
+        if (!file.exists()) return new ArrayList<>();
+        try (FileInputStream in = new FileInputStream(file)) {
+            StoredIncompleteClimbAttempt[] arr =
+                    mapper.readValue(in, StoredIncompleteClimbAttempt[].class);
+            return new ArrayList<>(Arrays.asList(arr));
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load incomplete climb attempts", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Activity ids that already have at least one recorded incomplete pass. Combined with
+     * {@link ClimbAttemptRepository#knownActivityIds()} by callers, this lets an activity that
+     * was fully processed and produced only incomplete passes (never a successful attempt) be
+     * treated as already-synced too, instead of being re-fetched and re-matched on every sync.
+     */
+    public Set<Long> knownActivityIds() {
+        Set<Long> ids = new HashSet<>();
+        for (StoredIncompleteClimbAttempt a : loadAll()) ids.add(a.activityId);
+        return ids;
+    }
+
+    /**
+     * Appends passes, skipping any whose (climbId, activityId) already exists — one
+     * incomplete record per climb per activity is enough for the overview.
+     * <p>Thread-safe across every {@link IncompleteClimbAttemptRepository} instance in the
+     * process: the whole read-modify-write cycle runs under {@link #WRITE_LOCK}, so two
+     * concurrent syncs (e.g. a manual "sync now" racing a WorkManager periodic sync) can't
+     * interleave their read-modify-write and silently lose one side's write.
+     */
+    public void append(List<StoredIncompleteClimbAttempt> passes) throws IOException {
+        if (passes == null || passes.isEmpty()) return;
+        WRITE_LOCK.lock();
+        try {
+            List<StoredIncompleteClimbAttempt> all = loadAll();
+            Set<String> seen = new HashSet<>();
+            for (StoredIncompleteClimbAttempt a : all) seen.add(key(a));
+            for (StoredIncompleteClimbAttempt a : passes) {
+                if (seen.add(key(a))) all.add(a);
+            }
+            writeAtomic(file, mapper.writeValueAsBytes(all));
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Deletes every stored incomplete pass (privacy dashboard, issue #264). Under the write lock, so a
+     * sync that is appending at the same moment can't write the old list back afterwards.
+     *
+     * @return false when the file exists but could not be deleted
+     */
+    public boolean deleteAll() {
+        WRITE_LOCK.lock();
+        try {
+            return !file.exists() || file.delete();
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    private static String key(StoredIncompleteClimbAttempt a) {
+        return (a.climbId != null ? a.climbId : "") + "#" + a.activityId;
+    }
+
+    private static void writeAtomic(File target, byte[] data) throws IOException {
+        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
+        try (FileOutputStream out = new FileOutputStream(tmp)) {
+            out.write(data);
+            out.getFD().sync();
+        }
+        try {
+            try {
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException moveFailed) {
+            tmp.delete();
+            throw moveFailed;
+        }
+    }
+}
