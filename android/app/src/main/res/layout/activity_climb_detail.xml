@@ -106,6 +106,14 @@
                 android:text="Exporteer als GPX"/>
 
             <Button
+                android:id="@+id/btn_summit_weather"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Weer op de top"/>
+
+            <Button
                 android:id="@+id/btn_re_segment"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

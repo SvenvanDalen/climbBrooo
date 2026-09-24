@@ -234,6 +234,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
+        binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
 
@@ -361,6 +362,49 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 this, getPackageName() + ".fileprovider", file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
         startActivity(Intent.createChooser(share, "Exporteer klim als GPX"));
+    }
+
+    /** Issue #246: valley vs summit weather, now and in 3 hours (Open-Meteo, off the UI thread). */
+    private void showSummitWeather() {
+        StoredRoute r = viewModel.route().getValue();
+        StoredClimb c = viewModel.climb().getValue();
+        if (r == null || c == null) return;
+        Toast.makeText(this, "Weer ophalen…", Toast.LENGTH_SHORT).show();
+        nl.paree.climbpro.domain.weather.ClimbEndpoints.Point foot =
+                nl.paree.climbpro.domain.weather.ClimbEndpoints.foot(r, c);
+        nl.paree.climbpro.domain.weather.ClimbEndpoints.Point top =
+                nl.paree.climbpro.domain.weather.ClimbEndpoints.top(r, c);
+        new Thread(() -> {
+            String msg;
+            try {
+                nl.paree.climbpro.data.weather.OpenMeteoClient client =
+                        new nl.paree.climbpro.data.weather.OpenMeteoClient();
+                nl.paree.climbpro.domain.weather.HourlyForecast f = client.fetch(foot);
+                nl.paree.climbpro.domain.weather.HourlyForecast t = client.fetch(top);
+                java.time.Instant now = java.time.Instant.now();
+                String nowText = nl.paree.climbpro.domain.weather.SummitWeather.describe(
+                        f, t, now, foot.elevationM, top.elevationM);
+                String laterText = nl.paree.climbpro.domain.weather.SummitWeather.describe(
+                        f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM);
+                StringBuilder sb = new StringBuilder();
+                if (nowText != null) sb.append("NU\n").append(nowText);
+                if (laterText != null) {
+                    sb.append(sb.length() > 0 ? "\n\n" : "").append("OVER 3 UUR\n").append(laterText);
+                }
+                msg = sb.length() > 0 ? sb.toString() : "Geen verwachting beschikbaar voor dit moment";
+            } catch (Exception e) {
+                msg = "Weer ophalen mislukt: " + e.getMessage();
+            }
+            String text = msg + "\n\nBron: Open-Meteo";
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                new AlertDialog.Builder(this)
+                        .setTitle("Weer op de top")
+                        .setMessage(text)
+                        .setPositiveButton("OK", null)
+                        .show();
+            });
+        }, "summit-weather").start();
     }
 
     private void showRenameDialog() {
