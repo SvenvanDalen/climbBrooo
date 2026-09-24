@@ -18,6 +18,7 @@ import nl.paree.climbpro.domain.climb.ClimbGpxWriter;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
+import nl.paree.climbpro.domain.climb.SeasonalComparisonCalculator;
 import nl.paree.climbpro.domain.climb.SegmentPrCalculator;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimator;
@@ -47,6 +48,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean>           saved        = new MutableLiveData<>(false);
     private final MutableLiveData<ClimbTimeEstimate> timeEstimate = new MutableLiveData<>();
     private final MutableLiveData<List<HistoryRow>>  history      = new MutableLiveData<>();
+    private final MutableLiveData<SeasonalComparisonCalculator.Result> seasonalComparison =
+            new MutableLiveData<>();
     private final MutableLiveData<File>              gpxExportFile = new MutableLiveData<>();
 
     private volatile StoredClimb lastClimb;
@@ -66,6 +69,9 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     public LiveData<Boolean>           saved()        { return saved; }
     public LiveData<ClimbTimeEstimate> timeEstimate() { return timeEstimate; }
     public LiveData<List<HistoryRow>>  history()      { return history; }
+    public LiveData<SeasonalComparisonCalculator.Result> seasonalComparison() {
+        return seasonalComparison;
+    }
     public LiveData<File>              gpxExportFile() { return gpxExportFile; }
 
     public void loadClimb(String routeId, int climbIndex) {
@@ -87,8 +93,10 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                                 + " for route climb; history may be empty");
                     }
                     String climbId = ClimbIdentity.of(loaded.startLat, loaded.startLon, len);
-                    history.postValue(
-                            LogbookCalculator.historyFor(climbId, attemptRepo.loadAll()));
+                    List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                    history.postValue(LogbookCalculator.historyFor(climbId, attempts));
+                    seasonalComparison.postValue(
+                            SeasonalComparisonCalculator.compare(climbId, attempts));
                 } else {
                     error.postValue("Climb not found");
                 }
@@ -142,6 +150,23 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 routeRepo.setSegmentSurfaceType(routeId, climbIndex, segmentIndex, surfaceType);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Sets or clears a segment's manual pacing target (issue #23). {@code targetSec} null
+     * reverts the segment to the automatic {@code RoutePacingPlanner} value.
+     */
+    public void setSegmentManualTargetSec(String routeId, int climbIndex, int segmentIndex,
+                                           Integer targetSec) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setSegmentManualTargetSec(routeId, climbIndex, segmentIndex, targetSec);
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
@@ -339,6 +364,19 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 surface[i] = segs.get(i).surfaceType;
             }
             estimate = ClimbTimeEstimator.estimate(dist, grad, surface, profile);
+        }
+
+        // Apply any per-segment manual overrides (issue #23) so the header total shown here
+        // stays consistent with ClimbSegmentAdapter's per-row display, which already reads
+        // StoredSegment#manualTargetSec directly.
+        if (estimate != null) {
+            int[] merged = nl.paree.climbpro.service.SegmentTargetOverrideMerger
+                    .mergeClimb(c, estimate.segmentSeconds);
+            if (merged != estimate.segmentSeconds) {
+                int total = 0;
+                for (int sec : merged) total += sec;
+                estimate = new ClimbTimeEstimate(total, merged, estimate.assumedPowerWatts);
+            }
         }
 
         timeEstimate.postValue(estimate);

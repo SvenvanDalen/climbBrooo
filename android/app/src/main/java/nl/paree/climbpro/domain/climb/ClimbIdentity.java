@@ -76,4 +76,23 @@ public final class ClimbIdentity {
     public static int effectiveLength(StoredClimb c) {
         return c.length > 0 ? c.length : (c.endDistance - c.startDistance);
     }
+
+    /**
+     * Approximate start coordinate ({@code {lat, lon}}, the bucket centre, i.e. within about
+     * half a {@code COORD_BUCKET_DEG} of the real start) encoded in a key built by {@link #of},
+     * or null when {@code climbId} is not in that format. Lets callers place logbook climbs on
+     * the map without loading every stored route.
+     */
+    public static double[] approxStart(String climbId) {
+        if (climbId == null) return null;
+        String[] parts = climbId.split(":");
+        if (parts.length != 3) return null;
+        try {
+            return new double[] {
+                    Long.parseLong(parts[0]) * COORD_BUCKET_DEG,
+                    Long.parseLong(parts[1]) * COORD_BUCKET_DEG};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 }
