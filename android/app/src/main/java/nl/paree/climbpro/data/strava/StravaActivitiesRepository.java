@@ -62,7 +62,7 @@ public final class StravaActivitiesRepository {
      * overlap catches late uploads; {@code RideRepository#upsertAll} makes the overlap harmless.
      */
     private static final long   RIDE_CURSOR_OVERLAP_SEC = 3L * 24 * 60 * 60;
-    private static final String STREAM_KEYS  = "latlng,time";
+    private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
 
     private final StravaAuthRepository   auth;
     private final RouteRepository        routeRepo;
@@ -216,10 +216,11 @@ public final class StravaActivitiesRepository {
             if (s.latlng == null || s.time == null
                     || s.latlng.data == null || s.time.data == null) return out;
 
-            List<TrackSample> track = toTrack(s);
+            List<Double> trackTemps = new ArrayList<>();
+            List<TrackSample> track = toTrack(s, trackTemps);
             if (track.size() < 2) return out;
 
-            out.addAll(ActivityClimbMatcher.match(track, climbs, act.id,
+            out.addAll(ActivityClimbMatcher.match(track, trackTemps, climbs, act.id,
                     parseStartDate(act.startDate), incompleteOut));
         } catch (IOException e) {
             Log.w(TAG, "Stream fetch failed for activity " + act.id, e);
@@ -231,13 +232,21 @@ public final class StravaActivitiesRepository {
         return KnownClimbCatalog.load(routeRepo);
     }
 
-    private static List<TrackSample> toTrack(StravaStreamsDto s) {
+    /**
+     * @param tempsOut filled index-aligned with the returned track: one entry per kept sample,
+     *                 the {@code temp} reading for that raw stream index, or null when the temp
+     *                 stream is absent or shorter. Built in the same loop so skipped (malformed)
+     *                 latlng samples can never shift temperatures onto the wrong track index.
+     */
+    static List<TrackSample> toTrack(StravaStreamsDto s, List<Double> tempsOut) {
         int n = Math.min(s.latlng.data.size(), s.time.data.size());
+        List<Double> rawTemps = s.temp != null ? s.temp.data : null;
         List<TrackSample> track = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             List<Double> ll = s.latlng.data.get(i);
             if (ll == null || ll.size() < 2) continue;
             track.add(new TrackSample(ll.get(0), ll.get(1), s.time.data.get(i)));
+            tempsOut.add(rawTemps != null && i < rawTemps.size() ? rawTemps.get(i) : null);
         }
         return track;
     }

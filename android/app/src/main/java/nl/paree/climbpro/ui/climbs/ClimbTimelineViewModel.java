@@ -49,9 +49,12 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
          * Still shown here, just marked, since this is the plain chronological view.
          */
         public final boolean routeDeviation;
+        /** Average device temperature over the pass (°C), null when unknown (issue #80). */
+        public final Double avgTempC;
 
         TimelineRow(long dateEpochSec, int elapsedSec, String displayName, int lengthM,
-                    double avgGradient, String routeId, int climbIndex, boolean routeDeviation) {
+                    double avgGradient, String routeId, int climbIndex, boolean routeDeviation,
+                    Double avgTempC) {
             this.dateEpochSec = dateEpochSec;
             this.elapsedSec = elapsedSec;
             this.displayName = displayName;
@@ -60,6 +63,7 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
             this.routeId = routeId;
             this.climbIndex = climbIndex;
             this.routeDeviation = routeDeviation;
+            this.avgTempC = avgTempC;
         }
     }
 
@@ -113,7 +117,8 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
                         info != null ? info.avgGradient : 0,
                         info != null ? info.routeId : null,
                         info != null ? info.index : -1,
-                        a.routeDeviation));
+                        a.routeDeviation,
+                        a.avgTempC));
             }
             rows.postValue(out);
         });

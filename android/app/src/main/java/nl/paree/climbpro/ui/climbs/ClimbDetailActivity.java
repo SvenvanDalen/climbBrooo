@@ -214,6 +214,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         "%s   %d:%02d   (%s)%s%s", date, m, s, delta, badge, deviationBadge));
                 rowLayout.addView(tv);
 
+                String tempNote = nl.paree.climbpro.domain.climb.AttemptTemperature.label(row.avgTempC);
+                if (tempNote != null) {
+                    android.widget.TextView tempView = new android.widget.TextView(this);
+                    tempView.setText(tempNote);
+                    tempView.setTextSize(13f);
+                    tempView.setPadding(0, 4, 0, 0);
+                    rowLayout.addView(tempView);
+                }
+
                 if (row.note != null && !row.note.isEmpty()) {
                     android.widget.TextView noteView = new android.widget.TextView(this);
                     noteView.setText("“" + row.note + "”");

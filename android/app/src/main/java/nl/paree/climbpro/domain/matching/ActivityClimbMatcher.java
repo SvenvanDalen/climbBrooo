@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.matching;
 
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
+import nl.paree.climbpro.domain.climb.AttemptTemperature;
 import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample;
 
@@ -26,6 +27,18 @@ public final class ActivityClimbMatcher {
     public static List<StoredClimbAttempt> match(List<TrackSample> track, List<KnownClimb> climbs,
                                                  long activityId, long dateSec,
                                                  List<StoredIncompleteClimbAttempt> incompleteOut) {
+        return match(track, null, climbs, activityId, dateSec, incompleteOut);
+    }
+
+    /**
+     * As {@link #match(List, List, long, long, List)}, plus the average temperature over each
+     * pass (issue #80) when {@code temps} is given: one entry per track sample, null entries
+     * for samples without a reading, or a null list when the source has no temperature.
+     */
+    public static List<StoredClimbAttempt> match(List<TrackSample> track, List<Double> temps,
+                                                 List<KnownClimb> climbs,
+                                                 long activityId, long dateSec,
+                                                 List<StoredIncompleteClimbAttempt> incompleteOut) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         if (track == null || track.size() < 2) return out;
         for (KnownClimb k : climbs) {
@@ -46,6 +59,7 @@ public final class ActivityClimbMatcher {
                 a.segSplitSec  = p.segSplitSec;
                 a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
                         track, p.entryIdx, p.exitIdx, k.calibLats, k.calibLons);
+                a.avgTempC = AttemptTemperature.averageOverPass(temps, p.entryIdx, p.exitIdx);
                 out.add(a);
             }
 
