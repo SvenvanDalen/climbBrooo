@@ -3,6 +3,8 @@ package nl.paree.climbpro.data.strava;
 import android.content.Context;
 import android.util.Log;
 
+import nl.paree.climbpro.data.ride.RideRepository;
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.KnownClimbCatalog;
@@ -52,12 +54,21 @@ public final class StravaActivitiesRepository {
      */
     private static final String PREF_KNOWN_CLIMB_IDS = "known_climb_ids_for_incomplete_skip";
     private static final long   ONE_YEAR_SEC = 365L * 24 * 60 * 60;
+    /** Separate cursor for the ride archive (issue #160), independent of climb matching. */
+    private static final String PREF_RIDES_LAST = "rides_last_sync_epoch_sec";
+    /**
+     * Strava's {@code after} filters on activity START time, so a ride uploaded after the last
+     * archive sync but started before it would be skipped forever. Re-listing a few days of
+     * overlap catches late uploads; {@code RideRepository#upsertAll} makes the overlap harmless.
+     */
+    private static final long   RIDE_CURSOR_OVERLAP_SEC = 3L * 24 * 60 * 60;
     private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
 
     private final StravaAuthRepository   auth;
     private final RouteRepository        routeRepo;
     private final ClimbAttemptRepository attemptRepo;
     private final IncompleteClimbAttemptRepository incompleteAttemptRepo;
+    private final RideRepository         rideRepo;
     private final StravaApiClient        api;
     private final android.content.SharedPreferences prefs;
 
@@ -79,6 +90,7 @@ public final class StravaActivitiesRepository {
         this.routeRepo = routeRepo;
         this.attemptRepo = attemptRepo;
         this.incompleteAttemptRepo = new IncompleteClimbAttemptRepository(context);
+        this.rideRepo = new RideRepository(context);
         this.api = api;
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -87,6 +99,13 @@ public final class StravaActivitiesRepository {
     /** @return number of new attempts persisted. */
     public int syncActivities() throws IOException {
         String token = "Bearer " + auth.getAccessToken();
+
+        // The ride archive is a side feature: it must never block or fail climb matching.
+        try {
+            syncRideArchive(token);
+        } catch (Exception e) {
+            Log.w(TAG, "Ride archive sync failed; climb sync continues", e);
+        }
 
         long lastSync = prefs.getLong(PREF_LAST, 0L);
         long nowSec   = System.currentTimeMillis() / 1000L;
@@ -230,6 +249,74 @@ public final class StravaActivitiesRepository {
             tempsOut.add(rawTemps != null && i < rawTemps.size() ? rawTemps.get(i) : null);
         }
         return track;
+    }
+
+    /**
+     * Archives a summary of every cycling activity since the last archive sync (issue #160).
+     * Uses only the activity list (no streams) and its own cursor, so it also works when no
+     * climbs are known yet, and the first run backfills the past year for existing users.
+     *
+     * @return number of rides archived this run.
+     */
+    public int syncRideArchive() throws IOException {
+        return syncRideArchive("Bearer " + auth.getAccessToken());
+    }
+
+    private int syncRideArchive(String token) throws IOException {
+        long nowSec = System.currentTimeMillis() / 1000L;
+        long last   = prefs.getLong(PREF_RIDES_LAST, 0L);
+        long after  = last > 0 ? last - RIDE_CURSOR_OVERLAP_SEC : nowSec - ONE_YEAR_SEC;
+
+        List<StoredRide> rides = new ArrayList<>();
+        boolean complete = false;
+        for (int page = 1; ; page++) {
+            Response<List<StravaActivityDto>> resp =
+                    api.listActivities(token, after, page, 50).execute();
+            if (!resp.isSuccessful()) {
+                Log.w(TAG, "Ride archive page " + page + " failed (HTTP " + resp.code() + ")");
+                break;
+            }
+            if (resp.body() == null || resp.body().isEmpty()) {
+                complete = true;
+                break;
+            }
+            for (StravaActivityDto act : resp.body()) {
+                if (isCycling(act.type)) rides.add(toStoredRide(act));
+            }
+        }
+        // Rides gathered before an aborted page are still valid; upsert is idempotent.
+        rideRepo.upsertAll(rides);
+        if (complete) prefs.edit().putLong(PREF_RIDES_LAST, nowSec).apply();
+        return rides.size();
+    }
+
+    /** Ride, VirtualRide, EBikeRide, GravelRide, MountainBikeRide, ... — not runs/walks. */
+    static boolean isCycling(String type) {
+        return type != null && type.endsWith("Ride");
+    }
+
+    static StoredRide toStoredRide(StravaActivityDto act) {
+        StoredRide r = new StoredRide();
+        r.activityId     = act.id;
+        r.name           = act.name;
+        r.type           = act.type;
+        r.startEpochSec  = parseStartDate(act.startDate);
+        r.distanceM      = act.distance;
+        r.movingTimeSec  = act.movingTime;
+        r.elapsedTimeSec = act.elapsedTime;
+        r.elevationGainM = act.totalElevationGain;
+        r.avgSpeedMps    = act.averageSpeed;
+        r.maxSpeedMps    = act.maxSpeed;
+        r.commute        = act.commute;
+        if (act.startLatLng != null && act.startLatLng.size() >= 2) {
+            r.startLat = act.startLatLng.get(0);
+            r.startLon = act.startLatLng.get(1);
+        }
+        if (act.endLatLng != null && act.endLatLng.size() >= 2) {
+            r.endLat = act.endLatLng.get(0);
+            r.endLon = act.endLatLng.get(1);
+        }
+        return r;
     }
 
     private static long parseStartDate(String iso) {

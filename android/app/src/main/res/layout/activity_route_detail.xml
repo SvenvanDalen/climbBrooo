@@ -100,6 +100,14 @@
             </LinearLayout>
 
             <Button
+                android:id="@+id/btn_ride_status"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Status: Geen status" />
+
+            <Button
                 android:id="@+id/btn_select_route"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

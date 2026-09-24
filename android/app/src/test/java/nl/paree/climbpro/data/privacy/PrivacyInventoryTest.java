@@ -103,7 +103,8 @@ public class PrivacyInventoryTest {
         // Guard: persistence files used across the app must be visible on the dashboard.
         String[] known = {"catalog.json", "routes/", "sync_state.json", "climb_attempts.json",
                 "incomplete_climb_attempts.json", "attempt_photos/", "collections.json",
-                "planned_climbs.json"};
+                "planned_climbs.json", "rides.json",
+                "tire_pressure_log.json", "maintenance.json"};
         java.util.Set<String> covered = new java.util.HashSet<>();
         for (PrivacyCategory c : PrivacyCategory.values()) {
             covered.addAll(java.util.Arrays.asList(c.paths()));
