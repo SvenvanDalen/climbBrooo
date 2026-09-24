@@ -20,6 +20,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_status_filter"
+        android:title="Filter op status"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_logbook"
         android:title="Logboek"
         app:showAsAction="never"/>
@@ -30,8 +35,28 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_elevation_target"
+        android:title="Hoogtemeter-doel"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_timeline"
         android:title="Tijdlijn"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_rides"
+        android:title="Ritten"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_records"
+        android:title="Records"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_tire_pressure_log"
+        android:title="Bandenspanning"
         app:showAsAction="never"/>
 
     <item
@@ -45,8 +70,23 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_photo_quiz"
+        android:title="Fotoquiz"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_visited_regions"
+        android:title="Landen &amp; provincies"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_collections"
         android:title="Collecties"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_maintenance"
+        android:title="Onderhoud"
         app:showAsAction="never"/>
 
     <item
@@ -57,6 +97,21 @@
     <item
         android:id="@+id/action_batch_export"
         android:title="Exporteer seizoen (GPX)"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_export_csv"
+        android:title="Exporteer CSV"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_privacy"
+        android:title="Privacy-dashboard"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_elevation_goal"
+        android:title="Hoogtemeters per week/maand"
         app:showAsAction="never"/>
 
     <item

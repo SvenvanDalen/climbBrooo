@@ -32,4 +32,15 @@
         android:layout_marginTop="4dp"
         android:textColor="@color/color_text_secondary"/>
 
+    <TextView
+        android:id="@+id/route_ride_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/space_grotesk"
+        android:textStyle="bold"
+        android:textSize="13sp"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/color_accent"
+        android:visibility="gone"/>
+
 </LinearLayout>

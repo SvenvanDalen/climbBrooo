@@ -50,6 +50,15 @@ public final class ClimbAttemptRepository {
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
+    /**
+     * Cheap change marker for the attempts file (mtime + size), so derived caches such as
+     * {@code HistoricClimbScoreCache} can detect ANY write (append, update, remap, overwrite)
+     * without every write path having to remember to invalidate them.
+     */
+    public String dataVersion() {
+        return file.exists() ? file.lastModified() + ":" + file.length() : "none";
+    }
+
     public List<StoredClimbAttempt> loadAll() {
         if (!file.exists()) return new ArrayList<>();
         try (FileInputStream in = new FileInputStream(file)) {
@@ -162,6 +171,44 @@ public final class ClimbAttemptRepository {
             }
             if (found) writeAtomic(file, mapper.writeValueAsBytes(all));
             return found;
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Clears {@link StoredClimbAttempt#photoFileName} on every attempt (privacy dashboard,
+     * issue #264, deletes all attempt photos). One locked read-modify-write, like
+     * {@link #remapClimbId}. Returns the number of attempts that referenced a photo.
+     */
+    public int clearPhotoReferences() throws IOException {
+        WRITE_LOCK.lock();
+        try {
+            List<StoredClimbAttempt> all = loadAll();
+            int cleared = 0;
+            for (StoredClimbAttempt a : all) {
+                if (a.photoFileName != null) {
+                    a.photoFileName = null;
+                    cleared++;
+                }
+            }
+            if (cleared > 0) writeAtomic(file, mapper.writeValueAsBytes(all));
+            return cleared;
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Deletes every stored attempt (privacy dashboard, issue #264). Under the write lock, so a
+     * sync that is appending at the same moment can't write the old list back afterwards.
+     *
+     * @return false when the file exists but could not be deleted
+     */
+    public boolean deleteAll() {
+        WRITE_LOCK.lock();
+        try {
+            return !file.exists() || file.delete();
         } finally {
             WRITE_LOCK.unlock();
         }

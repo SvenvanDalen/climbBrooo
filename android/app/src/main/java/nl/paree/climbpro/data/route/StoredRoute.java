@@ -13,6 +13,13 @@ public final class StoredRoute {
     public String userDisplayName;
     public String notes;
 
+    /**
+     * Bucket-list status ({@link RouteRideStatus}): null (geen status), WANT_TO_RIDE or
+     * RIDDEN. User data — {@link RouteRepository#saveRoute} carries it across resync.
+     * Null on routes stored before this field existed.
+     */
+    public String rideStatus;
+
     public double[] lats;
     public double[] lons;
     public double[] elevations;

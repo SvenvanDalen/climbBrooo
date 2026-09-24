@@ -211,4 +211,16 @@ public class LogbookCalculatorTest {
         assertTrue("the most recent clean attempt this year earns the badge",
                 rows.get(1).bestOfYear);
     }
+
+    @Test
+    public void historyFor_carriesAvgTempC_nullWhenUnknown() {
+        StoredClimbAttempt hot = at("k1", 1, 2000, 700);
+        hot.avgTempC = 33.0;
+        StoredClimbAttempt unknown = at("k1", 2, 1000, 650);
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", Arrays.asList(hot, unknown));
+
+        assertEquals(33.0, rows.get(0).avgTempC, 1e-9);   // most recent first
+        assertEquals(null, rows.get(1).avgTempC);
+    }
 }
