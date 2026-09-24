@@ -99,6 +99,21 @@ public final class IncompleteClimbAttemptRepository {
         }
     }
 
+    /**
+     * Deletes every stored incomplete pass (privacy dashboard, issue #264). Under the write lock, so a
+     * sync that is appending at the same moment can't write the old list back afterwards.
+     *
+     * @return false when the file exists but could not be deleted
+     */
+    public boolean deleteAll() {
+        WRITE_LOCK.lock();
+        try {
+            return !file.exists() || file.delete();
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
     private static String key(StoredIncompleteClimbAttempt a) {
         return (a.climbId != null ? a.climbId : "") + "#" + a.activityId;
     }

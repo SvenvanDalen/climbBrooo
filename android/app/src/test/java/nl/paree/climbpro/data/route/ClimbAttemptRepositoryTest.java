@@ -352,4 +352,15 @@ public class ClimbAttemptRepositoryTest {
         assertEquals("blijft", all.get(0).note);
         assertEquals(0, repo.clearPhotoReferences());
     }
+
+    @Test
+    public void deleteAll_removesEveryAttemptAndIsIdempotent() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        ClimbAttemptRepository repo = new ClimbAttemptRepository(app);
+        repo.append(Arrays.asList(attempt("k1", 1L, 1_700_000_000L, 600)));
+
+        assertTrue(repo.deleteAll());
+        assertTrue(repo.loadAll().isEmpty());
+        assertTrue(repo.deleteAll()); // nothing left: still fine
+    }
 }

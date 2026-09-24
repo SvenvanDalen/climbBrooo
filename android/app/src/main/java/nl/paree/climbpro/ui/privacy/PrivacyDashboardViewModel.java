@@ -16,6 +16,7 @@ import nl.paree.climbpro.data.privacy.PrivacyCategory;
 import nl.paree.climbpro.data.privacy.PrivacyInventory;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
+import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteCollection;
 import nl.paree.climbpro.data.route.RouteCollectionRepository;
@@ -99,7 +100,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                         ? category.label + " verwijderd"
                         : failed + " bestand(en) konden niet worden verwijderd");
             } catch (Exception e) {
-                message.postValue("Verwijderen mislukt: " + e.getMessage());
+                message.postValue("Verwijderen mislukt: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
             }
             load();
         });
@@ -245,9 +247,14 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 prefs.edit().remove(RouteSyncWorker.PREF_ROUTE_ID).apply();
                 return inventory.deleteFiles(c);
             }
-            case ATTEMPTS:
+            case ATTEMPTS: {
+                // Through the repositories' write locks: a raw file delete could be undone by
+                // a Strava sync appending at the same moment (it rewrites the list it read).
+                int failed = new ClimbAttemptRepository(app).deleteAll() ? 0 : 1;
+                failed += new IncompleteClimbAttemptRepository(app).deleteAll() ? 0 : 1;
                 // Photos only exist as part of an attempt, so they go with it.
-                return inventory.deleteFiles(c) + inventory.deleteFiles(PrivacyCategory.PHOTOS);
+                return failed + inventory.deleteFiles(c) + inventory.deleteFiles(PrivacyCategory.PHOTOS);
+            }
             case PHOTOS:
                 new ClimbAttemptRepository(app).clearPhotoReferences();
                 return inventory.deleteFiles(c);
