@@ -143,4 +143,33 @@ public class ElevationGoalCalculatorTest {
         assertEquals(0, ElevationGoalCalculator.monthlyGoalFromWeekly(0,
                 java.time.LocalDate.of(2026, 7, 10)));
     }
+
+    private static nl.paree.climbpro.data.ride.StoredRide ride(LocalDate day, float gainM) {
+        nl.paree.climbpro.data.ride.StoredRide r = new nl.paree.climbpro.data.ride.StoredRide();
+        r.startEpochSec = day.atTime(10, 0).atZone(ZONE).toEpochSecond();
+        r.elevationGainM = gainM;
+        return r;
+    }
+
+    @Test
+    public void rideGain_sumsWholeRidesInPeriod() {
+        LocalDate wed = LocalDate.of(2026, 9, 23);
+        List<nl.paree.climbpro.data.ride.StoredRide> rides = Arrays.asList(
+                ride(LocalDate.of(2026, 9, 21), 650),   // Monday: in week and month
+                ride(wed, 420.4f),                      // in week and month
+                ride(LocalDate.of(2026, 9, 20), 900),   // Sunday before: month only
+                ride(LocalDate.of(2026, 8, 31), 1000)); // previous month
+        assertEquals(1070, ElevationGoalCalculator.cumulativeRideGainM(rides, Period.WEEK, ZONE, wed));
+        assertEquals(1970, ElevationGoalCalculator.cumulativeRideGainM(rides, Period.MONTH, ZONE, wed));
+    }
+
+    @Test
+    public void rideGain_skipsUndatedAndEmpty() {
+        nl.paree.climbpro.data.ride.StoredRide undated = ride(LocalDate.of(2026, 9, 23), 500);
+        undated.startEpochSec = 0;
+        assertEquals(0, ElevationGoalCalculator.cumulativeRideGainM(
+                Collections.singletonList(undated), Period.WEEK, ZONE, LocalDate.of(2026, 9, 23)));
+        assertEquals(0, ElevationGoalCalculator.cumulativeRideGainM(
+                null, Period.WEEK, ZONE, LocalDate.of(2026, 9, 23)));
+    }
 }

@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.ride.RideRepository;
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -41,6 +43,7 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final RideRepository rideRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<Progress> weekProgress = new MutableLiveData<>();
@@ -50,6 +53,7 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
         super(app);
         routeRepo = new RouteRepository(app);
         attemptRepo = new ClimbAttemptRepository(app);
+        rideRepo = new RideRepository(app);
     }
 
     public LiveData<Progress> weekProgress()  { return weekProgress; }
@@ -69,13 +73,26 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
             int monthlyGoalM = ElevationGoalCalculator.monthlyGoalFromWeekly(
                     weeklyGoalM, java.time.LocalDate.now());
 
-            List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-            Map<String, Integer> elevationByClimbId = resolveElevationGains();
-
-            int weekGained = ElevationGoalCalculator.cumulativeGainM(
-                    attempts, elevationByClimbId, Period.WEEK);
-            int monthGained = ElevationGoalCalculator.cumulativeGainM(
-                    attempts, elevationByClimbId, Period.MONTH);
+            int weekGained;
+            int monthGained;
+            List<StoredRide> rides = rideRepo.loadAll();
+            if (!rides.isEmpty()) {
+                // The ride archive (#160) has each ride's total hm, not just its climbs.
+                java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+                java.time.LocalDate today = java.time.LocalDate.now(zone);
+                weekGained = ElevationGoalCalculator.cumulativeRideGainM(
+                        rides, Period.WEEK, zone, today);
+                monthGained = ElevationGoalCalculator.cumulativeRideGainM(
+                        rides, Period.MONTH, zone, today);
+            } else {
+                // No archive yet (no Strava link, or only file imports): climb hm only.
+                List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                Map<String, Integer> elevationByClimbId = resolveElevationGains();
+                weekGained = ElevationGoalCalculator.cumulativeGainM(
+                        attempts, elevationByClimbId, Period.WEEK);
+                monthGained = ElevationGoalCalculator.cumulativeGainM(
+                        attempts, elevationByClimbId, Period.MONTH);
+            }
 
             weekProgress.postValue(new Progress(weekGained, weeklyGoalM));
             monthProgress.postValue(new Progress(monthGained, monthlyGoalM));

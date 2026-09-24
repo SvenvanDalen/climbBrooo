@@ -1,5 +1,6 @@
 package nl.paree.climbpro.domain.climb;
 
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 
 import java.time.Instant;
@@ -82,6 +83,27 @@ public final class ElevationGoalCalculator {
             total += gain;
         }
         return total;
+    }
+
+    /**
+     * Total elevation gain of the rides (issue #160 ride archive) that started in the period:
+     * the whole ride, not only its detected climbs, which is what a weekly/monthly hm goal is
+     * about. Undated rides ({@code startEpochSec <= 0}) are skipped; indoor rides count, like
+     * the yearly km goal (#157).
+     */
+    public static int cumulativeRideGainM(List<StoredRide> rides, Period period, ZoneId zone,
+                                          LocalDate referenceDate) {
+        if (rides == null || rides.isEmpty()) return 0;
+        LocalDate start = periodStart(referenceDate, period);
+        LocalDate endExclusive = periodEndExclusive(referenceDate, period);
+        double total = 0;
+        for (StoredRide r : rides) {
+            if (r == null || r.startEpochSec <= 0 || !(r.elevationGainM > 0)) continue;
+            LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
+            if (day.isBefore(start) || !day.isBefore(endExclusive)) continue;
+            total += r.elevationGainM;
+        }
+        return (int) Math.round(total);
     }
 
     private static LocalDate periodStart(LocalDate referenceDate, Period period) {
