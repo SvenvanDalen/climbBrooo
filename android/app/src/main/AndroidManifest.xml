@@ -137,6 +137,21 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.rides.RideArchiveActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.records.RideRecordsActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.tire.TirePressureLogActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.wrapped.ClimbWrappedActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
@@ -214,6 +229,11 @@
                 <data android:mimeType="application/fit" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.maintenance.MaintenanceActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.settings.SettingsActivity"
