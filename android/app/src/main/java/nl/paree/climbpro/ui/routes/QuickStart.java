@@ -9,6 +9,7 @@ import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Quick-start mode (issue #263): one tap on "Rit nu starten" makes a route the active watch
@@ -47,13 +48,17 @@ public final class QuickStart {
                 .getString(RouteSyncWorker.PREF_ROUTE_ID, null);
     }
 
-    /** Makes {@code routeId} the active route (route-follow mode) and starts a sync now. */
-    public static void start(Context ctx, String routeId) {
+    /**
+     * Makes {@code routeId} the active route (route-follow mode) and starts a sync now.
+     *
+     * @return id of that sync run
+     */
+    public static UUID start(Context ctx, String routeId) {
         PreferenceManager.getDefaultSharedPreferences(ctx)
                 .edit()
                 .putString(RouteSyncWorker.PREF_ROUTE_ID, routeId)
                 .putString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_ROUTE)
                 .apply();
-        SyncScheduler.triggerImmediateSync(ctx);
+        return SyncScheduler.triggerImmediateSync(ctx);
     }
 }
