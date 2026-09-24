@@ -293,6 +293,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_export_csv) {
+            exportCsv();
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
@@ -316,6 +319,21 @@ public final class RouteListActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         executor.shutdown();
+    }
+
+    /** Issue #256: exports routes + climb attempts as CSV via the share sheet. */
+    private void exportCsv() {
+        executor.execute(() -> {
+            try {
+                Intent share = nl.paree.climbpro.ui.export.CsvExportHandoff.export(this);
+                runOnUiThread(() -> startActivity(Intent.createChooser(share, "Exporteer CSV")));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "CSV-export mislukt: " + (e.getMessage() != null
+                                ? e.getMessage() : e.getClass().getSimpleName()),
+                        Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void confirmDeleteRoute(String routeId, String name) {
