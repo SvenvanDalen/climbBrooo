@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -110,14 +111,32 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
             } catch (SecurityException e) {
                 best = null;
             }
-            if (best == null) {
+            String label = best == null ? null : startLabelForFixAge(
+                    (SystemClock.elapsedRealtimeNanos() - best.getElapsedRealtimeNanos()) / 1_000_000L);
+            if (label == null) {
                 message.postValue("Geen recente locatie bekend — kies de start van een route.");
                 return;
             }
-            start.postValue(new StartPoint(best.getLatitude(), best.getLongitude(),
-                    "Huidige locatie"));
+            start.postValue(new StartPoint(best.getLatitude(), best.getLongitude(), label));
             suggestion.postValue(null);
         });
+    }
+
+    /** A cached fix older than this is where the phone was, not where the rider plans from. */
+    static final long MAX_FIX_AGE_MS = 24L * 60 * 60 * 1000;
+    /** Up to this age a cached fix is shown as the current location. */
+    static final long FRESH_FIX_AGE_MS = 30L * 60 * 1000;
+
+    /**
+     * Start-point label for a cached fix of {@code ageMs}: "Huidige locatie" while fresh, the
+     * age once older (so a fix from elsewhere is noticed), or null when too old to use.
+     */
+    static String startLabelForFixAge(long ageMs) {
+        if (ageMs > MAX_FIX_AGE_MS) return null;
+        if (ageMs <= FRESH_FIX_AGE_MS) return "Huidige locatie";
+        long hours = ageMs / (60L * 60 * 1000);
+        return hours < 1 ? "Laatst bekende locatie (minder dan een uur geleden)"
+                : "Laatst bekende locatie (" + hours + " uur geleden)";
     }
 
     /** Lists stored routes with their first track point, off the main thread. */
