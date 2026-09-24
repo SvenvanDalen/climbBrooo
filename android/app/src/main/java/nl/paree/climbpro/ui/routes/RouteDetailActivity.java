@@ -119,6 +119,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnShareToGarmin.setOnClickListener(v ->
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(),
                         this::shareToGarminConnect));
+        binding.btnExportBikeComputer.setOnClickListener(v -> showBikeComputerExport());
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
         binding.btnBulkRenameClimbs.setOnClickListener(v ->
                 startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));
@@ -469,6 +470,45 @@ public final class RouteDetailActivity extends AppCompatActivity {
             return (int) Math.round(Double.parseDouble(text.trim()) * 1000.0);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    /** Issue #254: route + climb waypoints as GPX to the Wahoo or Hammerhead companion app. */
+    private void showBikeComputerExport() {
+        StoredRoute route = viewModel.route().getValue();
+        if (route == null || route.lats == null || route.lats.length == 0) {
+            Toast.makeText(this, "Route heeft nog geen geometrie om te exporteren",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BikeComputerExport.Target[] targets = BikeComputerExport.Target.values();
+        String[] labels = new String[targets.length + 1];
+        for (int i = 0; i < targets.length; i++) {
+            labels[i] = targets[i].label + (BikeComputerExport.isInstalled(this, targets[i])
+                    ? "" : " (app niet gevonden)");
+        }
+        labels[targets.length] = "Ander apparaat of bestand";
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Exporteer route met klimmen")
+                .setItems(labels, (d, which) ->
+                        exportToBikeComputer(route, which < targets.length ? targets[which] : null))
+                .show();
+    }
+
+    private void exportToBikeComputer(StoredRoute route, BikeComputerExport.Target target) {
+        try {
+            java.io.File gpx = BikeComputerExport.writeGpx(this, route);
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", gpx);
+            Intent share = BikeComputerExport.buildShareIntent(this, uri, target);
+            if (target != null && share.getPackage() == null) {
+                Toast.makeText(this, target.label + "-app niet gevonden; kies zelf een app",
+                        Toast.LENGTH_LONG).show();
+            }
+            startActivity(share.getPackage() != null ? share
+                    : Intent.createChooser(share, "Exporteer route"));
+        } catch (Exception e) {
+            Toast.makeText(this, "Exporteren mislukt: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 

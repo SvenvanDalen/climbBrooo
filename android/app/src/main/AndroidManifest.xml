@@ -21,6 +21,19 @@
          GCM_NOT_INSTALLED even when Garmin Connect is installed. -->
     <queries>
         <package android:name="com.garmin.android.apps.connectmobile" />
+        <!-- Find the Wahoo / Hammerhead companion apps among GPX share targets (issue #254). -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="application/gpx+xml" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="application/octet-stream" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
     </queries>
 
     <application
