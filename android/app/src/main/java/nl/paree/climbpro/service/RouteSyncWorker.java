@@ -17,6 +17,7 @@ import nl.paree.climbpro.data.health.HealthConnectGateway;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.data.strava.StravaRoutesRepository;
 import nl.paree.climbpro.data.sync.SyncState;
@@ -114,6 +115,18 @@ public final class RouteSyncWorker extends Worker {
                 .putInt(KEY_CHANGED, r.routesChanged)
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
                 .build();
+
+        // The yearly km goal card (issue #157) reads the ride archive, which otherwise only
+        // fills from the logbook or the Ritten screen: refresh it on every sync. List endpoint
+        // only (no streams), and it never fails the sync.
+        if (authorised) {
+            try {
+                new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo)
+                        .syncRideArchive();
+            } catch (Exception e) {
+                Log.w(TAG, "Ride archive refresh failed; sync continues", e);
+            }
+        }
 
         // New attempts may have been matched during the pull: keep the widget's week total fresh.
         WeekWidgetProvider.refresh(ctx);

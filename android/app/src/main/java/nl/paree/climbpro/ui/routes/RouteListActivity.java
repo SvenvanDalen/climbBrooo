@@ -30,7 +30,9 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
 import nl.paree.climbpro.domain.climb.DuplicateClimbMatcher;
+import nl.paree.climbpro.domain.ride.YearlyDistanceGoalCalculator;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.data.ride.YearlyDistanceGoalRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -143,8 +145,15 @@ public final class RouteListActivity extends AppCompatActivity {
         binding.chipMixed.setOnCheckedChangeListener((btn, checked) -> {
             if (checked) viewModel.setSurfaceFilter(SurfaceType.MIXED);
         });
+        binding.maintenanceBanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this)));
 
         binding.fab.setOnClickListener(v -> showImportDialog());
+        binding.tirePressureBanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this)));
+
+        viewModel.yearlyGoal().observe(this, this::renderYearlyGoal);
+        binding.yearlyGoalCard.setOnClickListener(v -> showYearlyGoalDialog());
 
         nl.paree.climbpro.service.SyncScheduler.manualSyncInfo(this).observe(this, infos -> {
             if (infos == null || infos.isEmpty()) return;
@@ -181,6 +190,7 @@ public final class RouteListActivity extends AppCompatActivity {
                     int changed = info.getOutputData().getInt(
                             nl.paree.climbpro.service.RouteSyncWorker.KEY_CHANGED, 0);
                     viewModel.loadRoutes();
+                    viewModel.loadYearlyGoal(); // the Strava pull also refreshes the ride archive
                     Toast.makeText(this,
                             changed > 0
                                     ? ("Sync klaar: " + changed + " nieuwe/gewijzigde route(s)")
@@ -323,6 +333,15 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbTimelineActivity.class));
             return true;
+        } else if (id == R.id.action_rides) {
+            startActivity(nl.paree.climbpro.ui.rides.RideArchiveActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_records) {
+            startActivity(nl.paree.climbpro.ui.records.RideRecordsActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_tire_pressure_log) {
+            startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
@@ -336,6 +355,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_maintenance) {
+            startActivity(nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
@@ -368,13 +390,115 @@ public final class RouteListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        refreshMaintenanceBanner();
         viewModel.loadRoutes();
+        viewModel.loadYearlyGoal();
+        refreshTirePressureBanner();
+    }
+
+    /**
+     * Shows the in-app tire-pressure reminder (issue #155) when a check is due. Evaluated on
+     * every resume, off the main thread; no notification or worker involved.
+     */
+    private void refreshTirePressureBanner() {
+        executor.execute(() -> {
+            String text = nl.paree.climbpro.ui.tire.TirePressureStatusLoader
+                    .load(getApplicationContext(), System.currentTimeMillis() / 1000L)
+                    .bannerText();
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                binding.tirePressureBanner.setText(text);
+                binding.tirePressureBanner.setVisibility(
+                        text != null ? android.view.View.VISIBLE : android.view.View.GONE);
+            });
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         executor.shutdown();
+    }
+
+    /**
+     * Yearly km goal card (issue #157). Without a goal the card stays visible with this year's
+     * km and a subtle prompt, so the feature is discoverable; the bar is then hidden.
+     */
+    private void renderYearlyGoal(YearlyDistanceGoalCalculator.Progress p) {
+        if (p == null) return;
+        binding.yearlyGoalCard.setVisibility(android.view.View.VISIBLE);
+        binding.yearlyGoalTitle.setText(YearlyDistanceGoalCalculator.headline(p));
+        if (p.hasGoal()) {
+            binding.yearlyGoalProgress.setVisibility(android.view.View.VISIBLE);
+            binding.yearlyGoalProgress.setProgressCompat(
+                    (int) Math.round(p.fraction * binding.yearlyGoalProgress.getMax()), false);
+            binding.yearlyGoalHint.setText(YearlyDistanceGoalCalculator.paceHint(p));
+            binding.yearlyGoalHint.setTextColor(ContextCompat.getColor(this,
+                    p.pace == YearlyDistanceGoalCalculator.Pace.BEHIND_SCHEDULE
+                            ? R.color.color_text_tertiary : R.color.color_success));
+        } else {
+            binding.yearlyGoalProgress.setVisibility(android.view.View.GONE);
+            binding.yearlyGoalHint.setText("Tik om een jaardoel in te stellen");
+            binding.yearlyGoalHint.setTextColor(
+                    ContextCompat.getColor(this, R.color.color_text_tertiary));
+        }
+    }
+
+    /** Sets or clears the yearly km goal; empty or 0 clears it. */
+    private void showYearlyGoalDialog() {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint("Doel in km, bv. 5000");
+        int current = viewModel.getYearlyGoalKm();
+        if (current > 0) {
+            input.setText(String.valueOf(current));
+            input.setSelection(input.getText().length());
+        }
+        android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+        int pad = (int) (20 * getResources().getDisplayMetrics().density);
+        container.setPadding(pad, pad / 2, pad, 0);
+        container.addView(input);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Jaardoel " + java.time.LocalDate.now().getYear())
+                .setMessage("Hoeveel km wil je dit jaar fietsen? Leeg of 0 wist het doel.")
+                .setView(container)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    String text = input.getText().toString().trim();
+                    int km;
+                    try {
+                        km = text.isEmpty() ? 0 : Integer.parseInt(text);
+                    } catch (NumberFormatException e) {
+                        km = -1; // too many digits for an int
+                    }
+                    if (km < 0 || km > YearlyDistanceGoalRepository.MAX_GOAL_KM) {
+                        Toast.makeText(this, "Ongeldig doel (max "
+                                        + YearlyDistanceGoalRepository.MAX_GOAL_KM + " km)",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.setYearlyGoalKm(km);
+                })
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    /**
+     * Shows the maintenance-due banner (issue #154) when a component needs service. Evaluated
+     * on every resume, off the main thread; no notification or worker involved.
+     */
+    private void refreshMaintenanceBanner() {
+        executor.execute(() -> {
+            String text = nl.paree.climbpro.ui.maintenance.MaintenanceStatusLoader
+                    .load(getApplicationContext(), System.currentTimeMillis() / 1000L)
+                    .bannerText();
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                binding.maintenanceBanner.setText(text);
+                binding.maintenanceBanner.setVisibility(
+                        text != null ? android.view.View.VISIBLE : android.view.View.GONE);
+            });
+        });
     }
 
     private void updateQuickStartButton() {
