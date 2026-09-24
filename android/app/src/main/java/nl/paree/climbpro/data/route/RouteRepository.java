@@ -211,6 +211,36 @@ public final class RouteRepository {
     }
 
     /**
+     * Marks/unmarks a climb as a "thuisklim" (home climb, issue #92). Only flips the privacy
+     * flag consumed at export time by {@code ClimbGpxWriter}; never touches the wire payload
+     * or internal calculations, which keep using the real coordinates.
+     */
+    public void setClimbHome(String routeId, int climbIndex, boolean isHome) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            route.climbs.get(climbIndex).isHome = isHome;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
+     * Stores a home climb's privacy-zone centre (issue #92), so every later export reuses the
+     * same centre. Out-of-range indices are silently skipped, matching {@link #setClimbHome}.
+     */
+    public void setClimbPrivacyCentre(String routeId, int climbIndex, double lat, double lon)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            StoredClimb c = route.climbs.get(climbIndex);
+            c.privacyCentreLat = lat;
+            c.privacyCentreLon = lon;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
      * Sets (or clears, when {@code shapeName} is null/blank/"auto") a manual override of a
      * climb's shape tag (issue #36). Mirrors {@link #renameClimb}'s pattern exactly, including
      * surviving resync via {@link #mergePreviousClimbUserData}. An unrecognised
@@ -454,6 +484,9 @@ public final class RouteRepository {
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
             if (p.shapeOverride != null) f.shapeOverride = p.shapeOverride;
             if (f.name == null && p.name != null) f.name = p.name;
+            f.isHome = p.isHome;
+            f.privacyCentreLat = p.privacyCentreLat;
+            f.privacyCentreLon = p.privacyCentreLon;
             if (p.manualRefSec != null) {
                 f.manualRefSec = p.manualRefSec;
                 f.manualRefLabel = p.manualRefLabel;

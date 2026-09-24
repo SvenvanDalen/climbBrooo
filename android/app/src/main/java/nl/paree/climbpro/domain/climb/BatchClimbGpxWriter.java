@@ -50,6 +50,16 @@ public final class BatchClimbGpxWriter {
      *         entries could be written (all had unusable geometry).
      */
     public static String toGpx(List<Entry> entries) {
+        return toGpx(entries, 0);
+    }
+
+    /**
+     * Same as {@link #toGpx(List)}, with home-climb privacy filtering (issue #92) applied to
+     * every entry exactly as {@link ClimbGpxWriter#toGpx(StoredRoute, StoredClimb, int, int[],
+     * Integer, double)} does. A home climb without a usable stored zone centre is skipped
+     * (fails closed) rather than written with its real start.
+     */
+    public static String toGpx(List<Entry> entries, double privacyRadiusMeters) {
         if (entries == null || entries.isEmpty()) {
             throw new IllegalArgumentException("no climbs to export");
         }
@@ -68,7 +78,7 @@ public final class BatchClimbGpxWriter {
         for (Entry e : entries) {
             try {
                 ClimbGpxWriter.appendClimb(waypoints, tracks, e.route, e.climb, e.climbIndex,
-                        e.bestSplitSec, e.bestElapsedSec, true);
+                        e.bestSplitSec, e.bestElapsedSec, true, privacyRadiusMeters);
                 written++;
             } catch (IllegalArgumentException ex) {
                 skipped.add(ex.getMessage());

@@ -678,9 +678,27 @@ public final class RouteListActivity extends AppCompatActivity {
                 Map<String, nl.paree.climbpro.domain.climb.LogbookCalculator.Summary> summaries =
                         nl.paree.climbpro.domain.climb.LogbookCalculator.summaries(attempts);
 
+                int privacyRadiusM = nl.paree.climbpro.domain.climb.CoordinateFuzzer.effectiveRadius(
+                        androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                                .getInt(nl.paree.climbpro.domain.climb.CoordinateFuzzer.PREF_PRIVACY_RADIUS_M,
+                                        nl.paree.climbpro.domain.climb.CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M));
+
                 List<nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry> exportEntries =
                         new ArrayList<>();
                 for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m : matches) {
+                    if (m.climb.isHome && !nl.paree.climbpro.domain.climb.CoordinateFuzzer
+                            .isUsableZoneCentre(m.climb.privacyCentreLat, m.climb.privacyCentreLon,
+                                    m.climb.startLat, m.climb.startLon, privacyRadiusM)) {
+                        // Home climb (issue #92) without a usable zone centre: draw and persist
+                        // one before sharing, exactly like the single-climb export does.
+                        double[] centre = nl.paree.climbpro.domain.climb.CoordinateFuzzer
+                                .randomZoneCentre(m.climb.startLat, m.climb.startLon,
+                                        privacyRadiusM, new java.security.SecureRandom());
+                        repo.setClimbPrivacyCentre(m.route.routeId, m.climbIndex,
+                                centre[0], centre[1]);
+                        m.climb.privacyCentreLat = centre[0];
+                        m.climb.privacyCentreLon = centre[1];
+                    }
                     int segCount = m.climb.segments != null ? m.climb.segments.size() : 0;
                     int len = m.climb.length > 0 ? m.climb.length
                             : (m.climb.endDistance - m.climb.startDistance);
@@ -695,7 +713,8 @@ public final class RouteListActivity extends AppCompatActivity {
                             m.route, m.climb, m.climbIndex, bestSplitSec, bestElapsedSec));
                 }
 
-                String gpx = nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.toGpx(exportEntries);
+                String gpx = nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.toGpx(exportEntries,
+                        privacyRadiusM);
                 File file = nl.paree.climbpro.ui.climbs.ClimbGpxExportHandoff.writeGpxFile(
                         this, gpx, "season_" + year);
                 runOnUiThread(() -> shareGpxFile(file, "Exporteer seizoen " + year));

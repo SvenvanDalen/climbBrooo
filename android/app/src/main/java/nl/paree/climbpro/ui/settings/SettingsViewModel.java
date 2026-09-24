@@ -15,6 +15,7 @@ import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
+import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.power.FtpEstimator;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.FtpEffortJoiner;
@@ -38,6 +39,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     private final MutableLiveData<String>  syncMode       = new MutableLiveData<>();
     private final MutableLiveData<Integer> radiusKm       = new MutableLiveData<>();
     private final MutableLiveData<String>  syncStatus     = new MutableLiveData<>();
+    private final MutableLiveData<Integer> privacyRadiusM = new MutableLiveData<>();
     private final MutableLiveData<Integer> suggestedFtpWatts = new MutableLiveData<>();
 
     /**
@@ -97,6 +99,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     public LiveData<Integer>     radiusKm()       { return radiusKm; }
     public LiveData<String>      syncStatus()     { return syncStatus; }
     public LiveData<RiderProfile> riderProfile()  { return riderProfile; }
+    public LiveData<Integer>     privacyRadiusM() { return privacyRadiusM; }
 
     /**
      * A suggested FTP re-estimate (issue #20), or null when there isn't enough
@@ -112,6 +115,8 @@ public final class SettingsViewModel extends AndroidViewModel {
         syncMode.postValue(prefs.getString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_ROUTE));
         int r = prefs.getInt(RouteSyncWorker.PREF_RADIUS_M, 30_000) / 1000;
         radiusKm.postValue(r);
+        privacyRadiusM.postValue(CoordinateFuzzer.effectiveRadius(prefs.getInt(
+                CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M)));
         RiderProfile profile = riderRepo.load();
         riderProfile.postValue(profile);
         // reload() is called from onResume() on EVERY resume (permission dialogs,
@@ -164,6 +169,14 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(RouteSyncWorker.PREF_RADIUS_M, km * 1000).apply();
         radiusKm.postValue(km);
+    }
+
+    /** Privacy-zone radius (issue #92) for fuzzing home-climb start locations on export. */
+    public void setPrivacyRadiusM(int requestedMeters) {
+        int meters = CoordinateFuzzer.effectiveRadius(requestedMeters);
+        PreferenceManager.getDefaultSharedPreferences(getApplication())
+                .edit().putInt(CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, meters).apply();
+        privacyRadiusM.postValue(meters);
     }
 
     public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg, int rideIntensityPct) {

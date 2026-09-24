@@ -16,6 +16,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.climb.ClimbGpxWriter;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
 import nl.paree.climbpro.domain.climb.SeasonalComparisonCalculator;
@@ -28,6 +29,7 @@ import nl.paree.climbpro.domain.power.RouteTile;
 import nl.paree.climbpro.service.RouteEffortProfileBuilder;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -204,6 +206,23 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     /**
+     * Marks/unmarks the loaded climb as a "thuisklim" (issue #92). Only a phone-side privacy
+     * flag consumed by {@link #exportGpx()} — never sent to the watch, never affects matching
+     * or PR calculations.
+     */
+    public void setHomeClimb(String routeId, int climbIndex, boolean isHome) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbHome(routeId, climbIndex, isHome);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
      * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
      * track, plus waypoints at every segment boundary and, when PR data exists, at the
      * climb's personal-record splits — and writes it to the app cache. Posts the resulting
@@ -230,7 +249,24 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 LogbookCalculator.Summary summary = summaries.get(climbId);
                 if (summary != null) bestElapsedSec = summary.prSec;
 
-                String gpx = ClimbGpxWriter.toGpx(r, c, lastClimbIndex, bestSplitSec, bestElapsedSec);
+                int privacyRadiusM = CoordinateFuzzer.effectiveRadius(
+                        androidx.preference.PreferenceManager
+                                .getDefaultSharedPreferences(getApplication())
+                                .getInt(CoordinateFuzzer.PREF_PRIVACY_RADIUS_M,
+                                        CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M));
+                if (c.isHome && !CoordinateFuzzer.isUsableZoneCentre(c.privacyCentreLat,
+                        c.privacyCentreLon, c.startLat, c.startLon, privacyRadiusM)) {
+                    // First export, radius shrunk below the stored offset, or a resync moved
+                    // the start: draw a fresh centre and persist it before anything is shared,
+                    // so later exports reuse it instead of leaking a new one each time.
+                    double[] centre = CoordinateFuzzer.randomZoneCentre(
+                            c.startLat, c.startLon, privacyRadiusM, new SecureRandom());
+                    routeRepo.setClimbPrivacyCentre(r.routeId, lastClimbIndex, centre[0], centre[1]);
+                    c.privacyCentreLat = centre[0];
+                    c.privacyCentreLon = centre[1];
+                }
+                String gpx = ClimbGpxWriter.toGpx(r, c, lastClimbIndex, bestSplitSec,
+                        bestElapsedSec, privacyRadiusM);
                 File file = ClimbGpxExportHandoff.writeGpxFile(getApplication(), gpx);
                 gpxExportFile.postValue(file);
             } catch (Exception e) {

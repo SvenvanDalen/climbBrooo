@@ -22,6 +22,7 @@ import nl.paree.climbpro.data.backup.BackupRetention;
 import nl.paree.climbpro.data.backup.LocalBackupService;
 import nl.paree.climbpro.data.health.HealthConnectGateway;
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
+import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.service.AutoBackupWorker;
 
 import java.time.ZoneId;
@@ -78,6 +79,14 @@ public final class SettingsActivity extends AppCompatActivity {
             if (km != null) {
                 binding.radiusSeekBar.setProgress(km);
                 binding.radiusLabel.setText(km + " km");
+            }
+        });
+
+        viewModel.privacyRadiusM().observe(this, meters -> {
+            if (meters != null) {
+                binding.privacyRadiusSeekBar.setProgress(
+                        meters - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
+                binding.privacyRadiusLabel.setText(meters + " m");
             }
         });
 
@@ -140,6 +149,20 @@ public final class SettingsActivity extends AppCompatActivity {
                 int km = Math.max(1, progress);
                 binding.radiusLabel.setText(km + " km");
                 if (user) viewModel.setRadiusKm(km);
+            }
+            public void onStartTrackingTouch(SeekBar sb) {}
+            public void onStopTrackingTouch(SeekBar sb) {}
+        });
+
+        // SeekBar has no API-24-safe min, so progress is an offset above the minimum radius:
+        // a 0 m zone would silently disable privacy while the climb still says "gewazigd".
+        binding.privacyRadiusSeekBar.setMax(
+                CoordinateFuzzer.MAX_PRIVACY_RADIUS_M - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
+        binding.privacyRadiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar sb, int progress, boolean user) {
+                int meters = CoordinateFuzzer.MIN_PRIVACY_RADIUS_M + progress;
+                binding.privacyRadiusLabel.setText(meters + " m");
+                if (user) viewModel.setPrivacyRadiusM(meters);
             }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}

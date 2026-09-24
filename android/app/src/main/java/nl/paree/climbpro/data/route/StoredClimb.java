@@ -41,6 +41,21 @@ public final class StoredClimb {
     /** Short label shown alongside {@link #manualRefSec}, e.g. "Pogačar 2024". Null when unset. */
     public String manualRefLabel;
     /**
+     * User-marked "thuisklim" (home climb, issue #92). Phone-only privacy flag: when true,
+     * {@code ClimbGpxWriter} obscures the start location on export/share. Never sent to the
+     * watch and never affects matching, PR calculation or any other internal logic — those
+     * always use the real {@link #startLat}/{@link #startLon}. Defaults to false so existing
+     * stored routes (field absent from older JSON) come back unmarked.
+     */
+    public boolean isHome = false;
+    /**
+     * Centre of this home climb's privacy zone (see {@code CoordinateFuzzer}): drawn once from
+     * a SecureRandom and reused on every export so repeated exports can't be intersected.
+     * Null until the first home-climb export. Phone-only, preserved across resync.
+     */
+    public Double privacyCentreLat;
+    public Double privacyCentreLon;
+    /**
      * User-supplied override of {@link #shape} (issue #36), stored as the enum name. Null means
      * "no override — use the auto-computed {@link #shape}". Set/cleared only via explicit user
      * action (never by detection/re-segmentation) and carried across resync/re-import by

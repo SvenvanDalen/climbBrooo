@@ -214,6 +214,52 @@
                     android:text="Save rider profile"/>
             </LinearLayout>
 
+            <!-- Home-climb privacy zone (issue #92). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Privacy"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="10dp"
+                    android:text="Zone rond het startpunt van een als &quot;thuisklim&quot; gemarkeerde klim die bij export/delen wordt gewazigd."/>
+
+                <TextView
+                    android:id="@+id/privacy_radius_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="500 m"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:layout_marginBottom="4dp"/>
+
+                <SeekBar
+                    android:id="@+id/privacy_radius_seek_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="@color/color_accent"
+                    android:thumbTint="@color/color_accent"
+                    android:max="1900"
+                    android:progress="400"/>
+
+            </LinearLayout>
+
             <!-- Health Connect (issue #255). -->
             <LinearLayout
                 android:layout_width="match_parent"

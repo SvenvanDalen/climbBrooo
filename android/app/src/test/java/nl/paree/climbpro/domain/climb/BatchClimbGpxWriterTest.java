@@ -200,4 +200,36 @@ public class BatchClimbGpxWriterTest {
 
         assertThrows(IllegalArgumentException.class, () -> BatchClimbGpxWriter.toGpx(entries));
     }
+
+    @Test
+    public void homeClimb_privacyZoneAppliesInBatchToo() {
+        StoredClimb home = climb("Home");
+        home.isHome = true;
+        home.privacyCentreLat = 50.0005; // ~66 m from the start: usable for a 300 m zone
+        home.privacyCentreLon = 5.0005;
+        List<BatchClimbGpxWriter.Entry> entries = new ArrayList<>();
+        entries.add(new BatchClimbGpxWriter.Entry(route("r1", 0), home, 0, null, 137));
+        entries.add(new BatchClimbGpxWriter.Entry(route("r2", 1), climb("Other"), 0, null, null));
+
+        String gpx = BatchClimbGpxWriter.toGpx(entries, 300);
+
+        assertTrue(gpx.contains("<trkpt lat=\"50.0005000\" lon=\"5.0005000\">"));
+        assertTrue(!gpx.contains("lat=\"50.0000000\" lon=\"5.0000000\""));
+        // The non-home climb (on another route) keeps its exact start.
+        assertTrue(gpx.contains("lat=\"51.0000000\" lon=\"5.0000000\""));
+    }
+
+    @Test
+    public void homeClimbWithoutCentre_isSkippedNotLeaked() {
+        StoredClimb home = climb("Home");
+        home.isHome = true; // no centre stored
+        List<BatchClimbGpxWriter.Entry> entries = new ArrayList<>();
+        entries.add(new BatchClimbGpxWriter.Entry(route("r1", 0), home, 0, null, null));
+        entries.add(new BatchClimbGpxWriter.Entry(route("r2", 1), climb("Other"), 0, null, null));
+
+        String gpx = BatchClimbGpxWriter.toGpx(entries, 300);
+
+        assertEquals(1, count(TRK_NAME_PATTERN, gpx.replace("\n", "")));
+        assertTrue(!gpx.contains("lat=\"50.0000000\""));
+    }
 }
