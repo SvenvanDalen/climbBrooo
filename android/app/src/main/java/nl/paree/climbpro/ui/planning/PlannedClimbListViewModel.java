@@ -16,6 +16,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.planning.PlannedClimbScheduler;
 import nl.paree.climbpro.service.PlannedClimbCalendarWriter;
 import nl.paree.climbpro.service.PlannedClimbWorkScheduler;
+import nl.paree.climbpro.widget.WeekWidgetProvider;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -109,6 +110,7 @@ public final class PlannedClimbListViewModel extends AndroidViewModel {
 
                 planRepo.add(plan);
                 PlannedClimbWorkScheduler.schedule(getApplication(), plan);
+                WeekWidgetProvider.refresh(getApplication());
                 load();
             } catch (Exception e) {
                 error.postValue("Plannen mislukt: " + e.getMessage());
@@ -124,6 +126,7 @@ public final class PlannedClimbListViewModel extends AndroidViewModel {
                     PlannedClimbCalendarWriter.deleteEvent(getApplication(), plan.calendarEventId);
                 }
                 planRepo.remove(plan.id);
+                WeekWidgetProvider.refresh(getApplication());
                 load();
             } catch (Exception e) {
                 error.postValue("Verwijderen mislukt: " + e.getMessage());

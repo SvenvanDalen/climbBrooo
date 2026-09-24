@@ -120,6 +120,10 @@ public final class RouteRepository {
         // Carry the tombstone list forward across resync so a user-confirmed merge/removal
         // (recorded by removeClimb) stays removed even after fresh re-detection below.
         route.removedClimbIds = new ArrayList<>(prevRemovedClimbIds);
+        // Bucket-list status is user data: a re-import supplies a fresh StoredRoute shell
+        // without it, so carry the previous value forward unless the caller set one.
+        if (route.rideStatus == null && prev != null) route.rideStatus = prev.rideStatus;
+        route.rideStatus = RouteRideStatus.normalize(route.rideStatus);
         // Filter the freshly (re-)detected climbs against the tombstone list BEFORE deriving
         // BOTH route.climbs and the flat-segment coverage from them, so a merged-away climb's
         // distance range is consistently treated as "not a climb" by both. Previously
@@ -325,6 +329,28 @@ public final class RouteRepository {
             if (e.routeId.equals(routeId)) {
                 e.notes = notes;
                 e.lastModifiedMs = System.currentTimeMillis();
+                break;
+            }
+        }
+        saveCatalog(catalog);
+    }
+
+    /**
+     * Sets the bucket-list status (issue #158); null or an unknown value clears it. Updates
+     * both the route file and its catalog entry, which the route list filters on.
+     */
+    public void setRideStatus(String routeId, String status) throws IOException {
+        String normalized = RouteRideStatus.normalize(status);
+        StoredRoute route = loadRoute(routeId);
+        route.rideStatus = normalized;
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+
+        List<RouteCatalogEntry> catalog = loadCatalog();
+        for (RouteCatalogEntry e : catalog) {
+            if (e.routeId.equals(routeId)) {
+                e.rideStatus = normalized;
+                e.lastModifiedMs = route.lastModifiedMs;
                 break;
             }
         }
@@ -579,6 +605,7 @@ public final class RouteRepository {
         e.sourceHash      = route.sourceHash;
         e.climbCount      = climbs != null ? climbs.size() : 0;
         e.notes           = route.notes;
+        e.rideStatus      = route.rideStatus;
         e.importedAtMs    = route.importedAtMs;
         e.lastModifiedMs  = route.lastModifiedMs;
 
@@ -1006,6 +1033,7 @@ public final class RouteRepository {
             stub.sourceHash     = route.sourceHash;
             stub.climbCount     = route.climbs != null ? route.climbs.size() : 0;
             stub.notes          = route.notes;
+            stub.rideStatus     = route.rideStatus;
             stub.importedAtMs   = route.importedAtMs;
             stub.lastModifiedMs = route.lastModifiedMs;
             stub.surfaceTypes   = types;

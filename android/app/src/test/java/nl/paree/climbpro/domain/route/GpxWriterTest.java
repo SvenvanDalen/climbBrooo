@@ -136,4 +136,37 @@ public class GpxWriterTest {
         assertThrows(IllegalArgumentException.class,
                 () -> GpxWriter.toGpx(route(new double[0], new double[0], new double[0], "leeg")));
     }
+
+    private static StoredRoute routeWithClimb() {
+        StoredRoute r = route(new double[]{50.0, 50.01, 50.02}, new double[]{5.0, 5.0, 5.0},
+                new double[]{100, 150, 200}, "Rondje");
+        r.distances = new double[]{0, 1000, 2000};
+        nl.paree.climbpro.data.route.StoredClimb c = new nl.paree.climbpro.data.route.StoredClimb();
+        c.name = "Cauberg & co";
+        c.startDistance = 500;
+        c.endDistance = 2000;
+        c.length = 1500;
+        c.avgGradient = 0.066;
+        c.elevationGain = 100;
+        r.climbs = new java.util.ArrayList<>(java.util.Collections.singletonList(c));
+        return r;
+    }
+
+    @Test
+    public void climbWaypoints_startAndTopBeforeTrackWithDetails() {
+        String gpx = GpxWriter.toGpx(routeWithClimb(), true);
+
+        assertTrue(gpx.contains("<wpt lat=\"50.0050000\" lon=\"5.0000000\">"));
+        assertTrue(gpx.contains("<name>Start Cauberg &amp; co</name>"));
+        assertTrue(gpx.contains("<wpt lat=\"50.0200000\" lon=\"5.0000000\">"));
+        assertTrue(gpx.contains("<name>Top Cauberg &amp; co</name>"));
+        assertTrue(gpx.contains("<desc>1.5 km, 6.6%, 100 hm</desc>"));
+        assertTrue(gpx.indexOf("<wpt") < gpx.indexOf("<trk>"));
+        assertEquals(3, reparse(gpx).size()); // track still parses unchanged
+    }
+
+    @Test
+    public void plainGpxHasNoWaypoints() {
+        assertFalse(GpxWriter.toGpx(routeWithClimb()).contains("<wpt"));
+    }
 }
