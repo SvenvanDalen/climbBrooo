@@ -132,6 +132,14 @@
                 android:text="Start navigatie" />
 
             <Button
+                android:id="@+id/btn_export_bike_computer"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Naar Wahoo / Hammerhead" />
+
+            <Button
                 android:id="@+id/btn_surface_sections"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

@@ -78,6 +78,8 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_LONG).show());
 
         findViewById(R.id.addButton).setOnClickListener(v -> showPickTargetDialog());
+        findViewById(R.id.multiDayTourButton).setOnClickListener(v ->
+                startActivity(new android.content.Intent(this, MultiDayTourActivity.class)));
 
         ensureNotificationPermission();
         viewModel.load();

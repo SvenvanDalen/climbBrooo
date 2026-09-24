@@ -54,6 +54,8 @@ public final class RouteListViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<RouteCatalogEntry>> routes()  { return routes;  }
+    /** Unfiltered catalog (the surface filter only narrows {@link #routes()}). */
+    public LiveData<List<RouteCatalogEntry>> catalog() { return allRoutes; }
     public LiveData<String>                  error()   { return error;   }
     public LiveData<Boolean>                 loading() { return loading; }
     public boolean isSignedInToStrava() { return authRepo.isAuthorised(); }
