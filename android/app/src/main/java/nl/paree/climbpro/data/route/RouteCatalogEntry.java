@@ -27,6 +27,9 @@ public final class RouteCatalogEntry {
     /** User-supplied notes — phone-only, never synced to watch. */
     public String notes;
 
+    /** Bucket-list status ({@link RouteRideStatus}), mirrored from StoredRoute. Phone-only. */
+    public String rideStatus;
+
     public long importedAtMs;
     public long lastModifiedMs;
 

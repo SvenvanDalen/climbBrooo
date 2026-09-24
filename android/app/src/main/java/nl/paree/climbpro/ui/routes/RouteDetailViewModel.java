@@ -10,12 +10,19 @@ import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
+import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.climb.ClimbUsageClassifier;
+import nl.paree.climbpro.domain.climb.ClimbUsageType;
+import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
+import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
@@ -32,7 +39,9 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
+    private final ClimbAttemptRepository attemptRepo;
     private final OnboardPushService onboardPushService;
+    private final HistoricClimbScoreCache historicClimbScoreCache;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredRoute> route      = new MutableLiveData<>();
@@ -42,14 +51,21 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<List<StoredSurfaceSection>> surfaceSections = new MutableLiveData<>();
     private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
     private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
+    private final MutableLiveData<ClimbUsageType[]> climbUsageTypes = new MutableLiveData<>();
     private final MutableLiveData<String> onboardPushMessage = new MutableLiveData<>();
+    /** Bucket-list status; separate from {@link #route} so a change doesn't re-render (and wipe unsaved) notes. */
+    private final MutableLiveData<String> rideStatus = new MutableLiveData<>();
+    private final MutableLiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions =
+            new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
         routeRepo = new RouteRepository(app);
         riderRepo = new RiderProfileRepository(app);
+        attemptRepo = new ClimbAttemptRepository(app);
         onboardPushService = new OnboardPushService(
                 ((ClimbProApplication) app).connectIqClient());
+        historicClimbScoreCache = ((ClimbProApplication) app).historicClimbScoreCache();
     }
 
     public LiveData<StoredRoute>  route()      { return route; }
@@ -59,24 +75,47 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<StoredSurfaceSection>> surfaceSections() { return surfaceSections; }
     public LiveData<RoutePassport> passport()           { return passport; }
     public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
+    public LiveData<ClimbUsageType[]> climbUsageTypes()  { return climbUsageTypes; }
     public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
+    public LiveData<String> rideStatus() { return rideStatus; }
+    /** Rest-split suggestions (issue #22); see {@link RestSplitAdvisor}. */
+    public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 route.postValue(r);
+                rideStatus.postValue(RouteRideStatus.normalize(r.rideStatus));
                 routeItems.postValue(buildRouteItems(r));
                 RiderProfile profile = riderRepo.load();
                 int[][] plan = RoutePacingPlanner.plan(r, profile);
+                plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(r, plan);
                 passport.postValue(RoutePassport.from(r, plan));
                 climbTargetSeconds.postValue(perClimbTotals(r, plan));
+                List<StoredClimb> climbs = r.climbs != null ? r.climbs : Collections.emptyList();
+                List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                climbUsageTypes.postValue(ClimbUsageClassifier.classifyAll(climbs, attempts));
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
+                restSuggestions.postValue(computeRestSuggestions(r));
             } catch (Exception e) {
                 error.postValue("Could not load route: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * Builds the rider's historic per-climb difficulty baseline from stored attempts, then asks
+     * {@link RestSplitAdvisor} which of this route's climbs are long + unusually hard for this
+     * rider relative to that baseline. See {@link RestSplitAdvisor} class doc for the rationale.
+     */
+    private List<RestSplitAdvisor.Suggestion> computeRestSuggestions(StoredRoute r) {
+        if (r == null || r.climbs == null || r.climbs.isEmpty()) return Collections.emptyList();
+        // Cached at Application scope: this would otherwise re-scan the whole route catalog
+        // from disk on every route-detail screen open. See HistoricClimbScoreCache class doc.
+        List<Double> historicScores = historicClimbScoreCache.get(routeRepo, attemptRepo);
+        return RestSplitAdvisor.suggest(r.climbs, historicScores);
     }
 
     public void renameRoute(String routeId, String newName) {
@@ -98,6 +137,18 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 saved.postValue(true);
             } catch (Exception e) {
                 error.postValue("Save failed: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Sets the bucket-list status (issue #158); null clears it. */
+    public void setRideStatus(String routeId, String status) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setRideStatus(routeId, status);
+                rideStatus.postValue(RouteRideStatus.normalize(status));
+            } catch (Exception e) {
+                error.postValue("Status opslaan mislukt: " + e.getMessage());
             }
         });
     }

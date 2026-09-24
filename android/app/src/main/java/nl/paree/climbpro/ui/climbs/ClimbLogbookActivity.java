@@ -11,12 +11,14 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
+import nl.paree.climbpro.ui.activity.ActivityImportActivity;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,10 +54,29 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
         });
         viewModel.streak().observe(this, this::renderStreak);
 
+        TextView levelTitle = findViewById(R.id.levelTitle);
+        TextView levelXp = findViewById(R.id.levelXp);
+        LinearProgressIndicator bar =
+                findViewById(R.id.levelProgress);
+        viewModel.progress().observe(this, p -> {
+            levelTitle.setText(p.label());
+            bar.setProgress((int) (100 * p.xpIntoLevel / Math.max(1, p.xpForNextLevel)));
+            levelXp.setText(p.totalXp + " XP · nog " + (p.xpForNextLevel - p.xpIntoLevel)
+                    + " XP tot level " + (p.level + 1));
+        });
+
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
+        findViewById(R.id.importGarminButton).setOnClickListener(v -> startActivity(
+                ActivityImportActivity.pickIntent(this)));
 
         viewModel.loadLogbook();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        viewModel.loadLogbook(); // back from a Garmin import
     }
 
     private void renderStreak(nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak streak) {

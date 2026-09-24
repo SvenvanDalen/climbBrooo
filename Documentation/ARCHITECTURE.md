@@ -343,6 +343,20 @@ Key types — names should match across modules where possible.
 - Segment count = `ceil(1 / 0.08) = 13` _unless_ the last segment is short — keep the segmenter honest about the tail.
 - Calibration points are a **subset of the segment-end positions** (same 8%-fraction grid), spaced ≥ 200 m apart with the final segment end always included. `Segmenter.calibrationPoints(climbPoints)` and `Segmenter.segment(climbPoints)` must walk identical boundaries.
 
+### Route bucket-list status (issue #158)
+
+`StoredRoute.rideStatus` holds a user-set route status: `null` (geen status — also the
+value for route files written before the field existed), `"WANT_TO_RIDE"` or `"RIDDEN"`
+(constants + Dutch labels in `data/route/RouteRideStatus`). It is mirrored to
+`RouteCatalogEntry.rideStatus` because the route list reads only `catalog.json`; every
+catalog write path (`toCatalogEntry` in `saveRoute`, the stub in
+`rebuildCatalogSurfaceTypes`, and `setRideStatus`) copies it. `saveRoute` carries the
+previous value forward when the incoming route shell has none, so a Strava resync or
+re-import never resets it. The status is purely manual (no automatic change from climb
+attempts), phone-only and never part of the wire payload. The route list filters on it
+via the pure `ui/routes/RouteStatusFilter` (Alle / Wil ik rijden / Gereden), applied
+alongside the surface filter and before sorting.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
@@ -462,9 +476,37 @@ contribute to the catalog `surfaceTypes` index.
 **Auto-seeding vs. user edits.** `StravaRoutesRepository` seeds per-climb-segment surface
 from the Strava `sub_type` (e.g. road → asphalt) **only on first import** (`existing == null`).
 On any re-sync, `RouteRepository.saveRoute` has already preserved the user's manual
-per-segment surface edits (matched by climb `startDistance`, copied by segment index for
-non-UNKNOWN values), so the seeding step is skipped to avoid clobbering them. This upholds
-the "user customisation survives resync" rule for surfaces, the same way renames are kept.
+per-segment surface edits (non-UNKNOWN values, remapped by `SegmentRemapper` — see below),
+so the seeding step is skipped to avoid clobbering them. This upholds the "user
+customisation survives resync" rule for surfaces, the same way renames are kept.
+
+**Robust re-mapping when segment boundaries move (issue #87).** A re-import of the same
+route can shift segment boundaries: the route start moves (every distance offset), a climb
+is trimmed/extended differently (its 8% grid moves), or climbs appear/disappear. All
+carry-over rules live in one pure class, `data/route/SegmentRemapper` (phone-only; no wire
+change), applied by `RouteRepository.saveRoute`:
+
+- **Climb matching** is one-to-one, greedy by score: exact `startDistance` with a near (or
+  unknown) start coordinate first (the legacy rule, so unchanged geometry behaves exactly as
+  before), then start coordinates within 150 m (survives a shifted route start); only for
+  the leftovers, `[startDistance,endDistance]` overlap ≥ 50% of the longer climb, compared
+  after the route-wide shift revealed by the anchored matches (survives a moved climb start).
+  An old climb never feeds two fresh climbs. Matched climbs carry rename, suggested name and
+  manual reference time.
+- **Alignment offset**: when starts coincide geometrically but start distances differ by
+  more than the start point moved (+50 m slack), the route start shifted and segment
+  positions are compared after subtracting that offset; otherwise on absolute route position.
+- **Position-bound segment data** (surface — it describes the road) goes to each fresh
+  segment from the previous segment it overlaps most, only if that covers ≥ 50% of the fresh
+  segment; else the default stays. On an identical grid this is the old index copy.
+- **Grid-bound segment data** (e.g. a per-segment target time) is only meaningful for exactly
+  the same boundaries: carry it by index only when `SegmentRemapper.isSameGrid` (same count,
+  every aligned boundary within 10 m), otherwise drop it — never interpolate.
+  `StoredClimbAttempt.segSplitSec` follows the same principle: `SegmentPrCalculator` ignores
+  splits whose length differs from the current grid.
+- **Flat stretches** keep name/surface by exact `startDistance`, else by ≥ 50% overlap after
+  the route-wide offset (median of the matched climbs' offsets). User-drawn surface sections
+  are still copied verbatim (absolute distances).
 
 ### Climb time estimate (phone-only)
 
@@ -676,7 +718,15 @@ Out-and-back rides are handled by picking the earliest gate entry: this ensures 
 
 ### Persistence
 
+The phone also keeps a **ride archive** (`rides.json`, `data/ride/RideRepository`, issue #160): one `StoredRide` summary per synced Strava cycling activity (distance, moving time, elevation, speeds, commute flag, start/end point). It is filled from the activity *list* endpoint only (no streams), with its own sync cursor that backfills the past year on first run, and never blocks climb matching. `domain/ride/RideClassifier` classifies each ride as woon-werk / training / toerrit on the fly (not persisted). Phone-only; never part of the wire payload.
+
+A **Records** screen (issue #156, `ui/records/RideRecordsActivity`) reads the same archive: `domain/ride/RideRecordsCalculator` derives longest ride, highest average speed (only rides >= 20 km, never `VirtualRide`), most elevation, longest moving time and most consecutive local calendar days with a ride. Ties go to the earliest ride. Computed on the fly, not persisted; phone-only.
+
+**Tire-pressure log** (`tire_pressure_log.json`, `data/tire/TirePressureLogRepository`, issue #155): one JSON object holding the manual checks (timestamp, front/rear pressure in bar with one decimal — the UI shows the psi equivalent next to it to line up with the psi ranges of the #90 tire-pressure advice — optional note) plus the reminder settings (every X days / every X km, 0 = off; defaults 7 days / 300 km). Atomic writes with a static write lock, like `RideRepository`. `domain/tire/TirePressureReminderCalculator` marks a check due when either threshold since the latest entry is reached; km = sum of archived `StoredRide.distanceM` that started after that entry, **excluding `VirtualRide`** (indoor km don't wear road tyres). With no entries yet it is not due (no permanent banner for riders who don't use the feature; the log screen prompts for a first check instead). The reminder is in-app and offline only: a banner on the route list (re-evaluated on resume) plus status on the log screen — no notification permission or worker (possible follow-up). Km only advance when the ride archive syncs from Strava. Phone-only; never part of the wire payload.
+
 Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, following the same JSON-file pattern used for routes. `ClimbAttemptRepository` deduplicates on `(climbId, activityId)` so re-running a sync never creates duplicate entries. Reads are on demand; writes are atomic (temp + rename).
+
+**Maintenance tracker** (`maintenance.json`, `data/maintenance/MaintenanceRepository`, issue #154): one JSON object with the user's components (defaults Ketting 3000 km, Banden 4000 km, Remblokken 2000 km, Service 5000 km / 12 months; the user can add, rename, re-interval and delete components, and an emptied list is not re-seeded). Each component has an interval in km and/or calendar months (0 = off), a last-serviced date and a small history of service dates (max 10). Atomic writes with a static write lock, like `RideRepository`; a missing or corrupt file loads as the default set. `domain/maintenance/MaintenanceCalculator` (pure, explicit now + zone) computes km since service = sum of archived `StoredRide.distanceM` that started after the last-serviced date, **excluding `VirtualRide`** unless the component opts in (trainer km don't wear a road chain/tyres the same way); undated rides are skipped. Due when either interval is reached, "bijna" from 90 %; a component without a known service date is never due (no permanent banner for new users). "Gedaan" appends now to the history and restarts the count. Surfaced in-app only: a banner on the route list (re-evaluated on resume, off the main thread) opening the "Onderhoud" screen (overflow menu). Independent of climb logic; km only advance when the ride archive syncs. Phone-only; never part of the wire payload.
 
 ### Logbook view
 

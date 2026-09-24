@@ -1,5 +1,6 @@
 package nl.paree.climbpro.ui.climbs;
 
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -25,11 +26,27 @@ import org.osmdroid.views.overlay.Polyline;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.data.planning.PlannedClimb;
+import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
+import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.sun.SunriseCalculator;
+import nl.paree.climbpro.domain.sun.SunriseRidePlanner;
+import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.domain.weather.SummitWeather;
+import nl.paree.climbpro.service.PlannedClimbWorkScheduler;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 public final class ClimbDetailActivity extends AppCompatActivity {
 
@@ -161,6 +178,18 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             updateManualRefText();
         });
 
+        viewModel.seasonalComparison().observe(this, result -> {
+            if (result == null) {
+                binding.seasonalComparison.setVisibility(android.view.View.GONE);
+                return;
+            }
+            String direction = result.percentFaster >= 0 ? "sneller" : "langzamer";
+            binding.seasonalComparison.setText(String.format(java.util.Locale.getDefault(),
+                    "%.0f%% %s dan in %d rond deze tijd van het jaar",
+                    Math.abs(result.percentFaster), direction, result.priorYear));
+            binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
+        });
+
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
         viewModel.saved().observe(this, isSaved -> {
@@ -197,6 +226,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         "%s   %d:%02d   (%s)%s%s", date, m, s, delta, badge, deviationBadge));
                 rowLayout.addView(tv);
 
+                String tempNote = nl.paree.climbpro.domain.climb.AttemptTemperature.label(row.avgTempC);
+                if (tempNote != null) {
+                    android.widget.TextView tempView = new android.widget.TextView(this);
+                    tempView.setText(tempNote);
+                    tempView.setTextSize(13f);
+                    tempView.setPadding(0, 4, 0, 0);
+                    rowLayout.addView(tempView);
+                }
+
                 if (row.note != null && !row.note.isEmpty()) {
                     android.widget.TextView noteView = new android.widget.TextView(this);
                     noteView.setText("“" + row.note + "”");
@@ -232,8 +270,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
+        binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
+        binding.btnSunriseRide.setOnClickListener(v -> pickSunriseDate());
+        binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
 
@@ -241,6 +282,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         adapter.setOnSegmentLongClickListener((position, segment) ->
                 showSegmentSurfaceDialog(position, segment));
+        adapter.setOnSegmentClickListener((position, segment) ->
+                showSegmentTargetTimeDialog(position, segment));
 
         viewModel.loadClimb(routeId, climbIndex);
     }
@@ -250,6 +293,79 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         super.onResume();
         binding.mapView.onResume();
         viewModel.refreshEstimate();
+    }
+
+    /** Issue #247: plan a ride that reaches this climb's top just before sunrise. */
+    private void pickSunriseDate() {
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        DatePickerDialog picker = new DatePickerDialog(this, (dp, y, m, d) ->
+                showSunrisePlan(LocalDate.of(y, m + 1, d)),
+                tomorrow.getYear(), tomorrow.getMonthValue() - 1, tomorrow.getDayOfMonth());
+        picker.getDatePicker().setMinDate(System.currentTimeMillis() - 1000); // no past dates
+        picker.show();
+    }
+
+    private void showSunrisePlan(LocalDate date) {
+        StoredClimb c = viewModel.climb().getValue();
+        if (c == null) return;
+        Instant sunrise = SunriseCalculator
+                .sunrise(date, c.startLat, c.startLon);
+        if (sunrise == null) {
+            new AlertDialog.Builder(this)
+                    .setMessage("Op deze datum komt de zon hier niet op of gaat ze niet onder.")
+                    .setPositiveButton("OK", null).show();
+            return;
+        }
+        ClimbTimeEstimate est = viewModel.timeEstimate().getValue();
+        SunriseRidePlanner.Plan plan =
+                SunriseRidePlanner.plan(sunrise, c.startDistance,
+                        SunriseRidePlanner.DEFAULT_APPROACH_KMH,
+                        est != null ? est.totalSeconds : 0, c.length,
+                        SunriseRidePlanner.DEFAULT_BUFFER_MIN);
+        ZoneId zone = ZoneId.systemDefault();
+        Locale dutch = new Locale("nl");
+        DateTimeFormatter hm = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter dayHm =
+                DateTimeFormatter.ofPattern("EEE d MMM HH:mm", dutch);
+        String name = c.userDisplayName != null ? c.userDisplayName
+                : (c.name != null ? c.name : "Klim " + (climbIndex + 1));
+        String msg = "Zon op: " + hm.format(sunrise.atZone(zone))
+                + "\nOp de top: " + hm.format(plan.arrivalTop.atZone(zone))
+                + " (" + SunriseRidePlanner.DEFAULT_BUFFER_MIN + " min vooraf)"
+                + "\nVertrek vanaf de routestart: " + dayHm.format(plan.departure.atZone(zone))
+                + "\n\nAanrit " + String.format(dutch, "%.1f", c.startDistance / 1000.0)
+                + " km à 25 km/u (" + DurationFormat.format(plan.approachSec)
+                + ") + klim " + DurationFormat.format(plan.climbSec)
+                + (est == null ? " (schatting op 10 km/u; vul je profiel in voor een betere schatting)" : "");
+        new AlertDialog.Builder(this)
+                .setTitle("Zonsopkomst op " + name)
+                .setMessage(msg)
+                .setPositiveButton("Zet in klimplanning", (d, w) -> saveSunrisePlan(plan, name))
+                .setNegativeButton("Sluiten", null)
+                .show();
+    }
+
+    private void saveSunrisePlan(SunriseRidePlanner.Plan plan, String name) {
+        if (SunriseRidePlanner.isInPast(plan, Instant.now())) {
+            Toast.makeText(this, "Het vertrektijdstip is al voorbij", Toast.LENGTH_LONG).show();
+            return;
+        }
+        PlannedClimb p = new PlannedClimb(
+                UUID.randomUUID().toString(), routeId, climbIndex,
+                "Zonsopkomst: " + name, plan.departure.getEpochSecond(), System.currentTimeMillis());
+        Context app = getApplicationContext();
+        new Thread(() -> {
+            try {
+                new PlannedClimbRepository(app).add(p);
+                PlannedClimbWorkScheduler.schedule(app, p);
+                runOnUiThread(() -> Toast.makeText(app, "Gepland; je krijgt een herinnering",
+                        Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(app, "Plannen mislukt: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
+                        Toast.LENGTH_LONG).show());
+            }
+        }, "sunrise-plan").start();
     }
 
     @Override
@@ -361,6 +477,52 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 this, getPackageName() + ".fileprovider", file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
         startActivity(Intent.createChooser(share, "Exporteer klim als GPX"));
+    }
+
+    /** Issue #246: valley vs summit weather, now and in 3 hours (Open-Meteo, off the UI thread). */
+    private void showSummitWeather() {
+        StoredRoute r = viewModel.route().getValue();
+        StoredClimb c = viewModel.climb().getValue();
+        if (r == null || c == null) return;
+        binding.btnSummitWeather.setEnabled(false); // one request at a time, no stacked dialogs
+        Toast.makeText(this, "Weer ophalen…", Toast.LENGTH_SHORT).show();
+        ClimbEndpoints.Point foot =
+                ClimbEndpoints.foot(r, c);
+        ClimbEndpoints.Point top =
+                ClimbEndpoints.top(r, c);
+        new Thread(() -> {
+            String msg;
+            try {
+                OpenMeteoClient client =
+                        new OpenMeteoClient();
+                HourlyForecast f = client.fetch(foot);
+                HourlyForecast t = client.fetch(top);
+                Instant now = Instant.now();
+                String nowText = SummitWeather.describe(
+                        f, t, now, foot.elevationM, top.elevationM);
+                String laterText = SummitWeather.describe(
+                        f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM);
+                StringBuilder sb = new StringBuilder();
+                if (nowText != null) sb.append("NU\n").append(nowText);
+                if (laterText != null) {
+                    sb.append(sb.length() > 0 ? "\n\n" : "").append("OVER 3 UUR\n").append(laterText);
+                }
+                msg = sb.length() > 0 ? sb.toString() : "Geen verwachting beschikbaar voor dit moment";
+            } catch (Exception e) {
+                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                msg = "Weer ophalen mislukt: " + reason;
+            }
+            String text = msg + "\n\nBron: Open-Meteo";
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnSummitWeather.setEnabled(true);
+                new AlertDialog.Builder(this)
+                        .setTitle("Weer op de top")
+                        .setMessage(text)
+                        .setPositiveButton("OK", null)
+                        .show();
+            });
+        }, "summit-weather").start();
     }
 
     private void showRenameDialog() {
@@ -483,6 +645,45 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Lets the user manually override the auto-computed shape tag (issue #36), e.g. when the
+     * heuristic in {@code ClimbShapeClassifier} mislabels a climb. "Automatisch" clears the
+     * override, falling back to the auto classification again — same shape as clearing a rename
+     * back to the auto name.
+     */
+    private void showShapeOverrideDialog() {
+        nl.paree.climbpro.domain.climb.ClimbShape[] shapes =
+                nl.paree.climbpro.domain.climb.ClimbShape.values();
+        String[] labels = new String[shapes.length + 1];
+        labels[0] = "Automatisch";
+        for (int i = 0; i < shapes.length; i++) {
+            labels[i + 1] = nl.paree.climbpro.domain.climb.ClimbShapeLabel.forShape(shapes[i]);
+        }
+
+        int current = 0;
+        if (loadedClimb != null && loadedClimb.shapeOverride != null) {
+            for (int i = 0; i < shapes.length; i++) {
+                if (shapes[i].name().equals(loadedClimb.shapeOverride)) {
+                    current = i + 1;
+                    break;
+                }
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Vorm van de klim")
+                .setSingleChoiceItems(labels, current, null)
+                .setPositiveButton("Opslaan", (dialog, which) -> {
+                    android.widget.ListView lv = ((AlertDialog) dialog).getListView();
+                    int chosen = lv.getCheckedItemPosition();
+                    String shapeName = (chosen >= 1 && chosen <= shapes.length)
+                            ? shapes[chosen - 1].name() : null;
+                    viewModel.setShapeOverride(routeId, climbIndex, shapeName);
+                })
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
     private void setupBulkSurfaceSetter() {
         String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed"};
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
@@ -502,6 +703,60 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         .show();
             }
         });
+    }
+
+    /**
+     * Lets the user set (or clear) a manual pacing target for one segment (issue #23),
+     * overriding {@code RoutePacingPlanner}'s automatic 'tsec' value for that segment only.
+     */
+    private void showSegmentTargetTimeDialog(int segmentIndex, StoredSegment segment) {
+        EditText input = new EditText(this);
+        input.setHint("mm:ss");
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+        if (segment.manualTargetSec != null) {
+            input.setText(DurationFormat.format(segment.manualTargetSec));
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle("Doeltijd segment " + (segmentIndex + 1))
+                .setMessage("Laat leeg en kies \"Automatisch\" om de berekende tijd te gebruiken.")
+                .setView(input)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    Integer seconds = parseMmSs(input.getText().toString().trim());
+                    if (seconds == null) {
+                        Toast.makeText(this, "Ongeldige tijd, gebruik mm:ss", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.setSegmentManualTargetSec(routeId, climbIndex, segmentIndex, seconds);
+                })
+                .setNegativeButton("Annuleer", null);
+        if (segment.manualTargetSec != null) {
+            builder.setNeutralButton("Automatisch",
+                    (d, w) -> viewModel.setSegmentManualTargetSec(
+                            routeId, climbIndex, segmentIndex, null));
+        }
+        builder.show();
+    }
+
+    /**
+     * Parses "mm:ss" or a bare seconds count; returns null on anything unparsable, negative or
+     * zero (a 0 s target would reach the watch as a meaningless tsec).
+     */
+    private static Integer parseMmSs(String text) {
+        if (text == null || text.isEmpty()) return null;
+        try {
+            if (text.contains(":")) {
+                String[] parts = text.split(":", 2);
+                int minutes = Integer.parseInt(parts[0].trim());
+                int seconds = Integer.parseInt(parts[1].trim());
+                if (minutes < 0 || seconds < 0 || seconds >= 60) return null;
+                int total = minutes * 60 + seconds;
+                return total > 0 ? total : null;
+            }
+            int seconds = Integer.parseInt(text);
+            return seconds > 0 ? seconds : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void showSegmentSurfaceDialog(int segmentIndex, nl.paree.climbpro.data.route.StoredSegment segment) {
