@@ -23,6 +23,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.region.VisitedRegions;
 
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
@@ -63,6 +64,7 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         map = findViewById(R.id.regions_map);
+        map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
         map.getController().setZoom(5.0);
         map.getController().setCenter(new GeoPoint(50.8, 5.7));
@@ -89,31 +91,45 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
         RegionCache cache = new RegionCache(new File(getFilesDir(), "region_cache.json"));
         RegionResolver resolver = new RegionResolver(this, cache);
         List<VisitedRegions.Visit> visits = new ArrayList<>();
+        // Resolve each climb once per load: failures are not cached on disk, so without this
+        // an offline open would hit the geocoder (and its timeout) for every single attempt.
+        Map<String, RegionCache.Region> byClimb = new HashMap<>();
         int unresolved = 0;
+        int attempts = 0;
         for (StoredClimbAttempt a : new ClimbAttemptRepository(this).loadAll()) {
+            attempts++;
             double[] p = startById.get(a.climbId);
-            if (p == null) continue;
-            RegionCache.Region r = resolver.resolve(p[0], p[1]);
+            if (p == null || (p[0] == 0 && p[1] == 0)) continue; // no usable start coordinate
+            RegionCache.Region r;
+            if (byClimb.containsKey(a.climbId)) {
+                r = byClimb.get(a.climbId);
+            } else {
+                r = resolver.resolve(p[0], p[1]);
+                byClimb.put(a.climbId, r);
+            }
             if (r == null) { unresolved++; continue; }
             visits.add(new VisitedRegions.Visit(r.countryCode, r.country, r.province, p[0], p[1]));
         }
+        boolean hadAttempts = attempts > 0;
         try { cache.save(); } catch (Exception ignored) { /* cache only */ }
         List<VisitedRegions.Country> countries = VisitedRegions.aggregate(visits);
         int missing = unresolved;
         runOnUiThread(() -> {
             if (isFinishing() || isDestroyed()) return;
-            render(countries, missing);
+            render(countries, missing, hadAttempts);
         });
     }
 
-    private void render(List<VisitedRegions.Country> countries, int unresolved) {
+    private void render(List<VisitedRegions.Country> countries, int unresolved, boolean hadAttempts) {
         TextView summary = findViewById(R.id.regions_summary);
         LinearLayout list = findViewById(R.id.regions_list);
         list.removeAllViews();
         if (countries.isEmpty()) {
             summary.setText(unresolved > 0
                     ? "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw."
-                    : "Nog geen klimpogingen. Haal je ritten op in het logboek.");
+                    : hadAttempts
+                            ? "Geen van je klimpogingen hoort bij een klim met een bekende locatie."
+                            : "Nog geen klimpogingen. Haal je ritten op in het logboek.");
             return;
         }
         int provinceCount = 0;
