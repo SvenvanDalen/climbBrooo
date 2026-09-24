@@ -211,6 +211,31 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets (or clears, when {@code shapeName} is null/blank/"auto") a manual override of a
+     * climb's shape tag (issue #36). Mirrors {@link #renameClimb}'s pattern exactly, including
+     * surviving resync via {@link #mergePreviousClimbUserData}. An unrecognised
+     * {@code shapeName} is treated the same as clearing the override, since
+     * {@code ClimbShapeClassifier#effectiveShape} would ignore it anyway.
+     */
+    public void setClimbShapeOverride(String routeId, int climbIndex, String shapeName)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            String normalised = null;
+            if (shapeName != null) {
+                try {
+                    normalised = nl.paree.climbpro.domain.climb.ClimbShape.valueOf(shapeName).name();
+                } catch (IllegalArgumentException unknownValue) {
+                    normalised = null;
+                }
+            }
+            route.climbs.get(climbIndex).shapeOverride = normalised;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
      * Renames multiple climbs in one load/write cycle, for the bulk rename screen. Out-of-range
      * indices (including negatives) are silently skipped, matching {@link #renameClimb}. A blank
      * name clears {@code userDisplayName} back to null so the climb falls back to its auto name.
@@ -406,8 +431,8 @@ public final class RouteRepository {
     }
 
     /**
-     * Copies user-supplied climb data (display-name rename, manual WR/pro reference time,
-     * per-segment surface type and per-segment manual target time) from a route's previous
+     * Copies user-supplied climb data (display-name rename, shape-tag override, manual WR/pro
+     * reference time, per-segment surface type and per-segment manual target time) from a route's previous
      * climbs onto the freshly detected ones. Which previous climb/segment feeds which fresh one
      * is decided by {@link SegmentRemapper} (issue #87): climbs are matched one-to-one by start
      * distance, start coordinate or distance-range overlap, and per-segment surface follows
@@ -427,6 +452,7 @@ public final class RouteRepository {
             StoredClimb f = fresh.get(m.freshIndex);
             StoredClimb p = previous.get(m.previousIndex);
             if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
+            if (p.shapeOverride != null) f.shapeOverride = p.shapeOverride;
             if (f.name == null && p.name != null) f.name = p.name;
             if (p.manualRefSec != null) {
                 f.manualRefSec = p.manualRefSec;

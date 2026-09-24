@@ -92,6 +92,35 @@ public class RouteRepositoryReimportTest {
     }
 
     @Test
+    public void saveRoutePreservesClimbShapeOverrideAcrossReimport() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setClimbShapeOverride("r1", 0,
+                nl.paree.climbpro.domain.climb.ClimbShape.IRREGULAR.name());
+
+        // Re-import: fresh climbs at the SAME startDistance, no shapeOverride set.
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+
+        StoredRoute reloaded = repo.loadRoute("r1");
+        assertEquals("climb shape override must survive re-import",
+                nl.paree.climbpro.domain.climb.ClimbShape.IRREGULAR.name(),
+                reloaded.climbs.get(0).shapeOverride);
+    }
+
+    @Test
+    public void setClimbShapeOverrideNullClearsOverride() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setClimbShapeOverride("r1", 0,
+                nl.paree.climbpro.domain.climb.ClimbShape.STEEP_FINISH.name());
+        repo.setClimbShapeOverride("r1", 0, null);
+
+        StoredRoute reloaded = repo.loadRoute("r1");
+        assertEquals("null clears the override back to auto",
+                null, reloaded.climbs.get(0).shapeOverride);
+    }
+
+    @Test
     public void saveRoutePreservesClimbSegmentSurfaceAcrossReimport() throws Exception {
         RouteRepository repo = new RouteRepository(app);
         repo.saveRoute(routeShell("r1"), points(), climbs());

@@ -109,6 +109,24 @@ public class ClimbMergeServiceTest {
     }
 
     @Test
+    public void merge_carriesOverShapeOverrideWhenKeepHasNone() throws Exception {
+        StoredClimb keep = climb(45.0005, 6.0000, 2000, 0.050, null);
+        StoredClimb remove = climb(45.0015, 6.0000, 2050, 0.052, null);
+        remove.shapeOverride = "STEEP_FINISH";
+        seedRoute("keepRoute", keep);
+        seedRoute("removeRoute", remove);
+
+        RouteRepository routeRepo = new RouteRepository(app);
+        NearDuplicateClimbFinder.ClimbRef keepRef = refFor(routeRepo, "keepRoute", 0);
+        NearDuplicateClimbFinder.ClimbRef removeRef = refFor(routeRepo, "removeRoute", 0);
+
+        new ClimbMergeService(routeRepo, new ClimbAttemptRepository(app),
+                new RouteCollectionRepository(app)).merge(keepRef, removeRef);
+
+        assertEquals("STEEP_FINISH", routeRepo.loadRoute("keepRoute").climbs.get(0).shapeOverride);
+    }
+
+    @Test
     public void merge_carriesOverUserDisplayNameWhenKeepHasNone() throws Exception {
         StoredClimb keep = climb(45.0005, 6.0000, 2000, 0.050, null);
         StoredClimb remove = climb(45.0015, 6.0000, 2050, 0.052, "Mont Ventoux");

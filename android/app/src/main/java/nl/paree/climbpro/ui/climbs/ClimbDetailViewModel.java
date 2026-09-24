@@ -118,6 +118,22 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Sets (or clears, when {@code shapeName} is null) a manual override of the climb's shape
+     * tag (issue #36). Mirrors {@link #renameClimb}: persist, reload, flag saved/error.
+     */
+    public void setShapeOverride(String routeId, int climbIndex, String shapeName) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbShapeOverride(routeId, climbIndex, shapeName);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     public void reSegment(String routeId, int climbIndex, int newSegmentCount) {
         executor.execute(() -> {
             try {
