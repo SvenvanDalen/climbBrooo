@@ -72,6 +72,21 @@ public final class RideRepository {
         }
     }
 
+    /**
+     * Deletes the whole archive (privacy dashboard, issue #264). Under the write lock, so a
+     * sync upserting at the same moment can't write the old list back afterwards.
+     *
+     * @return false when the file exists but could not be deleted
+     */
+    public boolean deleteAll() {
+        WRITE_LOCK.lock();
+        try {
+            return !file.exists() || file.delete();
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
     private static void writeAtomic(File target, byte[] data) throws IOException {
         File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
         try (FileOutputStream out = new FileOutputStream(tmp)) {
