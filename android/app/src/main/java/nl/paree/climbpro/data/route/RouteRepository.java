@@ -158,6 +158,17 @@ public final class RouteRepository {
         saveCatalog(catalog);
     }
 
+    /**
+     * Cheap change marker for the route catalog (mtime + size of {@code catalog.json}). Every
+     * write that adds, removes or re-detects climbs (import/resync, delete route, remove or
+     * merge a climb) rewrites the catalog, so derived caches such as
+     * {@code HistoricClimbScoreCache} can compare this instead of relying on invalidation hooks.
+     */
+    public String dataVersion() {
+        return catalogFile.exists()
+                ? catalogFile.lastModified() + ":" + catalogFile.length() : "none";
+    }
+
     public StoredRoute loadRoute(String routeId) throws IOException {
         File f = routeFile(routeId);
         if (!f.exists()) throw new IOException("Route not found: " + routeId);

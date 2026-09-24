@@ -50,6 +50,15 @@ public final class ClimbAttemptRepository {
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
+    /**
+     * Cheap change marker for the attempts file (mtime + size), so derived caches such as
+     * {@code HistoricClimbScoreCache} can detect ANY write (append, update, remap, overwrite)
+     * without every write path having to remember to invalidate them.
+     */
+    public String dataVersion() {
+        return file.exists() ? file.lastModified() + ":" + file.length() : "none";
+    }
+
     public List<StoredClimbAttempt> loadAll() {
         if (!file.exists()) return new ArrayList<>();
         try (FileInputStream in = new FileInputStream(file)) {
