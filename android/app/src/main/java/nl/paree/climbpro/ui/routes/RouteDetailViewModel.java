@@ -12,6 +12,7 @@ import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -48,6 +49,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
     private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
     private final MutableLiveData<String> onboardPushMessage = new MutableLiveData<>();
+    /** Bucket-list status; separate from {@link #route} so a change doesn't re-render (and wipe unsaved) notes. */
+    private final MutableLiveData<String> rideStatus = new MutableLiveData<>();
     private final MutableLiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions =
             new MutableLiveData<>();
 
@@ -69,6 +72,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<RoutePassport> passport()           { return passport; }
     public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
     public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
+    public LiveData<String> rideStatus() { return rideStatus; }
     /** Rest-split suggestions (issue #22); see {@link RestSplitAdvisor}. */
     public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
 
@@ -77,6 +81,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 route.postValue(r);
+                rideStatus.postValue(RouteRideStatus.normalize(r.rideStatus));
                 routeItems.postValue(buildRouteItems(r));
                 RiderProfile profile = riderRepo.load();
                 int[][] plan = RoutePacingPlanner.plan(r, profile);
@@ -123,6 +128,18 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 saved.postValue(true);
             } catch (Exception e) {
                 error.postValue("Save failed: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Sets the bucket-list status (issue #158); null clears it. */
+    public void setRideStatus(String routeId, String status) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setRideStatus(routeId, status);
+                rideStatus.postValue(RouteRideStatus.normalize(status));
+            } catch (Exception e) {
+                error.postValue("Status opslaan mislukt: " + e.getMessage());
             }
         });
     }
