@@ -26,6 +26,17 @@ public class BikeComputerExportTest {
     }
 
     @Test
+    public void findPackage_prefersTheCompanionAppOverOtherVendorApps() {
+        java.util.List<String> installed = Arrays.asList(
+                "com.wahoofitness.fitness", "com.wahoofitness.boltcompanion");
+        assertEquals("com.wahoofitness.boltcompanion",
+                BikeComputerExport.findPackage(installed, BikeComputerExport.Target.WAHOO));
+        assertEquals("com.wahoofitness.fitness", BikeComputerExport.findPackage(
+                Collections.singletonList("com.wahoofitness.fitness"),
+                BikeComputerExport.Target.WAHOO));
+    }
+
+    @Test
     public void fileName_usesSanitisedRouteName() {
         StoredRoute r = new StoredRoute();
         r.name = "strava_route.gpx";

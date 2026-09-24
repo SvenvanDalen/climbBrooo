@@ -3,6 +3,7 @@ package nl.paree.climbpro.ui.routes;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -10,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -26,6 +28,7 @@ import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -488,7 +491,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                     ? "" : " (app niet gevonden)");
         }
         labels[targets.length] = "Ander apparaat of bestand";
-        new androidx.appcompat.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Exporteer route met klimmen")
                 .setItems(labels, (d, which) ->
                         exportToBikeComputer(route, which < targets.length ? targets[which] : null))
@@ -497,8 +500,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private void exportToBikeComputer(StoredRoute route, BikeComputerExport.Target target) {
         try {
-            java.io.File gpx = BikeComputerExport.writeGpx(this, route);
-            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+            File gpx = BikeComputerExport.writeGpx(this, route);
+            Uri uri = FileProvider.getUriForFile(
                     this, getPackageName() + ".fileprovider", gpx);
             Intent share = BikeComputerExport.buildShareIntent(this, uri, target);
             if (target != null && share.getPackage() == null) {
@@ -508,7 +511,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
             startActivity(share.getPackage() != null ? share
                     : Intent.createChooser(share, "Exporteer route"));
         } catch (Exception e) {
-            Toast.makeText(this, "Exporteren mislukt: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            Toast.makeText(this, "Exporteren mislukt: " + reason, Toast.LENGTH_LONG).show();
         }
     }
 

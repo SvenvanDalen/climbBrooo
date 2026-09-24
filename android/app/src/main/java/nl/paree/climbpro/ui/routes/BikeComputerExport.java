@@ -42,12 +42,26 @@ public final class BikeComputerExport {
 
     private BikeComputerExport() {}
 
-    /** First package whose name contains the target's keyword, or null. */
+    /** Name hints of the unit companion apps, preferred over other apps of the same vendor. */
+    private static final String[] COMPANION_HINTS = {"companion", "elemnt", "bolt", "karoo"};
+
+    /**
+     * Package whose name contains the target's keyword, or null. A companion app wins over
+     * another app of the same vendor (e.g. the legacy Wahoo Fitness app, which does not sync
+     * routes to an ELEMNT), whatever order the package manager lists them in.
+     */
     public static String findPackage(List<String> packages, Target target) {
+        String any = null;
         for (String p : packages) {
-            if (p != null && p.toLowerCase(Locale.ROOT).contains(target.packageKeyword)) return p;
+            if (p == null) continue;
+            String lower = p.toLowerCase(Locale.ROOT);
+            if (!lower.contains(target.packageKeyword)) continue;
+            for (String hint : COMPANION_HINTS) {
+                if (lower.contains(hint)) return p;
+            }
+            if (any == null) any = p;
         }
-        return null;
+        return any;
     }
 
     /** File name that survives in the companion app's route list: the route name, sanitised. */
