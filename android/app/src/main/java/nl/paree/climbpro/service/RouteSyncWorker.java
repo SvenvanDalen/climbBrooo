@@ -113,6 +113,9 @@ public final class RouteSyncWorker extends Worker {
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
                 .build();
 
+        // New attempts may have been matched during the pull: keep the widget's week total fresh.
+        nl.paree.climbpro.widget.WeekWidgetProvider.refresh(ctx);
+
         boolean shouldRetry = (r.pullAttempted && !r.pullSucceeded)
                 || (r.sendAttempted && !r.sendSucceeded)
                 || r.buildFailed;

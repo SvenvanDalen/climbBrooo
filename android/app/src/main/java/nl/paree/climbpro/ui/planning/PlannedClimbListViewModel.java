@@ -109,6 +109,7 @@ public final class PlannedClimbListViewModel extends AndroidViewModel {
 
                 planRepo.add(plan);
                 PlannedClimbWorkScheduler.schedule(getApplication(), plan);
+                nl.paree.climbpro.widget.WeekWidgetProvider.refresh(getApplication());
                 load();
             } catch (Exception e) {
                 error.postValue("Plannen mislukt: " + e.getMessage());
@@ -124,6 +125,7 @@ public final class PlannedClimbListViewModel extends AndroidViewModel {
                     PlannedClimbCalendarWriter.deleteEvent(getApplication(), plan.calendarEventId);
                 }
                 planRepo.remove(plan.id);
+                nl.paree.climbpro.widget.WeekWidgetProvider.refresh(getApplication());
                 load();
             } catch (Exception e) {
                 error.postValue("Verwijderen mislukt: " + e.getMessage());
