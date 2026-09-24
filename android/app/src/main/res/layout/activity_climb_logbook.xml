@@ -13,6 +13,32 @@
         android:title="Logboek" />
 
     <TextView
+        android:id="@+id/levelTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        tools:text="Level 3 · Heuvelrijder" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/levelProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="6dp"
+        android:max="100" />
+
+    <TextView
+        android:id="@+id/levelXp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="4dp"
+        tools:text="410 XP · nog 190 XP tot level 4" />
+
+    <TextView
         android:id="@+id/streak"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -42,4 +68,13 @@
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         android:text="Ritten ophalen uit Strava" />
+
+    <Button
+        android:id="@+id/importGarminButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:text="Garmin-rit importeren (FIT / GPX / zip)" />
 </LinearLayout>
