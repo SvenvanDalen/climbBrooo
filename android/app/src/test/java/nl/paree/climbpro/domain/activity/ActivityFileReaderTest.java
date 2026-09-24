@@ -101,4 +101,19 @@ public class ActivityFileReaderTest {
         assertTrue(id < 0);
         assertEquals(id, ImportedActivityDedupe.activityIdFor(start));
     }
+
+    @Test
+    public void dedupe_sameRideTwiceInOneImportCountsOnce() {
+        long start = 1_783_146_600L;
+        long fitId = ImportedActivityDedupe.activityIdFor(start);
+        long gpxId = ImportedActivityDedupe.activityIdFor(start + 4); // GPX starts 4 s later
+        List<StoredClimbAttempt> kept = ImportedActivityDedupe.withoutKnownRides(Arrays.asList(
+                attempt("cauberg", fitId, start),
+                attempt("cauberg", fitId, start),        // second pass of the same file: kept
+                attempt("cauberg", gpxId, start + 4)),   // same ride from the GPX: skipped
+                Collections.emptyList());
+
+        assertEquals(2, kept.size());
+        assertEquals(fitId, kept.get(1).activityId);
+    }
 }

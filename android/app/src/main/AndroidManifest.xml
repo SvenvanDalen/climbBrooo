@@ -95,8 +95,10 @@
             android:parentActivityName=".ui.collections.CollectionListActivity" />
 
         <!-- Garmin Connect ride import (issue #253): share or open a FIT / GPX / export zip. -->
+        <!-- configChanges: a recreated translucent instance would sit invisibly over the app. -->
         <activity
             android:name=".ui.activity.ActivityImportActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:exported="true"
             android:excludeFromRecents="true"
             android:label="Rit importeren in ClimbPro"

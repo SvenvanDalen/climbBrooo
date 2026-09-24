@@ -17,6 +17,7 @@ import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
+import nl.paree.climbpro.ui.activity.ActivityImportActivity;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,7 +56,7 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
         findViewById(R.id.importGarminButton).setOnClickListener(v -> startActivity(
-                nl.paree.climbpro.ui.activity.ActivityImportActivity.pickIntent(this)));
+                ActivityImportActivity.pickIntent(this)));
 
         viewModel.loadLogbook();
     }

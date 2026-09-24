@@ -85,7 +85,8 @@ public final class ActivityImportActivity extends AppCompatActivity {
                     added += r.newAttempts;
                     known += r.alreadyKnown;
                 } catch (Exception e) {
-                    errors.add(name + ": " + e.getMessage());
+                    errors.add(name + ": "
+                            + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
                 }
             }
             StringBuilder msg = new StringBuilder();
@@ -95,17 +96,22 @@ public final class ActivityImportActivity extends AppCompatActivity {
                 if (known > 0) msg.append("\n").append(known).append(" al bekend (bijv. via Strava)");
             }
             for (String e : errors) msg.append(msg.length() > 0 ? "\n\n" : "").append(e);
-            boolean anyAdded = added > 0;
-            runOnUiThread(() -> new AlertDialog.Builder(this)
-                    .setTitle("Garmin-rit importeren")
-                    .setMessage(msg.toString())
-                    .setPositiveButton(anyAdded ? "Naar logboek" : "OK", (d, w) -> {
-                        if (anyAdded) {
-                            startActivity(new Intent(this, ClimbLogbookActivity.class));
-                        }
-                    })
-                    .setOnDismissListener(d -> finish())
-                    .show());
+            // Picked from the logbook: it is right underneath and reloads in onRestart(), so
+            // opening it again would stack a second logbook.
+            boolean offerLogbook = added > 0 && !getIntent().getBooleanExtra(EXTRA_PICK, false);
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                new AlertDialog.Builder(this)
+                        .setTitle("Garmin-rit importeren")
+                        .setMessage(msg.toString())
+                        .setPositiveButton(offerLogbook ? "Naar logboek" : "OK", (d, w) -> {
+                            if (offerLogbook) {
+                                startActivity(new Intent(this, ClimbLogbookActivity.class));
+                            }
+                        })
+                        .setOnDismissListener(d -> finish())
+                        .show();
+            });
         });
     }
 

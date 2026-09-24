@@ -25,21 +25,27 @@ public final class ImportedActivityDedupe {
         return -Math.max(1, startEpochSec);
     }
 
-    /** {@code candidates} without the ones whose climb already has an attempt of this ride. */
+    /**
+     * {@code candidates} without the ones whose climb already has an attempt of this ride —
+     * either in {@code existing} or earlier in {@code candidates} itself (a FIT and a GPX of
+     * the same ride in one export zip start a few seconds apart, so get different ids).
+     */
     public static List<StoredClimbAttempt> withoutKnownRides(List<StoredClimbAttempt> candidates,
                                                              List<StoredClimbAttempt> existing) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         for (StoredClimbAttempt c : candidates) {
-            boolean known = false;
-            for (StoredClimbAttempt e : existing) {
-                if (e.activityId != c.activityId && e.climbId != null && e.climbId.equals(c.climbId)
-                        && Math.abs(e.dateEpochSec - c.dateEpochSec) <= SAME_RIDE_WINDOW_SEC) {
-                    known = true;
-                    break;
-                }
-            }
-            if (!known) out.add(c);
+            if (!sameRideIn(existing, c) && !sameRideIn(out, c)) out.add(c);
         }
         return out;
+    }
+
+    private static boolean sameRideIn(List<StoredClimbAttempt> known, StoredClimbAttempt c) {
+        for (StoredClimbAttempt e : known) {
+            if (e.activityId != c.activityId && e.climbId != null && e.climbId.equals(c.climbId)
+                    && Math.abs(e.dateEpochSec - c.dateEpochSec) <= SAME_RIDE_WINDOW_SEC) {
+                return true;
+            }
+        }
+        return false;
     }
 }
