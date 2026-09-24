@@ -52,10 +52,12 @@ public final class RouteListActivity extends AppCompatActivity {
     private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
-    /** Quick start (issue #263) is waiting for its sync to finish to report the outcome. */
-    private boolean quickStartPending;
-    /** The pending quick-start sync has been seen running, so a finished state is ours. */
-    private boolean quickStartSawRunning;
+    /**
+     * The quick-start (issue #263) sync run whose outcome is still to be reported, or null.
+     * Matched by id: with REPLACE the unique-work list can also hold the cancelled previous
+     * run, which must not be reported as "horloge niet bereikt".
+     */
+    private java.util.UUID quickStartWorkId;
 
     private final ActivityResultLauncher<String[]> gpxPicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
@@ -153,17 +155,20 @@ public final class RouteListActivity extends AppCompatActivity {
                 viewModel.loadRoutes(); // new routes appear immediately (at the bottom with default sort)
             }
 
-            if (quickStartPending) {
-                if (!info.getState().isFinished()) {
-                    quickStartSawRunning = true;
-                } else if (quickStartSawRunning) {
-                    quickStartPending = false;
-                    boolean sent = info.getOutputData().getBoolean(
-                            nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
-                    Toast.makeText(this, sent
-                                    ? "Route staat klaar op je horloge"
-                                    : "Horloge niet bereikt; de sync probeert het later opnieuw",
-                            Toast.LENGTH_LONG).show();
+            if (quickStartWorkId != null) {
+                for (androidx.work.WorkInfo w : infos) {
+                    if (!quickStartWorkId.equals(w.getId()) || !w.getState().isFinished()) continue;
+                    quickStartWorkId = null;
+                    // Cancelled = replaced by a newer sync, which reports for itself.
+                    if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
+                        boolean sent = w.getOutputData().getBoolean(
+                                nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
+                        Toast.makeText(this, sent
+                                        ? "Route staat klaar op je horloge"
+                                        : "Horloge niet bereikt; de sync probeert het later opnieuw",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    break;
                 }
             }
 
@@ -328,6 +333,12 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_export_csv) {
+            exportCsv();
+            return true;
+        } else if (id == R.id.action_privacy) {
+            startActivity(nl.paree.climbpro.ui.privacy.PrivacyDashboardActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
@@ -377,12 +388,25 @@ public final class RouteListActivity extends AppCompatActivity {
     }
 
     private void startQuickStart(RouteCatalogEntry route) {
-        QuickStart.start(this, route.routeId);
-        quickStartPending = true;
-        quickStartSawRunning = false;
+        quickStartWorkId = QuickStart.start(this, route.routeId);
         updateQuickStartButton();
         Toast.makeText(this, QuickStart.displayName(route) + " wordt naar je horloge gestuurd",
                 Toast.LENGTH_SHORT).show();
+    }
+
+    /** Issue #256: exports routes + climb attempts as CSV via the share sheet. */
+    private void exportCsv() {
+        executor.execute(() -> {
+            try {
+                Intent share = nl.paree.climbpro.ui.export.CsvExportHandoff.export(this);
+                runOnUiThread(() -> startActivity(Intent.createChooser(share, "Exporteer CSV")));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "CSV-export mislukt: " + (e.getMessage() != null
+                                ? e.getMessage() : e.getClass().getSimpleName()),
+                        Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void confirmDeleteRoute(String routeId, String name) {
