@@ -1,5 +1,6 @@
 package nl.paree.climbpro.ui.climbs;
 
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -25,11 +26,23 @@ import org.osmdroid.views.overlay.Polyline;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
+import nl.paree.climbpro.data.planning.PlannedClimb;
+import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
+import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.sun.SunriseCalculator;
+import nl.paree.climbpro.domain.sun.SunriseRidePlanner;
+import nl.paree.climbpro.service.PlannedClimbWorkScheduler;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 public final class ClimbDetailActivity extends AppCompatActivity {
 
@@ -255,16 +268,18 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     /** Issue #247: plan a ride that reaches this climb's top just before sunrise. */
     private void pickSunriseDate() {
-        java.time.LocalDate tomorrow = java.time.LocalDate.now().plusDays(1);
-        new android.app.DatePickerDialog(this, (dp, y, m, d) ->
-                showSunrisePlan(java.time.LocalDate.of(y, m + 1, d)),
-                tomorrow.getYear(), tomorrow.getMonthValue() - 1, tomorrow.getDayOfMonth()).show();
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        DatePickerDialog picker = new DatePickerDialog(this, (dp, y, m, d) ->
+                showSunrisePlan(LocalDate.of(y, m + 1, d)),
+                tomorrow.getYear(), tomorrow.getMonthValue() - 1, tomorrow.getDayOfMonth());
+        picker.getDatePicker().setMinDate(System.currentTimeMillis() - 1000); // no past dates
+        picker.show();
     }
 
-    private void showSunrisePlan(java.time.LocalDate date) {
+    private void showSunrisePlan(LocalDate date) {
         StoredClimb c = viewModel.climb().getValue();
         if (c == null) return;
-        java.time.Instant sunrise = nl.paree.climbpro.domain.sun.SunriseCalculator
+        Instant sunrise = SunriseCalculator
                 .sunrise(date, c.startLat, c.startLon);
         if (sunrise == null) {
             new AlertDialog.Builder(this)
@@ -272,22 +287,22 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     .setPositiveButton("OK", null).show();
             return;
         }
-        nl.paree.climbpro.domain.power.ClimbTimeEstimate est = viewModel.timeEstimate().getValue();
-        nl.paree.climbpro.domain.sun.SunriseRidePlanner.Plan plan =
-                nl.paree.climbpro.domain.sun.SunriseRidePlanner.plan(sunrise, c.startDistance,
-                        nl.paree.climbpro.domain.sun.SunriseRidePlanner.DEFAULT_APPROACH_KMH,
+        ClimbTimeEstimate est = viewModel.timeEstimate().getValue();
+        SunriseRidePlanner.Plan plan =
+                SunriseRidePlanner.plan(sunrise, c.startDistance,
+                        SunriseRidePlanner.DEFAULT_APPROACH_KMH,
                         est != null ? est.totalSeconds : 0, c.length,
-                        nl.paree.climbpro.domain.sun.SunriseRidePlanner.DEFAULT_BUFFER_MIN);
-        java.time.ZoneId zone = java.time.ZoneId.systemDefault();
-        java.util.Locale dutch = new java.util.Locale("nl");
-        java.time.format.DateTimeFormatter hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
-        java.time.format.DateTimeFormatter dayHm =
-                java.time.format.DateTimeFormatter.ofPattern("EEE d MMM HH:mm", dutch);
+                        SunriseRidePlanner.DEFAULT_BUFFER_MIN);
+        ZoneId zone = ZoneId.systemDefault();
+        Locale dutch = new Locale("nl");
+        DateTimeFormatter hm = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter dayHm =
+                DateTimeFormatter.ofPattern("EEE d MMM HH:mm", dutch);
         String name = c.userDisplayName != null ? c.userDisplayName
                 : (c.name != null ? c.name : "Klim " + (climbIndex + 1));
         String msg = "Zon op: " + hm.format(sunrise.atZone(zone))
                 + "\nOp de top: " + hm.format(plan.arrivalTop.atZone(zone))
-                + " (" + nl.paree.climbpro.domain.sun.SunriseRidePlanner.DEFAULT_BUFFER_MIN + " min vooraf)"
+                + " (" + SunriseRidePlanner.DEFAULT_BUFFER_MIN + " min vooraf)"
                 + "\nVertrek vanaf de routestart: " + dayHm.format(plan.departure.atZone(zone))
                 + "\n\nAanrit " + String.format(dutch, "%.1f", c.startDistance / 1000.0)
                 + " km à 25 km/u (" + DurationFormat.format(plan.approachSec)
@@ -301,23 +316,24 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void saveSunrisePlan(nl.paree.climbpro.domain.sun.SunriseRidePlanner.Plan plan, String name) {
-        if (nl.paree.climbpro.domain.sun.SunriseRidePlanner.isInPast(plan, java.time.Instant.now())) {
+    private void saveSunrisePlan(SunriseRidePlanner.Plan plan, String name) {
+        if (SunriseRidePlanner.isInPast(plan, Instant.now())) {
             Toast.makeText(this, "Het vertrektijdstip is al voorbij", Toast.LENGTH_LONG).show();
             return;
         }
-        nl.paree.climbpro.data.planning.PlannedClimb p = new nl.paree.climbpro.data.planning.PlannedClimb(
-                java.util.UUID.randomUUID().toString(), routeId, climbIndex,
+        PlannedClimb p = new PlannedClimb(
+                UUID.randomUUID().toString(), routeId, climbIndex,
                 "Zonsopkomst: " + name, plan.departure.getEpochSecond(), System.currentTimeMillis());
-        android.content.Context app = getApplicationContext();
+        Context app = getApplicationContext();
         new Thread(() -> {
             try {
-                new nl.paree.climbpro.data.planning.PlannedClimbRepository(app).add(p);
-                nl.paree.climbpro.service.PlannedClimbWorkScheduler.schedule(app, p);
+                new PlannedClimbRepository(app).add(p);
+                PlannedClimbWorkScheduler.schedule(app, p);
                 runOnUiThread(() -> Toast.makeText(app, "Gepland; je krijgt een herinnering",
                         Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(app, "Plannen mislukt: " + e.getMessage(),
+                runOnUiThread(() -> Toast.makeText(app, "Plannen mislukt: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
                         Toast.LENGTH_LONG).show());
             }
         }, "sunrise-plan").start();
