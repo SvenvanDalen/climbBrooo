@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public final class CsvExporter {
 
-    public static final String BOM = "﻿";
+    public static final String BOM = "\uFEFF"; // UTF-8 byte-order mark
     private static final String EOL = "\r\n";
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.US);

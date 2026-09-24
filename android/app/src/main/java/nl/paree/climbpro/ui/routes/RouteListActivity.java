@@ -329,7 +329,9 @@ public final class RouteListActivity extends AppCompatActivity {
                 runOnUiThread(() -> startActivity(Intent.createChooser(share, "Exporteer CSV")));
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "CSV-export mislukt: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        "CSV-export mislukt: " + (e.getMessage() != null
+                                ? e.getMessage() : e.getClass().getSimpleName()),
+                        Toast.LENGTH_LONG).show());
             }
         });
     }

@@ -113,4 +113,8 @@ public class CsvExporterTest {
         assertTrue(lines[1].contains(",0,,1000,50,,,1,"));
         assertTrue(lines[2].startsWith("2033-05-18"));
     }
+    @Test
+    public void bomIsTheUtf8ByteOrderMark() {
+        assertEquals("\uFEFF", CsvExporter.BOM); // Excel needs it to read accents as UTF-8
+    }
 }

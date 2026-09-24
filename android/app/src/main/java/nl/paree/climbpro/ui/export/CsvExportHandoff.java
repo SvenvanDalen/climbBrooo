@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.export.CsvExporter;
 
@@ -43,7 +44,25 @@ public final class CsvExportHandoff {
         List<StoredRoute> routes = new ArrayList<>();
         for (RouteCatalogEntry e : routeRepo.loadCatalog()) {
             try {
-                routes.add(routeRepo.loadRoute(e.routeId));
+                StoredRoute r = routeRepo.loadRoute(e.routeId);
+                if (r == null) continue;
+                // Keep only what the CSV needs: holding every route's full geometry at once
+                // can exhaust the heap on a large library (OOM is not caught by the caller).
+                double[] d = r.distances;
+                r.distances = d != null && d.length > 0 ? new double[]{d[d.length - 1]} : null;
+                r.lats = null;
+                r.lons = null;
+                r.elevations = null;
+                r.flatSegments = null;
+                r.surfaceSections = null;
+                r.starredSegments = null;
+                if (r.climbs != null) {
+                    for (StoredClimb c : r.climbs) {
+                        c.segments = null;
+                        c.calibrationPoints = null;
+                    }
+                }
+                routes.add(r);
             } catch (IOException ex) {
                 Log.w(TAG, "Skipping unreadable route " + e.routeId, ex);
             }
