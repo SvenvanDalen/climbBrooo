@@ -13,6 +13,8 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.climb.ClimbUsageLabel;
+import nl.paree.climbpro.domain.climb.ClimbUsageType;
 import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
 import nl.paree.climbpro.domain.segment.GradientColor;
 import nl.paree.climbpro.domain.segment.SurfaceType;
@@ -68,10 +70,16 @@ public final class RouteDetailAdapter
     private OnStarredClickListener  starredClickListener;
     private OnSurfaceClickListener  surfaceClickListener;
     private int[] climbTargetSeconds; // index = climb position; -1 = none
+    private ClimbUsageType[] climbUsageTypes; // index = climb position
     private Map<Integer, RestSplitAdvisor.Suggestion> restSuggestions = new HashMap<>();
 
     public void setClimbTargetSeconds(int[] secs) {
         this.climbTargetSeconds = secs;
+        notifyDataSetChanged();
+    }
+
+    public void setClimbUsageTypes(ClimbUsageType[] types) {
+        this.climbUsageTypes = types;
         notifyDataSetChanged();
     }
 
@@ -188,6 +196,12 @@ public final class RouteDetailAdapter
             h.statsView.setText(h.statsView.getText() + "  ·  ⏱ "
                     + nl.paree.climbpro.domain.power.DurationFormat.format(
                             climbTargetSeconds[climbIndex]));
+        }
+        if (climbUsageTypes != null && climbIndex < climbUsageTypes.length) {
+            String usageLabel = ClimbUsageLabel.forType(climbUsageTypes[climbIndex]);
+            if (!usageLabel.isEmpty()) {
+                h.statsView.setText(h.statsView.getText() + "  ·  " + usageLabel);
+            }
         }
         RestSplitAdvisor.Suggestion rest = restSuggestions.get(climbIndex);
         if (rest != null) {

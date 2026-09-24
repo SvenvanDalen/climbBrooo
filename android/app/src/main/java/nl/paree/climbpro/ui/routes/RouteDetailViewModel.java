@@ -14,10 +14,13 @@ import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.climb.ClimbUsageClassifier;
+import nl.paree.climbpro.domain.climb.ClimbUsageType;
 import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
 import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
 import nl.paree.climbpro.domain.power.RiderProfile;
@@ -48,6 +51,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<List<StoredSurfaceSection>> surfaceSections = new MutableLiveData<>();
     private final MutableLiveData<RoutePassport> passport = new MutableLiveData<>();
     private final MutableLiveData<int[]> climbTargetSeconds = new MutableLiveData<>();
+    private final MutableLiveData<ClimbUsageType[]> climbUsageTypes = new MutableLiveData<>();
     private final MutableLiveData<String> onboardPushMessage = new MutableLiveData<>();
     /** Bucket-list status; separate from {@link #route} so a change doesn't re-render (and wipe unsaved) notes. */
     private final MutableLiveData<String> rideStatus = new MutableLiveData<>();
@@ -71,6 +75,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<StoredSurfaceSection>> surfaceSections() { return surfaceSections; }
     public LiveData<RoutePassport> passport()           { return passport; }
     public LiveData<int[]>         climbTargetSeconds()  { return climbTargetSeconds; }
+    public LiveData<ClimbUsageType[]> climbUsageTypes()  { return climbUsageTypes; }
     public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
     public LiveData<String> rideStatus() { return rideStatus; }
     /** Rest-split suggestions (issue #22); see {@link RestSplitAdvisor}. */
@@ -88,6 +93,9 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(r, plan);
                 passport.postValue(RoutePassport.from(r, plan));
                 climbTargetSeconds.postValue(perClimbTotals(r, plan));
+                List<StoredClimb> climbs = r.climbs != null ? r.climbs : Collections.emptyList();
+                List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                climbUsageTypes.postValue(ClimbUsageClassifier.classifyAll(climbs, attempts));
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
                 restSuggestions.postValue(computeRestSuggestions(r));
