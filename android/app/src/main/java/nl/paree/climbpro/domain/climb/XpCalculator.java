@@ -2,9 +2,10 @@ package nl.paree.climbpro.domain.climb;
 
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Levels and XP (issue #249), derived from climb attempts every time — nothing is stored, so
@@ -44,18 +45,16 @@ public final class XpCalculator {
     public static Progress compute(List<StoredClimbAttempt> attempts,
                                    Map<String, ClimbStats> statsByClimbId) {
         long xp = 0;
-        Map<String, StoredClimbAttempt> first = new HashMap<>();
+        // The first-ascent bonus is a flat amount per climb, so only the set of distinct climbs
+        // matters, not which attempt was first.
+        Set<String> climbed = new HashSet<>();
         for (StoredClimbAttempt a : attempts) {
             ClimbStats s = statsByClimbId.get(a.climbId);
             xp += BASE_XP;
             if (s != null) xp += Math.max(0, s.gainM) + Math.max(0, s.lengthM) / 100;
-            StoredClimbAttempt f = first.get(a.climbId);
-            if (f == null || a.dateEpochSec < f.dateEpochSec
-                    || (a.dateEpochSec == f.dateEpochSec && a.passIndex < f.passIndex)) {
-                first.put(a.climbId, a);
-            }
+            climbed.add(a.climbId);
         }
-        xp += (long) FIRST_ASCENT_XP * first.size();
+        xp += (long) FIRST_ASCENT_XP * climbed.size();
         int level = 1;
         while (xpForLevel(level + 1) <= xp) level++;
         return new Progress(xp, level);

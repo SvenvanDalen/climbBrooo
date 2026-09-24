@@ -11,6 +11,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
@@ -54,7 +55,7 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
 
         TextView levelTitle = findViewById(R.id.levelTitle);
         TextView levelXp = findViewById(R.id.levelXp);
-        com.google.android.material.progressindicator.LinearProgressIndicator bar =
+        LinearProgressIndicator bar =
                 findViewById(R.id.levelProgress);
         viewModel.progress().observe(this, p -> {
             levelTitle.setText(p.label());
