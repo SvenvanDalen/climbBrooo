@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_start_ride_short">Start mijn rit</string>
+    <string name="shortcut_start_ride_long">Start mijn rit op het horloge</string>
+    <string name="shortcut_next_climb_short">Volgende klim</string>
+    <string name="shortcut_next_climb_long">Hoe ver is de volgende klim?</string>
+
+    <string-array name="shortcut_start_ride_synonyms">
+        <item>rit starten</item>
+        <item>start mijn rit</item>
+        <item>rit</item>
+    </string-array>
+    <string-array name="shortcut_next_climb_synonyms">
+        <item>volgende klim</item>
+        <item>hoe ver is de volgende klim</item>
+        <item>klim</item>
+    </string-array>
+</resources>
