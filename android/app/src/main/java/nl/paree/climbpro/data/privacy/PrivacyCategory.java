@@ -15,6 +15,10 @@ public enum PrivacyCategory {
     ATTEMPTS("Klimpogingen",
             "Tijden per klim uit je Strava-activiteiten, met notities.",
             "climb_attempts.json", "incomplete_climb_attempts.json"),
+    RIDES("Rittenarchief",
+            "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
+                    + "start- en eindpunt.",
+            "rides.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),
