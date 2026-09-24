@@ -296,6 +296,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_export_csv) {
             exportCsv();
             return true;
+        } else if (id == R.id.action_privacy) {
+            startActivity(nl.paree.climbpro.ui.privacy.PrivacyDashboardActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
