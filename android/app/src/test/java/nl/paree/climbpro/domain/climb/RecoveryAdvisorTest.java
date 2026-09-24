@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.domain.climb.RecoveryAdvisor.Advice;
 
@@ -292,5 +293,51 @@ public class RecoveryAdvisorTest {
         assertTrue(advice.enoughHistory);
         assertEquals(700.0, advice.baselineWeeklyAvgGainM, 0.001);
         assertFalse(advice.suggestRest);
+    }
+
+    private static StoredRide ride(LocalDate day, float gainM) {
+        StoredRide r = new StoredRide();
+        r.startEpochSec = day.atStartOfDay(ZONE).toEpochSecond();
+        r.elevationGainM = gainM;
+        return r;
+    }
+
+    @Test
+    public void rides_countWholeRideGain_heavyWeekSuggestsRest() {
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        List<StoredRide> rides = new java.util.ArrayList<>();
+        for (int i = 27; i >= 7; i--) rides.add(ride(today.minusDays(i), 100f));
+        rides.add(ride(today, 2000f));
+
+        Advice advice = RecoveryAdvisor.computeFromRides(rides, ZONE, today);
+
+        assertTrue(advice.suggestRest);
+        assertEquals(2000, advice.recentGainM);
+        assertEquals(1025.0, advice.baselineWeeklyAvgGainM, 0.001);
+    }
+
+    @Test
+    public void rides_zeroGainRideStillCountsAsRecent_undatedIgnored() {
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        List<StoredRide> rides = new java.util.ArrayList<>();
+        for (int i = 27; i >= 1; i--) rides.add(ride(today.minusDays(i), 300f));
+        rides.add(ride(today, 0f));
+        StoredRide undated = ride(today, 50000f);
+        undated.startEpochSec = 0;
+        rides.add(undated);
+
+        Advice advice = RecoveryAdvisor.computeFromRides(rides, ZONE, today);
+
+        assertTrue(advice.rodeRecently);
+        assertFalse(advice.suggestRest);
+        assertEquals(1800, advice.recentGainM); // 6 * 300, today's ride adds 0
+    }
+
+    @Test
+    public void rides_emptyOrNull_noData() {
+        LocalDate today = LocalDate.of(2026, 9, 21);
+        assertFalse(RecoveryAdvisor.computeFromRides(null, ZONE, today).hasData);
+        assertFalse(RecoveryAdvisor.computeFromRides(
+                Collections.emptyList(), ZONE, today).hasData);
     }
 }

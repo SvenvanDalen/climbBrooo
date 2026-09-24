@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import nl.paree.climbpro.data.ride.RideRepository;
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -33,6 +35,7 @@ public final class RecoveryAdviceViewModel extends AndroidViewModel {
 
     private final RouteRepository routeRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final RideRepository rideRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<Advice> advice = new MutableLiveData<>();
@@ -41,12 +44,20 @@ public final class RecoveryAdviceViewModel extends AndroidViewModel {
         super(app);
         routeRepo = new RouteRepository(app);
         attemptRepo = new ClimbAttemptRepository(app);
+        rideRepo = new RideRepository(app);
     }
 
     public LiveData<Advice> advice() { return advice; }
 
     public void load() {
         executor.execute(() -> {
+            List<StoredRide> rides = rideRepo.loadAll();
+            if (!rides.isEmpty()) {
+                // The ride archive (#160) has each ride's total hm, not just its climbs.
+                advice.postValue(RecoveryAdvisor.computeFromRides(rides));
+                return;
+            }
+            // No archive yet (no Strava link, or only file imports): climb hm only.
             List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
             Map<String, Integer> elevationGainByClimbId = resolveElevationGain();
             advice.postValue(RecoveryAdvisor.compute(attempts, elevationGainByClimbId));

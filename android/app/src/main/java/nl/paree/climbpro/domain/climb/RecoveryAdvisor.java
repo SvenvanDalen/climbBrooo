@@ -1,5 +1,6 @@
 package nl.paree.climbpro.domain.climb;
 
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 
 import java.time.Instant;
@@ -149,6 +150,41 @@ public final class RecoveryAdvisor {
             }
         }
 
+        return evaluate(gainByDay, rideDays, earliestDay, referenceDate);
+    }
+
+    /** Convenience overload of {@link #computeFromRides(List, ZoneId, LocalDate)} for today. */
+    public static Advice computeFromRides(List<StoredRide> rides) {
+        ZoneId zone = ZoneId.systemDefault();
+        return computeFromRides(rides, zone, LocalDate.now(zone));
+    }
+
+    /**
+     * Same rule as {@link #compute}, but over the ride archive (issue #160): each ride's total
+     * elevation gain rather than only its detected climbs', which is the load that actually
+     * accumulated. Undated rides ({@code startEpochSec <= 0}) are skipped; a dated ride with no
+     * gain still counts as "a ride happened that day" for the recency check.
+     */
+    public static Advice computeFromRides(List<StoredRide> rides, ZoneId zone,
+                                          LocalDate referenceDate) {
+        Map<LocalDate, Integer> gainByDay = new HashMap<>();
+        Set<LocalDate> rideDays = new HashSet<>();
+        LocalDate earliestDay = null;
+        if (rides != null) {
+            for (StoredRide r : rides) {
+                if (r == null || r.startEpochSec <= 0) continue;
+                LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
+                rideDays.add(day);
+                if (earliestDay == null || day.isBefore(earliestDay)) earliestDay = day;
+                int gain = Math.round(r.elevationGainM);
+                if (gain > 0) gainByDay.merge(day, gain, Integer::sum);
+            }
+        }
+        return evaluate(gainByDay, rideDays, earliestDay, referenceDate);
+    }
+
+    private static Advice evaluate(Map<LocalDate, Integer> gainByDay, Set<LocalDate> rideDays,
+                                   LocalDate earliestDay, LocalDate referenceDate) {
         if (earliestDay == null) {
             return new Advice(false, 0, 0,
                     "Nog geen ritten gevonden om je belasting te beoordelen.", false, false, false);

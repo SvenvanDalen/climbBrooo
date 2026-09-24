@@ -29,6 +29,11 @@ public final class GpxParser {
             xpp.setInput(in, null);
 
             List<RoutePoint> points = new ArrayList<>();
+            // Waypoints are only route geometry in a waypoint-only file; next to a track or
+            // route they are POIs (e.g. the climb markers of our own Wahoo/Hammerhead export,
+            // issue #254) and must not be spliced into the line.
+            List<RoutePoint> waypoints = new ArrayList<>();
+            boolean inWaypoint = false;
             double lat = Double.NaN, lon = Double.NaN, ele = Double.NaN;
             boolean inPoint = false;
             boolean inEle = false;
@@ -40,6 +45,7 @@ public final class GpxParser {
                         String tag = xpp.getName();
                         if ("trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag)) {
                             inPoint = true;
+                            inWaypoint = "wpt".equals(tag);
                             lat = parseAttr(xpp, "lat");
                             lon = parseAttr(xpp, "lon");
                             ele = Double.NaN;
@@ -62,7 +68,7 @@ public final class GpxParser {
                         String tag = xpp.getName();
                         if ("trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag)) {
                             if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
-                                points.add(new RoutePoint(lat, lon, ele, 0.0));
+                                (inWaypoint ? waypoints : points).add(new RoutePoint(lat, lon, ele, 0.0));
                             }
                             inPoint = false;
                             inEle = false;
@@ -76,6 +82,7 @@ public final class GpxParser {
                 event = xpp.next();
             }
 
+            if (points.isEmpty()) points = waypoints;
             if (points.isEmpty()) {
                 throw new GpxParseException("No track points found in GPX file");
             }
