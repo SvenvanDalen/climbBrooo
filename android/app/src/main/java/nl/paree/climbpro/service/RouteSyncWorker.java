@@ -113,6 +113,9 @@ public final class RouteSyncWorker extends Worker {
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
                 .build();
 
+        // Opportunistic, never fails the sync: new Strava rides to Health Connect (issue #255).
+        new nl.paree.climbpro.data.health.HealthConnectGateway(ctx).exportIfEnabled();
+
         boolean shouldRetry = (r.pullAttempted && !r.pullSucceeded)
                 || (r.sendAttempted && !r.sendSucceeded)
                 || r.buildFailed;
