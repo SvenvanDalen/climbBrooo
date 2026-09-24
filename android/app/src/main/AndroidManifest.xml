@@ -15,6 +15,12 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- In-app update checker: install a downloaded release APK from outside the Play Store. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Health Connect (issue #255): write rides, read the latest weight. -->
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
+    <uses-permission android:name="android.permission.health.WRITE_DISTANCE" />
+    <uses-permission android:name="android.permission.health.WRITE_ELEVATION_GAINED" />
+    <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
 
     <!-- Required on Android 11+ (targetSdk 30+) so the CIQ SDK can bind to
          the Garmin Connect Mobile service. Without this, initialize() reports
@@ -38,6 +44,8 @@
             <action android:name="android.intent.action.SEND" />
             <data android:mimeType="*/*" />
         </intent>
+        <!-- Health Connect app (Android 13 and lower). -->
+        <package android:name="com.google.android.apps.healthdata" />
     </queries>
 
     <application
@@ -137,6 +145,27 @@
             android:name=".ui.collections.CollectionDetailActivity"
             android:exported="false"
             android:parentActivityName=".ui.collections.CollectionListActivity" />
+
+        <!-- Health Connect permission rationale (issue #255): Android 13 and lower use the
+             intent filter, Android 14+ the activity-alias below. -->
+        <activity
+            android:name=".ui.health.HealthConnectRationaleActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".ui.health.HealthConnectRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name=".ui.privacy.PrivacyDashboardActivity"

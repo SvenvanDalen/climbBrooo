@@ -157,6 +157,28 @@ public final class StravaActivitiesRepository {
     }
 
     /**
+     * All activities started after {@code afterEpochSec}, oldest pages first (Health Connect
+     * export, issue #255). Unlike {@link #syncActivities()} this only lists; no streams are
+     * fetched and nothing is matched or stored.
+     *
+     * @throws IOException when a page fails, so the caller does not advance its cursor
+     */
+    public List<StravaActivityDto> listActivitiesSince(long afterEpochSec) throws IOException {
+        String token = "Bearer " + auth.getAccessToken();
+        List<StravaActivityDto> out = new ArrayList<>();
+        for (int page = 1; ; page++) {
+            Response<List<StravaActivityDto>> resp =
+                    api.listActivities(token, afterEpochSec, page, 50).execute();
+            if (!resp.isSuccessful()) {
+                throw new IOException("Strava activities page " + page + " failed (HTTP "
+                        + resp.code() + ")");
+            }
+            if (resp.body() == null || resp.body().isEmpty()) return out;
+            out.addAll(resp.body());
+        }
+    }
+
+    /**
      * @param incompleteOut ADDITIONAL, separate output: never-completed passes are appended
      *                      here for climbs that had zero successful passes matched in this
      *                      activity — see {@link ClimbEntryOnlyDetector}. The returned list

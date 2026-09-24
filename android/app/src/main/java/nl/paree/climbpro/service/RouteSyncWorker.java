@@ -13,6 +13,7 @@ import androidx.work.WorkerParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.connectiq.ConnectIqClient;
+import nl.paree.climbpro.data.health.HealthConnectGateway;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -116,6 +117,9 @@ public final class RouteSyncWorker extends Worker {
 
         // New attempts may have been matched during the pull: keep the widget's week total fresh.
         WeekWidgetProvider.refresh(ctx);
+
+        // Opportunistic, never fails the sync: new Strava rides to Health Connect (issue #255).
+        new HealthConnectGateway(ctx).exportIfEnabled();
 
         boolean shouldRetry = (r.pullAttempted && !r.pullSucceeded)
                 || (r.sendAttempted && !r.sendSucceeded)
