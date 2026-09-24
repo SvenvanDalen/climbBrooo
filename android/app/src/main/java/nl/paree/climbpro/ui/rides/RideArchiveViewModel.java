@@ -79,7 +79,8 @@ public final class RideArchiveViewModel extends AndroidViewModel {
                         new ClimbAttemptRepository(getApplication())).syncRideArchive();
                 message.postValue(n + " rit(ten) bijgewerkt");
             } catch (Exception e) {
-                message.postValue("Ophalen mislukt: " + e.getMessage());
+                message.postValue("Ophalen mislukt: "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
             }
             loadNow();
         });

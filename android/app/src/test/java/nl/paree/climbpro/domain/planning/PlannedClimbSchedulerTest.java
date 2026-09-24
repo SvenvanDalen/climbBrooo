@@ -109,4 +109,14 @@ public class PlannedClimbSchedulerTest {
         PlannedClimb past = plan("p", NOW - 3600);
         assertEquals(0L, PlannedClimbScheduler.delaySeconds(past, NOW));
     }
+
+    @Test
+    public void next_skipsPlansThatAlreadyStartedToday() {
+        PlannedClimb thisMorning = plan("m", NOW - 5 * 3600);
+        PlannedClimb dayAfter = plan("d", NOW + 2 * DAY);
+        PlannedClimb tomorrow = plan("t", NOW + DAY);
+        assertEquals("t", PlannedClimbScheduler.next(
+                Arrays.asList(thisMorning, dayAfter, tomorrow), NOW).id);
+        assertEquals(null, PlannedClimbScheduler.next(Arrays.asList(thisMorning), NOW));
+    }
 }

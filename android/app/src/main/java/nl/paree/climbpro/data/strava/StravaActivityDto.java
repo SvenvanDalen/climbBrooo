@@ -22,7 +22,11 @@ public final class StravaActivityDto {
     @JsonProperty("distance")
     public float distance;       // metres
 
-    // Summary fields for the ride archive (issue #160) — all on the list item, no extra call.
+    // Summary fields on the list item, no extra call: ride archive (issue #160) and the
+    // Health Connect export (issue #255).
+    @JsonProperty("start_date_local")
+    public String startDateLocal; // local wall time, ISO-8601 with a misleading "Z"
+
     @JsonProperty("moving_time")
     public int movingTime;       // seconds
 
@@ -46,4 +50,7 @@ public final class StravaActivityDto {
 
     @JsonProperty("end_latlng")
     public java.util.List<Double> endLatLng;
+
+    @JsonProperty("kilojoules")
+    public Double kilojoules;    // work done; rides only, null when unknown
 }
