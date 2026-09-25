@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/color_bg"
-        android:title="Framemaat"
+        app:title="Framemaat"
         app:titleTextColor="@color/color_text_primary"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
 
