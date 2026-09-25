@@ -70,6 +70,12 @@ public final class LogbookCalculator {
          */
         public final Double avgTempC;
 
+        /**
+         * Who rode along (issue #243), stored form {@code "Anna, Bas"}; null when nobody is
+         * named. With a {@link #photoFileName} this is a group summit photo.
+         */
+        public final String companions;
+
         public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
                           boolean routeDeviation, boolean bestOfYear) {
             this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
@@ -87,6 +93,14 @@ public final class LogbookCalculator {
                            boolean routeDeviation, boolean bestOfYear,
                            long activityId, int passIndex, String note, String photoFileName,
                            Double avgTempC) {
+            this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
+                    activityId, passIndex, note, photoFileName, avgTempC, null);
+        }
+
+        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
+                           boolean routeDeviation, boolean bestOfYear,
+                           long activityId, int passIndex, String note, String photoFileName,
+                           Double avgTempC, String companions) {
             this.dateEpochSec = dateEpochSec;
             this.elapsedSec = elapsedSec;
             this.deltaToPrSec = deltaToPrSec;
@@ -97,6 +111,7 @@ public final class LogbookCalculator {
             this.note = note;
             this.photoFileName = photoFileName;
             this.avgTempC = avgTempC;
+            this.companions = companions;
         }
     }
 
@@ -192,7 +207,8 @@ public final class LogbookCalculator {
             boolean bestOfYear = i == bestOfYearIndex;
             rows.add(new HistoryRow(a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr,
                     a.routeDeviation, bestOfYear,
-                    a.activityId, a.passIndex, a.note, a.photoFileName, a.avgTempC));
+                    a.activityId, a.passIndex, a.note, a.photoFileName, a.avgTempC,
+                    a.companions));
         }
         return rows;
     }
