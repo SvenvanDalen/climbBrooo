@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:title="Fietskosten" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp"
+        android:textColor="@color/color_text_tertiary"
+        android:textSize="13sp"
+        android:text="Kosten per km = aankoop plus onderdelen, gedeeld door de km van de fiets. Km komen uit je gesynchroniseerde Strava-ritten vanaf de ingestelde datum, plus handmatige km. Strava geeft niet door op welke fiets je reed: rijd je meerdere fietsen door elkaar, zet het rittenarchief dan uit en vul de km handmatig in. Tik op een fiets voor de kosten." />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp">
+
+        <Button
+            android:id="@+id/btn_add"
+            style="@style/Widget.ClimbPro.Button.Accent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fiets toevoegen" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:visibility="gone"
+        android:text="Nog geen fietsen. Tik op Fiets toevoegen om de kosten bij te houden." />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>
