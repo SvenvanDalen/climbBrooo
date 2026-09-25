@@ -115,4 +115,51 @@ public class MaintenanceRepositoryTest {
         assertEquals(1_750_000_000L,
                 new MaintenanceRepository(app).load().components.get(0).lastServicedEpochSec);
     }
+
+    @Test
+    public void warrantyRoundTripsAndSurvivesEdits() throws Exception {
+        MaintenanceRepository repo = new MaintenanceRepository(app);
+        String id = repo.upsertComponent(null, "Wielset", 0, 0, false, 0);
+        repo.setWarranty(id, 1_700_000_000L, 24);
+        repo.markWarrantyReminderSent(id, 1_763_000_000L);
+        // Editing name/intervals must not wipe the warranty.
+        repo.upsertComponent(id, "Wielset carbon", 0, 0, false, 0);
+        repo.setWarranty("does-not-exist", 1L, 1);
+        repo.markWarrantyReminderSent(null, 5L);
+
+        MaintenanceLog log = new MaintenanceRepository(app).load();
+        assertEquals(5, log.components.size());
+        MaintenanceComponent c = log.components.get(4);
+        assertEquals("Wielset carbon", c.name);
+        assertEquals(1_700_000_000L, c.warrantyPurchaseEpochSec);
+        assertEquals(24, c.warrantyMonths);
+        assertEquals(1_763_000_000L, c.warrantyReminderSentForExpiryEpochSec);
+    }
+
+    @Test
+    public void olderFileLoadsWithoutWarranty() throws Exception {
+        writeRaw("{\"version\":1,\"components\":[{\"id\":\"chain\",\"name\":\"Ketting\","
+                + "\"intervalKm\":3000}]}");
+        MaintenanceComponent c = new MaintenanceRepository(app).load().components.get(0);
+        assertEquals(0, c.warrantyPurchaseEpochSec);
+        assertEquals(0, c.warrantyMonths);
+        assertEquals(0, c.warrantyReminderSentForExpiryEpochSec);
+    }
+
+    @Test
+    public void negativeWarrantyValuesAreClamped() throws Exception {
+        writeRaw("{\"components\":[{\"id\":\"w\",\"name\":\"Wiel\","
+                + "\"warrantyPurchaseEpochSec\":-5,\"warrantyMonths\":-3,"
+                + "\"warrantyReminderSentForExpiryEpochSec\":-1}]}");
+        MaintenanceRepository repo = new MaintenanceRepository(app);
+        MaintenanceComponent c = repo.load().components.get(0);
+        assertEquals(0, c.warrantyPurchaseEpochSec);
+        assertEquals(0, c.warrantyMonths);
+        assertEquals(0, c.warrantyReminderSentForExpiryEpochSec);
+
+        repo.setWarranty("w", -1L, -2);
+        c = repo.load().components.get(0);
+        assertEquals(0, c.warrantyPurchaseEpochSec);
+        assertEquals(0, c.warrantyMonths);
+    }
 }
