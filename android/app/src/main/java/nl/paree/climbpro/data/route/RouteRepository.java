@@ -10,6 +10,7 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ClimbNameSuggester;
+import nl.paree.climbpro.domain.climb.ClimbRating;
 import nl.paree.climbpro.domain.climb.ClimbShapeClassifier;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
@@ -266,6 +267,46 @@ public final class RouteRepository {
     }
 
     /**
+     * Sets (or, with all-null/blank values, clears) the rider's rating of a climb (issue #244).
+     * Values are normalized by {@code ClimbRating#apply} (anything outside 1–5 = not rated).
+     * The same physical climb can sit in several routes, so the rating is also written onto
+     * every climb with the same {@code ClimbIdentity} in the other catalog routes; routes that
+     * fail to load are skipped. Out-of-range indices are silently ignored, like
+     * {@link #setClimbHome}. Survives resync via {@link #mergePreviousClimbUserData}.
+     */
+    public void setClimbRating(String routeId, int climbIndex, Integer road, Integer traffic,
+                               Integer view, String note) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) return;
+        StoredClimb target = route.climbs.get(climbIndex);
+        ClimbRating.apply(target, road, traffic, view, note);
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+
+        String identity = ClimbIdentity.of(target);
+        for (RouteCatalogEntry entry : loadCatalog()) {
+            if (entry.routeId == null || entry.routeId.equals(routeId)) continue;
+            try {
+                StoredRoute other = loadRoute(entry.routeId);
+                if (other.climbs == null) continue;
+                boolean changed = false;
+                for (StoredClimb c : other.climbs) {
+                    if (identity.equals(ClimbIdentity.of(c))) {
+                        ClimbRating.copy(target, c);
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    other.lastModifiedMs = System.currentTimeMillis();
+                    writeAtomic(routeFile(entry.routeId), mapper.writeValueAsBytes(other));
+                }
+            } catch (IOException e) {
+                Log.w(TAG, "Rating not propagated to route " + entry.routeId, e);
+            }
+        }
+    }
+
+    /**
      * Renames multiple climbs in one load/write cycle, for the bulk rename screen. Out-of-range
      * indices (including negatives) are silently skipped, matching {@link #renameClimb}. A blank
      * name clears {@code userDisplayName} back to null so the climb falls back to its auto name.
@@ -487,6 +528,8 @@ public final class RouteRepository {
             f.isHome = p.isHome;
             f.privacyCentreLat = p.privacyCentreLat;
             f.privacyCentreLon = p.privacyCentreLon;
+            // Rating (issue #244) is user data about the physical climb: always carry it.
+            ClimbRating.copy(p, f);
             if (p.manualRefSec != null) {
                 f.manualRefSec = p.manualRefSec;
                 f.manualRefLabel = p.manualRefLabel;
