@@ -152,6 +152,14 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
     }
 
     /**
+     * Whether "Sorteer op waardering" is currently active, so the menu can restore its checked
+     * state after a config change (the ViewModel survives rotation; the menu does not).
+     */
+    public boolean isSortByRating() {
+        return sortByRating;
+    }
+
+    /**
      * Returns a sorted copy: most recent attempt first, or — with {@code byRating} — highest
      * average rating first, unrated last, ties by most recent attempt.
      */

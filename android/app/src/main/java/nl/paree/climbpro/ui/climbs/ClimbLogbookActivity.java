@@ -84,6 +84,9 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.logbook_menu, menu);
+        // Restore the checked state after rotation: the ViewModel survives it, the menu doesn't.
+        MenuItem sortByRating = menu.findItem(R.id.action_sort_by_rating);
+        if (sortByRating != null) sortByRating.setChecked(viewModel.isSortByRating());
         return true;
     }
 

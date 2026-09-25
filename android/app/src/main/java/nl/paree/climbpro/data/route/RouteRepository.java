@@ -137,6 +137,7 @@ public final class RouteRepository {
         route.climbs = toStoredClimbs(filteredClimbs);
         int routeOffsetM = mergePreviousClimbUserData(route.climbs, prevClimbs);
         fillMissingClimbNames(route.climbs);
+        inheritRatingsFromOtherRoutes(route);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
                 : 0;
@@ -551,6 +552,46 @@ public final class RouteRepository {
             }
         }
         return SegmentRemapper.routeOffset(matches);
+    }
+
+    /**
+     * A climb detected for the first time in {@code route} (e.g. a freshly imported/resynced
+     * route covering ground already ridden elsewhere) would otherwise start unrated even though
+     * the rider already rated the same physical climb via another route (issue #244 review
+     * finding): the logbook would resolve that {@code ClimbIdentity} to the unrated copy, and a
+     * later partial re-rate from it would overwrite the full rating. Backfills the rating/note
+     * from the first other catalog route whose matching climb is rated or has a note. Never
+     * overwrites a climb that already has its own rating or note (whether fresh or carried over
+     * by {@link #mergePreviousClimbUserData}). Routes that fail to load are skipped.
+     */
+    private void inheritRatingsFromOtherRoutes(StoredRoute route) {
+        if (route.climbs == null || route.climbs.isEmpty()) return;
+        List<RouteCatalogEntry> catalog = loadCatalog();
+        for (StoredClimb c : route.climbs) {
+            if (ClimbRating.isRated(c) || c.ratingNote != null) continue;
+            String identity = ClimbIdentity.of(c);
+            for (RouteCatalogEntry entry : catalog) {
+                if (entry.routeId == null || entry.routeId.equals(route.routeId)) continue;
+                StoredRoute other;
+                try {
+                    other = loadRoute(entry.routeId);
+                } catch (IOException e) {
+                    Log.w(TAG, "Rating inheritance skipped for route " + entry.routeId, e);
+                    continue;
+                }
+                if (other.climbs == null) continue;
+                boolean found = false;
+                for (StoredClimb oc : other.climbs) {
+                    if (identity.equals(ClimbIdentity.of(oc))
+                            && (ClimbRating.isRated(oc) || oc.ratingNote != null)) {
+                        ClimbRating.copy(oc, c);
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+        }
     }
 
     /**
