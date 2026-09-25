@@ -70,6 +70,11 @@ public final class RadarTiles {
         return out;
     }
 
+    /**
+     * Covers the route's padded bounding box. The bbox is built from raw min/max longitude, so a
+     * route crossing the antimeridian (±180°) produces a world-wide bbox and falls back to a
+     * single, coarse zoom-0 tile — acceptable for this app's European cycling routes; not handled.
+     */
     public static List<Tile> forRoute(double[] lats, double[] lons) {
         if (lats == null || lons == null) return new ArrayList<>();
         int n = Math.min(lats.length, lons.length);

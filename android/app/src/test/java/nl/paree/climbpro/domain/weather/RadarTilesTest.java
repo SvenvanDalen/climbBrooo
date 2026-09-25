@@ -55,4 +55,16 @@ public class RadarTilesTest {
         assertTrue(RadarTiles.forRoute(null, null).isEmpty());
         assertTrue(RadarTiles.forRoute(new double[0], new double[0]).isEmpty());
     }
+
+    @Test public void antimeridianRouteFallsBackToCoarseTiles() {
+        // A route crossing +/-180 deg has raw min/max longitude spanning the whole globe, so
+        // forRoute degrades to a single, coarse tile set rather than throwing or exploding.
+        List<RadarTiles.Tile> t = RadarTiles.forRoute(
+                new double[]{-40.0, -40.1}, new double[]{179.5, -179.5});
+        assertTrue(!t.isEmpty());
+        assertTrue(t.size() <= RadarTiles.MAX_TILES);
+        for (RadarTiles.Tile tile : t) {
+            assertTrue(tile.z >= 0 && tile.z <= RadarTiles.MAX_ZOOM);
+        }
+    }
 }
