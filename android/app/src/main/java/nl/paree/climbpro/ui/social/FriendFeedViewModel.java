@@ -20,6 +20,7 @@ import nl.paree.climbpro.data.social.FriendFeedRepository;
 import nl.paree.climbpro.data.social.FriendShareIdentity;
 import nl.paree.climbpro.domain.climb.ClimbCatalogIndex;
 import nl.paree.climbpro.domain.social.FriendShareCode;
+import nl.paree.climbpro.domain.social.HomeClimbAggregator;
 import nl.paree.climbpro.domain.social.OwnFeedBuilder;
 
 import java.util.HashMap;
@@ -97,11 +98,10 @@ public final class FriendFeedViewModel extends AndroidViewModel {
                 Set<String> ids = new HashSet<>();
                 for (StoredClimbAttempt a : attempts) if (a.climbId != null) ids.add(a.climbId);
                 Map<String, OwnFeedBuilder.ClimbInfo> climbs = new HashMap<>();
-                for (Map.Entry<String, ClimbCatalogIndex.Entry> en : ClimbCatalogIndex.resolve(
+                for (Map.Entry<String, List<StoredClimb>> en : ClimbCatalogIndex.resolveAllCopies(
                         new RouteRepository(getApplication()), ids).entrySet()) {
-                    StoredClimb c = en.getValue().climb;
-                    String n = c.userDisplayName != null ? c.userDisplayName : c.name;
-                    climbs.put(en.getKey(), new OwnFeedBuilder.ClimbInfo(n, c.elevationGain, c.isHome));
+                    OwnFeedBuilder.ClimbInfo info = HomeClimbAggregator.aggregate(en.getValue());
+                    if (info != null) climbs.put(en.getKey(), info);
                 }
                 long now = System.currentTimeMillis() / 1000L;
                 List<FriendFeedEntry> own = OwnFeedBuilder.build(

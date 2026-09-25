@@ -129,6 +129,18 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
                         : "Niet gekoppeld"), linked || syncState);
             }
+            case FRIENDS: {
+                // The chosen share name lives in prefs, not friend_feed.json, so it must count
+                // as data on its own: otherwise a user who shared once but received nothing yet
+                // sees "Leeg" with nothing to erase, even though their name is still stored.
+                PrivacyInventory.Usage u = inventory.usage(c);
+                boolean hasName = !FriendShareIdentity.name(prefs).isEmpty();
+                boolean has = u.fileCount > 0 || hasName;
+                String summary = u.fileCount > 0
+                        ? u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes)
+                        : (hasName ? "Geen feed, deelnaam bewaard" : "Leeg");
+                return new Row(c, summary, has);
+            }
             default: {
                 PrivacyInventory.Usage u = inventory.usage(c);
                 return new Row(c, u.fileCount == 0 ? "Leeg"
