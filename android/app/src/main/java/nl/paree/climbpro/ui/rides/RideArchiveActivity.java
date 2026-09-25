@@ -34,6 +34,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
 
     private RideArchiveViewModel viewModel;
     private ArrayAdapter<String> filterAdapter;
+    private RideArchiveAdapter adapter;
 
     public static Intent intentFor(Context context) {
         return new Intent(context, RideArchiveActivity.class);
@@ -52,7 +53,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
         TextView empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        RideArchiveAdapter adapter = new RideArchiveAdapter();
+        adapter = new RideArchiveAdapter();
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(RideArchiveViewModel.class);
@@ -84,6 +85,12 @@ public final class RideArchiveActivity extends AppCompatActivity {
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
         viewModel.load();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (adapter != null) adapter.shutdown();
     }
 
     private static String[] labels(Map<RideCategory, Integer> counts) {

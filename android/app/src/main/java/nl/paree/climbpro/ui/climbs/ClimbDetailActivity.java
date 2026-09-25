@@ -246,6 +246,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     rowLayout.addView(noteView);
                 }
 
+                String companionsLabel =
+                        nl.paree.climbpro.domain.ride.SummitGroupPhotos.companionsLabel(row.companions);
+                if (companionsLabel != null) {
+                    android.widget.TextView groupView = new android.widget.TextView(this);
+                    boolean hasPhoto = row.photoFileName != null && !row.photoFileName.isEmpty();
+                    groupView.setText(hasPhoto
+                            ? "👥 Groepsfoto op de top · " + companionsLabel
+                            : "👥 " + companionsLabel);
+                    groupView.setTextSize(13f);
+                    groupView.setPadding(0, 4, 0, 0);
+                    rowLayout.addView(groupView);
+                }
+
                 if (row.photoFileName != null && !row.photoFileName.isEmpty()) {
                     android.widget.ImageView thumb = new android.widget.ImageView(this);
                     int sizePx = (int) (72 * getResources().getDisplayMetrics().density);
@@ -260,7 +273,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
                 android.widget.TextView editLink = new android.widget.TextView(this);
                 editLink.setText(row.note != null || row.photoFileName != null
-                        ? "Notitie/foto bewerken" : "+ Notitie/foto toevoegen");
+                        || row.companions != null
+                        ? "Notitie/foto/groep bewerken" : "+ Notitie/foto/groep toevoegen");
                 editLink.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
                 editLink.setPadding(0, 8, 0, 0);
                 editLink.setOnClickListener(v -> showAttemptNoteDialog(row));
@@ -804,6 +818,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         noteInput.setText(row.note);
         dialogLayout.addView(noteInput);
 
+        EditText companionsInput = new EditText(this);
+        companionsInput.setHint("Meegereden met (namen, gescheiden door komma's)");
+        companionsInput.setText(row.companions);
+        companionsInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        dialogLayout.addView(companionsInput);
+
+        android.widget.TextView groupHint = new android.widget.TextView(this);
+        groupHint.setText("Met een foto en namen wordt dit een groepsfoto op de top, "
+                + "zichtbaar bij de rit in het rittenarchief.");
+        groupHint.setTextSize(12f);
+        dialogLayout.addView(groupHint);
+
         android.widget.ImageView preview = new android.widget.ImageView(this);
         int sizePx = (int) (120 * getResources().getDisplayMetrics().density);
         android.widget.LinearLayout.LayoutParams previewLp =
@@ -825,11 +852,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         dialogLayout.addView(pickPhotoButton);
 
         new AlertDialog.Builder(this)
-                .setTitle("Notitie & foto")
+                .setTitle("Notitie, foto & groep")
                 .setView(dialogLayout)
                 .setPositiveButton("Opslaan", (d, w) -> {
                     viewModel.saveAttemptNote(routeId, climbIndex, row.activityId, row.passIndex,
-                            noteInput.getText().toString(), pendingPhotoUri);
+                            noteInput.getText().toString(),
+                            companionsInput.getText().toString(), pendingPhotoUri);
                     pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;

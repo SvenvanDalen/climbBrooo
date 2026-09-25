@@ -223,4 +223,16 @@ public class LogbookCalculatorTest {
         assertEquals(33.0, rows.get(0).avgTempC, 1e-9);   // most recent first
         assertEquals(null, rows.get(1).avgTempC);
     }
+
+    @Test
+    public void historyFor_carriesCompanionsThrough() {
+        StoredClimbAttempt a = at("k1", 1, 1000, 700);
+        a.companions = "Anna, Bas";
+        StoredClimbAttempt b = at("k1", 2, 2000, 650);
+
+        List<HistoryRow> rows = LogbookCalculator.historyFor("k1", Arrays.asList(a, b), 3000);
+
+        assertEquals(null, rows.get(0).companions);        // newest first: b
+        assertEquals("Anna, Bas", rows.get(1).companions);
+    }
 }
