@@ -52,6 +52,12 @@ public final class SettingsActivity extends AppCompatActivity {
                 if (!granted) {
                     Toast.makeText(this, "Zonder meldingen krijg je geen schoonmaakherinnering",
                             Toast.LENGTH_LONG).show();
+                    // The switch stayed on when the user tapped it; without the grant the
+                    // reminder can never fire, so turn it (and the preference) back off rather
+                    // than leave a setting on that silently does nothing.
+                    PreferenceManager.getDefaultSharedPreferences(this).edit()
+                            .putBoolean(WetRideReminderJob.PREF_ENABLED, false).apply();
+                    binding.switchWetRideReminder.setChecked(false);
                 }
             });
 

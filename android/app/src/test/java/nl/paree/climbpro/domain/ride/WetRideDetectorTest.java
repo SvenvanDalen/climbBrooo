@@ -128,6 +128,28 @@ public class WetRideDetectorTest {
         assertTrue(v.offroad);
     }
 
+    @Test public void legacyTypeSaysRideButSportTypeIsGravel_stillUsesOffroadRule() {
+        // Strava reports gravel/MTB rides as type="Ride"; only sport_type carries the real
+        // classification (issue #234 regression: isOffroad must prefer sportType).
+        StoredRide r = ride("Ride", 7200);
+        r.sportType = "GravelRide";
+        HourlyPrecipitation p = weather(0.0, new String[]{"2026-09-20T03:00:00Z"}, new double[]{0.5});
+        WetRideDetector.Verdict v = WetRideDetector.judge(r, p);
+        assertTrue(v.wet);
+        assertTrue(v.offroad);
+    }
+
+    @Test public void isOffroadPrefersSportTypeOverLegacyType() {
+        assertTrue(WetRideDetector.isOffroad("Ride", "GravelRide"));
+        assertTrue(WetRideDetector.isOffroad("Ride", "MountainBikeRide"));
+        assertTrue(WetRideDetector.isOffroad("Ride", "EMountainBikeRide"));
+        assertFalse(WetRideDetector.isOffroad("Ride", "Ride"));
+        assertFalse(WetRideDetector.isOffroad("Ride", null));
+        // Falls back to legacy type when sportType is null/empty (old rides.json entries).
+        assertTrue(WetRideDetector.isOffroad("GravelRide", null));
+        assertTrue(WetRideDetector.isOffroad("GravelRide", ""));
+    }
+
     @Test public void allNullHoursMeansUnknown() {
         HourlyPrecipitation p = weather(Double.NaN, new String[0], new double[0]);
         assertNull(WetRideDetector.judge(ride("Ride", 7200), p));

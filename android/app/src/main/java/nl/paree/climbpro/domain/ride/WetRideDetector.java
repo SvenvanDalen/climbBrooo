@@ -37,9 +37,21 @@ public final class WetRideDetector {
         }
     }
 
+    /**
+     * True for gravel/MTB rides. Strava's legacy {@code type} field still reports "Ride" for
+     * these (see {@code StravaActivityDto#type}); the specific classification only appears in
+     * {@code sport_type}. Prefers {@code sportType}, falling back to {@code type} for rides
+     * archived before that field existed.
+     */
+    public static boolean isOffroad(String type, String sportType) {
+        String effective = sportType != null && !sportType.isEmpty() ? sportType : type;
+        return "GravelRide".equals(effective) || "MountainBikeRide".equals(effective)
+                || "EMountainBikeRide".equals(effective);
+    }
+
+    /** @see #isOffroad(String, String) */
     public static boolean isOffroad(String type) {
-        return "GravelRide".equals(type) || "MountainBikeRide".equals(type)
-                || "EMountainBikeRide".equals(type);
+        return isOffroad(type, null);
     }
 
     /** Ride end: start + elapsed time, else moving time, else one hour. */
@@ -61,7 +73,7 @@ public final class WetRideDetector {
 
     /** Null when the weather has no value for any hour of the ride window (retry later). */
     public static Verdict judge(StoredRide r, HourlyPrecipitation p) {
-        boolean offroad = isOffroad(r.type);
+        boolean offroad = isOffroad(r.type, r.sportType);
         long lead = offroad ? OFFROAD_LEAD_SEC : ROAD_LEAD_SEC;
         double mm = p.sumBetween(r.startEpochSec - lead, endSec(r));
         if (Double.isNaN(mm)) return null;
