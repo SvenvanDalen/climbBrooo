@@ -23,6 +23,8 @@ import nl.paree.climbpro.data.route.RouteCollection;
 import nl.paree.climbpro.data.route.RouteCollectionRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
+import nl.paree.climbpro.data.social.FriendFeedRepository;
+import nl.paree.climbpro.data.social.FriendShareIdentity;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.power.RiderProfile;
@@ -259,6 +261,11 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
             case RIDES:
                 // Through the repository's write lock, like ATTEMPTS.
                 return (new RideRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
+            case FRIENDS:
+                // Through the repository lock (an import may be writing). The random share id
+                // stays: friends who already imported you would otherwise see a second "you".
+                prefs.edit().remove(FriendShareIdentity.PREF_NAME).apply();
+                return (new FriendFeedRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
             case PHOTOS:
                 new ClimbAttemptRepository(app).clearPhotoReferences();
                 return inventory.deleteFiles(c);
