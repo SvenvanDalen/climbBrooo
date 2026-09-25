@@ -279,7 +279,19 @@ public final class RouteDetailActivity extends AppCompatActivity {
         final List<RadarTiles.Tile> tiles = RadarTiles.forRoute(r.lats, r.lons);
         final List<RouteSampler.Sample> samples =
                 RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
-        new Thread(() -> {
+
+        // Issue #245 fix: the radar-tile fetch and the Open-Meteo forecast fetch are independent
+        // network calls. Run them on separate threads (forecast started first) instead of one
+        // after another, so a slow radar tile source can't make the forecast wait behind up to
+        // MAX_TILES sequential 15 s call timeouts.
+        final java.util.concurrent.atomic.AtomicReference<String> radarLineRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<RainRadarOverlay> overlayRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<String> forecastRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+
+        Thread radarThread = new Thread(() -> {
             RainRadarOverlay overlay = null;
             String radarLine;
             try {
@@ -293,11 +305,19 @@ public final class RouteDetailActivity extends AppCompatActivity {
                     for (RadarTiles.Tile t : tiles) {
                         try {
                             byte[] png = rv.fetchTile(frame.tileUrl(t));
-                            Bitmap b = BitmapFactory.decodeByteArray(png, 0, png.length);
+                            Bitmap b;
+                            try {
+                                b = BitmapFactory.decodeByteArray(png, 0, png.length);
+                            } catch (OutOfMemoryError oom) {
+                                b = null; // decode failed; skip this tile, keep the rest
+                            }
                             if (b != null) {
                                 got.add(t);
                                 bitmaps.add(b);
                             }
+                        } catch (java.io.InterruptedIOException timeout) {
+                            // slow network: stop asking for more tiles, keep what already decoded
+                            break;
                         } catch (java.io.IOException ignored) {
                             // skip this tile; the others still show
                         }
@@ -313,6 +333,11 @@ public final class RouteDetailActivity extends AppCompatActivity {
             } catch (Exception e) {
                 radarLine = "Radar ophalen mislukt: " + reason(e);
             }
+            radarLineRef.set(radarLine);
+            overlayRef.set(overlay);
+        }, "rain-radar-tiles");
+
+        Thread forecastThread = new Thread(() -> {
             String forecast;
             try {
                 PrecipitationGrid g = new OpenMeteoClient()
@@ -322,9 +347,21 @@ public final class RouteDetailActivity extends AppCompatActivity {
             } catch (Exception e) {
                 forecast = "Verwachting ophalen mislukt: " + reason(e);
             }
-            final String text = radarLine + "\n\n" + forecast
+            forecastRef.set(forecast);
+        }, "rain-radar-forecast");
+
+        new Thread(() -> {
+            forecastThread.start();
+            radarThread.start();
+            try {
+                forecastThread.join();
+                radarThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            final String text = radarLineRef.get() + "\n\n" + forecastRef.get()
                     + "\n\nBron: RainViewer (radar), Open-Meteo (verwachting)";
-            final RainRadarOverlay result = overlay;
+            final RainRadarOverlay result = overlayRef.get();
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 binding.btnRainRadar.setEnabled(true);

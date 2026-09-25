@@ -31,20 +31,30 @@ public final class RouteRainSummary {
         }
         int end = Math.min(grid.times.length, start + hours);
         List<String> lines = new ArrayList<>();
-        boolean anyRainOrUnknown = false;
+        boolean anyRain = false;
+        boolean anyUnknown = false;
         for (int h = start; h < end; h++) {
             String wet = wetStretches(samples, grid, h);
             String what;
-            if (wet == null) what = "geen gegevens";
-            else if (wet.isEmpty()) what = "droog";
-            else what = "regen bij " + wet;
-            if (wet == null || !wet.isEmpty()) anyRainOrUnknown = true;
+            if (wet == null) {
+                what = "geen gegevens";
+                anyUnknown = true;
+            } else if (wet.isEmpty()) {
+                what = "droog";
+            } else {
+                what = "regen bij " + wet;
+                anyRain = true;
+            }
             lines.add(HOUR.format(grid.times[h].atZone(zone)) + "  " + what);
         }
-        if (!anyRainOrUnknown) {
+        if (!anyRain && !anyUnknown) {
             return "Geen regen verwacht langs de route in de komende " + (end - start) + " uur.";
         }
-        return "Regen langs de route (per uur):\n" + String.join("\n", lines);
+        // Neutral heading when nothing but unknown/dry hours: "Regen..." would overstate a
+        // forecast that never actually shows rain.
+        String heading = anyRain ? "Regen langs de route (per uur):"
+                                  : "Neerslag langs de route (per uur):";
+        return heading + "\n" + String.join("\n", lines);
     }
 
     /** "km a–b (max mm), ..." for hour {@code h}; "" when dry; null when every sample is unknown. */
