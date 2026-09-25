@@ -42,8 +42,11 @@ public final class LogbookAdapter extends RecyclerView.Adapter<LogbookAdapter.VH
     public void onBindViewHolder(@NonNull VH h, int position) {
         LogbookRow row = items.get(position);
         h.name.setText(row.displayName);
-        h.stats.setText(String.format(Locale.getDefault(),
-                "PR %s  •  %d pogingen", formatTime(row.prSec), row.attemptCount));
+        String stats = String.format(Locale.getDefault(),
+                "PR %s  •  %d pogingen", formatTime(row.prSec), row.attemptCount);
+        String badge = nl.paree.climbpro.domain.climb.ClimbRating.badge(row.rating);
+        if (!badge.isEmpty()) stats += "  •  " + badge;
+        h.stats.setText(stats);
         h.itemView.setOnClickListener(v -> {
             if (onClick != null) onClick.onClimb(row);
         });
