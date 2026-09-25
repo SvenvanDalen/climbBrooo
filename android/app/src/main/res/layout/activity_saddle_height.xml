@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_bg">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/color_bg"
+        app:title="Zadelhoogte"
+        app:titleTextColor="@color/color_text_primary"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="BINNENBEENLENGTE METEN"
+                android:textColor="@color/color_text_primary"
+                android:alpha="0.85"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="15sp"
+                android:text="1. Ga op blote voeten met je rug tegen een muur staan, voeten ongeveer 15 cm uit elkaar.\n2. Klem een dik boek met de rug naar boven tussen je benen en trek het stevig omhoog tegen je kruis, zoals een zadel.\n3. Houd het boek waterpas en markeer de bovenkant op de muur.\n4. Meet van de vloer tot de markering. Doe dit twee of drie keer en neem het gemiddelde." />
+
+            <EditText
+                android:id="@+id/inseamInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Binnenbeenlengte in cm (bijv. 84,5)"
+                android:inputType="numberDecimal"
+                android:digits="0123456789,."
+                android:maxLength="6"
+                android:textColor="@color/color_text_primary" />
+
+            <TextView
+                android:id="@+id/messageText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:text="" />
+
+            <LinearLayout
+                android:id="@+id/resultPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:background="@color/color_surface"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="LEMOND (× 0,883)"
+                    android:textColor="@color/color_text_primary"
+                    android:alpha="0.85"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/lemondText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/color_text_primary"
+                    android:textSize="22sp"
+                    android:text="" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="14sp"
+                    android:text="Van het midden van de trapas tot de bovenkant van het zadel, gemeten langs de zadelbuis." />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="HAMLEY / 109 % (× 1,09)"
+                    android:textColor="@color/color_text_primary"
+                    android:alpha="0.85"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/hamleyText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/color_text_primary"
+                    android:textSize="22sp"
+                    android:text="" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="14sp"
+                    android:text="Van de pedaalas tot de bovenkant van het zadel, met de crank in het verlengde van de zadelbuis (pedaal helemaal onderaan)." />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="14sp"
+                    android:text="De twee methodes meten tussen verschillende punten, dus de getallen zijn niet met elkaar te vergelijken. Kies er één en gebruik die als startpunt." />
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="CONTROLEREN OP DE FIETS"
+                android:textColor="@color/color_text_primary"
+                android:alpha="0.85"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="15sp"
+                android:text="Hielmethode: zet je fiets op een rollerbank of leun tegen een muur. Zet je hiel op het pedaal en trap achteruit. Met het pedaal helemaal onderaan moet je been net gestrekt zijn, zonder dat je heup naar opzij kantelt. Met je voorvoet op het pedaal houd je dan vanzelf een lichte buiging in de knie.\n\nKniehoek: met het pedaal onderaan en je voorvoet op het pedaal hoort je knie 25 tot 35 graden gebogen te zijn (gemeten vanaf een gestrekt been). Laat iemand een foto van opzij maken. Minder dan 25 graden: zadel te hoog. Meer dan 35 graden: zadel te laag.\n\nPas de hoogte in stappen van hooguit 5 mm aan en rijd een paar ritten voordat je verder bijstelt. Houd je pijn in knie, heup of onderrug, laat dan een professionele bikefit doen." />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
