@@ -87,14 +87,26 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
         ImageView target = holder.groupPhoto;
         target.setTag(fileName);
         target.setImageDrawable(null);
+        // Reset on bind, since a recycled holder may still carry the previous row's GONE state.
+        target.setVisibility(View.VISIBLE);
         File file = AttemptPhotoStore.fileFor(target.getContext(), fileName);
+        if (!file.exists()) {
+            target.setVisibility(View.GONE);
+            return;
+        }
         int sizePx = (int) (56 * target.getResources().getDisplayMetrics().density);
         if (thumbnailExecutor.isShutdown()) return;
         thumbnailExecutor.execute(() -> {
             Bitmap bmp = decode(file, sizePx);
             target.post(() -> {
                 // The holder may have been recycled for another ride meanwhile.
-                if (fileName.equals(target.getTag())) target.setImageBitmap(bmp);
+                if (!fileName.equals(target.getTag())) return;
+                if (bmp == null) {
+                    target.setVisibility(View.GONE);
+                } else {
+                    target.setVisibility(View.VISIBLE);
+                    target.setImageBitmap(bmp);
+                }
             });
         });
     }
