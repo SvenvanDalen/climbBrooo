@@ -2,10 +2,13 @@ package nl.paree.climbpro.ui.routes;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -24,13 +27,23 @@ import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
+import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.domain.weather.PrecipitationGrid;
+import nl.paree.climbpro.domain.weather.RadarTiles;
+import nl.paree.climbpro.domain.weather.RainRadarFrame;
+import nl.paree.climbpro.domain.weather.RouteRainSummary;
+import nl.paree.climbpro.domain.weather.RouteSampler;
 import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 
 import java.io.File;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +59,14 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private RouteDetailViewModel        viewModel;
     private RouteDetailAdapter          adapter;
     private String                      routeId;
+
+    /** Issue #245: forecast samples every 5 km, at most 25 (one Open-Meteo request). */
+    private static final double RAIN_SAMPLE_STEP_M = 5_000;
+    private static final int    RAIN_MAX_SAMPLES   = 25;
+    private static final int    RAIN_FORECAST_HOURS = 6;
+
+    private RainRadarOverlay rainOverlay;
+    private boolean          rainShown;
 
     public static Intent intentFor(Context ctx, String routeId) {
         Intent i = new Intent(ctx, RouteDetailActivity.class);
@@ -137,6 +158,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             StoredRoute r = viewModel.route().getValue();
             if (r != null) TirePressureAdviceDialog.show(this, r);
         });
+        binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
 
         viewModel.loadRoute(routeId);
     }
@@ -195,6 +217,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         polyline.setPoints(points);
 
         binding.mapView.getOverlays().clear();
+        if (rainOverlay != null) binding.mapView.getOverlays().add(rainOverlay);
         binding.mapView.getOverlays().add(polyline);
 
         drawSurfaceSections(route);
@@ -230,6 +253,133 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
             binding.mapView.getOverlays().add(overlay);
         }
+    }
+
+    /**
+     * Issue #245: RainViewer's latest radar image over the map plus Open-Meteo's hourly rain
+     * forecast along the route. Both fetched off the UI thread; each fails independently.
+     */
+    private void toggleRainRadar() {
+        if (rainShown) {
+            if (rainOverlay != null) binding.mapView.getOverlays().remove(rainOverlay);
+            rainOverlay = null;
+            rainShown = false;
+            binding.rainSummary.setVisibility(View.GONE);
+            binding.btnRainRadar.setText("Regenradar tonen");
+            binding.mapView.invalidate();
+            return;
+        }
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null || r.lats == null || r.lons == null || r.lats.length == 0) {
+            Toast.makeText(this, "Route heeft geen coördinaten", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        binding.btnRainRadar.setEnabled(false); // one request at a time
+        binding.btnRainRadar.setText("Regenradar laden…");
+        final List<RadarTiles.Tile> tiles = RadarTiles.forRoute(r.lats, r.lons);
+        final List<RouteSampler.Sample> samples =
+                RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
+
+        // Issue #245 fix: the radar-tile fetch and the Open-Meteo forecast fetch are independent
+        // network calls. Run them on separate threads (forecast started first) instead of one
+        // after another, so a slow radar tile source can't make the forecast wait behind up to
+        // MAX_TILES sequential 15 s call timeouts.
+        final java.util.concurrent.atomic.AtomicReference<String> radarLineRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<RainRadarOverlay> overlayRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<String> forecastRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+
+        Thread radarThread = new Thread(() -> {
+            RainRadarOverlay overlay = null;
+            String radarLine;
+            try {
+                RainViewerClient rv = new RainViewerClient();
+                RainRadarFrame frame = rv.fetchLatestFrame();
+                if (frame == null) {
+                    radarLine = "Geen radarbeeld beschikbaar";
+                } else {
+                    List<RadarTiles.Tile> got = new ArrayList<>();
+                    List<Bitmap> bitmaps = new ArrayList<>();
+                    for (RadarTiles.Tile t : tiles) {
+                        try {
+                            byte[] png = rv.fetchTile(frame.tileUrl(t));
+                            Bitmap b;
+                            try {
+                                b = BitmapFactory.decodeByteArray(png, 0, png.length);
+                            } catch (OutOfMemoryError oom) {
+                                b = null; // decode failed; skip this tile, keep the rest
+                            }
+                            if (b != null) {
+                                got.add(t);
+                                bitmaps.add(b);
+                            }
+                        } catch (java.io.InterruptedIOException timeout) {
+                            // slow network: stop asking for more tiles, keep what already decoded
+                            break;
+                        } catch (java.io.IOException ignored) {
+                            // skip this tile; the others still show
+                        }
+                    }
+                    if (got.isEmpty()) {
+                        radarLine = "Radar ophalen mislukt: geen tegels ontvangen";
+                    } else {
+                        overlay = new RainRadarOverlay(got, bitmaps);
+                        radarLine = "Radarbeeld van " + DateTimeFormatter.ofPattern("HH:mm")
+                                .withZone(ZoneId.systemDefault()).format(frame.time);
+                    }
+                }
+            } catch (Exception e) {
+                radarLine = "Radar ophalen mislukt: " + reason(e);
+            }
+            radarLineRef.set(radarLine);
+            overlayRef.set(overlay);
+        }, "rain-radar-tiles");
+
+        Thread forecastThread = new Thread(() -> {
+            String forecast;
+            try {
+                PrecipitationGrid g = new OpenMeteoClient()
+                        .fetchPrecipitation(samples, RAIN_FORECAST_HOURS);
+                forecast = RouteRainSummary.describe(samples, g, Instant.now(),
+                        RAIN_FORECAST_HOURS, ZoneId.systemDefault());
+            } catch (Exception e) {
+                forecast = "Verwachting ophalen mislukt: " + reason(e);
+            }
+            forecastRef.set(forecast);
+        }, "rain-radar-forecast");
+
+        new Thread(() -> {
+            forecastThread.start();
+            radarThread.start();
+            try {
+                forecastThread.join();
+                radarThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            final String text = radarLineRef.get() + "\n\n" + forecastRef.get()
+                    + "\n\nBron: RainViewer (radar), Open-Meteo (verwachting)";
+            final RainRadarOverlay result = overlayRef.get();
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnRainRadar.setEnabled(true);
+                binding.btnRainRadar.setText("Regenradar verbergen");
+                rainShown = true;
+                rainOverlay = result;
+                if (result != null) {
+                    binding.mapView.getOverlays().add(0, result);
+                    binding.mapView.invalidate();
+                }
+                binding.rainSummary.setText(text);
+                binding.rainSummary.setVisibility(View.VISIBLE);
+            });
+        }, "rain-radar").start();
+    }
+
+    private static String reason(Exception e) {
+        return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
     }
 
     /** Bucket-list status picker (issue #158); purely manual, never changed automatically. */
