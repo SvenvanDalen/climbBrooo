@@ -148,10 +148,24 @@ public class BikeCostCalculatorTest {
     }
 
     @Test
-    public void kmTextRoundsAndGroups() {
+    public void kmTextTruncatesAndGroups() {
         assertEquals("0 km", BikeCostCalculator.kmText(0));
-        assertEquals("1 km", BikeCostCalculator.kmText(500));
-        assertEquals("1.235 km", BikeCostCalculator.kmText(1_234_567));
+        assertEquals("0 km", BikeCostCalculator.kmText(500));
+        assertEquals("0 km", BikeCostCalculator.kmText(999));
+        assertEquals("1 km", BikeCostCalculator.kmText(1000));
+        assertEquals("1.234 km", BikeCostCalculator.kmText(1_234_567));
+    }
+
+    @Test
+    public void rateTextShowsBelowOneCentInsteadOfZero() {
+        // 1 cent over 2000 m rounds to 0 cents/km (1 * 1000 / 2000 = 0,5 -> half up = 1... use
+        // a total that truly rounds to 0): 1 cent / 3000 m -> (1000 + 1500) / 3000 = 0.
+        Bike b = bike(0, 0, false, 3);
+        b.costs.add(cost(BikeCostEntry.KIND_PART, 1));
+        BikeCostCalculator.Summary s = BikeCostCalculator.evaluate(b, null);
+        assertEquals(0, s.costPerKmCents);
+        assertTrue(s.hasRate());
+        assertEquals("< € 0,01 per km", BikeCostCalculator.rateText(s));
     }
 
     @Test

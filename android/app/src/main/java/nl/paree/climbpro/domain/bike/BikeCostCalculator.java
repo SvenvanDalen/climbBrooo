@@ -103,14 +103,16 @@ public final class BikeCostCalculator {
         return (totalCents * 1000L + meters / 2) / meters;
     }
 
-    /** Whole km, Dutch grouping: {@code "1.235 km"}. */
+    /** Whole km, truncated (not rounded) so it agrees with {@link #rateText}: {@code "1.234 km"}. */
     public static String kmText(long meters) {
-        return EuroAmount.groupThousands((Math.max(0, meters) + 500) / 1000) + " km";
+        return EuroAmount.groupThousands(Math.max(0, meters) / 1000) + " km";
     }
 
     public static String rateText(Summary s) {
         if (!s.hasRate()) return "Nog geen km: kosten per km onbekend";
         if (s.totalCents == 0) return "Nog geen kosten ingevoerd";
+        // Costs exist but the rate rounds to 0 cents/km: say so rather than showing € 0,00.
+        if (s.costPerKmCents == 0) return "< € 0,01 per km";
         return EuroAmount.format(s.costPerKmCents) + " per km";
     }
 
