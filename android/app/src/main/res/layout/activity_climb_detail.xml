@@ -40,6 +40,16 @@
                 android:layout_marginBottom="10dp"/>
 
             <TextView
+                android:id="@+id/climb_rating"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="10dp"
+                android:text="Nog niet beoordeeld"/>
+
+            <TextView
                 android:id="@+id/climb_time_estimate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -114,6 +124,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="Exporteer als GPX"/>
+
+            <Button
+                android:id="@+id/btn_rate_climb"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Klim beoordelen"/>
 
             <Button
                 android:id="@+id/btn_toggle_home_climb"

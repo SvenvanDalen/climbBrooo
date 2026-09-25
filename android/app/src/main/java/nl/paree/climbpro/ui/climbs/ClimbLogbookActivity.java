@@ -1,6 +1,8 @@
 package nl.paree.climbpro.ui.climbs;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -77,6 +79,26 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
     protected void onRestart() {
         super.onRestart();
         viewModel.loadLogbook(); // back from a Garmin import
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.logbook_menu, menu);
+        // Restore the checked state after rotation: the ViewModel survives it, the menu doesn't.
+        MenuItem sortByRating = menu.findItem(R.id.action_sort_by_rating);
+        if (sortByRating != null) sortByRating.setChecked(viewModel.isSortByRating());
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_sort_by_rating) {
+            boolean byRating = !item.isChecked();
+            item.setChecked(byRating);
+            viewModel.setSortByRating(byRating);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void renderStreak(nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak streak) {

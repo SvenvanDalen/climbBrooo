@@ -222,6 +222,20 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Saves the rider's rating of this climb (issue #244); all-null clears it. */
+    public void setRating(String routeId, int climbIndex, Integer road, Integer traffic,
+                          Integer view, String note) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbRating(routeId, climbIndex, road, traffic, view, note);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     /**
      * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
      * track, plus waypoints at every segment boundary and, when PR data exists, at the

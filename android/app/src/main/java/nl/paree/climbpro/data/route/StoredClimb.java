@@ -64,4 +64,17 @@ public final class StoredClimb {
      * directly, so override-wins-over-auto logic lives in one place.
      */
     public String shapeOverride;
+    /**
+     * The rider's own rating of this climb (issue #244), 1–5 stars per aspect, null = not
+     * rated. Verkeer: 5 = rustig. Phone-only, never on the wire. Set through
+     * {@code RouteRepository#setClimbRating} (which also updates other stored instances of the
+     * same {@code ClimbIdentity}) and carried across resync by
+     * {@code RouteRepository#mergePreviousClimbUserData}. Always read through
+     * {@code domain.climb.ClimbRating}, which treats out-of-range values as unrated.
+     */
+    public Integer ratingRoad;
+    public Integer ratingTraffic;
+    public Integer ratingView;
+    /** Optional short review text for the rating (issue #244). Null when empty. */
+    public String ratingNote;
 }

@@ -158,6 +158,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             binding.btnToggleHomeClimb.setText(climb.isHome
                     ? "Thuisklim — startlocatie wordt gewazigd bij export"
                     : "Markeer als thuisklim");
+            binding.climbRating.setText(
+                    nl.paree.climbpro.domain.climb.ClimbRating.detailText(climb));
+            binding.btnRateClimb.setText(
+                    nl.paree.climbpro.domain.climb.ClimbRating.isRated(climb)
+                            || climb.ratingNote != null
+                            ? "Beoordeling aanpassen" : "Klim beoordelen");
             tryDrawMap();
             updateManualRefText();
         });
@@ -274,6 +280,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
+        binding.btnRateClimb.setOnClickListener(v -> showRatingDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
         binding.btnToggleHomeClimb.setOnClickListener(v -> {
@@ -689,6 +696,65 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Annuleer", null)
                 .show();
+    }
+
+    /** RatingBar value → 1–5, or null when the rider left it at 0 stars. */
+    static Integer starsOrNull(float rating) {
+        int stars = Math.round(rating);
+        return nl.paree.climbpro.domain.climb.ClimbRating.normalize(stars);
+    }
+
+    /**
+     * Rate this climb (issue #244): wegdek, verkeer (5 = rustig) and uitzicht, 0–5 stars each
+     * (0 = niet beoordeeld), plus an optional note. "Wissen" clears the whole rating.
+     */
+    private void showRatingDialog() {
+        android.widget.LinearLayout container = new android.widget.LinearLayout(this);
+        container.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        container.setPadding(pad, pad, pad, 0);
+
+        StoredClimb c = loadedClimb;
+        android.widget.RatingBar road = addRatingRow(container, "Wegdek",
+                c != null ? c.ratingRoad : null);
+        android.widget.RatingBar traffic = addRatingRow(container, "Verkeer (5 = rustig)",
+                c != null ? c.ratingTraffic : null);
+        android.widget.RatingBar view = addRatingRow(container, "Uitzicht",
+                c != null ? c.ratingView : null);
+
+        EditText note = new EditText(this);
+        note.setHint("Notitie (optioneel)");
+        if (c != null && c.ratingNote != null) note.setText(c.ratingNote);
+        container.addView(note);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Klim beoordelen")
+                .setView(container)
+                .setPositiveButton("Opslaan", (d, w) -> viewModel.setRating(routeId, climbIndex,
+                        starsOrNull(road.getRating()),
+                        starsOrNull(traffic.getRating()),
+                        starsOrNull(view.getRating()),
+                        note.getText().toString()))
+                .setNeutralButton("Wissen", (d, w) ->
+                        viewModel.setRating(routeId, climbIndex, null, null, null, null))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    private android.widget.RatingBar addRatingRow(android.widget.LinearLayout container,
+                                                  String label, Integer current) {
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText(label);
+        container.addView(tv);
+        android.widget.RatingBar bar = new android.widget.RatingBar(this);
+        bar.setNumStars(nl.paree.climbpro.domain.climb.ClimbRating.MAX_STARS);
+        bar.setStepSize(1f);
+        bar.setRating(current != null ? current : 0f);
+        // WRAP_CONTENT is required: a match_parent RatingBar draws extra stars.
+        container.addView(bar, new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+        return bar;
     }
 
     private void setupBulkSurfaceSetter() {
