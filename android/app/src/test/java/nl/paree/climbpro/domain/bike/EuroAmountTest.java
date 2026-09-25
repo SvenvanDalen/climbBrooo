@@ -21,6 +21,12 @@ public class EuroAmountTest {
     }
 
     @Test
+    public void stripsNoBreakSpaces() {
+        assertEquals(4500, EuroAmount.parseCents("€ 45"));
+        assertEquals(1250, EuroAmount.parseCents("12,50 "));
+    }
+
+    @Test
     public void dotWithThreeDigitsIsAThousandsSeparator() {
         assertEquals(123400, EuroAmount.parseCents("1.234"));
         assertEquals(99_999_900L, EuroAmount.parseCents("999.999"));

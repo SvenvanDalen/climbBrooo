@@ -21,7 +21,7 @@ public final class EuroAmount {
 
     public static long parseCents(String input) {
         if (input == null) return INVALID;
-        String s = input.replace(' ', ' ').replace("€", "").replaceAll("\\s+", "");
+        String s = input.replace(' ', ' ').replace("€", "").replaceAll("\\s+", "");
         if (s.isEmpty()) return INVALID;
 
         String intPart;
