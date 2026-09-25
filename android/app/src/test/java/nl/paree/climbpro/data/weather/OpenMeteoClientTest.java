@@ -19,4 +19,10 @@ public class OpenMeteoClientTest {
                 + "&wind_speed_unit=kmh&timezone=UTC&forecast_days=2",
                 OpenMeteoClient.url(50.85, 5.69, Double.NaN));
     }
+
+    @Test public void precipitationUrlAsksForPastDaysInUtc() {
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.85000&longitude=5.69000"
+                + "&hourly=precipitation&timezone=UTC&past_days=4&forecast_days=1",
+                OpenMeteoClient.precipitationUrl(50.85, 5.69));
+    }
 }
