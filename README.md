@@ -103,6 +103,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
+- **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
+  radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
+  the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
 
 ---
 
