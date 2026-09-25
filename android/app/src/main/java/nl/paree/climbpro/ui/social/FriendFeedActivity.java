@@ -20,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.social.FriendFeedEntry;
+import nl.paree.climbpro.domain.social.FriendShareCode;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,8 +34,12 @@ import java.util.Locale;
  */
 public final class FriendFeedActivity extends AppCompatActivity {
 
-    /** Rows rendered at most; the store itself keeps up to 100 per friend. */
+    /** Rows rendered at most (a display cap, not a data cap; the store keeps up to 100 per friend). */
     private static final int MAX_ROWS = 200;
+    /** Cap for text prefilled into the import field from an incoming share: the code itself is
+     * bounded by {@link FriendShareCode#MAX_CODE_CHARS}, plus slack for the surrounding chat
+     * message text (e.g. our own share intro) the code was embedded in. */
+    private static final int PREFILL_MAX_CHARS = FriendShareCode.MAX_CODE_CHARS + 500;
     private static final Locale NL = new Locale("nl");
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE d MMM yyyy", NL);
@@ -87,10 +92,18 @@ public final class FriendFeedActivity extends AppCompatActivity {
         viewModel.load();
     }
 
+    /**
+     * A share received via {@code ACTION_SEND} comes from any app the user picked in a share
+     * sheet, so it must not be imported silently — it opens the same confirmation dialog as
+     * manual paste, prefilled with the shared text, and only imports when the user taps
+     * "Importeren".
+     */
     private void handleIncomingShare(Intent intent) {
         if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return;
         CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
-        viewModel.importCode(text == null ? null : text.toString());
+        if (text == null) return;
+        String s = text.toString();
+        showImportDialog(s.length() > PREFILL_MAX_CHARS ? s.substring(0, PREFILL_MAX_CHARS) : s);
     }
 
     private void showShareDialog() {
@@ -117,11 +130,21 @@ public final class FriendFeedActivity extends AppCompatActivity {
     }
 
     private void showImportDialog() {
+        showImportDialog(null);
+    }
+
+    /** @param prefill text to prefill the field with (e.g. an incoming share); when null, falls
+     *  back to the clipboard if it looks like it holds a share code. */
+    private void showImportDialog(String prefill) {
         EditText input = new EditText(this);
         input.setHint("Plak hier de deelcode");
         input.setMinLines(3);
-        String clip = clipboardText();
-        if (clip != null && clip.contains("CPF")) input.setText(clip);
+        String text = prefill;
+        if (text == null) {
+            String clip = clipboardText();
+            if (clip != null && clip.contains("CPF")) text = clip;
+        }
+        if (text != null) input.setText(text);
         new AlertDialog.Builder(this)
                 .setTitle("Code van een vriend")
                 .setView(input)
