@@ -151,6 +151,21 @@
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
+        <!-- Friends' feed (issue #240). Exported only for text shares, so a friend's chat
+             message with a CPF1: code can be sent straight to ClimbPro; the decoder treats
+             the text as untrusted. -->
+        <activity
+            android:name=".ui.social.FriendFeedActivity"
+            android:exported="true"
+            android:label="Vriendenfeed"
+            android:parentActivityName=".ui.routes.RouteListActivity">
+            <intent-filter android:label="Vriendenfeed (ClimbPro)">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".ui.tire.TirePressureLogActivity"
             android:exported="false"
