@@ -29,9 +29,13 @@ public final class WarrantyReminderWorker extends Worker {
     private static final String TAG = "WarrantyReminderWorker";
     private static final String UNIQUE = "climbpro_warranty_reminder";
 
-    /** Receives each part whose reminder is due; the worker posts a notification. */
+    /**
+     * Receives each part whose reminder is due; the worker posts a notification. Returns
+     * whether the notification was actually shown — the caller only marks the reminder sent
+     * when it was, so a denied/disabled permission doesn't silently swallow the reminder.
+     */
     interface ReminderSink {
-        void remind(MaintenanceComponent c);
+        boolean remind(MaintenanceComponent c);
     }
 
     public WarrantyReminderWorker(@NonNull Context context, @NonNull WorkerParameters params) {
@@ -63,8 +67,11 @@ public final class WarrantyReminderWorker extends Worker {
     }
 
     /**
-     * Reminds every due part and records it as sent. Notify-then-mark: if the mark fails the
-     * retry re-posts under the same notification id (replaces, doesn't duplicate).
+     * Reminds every due part and records it as sent, but only when it was actually shown — a
+     * denied/disabled notification leaves the part unmarked so it is retried on a later run
+     * (e.g. once the user grants the permission), still within the reminder window. Notify-
+     * then-mark: if the mark fails the retry re-posts under the same notification id (replaces,
+     * doesn't duplicate).
      */
     static int runOnce(MaintenanceRepository repo, ReminderSink sink, long nowEpochSec,
                        ZoneId zone) throws IOException {
@@ -72,7 +79,7 @@ public final class WarrantyReminderWorker extends Worker {
         int sent = 0;
         for (MaintenanceComponent c
                 : WarrantyCalculator.dueReminders(log.components, nowEpochSec, zone)) {
-            sink.remind(c);
+            if (!sink.remind(c)) continue;
             repo.markWarrantyReminderSent(c.id, WarrantyCalculator.expiryEpochSec(c, zone));
             sent++;
         }

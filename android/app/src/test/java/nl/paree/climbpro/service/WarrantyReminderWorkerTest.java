@@ -50,11 +50,13 @@ public class WarrantyReminderWorkerTest {
 
         List<String> notified = new ArrayList<>();
         long now = at(2027, 3, 1);
-        assertEquals(1, WarrantyReminderWorker.runOnce(repo, c -> notified.add(c.id), now, ZONE));
+        assertEquals(1, WarrantyReminderWorker.runOnce(
+                repo, c -> { notified.add(c.id); return true; }, now, ZONE));
         // Same day (retry) and next day: nothing new.
-        assertEquals(0, WarrantyReminderWorker.runOnce(repo, c -> notified.add(c.id), now, ZONE));
         assertEquals(0, WarrantyReminderWorker.runOnce(
-                new MaintenanceRepository(app), c -> notified.add(c.id), now + 86_400, ZONE));
+                repo, c -> { notified.add(c.id); return true; }, now, ZONE));
+        assertEquals(0, WarrantyReminderWorker.runOnce(new MaintenanceRepository(app),
+                c -> { notified.add(c.id); return true; }, now + 86_400, ZONE));
         assertEquals(Collections.singletonList(id), notified);
     }
 
@@ -62,7 +64,7 @@ public class WarrantyReminderWorkerTest {
     public void noWarrantiesMeansNoNotificationAndNoWrite() throws Exception {
         List<String> notified = new ArrayList<>();
         assertEquals(0, WarrantyReminderWorker.runOnce(new MaintenanceRepository(app),
-                c -> notified.add(c.id), at(2027, 3, 1), ZONE));
+                c -> { notified.add(c.id); return true; }, at(2027, 3, 1), ZONE));
         assertEquals(0, notified.size());
         assertFalse(file.exists());
     }
@@ -75,5 +77,30 @@ public class WarrantyReminderWorkerTest {
         assertEquals(0, WarrantyReminderWorker.runOnce(new MaintenanceRepository(app),
                 c -> { throw new AssertionError("no reminder expected"); },
                 at(2027, 3, 1), ZONE));
+    }
+
+    @Test
+    public void unshownReminderIsNotMarkedAndIsRetriedNextRun() throws Exception {
+        MaintenanceRepository repo = new MaintenanceRepository(app);
+        String id = repo.upsertComponent(null, "Wielset", 0, 0, false, 0);
+        repo.setWarranty(id, at(2025, 3, 15), 24); // expires 15-3-2027
+
+        List<String> notified = new ArrayList<>();
+        long now = at(2027, 3, 1);
+        // Sink reports the notification was not actually shown (e.g. permission denied).
+        assertEquals(0, WarrantyReminderWorker.runOnce(
+                repo, c -> { notified.add(c.id); return false; }, now, ZONE));
+        assertEquals(Collections.singletonList(id), notified);
+
+        // Not marked sent, so a later run (e.g. after the user grants permission) reminds again.
+        assertEquals(1, WarrantyReminderWorker.runOnce(
+                repo, c -> { notified.add(c.id); return true; }, now + 86_400, ZONE));
+        assertEquals(2, notified.size());
+
+        // Now marked sent: no further reminder within the same expiry window.
+        assertEquals(0, WarrantyReminderWorker.runOnce(
+                new MaintenanceRepository(app), c -> { notified.add(c.id); return true; },
+                now + 2 * 86_400, ZONE));
+        assertEquals(2, notified.size());
     }
 }

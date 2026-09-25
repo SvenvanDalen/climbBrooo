@@ -40,10 +40,27 @@ public final class WarrantyNotifier {
         nm.createNotificationChannel(channel);
     }
 
-    /** Notification id is derived from the part id, so a retry replaces instead of duplicating. */
-    public static void notify(Context context, MaintenanceComponent c, long nowEpochSec,
-                              ZoneId zone) {
+    /**
+     * Notification id is derived from the part id, so a retry replaces instead of duplicating.
+     * Returns whether the notification was actually shown, so the caller can leave the part's
+     * reminder unmarked (and retry later) when it wasn't.
+     */
+    public static boolean notify(Context context, MaintenanceComponent c, long nowEpochSec,
+                                 ZoneId zone) {
+        NotificationManagerCompat nmc = NotificationManagerCompat.from(context);
+        if (!nmc.areNotificationsEnabled()) {
+            Log.w(TAG, "Notifications disabled, skipping warranty reminder");
+            return false;
+        }
         ensureChannel(context);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager nm = context.getSystemService(NotificationManager.class);
+            NotificationChannel channel = nm != null ? nm.getNotificationChannel(CHANNEL_ID) : null;
+            if (channel != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                Log.w(TAG, "Warranty channel disabled, skipping warranty reminder");
+                return false;
+            }
+        }
         PendingIntent open = PendingIntent.getActivity(context, 0,
                 MaintenanceActivity.intentFor(context),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
@@ -55,11 +72,12 @@ public final class WarrantyNotifier {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true);
         try {
-            NotificationManagerCompat.from(context)
-                    .notify(("warranty_" + c.id).hashCode(), builder.build());
+            nmc.notify(("warranty_" + c.id).hashCode(), builder.build());
+            return true;
         } catch (SecurityException e) {
             // POST_NOTIFICATIONS not granted (Android 13+) — don't crash the worker over it.
             Log.w(TAG, "Notification permission not granted, skipping warranty reminder");
+            return false;
         }
     }
 }
