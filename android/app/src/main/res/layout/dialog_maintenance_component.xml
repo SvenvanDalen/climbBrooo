@@ -49,6 +49,27 @@
             android:text="Indoorritten (VirtualRide) meetellen" />
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:text="Garantie"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_purchase_date"
+            style="@style/Widget.ClimbPro.Button.Outline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <EditText
+            android:id="@+id/input_warranty_months"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Garantietermijn in maanden (leeg = geen)"
+            android:importantForAutofill="no"
+            android:inputType="number" />
+
+        <TextView
             android:id="@+id/history"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
