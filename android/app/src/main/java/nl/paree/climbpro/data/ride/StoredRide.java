@@ -11,8 +11,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public final class StoredRide {
     public long    activityId;
     public String  name;
-    /** Strava activity type, e.g. "Ride", "VirtualRide", "GravelRide". */
+    /** Strava's legacy activity type, e.g. "Ride", "VirtualRide" — gravel/MTB rides still say
+     *  "Ride" here; see {@link #sportType}. */
     public String  type;
+    /**
+     * Strava's newer, more specific classification (e.g. "GravelRide", "MountainBikeRide"),
+     * used by the wet-ride "modder" rule (issue #234). Null for rides archived before this
+     * field was added, or when Strava didn't report it — old rides.json entries stay readable.
+     */
+    public String  sportType;
     /** Activity start (epoch seconds); 0 when the start date failed to parse. */
     public long    startEpochSec;
     public float   distanceM;

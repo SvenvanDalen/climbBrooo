@@ -2,6 +2,7 @@ package nl.paree.climbpro.data.weather;
 
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -36,6 +37,29 @@ public final class OpenMeteoClient {
                 throw new IOException("weerdienst gaf HTTP " + resp.code());
             }
             return HourlyForecast.parse(resp.body().string());
+        }
+    }
+
+    /**
+     * Past hourly precipitation for the wet-ride check (issue #234). {@code past_days=5}
+     * covers rides that ended up to 3 days ago ({@code WetRideDetector#MAX_AGE_SEC}) plus the
+     * 24 h off-road lead-in counted back from that ride's start — a ride ending right at the
+     * 3-day limit still needs weather from up to 4 days before now.
+     */
+    public static String precipitationUrl(double lat, double lon) {
+        return String.format(Locale.US,
+                "https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=precipitation&timezone=UTC&past_days=5&forecast_days=1",
+                lat, lon);
+    }
+
+    public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
+        Request req = new Request.Builder().url(precipitationUrl(lat, lon)).build();
+        try (Response resp = http.newCall(req).execute()) {
+            if (!resp.isSuccessful() || resp.body() == null) {
+                throw new IOException("weerdienst gaf HTTP " + resp.code());
+            }
+            return HourlyPrecipitation.parse(resp.body().string());
         }
     }
 }

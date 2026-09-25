@@ -24,6 +24,7 @@ public final class ClimbProApplication extends Application {
                 new File(getCacheDir(), "osmdroid"));
 
         nl.paree.climbpro.service.PlannedClimbNotifier.ensureChannel(this);
+        nl.paree.climbpro.service.WetRideNotifier.ensureChannel(this);
 
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);

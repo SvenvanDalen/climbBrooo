@@ -17,8 +17,8 @@ public enum PrivacyCategory {
             "climb_attempts.json", "incomplete_climb_attempts.json"),
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
-                    + "start- en eindpunt.",
-            "rides.json"),
+                    + "start- en eindpunt, plus de gemeten regen voor de schoonmaakherinnering.",
+            "rides.json", "wet_ride_checks.json"),
     TIRE_PRESSURE("Bandenspanning-logboek",
             "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",
             "tire_pressure_log.json"),
