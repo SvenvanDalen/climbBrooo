@@ -185,6 +185,10 @@
             android:name=".ui.goals.ElevationGoalActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.goals.GoalEventActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.collections.CollectionDetailActivity"
