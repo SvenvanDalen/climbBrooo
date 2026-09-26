@@ -65,6 +65,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_sunscreen"
+        android:title="Zonnebrand-check"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_unfinished_climbs"
         android:title="Nooit voltooide klimmen"
         app:showAsAction="never"/>
