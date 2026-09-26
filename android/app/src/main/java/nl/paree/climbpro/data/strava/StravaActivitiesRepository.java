@@ -75,8 +75,11 @@ public final class StravaActivitiesRepository {
      */
     private static final long   RIDE_CURSOR_OVERLAP_SEC = 3L * 24 * 60 * 60;
     private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
-    /** Streams the ride-archive analysis needs (issue #225); absent keys are simply omitted. */
-    static final String RIDE_STREAM_KEYS = "time,distance";
+    /**
+     * Streams the ride-archive analysis needs (issues #225, #224); Strava omits keys a ride
+     * doesn't have, such as watts without a power meter.
+     */
+    static final String RIDE_STREAM_KEYS = "time,distance,watts,altitude";
     /**
      * Stream requests per {@link #analyzeRideStreams()} run. Strava allows 100 reads per 15
      * minutes, shared with climb matching; a year of rides fills in over a few syncs instead.
@@ -501,7 +504,10 @@ public final class StravaActivitiesRepository {
         return out.size();
     }
 
-    /** Null when the time or distance stream is missing; null distance samples carry forward. */
+    /**
+     * Null when the time or distance stream is missing. Null distance and altitude samples carry
+     * the previous value forward; null power samples become NaN (not recorded).
+     */
     static RideStreams toRideStreams(StravaStreamsDto s) {
         if (s == null || s.time == null || s.time.data == null
                 || s.distance == null || s.distance.data == null) return null;
@@ -520,7 +526,29 @@ public final class StravaActivitiesRepository {
             t[i] = lastT;
             d[i] = last;
         }
-        return new RideStreams(t, d);
+        return new RideStreams(t, d, toWatts(s.watts, t.length), toAltitude(s.altitude, t.length));
+    }
+
+    private static double[] toWatts(StravaStreamsDto.NumberStream s, int n) {
+        if (s == null || s.data == null || s.data.size() != n) return null;
+        double[] w = new double[n];
+        for (int i = 0; i < n; i++) {
+            Double v = s.data.get(i);
+            w[i] = v != null ? v : Double.NaN;
+        }
+        return w;
+    }
+
+    private static double[] toAltitude(StravaStreamsDto.NumberStream s, int n) {
+        if (s == null || s.data == null || s.data.size() != n) return null;
+        double[] a = new double[n];
+        Double last = null;
+        for (int i = 0; i < n; i++) {
+            Double v = s.data.get(i);
+            if (v != null) last = v;
+            a[i] = last != null ? last : Double.NaN;
+        }
+        return a;
     }
 
     /** Ride, VirtualRide, EBikeRide, GravelRide, MountainBikeRide, ... — not runs/walks. */
