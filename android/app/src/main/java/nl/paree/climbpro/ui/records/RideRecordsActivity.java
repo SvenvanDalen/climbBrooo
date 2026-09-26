@@ -22,6 +22,7 @@ import nl.paree.climbpro.domain.ride.FastestDistanceCalculator;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Records;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Streak;
+import nl.paree.climbpro.domain.ride.SprintCalculator;
 
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
@@ -33,7 +34,8 @@ import java.util.Locale;
  * "Records" screen (issue #156): longest ride, highest average speed, most elevation, longest
  * moving time and most consecutive riding days, from the ride archive (issue #160). Each record
  * shows its value, date and ride name. Below that the fastest 10, 40 and 100 km inside rides
- * (issue #225), from the stream analysis. Phone-only.
+ * (issue #225) and the best sprints by power and by speed (issue #224), from the stream
+ * analysis. Phone-only.
  */
 public final class RideRecordsActivity extends AppCompatActivity {
 
@@ -69,6 +71,7 @@ public final class RideRecordsActivity extends AppCompatActivity {
             if (none) return;
             render(container, st.records);
             renderFastest(container, st.fastest, st.ridesAwaitingAnalysis);
+            renderSprints(container, st.sprints);
         });
     }
 
@@ -113,13 +116,8 @@ public final class RideRecordsActivity extends AppCompatActivity {
 
     private void renderFastest(LinearLayout container,
                                List<FastestDistanceCalculator.Distance> fastest, int awaiting) {
-        TextView header = new TextView(this);
-        header.setText("Snelste afstanden binnen een rit");
-        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        header.setTypeface(header.getTypeface(), Typeface.BOLD);
+        addHeader(container, "Snelste afstanden binnen een rit");
         int pad = Math.round(16 * getResources().getDisplayMetrics().density);
-        header.setPadding(pad, pad, pad, 0);
-        container.addView(header);
 
         if (awaiting > 0) {
             TextView note = new TextView(this);
@@ -150,6 +148,56 @@ public final class RideRecordsActivity extends AppCompatActivity {
             addRow(container, title, String.format(Locale.getDefault(), "%s  (%.1f km/u)",
                     DurationFormat.format(best.seconds), best.avgSpeedMps() * 3.6), detail.toString());
         }
+    }
+
+    private void renderSprints(LinearLayout container, SprintCalculator.Result sprints) {
+        addHeader(container, "Sprints");
+        if (sprints == null || sprints.isEmpty()) {
+            addRow(container, "Snelste sprints", "–",
+                    "Nog geen sprints gevonden. Vermogenssprints hebben een powermeter nodig; "
+                            + "snelheidssprints tellen alleen op vlakke of oplopende weg.");
+            return;
+        }
+        String nl = System.lineSeparator();
+        if (!sprints.byPower.isEmpty()) {
+            SprintCalculator.PowerSprint best = sprints.byPower.get(0);
+            StringBuilder detail = new StringBuilder(sprintLabel(best.ride, best.atSec));
+            if (best.watts15s > 0) detail.append(nl).append("15 s: ").append(best.watts15s).append(" W");
+            for (int i = 1; i < sprints.byPower.size(); i++) {
+                SprintCalculator.PowerSprint p = sprints.byPower.get(i);
+                detail.append(nl).append(i + 1).append(". ").append(p.watts5s)
+                        .append(" W  •  ").append(sprintLabel(p.ride, p.atSec));
+            }
+            addRow(container, "Hoogste 5 s-vermogen", best.watts5s + " W", detail.toString());
+        }
+        if (!sprints.bySpeed.isEmpty()) {
+            SprintCalculator.SpeedSprint best = sprints.bySpeed.get(0);
+            StringBuilder detail = new StringBuilder(sprintLabel(best.ride, best.atSec));
+            for (int i = 1; i < sprints.bySpeed.size(); i++) {
+                SprintCalculator.SpeedSprint s = sprints.bySpeed.get(i);
+                detail.append(nl).append(i + 1).append(". ")
+                        .append(String.format(Locale.getDefault(), "%.1f km/u", s.speedMps * 3.6))
+                        .append("  •  ").append(sprintLabel(s.ride, s.atSec));
+            }
+            addRow(container, "Hoogste snelheid over 10 s (vlak of bergop)",
+                    String.format(Locale.getDefault(), "%.1f km/u", best.speedMps * 3.6),
+                    detail.toString());
+        }
+    }
+
+    /** Ride label plus where in the ride the sprint started. */
+    private String sprintLabel(StoredRide r, int atSec) {
+        return rideLabel(r) + "  •  na " + DurationFormat.format(atSec);
+    }
+
+    private void addHeader(LinearLayout container, String text) {
+        TextView header = new TextView(this);
+        header.setText(text);
+        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        header.setTypeface(header.getTypeface(), Typeface.BOLD);
+        int pad = Math.round(16 * getResources().getDisplayMetrics().density);
+        header.setPadding(pad, pad, pad, 0);
+        container.addView(header);
     }
 
     private String rideLabel(StoredRide r) {
