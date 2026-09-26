@@ -25,6 +25,10 @@ public enum PrivacyCategory {
     MAINTENANCE("Onderhoud",
             "Je onderdelen met onderhoudsintervallen en de data waarop je ze onderhield.",
             "maintenance.json"),
+    COMEBACK_PLAN("Terugkomstplan",
+            "Je actieve opbouwplan na een pauze of blessure (startdatum en of het om een "
+                    + "blessure gaat).",
+            "comeback_plan.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),
