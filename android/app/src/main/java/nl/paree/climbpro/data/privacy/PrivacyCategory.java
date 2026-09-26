@@ -25,6 +25,10 @@ public enum PrivacyCategory {
     MAINTENANCE("Onderhoud",
             "Je onderdelen met onderhoudsintervallen en de data waarop je ze onderhield.",
             "maintenance.json"),
+    BATTERIES("Accu's",
+            "Je accu's (e-shifting, verlichting, powermeter) met de laatste laaddatum en "
+                    + "herinneringsinterval.",
+            "battery_status.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),
