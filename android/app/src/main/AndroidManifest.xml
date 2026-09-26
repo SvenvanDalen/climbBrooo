@@ -150,6 +150,10 @@
             android:name=".ui.records.RideRecordsActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.records.HeartRateDriftActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.tire.TirePressureLogActivity"

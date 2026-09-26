@@ -76,10 +76,10 @@ public final class StravaActivitiesRepository {
     private static final long   RIDE_CURSOR_OVERLAP_SEC = 3L * 24 * 60 * 60;
     private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
     /**
-     * Streams the ride-archive analysis needs (issues #225, #224); Strava omits keys a ride
-     * doesn't have, such as watts without a power meter.
+     * Streams the ride-archive analysis needs (issues #225, #224, #222); Strava omits keys a
+     * ride doesn't have, such as watts without a power meter.
      */
-    static final String RIDE_STREAM_KEYS = "time,distance,watts,altitude";
+    static final String RIDE_STREAM_KEYS = "time,distance,watts,altitude,heartrate";
     /**
      * Stream requests per {@link #analyzeRideStreams()} run. Strava allows 100 reads per 15
      * minutes, shared with climb matching; a year of rides fills in over a few syncs instead.
@@ -506,7 +506,7 @@ public final class StravaActivitiesRepository {
 
     /**
      * Null when the time or distance stream is missing. Null distance and altitude samples carry
-     * the previous value forward; null power samples become NaN (not recorded).
+     * the previous value forward; null power and heart-rate samples become NaN (not recorded).
      */
     static RideStreams toRideStreams(StravaStreamsDto s) {
         if (s == null || s.time == null || s.time.data == null
@@ -526,10 +526,11 @@ public final class StravaActivitiesRepository {
             t[i] = lastT;
             d[i] = last;
         }
-        return new RideStreams(t, d, toWatts(s.watts, t.length), toAltitude(s.altitude, t.length));
+        return new RideStreams(t, d, toNaNGaps(s.watts, t.length),
+                toAltitude(s.altitude, t.length), toNaNGaps(s.heartrate, t.length));
     }
 
-    private static double[] toWatts(StravaStreamsDto.NumberStream s, int n) {
+    private static double[] toNaNGaps(StravaStreamsDto.NumberStream s, int n) {
         if (s == null || s.data == null || s.data.size() != n) return null;
         double[] w = new double[n];
         for (int i = 0; i < n; i++) {
