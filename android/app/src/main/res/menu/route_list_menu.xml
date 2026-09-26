@@ -65,6 +65,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_comeback_plan"
+        android:title="Terugkomstplan"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_unfinished_climbs"
         android:title="Nooit voltooide klimmen"
         app:showAsAction="never"/>
