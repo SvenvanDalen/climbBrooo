@@ -125,6 +125,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_goal_event"
+        android:title="Doelevenement"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
         app:showAsAction="never"/>
