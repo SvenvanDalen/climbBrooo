@@ -29,4 +29,12 @@ public final class StoredRide {
     public Double  startLon;
     public Double  endLat;
     public Double  endLon;
+    /**
+     * Power summary for the training load (issue #220): Strava's average watts (estimated when
+     * {@link #deviceWatts} is false), weighted average (normalized) watts from a power meter,
+     * null when Strava reports none.
+     */
+    public Float   avgWatts;
+    public Integer weightedAvgWatts;
+    public boolean deviceWatts;
 }

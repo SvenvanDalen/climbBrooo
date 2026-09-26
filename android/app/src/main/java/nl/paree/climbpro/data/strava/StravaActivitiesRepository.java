@@ -65,6 +65,13 @@ public final class StravaActivitiesRepository {
     /** Separate cursor for the ride archive (issue #160), independent of climb matching. */
     private static final String PREF_RIDES_LAST = "rides_last_sync_epoch_sec";
     /**
+     * Version of the fields {@link #toStoredRide} fills. When it grows (2: power summary, issue
+     * #220), the next archive sync re-lists the whole past year once so older rides get the new
+     * fields too; that's the cheap list endpoint only, and upsert replaces the old entries.
+     */
+    static final String PREF_RIDES_SCHEMA = "rides_schema_version";
+    static final int RIDES_SCHEMA_VERSION = 2;
+    /**
      * Strava's {@code after} filters on activity START time, so a ride uploaded after the last
      * archive sync but started before it would be skipped forever. Re-listing a few days of
      * overlap catches late uploads; {@code RideRepository#upsertAll} makes the overlap harmless.
@@ -416,7 +423,8 @@ public final class StravaActivitiesRepository {
 
     private int syncRideArchive(String token) throws IOException {
         long nowSec = System.currentTimeMillis() / 1000L;
-        long last   = prefs.getLong(PREF_RIDES_LAST, 0L);
+        long last   = prefs.getInt(PREF_RIDES_SCHEMA, 1) < RIDES_SCHEMA_VERSION
+                ? 0L : prefs.getLong(PREF_RIDES_LAST, 0L);
         long after  = last > 0 ? last - RIDE_CURSOR_OVERLAP_SEC : nowSec - ONE_YEAR_SEC;
 
         List<StoredRide> rides = new ArrayList<>();
@@ -438,7 +446,10 @@ public final class StravaActivitiesRepository {
         }
         // Rides gathered before an aborted page are still valid; upsert is idempotent.
         rideRepo.upsertAll(rides);
-        if (complete) prefs.edit().putLong(PREF_RIDES_LAST, nowSec).apply();
+        if (complete) {
+            prefs.edit().putLong(PREF_RIDES_LAST, nowSec)
+                    .putInt(PREF_RIDES_SCHEMA, RIDES_SCHEMA_VERSION).apply();
+        }
         return rides.size();
     }
 
@@ -460,6 +471,10 @@ public final class StravaActivitiesRepository {
         r.avgSpeedMps    = act.averageSpeed;
         r.maxSpeedMps    = act.maxSpeed;
         r.commute        = act.commute;
+        r.avgWatts         = act.averageWatts != null && act.averageWatts > 0 ? act.averageWatts : null;
+        r.weightedAvgWatts = act.weightedAverageWatts != null && act.weightedAverageWatts > 0
+                ? act.weightedAverageWatts : null;
+        r.deviceWatts      = act.deviceWatts;
         if (act.startLatLng != null && act.startLatLng.size() >= 2) {
             r.startLat = act.startLatLng.get(0);
             r.startLon = act.startLatLng.get(1);

@@ -831,4 +831,45 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(0, created);
         assertEquals(1, new nl.paree.climbpro.data.ride.RideRepository(app).loadAll().size());
     }
+
+    // ---- power summary + one-time archive backfill (issue #220) ----
+
+    @Test
+    public void toStoredRide_keepsPowerSummary() {
+        StravaActivityDto a = activity(1L, "Ride", 42_000f);
+        a.averageWatts = 190f;
+        a.weightedAverageWatts = 212;
+        a.deviceWatts = true;
+        nl.paree.climbpro.data.ride.StoredRide r = StravaActivitiesRepository.toStoredRide(a);
+        assertEquals(190f, r.avgWatts, 0.01f);
+        assertEquals(212, (int) r.weightedAvgWatts);
+        assertTrue(r.deviceWatts);
+
+        StravaActivityDto none = activity(2L, "Ride", 42_000f);
+        nl.paree.climbpro.data.ride.StoredRide r2 = StravaActivitiesRepository.toStoredRide(none);
+        assertEquals(null, r2.avgWatts);
+        assertEquals(null, r2.weightedAvgWatts);
+        assertFalse(r2.deviceWatts);
+    }
+
+    @Test
+    public void syncRideArchive_relistsTheYearOnceAfterSchemaUpgrade() throws Exception {
+        long now = System.currentTimeMillis() / 1000L;
+        SharedPreferences prefs = app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE);
+        prefs.edit().putLong("rides_last_sync_epoch_sec", now).commit(); // pre-#220 cursor
+        stubActivityList(Collections.singletonList(activity(1L, "Ride", 42_000f)));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        repo.syncRideArchive();
+        repo.syncRideArchive();
+
+        org.mockito.ArgumentCaptor<Long> after = org.mockito.ArgumentCaptor.forClass(Long.class);
+        verify(api, times(2)).listActivities(anyString(), after.capture(), eq(1), anyInt());
+        long oneYear = 365L * 24 * 60 * 60;
+        assertTrue("first run backfills a year", after.getAllValues().get(0) <= now - oneYear + 60);
+        assertTrue("second run is incremental", after.getAllValues().get(1) > now - oneYear / 2);
+        assertEquals(StravaActivitiesRepository.RIDES_SCHEMA_VERSION,
+                prefs.getInt(StravaActivitiesRepository.PREF_RIDES_SCHEMA, 0));
+    }
 }
