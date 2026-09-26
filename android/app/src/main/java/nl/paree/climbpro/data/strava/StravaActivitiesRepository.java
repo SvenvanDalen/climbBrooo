@@ -6,7 +6,9 @@ import android.util.Log;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.data.ride.RideRepository;
+import nl.paree.climbpro.data.ride.RideStreamStatsRepository;
 import nl.paree.climbpro.data.ride.StoredRide;
+import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.KnownClimbCatalog;
@@ -26,6 +28,8 @@ import nl.paree.climbpro.domain.strava.StravaTitleTemplateRenderer;
 import nl.paree.climbpro.domain.strava.StravaTitleUpdateDecision;
 import nl.paree.climbpro.domain.matching.ClimbEntryOnlyDetector;
 import nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector;
+import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
+import nl.paree.climbpro.domain.ride.RideStreams;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -71,6 +75,13 @@ public final class StravaActivitiesRepository {
      */
     private static final long   RIDE_CURSOR_OVERLAP_SEC = 3L * 24 * 60 * 60;
     private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
+    /** Streams the ride-archive analysis needs (issue #225); absent keys are simply omitted. */
+    static final String RIDE_STREAM_KEYS = "time,distance";
+    /**
+     * Stream requests per {@link #analyzeRideStreams()} run. Strava allows 100 reads per 15
+     * minutes, shared with climb matching; a year of rides fills in over a few syncs instead.
+     */
+    static final int MAX_STREAM_ANALYSES_PER_RUN = 20;
 
     /**
      * Default-shared-prefs key for the user's Strava title template (issue #60), edited from
@@ -93,6 +104,7 @@ public final class StravaActivitiesRepository {
     private final ClimbAttemptRepository attemptRepo;
     private final IncompleteClimbAttemptRepository incompleteAttemptRepo;
     private final RideRepository         rideRepo;
+    private final RideStreamStatsRepository streamStatsRepo;
     private final StravaApiClient        api;
     private final android.content.SharedPreferences prefs;
 
@@ -124,6 +136,7 @@ public final class StravaActivitiesRepository {
         this.attemptRepo = attemptRepo;
         this.incompleteAttemptRepo = new IncompleteClimbAttemptRepository(context);
         this.rideRepo = new RideRepository(context);
+        this.streamStatsRepo = new RideStreamStatsRepository(context);
         this.api = api;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -440,6 +453,74 @@ public final class StravaActivitiesRepository {
         rideRepo.upsertAll(rides);
         if (complete) prefs.edit().putLong(PREF_RIDES_LAST, nowSec).apply();
         return rides.size();
+    }
+
+    /**
+     * Fetches streams for archived rides that have no (current) stream analysis yet, newest
+     * first, and stores what {@link RideStreamAnalyzer} derives from them (issue #225). At most
+     * {@link #MAX_STREAM_ANALYSES_PER_RUN} requests per run; stops early on rate limiting,
+     * an auth error or a network failure, keeping everything analyzed so far.
+     *
+     * @return number of rides analyzed in this run
+     */
+    public int analyzeRideStreams() throws IOException {
+        return analyzeRideStreams("Bearer " + auth.getAccessToken());
+    }
+
+    private int analyzeRideStreams(String token) throws IOException {
+        Map<Long, StoredRideStreamStats> done = streamStatsRepo.loadById();
+        List<StoredRide> todo = new ArrayList<>();
+        for (StoredRide r : rideRepo.loadAll()) {
+            StoredRideStreamStats s = done.get(r.activityId);
+            if (s == null || s.version < RideStreamAnalyzer.VERSION) todo.add(r);
+        }
+        todo.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
+
+        List<StoredRideStreamStats> out = new ArrayList<>();
+        try {
+            for (StoredRide r : todo) {
+                if (out.size() >= MAX_STREAM_ANALYSES_PER_RUN) break;
+                Response<StravaStreamsDto> resp =
+                        api.getStreams(token, r.activityId, RIDE_STREAM_KEYS).execute();
+                if (resp.code() == 404) {
+                    // Deleted on Strava or a manual entry: nothing to analyze, don't ask again.
+                    out.add(RideStreamAnalyzer.analyze(r.activityId, null));
+                    continue;
+                }
+                if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
+                    Log.w(TAG, "Ride stream analysis paused (HTTP " + resp.code() + ")");
+                    break;
+                }
+                if (!resp.isSuccessful()) continue; // transient; retried next run
+                out.add(RideStreamAnalyzer.analyze(r.activityId, toRideStreams(resp.body())));
+            }
+        } catch (IOException e) {
+            Log.w(TAG, "Ride stream fetch failed; keeping " + out.size() + " analyzed ride(s)", e);
+        }
+        streamStatsRepo.upsertAll(out);
+        return out.size();
+    }
+
+    /** Null when the time or distance stream is missing; null distance samples carry forward. */
+    static RideStreams toRideStreams(StravaStreamsDto s) {
+        if (s == null || s.time == null || s.time.data == null
+                || s.distance == null || s.distance.data == null) return null;
+        List<Integer> time = s.time.data;
+        List<Double> dist = s.distance.data;
+        if (time.size() != dist.size()) return null;
+        int[] t = new int[time.size()];
+        double[] d = new double[dist.size()];
+        double last = 0;
+        int lastT = 0;
+        for (int i = 0; i < t.length; i++) {
+            Integer ti = time.get(i);
+            Double di = dist.get(i);
+            lastT = ti != null ? ti : lastT;
+            last = di != null ? di : last;
+            t[i] = lastT;
+            d[i] = last;
+        }
+        return new RideStreams(t, d);
     }
 
     /** Ride, VirtualRide, EBikeRide, GravelRide, MountainBikeRide, ... — not runs/walks. */

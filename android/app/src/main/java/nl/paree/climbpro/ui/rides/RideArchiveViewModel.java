@@ -74,10 +74,17 @@ public final class RideArchiveViewModel extends AndroidViewModel {
                 return;
             }
             try {
-                int n = new StravaActivitiesRepository(getApplication(), auth,
-                        new RouteRepository(getApplication()),
-                        new ClimbAttemptRepository(getApplication())).syncRideArchive();
+                StravaActivitiesRepository repo = new StravaActivitiesRepository(
+                        getApplication(), auth, new RouteRepository(getApplication()),
+                        new ClimbAttemptRepository(getApplication()));
+                int n = repo.syncRideArchive();
                 message.postValue(n + " rit(ten) bijgewerkt");
+                try {
+                    // Fastest 10/40/100 km (issue #225); a capped batch, the rest follows later.
+                    repo.analyzeRideStreams();
+                } catch (Exception e) {
+                    android.util.Log.w("RideArchiveViewModel", "Stream analysis failed", e);
+                }
             } catch (Exception e) {
                 message.postValue("Ophalen mislukt: "
                         + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
