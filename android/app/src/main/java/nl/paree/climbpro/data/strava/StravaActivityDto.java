@@ -53,4 +53,14 @@ public final class StravaActivityDto {
 
     @JsonProperty("kilojoules")
     public Double kilojoules;    // work done; rides only, null when unknown
+
+    // Power summary for the training-load chart (issue #220).
+    @JsonProperty("average_watts")
+    public Float averageWatts;   // estimated by Strava when device_watts is false
+
+    @JsonProperty("weighted_average_watts")
+    public Integer weightedAverageWatts; // power-meter rides only
+
+    @JsonProperty("device_watts")
+    public boolean deviceWatts;
 }

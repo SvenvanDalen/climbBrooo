@@ -170,6 +170,10 @@
             android:name=".ui.recovery.RecoveryAdviceActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.fitness.FitnessActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.fit.SaddleHeightActivity"
