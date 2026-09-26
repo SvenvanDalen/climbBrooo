@@ -326,6 +326,18 @@ public final class StravaActivitiesRepository {
     }
 
     /**
+     * Cycling activities started after {@code afterEpochSec} as ride summaries ("veilig thuis",
+     * issue #231). List-only like {@link #listActivitiesSince}; nothing is stored.
+     */
+    public List<StoredRide> listRecentRides(long afterEpochSec) throws IOException {
+        List<StoredRide> out = new ArrayList<>();
+        for (StravaActivityDto act : listActivitiesSince(afterEpochSec)) {
+            if (isCycling(act.type)) out.add(toStoredRide(act));
+        }
+        return out;
+    }
+
+    /**
      * @param incompleteOut ADDITIONAL, separate output: never-completed passes are appended
      *                      here for climbs that had zero successful passes matched in this
      *                      activity — see {@link ClimbEntryOnlyDetector}. The returned list
