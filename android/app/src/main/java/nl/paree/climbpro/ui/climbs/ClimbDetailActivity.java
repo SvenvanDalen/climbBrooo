@@ -276,6 +276,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
+        binding.btnExportWorkout.setOnClickListener(v -> pickWorkoutFormat());
         binding.btnToggleHomeClimb.setOnClickListener(v -> {
             if (loadedClimb == null) return;
             viewModel.setHomeClimb(routeId, climbIndex, !loadedClimb.isHome);
@@ -284,6 +285,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
+        viewModel.workoutExport().observe(this, this::shareWorkout);
 
         setupBulkSurfaceSetter();
 
@@ -484,6 +486,24 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 this, getPackageName() + ".fileprovider", file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
         startActivity(Intent.createChooser(share, "Exporteer klim als GPX"));
+    }
+
+    /** Issue #223: choose Zwift or ERG, then export the climb as an indoor workout. */
+    private void pickWorkoutFormat() {
+        String[] formats = {"Zwift-workout (.zwo)", "ERG-bestand (.erg, TrainerRoad e.a.)"};
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Exporteer als indoor-workout")
+                .setItems(formats, (d, which) -> viewModel.exportWorkout(which == 0))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    private void shareWorkout(ClimbDetailViewModel.WorkoutExport export) {
+        if (export == null) return;
+        android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                this, getPackageName() + ".fileprovider", export.file);
+        Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
+        startActivity(Intent.createChooser(share, "Deel workout"));
     }
 
     /** Issue #246: valley vs summit weather, now and in 3 hours (Open-Meteo, off the UI thread). */
