@@ -55,6 +55,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_hr_drift"
+        android:title="Hartslag-drift"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_tire_pressure_log"
         android:title="Bandenspanning"
         app:showAsAction="never"/>

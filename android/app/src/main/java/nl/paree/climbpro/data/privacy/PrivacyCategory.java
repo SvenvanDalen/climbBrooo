@@ -17,7 +17,8 @@ public enum PrivacyCategory {
             "climb_attempts.json", "incomplete_climb_attempts.json"),
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
-                    + "start- en eindpunt, plus per rit je snelste 10, 40 en 100 km en je beste sprint.",
+                    + "start- en eindpunt, plus per rit je snelste 10, 40 en 100 km, je beste "
+                    + "sprint, gemiddelde hartslag en hartslag-drift.",
             "rides.json", "ride_stream_stats.json"),
     TIRE_PRESSURE("Bandenspanning-logboek",
             "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",

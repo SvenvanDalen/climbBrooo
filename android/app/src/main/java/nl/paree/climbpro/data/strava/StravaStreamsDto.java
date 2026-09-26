@@ -34,6 +34,10 @@ public final class StravaStreamsDto {
     @JsonProperty("altitude")
     public NumberStream altitude;
 
+    /** Heart rate (bpm) per sample, for heart-rate drift (issue #222). */
+    @JsonProperty("heartrate")
+    public NumberStream heartrate;
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class LatLngStream {
         @JsonProperty("data")
