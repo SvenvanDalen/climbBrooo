@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- "Veilig thuis"-bericht (issue #231): optional automatic SMS; asked only when enabled. -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Optional: only requested/used when the user opts in to also add a planned climb to
          their device calendar (issue #70). The in-app reminder never depends on this. -->
@@ -173,6 +176,11 @@
 
         <activity
             android:name=".ui.fit.SaddleHeightActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.safehome.SafeHomeActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 

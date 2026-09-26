@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:title="Veilig thuis-bericht" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="13sp"
+                android:text="Zodra een nieuwe rit op Strava staat, krijgt je contact een bericht dat je veilig thuis bent. De app kijkt elke 15 minuten; ritten die langer dan 3 uur geleden eindigden en indoorritten tellen niet mee." />
+
+            <TextView
+                android:id="@+id/strava_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:textColor="@color/color_accent"
+                android:visibility="gone"
+                android:text="Koppel eerst Strava: daaraan ziet de app dat je rit klaar is." />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_enabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="12dp"
+                android:text="Bericht sturen na elke rit" />
+
+            <Button
+                android:id="@+id/btn_pick_contact"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Contact kiezen" />
+
+            <TextView
+                android:id="@+id/contact_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/input_phone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Telefoonnummer"
+                android:importantForAutofill="no"
+                android:inputType="phone" />
+
+            <EditText
+                android:id="@+id/input_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Bericht ({km} = afstand, {naam} = ritnaam)"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences|textMultiLine" />
+
+            <CheckBox
+                android:id="@+id/check_auto_sms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Automatisch als sms versturen (anders krijg je een melding om met één tik te versturen)" />
+
+            <Button
+                android:id="@+id/btn_save"
+                style="@style/Widget.ClimbPro.Button.Accent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Opslaan" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

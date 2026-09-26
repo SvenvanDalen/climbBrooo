@@ -25,6 +25,10 @@ public enum PrivacyCategory {
     MAINTENANCE("Onderhoud",
             "Je onderdelen met onderhoudsintervallen en de data waarop je ze onderhield.",
             "maintenance.json"),
+    SAFE_HOME("Veilig thuis-bericht",
+            "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
+                    + "gemeld zijn.",
+            "safe_home.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),

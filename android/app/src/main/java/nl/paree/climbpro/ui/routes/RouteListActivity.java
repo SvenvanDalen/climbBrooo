@@ -351,6 +351,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_saddle_height) {
             startActivity(nl.paree.climbpro.ui.fit.SaddleHeightActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_safe_home) {
+            startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
