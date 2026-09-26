@@ -177,6 +177,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.pain.PainLogActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.collections.CollectionListActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
