@@ -305,7 +305,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 RiderProfileRepository.PREF_FTP_WATTS,
                 RiderProfileRepository.PREF_RIDER_WEIGHT_KG,
                 RiderProfileRepository.PREF_BIKE_WEIGHT_KG,
-                RiderProfileRepository.PREF_RIDE_INTENSITY_PCT};
+                RiderProfileRepository.PREF_RIDE_INTENSITY_PCT,
+                RiderProfileRepository.PREF_MAX_HEART_RATE};
     }
 
     private static boolean hasAny(SharedPreferences prefs, String[] keys) {

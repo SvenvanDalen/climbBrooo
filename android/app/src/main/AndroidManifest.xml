@@ -158,6 +158,10 @@
             android:name=".ui.records.PowerCurveActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.records.ZoneDistributionActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.tire.TirePressureLogActivity"
