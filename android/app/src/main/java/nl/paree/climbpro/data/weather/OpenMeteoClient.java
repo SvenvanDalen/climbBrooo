@@ -27,7 +27,7 @@ public final class OpenMeteoClient {
     public static String url(double lat, double lon, double elevationM) {
         String base = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f"
-                        + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,precipitation_probability,uv_index"
+                        + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,precipitation_probability,uv_index"
                         + "&wind_speed_unit=kmh&timezone=UTC&forecast_days=2", lat, lon);
         return Double.isNaN(elevationM) ? base
                 : base + "&elevation=" + Math.round(elevationM);

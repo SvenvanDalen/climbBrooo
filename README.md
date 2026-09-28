@@ -114,6 +114,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
   the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
+- **Wind-optimised loop direction** — route detail → "Beste rijrichting (wind)" says which way
+  round to ride a loop so the last kilometres home have the wind at your back (Open-Meteo
+  wind at the start, averaged over the next 3 hours). Point-to-point routes are recognised
+  and left alone. Phone-only, keyless, on demand.
 
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
