@@ -381,6 +381,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_sunscreen) {
             startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_clothing) {
+            startActivity(nl.paree.climbpro.ui.clothing.ClothingActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_comeback_plan) {
             startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
             return true;

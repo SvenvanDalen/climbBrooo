@@ -118,6 +118,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
+- **Clothing advice** — what to wear for your planned ride window, from the forecast with
+  the riding wind in the wind chill, plus rain and removable-layer hints. Phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.

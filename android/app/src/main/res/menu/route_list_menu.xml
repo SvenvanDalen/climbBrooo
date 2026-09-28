@@ -115,6 +115,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_clothing"
+        android:title="Kledingadvies"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_comeback_plan"
         android:title="Terugkomstplan"
         app:showAsAction="never"/>
