@@ -42,7 +42,8 @@ public final class BackupArchive {
             "attempt_photos/", "collections.json", "planned_climbs.json", "rides.json",
             "tire_pressure_log.json", "maintenance.json", "wet_ride_checks.json",
             "torque_values.json",
-            "friend_feed.json"};
+            "friend_feed.json",
+            "bike_costs.json"};
 
     static final String MANIFEST = "manifest.json";
     static final String PREFS = "prefs.json";
