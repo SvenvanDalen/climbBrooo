@@ -129,6 +129,12 @@ public final class RouteDetailActivity extends AppCompatActivity {
         viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
+        viewModel.elevationProfile().observe(this, profile -> {
+            boolean empty = profile == null || profile.isEmpty();
+            binding.routeProfile.setProfile(profile);
+            binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
+            binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        });
 
         viewModel.error().observe(this, msg -> {
             binding.btnReverseRoute.setEnabled(true);

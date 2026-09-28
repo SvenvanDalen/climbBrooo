@@ -8,4 +8,7 @@
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <string name="route_profile_title">Hoogteprofiel</string>
+    <string name="route_profile_empty">Geen hoogtegegevens voor deze route</string>
+    <string name="route_profile_description">Hoogteprofiel van %1$.1f km, van %2$d tot %3$d m hoogte, met %4$d klimmen gemarkeerd</string>
 </resources>

@@ -372,6 +372,20 @@ maps back to the original. Climb renames, notes, ride status, surface sections a
 segments do not carry over (they describe different climbs/stretches). Phone-only; the result
 is an ordinary route payload, no wire-format change.
 
+### Whole-route elevation profile (issue #207)
+
+The route detail screen shows the elevation profile of the entire route above the pacing
+passport, with every climb highlighted in its segment gradient colors. Phone-only, no
+wire-format change. `ui/routes/RouteElevationProfile` (pure Java, unit-tested) prepares the
+drawable series from the stored route geometry (`StoredRoute.distances`/`elevations`, falling
+back to haversine distances from `lats`/`lons`): NaN and zero elevation samples are skipped,
+long routes are downsampled to per-bucket min/max pairs (`DEFAULT_MAX_BUCKETS` = 300) so
+summits survive, and each climb becomes colored bands — one per `StoredSegment` using its
+`colorIndex`, or one band from `GradientColor.forGradient(avgGradient)` when a climb has no
+segments — clamped to the route and palette. `RouteDetailViewModel` builds it on its executor;
+the thin `RouteElevationProfileView` only scales and paints, coloring bands via
+`SegmentColorPalette`. Routes without usable elevation show "Geen hoogtegegevens" instead.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as

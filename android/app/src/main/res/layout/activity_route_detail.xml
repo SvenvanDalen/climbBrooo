@@ -56,6 +56,33 @@
                 android:visibility="gone" />
 
             <TextView
+                android:id="@+id/route_profile_title"
+                style="@style/TextAppearance.ClimbPro.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="@string/route_profile_title" />
+
+            <nl.paree.climbpro.ui.routes.RouteElevationProfileView
+                android:id="@+id/route_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="4dp"
+                android:background="@drawable/bg_card"/>
+
+            <TextView
+                android:id="@+id/route_profile_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:text="@string/route_profile_empty"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/passport_title"
                 style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
