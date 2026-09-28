@@ -21,6 +21,7 @@ import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.ride.RideCategory;
 import nl.paree.climbpro.domain.ride.RideClassifier;
+import nl.paree.climbpro.domain.ride.RideComparison;
 import nl.paree.climbpro.domain.ride.SummitGroupPhotos;
 
 import java.io.IOException;
@@ -106,6 +107,13 @@ public final class RideArchiveViewModel extends AndroidViewModel {
             }
             loadNow();
         });
+    }
+
+    /** Other archived rides over the same route as {@code base} (issue #199), newest first. */
+    public List<StoredRide> sameRouteCandidates(StoredRide base) {
+        List<StoredRide> rides = new ArrayList<>();
+        for (Row r : allRows) rides.add(r.ride);
+        return RideComparison.sameRouteCandidates(base, rides);
     }
 
     public void setFilter(RideCategory category) {

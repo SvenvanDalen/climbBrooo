@@ -728,6 +728,20 @@ public final class StravaActivitiesRepository {
     }
 
     /**
+     * One ride's streams fetched on demand, e.g. for the ride comparer (issue #199). Null when
+     * Strava has none (manual entry, deleted) or the request is refused.
+     */
+    public RideStreams fetchRideStreams(long activityId) throws IOException {
+        Response<StravaStreamsDto> resp = api.getStreams(
+                "Bearer " + auth.getAccessToken(), activityId, RIDE_STREAM_KEYS).execute();
+        if (!resp.isSuccessful()) {
+            Log.w(TAG, "Streams for " + activityId + " failed (HTTP " + resp.code() + ")");
+            return null;
+        }
+        return toRideStreams(resp.body());
+    }
+
+    /**
      * Null when the time or distance stream is missing. Null distance and altitude samples carry
      * the previous value forward; null power and heart-rate samples become NaN (not recorded).
      */

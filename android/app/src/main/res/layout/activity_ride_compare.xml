@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:title="Ritvergelijker" />
+
+    <TextView
+        android:id="@+id/summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:textSize="15sp"
+        android:text="Streams ophalen bij Strava…" />
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp"
+        android:visibility="gone">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="0.6" android:text="km" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1.2" android:text="tijd A / B" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1.2" android:text="km/u A / B" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1" android:text="HS A / B" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="0.9" android:gravity="end" android:text="verschil" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>
