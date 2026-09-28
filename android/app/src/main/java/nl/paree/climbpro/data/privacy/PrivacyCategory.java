@@ -19,11 +19,9 @@ public enum PrivacyCategory {
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
                     + "start- en eindpunt, de gemeten regen voor de schoonmaakherinnering en je "
-                    + "snelste 10, 40 en 100 km en je beste sprint per rit.",
+                    + "snelste 10, 40 en 100 km, je beste sprint, gemiddelde hartslag en "
+                    + "hartslag-drift per rit.",
             "rides.json", "wet_ride_checks.json", "ride_stream_stats.json"),
-                    + "start- en eindpunt, plus per rit je snelste 10, 40 en 100 km, je beste "
-                    + "sprint, gemiddelde hartslag en hartslag-drift.",
-            "rides.json", "ride_stream_stats.json"),
     TIRE_PRESSURE("Bandenspanning-logboek",
             "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",
             "tire_pressure_log.json"),
