@@ -112,6 +112,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
   the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
 
+- **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
+  ranked by difficulty score (elevation gain × average gradient). Phone-only.
+
 ---
 
 ## Repository layout

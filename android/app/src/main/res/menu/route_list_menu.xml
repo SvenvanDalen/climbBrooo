@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_top_climbs"
+        android:title="@string/menu_top_climbs"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_timeline"
         android:title="Tijdlijn"
         app:showAsAction="never"/>
