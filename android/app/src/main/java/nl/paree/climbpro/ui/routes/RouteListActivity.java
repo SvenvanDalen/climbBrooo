@@ -354,6 +354,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_power_curve) {
             startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_zone_distribution) {
+            startActivity(nl.paree.climbpro.ui.records.ZoneDistributionActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_tire_pressure_log) {
             startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
             return true;

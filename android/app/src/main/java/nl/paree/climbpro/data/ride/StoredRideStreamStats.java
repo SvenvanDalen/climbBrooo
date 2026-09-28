@@ -42,4 +42,11 @@ public final class StoredRideStreamStats {
      * {@code PowerCurveAnalyzer.DURATIONS_SEC}; 0 where the ride is shorter. Null without power.
      */
     public int[]   powerCurve;
+    /**
+     * Seconds at each heart rate from 40 bpm up, one bin per bpm (issue #218); null without
+     * heart rate. Zones are applied when shown, so a new max heart rate needs no re-analysis.
+     */
+    public int[]   hrSecondsPerBpm;
+    /** Seconds per 10 W power bin from 0 W (issue #218); null without power. */
+    public int[]   powerSecondsPer10W;
 }
