@@ -92,6 +92,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
   detail screen; the route list shows the status and can be filtered on it (menu →
   "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
+  "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
+  untouched and tapping again reopens the existing reversed route.
 - **Whole-route elevation profile** — the route detail screen shows the elevation
   profile of the full route with every climb highlighted in its gradient colors. Phone-only.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
@@ -105,6 +108,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
+- **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
+  radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
+  the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
 
 ---
 
