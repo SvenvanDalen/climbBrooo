@@ -105,6 +105,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_sweat_loss"
+        android:title="@string/sweat_title"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_safe_home"
         android:title="Veilig thuis-bericht"
         app:showAsAction="never"/>

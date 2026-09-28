@@ -375,6 +375,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_pain_log) {
             startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_sweat_loss) {
+            startActivity(nl.paree.climbpro.ui.hydration.SweatLossActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_safe_home) {
             startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
             return true;
