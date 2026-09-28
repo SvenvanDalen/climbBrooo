@@ -122,6 +122,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Gear calculator for a climb** — climb screen → "Versnellingen berekenen": enter your
+  chainrings, cassette, wheel size and target cadence to see the cadence per gear on the
+  steepest segment and at the average gradient, and whether your easiest gear is light
+  enough. Phone-only.
+
 ---
 
 ## Repository layout

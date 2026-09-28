@@ -104,6 +104,11 @@
             android:parentActivityName=".ui.climbs.ClimbDetailActivity"/>
 
         <activity
+            android:name=".ui.climbs.GearCalculatorActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.climbs.ClimbDetailActivity"/>
+
+        <activity
             android:name=".ui.climbs.ClimbBulkRenameActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteDetailActivity"/>
