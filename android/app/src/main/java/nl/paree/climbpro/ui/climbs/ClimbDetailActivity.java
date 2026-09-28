@@ -282,6 +282,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         });
         binding.btnSunriseRide.setOnClickListener(v -> pickSunriseDate());
         binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
+        binding.btnCompareClimb.setOnClickListener(v ->
+                startActivity(ClimbCompareActivity.intentFor(this, routeId, climbIndex)));
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
 
