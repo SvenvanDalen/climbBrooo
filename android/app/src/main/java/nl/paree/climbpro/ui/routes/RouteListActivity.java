@@ -345,6 +345,8 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_records) {
             startActivity(nl.paree.climbpro.ui.records.RideRecordsActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_friend_feed) {
+            startActivity(nl.paree.climbpro.ui.social.FriendFeedActivity.intentFor(this));
         } else if (id == R.id.action_hr_drift) {
             startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
             return true;
@@ -353,6 +355,17 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_saddle_height) {
             startActivity(nl.paree.climbpro.ui.fit.SaddleHeightActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_battery_status) {
+            startActivity(nl.paree.climbpro.ui.battery.BatteryActivity.intentFor(this));
+        } else if (id == R.id.action_pain_log) {
+            startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
+        } else if (id == R.id.action_safe_home) {
+            startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+        } else if (id == R.id.action_sunscreen) {
+            startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
+        } else if (id == R.id.action_comeback_plan) {
+            startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
@@ -374,6 +387,15 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_maintenance) {
             startActivity(nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_torque) {
+            startActivity(nl.paree.climbpro.ui.maintenance.TorqueActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_frame_size) {
+            startActivity(nl.paree.climbpro.ui.frame.FrameSizeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_costs) {
+            startActivity(nl.paree.climbpro.ui.bike.BikeCostActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));

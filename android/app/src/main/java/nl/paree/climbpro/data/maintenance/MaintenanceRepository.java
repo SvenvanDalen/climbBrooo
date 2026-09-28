@@ -95,6 +95,42 @@ public final class MaintenanceRepository {
         }
     }
 
+    /**
+     * Sets the warranty (issue #239) of an existing component: purchase date and term in months
+     * (0 = no warranty). The reminder-sent marker is left alone: it is keyed by expiry, so a
+     * changed date/term re-arms the reminder by itself. A no-op for an unknown id.
+     */
+    public void setWarranty(String id, long purchaseEpochSec, int warrantyMonths)
+            throws IOException {
+        if (id == null) return;
+        WRITE_LOCK.lock();
+        try {
+            MaintenanceLog log = load();
+            MaintenanceComponent c = find(log, id);
+            if (c == null) return;
+            c.warrantyPurchaseEpochSec = Math.max(0, purchaseEpochSec);
+            c.warrantyMonths           = Math.max(0, warrantyMonths);
+            write(log);
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
+    /** Records that the expiry reminder for {@code expiryEpochSec} was sent. No-op if unknown. */
+    public void markWarrantyReminderSent(String id, long expiryEpochSec) throws IOException {
+        if (id == null) return;
+        WRITE_LOCK.lock();
+        try {
+            MaintenanceLog log = load();
+            MaintenanceComponent c = find(log, id);
+            if (c == null) return;
+            c.warrantyReminderSentForExpiryEpochSec = Math.max(0, expiryEpochSec);
+            write(log);
+        } finally {
+            WRITE_LOCK.unlock();
+        }
+    }
+
     /** Removes the component with this id; a no-op when it is not present. */
     public void deleteComponent(String id) throws IOException {
         if (id == null) return;
@@ -131,6 +167,11 @@ public final class MaintenanceRepository {
             if (c.intervalKm < 0) c.intervalKm = 0;
             if (c.intervalMonths < 0) c.intervalMonths = 0;
             if (c.lastServicedEpochSec < 0) c.lastServicedEpochSec = 0;
+            if (c.warrantyPurchaseEpochSec < 0) c.warrantyPurchaseEpochSec = 0;
+            if (c.warrantyMonths < 0) c.warrantyMonths = 0;
+            if (c.warrantyReminderSentForExpiryEpochSec < 0) {
+                c.warrantyReminderSentForExpiryEpochSec = 0;
+            }
             if (c.serviceHistory == null) c.serviceHistory = new ArrayList<>();
             c.serviceHistory.removeIf(ts -> ts == null || ts <= 0);
             for (Long ts : c.serviceHistory) {
