@@ -46,13 +46,18 @@ public final class MaintenanceViewModel extends AndroidViewModel {
         });
     }
 
-    /** Creates ({@code id == null}) or edits a component; see the repository for the date. */
+    /**
+     * Creates ({@code id == null}) or edits a component, then stores its warranty (issue #239;
+     * {@code warrantyMonths == 0} = none). See the repository for the corrected service date.
+     */
     public void saveComponent(String id, String name, int intervalKm, int intervalMonths,
-                              boolean includeVirtualRides, long correctedLastServicedEpochSec) {
+                              boolean includeVirtualRides, long correctedLastServicedEpochSec,
+                              long warrantyPurchaseEpochSec, int warrantyMonths) {
         executor.execute(() -> {
             try {
-                repo.upsertComponent(id, name, intervalKm, intervalMonths,
+                String savedId = repo.upsertComponent(id, name, intervalKm, intervalMonths,
                         includeVirtualRides, correctedLastServicedEpochSec);
+                repo.setWarranty(savedId, warrantyPurchaseEpochSec, warrantyMonths);
             } catch (Exception e) {
                 message.postValue("Opslaan mislukt: " + e.getMessage());
             }
