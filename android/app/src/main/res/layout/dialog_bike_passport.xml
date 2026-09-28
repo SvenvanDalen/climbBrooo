@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="8dp">
+
+        <EditText
+            android:id="@+id/input_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Naam (bv. Racefiets)"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences" />
+
+        <EditText
+            android:id="@+id/input_brand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Merk"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords" />
+
+        <EditText
+            android:id="@+id/input_model"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Model"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords" />
+
+        <EditText
+            android:id="@+id/input_color"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Kleur"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences" />
+
+        <EditText
+            android:id="@+id/input_frame_number"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Framenummer"
+            android:importantForAutofill="no"
+            android:inputType="textCapCharacters" />
+
+        <EditText
+            android:id="@+id/input_purchase_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Aankoopdatum"
+            android:importantForAutofill="no"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/input_purchase_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Aankoopprijs"
+            android:importantForAutofill="no"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/input_shop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Gekocht bij"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords" />
+
+        <EditText
+            android:id="@+id/input_features"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Kenmerken (stickers, accessoires, schade)"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textCapSentences" />
+    </LinearLayout>
+</ScrollView>

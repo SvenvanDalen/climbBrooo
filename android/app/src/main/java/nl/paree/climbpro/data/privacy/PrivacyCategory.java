@@ -35,6 +35,9 @@ public enum PrivacyCategory {
     BIKE_COSTS("Fietskosten",
             "Je fietsen met aankopen, onderdelen en hun bedragen.",
             "bike_costs.json"),
+    BIKE_PASSPORTS("Fietspaspoort",
+            "Framenummer, merk, model, aankoopgegevens, foto's en aankoopbewijs van je fietsen.",
+            "bike_passports.json", "bike_passport_photos/"),
     BATTERIES("Accu's",
             "Je accu's (e-shifting, verlichting, powermeter) met de laatste laaddatum en "
                     + "herinneringsinterval.",
