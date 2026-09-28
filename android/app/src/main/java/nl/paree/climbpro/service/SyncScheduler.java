@@ -3,6 +3,7 @@ package nl.paree.climbpro.service;
 import android.content.Context;
 
 import androidx.lifecycle.LiveData;
+import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.ExistingWorkPolicy;
@@ -20,6 +21,7 @@ public final class SyncScheduler {
 
     private static final String PERIODIC_TAG = "climbpro_periodic_sync";
     public  static final String UNIQUE_MANUAL_SYNC = "climbpro_manual_sync";
+    public  static final String UNIQUE_HISTORY_BACKFILL = "climbpro_strava_history_backfill";
     private static final long   INTERVAL_HOURS = 6;
 
     private SyncScheduler() {}
@@ -51,6 +53,28 @@ public final class SyncScheduler {
                 ExistingWorkPolicy.REPLACE,
                 work);
         return work.getId();
+    }
+
+    /**
+     * Starts the one-off Strava history backfill (issue #312). KEEP: pressing the button again
+     * while it runs or waits for a retry does nothing. Linear 15-minute backoff matches
+     * Strava's short rate-limit window.
+     */
+    public static void startHistoryBackfill(Context context) {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(StravaHistoryBackfillWorker.class)
+                .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, 15, TimeUnit.MINUTES)
+                .build();
+        WorkManager.getInstance(context).enqueueUniqueWork(
+                UNIQUE_HISTORY_BACKFILL, ExistingWorkPolicy.KEEP, work);
+    }
+
+    public static LiveData<List<WorkInfo>> historyBackfillInfo(Context context) {
+        return WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWorkLiveData(UNIQUE_HISTORY_BACKFILL);
     }
 
     /** Observable status of the last manual sync (for UI refresh/feedback). */
