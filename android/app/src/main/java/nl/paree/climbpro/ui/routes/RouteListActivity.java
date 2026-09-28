@@ -360,6 +360,8 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
         } else if (id == R.id.action_safe_home) {
             startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+        } else if (id == R.id.action_sunscreen) {
+            startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
