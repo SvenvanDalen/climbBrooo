@@ -2,7 +2,9 @@ package nl.paree.climbpro.ui.records;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +17,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.ride.StoredRide;
+import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.ride.FastestDistanceCalculator;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Records;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Streak;
@@ -22,12 +26,14 @@ import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Streak;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * "Records" screen (issue #156): longest ride, highest average speed, most elevation, longest
  * moving time and most consecutive riding days, from the ride archive (issue #160). Each record
- * shows its value, date and ride name. Phone-only.
+ * shows its value, date and ride name. Below that the fastest 10, 40 and 100 km inside rides
+ * (issue #225), from the stream analysis. Phone-only.
  */
 public final class RideRecordsActivity extends AppCompatActivity {
 
@@ -56,11 +62,13 @@ public final class RideRecordsActivity extends AppCompatActivity {
         LinearLayout container = findViewById(R.id.records);
 
         viewModel = new ViewModelProvider(this).get(RideRecordsViewModel.class);
-        viewModel.records().observe(this, rec -> {
+        viewModel.state().observe(this, st -> {
             container.removeAllViews();
-            boolean none = rec == null || rec.isEmpty();
+            boolean none = st == null || st.records == null || st.records.isEmpty();
             empty.setVisibility(none ? View.VISIBLE : View.GONE);
-            if (!none) render(container, rec);
+            if (none) return;
+            render(container, st.records);
+            renderFastest(container, st.fastest, st.ridesAwaitingAnalysis);
         });
     }
 
@@ -103,11 +111,56 @@ public final class RideRecordsActivity extends AppCompatActivity {
         }
     }
 
-    private void addRideRecord(LinearLayout container, String title, String value, StoredRide r) {
+    private void renderFastest(LinearLayout container,
+                               List<FastestDistanceCalculator.Distance> fastest, int awaiting) {
+        TextView header = new TextView(this);
+        header.setText("Snelste afstanden binnen een rit");
+        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        header.setTypeface(header.getTypeface(), Typeface.BOLD);
+        int pad = Math.round(16 * getResources().getDisplayMetrics().density);
+        header.setPadding(pad, pad, pad, 0);
+        container.addView(header);
+
+        if (awaiting > 0) {
+            TextView note = new TextView(this);
+            note.setText(String.format(Locale.getDefault(),
+                    "Nog %d rit(ten) te analyseren; dat gebeurt in stappen bij elke sync. "
+                            + "Tijden zijn verstreken tijd, stops tellen mee. Geen indoor- of "
+                            + "e-bike-ritten.", awaiting));
+            note.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            note.setPadding(pad, pad / 2, pad, 0);
+            container.addView(note);
+        }
+
+        for (FastestDistanceCalculator.Distance d : fastest) {
+            String title = String.format(Locale.getDefault(), "Snelste %d km",
+                    Math.round(d.distanceM / 1000));
+            if (d.efforts.isEmpty()) {
+                addRow(container, title, "–", "Nog geen rit van deze afstand geanalyseerd");
+                continue;
+            }
+            FastestDistanceCalculator.Effort best = d.efforts.get(0);
+            StringBuilder detail = new StringBuilder(rideLabel(best.ride));
+            for (int i = 1; i < d.efforts.size(); i++) {
+                FastestDistanceCalculator.Effort e = d.efforts.get(i);
+                detail.append(System.lineSeparator()).append(i + 1).append(". ")
+                        .append(DurationFormat.format(e.seconds)).append("  •  ")
+                        .append(rideLabel(e.ride));
+            }
+            addRow(container, title, String.format(Locale.getDefault(), "%s  (%.1f km/u)",
+                    DurationFormat.format(best.seconds), best.avgSpeedMps() * 3.6), detail.toString());
+        }
+    }
+
+    private String rideLabel(StoredRide r) {
         String date = r.startEpochSec > 0
                 ? dateFormat.format(new Date(r.startEpochSec * 1000L)) : "onbekende datum";
         String name = r.name != null && !r.name.isEmpty() ? r.name : "Rit";
-        addRow(container, title, value, date + "  •  " + name);
+        return date + "  •  " + name;
+    }
+
+    private void addRideRecord(LinearLayout container, String title, String value, StoredRide r) {
+        addRow(container, title, value, rideLabel(r));
     }
 
     private void addRow(ViewGroup container, String title, String value, String detail) {

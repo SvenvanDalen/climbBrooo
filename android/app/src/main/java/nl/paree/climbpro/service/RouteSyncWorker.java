@@ -117,14 +117,21 @@ public final class RouteSyncWorker extends Worker {
                 .build();
 
         // The yearly km goal card (issue #157) reads the ride archive, which otherwise only
-        // fills from the logbook or the Ritten screen: refresh it on every sync. List endpoint
-        // only (no streams), and it never fails the sync.
+        // fills from the logbook or the Ritten screen: refresh it on every sync. Then a capped
+        // batch of stream analyses for the fastest-distance records (issue #225). Neither ever
+        // fails the sync.
         if (authorised) {
+            StravaActivitiesRepository rides =
+                    new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo);
             try {
-                new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo)
-                        .syncRideArchive();
+                rides.syncRideArchive();
             } catch (Exception e) {
                 Log.w(TAG, "Ride archive refresh failed; sync continues", e);
+            }
+            try {
+                rides.analyzeRideStreams();
+            } catch (Exception e) {
+                Log.w(TAG, "Ride stream analysis failed; sync continues", e);
             }
         }
 

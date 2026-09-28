@@ -15,6 +15,7 @@ import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.data.privacy.PrivacyCategory;
 import nl.paree.climbpro.data.privacy.PrivacyInventory;
 import nl.paree.climbpro.data.ride.RideRepository;
+import nl.paree.climbpro.data.ride.RideStreamStatsRepository;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
@@ -272,7 +273,9 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
             }
             case RIDES:
                 // Through the repository's write lock, like ATTEMPTS.
-                return (new RideRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
+                return (new RideRepository(app).deleteAll() ? 0 : 1)
+                        + (new RideStreamStatsRepository(app).deleteAll() ? 0 : 1)
+                        + inventory.deleteFiles(c);
             case FRIENDS:
                 // Through the repository lock (an import may be writing). The random share id
                 // stays: friends who already imported you would otherwise see a second "you".

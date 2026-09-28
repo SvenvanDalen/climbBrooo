@@ -64,6 +64,7 @@ public class StravaActivitiesRepositoryTest {
         new File(app.getFilesDir(), "climb_attempts.json").delete();
         new File(app.getFilesDir(), "incomplete_climb_attempts.json").delete();
         new File(app.getFilesDir(), "rides.json").delete();
+        new File(app.getFilesDir(), "ride_stream_stats.json").delete();
         app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
                 .edit().clear().commit();
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
@@ -830,5 +831,88 @@ public class StravaActivitiesRepositoryTest {
 
         assertEquals(0, created);
         assertEquals(1, new nl.paree.climbpro.data.ride.RideRepository(app).loadAll().size());
+    }
+
+    // ---- ride stream analysis (issue #225) ----
+
+    /** 12 km at a steady 10 m/s, one sample per second. */
+    private static StravaStreamsDto steadyRideStreams() {
+        StravaStreamsDto s = new StravaStreamsDto();
+        s.time = new StravaStreamsDto.TimeStream();
+        s.time.data = new ArrayList<>();
+        s.distance = new StravaStreamsDto.NumberStream();
+        s.distance.data = new ArrayList<>();
+        for (int i = 0; i <= 1200; i++) {
+            s.time.data.add(i);
+            s.distance.data.add(i * 10.0);
+        }
+        return s;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubStreams(long id, Response<StravaStreamsDto> response) throws Exception {
+        Call<StravaStreamsDto> call = mock(Call.class);
+        when(call.execute()).thenReturn(response);
+        when(api.getStreams(anyString(), eq(id), eq(StravaActivitiesRepository.RIDE_STREAM_KEYS)))
+                .thenReturn(call);
+    }
+
+    private static Response<StravaStreamsDto> httpError(int code) {
+        return Response.error(code, okhttp3.ResponseBody.create("", null));
+    }
+
+    @Test
+    public void analyzeRideStreams_storesFastestEffortsOncePerRide() throws Exception {
+        stubActivityList(Collections.singletonList(activity(1L, "Ride", 12_000f)));
+        stubStreams(1L, Response.success(steadyRideStreams()));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncRideArchive();
+
+        assertEquals(1, repo.analyzeRideStreams());
+        assertEquals(0, repo.analyzeRideStreams()); // already analyzed: no second request
+
+        nl.paree.climbpro.data.ride.StoredRideStreamStats st =
+                new nl.paree.climbpro.data.ride.RideStreamStatsRepository(app).loadById().get(1L);
+        assertTrue(st.hasStreams);
+        assertEquals(1000, (int) st.best10kSec);
+        verify(api, times(1)).getStreams(anyString(), eq(1L), anyString());
+    }
+
+    @Test
+    public void analyzeRideStreams_marksMissingActivityAndStopsOnRateLimit() throws Exception {
+        StravaActivityDto older = activity(1L, "Ride", 12_000f);
+        older.startDate = "2026-02-01T08:00:00Z";
+        StravaActivityDto newer = activity(2L, "Ride", 12_000f);
+        newer.startDate = "2026-02-10T08:00:00Z";
+        StravaActivityDto newest = activity(3L, "Ride", 12_000f);
+        newest.startDate = "2026-02-20T08:00:00Z";
+        stubActivityList(Arrays.asList(older, newer, newest));
+        stubStreams(3L, httpError(404));
+        stubStreams(2L, httpError(429));
+        stubStreams(1L, Response.success(steadyRideStreams()));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncRideArchive();
+
+        assertEquals(1, repo.analyzeRideStreams());
+
+        java.util.Map<Long, nl.paree.climbpro.data.ride.StoredRideStreamStats> byId =
+                new nl.paree.climbpro.data.ride.RideStreamStatsRepository(app).loadById();
+        assertFalse(byId.get(3L).hasStreams);
+        assertFalse(byId.containsKey(2L));
+        assertFalse(byId.containsKey(1L)); // never reached: the run paused at the 429
+        verify(api, org.mockito.Mockito.never()).getStreams(anyString(), eq(1L), anyString());
+    }
+
+    @Test
+    public void toRideStreams_needsTimeAndDistanceAndCarriesNullsForward() {
+        StravaStreamsDto s = steadyRideStreams();
+        s.distance.data.set(5, null);
+        nl.paree.climbpro.domain.ride.RideStreams rs = StravaActivitiesRepository.toRideStreams(s);
+        assertEquals(40.0, rs.distance[5], 1e-9);
+
+        s.distance = null;
+        assertEquals(null, StravaActivitiesRepository.toRideStreams(s));
     }
 }
