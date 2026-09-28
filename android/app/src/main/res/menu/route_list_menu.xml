@@ -55,6 +55,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_friend_feed"
+        android:title="Vriendenfeed"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_tire_pressure_log"
         android:title="Bandenspanning"
         app:showAsAction="never"/>
@@ -62,6 +67,31 @@
     <item
         android:id="@+id/action_saddle_height"
         android:title="Zadelhoogte"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_battery_status"
+        android:title="Accu's"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_pain_log"
+        android:title="Pijnlogboek"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_safe_home"
+        android:title="Veilig thuis-bericht"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_sunscreen"
+        android:title="Zonnebrand-check"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_comeback_plan"
+        android:title="Terugkomstplan"
         app:showAsAction="never"/>
 
     <item
@@ -97,6 +127,21 @@
     <item
         android:id="@+id/action_maintenance"
         android:title="Onderhoud"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_torque"
+        android:title="Aanhaalmomenten"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_frame_size"
+        android:title="Framemaat"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_bike_costs"
+        android:title="Fietskosten"
         app:showAsAction="never"/>
 
     <item
