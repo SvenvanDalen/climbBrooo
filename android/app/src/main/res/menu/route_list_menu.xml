@@ -205,6 +205,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_badges"
+        android:title="Badges"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
         app:showAsAction="never"/>
