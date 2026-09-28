@@ -23,6 +23,8 @@ import nl.paree.climbpro.data.route.RouteCollection;
 import nl.paree.climbpro.data.route.RouteCollectionRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
+import nl.paree.climbpro.data.social.FriendFeedRepository;
+import nl.paree.climbpro.data.social.FriendShareIdentity;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.power.RiderProfile;
@@ -126,6 +128,18 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 boolean syncState = !stravaPrefs().getAll().isEmpty();
                 return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
                         : "Niet gekoppeld"), linked || syncState);
+            }
+            case FRIENDS: {
+                // The chosen share name lives in prefs, not friend_feed.json, so it must count
+                // as data on its own: otherwise a user who shared once but received nothing yet
+                // sees "Leeg" with nothing to erase, even though their name is still stored.
+                PrivacyInventory.Usage u = inventory.usage(c);
+                boolean hasName = !FriendShareIdentity.name(prefs).isEmpty();
+                boolean has = u.fileCount > 0 || hasName;
+                String summary = u.fileCount > 0
+                        ? u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes)
+                        : (hasName ? "Geen feed, deelnaam bewaard" : "Leeg");
+                return new Row(c, summary, has);
             }
             default: {
                 PrivacyInventory.Usage u = inventory.usage(c);
@@ -259,6 +273,11 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
             case RIDES:
                 // Through the repository's write lock, like ATTEMPTS.
                 return (new RideRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
+            case FRIENDS:
+                // Through the repository lock (an import may be writing). The random share id
+                // stays: friends who already imported you would otherwise see a second "you".
+                prefs.edit().remove(FriendShareIdentity.PREF_NAME).apply();
+                return (new FriendFeedRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
             case PHOTOS:
                 new ClimbAttemptRepository(app).clearPhotoReferences();
                 return inventory.deleteFiles(c);
