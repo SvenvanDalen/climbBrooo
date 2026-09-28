@@ -58,6 +58,16 @@ public final class StoredClimbAttempt {
     public String photoFileName;
 
     /**
+     * Phone-only "groepsfoto op de top" (issue #243): who rode along on this ascent, as a
+     * normalised comma-separated list of names ({@code "Anna, Bas"}), or null. An attempt
+     * with both a {@link #photoFileName} and companions counts as a group summit photo and is
+     * shown on its ride in the ride archive. Always write it via
+     * {@link nl.paree.climbpro.domain.ride.SummitGroupPhotos#normalizeCompanions}. Never
+     * shipped to the watch.
+     */
+    public String companions;
+
+    /**
      * Average device temperature (°C) over this pass, from the Strava {@code temp} stream at
      * match time (issue #80). Null = unknown: the device recorded no temperature, or the attempt
      * was matched before this field existed (no backfill). Classified for display by
