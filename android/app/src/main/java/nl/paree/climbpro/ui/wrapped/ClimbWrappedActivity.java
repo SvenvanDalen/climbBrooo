@@ -12,6 +12,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.climb.WrappedCalculator.Summary;
 
 /**
@@ -71,7 +72,9 @@ public final class ClimbWrappedActivity extends AppCompatActivity {
         }
         empty.setVisibility(View.GONE);
 
-        addCard("Totale hoogtemeters", formatMeters(s.totalElevationGainM));
+        String cmp = ElevationComparisons.describe(s.totalElevationGainM);
+        addCard("Totale hoogtemeters", formatMeters(s.totalElevationGainM)
+                + (cmp != null ? "\nDat is " + cmp : ""));
         addCard("Klimpogingen", s.totalAttempts + " op " + s.distinctClimbCount + " verschillende klim(men)");
         addCard("Totale klimtijd", formatDuration(s.totalClimbingTimeSec));
 

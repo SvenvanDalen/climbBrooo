@@ -222,4 +222,158 @@ public class ClimbGpxWriterTest {
         assertFalse(gpx.contains("<name>PR</name>"));
         assertEquals(4, count(WPT_PATTERN, gpx));
     }
+
+
+    // -----------------------------------------------------------------------
+    // Home-climb privacy zone (issue #92). Fixture points lie ~132 m apart in a straight
+    // line (0, 132, 264, 397, 529 m from the start) while the route says 250 m apart.
+    // -----------------------------------------------------------------------
+
+    /** Formats a coordinate exactly the way ClimbGpxWriter does, for exact-match checks. */
+    private static String fmt(double coord) {
+        return String.format(java.util.Locale.US, "%.7f", coord);
+    }
+
+    /**
+     * Home climb with a stored zone centre ~40 m from the start, on the side away from the
+     * climb (usable for radii >= 50 m). Straight-line distances from this centre to the route
+     * points: ~40, ~172, ~304, ~436, ~568 m.
+     */
+    private static StoredClimb homeClimb() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        c.privacyCentreLat = 49.9997;
+        c.privacyCentreLon = 4.9997;
+        return c;
+    }
+
+    private static boolean containsPoint(String gpx, StoredRoute r, int i) {
+        return gpx.contains("lat=\"" + fmt(r.lats[i]) + "\" lon=\"" + fmt(r.lons[i]) + "\"");
+    }
+
+    @Test
+    public void nonHomeClimb_startCoordinateIsExactEvenWithPrivacyRadiusSet() {
+        StoredClimb c = climb();
+        c.isHome = false;
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null, 300);
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
+        assertEquals(5.000, Double.parseDouble(m.group(2)), 1e-6);
+    }
+
+    @Test
+    public void homeClimb_trackStartsAtStoredZoneCentre() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        c.privacyCentreLat = 50.0005; // ~66 m from the start: usable for a 300 m zone
+        c.privacyCentreLon = 5.0005;
+
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, 137, 300);
+
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.0005, Double.parseDouble(m.group(1)), 1e-7);
+        assertEquals(5.0005, Double.parseDouble(m.group(2)), 1e-7);
+        // The PR marker stands in at the centre too, never at the real start.
+        assertTrue(gpx.contains("<wpt lat=\"50.0005000\" lon=\"5.0005000\">"));
+        assertFalse(containsPoint(gpx, route(), 0));
+    }
+
+    @Test
+    public void homeClimb_withZeroPrivacyRadiusStaysExact() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null, 0);
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
+        assertEquals(5.000, Double.parseDouble(m.group(2)), 1e-6);
+    }
+
+    @Test
+    public void fiveArgOverload_stillWorksAndIsUnaffectedByHomeFlag() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        // Old call site (no privacy radius) must keep exporting exact coordinates: it's the
+        // caller's job to pass the configured radius, so omitting it is equivalent to radius=0.
+        String gpx = ClimbGpxWriter.toGpx(route(), c, 0, null, null);
+        Matcher m = TRKPT_PATTERN.matcher(gpx);
+        assertTrue(m.find());
+        assertEquals(50.000, Double.parseDouble(m.group(1)), 1e-6);
+    }
+
+    @Test
+    public void homeClimb_withoutStoredCentre_failsClosed() {
+        StoredClimb c = climb();
+        c.isHome = true; // no centre stored yet
+        assertThrows(IllegalArgumentException.class,
+                () -> ClimbGpxWriter.toGpx(route(), c, 0, null, null, 300));
+    }
+
+    @Test
+    public void homeClimb_centreTooFarForSmallerRadius_failsClosed() {
+        StoredClimb c = climb();
+        c.isHome = true;
+        c.privacyCentreLat = 50.002; // ~264 m away: fine for 2000 m, not for 250 m
+        c.privacyCentreLon = 5.002;
+        assertThrows(IllegalArgumentException.class,
+                () -> ClimbGpxWriter.toGpx(route(), c, 0, null, null, 250));
+    }
+
+    @Test
+    public void homeClimb_entirelyInsidePrivacyZone_leaksNoRealCoordinate() {
+        StoredRoute r = route();
+        StoredClimb c = homeClimb();
+
+        String gpx = ClimbGpxWriter.toGpx(r, c, 0, null, null, 1500);
+
+        for (int i = 0; i < r.lats.length; i++) {
+            assertFalse("real point " + i + " (lat) leaked into GPX", gpx.contains(fmt(r.lats[i])));
+            assertFalse("real point " + i + " (lon) leaked into GPX", gpx.contains(fmt(r.lons[i])));
+        }
+        // Only the zone centre is emitted as track geometry, and no segment waypoints.
+        assertEquals(1, count(TRKPT_PATTERN, gpx));
+        assertEquals(0, count(WPT_PATTERN, gpx));
+        assertFalse(gpx.contains("<name>Top</name>"));
+    }
+
+    @Test
+    public void homeClimb_entirelyInsidePrivacyZone_stillProducesWellFormedXml() throws Exception {
+        String gpx = ClimbGpxWriter.toGpx(route(), homeClimb(), 0, null, null, 1500);
+        javax.xml.parsers.DocumentBuilderFactory factory =
+                javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
+        builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+    }
+
+    @Test
+    public void homeClimb_zoneIsMeasuredInStraightLineNotAlongTheRoad() {
+        // Point 1 is 250 m along the road but only ~172 m from the centre: inside a 250 m zone.
+        StoredRoute r = route();
+        String gpx = ClimbGpxWriter.toGpx(r, homeClimb(), 0, null, null, 250);
+
+        assertFalse(containsPoint(gpx, r, 0));
+        assertFalse(containsPoint(gpx, r, 1));
+        assertTrue(containsPoint(gpx, r, 2));
+        assertFalse(gpx.contains("<name>Segment 1</name>")); // boundary at point 1
+        assertTrue(gpx.contains("<name>Segment 2</name>"));
+        assertTrue(gpx.contains("<name>Top</name>"));
+        assertEquals(3, count(WPT_PATTERN, gpx));
+    }
+
+    @Test
+    public void homeClimb_hairpinBackIntoZoneIsHiddenToo() {
+        // Point 3 is 750 m along the road but the road hairpins back to ~25 m from the start.
+        StoredRoute r = route();
+        r.lats[3] = 50.0002;
+        r.lons[3] = 5.0002;
+
+        String gpx = ClimbGpxWriter.toGpx(r, homeClimb(), 0, null, null, 200);
+
+        assertTrue(containsPoint(gpx, r, 2));
+        assertFalse("hairpin point near the start leaked", containsPoint(gpx, r, 3));
+        assertTrue(containsPoint(gpx, r, 4));
+        assertFalse(gpx.contains("<name>Segment 3</name>")); // boundary at point 3
+    }
 }

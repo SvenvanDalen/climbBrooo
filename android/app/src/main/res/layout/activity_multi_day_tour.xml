@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:title="Meerdaagse toer" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/selectionSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Klimplanning laden…" />
+
+            <Button
+                android:id="@+id/selectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Klimmen kiezen" />
+
+            <EditText
+                android:id="@+id/inputDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Aantal dagen"
+                android:inputType="number"
+                android:text="3" />
+
+            <EditText
+                android:id="@+id/inputMaxHm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Max hoogtemeters per dag (optioneel)"
+                android:inputType="number" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Startpunt" />
+
+            <Spinner
+                android:id="@+id/startSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <CheckBox
+                android:id="@+id/balanceOnTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Verdeel op geschatte klimtijd i.p.v. hoogtemeters" />
+
+            <Button
+                android:id="@+id/planButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Verdeel over dagen" />
+
+            <LinearLayout
+                android:id="@+id/result"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="8dp" />
+
+            <Button
+                android:id="@+id/shareButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Dagoverzicht delen"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

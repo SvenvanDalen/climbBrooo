@@ -13,6 +13,13 @@ public final class StoredRoute {
     public String userDisplayName;
     public String notes;
 
+    /**
+     * Bucket-list status ({@link RouteRideStatus}): null (geen status), WANT_TO_RIDE or
+     * RIDDEN. User data — {@link RouteRepository#saveRoute} carries it across resync.
+     * Null on routes stored before this field existed.
+     */
+    public String rideStatus;
+
     public double[] lats;
     public double[] lons;
     public double[] elevations;
@@ -28,6 +35,17 @@ public final class StoredRoute {
 
     /** Strava starred segments too flat to be climbs (< 3%); user-curated, surface-taggable. */
     public List<StoredStarredSegment> starredSegments;
+
+    /**
+     * Tombstone of climbs the user explicitly removed (e.g. via {@link ClimbMergeService}'s
+     * near-duplicate merge), keyed by {@link nl.paree.climbpro.domain.climb.ClimbIdentity}. A
+     * Strava resync re-runs climb detection from scratch against the raw route geometry and can
+     * otherwise silently rediscover a climb the user chose to merge/remove — see
+     * {@link RouteRepository#saveRoute}, which filters freshly detected climbs against this list
+     * so a resync respects a prior removal instead of undoing it with no indication to the user.
+     * Null on routes stored before this field existed.
+     */
+    public List<String> removedClimbIds;
 
     public long importedAtMs;
     public long lastModifiedMs;

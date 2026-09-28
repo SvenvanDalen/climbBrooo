@@ -36,22 +36,36 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
     /** One row in the chronological timeline: a single attempt, resolved for display. */
     public static final class TimelineRow {
         public final long   dateEpochSec;
+        public final long   activityId;      // Strava activity id; groups rows from the same ride
         public final int    elapsedSec;
         public final String displayName;
         public final int    lengthM;         // 0 if unresolved
         public final double avgGradient;      // 0 if unresolved
         public final String routeId;          // null if no longer resolvable to a route
         public final int    climbIndex;       // -1 if unresolved
+        /**
+         * True when this attempt's GPS track diverged from the climb's known geometry
+         * and was excluded from PR calculations — see
+         * {@link nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector} (issue #77).
+         * Still shown here, just marked, since this is the plain chronological view.
+         */
+        public final boolean routeDeviation;
+        /** Average device temperature over the pass (°C), null when unknown (issue #80). */
+        public final Double avgTempC;
 
-        TimelineRow(long dateEpochSec, int elapsedSec, String displayName, int lengthM,
-                    double avgGradient, String routeId, int climbIndex) {
+        TimelineRow(long dateEpochSec, long activityId, int elapsedSec, String displayName,
+                    int lengthM, double avgGradient, String routeId, int climbIndex,
+                    boolean routeDeviation, Double avgTempC) {
             this.dateEpochSec = dateEpochSec;
+            this.activityId = activityId;
             this.elapsedSec = elapsedSec;
             this.displayName = displayName;
             this.lengthM = lengthM;
             this.avgGradient = avgGradient;
             this.routeId = routeId;
             this.climbIndex = climbIndex;
+            this.routeDeviation = routeDeviation;
+            this.avgTempC = avgTempC;
         }
     }
 
@@ -99,12 +113,15 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
                 ClimbInfo info = resolved.get(a.climbId);
                 out.add(new TimelineRow(
                         a.dateEpochSec,
+                        a.activityId,
                         a.elapsedSec,
                         info != null ? info.displayName : "Klim",
                         info != null ? info.lengthM : 0,
                         info != null ? info.avgGradient : 0,
                         info != null ? info.routeId : null,
-                        info != null ? info.index : -1));
+                        info != null ? info.index : -1,
+                        a.routeDeviation,
+                        a.avgTempC));
             }
             rows.postValue(out);
         });

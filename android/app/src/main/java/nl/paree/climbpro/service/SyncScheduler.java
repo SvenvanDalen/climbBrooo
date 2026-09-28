@@ -13,6 +13,7 @@ import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public final class SyncScheduler {
@@ -41,13 +42,15 @@ public final class SyncScheduler {
     }
 
     /** Trigger an immediate sync (e.g. from the "Sync now" button). */
-    public static void triggerImmediateSync(Context context) {
+    /** @return id of the enqueued run, so a caller can follow exactly this run's outcome. */
+    public static UUID triggerImmediateSync(Context context) {
         OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(RouteSyncWorker.class)
                 .build();
         WorkManager.getInstance(context).enqueueUniqueWork(
                 UNIQUE_MANUAL_SYNC,
                 ExistingWorkPolicy.REPLACE,
                 work);
+        return work.getId();
     }
 
     /** Observable status of the last manual sync (for UI refresh/feedback). */

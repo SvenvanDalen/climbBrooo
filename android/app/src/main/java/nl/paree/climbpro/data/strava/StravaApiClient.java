@@ -2,8 +2,10 @@ package nl.paree.climbpro.data.strava;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -42,4 +44,11 @@ public interface StravaApiClient {
             @Header("Authorization") String bearerToken,
             @Path("id") long activityId,
             @Query("keys") String keys);
+
+    /** Requires the {@code activity:write} OAuth scope (added for issue #60). */
+    @PUT("activities/{id}")
+    Call<StravaActivityDto> updateActivity(
+            @Header("Authorization") String bearerToken,
+            @Path("id") long activityId,
+            @Body StravaUpdateActivityDto body);
 }

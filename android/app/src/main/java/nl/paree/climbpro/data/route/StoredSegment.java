@@ -14,4 +14,10 @@ public final class StoredSegment {
     /** Gradient-implied VAM (m/h). -1 = not computed (e.g. stored by a pre-VAM build). */
     public int avgVamMPerH = -1;
     public int peakVamMPerH = -1;
+    /**
+     * User-set target time (seconds) for this segment, overriding the
+     * {@link nl.paree.climbpro.service.RoutePacingPlanner}-computed value before it is sent
+     * to the watch as 'tsec' (issue #23). Null means "use the automatic pacing plan".
+     */
+    public Integer manualTargetSec;
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto Backup to Google Drive, Android 11 and lower (issue #257). Same content as
+     data_extraction_rules.xml: everything except the Strava credentials (the encrypted token
+     and its Tink keyset are bound to this phone's keystore and can't be decrypted after a
+     restore) and sync_state.json (what this phone last sent to the watch). -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="strava_auth.xml" />
+    <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
+    <exclude domain="file" path="sync_state.json" />
+    <exclude domain="file" path=".restore_staging" />
+</full-backup-content>

@@ -107,6 +107,39 @@ public class BestOfYearCalculatorTest {
     }
 
     @Test
+    public void routeDeviatedMostRecentAttempt_ignoredEntirely_earlierCleanAttemptWins() {
+        StoredClimbAttempt deviated = at("k1", 2, epoch(2026, 5, 1), 400); // fastest, most recent
+        deviated.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                at("k1", 1, epoch(2026, 2, 1), 650),
+                deviated);
+
+        // Deviated attempts are ignored entirely, so the Feb attempt is both the most
+        // recent AND fastest among the clean attempts -> still flagged best-of-year.
+        assertTrue(BestOfYearCalculator.isMostRecentBestOfYear("k1", attempts, NOW_2026, UTC));
+    }
+
+    @Test
+    public void allAttemptsThisYearDeviated_notBest() {
+        StoredClimbAttempt deviated = at("k1", 1, epoch(2026, 3, 1), 400);
+        deviated.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(deviated);
+
+        assertFalse(BestOfYearCalculator.isMostRecentBestOfYear("k1", attempts, NOW_2026, UTC));
+    }
+
+    @Test
+    public void routeDeviatedFasterAttempt_ignoredWhenJudgingCleanAttempt() {
+        StoredClimbAttempt deviated = at("k1", 1, epoch(2026, 2, 1), 400); // faster, but deviated
+        deviated.routeDeviation = true;
+        List<StoredClimbAttempt> attempts = Arrays.asList(
+                deviated,
+                at("k1", 2, epoch(2026, 5, 1), 650)); // most recent, clean
+
+        assertTrue(BestOfYearCalculator.isMostRecentBestOfYear("k1", attempts, NOW_2026, UTC));
+    }
+
+    @Test
     public void otherClimbsIgnored_whenComparingBestOfYear() {
         List<StoredClimbAttempt> attempts = Arrays.asList(
                 at("k1", 1, epoch(2026, 4, 1), 650),

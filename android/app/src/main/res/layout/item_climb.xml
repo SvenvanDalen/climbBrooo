@@ -43,4 +43,15 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/climb_rest_badge"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:gravity="center"
+        android:text="☕"
+        android:textSize="13sp"
+        android:background="@drawable/bg_rest_badge"
+        android:visibility="gone"/>
+
 </LinearLayout>

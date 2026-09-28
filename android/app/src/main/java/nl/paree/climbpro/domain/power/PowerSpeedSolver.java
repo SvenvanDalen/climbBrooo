@@ -55,4 +55,20 @@ public final class PowerSpeedSolver {
     private static double residual(double v, double gravRoll, double dragCoef, double wheelPower) {
         return gravRoll * v + dragCoef * v * v * v - wheelPower;
     }
+
+    /**
+     * Sums per-segment time (distance / speed) at a fixed pedal power over raw segment
+     * arrays. Shared by {@link ClimbTimeEstimator} (forward: power -> time, used inside its
+     * fixed-point duration iteration) and {@link FtpEstimator} (inverse: bisects on power to
+     * match an observed time) so both sides of that inverse relationship use one loop.
+     */
+    static double totalSecondsAtPower(int[] segDistMeters, double[] segGradient, double[] segCrr,
+                                      double totalMassKg, double pedalPowerWatts) {
+        double total = 0;
+        for (int i = 0; i < segDistMeters.length; i++) {
+            double v = speedMetersPerSecond(pedalPowerWatts, totalMassKg, segGradient[i], segCrr[i]);
+            total += segDistMeters[i] / v;
+        }
+        return total;
+    }
 }

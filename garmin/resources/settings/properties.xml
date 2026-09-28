@@ -2,10 +2,14 @@
 <!--
     App-settings backed properties (Connect IQ "properties.xml"), configurable from
     Garmin Connect Mobile / Garmin Express without a rebuild. See settings.xml for the
-    user-facing setting that maps to darkTheme / climbAlertDistinctTone.
+    user-facing settings that map to darkTheme / largeTextMode / climbAlertDistinctTone.
 -->
 <properties>
     <property id="darkTheme" type="boolean">false</property>
+    <!-- Issue #82: accessibility mode (larger fonts, fewer secondary stats per
+         screen), for low-vision users or bright-sunlight legibility. Independent of
+         darkTheme; both can be on at once. -->
+    <property id="largeTextMode" type="boolean">false</property>
     <!-- Issue #83: opt-in alternative climb-start alert for earbud/headphone wearers
          who can miss the wrist vibration. Toybox.Attention has no spoken-voice/TTS
          API on this device tier, so this plays a distinct, more attention-grabbing

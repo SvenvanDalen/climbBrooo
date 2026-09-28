@@ -9,10 +9,12 @@ import java.io.File;
 import nl.paree.climbpro.connectiq.ConnectIqClient;
 import nl.paree.climbpro.connectiq.WatchRequestHandler;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
 
 public final class ClimbProApplication extends Application {
 
     private ConnectIqClient ciqClient;
+    private final HistoricClimbScoreCache historicClimbScoreCache = new HistoricClimbScoreCache();
 
     @Override
     public void onCreate() {
@@ -22,6 +24,7 @@ public final class ClimbProApplication extends Application {
                 new File(getCacheDir(), "osmdroid"));
 
         nl.paree.climbpro.service.PlannedClimbNotifier.ensureChannel(this);
+        nl.paree.climbpro.service.WetRideNotifier.ensureChannel(this);
 
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
@@ -38,14 +41,38 @@ public final class ClimbProApplication extends Application {
         // JVM/Robolectric tests it is not — there, scheduling is a no-op.
         try {
             nl.paree.climbpro.service.RebindScheduler.schedulePeriodicRebind(this);
+            nl.paree.climbpro.service.WarrantyReminderWorker.schedule(this);
         } catch (IllegalStateException e) {
             android.util.Log.w("ClimbProApplication",
-                    "WorkManager not initialised — skipping rebind schedule", e);
+                    "WorkManager not initialised — skipping periodic work schedules", e);
         }
+
+        // Best-effort cleanup of photo files orphaned by a process death between a photo
+        // write and its climb_attempts.json record being saved (see AttemptPhotoStore#
+        // cleanupOrphans). Off the main thread; failure here must never block startup.
+        new Thread(() -> {
+            try {
+                nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
+                        new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
+                nl.paree.climbpro.data.route.AttemptPhotoStore
+                        .cleanupOrphans(this, attemptRepo.loadAll());
+            } catch (Exception e) {
+                android.util.Log.w("ClimbProApplication", "Orphan photo cleanup failed", e);
+            }
+        }, "attempt-photo-cleanup").start();
     }
 
     /** App-scoped Connect IQ client. Reused by RouteSyncWorker — never construct your own. */
     public ConnectIqClient connectIqClient() {
         return ciqClient;
+    }
+
+    /**
+     * App-scoped cache of the rider's historic per-climb difficulty scores; see
+     * {@link HistoricClimbScoreCache} for why this must outlive a single ViewModel/screen.
+     * It revalidates itself against the catalog/attempts data versions on every read.
+     */
+    public HistoricClimbScoreCache historicClimbScoreCache() {
+        return historicClimbScoreCache;
     }
 }

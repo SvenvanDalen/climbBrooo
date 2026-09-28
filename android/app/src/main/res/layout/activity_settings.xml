@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/color_bg">
@@ -120,6 +121,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Sign in to Strava"/>
+
+                <Button
+                    android:id="@+id/btn_strava_title_template"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Titel-sjabloon"/>
             </LinearLayout>
 
             <LinearLayout
@@ -148,6 +157,18 @@
                     android:hint="FTP (watts)"
                     android:inputType="number"
                     android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:id="@+id/suggested_ftp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:padding="4dp"
+                    android:visibility="gone"
+                    android:layout_marginBottom="8dp"
+                    tools:text="Voorgestelde FTP: 245 W (toepassen?)"/>
 
                 <EditText
                     android:id="@+id/input_rider_weight"
@@ -191,6 +212,185 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Save rider profile"/>
+            </LinearLayout>
+
+            <!-- Home-climb privacy zone (issue #92). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Privacy"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="10dp"
+                    android:text="Zone rond het startpunt van een als &quot;thuisklim&quot; gemarkeerde klim die bij export/delen wordt gewazigd."/>
+
+                <TextView
+                    android:id="@+id/privacy_radius_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="500 m"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:layout_marginBottom="4dp"/>
+
+                <SeekBar
+                    android:id="@+id/privacy_radius_seek_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="@color/color_accent"
+                    android:thumbTint="@color/color_accent"
+                    android:max="1900"
+                    android:progress="400"/>
+
+            </LinearLayout>
+
+            <!-- Cleaning reminder after wet rides (issue #234). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Schoonmaakherinnering"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="Na een rit in de regen (of een gravel- of MTB-rit na regen) krijg je een melding om fiets en ketting schoon te maken. Het startpunt van je rit wordt hiervoor naar Open-Meteo gestuurd. Werkt voor Strava-ritten van de laatste 3 dagen, na elke sync."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_wet_ride_reminder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Herinner me na natte ritten"/>
+            </LinearLayout>
+
+            <!-- Health Connect (issue #255). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Health Connect"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/health_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_health_connect"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Koppelen met Health Connect"/>
+
+                <Button
+                    android:id="@+id/btn_health_export"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Ritten nu naar Health Connect"/>
+
+                <Button
+                    android:id="@+id/btn_health_weight"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Gewicht overnemen"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_health_auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Nieuwe ritten automatisch na elke sync"/>
+            </LinearLayout>
+
+            <!-- Back-up (issue #257): manual zip + daily automatic copy to a picked folder. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Back-up"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/backup_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_backup_create"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Back-up maken"/>
+
+                <Button
+                    android:id="@+id/btn_backup_restore"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Back-up terugzetten"/>
+
+                <Button
+                    android:id="@+id/btn_backup_auto"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Automatische back-up aanzetten"/>
             </LinearLayout>
 
             <Button

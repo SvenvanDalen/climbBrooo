@@ -40,6 +40,16 @@
                 android:layout_marginBottom="10dp"/>
 
             <TextView
+                android:id="@+id/climb_rating"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="10dp"
+                android:text="Nog niet beoordeeld"/>
+
+            <TextView
                 android:id="@+id/climb_time_estimate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -48,6 +58,36 @@
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/seasonal_comparison"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/climb_manual_ref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/descent_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
 
             <nl.paree.climbpro.ui.climbs.ClimbProfileView
                 android:id="@+id/climb_profile"
@@ -72,6 +112,14 @@
                 android:text="Rename climb"/>
 
             <Button
+                android:id="@+id/btn_manual_ref"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="WR/pro-referentietijd instellen"/>
+
+            <Button
                 android:id="@+id/btn_share_climb"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
@@ -88,12 +136,52 @@
                 android:text="Exporteer als GPX"/>
 
             <Button
+                android:id="@+id/btn_rate_climb"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Klim beoordelen"/>
+
+            <Button
+                android:id="@+id/btn_toggle_home_climb"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Markeer als thuisklim"/>
+
+            <Button
+                android:id="@+id/btn_sunrise_ride"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Zonsopkomst-rit plannen"/>
+
+            <Button
+                android:id="@+id/btn_summit_weather"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Weer op de top"/>
+
+            <Button
                 android:id="@+id/btn_re_segment"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="8dp"
                 android:text="Herbereken segmenten"/>
+
+            <Button
+                android:id="@+id/btn_edit_shape"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Vorm aanpassen"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
