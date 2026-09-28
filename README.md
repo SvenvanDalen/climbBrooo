@@ -103,6 +103,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
+- **Favorite start points** — save home, work or a parking spot once (current location or
+  typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
+  planning. Phone-only.
 
 ---
 

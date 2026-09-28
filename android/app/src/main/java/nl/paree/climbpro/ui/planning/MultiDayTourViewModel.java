@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import nl.paree.climbpro.data.planning.FavoriteStartPoint;
+import nl.paree.climbpro.data.planning.FavoriteStartPointStore;
 import nl.paree.climbpro.data.planning.PlannedClimb;
 import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
@@ -22,6 +24,7 @@ import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.RoutePacingPlanner;
 import nl.paree.climbpro.service.SegmentTargetOverrideMerger;
 
+import java.io.File;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,12 +47,14 @@ public final class MultiDayTourViewModel extends AndroidViewModel {
     private final PlannedClimbRepository planRepo;
     private final RouteRepository routeRepo;
     private final RiderProfileRepository profileRepo;
+    private final FavoriteStartPointStore favoriteStore;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<TourStop>> candidates = new MutableLiveData<>();
     private final MutableLiveData<MultiDayTourPlan> plan = new MutableLiveData<>();
     private final MutableLiveData<Boolean> profileComplete = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final MutableLiveData<List<FavoriteStartPoint>> favorites = new MutableLiveData<>();
 
     /** Keys of the selected candidates; null until the first load (then: all selected). */
     private volatile Set<String> selectedKeys;
@@ -59,12 +64,21 @@ public final class MultiDayTourViewModel extends AndroidViewModel {
         planRepo = new PlannedClimbRepository(app);
         routeRepo = new RouteRepository(app);
         profileRepo = new RiderProfileRepository(app);
+        favoriteStore = new FavoriteStartPointStore(
+                new File(app.getFilesDir(), FavoriteStartPointStore.FILE_NAME));
     }
 
     public LiveData<List<TourStop>> candidates() { return candidates; }
     public LiveData<MultiDayTourPlan> plan() { return plan; }
     public LiveData<Boolean> profileComplete() { return profileComplete; }
     public LiveData<String> error() { return error; }
+    /** Saved favorite start points (issue #206), offered as tour start next to the climbs. */
+    public LiveData<List<FavoriteStartPoint>> favorites() { return favorites; }
+
+    /** (Re)loads the favorites; called on every resume so edits elsewhere show up. */
+    public void loadFavorites() {
+        executor.execute(() -> favorites.postValue(favoriteStore.loadAll()));
+    }
 
     /** Loads the Klimplanning candidates once (subsequent calls keep the current selection). */
     public void loadCandidates() {

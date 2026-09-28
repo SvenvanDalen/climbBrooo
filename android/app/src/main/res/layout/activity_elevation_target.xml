@@ -78,6 +78,13 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Start van route" />
+
+                <Button
+                    android:id="@+id/pickFavoriteStartButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/fav_start_pick_button" />
             </LinearLayout>
 
             <Button

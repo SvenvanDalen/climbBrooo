@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_favorite_start_points"
+        android:title="@string/fav_start_title"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_timeline"
         android:title="Tijdlijn"
         app:showAsAction="never"/>

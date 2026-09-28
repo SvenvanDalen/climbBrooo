@@ -10,6 +10,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.planning.FavoriteStartPoint;
+import nl.paree.climbpro.data.planning.FavoriteStartPointStore;
 import nl.paree.climbpro.data.planning.PlannedClimb;
 import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.data.privacy.PrivacyCategory;
@@ -185,6 +187,15 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 List<String> names = new ArrayList<>();
                 for (PlannedClimb p : new PlannedClimbRepository(getApplication()).loadAll()) {
                     names.add("• " + p.displayName + " op " + date(p.plannedAtEpochSec));
+                }
+                appendCapped(sb, names);
+                break;
+            }
+            case FAVORITE_START_POINTS: {
+                List<String> names = new ArrayList<>();
+                for (FavoriteStartPoint f : new FavoriteStartPointStore(new File(
+                        getApplication().getFilesDir(), FavoriteStartPointStore.FILE_NAME)).loadAll()) {
+                    names.add("• " + f.name);
                 }
                 appendCapped(sb, names);
                 break;
