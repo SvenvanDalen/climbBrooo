@@ -65,6 +65,17 @@ public final class SettingsActivity extends AppCompatActivity {
                 }
             });
 
+    // Radius mode (issue #310) searches around the last known fix, which needs a location grant.
+    private final ActivityResultLauncher<String> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    viewModel.refreshRadiusLocation();
+                } else {
+                    Toast.makeText(this, "Zonder locatie weet de radiusmodus niet waar je bent",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+
     // Back-up (issue #257): Storage Access Framework pickers, so the target can be a local
     // folder or a cloud provider such as Google Drive.
     private final ActivityResultLauncher<String> backupCreator = registerForActivityResult(
@@ -164,8 +175,13 @@ public final class SettingsActivity extends AppCompatActivity {
 
         binding.radioRoute.setOnClickListener(v ->
                 viewModel.setSyncMode("route"));
-        binding.radioRadius.setOnClickListener(v ->
-                viewModel.setSyncMode("radius"));
+        binding.radioRadius.setOnClickListener(v -> {
+            viewModel.setSyncMode("radius");
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+        });
 
         binding.radiusSeekBar.setMax(100);
         binding.radiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

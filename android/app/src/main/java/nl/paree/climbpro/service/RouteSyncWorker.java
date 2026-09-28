@@ -48,8 +48,13 @@ public final class RouteSyncWorker extends Worker {
     public  static final String KEY_PULL_DONE  = "pull_done";
     public  static final String KEY_CHANGED    = "routes_changed";
     public  static final String KEY_WATCH_SENT = "watch_sent";
+    /** True when radius mode had no known position, so nothing was sent (issue #310). */
+    public  static final String KEY_NO_LOCATION = "no_location";
 
     private static final int DEFAULT_RADIUS_M = 30_000;
+
+    /** Set by the radius payload job when there is no known position to search around. */
+    private volatile boolean radiusWithoutLocation;
 
     public RouteSyncWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -114,6 +119,7 @@ public final class RouteSyncWorker extends Worker {
                 .putBoolean(KEY_PULL_DONE, true)
                 .putInt(KEY_CHANGED, r.routesChanged)
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
+                .putBoolean(KEY_NO_LOCATION, radiusWithoutLocation)
                 .build();
 
         // The yearly km goal card (issue #157) reads the ride archive, which otherwise only
@@ -186,10 +192,16 @@ public final class RouteSyncWorker extends Worker {
         if (MODE_RADIUS.equals(mode)) {
             return new SyncOrchestrator.PayloadJob() {
                 @Override public byte[] build() throws IOException {
-                    double lat = Double.longBitsToDouble(
-                            prefs.getLong(PREF_LAST_LAT, Double.doubleToLongBits(0)));
-                    double lon = Double.longBitsToDouble(
-                            prefs.getLong(PREF_LAST_LON, Double.doubleToLongBits(0)));
+                    // Never search around 0,0 (issue #310): without a known position
+                    // there is nothing sensible to send.
+                    double[] position = RadiusLocation.current(getApplicationContext(), prefs);
+                    if (position == null) {
+                        Log.w(TAG, "Radius mode without a known location — nothing to send");
+                        radiusWithoutLocation = true;
+                        return null;
+                    }
+                    double lat = position[0];
+                    double lon = position[1];
                     double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
                     RadiusModeAssembler assembler =
                             new RadiusModeAssembler(routeRepo, payloadBuilder);

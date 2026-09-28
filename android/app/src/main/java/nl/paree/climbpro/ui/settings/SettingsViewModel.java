@@ -19,6 +19,7 @@ import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.power.FtpEstimator;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.FtpEffortJoiner;
+import nl.paree.climbpro.service.RadiusLocation;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 
@@ -76,8 +77,25 @@ public final class SettingsViewModel extends AndroidViewModel {
         if (infos == null || infos.isEmpty() || !pendingSyncRebuild.get()) return;
         WorkInfo info = infos.get(infos.size() - 1);
         if (info.getState().isFinished() && pendingSyncRebuild.compareAndSet(true, false)) {
+            if (info.getOutputData().getBoolean(RouteSyncWorker.KEY_NO_LOCATION, false)) {
+                syncStatus.postValue(NO_LOCATION_MESSAGE);
+            }
             refreshSuggestedFtp(riderProfile.getValue(), true);
         }
+    }
+
+    /** Shown when radius mode had no known position, so nothing went to the watch (#310). */
+    static final String NO_LOCATION_MESSAGE =
+            "Radiusmodus: geen locatie bekend. Zet locatie aan en sync opnieuw.";
+
+    /**
+     * Stores the freshest cached fix as the radius-mode centre (issue #310). Runs while the
+     * app is in the foreground, where a cached fix is most likely available; the background
+     * worker falls back to what is stored here.
+     */
+    public void refreshRadiusLocation() {
+        executor.execute(() -> RadiusLocation.current(getApplication(),
+                PreferenceManager.getDefaultSharedPreferences(getApplication())));
     }
 
     public SettingsViewModel(@NonNull Application app) {
@@ -163,6 +181,7 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putString(RouteSyncWorker.PREF_MODE, mode).apply();
         syncMode.postValue(mode);
+        if (RouteSyncWorker.MODE_RADIUS.equals(mode)) refreshRadiusLocation();
     }
 
     public void setRadiusKm(int km) {
@@ -214,6 +233,7 @@ public final class SettingsViewModel extends AndroidViewModel {
         // tapped. manualSyncObserver forces the rebuild when the triggered work reaches
         // a finished state.
         pendingSyncRebuild.set(true);
+        refreshRadiusLocation();
         SyncScheduler.triggerImmediateSync(getApplication());
     }
 
