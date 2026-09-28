@@ -92,6 +92,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
   detail screen; the route list shows the status and can be filtered on it (menu →
   "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Fuel planner** — "Voedingsplanner" on the route detail screen estimates ride time from
+  your profile and the route's climbing, and tells you how many bars, gels and bottles to
+  bring; temperature comes from the forecast at the start or is typed in.
 - **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
   "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
   untouched and tapping again reopens the existing reversed route.

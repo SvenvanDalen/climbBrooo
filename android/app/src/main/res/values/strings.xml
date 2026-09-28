@@ -72,4 +72,31 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <!-- Calorie- en koolhydratenplanner per route (issue #185) -->
+    <string name="fuel_action">Voedingsplanner</string>
+    <string name="fuel_title">Voedingsplanner</string>
+    <string name="fuel_intro">Hoeveel gels, repen en bidons heb je nodig? Gebaseerd op de geschatte rijtijd, de hoogtemeters en de temperatuur.</string>
+    <string name="fuel_loading">Route laden…</string>
+    <string name="fuel_summary">%1$.1f km · %2$d hm · geschatte rijtijd %3$s</string>
+    <string name="fuel_summary_model">Rijtijd geschat met je FTP en gewicht (instellingen).</string>
+    <string name="fuel_summary_fallback">Rijtijd geschat met 25 km/u plus een uur per 1000 hm — vul je profiel in (instellingen) voor een betere schatting.</string>
+    <string name="fuel_temperature_hint">Temperatuur (°C)</string>
+    <string name="fuel_fetch_temperature">Temperatuur ophalen (weersverwachting)</string>
+    <string name="fuel_fetching_temperature">Weersverwachting ophalen…</string>
+    <string name="fuel_temperature_fetched">Verwachte gemiddelde temperatuur bij vertrek nu: %1$.0f °C</string>
+    <string name="fuel_temperature_unavailable">Geen temperatuur uit de verwachting — vul hem zelf in.</string>
+    <string name="fuel_temperature_failed">Weersverwachting ophalen mislukt — vul de temperatuur zelf in.</string>
+    <string name="fuel_bottle_size">Bidon: %1$d ml</string>
+    <string name="fuel_calculate">Bereken</string>
+    <string name="fuel_result_kcal">Verbruik: ca. %1$d kcal</string>
+    <string name="fuel_result_carbs">Koolhydraten: %1$d g per uur, %2$d g totaal</string>
+    <string name="fuel_result_food">Meenemen: %1$d repen (%2$d g) en %3$d gels (%4$d g)</string>
+    <string name="fuel_result_no_food">Eten onderweg is niet nodig voor een rit onder de 75 minuten.</string>
+    <string name="fuel_result_fluid">Drinken: %1$d ml per uur, %2$.1f liter totaal</string>
+    <string name="fuel_result_bottles">%1$d bidons van %2$d ml</string>
+    <string name="fuel_result_refills">Je hebt %1$d bidonhouders: plan %2$d keer bijvullen.</string>
+    <string name="fuel_result_electrolytes">Neem elektrolyten (zout) mee in je bidons.</string>
+    <string name="fuel_result_temp_assumed">Geen temperatuur ingevuld — uitgegaan van %1$.0f °C.</string>
+    <string name="fuel_result_temp">Temperatuur: %1$.0f °C</string>
+    <string name="fuel_route_error">Route laden mislukt: %1$s</string>
 </resources>
