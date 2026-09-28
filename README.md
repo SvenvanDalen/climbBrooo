@@ -122,6 +122,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Training-load calendar** — menu → "Trainingskalender" shows a year of daily training load
+  as a GitHub-style heatmap (TSS-style load per ride from the ride archive, plus climb
+  attempts); tap a day for load, rides, climbs and elevation. Phone-only.
+
 ---
 
 ## Repository layout

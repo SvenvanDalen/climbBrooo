@@ -399,6 +399,10 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_fitness) {
             startActivity(nl.paree.climbpro.ui.fitness.FitnessActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_training_load_calendar) {
+            startActivity(
+                    nl.paree.climbpro.ui.fitness.TrainingLoadCalendarActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_photo_quiz) {
             startActivity(nl.paree.climbpro.ui.quiz.PhotoQuizActivity.intentFor(this));
             return true;
