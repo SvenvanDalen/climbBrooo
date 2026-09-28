@@ -16,14 +16,17 @@ public final class HourlyForecast {
     public final double[] apparent;
     public final double[] windKmh;
     public final Integer[] rainPct;
+    /** UV index per hour (issue #229); NaN when the service left it out. */
+    public final double[] uvIndex;
 
     private HourlyForecast(Instant[] times, double[] temperature, double[] apparent,
-                           double[] windKmh, Integer[] rainPct) {
+                           double[] windKmh, Integer[] rainPct, double[] uvIndex) {
         this.times = times;
         this.temperature = temperature;
         this.apparent = apparent;
         this.windKmh = windKmh;
         this.rainPct = rainPct;
+        this.uvIndex = uvIndex;
     }
 
     public static HourlyForecast parse(String json) throws IOException {
@@ -34,17 +37,18 @@ public final class HourlyForecast {
         JsonNode time = hourly.get("time");
         int n = time.size();
         Instant[] times = new Instant[n];
-        double[] temp = new double[n], app = new double[n], wind = new double[n];
+        double[] temp = new double[n], app = new double[n], wind = new double[n], uv = new double[n];
         Integer[] rain = new Integer[n];
         for (int i = 0; i < n; i++) {
             times[i] = LocalDateTime.parse(time.get(i).asText()).toInstant(ZoneOffset.UTC);
             temp[i] = number(hourly, "temperature_2m", i);
             app[i] = number(hourly, "apparent_temperature", i);
             wind[i] = number(hourly, "wind_speed_10m", i);
+            uv[i] = number(hourly, "uv_index", i);
             JsonNode r = hourly.path("precipitation_probability").get(i);
             rain[i] = r == null || r.isNull() ? null : r.asInt();
         }
-        return new HourlyForecast(times, temp, app, wind, rain);
+        return new HourlyForecast(times, temp, app, wind, rain, uv);
     }
 
     /** Index of the hour that contains {@code when}, or -1 outside the forecast. */

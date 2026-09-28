@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="8dp">
+
+    <RadioGroup
+        android:id="@+id/radio_kind"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/radio_purchase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Aankoop" />
+
+        <RadioButton
+            android:id="@+id/radio_part"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Onderdeel" />
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/input_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Omschrijving (bv. Nieuwe ketting)"
+        android:importantForAutofill="no"
+        android:inputType="textCapSentences" />
+
+    <EditText
+        android:id="@+id/input_amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:digits="0123456789,."
+        android:hint="Bedrag in euro (bv. 49,95)"
+        android:importantForAutofill="no"
+        android:inputType="numberDecimal" />
+</LinearLayout>
