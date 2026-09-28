@@ -96,6 +96,18 @@ public class RideStreamAnalyzerTest {
         assertEquals(1000, (int) st.best10kSec);
         assertEquals(4000, (int) st.best40kSec);
         assertNull(st.best100kSec);
+        assertNull(st.powerCurve); // no power stream
+    }
+
+    @Test
+    public void analyzeStoresPowerCurve() {
+        RideStreams s = steady(4000, 9);
+        double[] w = new double[s.time.length];
+        java.util.Arrays.fill(w, 210);
+        StoredRideStreamStats st = RideStreamAnalyzer.analyze(7L,
+                new RideStreams(s.time, s.distance, w, null));
+        assertEquals(210, st.powerCurve[0]);
+        assertEquals(210, st.powerCurve[4]);
     }
 
     @Test

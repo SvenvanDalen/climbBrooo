@@ -157,6 +157,10 @@
             android:name=".ui.records.HeartRateDriftActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.records.PowerCurveActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <!-- Friends' feed (issue #240). Exported only for text shares, so a friend's chat
              message with a CPF1: code can be sent straight to ClimbPro; the decoder treats
