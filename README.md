@@ -122,6 +122,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Climb training block** — menu "Trainingsblok": a 4-week plan (3 build weeks, 1 recovery
+  week) built from climbs you have already ridden. Weekly climbing load starts at your recent
+  4-week average and rises 10 % per week while the allowed climbs get harder; each week lists
+  2-3 sessions as "N× climb". Phone-only.
+
 ---
 
 ## Repository layout

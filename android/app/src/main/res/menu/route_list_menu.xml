@@ -135,6 +135,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_periodization"
+        android:title="@string/menu_periodization"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_fitness"
         android:title="Fitheid &amp; vorm"
         app:showAsAction="never"/>

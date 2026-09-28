@@ -396,6 +396,9 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.recovery.RecoveryAdviceActivity.class));
             return true;
+        } else if (id == R.id.action_periodization) {
+            startActivity(nl.paree.climbpro.ui.training.ClimbPeriodizationActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_fitness) {
             startActivity(nl.paree.climbpro.ui.fitness.FitnessActivity.intentFor(this));
             return true;
