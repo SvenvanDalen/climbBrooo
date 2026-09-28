@@ -122,6 +122,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Recovery check after a ride** — tap a ride in "Ritten" to log how hard it felt (RPE 1–10)
+  and how you slept (1–5, optional hours and a note); "Herstel" shows the trend next to each
+  ride's distance, time, speed and power, and warns when rides feel harder while sleep gets
+  worse. Phone-only.
+
 ---
 
 ## Repository layout

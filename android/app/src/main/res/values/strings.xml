@@ -72,4 +72,59 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <!-- Herstel-check na de rit (issue #183) -->
+    <string name="recovery_check_title">Herstel-check</string>
+    <string name="recovery_check_rpe_label">Hoe zwaar voelde de rit? %1$d/10 (%2$s)</string>
+    <string name="recovery_check_sleep_label">Hoe sliep je de nacht ervoor? %1$d/5 (%2$s)</string>
+    <string-array name="recovery_rpe_words">
+        <item>heel licht</item>
+        <item>licht</item>
+        <item>licht</item>
+        <item>matig</item>
+        <item>matig</item>
+        <item>zwaar</item>
+        <item>zwaar</item>
+        <item>heel zwaar</item>
+        <item>heel zwaar</item>
+        <item>maximaal</item>
+    </string-array>
+    <string-array name="recovery_sleep_words">
+        <item>slecht</item>
+        <item>matig</item>
+        <item>redelijk</item>
+        <item>goed</item>
+        <item>uitstekend</item>
+    </string-array>
+    <string name="recovery_check_hours_hint">Uren geslapen (optioneel, bijv. 7,5)</string>
+    <string name="recovery_check_note_hint">Notitie (optioneel, bijv. zware benen)</string>
+    <string name="recovery_check_save">Opslaan</string>
+    <string name="recovery_check_cancel">Annuleren</string>
+    <string name="recovery_check_delete">Wissen</string>
+    <string name="recovery_check_saved">Herstel-check opgeslagen</string>
+    <string name="recovery_check_deleted">Herstel-check gewist</string>
+    <string name="recovery_check_save_failed">Opslaan mislukt: %1$s</string>
+    <string name="recovery_row_logged">Herstel: RPE %1$d/10 · slaap %2$d/5</string>
+    <string name="recovery_row_logged_hours">Herstel: RPE %1$d/10 · slaap %2$d/5 (%3$.1f u)</string>
+    <string name="recovery_row_empty">Tik voor een herstel-check</string>
+    <string name="ride_archive_recovery_trend">Herstel</string>
+    <string name="recovery_trend_title">Herstel-trend</string>
+    <string name="recovery_trend_empty">Nog geen herstel-checks. Tik in Ritten op een rit om in te vullen hoe zwaar hij voelde en hoe je sliep.</string>
+    <string name="recovery_trend_summary_few">%1$d rit(ten) gelogd · gem. RPE %2$.1f/10 · gem. slaap %3$.1f/5. Vanaf 4 checks zie je een trend.</string>
+    <string name="recovery_trend_summary">Laatste %1$d ritten tegenover de %1$d ervoor:
+RPE %2$.1f → %3$.1f (%4$s)
+Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
+    <string name="recovery_direction_up">hoger</string>
+    <string name="recovery_direction_down">lager</string>
+    <string name="recovery_direction_stable">gelijk</string>
+    <string name="recovery_trend_warning">Je ritten voelen zwaarder terwijl je slechter slaapt. Plan wat extra rust.</string>
+    <string name="recovery_trend_legend">Geel: RPE (1–10) · Blauw: slaap (1–5, ×2 geschaald). Laatste %1$d checks.</string>
+    <string name="recovery_trend_chart_description">Verloop van RPE en slaap over de laatste %1$d gelogde ritten</string>
+    <string name="recovery_point_title">%1$s · %2$s</string>
+    <string name="recovery_point_stats">%1$.1f km · %2$s · %3$.1f km/u · %4$d hm</string>
+    <string name="recovery_point_watts"> · %1$d W</string>
+    <string name="recovery_point_check">RPE %1$d/10 · slaap %2$d/5 · belasting %3$d</string>
+    <string name="recovery_point_hours"> · %1$.1f u geslapen</string>
+    <string name="recovery_duration">%1$d:%2$02d u</string>
+    <string name="recovery_ride_default_name">Rit</string>
+    <string name="recovery_unknown_date">onbekende datum</string>
 </resources>
