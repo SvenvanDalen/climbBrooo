@@ -109,7 +109,8 @@ public class PrivacyInventoryTest {
                 "bike_costs.json",
                 "battery_status.json",
                 "pain_log.json",
-                "safe_home.json"};
+                "safe_home.json",
+                "comeback_plan.json"};
         java.util.Set<String> covered = new java.util.HashSet<>();
         for (PrivacyCategory c : PrivacyCategory.values()) {
             covered.addAll(java.util.Arrays.asList(c.paths()));

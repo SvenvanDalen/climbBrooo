@@ -46,7 +46,8 @@ public final class BackupArchive {
             "bike_costs.json",
             "battery_status.json",
             "pain_log.json",
-            "safe_home.json"};
+            "safe_home.json",
+            "comeback_plan.json"};
 
     static final String MANIFEST = "manifest.json";
     static final String PREFS = "prefs.json";

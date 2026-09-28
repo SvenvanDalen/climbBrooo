@@ -43,6 +43,10 @@ public enum PrivacyCategory {
             "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
                     + "gemeld zijn.",
             "safe_home.json"),
+    COMEBACK_PLAN("Terugkomstplan",
+            "Je actieve opbouwplan na een pauze of blessure (startdatum en of het om een "
+                    + "blessure gaat).",
+            "comeback_plan.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),
