@@ -144,6 +144,14 @@
                 android:text="Klim beoordelen"/>
 
             <Button
+                android:id="@+id/btn_export_workout"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Exporteer als Zwift-/ERG-workout"/>
+
+            <Button
                 android:id="@+id/btn_toggle_home_climb"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
