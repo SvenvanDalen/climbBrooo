@@ -1,10 +1,7 @@
 package nl.paree.climbpro.ui.planning;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
-import android.content.Context;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
@@ -12,6 +9,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import nl.paree.climbpro.data.planning.FavoriteStartPoint;
+import nl.paree.climbpro.data.planning.FavoriteStartPointStore;
 import nl.paree.climbpro.data.planning.PlannedClimb;
 import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
@@ -24,6 +23,7 @@ import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.planning.ElevationTargetPlanner;
 import nl.paree.climbpro.service.PlannedClimbWorkScheduler;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -64,8 +64,11 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
 
     public interface RouteStartsCallback { void onRouteStarts(List<RouteStart> starts); }
 
+    public interface FavoritesCallback { void onFavorites(List<FavoriteStartPoint> favorites); }
+
     private final RouteRepository routeRepo;
     private final PlannedClimbRepository planRepo;
+    private final FavoriteStartPointStore favoriteStore;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StartPoint> start = new MutableLiveData<>();
@@ -77,6 +80,8 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
         super(app);
         routeRepo = new RouteRepository(app);
         planRepo = new PlannedClimbRepository(app);
+        favoriteStore = new FavoriteStartPointStore(
+                new File(app.getFilesDir(), FavoriteStartPointStore.FILE_NAME));
     }
 
     public LiveData<StartPoint> start() { return start; }
@@ -95,22 +100,9 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
      * user to pick a route start instead. No active GPS request is made — this is a planning
      * screen, a cached fix of the phone's whereabouts is precise enough for a radius.
      */
-    @SuppressLint("MissingPermission")
     public void useLastKnownLocation() {
         executor.execute(() -> {
-            Location best = null;
-            try {
-                LocationManager lm = (LocationManager) getApplication()
-                        .getSystemService(Context.LOCATION_SERVICE);
-                if (lm != null) {
-                    for (String provider : lm.getProviders(true)) {
-                        Location l = lm.getLastKnownLocation(provider);
-                        if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
-                    }
-                }
-            } catch (SecurityException e) {
-                best = null;
-            }
+            Location best = LastKnownLocation.freshest(getApplication());
             String label = best == null ? null : startLabelForFixAge(
                     (SystemClock.elapsedRealtimeNanos() - best.getElapsedRealtimeNanos()) / 1_000_000L);
             if (label == null) {
@@ -155,6 +147,11 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
             }
             callback.onRouteStarts(out);
         });
+    }
+
+    /** Lists the saved favorite start points (issue #206), off the main thread. */
+    public void loadFavorites(FavoritesCallback callback) {
+        executor.execute(() -> callback.onFavorites(favoriteStore.loadAll()));
     }
 
     public void suggest(int targetGainM, double radiusKm, int maxClimbs) {

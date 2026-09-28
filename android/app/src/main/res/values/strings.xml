@@ -44,4 +44,32 @@
         <item quantity="other">Samengevoegd: %1$s (%2$d klimmen)</item>
     </plurals>
     <string name="route_join_failed">Samenvoegen mislukt: %1$s</string>
+    <!-- Favoriete startpunten (issue #206) -->
+    <string name="fav_start_title">Favoriete startpunten</string>
+    <string name="fav_start_intro">Bewaar vaste startpunten zoals thuis, werk of een parkeerplek. Je kiest ze snel als start bij het hoogtemeter-doel en de meerdaagse toer.</string>
+    <string name="fav_start_empty">Nog geen favoriete startpunten.</string>
+    <string name="fav_start_add_location">Huidige locatie toevoegen</string>
+    <string name="fav_start_add_coordinates">Coördinaten invoeren</string>
+    <string name="fav_start_name_hint">Naam (bijv. Thuis)</string>
+    <string name="fav_start_coordinates_hint">Breedte, lengte (bijv. 50.8512, 5.6904)</string>
+    <string name="fav_start_name_required">Vul een naam in</string>
+    <string name="fav_start_coordinates_invalid">Ongeldige coördinaten</string>
+    <string name="fav_start_new_title">Nieuw startpunt</string>
+    <string name="fav_start_location_message">%1$s: %2$.5f, %3$.5f</string>
+    <string name="fav_start_no_location">Geen recente locatie bekend. Voer de coördinaten in.</string>
+    <string name="fav_start_no_permission">Geen locatietoestemming. Voer de coördinaten in.</string>
+    <string name="fav_start_saved">Startpunt "%1$s" opgeslagen</string>
+    <string name="fav_start_save_failed">Opslaan mislukt: %1$s</string>
+    <string name="fav_start_row">%1$s
+%2$.5f, %3$.5f</string>
+    <string name="fav_start_rename">Hernoemen</string>
+    <string name="fav_start_delete">Verwijderen</string>
+    <string name="fav_start_delete_confirm">Startpunt "%1$s" verwijderen?</string>
+    <string name="fav_start_save">Opslaan</string>
+    <string name="fav_start_cancel">Annuleren</string>
+    <string name="fav_start_pick_button">Favoriet</string>
+    <string name="fav_start_pick_title">Kies een favoriet startpunt</string>
+    <string name="fav_start_manage">Beheren</string>
+    <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
+    <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
 </resources>

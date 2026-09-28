@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.domain.planning.ElevationTargetPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
 
@@ -107,6 +108,7 @@ public final class ElevationTargetActivity extends AppCompatActivity {
 
         findViewById(R.id.useLocationButton).setOnClickListener(v -> requestLocation());
         findViewById(R.id.pickRouteStartButton).setOnClickListener(v -> pickRouteStart());
+        findViewById(R.id.pickFavoriteStartButton).setOnClickListener(v -> pickFavoriteStart());
         findViewById(R.id.suggestButton).setOnClickListener(v -> suggest());
         addToPlanningButton.setOnClickListener(v -> pickDateTimeAndAdd());
 
@@ -152,6 +154,33 @@ public final class ElevationTargetActivity extends AppCompatActivity {
                         viewModel.setStart(new ElevationTargetViewModel.StartPoint(
                                 s.lat, s.lon, "start van " + s.label));
                     })
+                    .show();
+        }));
+    }
+
+    /** Favoriete startpunten (issue #206): pick a saved start instead of GPS or a route. */
+    private void pickFavoriteStart() {
+        viewModel.loadFavorites(favorites -> runOnUiThread(() -> {
+            if (isFinishing()) return;
+            Intent manage = FavoriteStartPointsActivity.intentFor(this);
+            if (favorites.isEmpty()) {
+                new AlertDialog.Builder(this)
+                        .setMessage(R.string.fav_start_none_yet)
+                        .setPositiveButton(R.string.fav_start_manage, (d, w) -> startActivity(manage))
+                        .setNegativeButton(R.string.fav_start_cancel, null)
+                        .show();
+                return;
+            }
+            String[] labels = new String[favorites.size()];
+            for (int i = 0; i < favorites.size(); i++) labels[i] = favorites.get(i).name;
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.fav_start_pick_title)
+                    .setItems(labels, (d, which) -> {
+                        FavoriteStartPoint f = favorites.get(which);
+                        viewModel.setStart(new ElevationTargetViewModel.StartPoint(
+                                f.lat, f.lon, f.name));
+                    })
+                    .setNeutralButton(R.string.fav_start_manage, (d, w) -> startActivity(manage))
                     .show();
         }));
     }

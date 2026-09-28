@@ -338,6 +338,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_top_climbs) {
             startActivity(nl.paree.climbpro.ui.climbs.TopClimbsActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_favorite_start_points) {
+            startActivity(nl.paree.climbpro.ui.planning.FavoriteStartPointsActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_timeline) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbTimelineActivity.class));

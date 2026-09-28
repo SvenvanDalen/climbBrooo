@@ -19,6 +19,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.domain.planning.MultiDayTourPlan;
 import nl.paree.climbpro.domain.planning.MultiDayTourPlanner;
 import nl.paree.climbpro.domain.planning.TourDay;
@@ -49,6 +50,7 @@ public final class MultiDayTourActivity extends AppCompatActivity {
     private Button shareButton;
 
     private List<TourStop> candidates = new ArrayList<>();
+    private List<FavoriteStartPoint> favorites = new ArrayList<>();
     private MultiDayTourPlan currentPlan;
 
     @Override
@@ -70,6 +72,10 @@ public final class MultiDayTourActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(MultiDayTourViewModel.class);
         viewModel.candidates().observe(this, this::onCandidates);
+        viewModel.favorites().observe(this, favs -> {
+            favorites = favs != null ? favs : new ArrayList<>();
+            rebuildStartSpinner();
+        });
         viewModel.plan().observe(this, this::renderPlan);
         viewModel.profileComplete().observe(this, complete -> {
             boolean ok = Boolean.TRUE.equals(complete);
@@ -91,20 +97,36 @@ public final class MultiDayTourActivity extends AppCompatActivity {
         viewModel.loadCandidates();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        viewModel.loadFavorites();
+    }
+
     private void onCandidates(List<TourStop> stops) {
         candidates = stops;
-        int selectedPosition = startSpinner.getSelectedItemPosition();
+        rebuildStartSpinner();
+        updateSelectionSummary();
+    }
+
+    /**
+     * Spinner layout: 0 = automatisch, then one entry per candidate climb, then one per
+     * favorite start point (issue #206). The selection is kept by label across rebuilds.
+     */
+    private void rebuildStartSpinner() {
+        Object previous = startSpinner.getSelectedItem();
         List<String> startLabels = new ArrayList<>();
         startLabels.add("Automatisch (kortste volgorde)");
-        for (TourStop s : stops) startLabels.add("Beginnen bij " + s.name);
+        for (TourStop s : candidates) startLabels.add("Beginnen bij " + s.name);
+        for (FavoriteStartPoint f : favorites) {
+            startLabels.add(getString(R.string.fav_start_spinner_item, f.name));
+        }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, startLabels);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         startSpinner.setAdapter(adapter);
-        if (selectedPosition > 0 && selectedPosition < startLabels.size()) {
-            startSpinner.setSelection(selectedPosition);
-        }
-        updateSelectionSummary();
+        int keep = previous != null ? startLabels.indexOf(previous.toString()) : -1;
+        if (keep > 0) startSpinner.setSelection(keep);
     }
 
     private void updateSelectionSummary() {
@@ -156,7 +178,12 @@ public final class MultiDayTourActivity extends AppCompatActivity {
         Double startLat = null;
         Double startLon = null;
         int startPos = startSpinner.getSelectedItemPosition();
-        if (startPos > 0 && startPos - 1 < candidates.size()) {
+        int favoritePos = startPos - 1 - candidates.size();
+        if (favoritePos >= 0 && favoritePos < favorites.size()) {
+            FavoriteStartPoint f = favorites.get(favoritePos);
+            startLat = f.lat;
+            startLon = f.lon;
+        } else if (startPos > 0 && startPos - 1 < candidates.size()) {
             TourStop start = candidates.get(startPos - 1);
             startLat = start.startLat;
             startLon = start.startLon;
