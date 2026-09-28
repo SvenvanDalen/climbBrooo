@@ -39,6 +39,17 @@ public interface StravaApiClient {
             @Query("page") int page,
             @Query("per_page") int perPage);
 
+    /**
+     * Newest-first window {@code (after, before)} for the history backfill (issue #312): always
+     * page 1, the caller moves {@code before} down instead of paging, so a resumed run is stable.
+     */
+    @GET("athlete/activities")
+    Call<List<StravaActivityDto>> listActivitiesBefore(
+            @Header("Authorization") String bearerToken,
+            @Query("before") long beforeEpochSec,
+            @Query("after") long afterEpochSec,
+            @Query("per_page") int perPage);
+
     @GET("activities/{id}/streams?key_by_type=true")
     Call<StravaStreamsDto> getStreams(
             @Header("Authorization") String bearerToken,

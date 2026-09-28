@@ -131,6 +131,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         viewModel.route().observe(this, route -> {
             loadedRoute = route;
             tryDrawMap();
+            updateDescentInfo();
         });
 
         viewModel.climb().observe(this, climb -> {
@@ -158,8 +159,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             binding.btnToggleHomeClimb.setText(climb.isHome
                     ? "Thuisklim — startlocatie wordt gewazigd bij export"
                     : "Markeer als thuisklim");
+            binding.climbRating.setText(
+                    nl.paree.climbpro.domain.climb.ClimbRating.detailText(climb));
+            binding.btnRateClimb.setText(
+                    nl.paree.climbpro.domain.climb.ClimbRating.isRated(climb)
+                            || climb.ratingNote != null
+                            ? "Beoordeling aanpassen" : "Klim beoordelen");
             tryDrawMap();
             updateManualRefText();
+            updateDescentInfo();
         });
 
         viewModel.timeEstimate().observe(this, estimate -> {
@@ -246,6 +254,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     rowLayout.addView(noteView);
                 }
 
+                String companionsLabel =
+                        nl.paree.climbpro.domain.ride.SummitGroupPhotos.companionsLabel(row.companions);
+                if (companionsLabel != null) {
+                    android.widget.TextView groupView = new android.widget.TextView(this);
+                    boolean hasPhoto = row.photoFileName != null && !row.photoFileName.isEmpty();
+                    groupView.setText(hasPhoto
+                            ? "👥 Groepsfoto op de top · " + companionsLabel
+                            : "👥 " + companionsLabel);
+                    groupView.setTextSize(13f);
+                    groupView.setPadding(0, 4, 0, 0);
+                    rowLayout.addView(groupView);
+                }
+
                 if (row.photoFileName != null && !row.photoFileName.isEmpty()) {
                     android.widget.ImageView thumb = new android.widget.ImageView(this);
                     int sizePx = (int) (72 * getResources().getDisplayMetrics().density);
@@ -260,7 +281,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
                 android.widget.TextView editLink = new android.widget.TextView(this);
                 editLink.setText(row.note != null || row.photoFileName != null
-                        ? "Notitie/foto bewerken" : "+ Notitie/foto toevoegen");
+                        || row.companions != null
+                        ? "Notitie/foto/groep bewerken" : "+ Notitie/foto/groep toevoegen");
                 editLink.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
                 editLink.setPadding(0, 8, 0, 0);
                 editLink.setOnClickListener(v -> showAttemptNoteDialog(row));
@@ -274,6 +296,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
+        binding.btnRateClimb.setOnClickListener(v -> showRatingDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
         binding.btnExportWorkout.setOnClickListener(v -> pickWorkoutFormat());
@@ -387,6 +410,20 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) { finish(); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Issue #215: what the descent after this climb looks like on this route. Hidden while the
+     * route is loading or when it has no geometry.
+     */
+    private void updateDescentInfo() {
+        if (loadedRoute == null || loadedClimb == null || loadedRoute.elevations == null) {
+            binding.descentInfo.setVisibility(android.view.View.GONE);
+            return;
+        }
+        binding.descentInfo.setText(nl.paree.climbpro.domain.climb.DescentLabel.format(
+                nl.paree.climbpro.domain.climb.DescentAnalyzer.analyze(loadedRoute, climbIndex)));
+        binding.descentInfo.setVisibility(android.view.View.VISIBLE);
     }
 
     private void tryDrawMap() {
@@ -711,6 +748,65 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .show();
     }
 
+    /** RatingBar value → 1–5, or null when the rider left it at 0 stars. */
+    static Integer starsOrNull(float rating) {
+        int stars = Math.round(rating);
+        return nl.paree.climbpro.domain.climb.ClimbRating.normalize(stars);
+    }
+
+    /**
+     * Rate this climb (issue #244): wegdek, verkeer (5 = rustig) and uitzicht, 0–5 stars each
+     * (0 = niet beoordeeld), plus an optional note. "Wissen" clears the whole rating.
+     */
+    private void showRatingDialog() {
+        android.widget.LinearLayout container = new android.widget.LinearLayout(this);
+        container.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        container.setPadding(pad, pad, pad, 0);
+
+        StoredClimb c = loadedClimb;
+        android.widget.RatingBar road = addRatingRow(container, "Wegdek",
+                c != null ? c.ratingRoad : null);
+        android.widget.RatingBar traffic = addRatingRow(container, "Verkeer (5 = rustig)",
+                c != null ? c.ratingTraffic : null);
+        android.widget.RatingBar view = addRatingRow(container, "Uitzicht",
+                c != null ? c.ratingView : null);
+
+        EditText note = new EditText(this);
+        note.setHint("Notitie (optioneel)");
+        if (c != null && c.ratingNote != null) note.setText(c.ratingNote);
+        container.addView(note);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Klim beoordelen")
+                .setView(container)
+                .setPositiveButton("Opslaan", (d, w) -> viewModel.setRating(routeId, climbIndex,
+                        starsOrNull(road.getRating()),
+                        starsOrNull(traffic.getRating()),
+                        starsOrNull(view.getRating()),
+                        note.getText().toString()))
+                .setNeutralButton("Wissen", (d, w) ->
+                        viewModel.setRating(routeId, climbIndex, null, null, null, null))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    private android.widget.RatingBar addRatingRow(android.widget.LinearLayout container,
+                                                  String label, Integer current) {
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText(label);
+        container.addView(tv);
+        android.widget.RatingBar bar = new android.widget.RatingBar(this);
+        bar.setNumStars(nl.paree.climbpro.domain.climb.ClimbRating.MAX_STARS);
+        bar.setStepSize(1f);
+        bar.setRating(current != null ? current : 0f);
+        // WRAP_CONTENT is required: a match_parent RatingBar draws extra stars.
+        container.addView(bar, new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+        return bar;
+    }
+
     private void setupBulkSurfaceSetter() {
         String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed"};
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
@@ -824,6 +920,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         noteInput.setText(row.note);
         dialogLayout.addView(noteInput);
 
+        EditText companionsInput = new EditText(this);
+        companionsInput.setHint("Meegereden met (namen, gescheiden door komma's)");
+        companionsInput.setText(row.companions);
+        companionsInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        dialogLayout.addView(companionsInput);
+
+        android.widget.TextView groupHint = new android.widget.TextView(this);
+        groupHint.setText("Met een foto en namen wordt dit een groepsfoto op de top, "
+                + "zichtbaar bij de rit in het rittenarchief.");
+        groupHint.setTextSize(12f);
+        dialogLayout.addView(groupHint);
+
         android.widget.ImageView preview = new android.widget.ImageView(this);
         int sizePx = (int) (120 * getResources().getDisplayMetrics().density);
         android.widget.LinearLayout.LayoutParams previewLp =
@@ -845,11 +954,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         dialogLayout.addView(pickPhotoButton);
 
         new AlertDialog.Builder(this)
-                .setTitle("Notitie & foto")
+                .setTitle("Notitie, foto & groep")
                 .setView(dialogLayout)
                 .setPositiveButton("Opslaan", (d, w) -> {
                     viewModel.saveAttemptNote(routeId, climbIndex, row.activityId, row.passIndex,
-                            noteInput.getText().toString(), pendingPhotoUri);
+                            noteInput.getText().toString(),
+                            companionsInput.getText().toString(), pendingPhotoUri);
                     pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;
