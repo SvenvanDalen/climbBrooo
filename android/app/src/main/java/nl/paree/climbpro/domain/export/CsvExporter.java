@@ -66,7 +66,7 @@ public final class CsvExporter {
         StringBuilder sb = new StringBuilder();
         row(sb, "datum", "klim", "route", "klim_id", "tijd_sec", "tijd", "lengte_m",
                 "hoogtemeters", "gem_snelheid_kmh", "vam_m_per_uur", "doorgang",
-                "afwijkend_gereden", "activiteit_id", "notitie");
+                "afwijkend_gereden", "activiteit_id", "notitie", "meegereden_met");
         for (StoredClimbAttempt a : sorted) {
             ClimbInfo c = climbs.get(a.climbId);
             boolean timed = a.elapsedSec > 0;
@@ -84,7 +84,8 @@ public final class CsvExporter {
                     String.valueOf(a.passIndex + 1),
                     a.routeDeviation ? "ja" : "nee",
                     String.valueOf(a.activityId),
-                    a.note);
+                    a.note,
+                    a.companions);
         }
         return sb.toString();
     }

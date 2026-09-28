@@ -345,11 +345,38 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_records) {
             startActivity(nl.paree.climbpro.ui.records.RideRecordsActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_friend_feed) {
+            startActivity(nl.paree.climbpro.ui.social.FriendFeedActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_hr_drift) {
+            startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_power_curve) {
+            startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_zone_distribution) {
+            startActivity(nl.paree.climbpro.ui.records.ZoneDistributionActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_tire_pressure_log) {
             startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_saddle_height) {
             startActivity(nl.paree.climbpro.ui.fit.SaddleHeightActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_battery_status) {
+            startActivity(nl.paree.climbpro.ui.battery.BatteryActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_pain_log) {
+            startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_safe_home) {
+            startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_sunscreen) {
+            startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_comeback_plan) {
+            startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
@@ -363,6 +390,9 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.recovery.RecoveryAdviceActivity.class));
             return true;
+        } else if (id == R.id.action_fitness) {
+            startActivity(nl.paree.climbpro.ui.fitness.FitnessActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_photo_quiz) {
             startActivity(nl.paree.climbpro.ui.quiz.PhotoQuizActivity.intentFor(this));
             return true;
@@ -371,6 +401,15 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_maintenance) {
             startActivity(nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_torque) {
+            startActivity(nl.paree.climbpro.ui.maintenance.TorqueActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_frame_size) {
+            startActivity(nl.paree.climbpro.ui.frame.FrameSizeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_costs) {
+            startActivity(nl.paree.climbpro.ui.bike.BikeCostActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
@@ -389,6 +428,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_elevation_goal) {
             startActivity(nl.paree.climbpro.ui.goals.ElevationGoalActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_goal_event) {
+            startActivity(nl.paree.climbpro.ui.goals.GoalEventActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));

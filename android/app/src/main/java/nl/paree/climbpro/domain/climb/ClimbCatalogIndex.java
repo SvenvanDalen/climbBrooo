@@ -5,7 +5,9 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,6 +62,37 @@ public final class ClimbCatalogIndex {
                 }
             } catch (Exception ignored) {
                 // A route that fails to load just won't resolve its climbs.
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Like {@link #resolve}, but collects every catalog copy of each wanted climbId instead of
+     * only the first one. A climb can appear on several routes (issue #240: a user-set
+     * per-route flag like {@link StoredClimb#isHome} does not propagate between copies, since
+     * {@code RouteRepository#setClimbHome} only flips the route the user marked), so callers
+     * that need a fact that should hold across all copies — "is this climb ever marked home
+     * anywhere?" — must scan every copy, not just the first found. Aggregation itself stays
+     * pure and belongs with the caller (e.g. {@code domain/social/HomeClimbAggregator}).
+     */
+    public static Map<String, List<StoredClimb>> resolveAllCopies(
+            RouteRepository routeRepo, Set<String> wantedClimbIds) {
+        Map<String, List<StoredClimb>> map = new HashMap<>();
+        if (wantedClimbIds == null || wantedClimbIds.isEmpty()) return map;
+
+        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
+            try {
+                StoredRoute route = routeRepo.loadRoute(entry.routeId);
+                if (route.climbs == null) continue;
+                for (StoredClimb c : route.climbs) {
+                    String id = ClimbIdentity.of(c);
+                    if (wantedClimbIds.contains(id)) {
+                        map.computeIfAbsent(id, k -> new ArrayList<>()).add(c);
+                    }
+                }
+            } catch (Exception ignored) {
+                // A route that fails to load just won't contribute its copies.
             }
         }
         return map;
