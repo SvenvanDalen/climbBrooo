@@ -40,7 +40,9 @@ public final class BackupArchive {
     public static final String[] INCLUDED_PATHS = {
             "catalog.json", "routes/", "climb_attempts.json", "incomplete_climb_attempts.json",
             "attempt_photos/", "collections.json", "planned_climbs.json", "rides.json",
-            "tire_pressure_log.json", "maintenance.json", "friend_feed.json"};
+            "tire_pressure_log.json", "maintenance.json", "wet_ride_checks.json",
+            "torque_values.json",
+            "friend_feed.json"};
 
     static final String MANIFEST = "manifest.json";
     static final String PREFS = "prefs.json";

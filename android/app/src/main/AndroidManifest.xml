@@ -187,6 +187,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.fit.SaddleHeightActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.collections.CollectionListActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
@@ -262,6 +267,16 @@
 
         <activity
             android:name=".ui.maintenance.MaintenanceActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.maintenance.TorqueActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.frame.FrameSizeActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 

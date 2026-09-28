@@ -15,8 +15,10 @@ import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.maintenance.MaintenanceComponent;
 import nl.paree.climbpro.domain.maintenance.MaintenanceCalculator;
 import nl.paree.climbpro.domain.maintenance.MaintenanceCalculator.Status;
+import nl.paree.climbpro.domain.maintenance.WarrantyCalculator;
 
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -80,6 +82,12 @@ public final class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAd
         if (c.includeVirtualRides) {
             if (detail.length() > 0) detail.append("  •  ");
             detail.append("incl. indoorritten");
+        }
+        String warranty = WarrantyCalculator.statusText(c,
+                System.currentTimeMillis() / 1000L, ZoneId.systemDefault());
+        if (warranty != null) {
+            if (detail.length() > 0) detail.append("  •  ");
+            detail.append(warranty);
         }
         holder.detail.setText(detail);
         holder.detail.setVisibility(detail.length() > 0 ? View.VISIBLE : View.GONE);
