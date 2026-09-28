@@ -163,6 +163,14 @@
                 android:layout_marginTop="8dp"
                 android:text="Bandenspanning-advies" />
 
+            <Button
+                android:id="@+id/btn_reverse_route"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/route_reverse_action" />
+
             <TextView
                 style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
