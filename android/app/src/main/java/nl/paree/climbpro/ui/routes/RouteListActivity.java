@@ -348,6 +348,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_tire_pressure_log) {
             startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_saddle_height) {
+            startActivity(nl.paree.climbpro.ui.fit.SaddleHeightActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
@@ -371,6 +374,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_torque) {
             startActivity(nl.paree.climbpro.ui.maintenance.TorqueActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_frame_size) {
+            startActivity(nl.paree.climbpro.ui.frame.FrameSizeActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_climb_hygiene) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));

@@ -357,6 +357,21 @@ attempts), phone-only and never part of the wire payload. The route list filters
 via the pure `ui/routes/RouteStatusFilter` (Alle / Wil ik rijden / Gereden), applied
 alongside the surface filter and before sorting.
 
+### Reverse a route (issue #201)
+
+The route detail button "Omgekeerde richting" creates the opposite-direction variant of a
+stored route as a **new** route — the original is never modified. The pure
+`domain/route/RouteReverser` flips the point order and recomputes cumulative distances
+(elevations kept); `data/route/RouteReverseService` then re-runs `ClimbDetector` (detect →
+false-flat trim → 8 % segmentation) on the reversed points and stores the result through the
+normal `RouteRepository.saveRoute`, so the descents of the original become the climbs of the
+reverse. Stored points are already smoothed/simplified, so smoothing is not re-applied. The
+reversed route gets the deterministic id `rev_<id>` and default name `"<name> (omgekeerd)"`;
+if that id already exists it is reopened instead of duplicated, and reversing a `rev_` route
+maps back to the original. Climb renames, notes, ride status, surface sections and starred
+segments do not carry over (they describe different climbs/stretches). Phone-only; the result
+is an ordinary route payload, no wire-format change.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
@@ -722,6 +737,8 @@ The phone also keeps a **ride archive** (`rides.json`, `data/ride/RideRepository
 
 A **Records** screen (issue #156, `ui/records/RideRecordsActivity`) reads the same archive: `domain/ride/RideRecordsCalculator` derives longest ride, highest average speed (only rides >= 20 km, never `VirtualRide`), most elevation, longest moving time and most consecutive local calendar days with a ride. Ties go to the earliest ride. Computed on the fly, not persisted; phone-only.
 
+**Descent info** (issue #215, `domain/climb/DescentAnalyzer` + `DescentLabel`, shown on the climb screen): computed on the fly from the stored route geometry, not persisted. The descent starts at the climb's top and ends at the lowest point before the road rises 15 m again, before the next climb starts, or at the route end (the screen says which). Leading and trailing false flat (descending less than `FALSE_FLAT_MAX_GRADIENT` over at least `FALSE_FLAT_MIN_LENGTH_M`) is trimmed, mirroring `ClimbTrimmer`, so a summit plateau or a valley run-out doesn't dilute the numbers. Less than 40 m of drop is reported as no notable descent. Shown: length, drop, average gradient, maximum gradient over any 100 m stretch, and twistiness. Twistiness is the summed absolute heading change per km: under 120 °/km "vrij recht", under 300 "bochtig", otherwise "zeer bochtig". A net turn of at least 150 ° within 200 m counts as a hairpin; turns are signed in that sum, so S-bends don't count. The geometry is the Douglas-Peucker-simplified route (5 m), which keeps real bends. Phone-only; never part of the wire payload.
+
 **Tire-pressure log** (`tire_pressure_log.json`, `data/tire/TirePressureLogRepository`, issue #155): one JSON object holding the manual checks (timestamp, front/rear pressure in bar with one decimal — the UI shows the psi equivalent next to it to line up with the psi ranges of the #90 tire-pressure advice — optional note) plus the reminder settings (every X days / every X km, 0 = off; defaults 7 days / 300 km). Atomic writes with a static write lock, like `RideRepository`. `domain/tire/TirePressureReminderCalculator` marks a check due when either threshold since the latest entry is reached; km = sum of archived `StoredRide.distanceM` that started after that entry, **excluding `VirtualRide`** (indoor km don't wear road tyres). With no entries yet it is not due (no permanent banner for riders who don't use the feature; the log screen prompts for a first check instead). The reminder is in-app and offline only: a banner on the route list (re-evaluated on resume) plus status on the log screen — no notification permission or worker (possible follow-up). Km only advance when the ride archive syncs from Strava. Phone-only; never part of the wire payload.
 
 Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, following the same JSON-file pattern used for routes. `ClimbAttemptRepository` deduplicates on `(climbId, activityId)` so re-running a sync never creates duplicate entries. Reads are on demand; writes are atomic (temp + rename).
@@ -729,6 +746,8 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 **Maintenance tracker** (`maintenance.json`, `data/maintenance/MaintenanceRepository`, issue #154): one JSON object with the user's components (defaults Ketting 3000 km, Banden 4000 km, Remblokken 2000 km, Service 5000 km / 12 months; the user can add, rename, re-interval and delete components, and an emptied list is not re-seeded). Each component has an interval in km and/or calendar months (0 = off), a last-serviced date and a small history of service dates (max 10). Atomic writes with a static write lock, like `RideRepository`; a missing or corrupt file loads as the default set. `domain/maintenance/MaintenanceCalculator` (pure, explicit now + zone) computes km since service = sum of archived `StoredRide.distanceM` that started after the last-serviced date, **excluding `VirtualRide`** unless the component opts in (trainer km don't wear a road chain/tyres the same way); undated rides are skipped. Due when either interval is reached, "bijna" from 90 %; a component without a known service date is never due (no permanent banner for new users). "Gedaan" appends now to the history and restarts the count. Surfaced in-app only: a banner on the route list (re-evaluated on resume, off the main thread) opening the "Onderhoud" screen (overflow menu). Independent of climb logic; km only advance when the ride archive syncs. Phone-only; never part of the wire payload.
 
 **Torque values** (`torque_values.json`, `data/maintenance/TorqueValueRepository`, issue #237): the "Aanhaalmomenten" screen (overflow menu) shows a static reference table of typical tightening torques per part (`domain/maintenance/TorqueReference`, e.g. stuurpen stuurklem 4–6 Nm, zadelpenklem carbon 4–6 Nm, cassette-lockring 40 Nm) under a "fabrikant gaat voor" disclaimer, plus the rider's own values. The app has no bike entity, so each own value carries an optional free-text bike label (auto-completed from labels already used), a part name, one Nm value (0,1–200, one decimal; comma or dot) and an optional note. Tapping a reference row pre-fills the add dialog. Atomic writes with a static write lock, like `MaintenanceRepository`; a missing or corrupt file loads empty and out-of-range entries are dropped on load. Registered with the privacy dashboard (`PrivacyCategory.TORQUE`) and the local backup. Phone-only; never part of the wire payload.
+
+**Warranty** (issue #239) is an optional extra per component in the same `maintenance.json`: `warrantyPurchaseEpochSec` + `warrantyMonths` (0 = none); expiry = purchase + N calendar months (`domain/maintenance/WarrantyCalculator`, clamped to month end). A daily `service/WarrantyReminderWorker` (periodic, KEEP, scheduled on app start) posts one "Garantie verloopt bijna" notification (`WarrantyNotifier`, channel `warranty`) in the last 30 days before expiry; idempotent via `warrantyReminderSentForExpiryEpochSec` (keyed by expiry, so correcting the date/term re-arms it). Already expired warranties never notify. Shown as a line on the component card; edited in the component dialog.
 
 ### Logbook view
 

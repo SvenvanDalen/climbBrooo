@@ -13,12 +13,13 @@ public enum PrivacyCategory {
             "Geïmporteerde routes met hun klimmen, namen, notities en ondergrond.",
             "routes/", "catalog.json", "sync_state.json"),
     ATTEMPTS("Klimpogingen",
-            "Tijden per klim uit je Strava-activiteiten, met notities.",
+            "Tijden per klim uit je Strava-activiteiten, met notities en de namen van wie er "
+                    + "meereed.",
             "climb_attempts.json", "incomplete_climb_attempts.json"),
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
-                    + "start- en eindpunt.",
-            "rides.json"),
+                    + "start- en eindpunt, plus de gemeten regen voor de schoonmaakherinnering.",
+            "rides.json", "wet_ride_checks.json"),
     TIRE_PRESSURE("Bandenspanning-logboek",
             "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",
             "tire_pressure_log.json"),

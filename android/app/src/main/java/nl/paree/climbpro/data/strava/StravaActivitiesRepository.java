@@ -452,6 +452,7 @@ public final class StravaActivitiesRepository {
         r.activityId     = act.id;
         r.name           = act.name;
         r.type           = act.type;
+        r.sportType      = act.sportType;
         r.startEpochSec  = parseStartDate(act.startDate);
         r.distanceM      = act.distance;
         r.movingTimeSec  = act.movingTime;
