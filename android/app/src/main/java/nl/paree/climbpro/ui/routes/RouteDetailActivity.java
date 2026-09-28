@@ -160,6 +160,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(),
                         this::shareToGarminConnect));
         binding.btnExportBikeComputer.setOnClickListener(v -> showBikeComputerExport());
+        binding.btnJoinRoute.setOnClickListener(v -> RouteJoinDialog.show(this, routeId));
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
         binding.btnBulkRenameClimbs.setOnClickListener(v ->
                 startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));

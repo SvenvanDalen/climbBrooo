@@ -102,6 +102,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Live data on the watch** — current/next climb, progress, surface section.
 - **Start navigation** — hands the GPX to Garmin Connect, which pushes the course. Navigating the selected route as a Garmin course also improves on-watch distance accuracy: the datafield matches on course distance (`rtl − distanceToDestination`) with a calibration trust check, falling back to the activity odometer when you are not navigating.
 - **Import a single route/climb from a GPX file**.
+- **Join two routes** — "Samenvoegen met…" on a route saves it plus a second route as one
+  new route (e.g. approach + climbing loop), with climbs re-detected across the joint.
+  Originals are kept; a gap between the routes is bridged in a straight line after a warning.
 - **Sort the route library** (import time or name); auto-refreshes after a Strava sync.
 - **Estimated climb time** — per-climb / per-segment, from your FTP + weights, with
   per-surface rolling resistance and route-wide fatigue (W'-balance). Phone-only.
