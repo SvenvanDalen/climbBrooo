@@ -37,6 +37,24 @@
                 android:layout_height="250dp"
                 android:layout_marginBottom="16dp"/>
 
+            <Button
+                android:id="@+id/btn_rain_radar"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Regenradar tonen" />
+
+            <TextView
+                android:id="@+id/rain_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/passport_title"
                 style="@style/TextAppearance.ClimbPro.Label"
