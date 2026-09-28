@@ -131,7 +131,7 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
      * Start-point label for a cached fix of {@code ageMs}: "Huidige locatie" while fresh, the
      * age once older (so a fix from elsewhere is noticed), or null when too old to use.
      */
-    static String startLabelForFixAge(long ageMs) {
+    public static String startLabelForFixAge(long ageMs) {
         if (ageMs > MAX_FIX_AGE_MS) return null;
         if (ageMs <= FRESH_FIX_AGE_MS) return "Huidige locatie";
         long hours = ageMs / (60L * 60 * 1000);

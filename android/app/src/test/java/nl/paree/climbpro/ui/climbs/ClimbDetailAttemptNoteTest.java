@@ -64,7 +64,7 @@ public class ClimbDetailAttemptNoteTest {
         vm.loadClimb("r1", 0);
         idleUntil(() -> vm.climb().getValue() != null);
 
-        vm.saveAttemptNote("r1", 0, 1, 0, "great ride", pickedUri);
+        vm.saveAttemptNote("r1", 0, 1, 0, "great ride", " Anna ,bas; anna", pickedUri);
         idleUntil(() -> saved[0]);
 
         assertEquals(null, unexpectedError[0]);
@@ -76,6 +76,7 @@ public class ClimbDetailAttemptNoteTest {
         assertTrue("new photo referenced by the record must exist",
                 AttemptPhotoStore.fileFor(app, persisted.photoFileName).exists());
         assertEquals("great ride", persisted.note);
+        assertEquals("Anna, bas", persisted.companions);
     }
 
     @Test
@@ -103,7 +104,7 @@ public class ClimbDetailAttemptNoteTest {
         vm.loadClimb("r1", 0);
         idleUntil(() -> vm.climb().getValue() != null);
 
-        vm.saveAttemptNote("r1", 0, 1, 0, "great ride", pickedUri);
+        vm.saveAttemptNote("r1", 0, 1, 0, "great ride", null, pickedUri);
         idleUntil(() -> gotError[0]);
 
         // Old photo must survive (still the only valid reference); the picker's source file
@@ -117,6 +118,30 @@ public class ClimbDetailAttemptNoteTest {
         assertEquals("orphaned new photo must be rolled back on update failure",
                 1, remaining.length);
         assertEquals(oldPhoto.getName(), remaining[0]);
+    }
+
+    @Test
+    public void saveAttemptNote_blankCompanionsClearsThem_andKeepsPhoto() throws Exception {
+        Application app = setUpRoute();
+        writePhotoFile(app, "old.jpg");
+        ClimbAttemptRepository attemptRepo = new ClimbAttemptRepository(app);
+        StoredClimbAttempt existing = mkAttempt(CLIMB_ID, 1, 1000, 700, "old.jpg");
+        existing.companions = "Anna";
+        attemptRepo.append(Collections.singletonList(existing));
+
+        ClimbDetailViewModel vm = new ClimbDetailViewModel(app);
+        boolean[] saved = {false};
+        vm.saved().observeForever(s -> { if (Boolean.TRUE.equals(s)) saved[0] = true; });
+
+        vm.loadClimb("r1", 0);
+        idleUntil(() -> vm.climb().getValue() != null);
+
+        vm.saveAttemptNote("r1", 0, 1, 0, "", "  ", null);
+        idleUntil(() -> saved[0]);
+
+        StoredClimbAttempt persisted = attemptRepo.loadAll().get(0);
+        assertEquals(null, persisted.companions);
+        assertEquals("old.jpg", persisted.photoFileName);
     }
 
     private static Application setUpRoute() throws Exception {
