@@ -356,6 +356,8 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_battery_status) {
             startActivity(nl.paree.climbpro.ui.battery.BatteryActivity.intentFor(this));
+        } else if (id == R.id.action_pain_log) {
+            startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_unfinished_climbs) {
             startActivity(new Intent(this,

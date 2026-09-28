@@ -36,6 +36,9 @@ public enum PrivacyCategory {
             "Je accu's (e-shifting, verlichting, powermeter) met de laatste laaddatum en "
                     + "herinneringsinterval.",
             "battery_status.json"),
+    PAIN_LOG("Pijnlogboek",
+            "Je gelogde klachten per rit, met fiets, afstelling en notities.",
+            "pain_log.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),
