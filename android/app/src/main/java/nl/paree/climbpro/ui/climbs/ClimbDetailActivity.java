@@ -201,6 +201,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
         });
 
+        viewModel.trainingAdvice().observe(this, this::renderTrainingAdvice);
+
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
         viewModel.saved().observe(this, isSaved -> {
@@ -909,6 +911,41 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Annuleer", null)
                 .show();
+    }
+
+    /** Shows the pacing advice for the latest attempt (issue #64), or hides the block. */
+    private void renderTrainingAdvice(ClimbDetailViewModel.TrainingAdvice result) {
+        android.widget.TextView view = binding.trainingAdvice;
+        if (result == null || result.advice.tips.isEmpty()) {
+            view.setVisibility(android.view.View.GONE);
+            return;
+        }
+        String date = new java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault())
+                .format(new java.util.Date(result.attemptDateEpochSec * 1000L));
+        StringBuilder sb = new StringBuilder(getString(nl.paree.climbpro.R.string.training_advice_header, date));
+        for (nl.paree.climbpro.domain.climb.ClimbPacingAdvisor.Tip tip : result.advice.tips) {
+            sb.append('\n').append(getString(nl.paree.climbpro.R.string.training_advice_bullet, trainingTipText(tip)));
+        }
+        view.setText(sb.toString());
+        view.setVisibility(android.view.View.VISIBLE);
+    }
+
+    private String trainingTipText(nl.paree.climbpro.domain.climb.ClimbPacingAdvisor.Tip tip) {
+        switch (tip.type) {
+            case FADED:
+                return getString(nl.paree.climbpro.R.string.training_advice_faded, tip.startM, tip.percent);
+            case HELD_BACK:
+                return getString(nl.paree.climbpro.R.string.training_advice_held_back, tip.percent, tip.startM);
+            case EVEN:
+                return getString(nl.paree.climbpro.R.string.training_advice_even, tip.percent);
+            case WEAKEST_SEGMENT:
+                return getString(nl.paree.climbpro.R.string.training_advice_weakest, tip.startM / 1000.0,
+                        tip.endM / 1000.0, tip.gradient * 100, tip.percent);
+            case LOST_MOST_VS_PR:
+            default:
+                return getString(nl.paree.climbpro.R.string.training_advice_lost_vs_pr, tip.startM / 1000.0,
+                        tip.endM / 1000.0, tip.seconds);
+        }
     }
 
     /**

@@ -72,4 +72,12 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <!-- Trainingsadvies na een klim (issue #64) -->
+    <string name="training_advice_header">Trainingsadvies (poging van %1$s)</string>
+    <string name="training_advice_bullet">• %1$s</string>
+    <string name="training_advice_faded">Begin de eerste %1$d m rustiger: in het laatste derde zakte je vermogen %2$d%% in t.o.v. het begin.</string>
+    <string name="training_advice_held_back">Je eindigde %1$d%% sterker dan je begon: de eerste %2$d m mag volgende keer gerust wat harder.</string>
+    <string name="training_advice_even">Mooi gelijkmatig gedoseerd: begin en eind liggen maar %1$d%% uit elkaar. Houd dit tempo vast.</string>
+    <string name="training_advice_weakest">Bij %1$.1f–%2$.1f km (%3$.0f%%) zakte je %4$d%% onder je gemiddelde: schakel daar eerder terug en houd je cadans vast.</string>
+    <string name="training_advice_lost_vs_pr">Grootste tijdverlies t.o.v. je beste splits: %1$.1f–%2$.1f km (+%3$d s). Daar valt het meeste te winnen.</string>
 </resources>
