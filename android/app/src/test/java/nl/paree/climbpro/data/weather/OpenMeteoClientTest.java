@@ -20,6 +20,29 @@ public class OpenMeteoClientTest {
                 OpenMeteoClient.precipitationUrl(pts, 6));
     }
 
+    @Test public void temperatureUrlListsSamplesWithTheirElevations() {
+        List<RouteSampler.Sample> pts = new ArrayList<>();
+        pts.add(new RouteSampler.Sample(0, 50.85, 5.69));
+        pts.add(new RouteSampler.Sample(5_000, 50.9, 5.8));
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
+                + "&longitude=5.6900,5.8000&hourly=temperature_2m&timezone=UTC&forecast_days=3"
+                + "&elevation=100,312",
+                OpenMeteoClient.temperatureUrl(pts, new double[]{100.2, 312.4}));
+    }
+
+    @Test public void temperatureUrlLeavesElevationOutWhenAnyIsUnknown() {
+        // Open-Meteo reads elevation=nan as "no downscaling"; better to let it use its own DEM.
+        List<RouteSampler.Sample> pts = new ArrayList<>();
+        pts.add(new RouteSampler.Sample(0, 50.85, 5.69));
+        pts.add(new RouteSampler.Sample(5_000, 50.9, 5.8));
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
+                + "&longitude=5.6900,5.8000&hourly=temperature_2m&timezone=UTC&forecast_days=3",
+                OpenMeteoClient.temperatureUrl(pts, new double[]{100, Double.NaN}));
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
+                + "&longitude=5.6900,5.8000&hourly=temperature_2m&timezone=UTC&forecast_days=3",
+                OpenMeteoClient.temperatureUrl(pts, null));
+    }
+
     @Test public void urlWithElevationUsesDotDecimals() {
         assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.85000&longitude=5.69000"
                 + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,precipitation_probability,uv_index"

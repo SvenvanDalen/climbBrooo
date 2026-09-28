@@ -38,6 +38,8 @@ import nl.paree.climbpro.domain.weather.RadarTiles;
 import nl.paree.climbpro.domain.weather.RainRadarFrame;
 import nl.paree.climbpro.domain.weather.RouteRainSummary;
 import nl.paree.climbpro.domain.weather.RouteSampler;
+import nl.paree.climbpro.domain.weather.TemperatureGrid;
+import nl.paree.climbpro.domain.weather.TemperatureTrend;
 import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 
@@ -68,6 +70,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private RainRadarOverlay rainOverlay;
     private boolean          rainShown;
+    private boolean          temperatureShown;
 
     public static Intent intentFor(Context ctx, String routeId) {
         Intent i = new Intent(ctx, RouteDetailActivity.class);
@@ -183,6 +186,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             if (r != null) TirePressureAdviceDialog.show(this, r);
         });
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
+        binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
 
         viewModel.loadRoute(routeId);
     }
@@ -400,6 +404,78 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 binding.rainSummary.setVisibility(View.VISIBLE);
             });
         }, "rain-radar").start();
+    }
+
+    /**
+     * Issue #153: ask the start time, then chart the expected temperature at each route sample
+     * at the moment the rider passes it (pace from the pacing plan, else 25 km/h).
+     */
+    private void toggleTemperatureTrend() {
+        if (temperatureShown) {
+            temperatureShown = false;
+            binding.temperatureTrend.setVisibility(View.GONE);
+            binding.temperatureSummary.setVisibility(View.GONE);
+            binding.btnTemperatureTrend.setText("Temperatuurtrend tonen");
+            return;
+        }
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null || r.lats == null || r.lons == null || r.lats.length == 0) {
+            Toast.makeText(this, "Route heeft geen coördinaten", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
+        new android.app.TimePickerDialog(this,
+                (picker, hour, minute) -> loadTemperatureTrend(r, hour, minute),
+                now.getHour(), now.getMinute(),
+                android.text.format.DateFormat.is24HourFormat(this))
+                .show();
+    }
+
+    private void loadTemperatureTrend(StoredRoute r, int hour, int minute) {
+        final ZoneId zone = ZoneId.systemDefault();
+        final Instant start = TemperatureTrend.nextStart(Instant.now(), hour, minute, zone);
+        final List<RouteSampler.Sample> samples =
+                RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
+        if (samples.isEmpty()) {
+            Toast.makeText(this, "Route heeft geen afstanden", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final double[] elevations = TemperatureTrend.elevationsAt(r, samples);
+        RoutePassport p = viewModel.passport().getValue();
+        double length = samples.get(samples.size() - 1).distanceM - samples.get(0).distanceM;
+        final long rideSeconds = TemperatureTrend.rideSeconds(
+                p != null ? p.totalEstimatedSeconds : -1, length);
+        final boolean planned = p != null && p.totalEstimatedSeconds > 0;
+
+        binding.btnTemperatureTrend.setEnabled(false); // one request at a time
+        binding.btnTemperatureTrend.setText("Temperatuurtrend laden…");
+        new Thread(() -> {
+            TemperatureTrend trend = null;
+            String text;
+            try {
+                TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
+                trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
+                text = trend.describe(zone) + "\n\nTempo: "
+                        + (planned ? "geschatte tijd uit je profiel"
+                                   : "25 km/u (vul je profiel in voor een eigen schatting)")
+                        + "\nBron: Open-Meteo";
+            } catch (Exception e) {
+                text = "Temperatuurverwachting ophalen mislukt: " + reason(e);
+            }
+            final TemperatureTrend result = trend;
+            final String summary = text;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnTemperatureTrend.setEnabled(true);
+                binding.btnTemperatureTrend.setText("Temperatuurtrend verbergen");
+                temperatureShown = true;
+                binding.temperatureTrend.setTrend(result, zone);
+                binding.temperatureTrend.setVisibility(
+                        result == null || result.isEmpty() ? View.GONE : View.VISIBLE);
+                binding.temperatureSummary.setText(summary);
+                binding.temperatureSummary.setVisibility(View.VISIBLE);
+            });
+        }, "temperature-trend").start();
     }
 
     private static String reason(Exception e) {
