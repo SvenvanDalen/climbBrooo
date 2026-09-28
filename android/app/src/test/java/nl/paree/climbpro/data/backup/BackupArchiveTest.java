@@ -134,6 +134,7 @@ public class BackupArchiveTest {
         assertTrue(BackupArchive.isIncluded("pain_log.json"));
         assertTrue(BackupArchive.isIncluded("safe_home.json"));
         assertTrue(BackupArchive.isIncluded("comeback_plan.json"));
+        assertTrue(BackupArchive.isIncluded("goal_event.json"));
         assertFalse(BackupArchive.isIncluded("routes/"));
         assertFalse(BackupArchive.isIncluded("routes/../catalog.json"));
         assertFalse(BackupArchive.isIncluded("/catalog.json"));

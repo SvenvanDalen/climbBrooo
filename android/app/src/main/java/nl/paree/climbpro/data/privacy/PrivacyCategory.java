@@ -62,6 +62,9 @@ public enum PrivacyCategory {
             "Ritten en mijlpalen die vrienden met een deelcode met je deelden, en de naam "
                     + "waaronder je zelf deelt.",
             "friend_feed.json"),
+    GOAL_EVENT("Doelevenement",
+            "Naam, datum, afstand en hoogtemeters van je doelevenement.",
+            "goal_event.json"),
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",
