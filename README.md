@@ -122,6 +122,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **PR chance before riding** — the climb screen shows whether a PR is realistic today
+  (goede kans / matig / onwaarschijnlijk) with the main reasons, combining your attempt
+  history on that climb, fitness and form from your ride archive, and the summit weather
+  forecast (left out when offline). Phone-only.
+
 ---
 
 ## Repository layout
