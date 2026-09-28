@@ -92,6 +92,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
   detail screen; the route list shows the status and can be filtered on it (menu →
   "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
+  "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
+  untouched and tapping again reopens the existing reversed route.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.

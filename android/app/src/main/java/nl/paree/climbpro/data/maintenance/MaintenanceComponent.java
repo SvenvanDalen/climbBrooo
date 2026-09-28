@@ -27,6 +27,18 @@ public final class MaintenanceComponent {
      * Off by default: trainer km don't wear a road chain or tyres the same way.
      */
     public boolean includeVirtualRides;
+    /**
+     * Warranty (issue #239): purchase date (epoch seconds); 0 = unknown. Only meaningful
+     * together with {@link #warrantyMonths}.
+     */
+    public long    warrantyPurchaseEpochSec;
+    /** Warranty term in calendar months from the purchase date; 0 = no warranty tracked. */
+    public int     warrantyMonths;
+    /**
+     * Expiry (epoch seconds) for which the "garantie verloopt bijna" reminder was already sent;
+     * 0 = none. Keyed by expiry so correcting the purchase date or term re-arms the reminder.
+     */
+    public long    warrantyReminderSentForExpiryEpochSec;
 
     public MaintenanceComponent() {}
 

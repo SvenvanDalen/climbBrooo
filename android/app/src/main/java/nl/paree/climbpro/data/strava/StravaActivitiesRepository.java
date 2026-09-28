@@ -73,6 +73,20 @@ public final class StravaActivitiesRepository {
     private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
 
     /**
+     * One-off history backfill (issue #312). Walks newest to oldest from the moment it was
+     * started down to {@link #BACKFILL_YEARS} years before it, moving {@code before} down after
+     * every activity, so a run that stops halfway (rate limit, app killed) resumes exactly
+     * there. The floor and start are pinned on the first run so a resume weeks later still
+     * covers the same window.
+     */
+    static final String PREF_BACKFILL_CURSOR = "history_backfill_before_epoch_sec";
+    static final String PREF_BACKFILL_FLOOR  = "history_backfill_after_epoch_sec";
+    public static final String PREF_BACKFILL_DONE = "history_backfill_done";
+    static final int    BACKFILL_YEARS = 10;
+    private static final long BACKFILL_WINDOW_SEC = BACKFILL_YEARS * ONE_YEAR_SEC;
+    private static final int  BACKFILL_PAGE_SIZE  = 50;
+
+    /**
      * Default-shared-prefs key for the user's Strava title template (issue #60), edited from
      * {@code ui.settings.StravaTitleTemplateActivity}. Blank/absent = feature off.
      */
@@ -303,6 +317,156 @@ public final class StravaActivitiesRepository {
         }
     }
 
+    public enum BackfillStatus {
+        /** The whole window is processed; the backfill never runs again. */
+        DONE,
+        /** Strava said 429, or the budget reserve for the regular sync was reached. */
+        PAUSED_RATE_LIMIT,
+        /** Network error or 5xx; try again later from the same cursor. */
+        RETRY
+    }
+
+    public static final class BackfillResult {
+        public final BackfillStatus status;
+        public final int ridesArchived;
+        public final int attemptsCreated;
+        /** Oldest activity start reached so far (epoch seconds). */
+        public final long cursorEpochSec;
+        public final long floorEpochSec;
+
+        BackfillResult(BackfillStatus status, int ridesArchived, int attemptsCreated,
+                       long cursorEpochSec, long floorEpochSec) {
+            this.status = status;
+            this.ridesArchived = ridesArchived;
+            this.attemptsCreated = attemptsCreated;
+            this.cursorEpochSec = cursorEpochSec;
+            this.floorEpochSec = floorEpochSec;
+        }
+    }
+
+    /** Called after every page, so the UI can show how far back the backfill got. */
+    public interface BackfillProgress {
+        void onProgress(long cursorEpochSec, long floorEpochSec);
+    }
+
+    public boolean isHistoryBackfillDone() {
+        return prefs.getBoolean(PREF_BACKFILL_DONE, false);
+    }
+
+    /**
+     * One-off import of every activity from the last {@link #BACKFILL_YEARS} years (issue #312):
+     * every ride goes into the ride archive, and every cycling ride with GPS (virtual rides
+     * included) is matched against the known climbs. Resumable: progress is saved after every
+     * activity, and the run stops early on a 429, a network error, or when Strava's rate-limit
+     * headers say the budget reserved for the regular sync is next. Never renames activities
+     * on Strava. Call from a background thread.
+     */
+    public BackfillResult backfillHistory(BackfillProgress progress) throws IOException {
+        long nowSec = clock.getAsLong();
+        long floor  = prefs.getLong(PREF_BACKFILL_FLOOR, 0L);
+        long cursor = prefs.getLong(PREF_BACKFILL_CURSOR, 0L);
+        if (isHistoryBackfillDone()) {
+            return new BackfillResult(BackfillStatus.DONE, 0, 0, cursor, floor);
+        }
+        if (floor <= 0 || cursor <= 0) {
+            floor  = nowSec - BACKFILL_WINDOW_SEC;
+            cursor = nowSec;
+            prefs.edit().putLong(PREF_BACKFILL_FLOOR, floor)
+                    .putLong(PREF_BACKFILL_CURSOR, cursor).apply();
+        }
+
+        String token = "Bearer " + auth.getAccessToken();
+        List<KnownClimb> climbs = enumerateKnownClimbs();
+        Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
+        known.addAll(incompleteAttemptRepo.knownActivityIds());
+
+        int ridesArchived = 0;
+        int attemptsCreated = 0;
+        while (true) {
+            Response<List<StravaActivityDto>> resp =
+                    api.listActivitiesBefore(token, cursor, floor, BACKFILL_PAGE_SIZE).execute();
+            if (!resp.isSuccessful()) {
+                Log.w(TAG, "Backfill page before " + cursor + " failed (HTTP " + resp.code() + ")");
+                BackfillStatus s = resp.code() == 429
+                        ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY;
+                return new BackfillResult(s, ridesArchived, attemptsCreated, cursor, floor);
+            }
+            List<StravaActivityDto> page = resp.body();
+            if (page == null || page.isEmpty()) {
+                prefs.edit().putBoolean(PREF_BACKFILL_DONE, true).apply();
+                Log.i(TAG, "History backfill done");
+                return new BackfillResult(BackfillStatus.DONE, ridesArchived, attemptsCreated,
+                        cursor, floor);
+            }
+
+            // Newest first, so moving the cursor to each processed activity's start keeps
+            // everything not yet processed strictly before it.
+            List<StravaActivityDto> sorted = new ArrayList<>(page);
+            Collections.sort(sorted, (a, b) ->
+                    Long.compare(parseStartDate(b.startDate), parseStartDate(a.startDate)));
+
+            List<StoredRide> rides = new ArrayList<>();
+            for (StravaActivityDto act : sorted) {
+                if (isCycling(act.type)) rides.add(toStoredRide(act));
+            }
+            rideRepo.upsertAll(rides); // list data only, idempotent: safe to redo on resume
+            ridesArchived += rides.size();
+
+            boolean budgetLow = StravaRateLimit.nearLimit(resp.headers());
+            long pageStartCursor = cursor;
+            for (StravaActivityDto act : sorted) {
+                if (budgetLow) break;
+                long start = parseStartDate(act.startDate);
+                if (shouldMatchInBackfill(act, climbs, known)) {
+                    List<StoredIncompleteClimbAttempt> incomplete = new ArrayList<>();
+                    MatchResult m = matchActivityChecked(token, act, climbs, incomplete);
+                    if (m.outcome == StreamOutcome.RATE_LIMITED
+                            || m.outcome == StreamOutcome.TRANSIENT_FAILURE) {
+                        // Cursor stays above this activity: it is fetched again on resume.
+                        BackfillStatus s = m.outcome == StreamOutcome.RATE_LIMITED
+                                ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY;
+                        return new BackfillResult(s, ridesArchived, attemptsCreated, cursor, floor);
+                    }
+                    if (!m.attempts.isEmpty()) attemptRepo.append(m.attempts);
+                    incompleteAttemptRepo.append(incomplete);
+                    attemptsCreated += m.attempts.size();
+                    known.add(act.id);
+                    budgetLow = StravaRateLimit.nearLimit(m.headers);
+                }
+                if (start > 0 && start < cursor) {
+                    cursor = start;
+                    prefs.edit().putLong(PREF_BACKFILL_CURSOR, cursor).apply();
+                }
+            }
+            if (progress != null) progress.onProgress(cursor, floor);
+            if (budgetLow) {
+                Log.i(TAG, "Backfill pausing: Strava rate-limit reserve reached");
+                return new BackfillResult(BackfillStatus.PAUSED_RATE_LIMIT, ridesArchived,
+                        attemptsCreated, cursor, floor);
+            }
+            if (cursor >= pageStartCursor) {
+                // A full page without a parseable start date can't move the window down;
+                // stop instead of re-requesting the same page forever.
+                Log.w(TAG, "Backfill cursor did not move; stopping");
+                prefs.edit().putBoolean(PREF_BACKFILL_DONE, true).apply();
+                return new BackfillResult(BackfillStatus.DONE, ridesArchived, attemptsCreated,
+                        cursor, floor);
+            }
+        }
+    }
+
+    /**
+     * Only cycling activities with GPS (virtual rides included) cost a streams request;
+     * runs, walks and indoor trainer rides without a track are archived but never matched.
+     */
+    static boolean shouldMatchInBackfill(StravaActivityDto act, List<KnownClimb> climbs,
+                                         Set<Long> known) {
+        return !climbs.isEmpty()
+                && isCycling(act.type)
+                && act.startLatLng != null && act.startLatLng.size() >= 2
+                && !known.contains(act.id);
+    }
+
     /**
      * All activities started after {@code afterEpochSec}, oldest pages first (Health Connect
      * export, issue #255). Unlike {@link #syncActivities()} this only lists; no streams are
@@ -334,25 +498,61 @@ public final class StravaActivitiesRepository {
     private List<StoredClimbAttempt> matchActivity(
             String token, StravaActivityDto act, List<KnownClimb> climbs,
             List<StoredIncompleteClimbAttempt> incompleteOut) {
+        return matchActivityChecked(token, act, climbs, incompleteOut).attempts;
+    }
+
+    /** Why a stream fetch ended, so the backfill can tell "retry later" from "skip for good". */
+    enum StreamOutcome { OK, SKIPPED, RATE_LIMITED, TRANSIENT_FAILURE }
+
+    static final class MatchResult {
+        final StreamOutcome outcome;
+        final List<StoredClimbAttempt> attempts;
+        final okhttp3.Headers headers;
+
+        MatchResult(StreamOutcome outcome, List<StoredClimbAttempt> attempts,
+                    okhttp3.Headers headers) {
+            this.outcome = outcome;
+            this.attempts = attempts;
+            this.headers = headers;
+        }
+    }
+
+    /**
+     * {@link #matchActivity} plus the reason a fetch failed: 429 is {@code RATE_LIMITED}, 5xx
+     * and network errors are {@code TRANSIENT_FAILURE}, and any other error (404 for a deleted
+     * or private activity) is {@code SKIPPED} because retrying would never help.
+     */
+    private MatchResult matchActivityChecked(
+            String token, StravaActivityDto act, List<KnownClimb> climbs,
+            List<StoredIncompleteClimbAttempt> incompleteOut) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         try {
             Response<StravaStreamsDto> sresp =
                     api.getStreams(token, act.id, STREAM_KEYS).execute();
-            if (!sresp.isSuccessful() || sresp.body() == null) return out;
+            okhttp3.Headers headers = sresp.headers();
+            if (!sresp.isSuccessful()) {
+                StreamOutcome o = sresp.code() == 429 ? StreamOutcome.RATE_LIMITED
+                        : sresp.code() >= 500 ? StreamOutcome.TRANSIENT_FAILURE
+                        : StreamOutcome.SKIPPED;
+                return new MatchResult(o, out, headers);
+            }
             StravaStreamsDto s = sresp.body();
-            if (s.latlng == null || s.time == null
-                    || s.latlng.data == null || s.time.data == null) return out;
+            if (s == null || s.latlng == null || s.time == null
+                    || s.latlng.data == null || s.time.data == null) {
+                return new MatchResult(StreamOutcome.SKIPPED, out, headers);
+            }
 
             List<Double> trackTemps = new ArrayList<>();
             List<TrackSample> track = toTrack(s, trackTemps);
-            if (track.size() < 2) return out;
+            if (track.size() < 2) return new MatchResult(StreamOutcome.SKIPPED, out, headers);
 
             out.addAll(ActivityClimbMatcher.match(track, trackTemps, climbs, act.id,
                     parseStartDate(act.startDate), incompleteOut));
+            return new MatchResult(StreamOutcome.OK, out, headers);
         } catch (IOException e) {
             Log.w(TAG, "Stream fetch failed for activity " + act.id, e);
+            return new MatchResult(StreamOutcome.TRANSIENT_FAILURE, out, null);
         }
-        return out;
     }
 
     private List<KnownClimb> enumerateKnownClimbs() {
@@ -452,6 +652,7 @@ public final class StravaActivitiesRepository {
         r.activityId     = act.id;
         r.name           = act.name;
         r.type           = act.type;
+        r.sportType      = act.sportType;
         r.startEpochSec  = parseStartDate(act.startDate);
         r.distanceM      = act.distance;
         r.movingTimeSec  = act.movingTime;

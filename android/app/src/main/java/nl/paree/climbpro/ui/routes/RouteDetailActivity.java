@@ -23,6 +23,7 @@ import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
+import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
@@ -129,8 +130,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
 
-        viewModel.error().observe(this,
-                msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
+        viewModel.error().observe(this, msg -> {
+            binding.btnReverseRoute.setEnabled(true);
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        });
         viewModel.saved().observe(this, ok -> {
             if (Boolean.TRUE.equals(ok)) Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
         });
@@ -154,6 +157,20 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
         binding.btnBulkRenameClimbs.setOnClickListener(v ->
                 startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));
+        binding.btnReverseRoute.setOnClickListener(v -> {
+            binding.btnReverseRoute.setEnabled(false);
+            viewModel.reverseRoute(routeId);
+        });
+        viewModel.reversedRoute().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeReversedRoute();
+            binding.btnReverseRoute.setEnabled(true);
+            Toast.makeText(this, result.created
+                            ? getString(R.string.route_reverse_created, result.climbCount)
+                            : getString(R.string.route_reverse_exists),
+                    Toast.LENGTH_LONG).show();
+            startActivity(intentFor(this, result.routeId));
+        });
         binding.btnTirePressure.setOnClickListener(v -> {
             StoredRoute r = viewModel.route().getValue();
             if (r != null) TirePressureAdviceDialog.show(this, r);

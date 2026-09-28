@@ -10,6 +10,7 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ClimbNameSuggester;
+import nl.paree.climbpro.domain.climb.ClimbRating;
 import nl.paree.climbpro.domain.climb.ClimbShapeClassifier;
 import nl.paree.climbpro.domain.route.RoutePoint;
 import nl.paree.climbpro.domain.segment.CalibrationPoint;
@@ -136,6 +137,7 @@ public final class RouteRepository {
         route.climbs = toStoredClimbs(filteredClimbs);
         int routeOffsetM = mergePreviousClimbUserData(route.climbs, prevClimbs);
         fillMissingClimbNames(route.climbs);
+        inheritRatingsFromOtherRoutes(route);
         int routeLength = (points != null && !points.isEmpty())
                 ? (int) Math.round(points.get(points.size() - 1).distance)
                 : 0;
@@ -262,6 +264,46 @@ public final class RouteRepository {
             route.climbs.get(climbIndex).shapeOverride = normalised;
             route.lastModifiedMs = System.currentTimeMillis();
             writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
+    /**
+     * Sets (or, with all-null/blank values, clears) the rider's rating of a climb (issue #244).
+     * Values are normalized by {@code ClimbRating#apply} (anything outside 1–5 = not rated).
+     * The same physical climb can sit in several routes, so the rating is also written onto
+     * every climb with the same {@code ClimbIdentity} in the other catalog routes; routes that
+     * fail to load are skipped. Out-of-range indices are silently ignored, like
+     * {@link #setClimbHome}. Survives resync via {@link #mergePreviousClimbUserData}.
+     */
+    public void setClimbRating(String routeId, int climbIndex, Integer road, Integer traffic,
+                               Integer view, String note) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) return;
+        StoredClimb target = route.climbs.get(climbIndex);
+        ClimbRating.apply(target, road, traffic, view, note);
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+
+        String identity = ClimbIdentity.of(target);
+        for (RouteCatalogEntry entry : loadCatalog()) {
+            if (entry.routeId == null || entry.routeId.equals(routeId)) continue;
+            try {
+                StoredRoute other = loadRoute(entry.routeId);
+                if (other.climbs == null) continue;
+                boolean changed = false;
+                for (StoredClimb c : other.climbs) {
+                    if (identity.equals(ClimbIdentity.of(c))) {
+                        ClimbRating.copy(target, c);
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    other.lastModifiedMs = System.currentTimeMillis();
+                    writeAtomic(routeFile(entry.routeId), mapper.writeValueAsBytes(other));
+                }
+            } catch (IOException e) {
+                Log.w(TAG, "Rating not propagated to route " + entry.routeId, e);
+            }
         }
     }
 
@@ -487,6 +529,8 @@ public final class RouteRepository {
             f.isHome = p.isHome;
             f.privacyCentreLat = p.privacyCentreLat;
             f.privacyCentreLon = p.privacyCentreLon;
+            // Rating (issue #244) is user data about the physical climb: always carry it.
+            ClimbRating.copy(p, f);
             if (p.manualRefSec != null) {
                 f.manualRefSec = p.manualRefSec;
                 f.manualRefLabel = p.manualRefLabel;
@@ -508,6 +552,46 @@ public final class RouteRepository {
             }
         }
         return SegmentRemapper.routeOffset(matches);
+    }
+
+    /**
+     * A climb detected for the first time in {@code route} (e.g. a freshly imported/resynced
+     * route covering ground already ridden elsewhere) would otherwise start unrated even though
+     * the rider already rated the same physical climb via another route (issue #244 review
+     * finding): the logbook would resolve that {@code ClimbIdentity} to the unrated copy, and a
+     * later partial re-rate from it would overwrite the full rating. Backfills the rating/note
+     * from the first other catalog route whose matching climb is rated or has a note. Never
+     * overwrites a climb that already has its own rating or note (whether fresh or carried over
+     * by {@link #mergePreviousClimbUserData}). Routes that fail to load are skipped.
+     */
+    private void inheritRatingsFromOtherRoutes(StoredRoute route) {
+        if (route.climbs == null || route.climbs.isEmpty()) return;
+        List<RouteCatalogEntry> catalog = loadCatalog();
+        for (StoredClimb c : route.climbs) {
+            if (ClimbRating.isRated(c) || c.ratingNote != null) continue;
+            String identity = ClimbIdentity.of(c);
+            for (RouteCatalogEntry entry : catalog) {
+                if (entry.routeId == null || entry.routeId.equals(route.routeId)) continue;
+                StoredRoute other;
+                try {
+                    other = loadRoute(entry.routeId);
+                } catch (IOException e) {
+                    Log.w(TAG, "Rating inheritance skipped for route " + entry.routeId, e);
+                    continue;
+                }
+                if (other.climbs == null) continue;
+                boolean found = false;
+                for (StoredClimb oc : other.climbs) {
+                    if (identity.equals(ClimbIdentity.of(oc))
+                            && (ClimbRating.isRated(oc) || oc.ratingNote != null)) {
+                        ClimbRating.copy(oc, c);
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+        }
     }
 
     /**

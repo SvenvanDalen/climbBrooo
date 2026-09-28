@@ -24,6 +24,7 @@ public final class ClimbProApplication extends Application {
                 new File(getCacheDir(), "osmdroid"));
 
         nl.paree.climbpro.service.PlannedClimbNotifier.ensureChannel(this);
+        nl.paree.climbpro.service.WetRideNotifier.ensureChannel(this);
 
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
@@ -40,9 +41,10 @@ public final class ClimbProApplication extends Application {
         // JVM/Robolectric tests it is not — there, scheduling is a no-op.
         try {
             nl.paree.climbpro.service.RebindScheduler.schedulePeriodicRebind(this);
+            nl.paree.climbpro.service.WarrantyReminderWorker.schedule(this);
         } catch (IllegalStateException e) {
             android.util.Log.w("ClimbProApplication",
-                    "WorkManager not initialised — skipping rebind schedule", e);
+                    "WorkManager not initialised — skipping periodic work schedules", e);
         }
 
         // Best-effort cleanup of photo files orphaned by a process death between a photo
