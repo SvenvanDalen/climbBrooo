@@ -128,6 +128,10 @@ public final class RouteSyncWorker extends Worker {
             }
         }
 
+        // Opportunistic, never fails the sync: cleaning reminder after wet rides (issue #234).
+        // Runs after the archive refresh above so today's ride is already in rides.json.
+        WetRideReminderJob.runIfEnabled(ctx);
+
         // New attempts may have been matched during the pull: keep the widget's week total fresh.
         WeekWidgetProvider.refresh(ctx);
 
