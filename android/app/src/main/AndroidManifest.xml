@@ -169,6 +169,11 @@
             android:parentActivityName=".ui.rides.RideArchiveActivity" />
 
         <activity
+            android:name=".ui.rides.RideStoryActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.rides.RideArchiveActivity" />
+
+        <activity
             android:name=".ui.records.RideRecordsActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />

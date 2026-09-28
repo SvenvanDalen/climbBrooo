@@ -169,9 +169,15 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         return SummitGroupPhotos.byActivity(attempts, climbNames());
     }
 
-    /** Display name per ClimbIdentity key, same resolution as the photo quiz (issue #252). */
     private Map<String, String> climbNames() {
-        RouteRepository repo = new RouteRepository(getApplication());
+        return climbNames(new RouteRepository(getApplication()));
+    }
+
+    /**
+     * Display name per ClimbIdentity key, same resolution as the photo quiz (issue #252). Also
+     * used by the ride story (issue #193).
+     */
+    static Map<String, String> climbNames(RouteRepository repo) {
         Map<String, String> names = new HashMap<>();
         for (RouteCatalogEntry e : repo.loadCatalog()) {
             try {
