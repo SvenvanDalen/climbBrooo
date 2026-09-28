@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/color_bg">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/color_bg"
+        app:title="Framemaat"
+        app:titleTextColor="@color/color_text_primary"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="15sp"
+                android:text="Vul je lengte en binnenbeenlengte in voor een indicatieve framemaat. Binnenbeenlengte meten: sta op blote voeten tegen een muur, klem een boek tussen je benen alsof het een zadel is en meet van de vloer tot de bovenkant van het boek." />
+
+            <EditText
+                android:id="@+id/heightInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Lengte (cm), bijv. 180"
+                android:inputType="numberDecimal"
+                android:digits="0123456789,."
+                android:maxLength="6"
+                android:textColor="@color/color_text_primary"
+                android:textColorHint="@color/color_text_tertiary" />
+
+            <EditText
+                android:id="@+id/inseamInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Binnenbeenlengte (cm), bijv. 84"
+                android:inputType="numberDecimal"
+                android:digits="0123456789,."
+                android:maxLength="6"
+                android:imeOptions="actionDone"
+                android:textColor="@color/color_text_primary"
+                android:textColorHint="@color/color_text_tertiary" />
+
+            <Button
+                android:id="@+id/calculateButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Bereken" />
+
+            <TextView
+                android:id="@+id/errorText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:freezesText="true"
+                android:textColor="@color/color_error"
+                android:textSize="15sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/roadResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:freezesText="true"
+                android:textColor="@color/color_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/mtbResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:freezesText="true"
+                android:textColor="@color/color_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/explanationText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/disclaimerText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="13sp"
+                android:text="Let op: dit is indicatief. Framematen verschillen per merk en geometrie (reach en stack zeggen meer dan de zitbuis). Maak altijd een proefrit of laat een bikefit doen voordat je een fiets koopt." />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

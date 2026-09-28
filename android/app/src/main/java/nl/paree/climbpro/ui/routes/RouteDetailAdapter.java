@@ -190,6 +190,10 @@ public final class RouteDetailAdapter
         if (!surfaceLabel.isEmpty()) {
             statsText += " · " + surfaceLabel;
         }
+        String ratingBadge = nl.paree.climbpro.domain.climb.ClimbRating.badge(c);
+        if (!ratingBadge.isEmpty()) {
+            statsText += " · " + ratingBadge;
+        }
         h.statsView.setText(statsText);
         if (climbTargetSeconds != null && climbIndex < climbTargetSeconds.length
                 && climbTargetSeconds[climbIndex] >= 0) {
