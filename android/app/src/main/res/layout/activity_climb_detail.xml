@@ -69,6 +69,16 @@
                 android:layout_marginBottom="16dp"
                 android:visibility="gone"/>
 
+            <TextView
+                android:id="@+id/descent_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
             <nl.paree.climbpro.ui.climbs.ClimbProfileView
                 android:id="@+id/climb_profile"
                 android:layout_width="match_parent"

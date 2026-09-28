@@ -131,6 +131,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         viewModel.route().observe(this, route -> {
             loadedRoute = route;
             tryDrawMap();
+            updateDescentInfo();
         });
 
         viewModel.climb().observe(this, climb -> {
@@ -160,6 +161,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     : "Markeer als thuisklim");
             tryDrawMap();
             updateManualRefText();
+            updateDescentInfo();
         });
 
         viewModel.timeEstimate().observe(this, estimate -> {
@@ -385,6 +387,20 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) { finish(); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Issue #215: what the descent after this climb looks like on this route. Hidden while the
+     * route is loading or when it has no geometry.
+     */
+    private void updateDescentInfo() {
+        if (loadedRoute == null || loadedClimb == null || loadedRoute.elevations == null) {
+            binding.descentInfo.setVisibility(android.view.View.GONE);
+            return;
+        }
+        binding.descentInfo.setText(nl.paree.climbpro.domain.climb.DescentLabel.format(
+                nl.paree.climbpro.domain.climb.DescentAnalyzer.analyze(loadedRoute, climbIndex)));
+        binding.descentInfo.setVisibility(android.view.View.VISIBLE);
     }
 
     private void tryDrawMap() {
