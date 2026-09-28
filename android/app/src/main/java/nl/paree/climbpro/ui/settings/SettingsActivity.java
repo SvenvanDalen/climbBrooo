@@ -1,8 +1,11 @@
 package nl.paree.climbpro.ui.settings;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.SeekBar;
@@ -12,18 +15,24 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.health.connect.client.PermissionController;
 import androidx.lifecycle.ViewModelProvider;
 
 import androidx.preference.PreferenceManager;
+import androidx.work.WorkInfo;
 
 import nl.paree.climbpro.data.backup.BackupArchive;
 import nl.paree.climbpro.data.backup.BackupRetention;
 import nl.paree.climbpro.data.backup.LocalBackupService;
 import nl.paree.climbpro.data.health.HealthConnectGateway;
+import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.service.AutoBackupWorker;
+import nl.paree.climbpro.service.StravaHistoryBackfillWorker;
+import nl.paree.climbpro.service.SyncScheduler;
+import nl.paree.climbpro.service.WetRideReminderJob;
 
 import java.time.ZoneId;
 import java.util.Set;
@@ -40,6 +49,21 @@ public final class SettingsActivity extends AppCompatActivity {
                     PermissionController.createRequestPermissionResultContract(),
                     granted -> renderHealthStatus());
     private final ExecutorService backupExecutor = Executors.newSingleThreadExecutor();
+
+    // Cleaning reminder (issue #234): ask for the notification grant when it is switched on.
+    private final ActivityResultLauncher<String> notificationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (!granted) {
+                    Toast.makeText(this, "Zonder meldingen krijg je geen schoonmaakherinnering",
+                            Toast.LENGTH_LONG).show();
+                    // The switch stayed on when the user tapped it; without the grant the
+                    // reminder can never fire, so turn it (and the preference) back off rather
+                    // than leave a setting on that silently does nothing.
+                    PreferenceManager.getDefaultSharedPreferences(this).edit()
+                            .putBoolean(WetRideReminderJob.PREF_ENABLED, false).apply();
+                    binding.switchWetRideReminder.setChecked(false);
+                }
+            });
 
     // Back-up (issue #257): Storage Access Framework pickers, so the target can be a local
     // folder or a cloud provider such as Google Drive.
@@ -182,6 +206,9 @@ public final class SettingsActivity extends AppCompatActivity {
         binding.btnStravaTitleTemplate.setOnClickListener(v -> startActivity(
                 new android.content.Intent(this, StravaTitleTemplateActivity.class)));
 
+        binding.btnStravaHistoryBackfill.setOnClickListener(v -> confirmHistoryBackfill());
+        SyncScheduler.historyBackfillInfo(this).observe(this, this::renderHistoryBackfill);
+
         binding.btnBackupCreate.setOnClickListener(v -> backupCreator.launch(
                 BackupRetention.fileName(System.currentTimeMillis(), ZoneId.systemDefault())));
         binding.btnBackupRestore.setOnClickListener(v -> backupPicker.launch(
@@ -194,6 +221,15 @@ public final class SettingsActivity extends AppCompatActivity {
             }
         });
         renderBackupStatus();
+
+        // Cleaning reminder after wet rides (issue #234).
+        binding.switchWetRideReminder.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(WetRideReminderJob.PREF_ENABLED, false));
+        binding.switchWetRideReminder.setOnCheckedChangeListener((b, on) -> {
+            PreferenceManager.getDefaultSharedPreferences(this).edit()
+                    .putBoolean(WetRideReminderJob.PREF_ENABLED, on).apply();
+            if (on) ensureNotificationPermission();
+        });
 
         // Health Connect (issue #255).
         binding.btnHealthConnect.setOnClickListener(v -> connectHealth());
@@ -305,6 +341,14 @@ public final class SettingsActivity extends AppCompatActivity {
         Toast.makeText(this, "Automatische back-up uitgezet", Toast.LENGTH_SHORT).show();
     }
 
+    private void ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
+    }
+
     private void renderHealthStatus() {
         HealthConnectGateway gateway = new HealthConnectGateway(this);
         healthExecutor.execute(() -> {
@@ -363,6 +407,49 @@ public final class SettingsActivity extends AppCompatActivity {
             return;
         }
         healthPermissionLauncher.launch(HealthConnectGateway.PERMISSIONS);
+    }
+
+    private void confirmHistoryBackfill() {
+        if (!Boolean.TRUE.equals(viewModel.stravaSignedIn().getValue())) {
+            Toast.makeText(this, "Log eerst in bij Strava", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Volledige historie ophalen")
+                .setMessage("Haalt eenmalig al je Strava-activiteiten van de afgelopen 10 jaar "
+                        + "op en zoekt je klimpogingen erin. Strava beperkt het aantal "
+                        + "verzoeken per dag, dus bij veel ritten kan dit een paar dagen duren. "
+                        + "Het gaat vanzelf verder op de achtergrond.")
+                .setPositiveButton("Starten", (d, w) -> SyncScheduler.startHistoryBackfill(this))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    private void renderHistoryBackfill(java.util.List<WorkInfo> infos) {
+        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS, MODE_PRIVATE)
+                .getBoolean(StravaActivitiesRepository.PREF_BACKFILL_DONE, false);
+        WorkInfo info = infos == null || infos.isEmpty() ? null : infos.get(infos.size() - 1);
+        boolean active = info != null && !info.getState().isFinished();
+        binding.btnStravaHistoryBackfill.setEnabled(!done && !active);
+        if (done) {
+            binding.btnStravaHistoryBackfill.setText("Volledige historie opgehaald");
+            binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.GONE);
+            return;
+        }
+        if (!active) {
+            binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.GONE);
+            return;
+        }
+        long cursor = info.getProgress().getLong(StravaHistoryBackfillWorker.KEY_CURSOR, 0L);
+        boolean paused = info.getProgress().getBoolean(StravaHistoryBackfillWorker.KEY_PAUSED, false);
+        String status = cursor > 0
+                ? "Bezig — opgehaald tot " + java.time.format.DateTimeFormatter
+                        .ofPattern("MMMM yyyy", new java.util.Locale("nl"))
+                        .format(java.time.Instant.ofEpochSecond(cursor).atZone(ZoneId.systemDefault()))
+                : "Bezig…";
+        if (paused) status += " (wacht op Strava-limiet)";
+        binding.stravaHistoryBackfillStatus.setText(status);
+        binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.VISIBLE);
     }
 
     private void exportRidesToHealth() {
