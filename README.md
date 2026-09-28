@@ -118,6 +118,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
+- **Ride comparer** — tap a ride in Ritten and pick another ride over the same route to see
+  time, speed, heart rate and the running time difference per kilometre. Phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
