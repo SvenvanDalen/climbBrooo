@@ -13,4 +13,28 @@ class SyncRetryPolicy {
         if (tick == 3 || tick == 6) { return :retransmit; }
         return :wait;
     }
+
+    // Decides which view the widget should open into (issue #88: a quick glance at the
+    // last-synced climbs without starting an activity). When the watch already has saved
+    // routes and/or standalone saved climbs from a previous sync, there is no reason to make
+    // the user sit through the phone-connect wait/retry/giveUp sequence above just to see data
+    // it already has locally — jump straight to RouteListView, which lists that saved data
+    // immediately and still picks up a live phone route list in the background if/when it
+    // arrives. Only fall back to the SyncView wait when there is truly nothing saved yet.
+    static function initialViewForSavedData(hasSavedRoutes, hasSavedClimbs) {
+        return (hasSavedRoutes || hasSavedClimbs) ? :routeList : :sync;
+    }
+
+    // Fast-path variant of actionForTick (issue #131 review): getInitialView()'s
+    // background LIST_ROUTES refresh, fired when the widget jumps straight to the
+    // cached RouteListView, previously had no retry at all — unlike SyncView's wait
+    // loop it partially replaces. This reuses the exact same tick 3/6/10 schedule so a
+    // transient BT hiccup doesn't strand the user on stale data. The only difference
+    // from actionForTick is vocabulary: the fast path never switches views (it's
+    // already showing RouteListView), so :giveUp is renamed :stop to mean "stop
+    // polling", not "fall back to another view".
+    static function fastPathActionForTick(tick, received) {
+        var action = actionForTick(tick, received);
+        return (action == :giveUp) ? :stop : action;
+    }
 }

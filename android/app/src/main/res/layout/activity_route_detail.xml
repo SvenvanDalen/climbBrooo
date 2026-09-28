@@ -37,6 +37,51 @@
                 android:layout_height="250dp"
                 android:layout_marginBottom="16dp"/>
 
+            <Button
+                android:id="@+id/btn_rain_radar"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Regenradar tonen" />
+
+            <TextView
+                android:id="@+id/rain_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/route_profile_title"
+                style="@style/TextAppearance.ClimbPro.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="@string/route_profile_title" />
+
+            <nl.paree.climbpro.ui.routes.RouteElevationProfileView
+                android:id="@+id/route_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="4dp"
+                android:background="@drawable/bg_card"/>
+
+            <TextView
+                android:id="@+id/route_profile_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:text="@string/route_profile_empty"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/passport_title"
                 style="@style/TextAppearance.ClimbPro.Label"
@@ -140,6 +185,14 @@
                 android:text="Naar Wahoo / Hammerhead" />
 
             <Button
+                android:id="@+id/btn_join_route"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/route_join_button" />
+
+            <Button
                 android:id="@+id/btn_surface_sections"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
@@ -162,6 +215,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Bandenspanning-advies" />
+
+            <Button
+                android:id="@+id/btn_reverse_route"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/route_reverse_action" />
 
             <TextView
                 style="@style/TextAppearance.ClimbPro.Label"

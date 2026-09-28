@@ -92,17 +92,32 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
   detail screen; the route list shows the status and can be filtered on it (menu →
   "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
+  "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
+  untouched and tapping again reopens the existing reversed route.
+- **Whole-route elevation profile** — the route detail screen shows the elevation
+  profile of the full route with every climb highlighted in its gradient colors. Phone-only.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
 - **Start navigation** — hands the GPX to Garmin Connect, which pushes the course. Navigating the selected route as a Garmin course also improves on-watch distance accuracy: the datafield matches on course distance (`rtl − distanceToDestination`) with a calibration trust check, falling back to the activity odometer when you are not navigating.
 - **Import a single route/climb from a GPX file**.
+- **Join two routes** — "Samenvoegen met…" on a route saves it plus a second route as one
+  new route (e.g. approach + climbing loop), with climbs re-detected across the joint.
+  Originals are kept; a gap between the routes is bridged in a straight line after a warning.
 - **Sort the route library** (import time or name); auto-refreshes after a Strava sync.
 - **Estimated climb time** — per-climb / per-segment, from your FTP + weights, with
   per-surface rolling resistance and route-wide fatigue (W'-balance). Phone-only.
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
+- **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
+  radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
+  the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
+
+- **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
+  ranked by difficulty score (elevation gain × average gradient). Phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.

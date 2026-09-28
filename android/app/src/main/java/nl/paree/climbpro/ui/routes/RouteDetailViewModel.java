@@ -12,6 +12,7 @@ import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.RouteReverseService;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
@@ -57,6 +58,10 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<String> rideStatus = new MutableLiveData<>();
     private final MutableLiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions =
             new MutableLiveData<>();
+    /** One-shot result of {@link #reverseRoute}; cleared via {@link #consumeReversedRoute}. */
+    private final MutableLiveData<RouteReverseService.Result> reversedRoute = new MutableLiveData<>();
+    private final MutableLiveData<RouteElevationProfile> elevationProfile =
+            new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
@@ -78,14 +83,36 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<ClimbUsageType[]> climbUsageTypes()  { return climbUsageTypes; }
     public LiveData<String> onboardPushMessage() { return onboardPushMessage; }
     public LiveData<String> rideStatus() { return rideStatus; }
+    public LiveData<RouteReverseService.Result> reversedRoute() { return reversedRoute; }
+
+    public void consumeReversedRoute() { reversedRoute.setValue(null); }
+
+    /**
+     * Creates (or reuses) the opposite-direction variant of the route with climbs re-detected
+     * (issue #201). The original route is left untouched.
+     */
+    public void reverseRoute(String routeId) {
+        executor.execute(() -> {
+            try {
+                reversedRoute.postValue(new RouteReverseService(routeRepo).reverse(routeId));
+            } catch (Exception e) {
+                error.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.route_reverse_failed, e.getMessage()));
+            }
+        });
+    }
     /** Rest-split suggestions (issue #22); see {@link RestSplitAdvisor}. */
     public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
+    /** Whole-route elevation profile with climbs highlighted (issue #207). */
+    public LiveData<RouteElevationProfile> elevationProfile() { return elevationProfile; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 route.postValue(r);
+                elevationProfile.postValue(RouteElevationProfile.from(
+                        r, RouteElevationProfile.DEFAULT_MAX_BUCKETS));
                 rideStatus.postValue(RouteRideStatus.normalize(r.rideStatus));
                 routeItems.postValue(buildRouteItems(r));
                 RiderProfile profile = riderRepo.load();

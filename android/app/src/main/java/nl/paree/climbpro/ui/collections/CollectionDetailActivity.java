@@ -28,6 +28,9 @@ public final class CollectionDetailActivity extends AppCompatActivity {
     private View                      emptyView;
     private Toolbar                   toolbar;
     private String                    collectionId;
+    /** Builds share codes off the main thread (issue #216). */
+    private final java.util.concurrent.ExecutorService shareExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
 
     public static Intent intentFor(Context ctx, String collectionId) {
         Intent i = new Intent(ctx, CollectionDetailActivity.class);
@@ -73,6 +76,12 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         viewModel.load(collectionId);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        shareExecutor.shutdown();
+    }
+
     private void setTitle(String name) {
         toolbar.setTitle(name);
     }
@@ -89,6 +98,14 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         if (id == android.R.id.home) { finish(); return true; }
         if (id == R.id.action_rename_collection) { showRenameDialog(); return true; }
         if (id == R.id.action_delete_collection) { confirmDeleteCollection(); return true; }
+        if (id == R.id.action_share_collection_code) {
+            RouteCollection current = viewModel.collection().getValue();
+            if (current != null) {
+                nl.paree.climbpro.ui.share.ClimbCodeSharing.shareCollection(this, shareExecutor,
+                        current);
+            }
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
