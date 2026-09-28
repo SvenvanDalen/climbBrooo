@@ -32,6 +32,10 @@ public enum PrivacyCategory {
     BIKE_COSTS("Fietskosten",
             "Je fietsen met aankopen, onderdelen en hun bedragen.",
             "bike_costs.json"),
+    BATTERIES("Accu's",
+            "Je accu's (e-shifting, verlichting, powermeter) met de laatste laaddatum en "
+                    + "herinneringsinterval.",
+            "battery_status.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),
