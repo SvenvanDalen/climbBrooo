@@ -348,6 +348,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_friend_feed) {
             startActivity(nl.paree.climbpro.ui.social.FriendFeedActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_hr_drift) {
+            startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_tire_pressure_log) {
             startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
             return true;
@@ -356,12 +359,16 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_battery_status) {
             startActivity(nl.paree.climbpro.ui.battery.BatteryActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_pain_log) {
             startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_safe_home) {
             startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_sunscreen) {
             startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_comeback_plan) {
             startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
             return true;

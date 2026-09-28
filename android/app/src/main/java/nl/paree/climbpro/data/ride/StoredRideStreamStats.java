@@ -26,4 +26,15 @@ public final class StoredRideStreamStats {
     /** Peak 10 s speed (m/s) on flat or rising road; null without an altitude stream. */
     public Double  sprint10sSpeedMps;
     public Integer sprint10sSpeedAtSec;
+    /** Time-weighted average heart rate while moving (bpm); null without heart-rate data. */
+    public Integer avgHeartrate;
+    /**
+     * Heart-rate drift / aerobic decoupling in percent (issue #222); null for rides that are
+     * too short, lack heart rate, or are hilly without power.
+     */
+    public Double  hrDriftPct;
+    /** "power" or "speed": what the heart rate was compared against. */
+    public String  hrDriftBasis;
+    /** Moving minutes the drift was computed over (warm-up excluded). */
+    public Integer hrDriftMinutes;
 }
