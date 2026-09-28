@@ -98,6 +98,10 @@
             android:name=".ui.climbs.ClimbDetailActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteDetailActivity"/>
+        <activity
+            android:name=".ui.climbs.ClimbCompareActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.climbs.ClimbDetailActivity"/>
 
         <activity
             android:name=".ui.climbs.ClimbBulkRenameActivity"
