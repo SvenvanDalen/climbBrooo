@@ -24,6 +24,7 @@ import nl.paree.climbpro.domain.climb.SegmentPrCalculator;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimator;
 import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.export.ClimbWorkoutWriter;
 import nl.paree.climbpro.domain.power.RouteAwareClimbEstimator;
 import nl.paree.climbpro.domain.power.RouteTile;
 import nl.paree.climbpro.service.RouteEffortProfileBuilder;
@@ -53,6 +54,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<SeasonalComparisonCalculator.Result> seasonalComparison =
             new MutableLiveData<>();
     private final MutableLiveData<File>              gpxExportFile = new MutableLiveData<>();
+    private final MutableLiveData<WorkoutExport>     workoutExport = new MutableLiveData<>();
 
     private volatile StoredClimb lastClimb;
     private volatile StoredRoute lastRoute;
@@ -75,6 +77,18 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         return seasonalComparison;
     }
     public LiveData<File>              gpxExportFile() { return gpxExportFile; }
+    public LiveData<WorkoutExport>     workoutExport() { return workoutExport; }
+
+    /** A written indoor-workout file and the MIME type to share it with (issue #223). */
+    public static final class WorkoutExport {
+        public final File file;
+        public final String mime;
+
+        WorkoutExport(File file, String mime) {
+            this.file = file;
+            this.mime = mime;
+        }
+    }
 
     public void loadClimb(String routeId, int climbIndex) {
         executor.execute(() -> {
@@ -222,6 +236,20 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Saves the rider's rating of this climb (issue #244); all-null clears it. */
+    public void setRating(String routeId, int climbIndex, Integer road, Integer traffic,
+                          Integer view, String note) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbRating(routeId, climbIndex, road, traffic, view, note);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     /**
      * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
      * track, plus waypoints at every segment boundary and, when PR data exists, at the
@@ -229,6 +257,50 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * {@link File} to {@link #gpxExportFile()} for the Activity to hand off to the share
      * sheet; PR lookup and file I/O both happen off the main thread.
      */
+    /**
+     * Writes the climb as an indoor workout (issue #223): Zwift {@code .zwo} when {@code zwift},
+     * else ERG. Uses the fresh per-climb estimate, not the route-aware one: indoors you start
+     * the climb rested. Needs a complete rider profile for the power targets.
+     */
+    public void exportWorkout(boolean zwift) {
+        StoredClimb c = lastClimb;
+        if (c == null || c.segments == null || c.segments.isEmpty()) {
+            error.postValue("Klim nog niet geladen");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                RiderProfile profile = riderRepo.load();
+                List<StoredSegment> segs = c.segments;
+                int[] dist = new int[segs.size()];
+                double[] grad = new double[segs.size()];
+                int[] surface = new int[segs.size()];
+                for (int i = 0; i < segs.size(); i++) {
+                    dist[i] = segs.get(i).distance;
+                    grad[i] = segs.get(i).gradient;
+                    surface[i] = segs.get(i).surfaceType;
+                }
+                ClimbWorkoutWriter.Plan plan =
+                        ClimbWorkoutWriter.plan(dist, grad, surface, profile);
+                if (plan == null) {
+                    error.postValue("Vul eerst je FTP en gewicht in bij Instellingen; daarmee "
+                            + "worden de vermogensdoelen per segment berekend.");
+                    return;
+                }
+                String name = c.userDisplayName != null && !c.userDisplayName.trim().isEmpty()
+                        ? c.userDisplayName : c.name;
+                String content = zwift ? ClimbWorkoutWriter.toZwo(name, plan.steps)
+                        : ClimbWorkoutWriter.toErg(name, plan.steps, plan.ftpWatts);
+                File file = ClimbWorkoutExportHandoff.writeFile(getApplication(), content,
+                        ClimbWorkoutWriter.fileName(name, zwift ? "zwo" : "erg"));
+                workoutExport.postValue(new WorkoutExport(file, zwift
+                        ? ClimbWorkoutExportHandoff.ZWO_MIME : ClimbWorkoutExportHandoff.ERG_MIME));
+            } catch (Exception e) {
+                error.postValue("Workout-export mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     public void exportGpx() {
         StoredClimb c = lastClimb;
         StoredRoute r = lastRoute;
@@ -276,7 +348,10 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     /**
-     * Attaches/updates a note and/or photo on one existing attempt (issue #46). {@code
+     * Attaches/updates a note, the riding companions (issue #243) and/or photo on one existing
+     * attempt (issue #46). {@code companions} is free text, normalised via
+     * {@link nl.paree.climbpro.domain.ride.SummitGroupPhotos#normalizeCompanions}; blank
+     * clears it. {@code
      * photoUri}, when non-null, is copied into {@code getFilesDir()/attempt_photos/} via
      * {@link nl.paree.climbpro.data.route.AttemptPhotoStore}; pass null to leave the attempt's
      * current photo untouched, and an empty/blank {@code note} to clear it. Identity is
@@ -285,7 +360,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * list picks up the change.
      */
     public void saveAttemptNote(String routeId, int climbIndex, long activityId, int passIndex,
-                                 String note, android.net.Uri photoUri) {
+                                 String note, String companions, android.net.Uri photoUri) {
         StoredClimb c = lastClimb;
         if (c == null) {
             error.postValue("Klim nog niet geladen");
@@ -310,6 +385,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 }
 
                 target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
+                target.companions = nl.paree.climbpro.domain.ride.SummitGroupPhotos
+                        .normalizeCompanions(companions);
 
                 // Write the NEW photo first, but don't touch the OLD one yet — if the JSON
                 // record update below fails, we must be able to roll back to a state where
