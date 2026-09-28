@@ -57,6 +57,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<String> rideStatus = new MutableLiveData<>();
     private final MutableLiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions =
             new MutableLiveData<>();
+    private final MutableLiveData<RouteElevationProfile> elevationProfile =
+            new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
@@ -80,12 +82,16 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<String> rideStatus() { return rideStatus; }
     /** Rest-split suggestions (issue #22); see {@link RestSplitAdvisor}. */
     public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
+    /** Whole-route elevation profile with climbs highlighted (issue #207). */
+    public LiveData<RouteElevationProfile> elevationProfile() { return elevationProfile; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 route.postValue(r);
+                elevationProfile.postValue(RouteElevationProfile.from(
+                        r, RouteElevationProfile.DEFAULT_MAX_BUCKETS));
                 rideStatus.postValue(RouteRideStatus.normalize(r.rideStatus));
                 routeItems.postValue(buildRouteItems(r));
                 RiderProfile profile = riderRepo.load();
