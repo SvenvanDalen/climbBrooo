@@ -20,14 +20,18 @@ import androidx.health.connect.client.PermissionController;
 import androidx.lifecycle.ViewModelProvider;
 
 import androidx.preference.PreferenceManager;
+import androidx.work.WorkInfo;
 
 import nl.paree.climbpro.data.backup.BackupArchive;
 import nl.paree.climbpro.data.backup.BackupRetention;
 import nl.paree.climbpro.data.backup.LocalBackupService;
 import nl.paree.climbpro.data.health.HealthConnectGateway;
+import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.service.AutoBackupWorker;
+import nl.paree.climbpro.service.StravaHistoryBackfillWorker;
+import nl.paree.climbpro.service.SyncScheduler;
 import nl.paree.climbpro.service.WetRideReminderJob;
 
 import java.time.ZoneId;
@@ -201,6 +205,9 @@ public final class SettingsActivity extends AppCompatActivity {
 
         binding.btnStravaTitleTemplate.setOnClickListener(v -> startActivity(
                 new android.content.Intent(this, StravaTitleTemplateActivity.class)));
+
+        binding.btnStravaHistoryBackfill.setOnClickListener(v -> confirmHistoryBackfill());
+        SyncScheduler.historyBackfillInfo(this).observe(this, this::renderHistoryBackfill);
 
         binding.btnBackupCreate.setOnClickListener(v -> backupCreator.launch(
                 BackupRetention.fileName(System.currentTimeMillis(), ZoneId.systemDefault())));
@@ -400,6 +407,49 @@ public final class SettingsActivity extends AppCompatActivity {
             return;
         }
         healthPermissionLauncher.launch(HealthConnectGateway.PERMISSIONS);
+    }
+
+    private void confirmHistoryBackfill() {
+        if (!Boolean.TRUE.equals(viewModel.stravaSignedIn().getValue())) {
+            Toast.makeText(this, "Log eerst in bij Strava", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Volledige historie ophalen")
+                .setMessage("Haalt eenmalig al je Strava-activiteiten van de afgelopen 10 jaar "
+                        + "op en zoekt je klimpogingen erin. Strava beperkt het aantal "
+                        + "verzoeken per dag, dus bij veel ritten kan dit een paar dagen duren. "
+                        + "Het gaat vanzelf verder op de achtergrond.")
+                .setPositiveButton("Starten", (d, w) -> SyncScheduler.startHistoryBackfill(this))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    private void renderHistoryBackfill(java.util.List<WorkInfo> infos) {
+        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS, MODE_PRIVATE)
+                .getBoolean(StravaActivitiesRepository.PREF_BACKFILL_DONE, false);
+        WorkInfo info = infos == null || infos.isEmpty() ? null : infos.get(infos.size() - 1);
+        boolean active = info != null && !info.getState().isFinished();
+        binding.btnStravaHistoryBackfill.setEnabled(!done && !active);
+        if (done) {
+            binding.btnStravaHistoryBackfill.setText("Volledige historie opgehaald");
+            binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.GONE);
+            return;
+        }
+        if (!active) {
+            binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.GONE);
+            return;
+        }
+        long cursor = info.getProgress().getLong(StravaHistoryBackfillWorker.KEY_CURSOR, 0L);
+        boolean paused = info.getProgress().getBoolean(StravaHistoryBackfillWorker.KEY_PAUSED, false);
+        String status = cursor > 0
+                ? "Bezig — opgehaald tot " + java.time.format.DateTimeFormatter
+                        .ofPattern("MMMM yyyy", new java.util.Locale("nl"))
+                        .format(java.time.Instant.ofEpochSecond(cursor).atZone(ZoneId.systemDefault()))
+                : "Bezig…";
+        if (paused) status += " (wacht op Strava-limiet)";
+        binding.stravaHistoryBackfillStatus.setText(status);
+        binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.VISIBLE);
     }
 
     private void exportRidesToHealth() {
