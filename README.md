@@ -122,6 +122,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Monthly challenge** — pick a goal for the month (distinct climbs, hoogtemeters, km or
+  rides) or let the app suggest one from your last three months, with progress and pace. Phone-only.
+
 ---
 
 ## Repository layout

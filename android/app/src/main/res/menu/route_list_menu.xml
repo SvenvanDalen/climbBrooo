@@ -205,6 +205,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_monthly_challenge"
+        android:title="Maanduitdaging"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_settings"
         android:title="Settings"
         app:showAsAction="never"/>
