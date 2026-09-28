@@ -14,7 +14,15 @@ public final class StravaActivityDto {
     public String name;
 
     @JsonProperty("type")
-    public String type;          // e.g. "Ride"
+    public String type;          // e.g. "Ride" (legacy field; gravel/MTB rides still say "Ride" here)
+
+    /**
+     * Strava's newer, more specific activity classification, e.g. "GravelRide",
+     * "MountainBikeRide" — {@code type} alone does not carry this (issue #234). Null on
+     * responses/records from before this field was added.
+     */
+    @JsonProperty("sport_type")
+    public String sportType;
 
     @JsonProperty("start_date")
     public String startDate;     // ISO-8601
@@ -53,4 +61,14 @@ public final class StravaActivityDto {
 
     @JsonProperty("kilojoules")
     public Double kilojoules;    // work done; rides only, null when unknown
+
+    // Power summary for the training-load chart (issue #220).
+    @JsonProperty("average_watts")
+    public Float averageWatts;   // estimated by Strava when device_watts is false
+
+    @JsonProperty("weighted_average_watts")
+    public Integer weightedAverageWatts; // power-meter rides only
+
+    @JsonProperty("device_watts")
+    public boolean deviceWatts;
 }
