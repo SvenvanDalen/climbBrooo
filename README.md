@@ -122,6 +122,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Packing list per ride type** — editable checklists (Training, Toerrit, Bikepacking or
+  your own) to tick off before you leave, with a one-tap reset. Phone-only.
+
 ---
 
 ## Repository layout

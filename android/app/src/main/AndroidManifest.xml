@@ -255,6 +255,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.planning.PackingListActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.goals.ElevationGoalActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
