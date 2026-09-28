@@ -39,6 +39,10 @@ public enum PrivacyCategory {
     PAIN_LOG("Pijnlogboek",
             "Je gelogde klachten per rit, met fiets, afstelling en notities.",
             "pain_log.json"),
+    SAFE_HOME("Veilig thuis-bericht",
+            "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
+                    + "gemeld zijn.",
+            "safe_home.json"),
     PHOTOS("Foto's bij pogingen",
             "Foto's die je aan een klimpoging hebt gekoppeld.",
             "attempt_photos/"),

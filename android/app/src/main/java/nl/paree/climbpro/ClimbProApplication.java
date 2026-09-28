@@ -43,6 +43,7 @@ public final class ClimbProApplication extends Application {
             nl.paree.climbpro.service.RebindScheduler.schedulePeriodicRebind(this);
             nl.paree.climbpro.service.WarrantyReminderWorker.schedule(this);
             nl.paree.climbpro.service.BatteryReminderWorker.schedule(this);
+            nl.paree.climbpro.service.SafeHomeWorker.syncSchedule(this);
         } catch (IllegalStateException e) {
             android.util.Log.w("ClimbProApplication",
                     "WorkManager not initialised — skipping periodic work schedules", e);
