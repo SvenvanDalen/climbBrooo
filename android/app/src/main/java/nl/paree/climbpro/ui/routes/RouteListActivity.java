@@ -577,9 +577,13 @@ public final class RouteListActivity extends AppCompatActivity {
     private void showImportDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Add route")
-                .setItems(new String[]{"Import GPX file", "Sync from Strava"}, (d, which) -> {
+                .setItems(new String[]{"Import GPX file", "Sync from Strava",
+                        "Klimcode importeren"}, (d, which) -> {
                     if (which == 0) {
                         gpxPicker.launch(new String[]{"*/*"});
+                    } else if (which == 2) {
+                        nl.paree.climbpro.ui.share.ClimbCodeSharing.showImportDialog(
+                                this, executor, viewModel::loadRoutes);
                     } else {
                         if (viewModel.isSignedInToStrava()) {
                             viewModel.triggerSync();

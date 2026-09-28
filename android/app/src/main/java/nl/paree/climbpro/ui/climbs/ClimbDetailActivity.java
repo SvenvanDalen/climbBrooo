@@ -276,6 +276,14 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
+        binding.btnShareCode.setOnClickListener(v -> {
+            StoredRoute r = viewModel.route().getValue();
+            if (r == null) {
+                Toast.makeText(this, "Klim nog niet geladen", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            nl.paree.climbpro.ui.share.ClimbCodeSharing.shareClimb(this, r, climbIndex);
+        });
         binding.btnToggleHomeClimb.setOnClickListener(v -> {
             if (loadedClimb == null) return;
             viewModel.setHomeClimb(routeId, climbIndex, !loadedClimb.isHome);

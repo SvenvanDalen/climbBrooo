@@ -116,6 +116,14 @@
                 android:text="Exporteer als GPX"/>
 
             <Button
+                android:id="@+id/btn_share_code"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Deel als code"/>
+
+            <Button
                 android:id="@+id/btn_toggle_home_climb"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"
