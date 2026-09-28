@@ -103,6 +103,8 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
+- **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
+  ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
 ---
 

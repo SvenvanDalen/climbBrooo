@@ -4,4 +4,24 @@
     <string name="placeholder_main">ClimbPro</string>
     <string name="widget_week_label">ClimbPro week</string>
     <string name="widget_week_description">Klimmen van deze week en je volgende geplande klim</string>
+    <!-- Top 10 zwaarste klimmen in je regio (issue #211) -->
+    <string name="top_climbs_title">Zwaarste klimmen in de regio</string>
+    <string name="top_climbs_intro">De zwaarste bekende klimmen binnen een straal rond je startpunt, gesorteerd op moeilijkheidsscore (hoogtemeters × gemiddeld stijgingspercentage).</string>
+    <string name="top_climbs_radius_hint">Straal rond startpunt (km)</string>
+    <string name="top_climbs_start_none">Startpunt: nog niet gekozen</string>
+    <string name="top_climbs_start">Startpunt: %1$s</string>
+    <string name="top_climbs_use_location">Huidige locatie</string>
+    <string name="top_climbs_pick_route_start">Start van route</string>
+    <string name="top_climbs_search">Toon top 10</string>
+    <string name="top_climbs_radius_error">Vul een straal in km in</string>
+    <string name="top_climbs_pick_start_first">Kies eerst een startpunt.</string>
+    <string name="top_climbs_no_location">Geen recente locatie bekend — kies de start van een route.</string>
+    <string name="top_climbs_no_permission">Geen locatietoestemming — kies de start van een route.</string>
+    <string name="top_climbs_no_routes">Geen routes gevonden om als start te gebruiken</string>
+    <string name="top_climbs_pick_route_title">Start van welke route?</string>
+    <string name="top_climbs_empty">Geen bekende klimmen binnen deze straal. Vergroot de straal of importeer meer routes.</string>
+    <string name="top_climbs_summary">Top %1$d binnen %2$d km</string>
+    <string name="top_climbs_row">%1$d. %2$s\n    score %3$.0f · %4$d hm · %5$.1f km · gem. %6$.1f%% · %7$.1f km hemelsbreed</string>
+    <string name="top_climbs_route_start">start van %1$s</string>
+    <string name="menu_top_climbs">Zwaarste klimmen in de regio</string>
 </resources>

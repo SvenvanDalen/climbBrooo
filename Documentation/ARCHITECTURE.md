@@ -508,6 +508,18 @@ change), applied by `RouteRepository.saveRoute`:
   the route-wide offset (median of the matched climbs' offsets). User-drawn surface sections
   are still copied verbatim (absolute distances).
 
+### Hardest climbs in the region (phone-only, issue #211)
+
+Menu entry *Zwaarste klimmen in de regio* (`ui/climbs/TopClimbsActivity`) lists the top 10
+known climbs whose start lies within a radius (default: the radius-mode setting) of the phone's
+last-known location or a chosen route start. Candidates come from the same catalog pre-filter
+as radius mode (`RouteRepository.findNearby`); the pure `domain/climb/RegionalTopClimbs` applies
+the exact haversine radius filter, dedupes the same climb across routes on its `ClimbIdentity`
+key (keeping the hardest version), and ranks by `DifficultyScoreCalculator.score(gain, gradient, 0)`
+— the standalone form without fatigue bonus, so a climb is judged on its own merit rather than on
+its position in whichever route it was imported from. Ties break on distance, then name. Tapping
+a row opens the climb detail screen. No wire-format change.
+
 ### Climb time estimate (phone-only)
 
 The phone estimates how long each climb takes from a rider profile (FTP in
