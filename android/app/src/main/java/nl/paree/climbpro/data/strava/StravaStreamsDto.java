@@ -27,6 +27,13 @@ public final class StravaStreamsDto {
     @JsonProperty("distance")
     public NumberStream distance;
 
+    /** Power (W) and altitude (m) per sample, for sprint detection (issue #224). */
+    @JsonProperty("watts")
+    public NumberStream watts;
+
+    @JsonProperty("altitude")
+    public NumberStream altitude;
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class LatLngStream {
         @JsonProperty("data")

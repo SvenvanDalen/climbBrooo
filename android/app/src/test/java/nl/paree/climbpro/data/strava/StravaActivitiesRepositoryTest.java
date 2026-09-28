@@ -915,4 +915,24 @@ public class StravaActivitiesRepositoryTest {
         s.distance = null;
         assertEquals(null, StravaActivitiesRepository.toRideStreams(s));
     }
+
+    @Test
+    public void toRideStreams_mapsPowerGapsToNaNAndCarriesAltitude() {
+        StravaStreamsDto s = steadyRideStreams();
+        s.watts = new StravaStreamsDto.NumberStream();
+        s.watts.data = new ArrayList<>();
+        s.altitude = new StravaStreamsDto.NumberStream();
+        s.altitude.data = new ArrayList<>();
+        for (int i = 0; i < s.time.data.size(); i++) {
+            s.watts.data.add(i == 3 ? null : 250.0);
+            s.altitude.data.add(i == 3 ? null : 12.0 + i);
+        }
+        nl.paree.climbpro.domain.ride.RideStreams rs = StravaActivitiesRepository.toRideStreams(s);
+        assertTrue(Double.isNaN(rs.watts[3]));
+        assertEquals(250.0, rs.watts[4], 1e-9);
+        assertEquals(14.0, rs.altitude[3], 1e-9);
+
+        s.watts.data.remove(0); // length mismatch: power is dropped, the rest still usable
+        assertEquals(null, StravaActivitiesRepository.toRideStreams(s).watts);
+    }
 }

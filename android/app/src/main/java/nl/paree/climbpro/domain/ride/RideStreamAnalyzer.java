@@ -3,7 +3,8 @@ package nl.paree.climbpro.domain.ride;
 import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 
 /**
- * Derives per-ride efforts from Strava streams (issue #225). Runs once per ride on the phone
+ * Derives per-ride efforts from Strava streams: fastest distances (issue #225) and sprints
+ * (issue #224). Runs once per ride on the phone
  * during the ride-archive sync; only the result is stored.
  */
 public final class RideStreamAnalyzer {
@@ -11,7 +12,12 @@ public final class RideStreamAnalyzer {
     private RideStreamAnalyzer() {}
 
     /** Bump when the analysis changes, so stored stats from an older version are redone. */
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
+
+    /** Sprint windows (issue #224): peak power over 5 and 15 s, peak speed over 10 s. */
+    public static final int SPRINT_POWER_SHORT_SEC = 5;
+    public static final int SPRINT_POWER_LONG_SEC = 15;
+    public static final int SPRINT_SPEED_SEC = 10;
 
     public static final double[] EFFORT_DISTANCES_M = {10_000, 40_000, 100_000};
 
@@ -30,6 +36,19 @@ public final class RideStreamAnalyzer {
         st.best10kSec = fastestDistanceSec(streams, EFFORT_DISTANCES_M[0]);
         st.best40kSec = fastestDistanceSec(streams, EFFORT_DISTANCES_M[1]);
         st.best100kSec = fastestDistanceSec(streams, EFFORT_DISTANCES_M[2]);
+
+        SprintAnalyzer.Peak p5 = SprintAnalyzer.peakPower(streams, SPRINT_POWER_SHORT_SEC);
+        if (p5 != null) {
+            st.sprint5sWatts = (int) Math.round(p5.value);
+            st.sprint5sAtSec = p5.atSec;
+        }
+        SprintAnalyzer.Peak p15 = SprintAnalyzer.peakPower(streams, SPRINT_POWER_LONG_SEC);
+        if (p15 != null) st.sprint15sWatts = (int) Math.round(p15.value);
+        SprintAnalyzer.Peak v = SprintAnalyzer.peakSpeed(streams, SPRINT_SPEED_SEC);
+        if (v != null) {
+            st.sprint10sSpeedMps = v.value;
+            st.sprint10sSpeedAtSec = v.atSec;
+        }
         return st;
     }
 
@@ -66,7 +85,7 @@ public final class RideStreamAnalyzer {
         return best == Double.POSITIVE_INFINITY ? null : (int) Math.round(best);
     }
 
-    private static boolean isPlausible(int t0, double d0, int t1, double d1) {
+    static boolean isPlausible(int t0, double d0, int t1, double d1) {
         double dd = d1 - d0;
         if (Double.isNaN(dd) || dd < 0) return false;
         int dt = t1 - t0;

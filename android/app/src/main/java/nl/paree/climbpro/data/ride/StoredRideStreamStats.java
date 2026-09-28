@@ -18,4 +18,12 @@ public final class StoredRideStreamStats {
     public Integer best10kSec;
     public Integer best40kSec;
     public Integer best100kSec;
+    /** Best sprint (issue #224): peak 5 s and 15 s power, null without a power stream. */
+    public Integer sprint5sWatts;
+    /** Seconds after the activity start where the 5 s peak begins. */
+    public Integer sprint5sAtSec;
+    public Integer sprint15sWatts;
+    /** Peak 10 s speed (m/s) on flat or rising road; null without an altitude stream. */
+    public Double  sprint10sSpeedMps;
+    public Integer sprint10sSpeedAtSec;
 }
