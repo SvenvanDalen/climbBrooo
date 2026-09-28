@@ -260,6 +260,37 @@
 
             </LinearLayout>
 
+            <!-- Cleaning reminder after wet rides (issue #234). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Schoonmaakherinnering"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="Na een rit in de regen (of een gravel- of MTB-rit na regen) krijg je een melding om fiets en ketting schoon te maken. Het startpunt van je rit wordt hiervoor naar Open-Meteo gestuurd. Werkt voor Strava-ritten van de laatste 3 dagen, na elke sync."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_wet_ride_reminder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Herinner me na natte ritten"/>
+            </LinearLayout>
+
             <!-- Health Connect (issue #255). -->
             <LinearLayout
                 android:layout_width="match_parent"

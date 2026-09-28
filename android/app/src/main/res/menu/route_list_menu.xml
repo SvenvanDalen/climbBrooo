@@ -55,8 +55,18 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_friend_feed"
+        android:title="Vriendenfeed"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_tire_pressure_log"
         android:title="Bandenspanning"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_saddle_height"
+        android:title="Zadelhoogte"
         app:showAsAction="never"/>
 
     <item
@@ -92,6 +102,16 @@
     <item
         android:id="@+id/action_maintenance"
         android:title="Onderhoud"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_torque"
+        android:title="Aanhaalmomenten"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_frame_size"
+        android:title="Framemaat"
         app:showAsAction="never"/>
 
     <item

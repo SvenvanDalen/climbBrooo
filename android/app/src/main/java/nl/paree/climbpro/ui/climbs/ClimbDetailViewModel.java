@@ -222,6 +222,20 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Saves the rider's rating of this climb (issue #244); all-null clears it. */
+    public void setRating(String routeId, int climbIndex, Integer road, Integer traffic,
+                          Integer view, String note) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbRating(routeId, climbIndex, road, traffic, view, note);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     /**
      * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
      * track, plus waypoints at every segment boundary and, when PR data exists, at the
@@ -276,7 +290,10 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     /**
-     * Attaches/updates a note and/or photo on one existing attempt (issue #46). {@code
+     * Attaches/updates a note, the riding companions (issue #243) and/or photo on one existing
+     * attempt (issue #46). {@code companions} is free text, normalised via
+     * {@link nl.paree.climbpro.domain.ride.SummitGroupPhotos#normalizeCompanions}; blank
+     * clears it. {@code
      * photoUri}, when non-null, is copied into {@code getFilesDir()/attempt_photos/} via
      * {@link nl.paree.climbpro.data.route.AttemptPhotoStore}; pass null to leave the attempt's
      * current photo untouched, and an empty/blank {@code note} to clear it. Identity is
@@ -285,7 +302,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * list picks up the change.
      */
     public void saveAttemptNote(String routeId, int climbIndex, long activityId, int passIndex,
-                                 String note, android.net.Uri photoUri) {
+                                 String note, String companions, android.net.Uri photoUri) {
         StoredClimb c = lastClimb;
         if (c == null) {
             error.postValue("Klim nog niet geladen");
@@ -310,6 +327,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 }
 
                 target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
+                target.companions = nl.paree.climbpro.domain.ride.SummitGroupPhotos
+                        .normalizeCompanions(companions);
 
                 // Write the NEW photo first, but don't touch the OLD one yet — if the JSON
                 // record update below fails, we must be able to roll back to a state where
