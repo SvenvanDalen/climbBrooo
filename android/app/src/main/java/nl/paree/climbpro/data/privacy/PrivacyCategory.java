@@ -13,7 +13,8 @@ public enum PrivacyCategory {
             "Geïmporteerde routes met hun klimmen, namen, notities en ondergrond.",
             "routes/", "catalog.json", "sync_state.json"),
     ATTEMPTS("Klimpogingen",
-            "Tijden per klim uit je Strava-activiteiten, met notities.",
+            "Tijden per klim uit je Strava-activiteiten, met notities en de namen van wie er "
+                    + "meereed.",
             "climb_attempts.json", "incomplete_climb_attempts.json"),
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid en "
