@@ -357,6 +357,21 @@ attempts), phone-only and never part of the wire payload. The route list filters
 via the pure `ui/routes/RouteStatusFilter` (Alle / Wil ik rijden / Gereden), applied
 alongside the surface filter and before sorting.
 
+### Reverse a route (issue #201)
+
+The route detail button "Omgekeerde richting" creates the opposite-direction variant of a
+stored route as a **new** route — the original is never modified. The pure
+`domain/route/RouteReverser` flips the point order and recomputes cumulative distances
+(elevations kept); `data/route/RouteReverseService` then re-runs `ClimbDetector` (detect →
+false-flat trim → 8 % segmentation) on the reversed points and stores the result through the
+normal `RouteRepository.saveRoute`, so the descents of the original become the climbs of the
+reverse. Stored points are already smoothed/simplified, so smoothing is not re-applied. The
+reversed route gets the deterministic id `rev_<id>` and default name `"<name> (omgekeerd)"`;
+if that id already exists it is reopened instead of duplicated, and reversing a `rev_` route
+maps back to the original. Climb renames, notes, ride status, surface sections and starred
+segments do not carry over (they describe different climbs/stretches). Phone-only; the result
+is an ordinary route payload, no wire-format change.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
