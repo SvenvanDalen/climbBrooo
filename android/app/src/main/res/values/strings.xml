@@ -4,4 +4,17 @@
     <string name="placeholder_main">ClimbPro</string>
     <string name="widget_week_label">ClimbPro week</string>
     <string name="widget_week_description">Klimmen van deze week en je volgende geplande klim</string>
+    <!-- Issue #204: routes samenvoegen -->
+    <string name="route_join_button">Samenvoegen met…</string>
+    <string name="route_join_pick_title">Achter deze route plakken</string>
+    <string name="route_join_no_other_routes">Geen andere routes om mee samen te voegen</string>
+    <string name="route_join_gap_title">Routes sluiten niet aan</string>
+    <string name="route_join_gap_message">Het einde van deze route en het begin van de gekozen route liggen %1$s km uit elkaar. Ze worden met een rechte lijn verbonden. Toch samenvoegen?</string>
+    <string name="route_join_confirm">Samenvoegen</string>
+    <string name="route_join_cancel">Annuleren</string>
+    <plurals name="route_join_done">
+        <item quantity="one">Samengevoegd: %1$s (%2$d klim)</item>
+        <item quantity="other">Samengevoegd: %1$s (%2$d klimmen)</item>
+    </plurals>
+    <string name="route_join_failed">Samenvoegen mislukt: %1$s</string>
 </resources>

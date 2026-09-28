@@ -357,6 +357,22 @@ attempts), phone-only and never part of the wire payload. The route list filters
 via the pure `ui/routes/RouteStatusFilter` (Alle / Wil ik rijden / Gereden), applied
 alongside the surface filter and before sorting.
 
+### Joining two routes (issue #204)
+
+"Samenvoegen met…" on the route detail screen saves the current route (A) followed by a
+picked route (B) as a **new, ordinary route**; both originals stay untouched. The pure
+`domain/route/RouteJoiner` concatenates the stored point lists and recomputes cumulative
+distance from A's first point. If B starts within 5 m of A's end the duplicate joint point
+is dropped; otherwise the gap is bridged by a straight line that counts towards the
+distance, and a gap over 250 m (`LARGE_GAP_WARNING_M`) makes the UI ask for confirmation
+first — no road geometry is invented. Missing elevation stays `NaN`. `data/route/RouteJoinService`
+then re-runs `ClimbDetector` (detect + trim + segment) over the joined points — not the
+smoother/simplifier, because stored geometry was already smoothed and simplified at import —
+and saves via `RouteRepository.saveRoute` under a `join_` route id with the default name
+"A + B" (renamable like any route). Climbs spanning the joint are detected as one climb.
+Phone-only; no wire-format change. Note the joined route's climbs duplicate those of its
+source routes in the catalog, like any overlapping import.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
