@@ -231,6 +231,62 @@
                     android:text="Save rider profile"/>
             </LinearLayout>
 
+            <!-- Virtual ghost for climbs without history (issue #31). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ghost voor nieuwe klimmen"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:text="Zonder PR of eigen referentietijd rijd je tegen een virtuele renner op deze streefsnelheid en/of VAM. Vul beide in en de ghost rijdt het langzaamste van de twee. Leeg = uit."
+                    android:layout_marginBottom="10dp"/>
+
+                <EditText
+                    android:id="@+id/input_ghost_speed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Streefsnelheid (km/u)"
+                    android:inputType="numberDecimal"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/input_ghost_vam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Streef-VAM (m/u)"
+                    android:inputType="number"
+                    android:layout_marginBottom="12dp"/>
+
+                <Button
+                    android:id="@+id/btn_save_ghost"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ghost-doel opslaan"/>
+            </LinearLayout>
+
             <!-- Home-climb privacy zone (issue #92). -->
             <LinearLayout
                 android:layout_width="match_parent"

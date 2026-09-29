@@ -10,6 +10,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
@@ -17,9 +18,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.ride.RideCategory;
 import nl.paree.climbpro.domain.ride.RideCategoryLabel;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -53,7 +59,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
         TextView empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RideArchiveAdapter();
+        adapter = new RideArchiveAdapter(this::showRideActions);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(RideArchiveViewModel.class);
@@ -91,6 +97,44 @@ public final class RideArchiveActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (adapter != null) adapter.shutdown();
+    }
+
+    /** Tap on a ride: share it as a story (issue #193) or compare it (issue #199). */
+    private void showRideActions(StoredRide ride) {
+        new AlertDialog.Builder(this)
+                .setTitle(ride.name != null && !ride.name.isEmpty() ? ride.name : "Rit")
+                .setItems(new String[]{"Rit-verhaal delen", "Vergelijk met…"}, (d, which) -> {
+                    if (which == 0) {
+                        startActivity(RideStoryActivity.intentFor(this, ride.activityId));
+                    } else {
+                        pickRideToCompare(ride);
+                    }
+                })
+                .show();
+    }
+
+    /** Ride comparer (issue #199): offer the other rides that look like the same route. */
+    private void pickRideToCompare(StoredRide base) {
+        List<StoredRide> candidates = viewModel.sameRouteCandidates(base);
+        if (candidates.isEmpty()) {
+            Toast.makeText(this, "Geen andere rit over dezelfde route gevonden om mee te vergelijken",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        SimpleDateFormat fmt = new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+        String[] items = new String[candidates.size()];
+        for (int i = 0; i < items.length; i++) {
+            StoredRide r = candidates.get(i);
+            items[i] = String.format(Locale.getDefault(), "%s  •  %.1f km  •  %.1f km/u",
+                    r.startEpochSec > 0 ? fmt.format(new Date(r.startEpochSec * 1000L)) : "?",
+                    r.distanceM / 1000f, r.avgSpeedMps * 3.6f);
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Vergelijk met…")
+                .setItems(items, (d, which) -> startActivity(RideCompareActivity.intentFor(
+                        this, base.activityId, candidates.get(which).activityId)))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private static String[] labels(Map<RideCategory, Integer> counts) {

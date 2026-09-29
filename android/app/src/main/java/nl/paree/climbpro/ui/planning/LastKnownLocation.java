@@ -10,12 +10,12 @@ import android.location.LocationManager;
  * is made. Caller must hold a location permission; without it (or without any cached fix)
  * this returns null. Call off the main thread.
  */
-final class LastKnownLocation {
+public final class LastKnownLocation {
 
     private LastKnownLocation() {}
 
     @SuppressLint("MissingPermission")
-    static Location freshest(Context context) {
+    public static Location freshest(Context context) {
         Location best = null;
         try {
             LocationManager lm = (LocationManager) context.getApplicationContext()

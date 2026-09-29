@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_climb_of_the_week"
+        android:title="@string/menu_climb_of_the_week"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_top_climbs"
         android:title="@string/menu_top_climbs"
         app:showAsAction="never"/>
@@ -207,6 +212,11 @@
     <item
         android:id="@+id/action_goal_event"
         android:title="Doelevenement"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_monthly_challenge"
+        android:title="Maanduitdaging"
         app:showAsAction="never"/>
 
     <item
