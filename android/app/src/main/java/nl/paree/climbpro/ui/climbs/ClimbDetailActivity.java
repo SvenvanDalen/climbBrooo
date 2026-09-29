@@ -31,6 +31,7 @@ import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
 import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
+import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.power.DurationFormat;
 import nl.paree.climbpro.domain.sun.SunriseCalculator;
 import nl.paree.climbpro.domain.sun.SunriseRidePlanner;
@@ -188,6 +189,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             }
             updateManualRefText();
         });
+
+        viewModel.windImpact().observe(this, this::showWindImpact);
 
         viewModel.seasonalComparison().observe(this, result -> {
             if (result == null) {
@@ -551,6 +554,41 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 this, getPackageName() + ".fileprovider", export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
         startActivity(Intent.createChooser(share, "Deel workout"));
+    }
+
+    /** Issue #47: wind-corrected estimate and its delta, or a clear "uncorrected" label. */
+    private void showWindImpact(ClimbDetailViewModel.WindImpactState state) {
+        android.widget.TextView view = binding.climbWindImpact;
+        if (state == null) {
+            view.setVisibility(android.view.View.GONE);
+            return;
+        }
+        view.setVisibility(android.view.View.VISIBLE);
+        if (state.loading) {
+            view.setText(R.string.wind_impact_loading);
+            return;
+        }
+        nl.paree.climbpro.domain.power.WindImpactEstimator.Result r = state.result;
+        if (r == null) {
+            view.setText(R.string.wind_impact_unavailable);
+            return;
+        }
+        int windKmh = (int) Math.round(r.windKmh);
+        String from = getResources().getStringArray(R.array.wind_compass_points)[
+                nl.paree.climbpro.domain.power.WindImpactEstimator.compassSector(r.windFromDeg)];
+        String total = DurationFormat.format(state.windTotalSeconds());
+        String delta = DurationFormat.format(Math.abs(r.deltaSeconds));
+        switch (r.verdict()) {
+            case HEADWIND:
+                view.setText(getString(R.string.wind_impact_headwind, total, delta, windKmh, from));
+                break;
+            case TAILWIND:
+                view.setText(getString(R.string.wind_impact_tailwind, total, delta, windKmh, from));
+                break;
+            default:
+                view.setText(getString(R.string.wind_impact_negligible, windKmh, from));
+                break;
+        }
     }
 
     /** Issue #246: valley vs summit weather, now and in 3 hours (Open-Meteo, off the UI thread). */

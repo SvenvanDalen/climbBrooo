@@ -57,6 +57,17 @@
                 android:textColor="@color/color_accent"
                 android:textSize="15sp"
                 android:textStyle="bold"
+                android:layout_marginBottom="4dp"/>
+
+            <!-- Issue #47: wind-corrected estimate (or why it is uncorrected) -->
+            <TextView
+                android:id="@+id/climb_wind_impact"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone"
                 android:layout_marginBottom="16dp"/>
 
             <TextView

@@ -18,15 +18,19 @@ public final class HourlyForecast {
     public final Integer[] rainPct;
     /** UV index per hour (issue #229); NaN when the service left it out. */
     public final double[] uvIndex;
+    /** Direction the wind comes from, degrees at 10 m (issue #47); NaN when missing. */
+    public final double[] windFromDeg;
 
     private HourlyForecast(Instant[] times, double[] temperature, double[] apparent,
-                           double[] windKmh, Integer[] rainPct, double[] uvIndex) {
+                           double[] windKmh, Integer[] rainPct, double[] uvIndex,
+                           double[] windFromDeg) {
         this.times = times;
         this.temperature = temperature;
         this.apparent = apparent;
         this.windKmh = windKmh;
         this.rainPct = rainPct;
         this.uvIndex = uvIndex;
+        this.windFromDeg = windFromDeg;
     }
 
     public static HourlyForecast parse(String json) throws IOException {
@@ -38,6 +42,7 @@ public final class HourlyForecast {
         int n = time.size();
         Instant[] times = new Instant[n];
         double[] temp = new double[n], app = new double[n], wind = new double[n], uv = new double[n];
+        double[] windDir = new double[n];
         Integer[] rain = new Integer[n];
         for (int i = 0; i < n; i++) {
             times[i] = LocalDateTime.parse(time.get(i).asText()).toInstant(ZoneOffset.UTC);
@@ -45,10 +50,11 @@ public final class HourlyForecast {
             app[i] = number(hourly, "apparent_temperature", i);
             wind[i] = number(hourly, "wind_speed_10m", i);
             uv[i] = number(hourly, "uv_index", i);
+            windDir[i] = number(hourly, "wind_direction_10m", i);
             JsonNode r = hourly.path("precipitation_probability").get(i);
             rain[i] = r == null || r.isNull() ? null : r.asInt();
         }
-        return new HourlyForecast(times, temp, app, wind, rain, uv);
+        return new HourlyForecast(times, temp, app, wind, rain, uv, windDir);
     }
 
     /** Index of the hour that contains {@code when}, or -1 outside the forecast. */

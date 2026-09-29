@@ -25,7 +25,8 @@ public final class ClimbEndpoints {
 
     public static Point top(StoredRoute r, StoredClimb c) { return at(r, c, c.endDistance); }
 
-    private static Point at(StoredRoute r, StoredClimb c, double distance) {
+    /** Point at any route distance (issue #47 uses it for segment bearings). */
+    public static Point at(StoredRoute r, StoredClimb c, double distance) {
         if (r.lats == null || r.lons == null || r.distances == null) {
             return new Point(c.startLat, c.startLon, Double.NaN);
         }

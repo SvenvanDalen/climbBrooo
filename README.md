@@ -40,6 +40,10 @@ phone and no network. Sync is opportunistic.
 - **Phone-side extras**: per-climb time estimate (fatigue-aware), pacing plan, and a
   climb logbook built from your Strava history — including per-segment PR splits, once
   an activity has been matched against a segmented climb.
+- **Wind-impact on the climb time** (issue #47): the climb screen adds a wind-corrected
+  estimate with the delta vs. windless ("wind tegen" / "wind mee"), from the current
+  Open-Meteo wind at the climb top projected onto each segment's direction. Offline it
+  is clearly labelled as uncorrected. Phone-only.
 
 ---
 
