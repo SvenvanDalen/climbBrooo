@@ -201,6 +201,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
         });
 
+        viewModel.trainingAdvice().observe(this, this::renderTrainingAdvice);
+        viewModel.prChance().observe(this, this::showPrChance);
+
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
         viewModel.saved().observe(this, isSaved -> {
@@ -316,6 +319,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
         binding.btnCompareClimb.setOnClickListener(v ->
                 startActivity(ClimbCompareActivity.intentFor(this, routeId, climbIndex)));
+        binding.btnGearCalculator.setOnClickListener(v ->
+                startActivity(GearCalculatorActivity.intentFor(this, routeId, climbIndex)));
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
         viewModel.workoutExport().observe(this, this::shareWorkout);
@@ -609,6 +614,71 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 this, getPackageName() + ".fileprovider", export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
         startActivity(Intent.createChooser(share, "Deel workout"));
+    }
+
+    /** Issue #58: PR chance for today with the main reasons, weather left out when offline. */
+    private void showPrChance(ClimbDetailViewModel.PrChance pc) {
+        if (pc == null || pc.prediction == null) {
+            binding.prChance.setVisibility(android.view.View.GONE);
+            return;
+        }
+        nl.paree.climbpro.domain.climb.PrChancePredictor.Prediction p = pc.prediction;
+        StringBuilder sb = new StringBuilder();
+        if (p.firstAttempt) {
+            sb.append(getString(nl.paree.climbpro.R.string.pr_chance_first_title)).append('\n')
+                    .append(getString(nl.paree.climbpro.R.string.pr_chance_first_attempt));
+        } else {
+            sb.append(getString(nl.paree.climbpro.R.string.pr_chance_title, chanceLabel(p.chance)))
+                    .append('\n')
+                    .append(getResources().getQuantityString(
+                            nl.paree.climbpro.R.plurals.pr_chance_pr_line, p.attemptCount,
+                            DurationFormat.format(p.prSec), p.attemptCount));
+            for (nl.paree.climbpro.domain.climb.PrChancePredictor.Reason r : p.reasons) {
+                sb.append("\n• ").append(reasonText(r));
+            }
+            if (!pc.weatherIncluded) {
+                sb.append("\n• ").append(getString(nl.paree.climbpro.R.string.pr_chance_weather_unknown));
+            }
+        }
+        binding.prChance.setText(sb.toString());
+        binding.prChance.setVisibility(android.view.View.VISIBLE);
+    }
+
+    private String chanceLabel(nl.paree.climbpro.domain.climb.PrChancePredictor.Chance c) {
+        switch (c) {
+            case GOOD: return getString(nl.paree.climbpro.R.string.pr_chance_good);
+            case MODERATE: return getString(nl.paree.climbpro.R.string.pr_chance_moderate);
+            default: return getString(nl.paree.climbpro.R.string.pr_chance_unlikely);
+        }
+    }
+
+    private String reasonText(nl.paree.climbpro.domain.climb.PrChancePredictor.Reason r) {
+        double v = r.value;
+        int n = Double.isNaN(v) ? 0 : (int) Math.round(v);
+        switch (r.factor) {
+            case FIRST_ATTEMPT: return getString(nl.paree.climbpro.R.string.pr_chance_first_attempt);
+            case RECENT_PR: return getString(nl.paree.climbpro.R.string.pr_chance_reason_recent_pr, n);
+            case CLOSE_TO_PR: return getString(nl.paree.climbpro.R.string.pr_chance_reason_close_to_pr, v);
+            case FAR_FROM_PR: return getString(nl.paree.climbpro.R.string.pr_chance_reason_far_from_pr, v);
+            case NO_RECENT_ATTEMPT:
+                return Double.isNaN(v)
+                        ? getString(nl.paree.climbpro.R.string.pr_chance_reason_no_recent_undated)
+                        : getString(nl.paree.climbpro.R.string.pr_chance_reason_no_recent, n);
+            case FEW_ATTEMPTS:
+                return getResources().getQuantityString(
+                        nl.paree.climbpro.R.plurals.pr_chance_reason_few_attempts, n, n);
+            case FITTER_THAN_PR: return getString(nl.paree.climbpro.R.string.pr_chance_reason_fitter, v);
+            case LESS_FIT_THAN_PR: return getString(nl.paree.climbpro.R.string.pr_chance_reason_less_fit, v);
+            case FRESH: return getString(nl.paree.climbpro.R.string.pr_chance_reason_fresh, v);
+            case NEUTRAL_FORM: return getString(nl.paree.climbpro.R.string.pr_chance_reason_neutral_form, v);
+            case TIRED: return getString(nl.paree.climbpro.R.string.pr_chance_reason_tired, v);
+            case VERY_TIRED: return getString(nl.paree.climbpro.R.string.pr_chance_reason_very_tired, v);
+            case WEATHER_IDEAL: return getString(nl.paree.climbpro.R.string.pr_chance_reason_weather_ideal, v);
+            case WEATHER_RAIN: return getString(nl.paree.climbpro.R.string.pr_chance_reason_weather_rain, v);
+            case WEATHER_WIND: return getString(nl.paree.climbpro.R.string.pr_chance_reason_weather_wind, v);
+            case WEATHER_COLD: return getString(nl.paree.climbpro.R.string.pr_chance_reason_weather_cold, v);
+            default: return getString(nl.paree.climbpro.R.string.pr_chance_reason_weather_hot, v);
+        }
     }
 
     /** Issue #246: valley vs summit weather, now and in 3 hours (Open-Meteo, off the UI thread). */
@@ -967,6 +1037,41 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Annuleer", null)
                 .show();
+    }
+
+    /** Shows the pacing advice for the latest attempt (issue #64), or hides the block. */
+    private void renderTrainingAdvice(ClimbDetailViewModel.TrainingAdvice result) {
+        android.widget.TextView view = binding.trainingAdvice;
+        if (result == null || result.advice.tips.isEmpty()) {
+            view.setVisibility(android.view.View.GONE);
+            return;
+        }
+        String date = new java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault())
+                .format(new java.util.Date(result.attemptDateEpochSec * 1000L));
+        StringBuilder sb = new StringBuilder(getString(nl.paree.climbpro.R.string.training_advice_header, date));
+        for (nl.paree.climbpro.domain.climb.ClimbPacingAdvisor.Tip tip : result.advice.tips) {
+            sb.append('\n').append(getString(nl.paree.climbpro.R.string.training_advice_bullet, trainingTipText(tip)));
+        }
+        view.setText(sb.toString());
+        view.setVisibility(android.view.View.VISIBLE);
+    }
+
+    private String trainingTipText(nl.paree.climbpro.domain.climb.ClimbPacingAdvisor.Tip tip) {
+        switch (tip.type) {
+            case FADED:
+                return getString(nl.paree.climbpro.R.string.training_advice_faded, tip.startM, tip.percent);
+            case HELD_BACK:
+                return getString(nl.paree.climbpro.R.string.training_advice_held_back, tip.percent, tip.startM);
+            case EVEN:
+                return getString(nl.paree.climbpro.R.string.training_advice_even, tip.percent);
+            case WEAKEST_SEGMENT:
+                return getString(nl.paree.climbpro.R.string.training_advice_weakest, tip.startM / 1000.0,
+                        tip.endM / 1000.0, tip.gradient * 100, tip.percent);
+            case LOST_MOST_VS_PR:
+            default:
+                return getString(nl.paree.climbpro.R.string.training_advice_lost_vs_pr, tip.startM / 1000.0,
+                        tip.endM / 1000.0, tip.seconds);
+        }
     }
 
     /**

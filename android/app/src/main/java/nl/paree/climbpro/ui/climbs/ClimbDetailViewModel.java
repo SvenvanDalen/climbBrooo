@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import nl.paree.climbpro.data.ride.RideRepository;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -16,9 +17,11 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.climb.ClimbGpxWriter;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.ClimbPacingAdvisor;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
+import nl.paree.climbpro.domain.climb.PrChancePredictor;
 import nl.paree.climbpro.domain.climb.SeasonalComparisonCalculator;
 import nl.paree.climbpro.domain.climb.SegmentPrCalculator;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
@@ -27,10 +30,18 @@ import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.export.ClimbWorkoutWriter;
 import nl.paree.climbpro.domain.power.RouteAwareClimbEstimator;
 import nl.paree.climbpro.domain.power.RouteTile;
+import nl.paree.climbpro.domain.training.FitnessCalculator;
+import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.service.RouteEffortProfileBuilder;
 
 import java.io.File;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +54,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final RouteRepository routeRepo;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final RideRepository rideRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredClimb>       climb        = new MutableLiveData<>();
@@ -54,7 +66,9 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<SeasonalComparisonCalculator.Result> seasonalComparison =
             new MutableLiveData<>();
     private final MutableLiveData<File>              gpxExportFile = new MutableLiveData<>();
+    private final MutableLiveData<TrainingAdvice>    trainingAdvice = new MutableLiveData<>();
     private final MutableLiveData<WorkoutExport>     workoutExport = new MutableLiveData<>();
+    private final MutableLiveData<PrChance>          prChance      = new MutableLiveData<>();
 
     private volatile StoredClimb lastClimb;
     private volatile StoredRoute lastRoute;
@@ -65,6 +79,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         routeRepo = new RouteRepository(app);
         riderRepo = new RiderProfileRepository(app);
         attemptRepo = new ClimbAttemptRepository(app);
+        rideRepo = new RideRepository(app);
     }
 
     public LiveData<StoredClimb>       climb()        { return climb; }
@@ -77,7 +92,32 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         return seasonalComparison;
     }
     public LiveData<File>              gpxExportFile() { return gpxExportFile; }
+    /** Pacing advice for the latest analysable attempt (issue #64); null = none. */
+    public LiveData<TrainingAdvice>    trainingAdvice() { return trainingAdvice; }
+
+    /** {@link ClimbPacingAdvisor} output plus the date of the attempt it is about. */
+    public static final class TrainingAdvice {
+        public final long attemptDateEpochSec;
+        public final ClimbPacingAdvisor.Advice advice;
+
+        TrainingAdvice(long attemptDateEpochSec, ClimbPacingAdvisor.Advice advice) {
+            this.attemptDateEpochSec = attemptDateEpochSec;
+            this.advice = advice;
+        }
+    }
     public LiveData<WorkoutExport>     workoutExport() { return workoutExport; }
+    public LiveData<PrChance>          prChance()      { return prChance; }
+
+    /** Issue #58: the PR-chance prediction and whether the weather could be taken into account. */
+    public static final class PrChance {
+        public final PrChancePredictor.Prediction prediction;
+        public final boolean weatherIncluded;
+
+        PrChance(PrChancePredictor.Prediction prediction, boolean weatherIncluded) {
+            this.prediction = prediction;
+            this.weatherIncluded = weatherIncluded;
+        }
+    }
 
     /** A written indoor-workout file and the MIME type to share it with (issue #223). */
     public static final class WorkoutExport {
@@ -113,6 +153,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                     history.postValue(LogbookCalculator.historyFor(climbId, attempts));
                     seasonalComparison.postValue(
                             SeasonalComparisonCalculator.compare(climbId, attempts));
+                    trainingAdvice.postValue(computeTrainingAdvice(loaded, climbId, attempts));
+                    predictPrChance(r, loaded, climbId, attempts);
                 } else {
                     error.postValue("Climb not found");
                 }
@@ -120,6 +162,53 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 error.postValue("Load failed: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * Issue #58: posts the offline prediction (history + fitness) straight away, then fetches the
+     * summit weather on its own thread and reposts with it. Offline the first result simply stays.
+     */
+    private void predictPrChance(StoredRoute r, StoredClimb c, String climbId,
+                                 List<StoredClimbAttempt> attempts) {
+        long now = System.currentTimeMillis() / 1000L;
+        PrChancePredictor.Prediction history =
+                PrChancePredictor.predict(climbId, attempts, null, null, now);
+        if (history.firstAttempt) {
+            prChance.postValue(new PrChance(history, false));
+            return;
+        }
+        PrChancePredictor.Fitness fitness = null;
+        try {
+            ZoneId zone = ZoneId.systemDefault();
+            LocalDate today = LocalDate.now(zone);
+            LocalDate prDate = history.prDateEpochSec > 0
+                    ? Instant.ofEpochSecond(history.prDateEpochSec).atZone(zone).toLocalDate()
+                    : null;
+            int window = prDate != null && !prDate.isAfter(today)
+                    ? (int) ChronoUnit.DAYS.between(prDate, today) + 1 : 1;
+            FitnessCalculator.Result result = FitnessCalculator.compute(rideRepo.loadAll(),
+                    riderRepo.load().ftpWatts, today, zone, window);
+            fitness = PrChancePredictor.fitnessFrom(result, prDate);
+        } catch (Exception e) {
+            android.util.Log.w(TAG, "PR chance: fitness unavailable", e);
+        }
+        prChance.postValue(new PrChance(
+                PrChancePredictor.predict(climbId, attempts, fitness, null, now), false));
+
+        final PrChancePredictor.Fitness fit = fitness;
+        ClimbEndpoints.Point top = ClimbEndpoints.top(r, c);
+        new Thread(() -> {
+            try {
+                HourlyForecast f = new OpenMeteoClient().fetch(top);
+                PrChancePredictor.Weather w = PrChancePredictor.Weather.from(f, Instant.now());
+                if (w == null) return;
+                prChance.postValue(new PrChance(
+                        PrChancePredictor.predict(climbId, attempts, fit, w, now), true));
+            } catch (Exception e) {
+                // Offline or service down: the prediction without weather stays on screen.
+                android.util.Log.i(TAG, "PR chance: no weather (" + e.getMessage() + ")");
+            }
+        }, "pr-chance-weather").start();
     }
 
     public void renameClimb(String routeId, int climbIndex, String newName) {
@@ -461,6 +550,31 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         if (c != null) {
             executor.execute(() -> computeEstimate(c));
         }
+    }
+
+    /** Issue #64: advice on how the latest attempt was paced; null when it can't be analysed. */
+    private TrainingAdvice computeTrainingAdvice(StoredClimb c, String climbId,
+                                                 List<StoredClimbAttempt> attempts) {
+        if (c.segments == null || c.segments.isEmpty()) return null;
+        int n = c.segments.size();
+        StoredClimbAttempt latest = ClimbPacingAdvisor.latestAnalyzable(climbId, n, attempts);
+        if (latest == null) return null;
+        int[] dist = new int[n];
+        double[] grad = new double[n];
+        int[] surface = new int[n];
+        for (int i = 0; i < n; i++) {
+            StoredSegment s = c.segments.get(i);
+            dist[i] = s.distance;
+            grad[i] = s.gradient;
+            surface[i] = s.surfaceType;
+        }
+        RiderProfile profile = riderRepo.load();
+        double mass = profile.riderWeightKg > 0 && profile.bikeWeightKg > 0
+                ? profile.totalMassKg() : ClimbPacingAdvisor.DEFAULT_MASS_KG;
+        int[] best = SegmentPrCalculator.bestSplits(climbId, n, attempts);
+        ClimbPacingAdvisor.Advice advice = ClimbPacingAdvisor.analyze(
+                dist, grad, surface, latest.segSplitSec, best, mass);
+        return advice == null ? null : new TrainingAdvice(latest.dateEpochSec, advice);
     }
 
     private void computeEstimate(StoredClimb c) {
