@@ -110,6 +110,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   per-surface rolling resistance and route-wide fatigue (W'-balance). Phone-only.
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
+- **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
+  target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
+  virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
