@@ -348,6 +348,27 @@ public class SettingsViewModelTest {
         mapper.writeValue(catalogFile, catalog);
     }
 
+    /** Issue #310: radius mode without a known position tells the user instead of silently syncing 0,0. */
+    @Test
+    public void syncWithoutRadiusLocation_showsNoLocationMessage() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        SettingsViewModel vm = new SettingsViewModel(app);
+        final List<String> statuses = new ArrayList<>();
+        vm.syncStatus().observeForever(statuses::add);
+
+        vm.syncNow();
+        WorkInfo finished = new WorkInfo(
+                UUID.randomUUID(), WorkInfo.State.SUCCEEDED, Collections.emptySet(),
+                new Data.Builder()
+                        .putBoolean(nl.paree.climbpro.service.RouteSyncWorker.KEY_NO_LOCATION, true)
+                        .build(),
+                Data.EMPTY, 0);
+        vm.handleManualSyncUpdate(new ArrayList<>(Collections.singletonList(finished)));
+
+        drainUntil(() -> statuses.contains(SettingsViewModel.NO_LOCATION_MESSAGE));
+        assertTrue(statuses.contains(SettingsViewModel.NO_LOCATION_MESSAGE));
+    }
+
     private interface Condition { boolean isMet(); }
 
     private static void drainUntil(Condition condition) throws InterruptedException {

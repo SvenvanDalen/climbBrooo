@@ -272,8 +272,8 @@ public final class RouteListActivity extends AppCompatActivity {
                         // a manually triggered check still confirms it actually ran.
                         if (verbose) {
                             Toast.makeText(RouteListActivity.this,
-                                    "Je hebt al de nieuwste versie (build "
-                                            + nl.paree.climbpro.BuildConfig.VERSION_CODE + ")",
+                                    "Je hebt al de nieuwste versie (v"
+                                            + nl.paree.climbpro.BuildConfig.VERSION_NAME + ")",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -335,6 +335,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_elevation_target) {
             startActivity(nl.paree.climbpro.ui.planning.ElevationTargetActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_climb_of_the_week) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbOfTheWeekActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_top_climbs) {
             startActivity(nl.paree.climbpro.ui.climbs.TopClimbsActivity.intentFor(this));
             return true;
@@ -375,11 +378,20 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_pain_log) {
             startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_sweat_loss) {
+            startActivity(nl.paree.climbpro.ui.hydration.SweatLossActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_safe_home) {
             startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_sunscreen) {
             startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_clothing) {
+            startActivity(nl.paree.climbpro.ui.clothing.ClothingActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_air_quality) {
+            startActivity(nl.paree.climbpro.ui.airquality.AirQualityActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_comeback_plan) {
             startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
@@ -396,8 +408,15 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.recovery.RecoveryAdviceActivity.class));
             return true;
+        } else if (id == R.id.action_periodization) {
+            startActivity(nl.paree.climbpro.ui.training.ClimbPeriodizationActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_fitness) {
             startActivity(nl.paree.climbpro.ui.fitness.FitnessActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_training_load_calendar) {
+            startActivity(
+                    nl.paree.climbpro.ui.fitness.TrainingLoadCalendarActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_photo_quiz) {
             startActivity(nl.paree.climbpro.ui.quiz.PhotoQuizActivity.intentFor(this));
@@ -440,6 +459,15 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_packing_list) {
             startActivity(nl.paree.climbpro.ui.planning.PackingListActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_passport) {
+            startActivity(nl.paree.climbpro.ui.bike.BikePassportActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_badges) {
+            startActivity(nl.paree.climbpro.ui.goals.BadgesActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_monthly_challenge) {
+            startActivity(nl.paree.climbpro.ui.goals.MonthlyChallengeActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
