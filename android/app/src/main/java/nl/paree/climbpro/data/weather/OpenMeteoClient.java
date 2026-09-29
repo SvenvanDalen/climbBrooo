@@ -7,6 +7,7 @@ import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
 import nl.paree.climbpro.domain.weather.PrecipitationGrid;
 import nl.paree.climbpro.domain.weather.RouteSampler;
+import nl.paree.climbpro.domain.weather.TemperatureGrid;
 
 import java.io.IOException;
 import java.util.List;
@@ -67,6 +68,40 @@ public final class OpenMeteoClient {
             throws IOException {
         if (pts.isEmpty()) throw new IOException("route heeft geen punten");
         return PrecipitationGrid.parse(get(precipitationUrl(pts, hours)), pts.size());
+    }
+
+    /**
+     * Issue #153: hourly temperature for every sample in one request, three days ahead so a ride
+     * planned for tomorrow is still covered. Elevations are sent only when every one is known:
+     * Open-Meteo reads {@code nan} as "no height correction", worse than its own terrain model.
+     */
+    public static String temperatureUrl(List<RouteSampler.Sample> pts, double[] elevations) {
+        StringBuilder lat = new StringBuilder();
+        StringBuilder lon = new StringBuilder();
+        for (int i = 0; i < pts.size(); i++) {
+            if (i > 0) {
+                lat.append(',');
+                lon.append(',');
+            }
+            lat.append(String.format(Locale.US, "%.4f", pts.get(i).lat));
+            lon.append(String.format(Locale.US, "%.4f", pts.get(i).lon));
+        }
+        String url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon
+                + "&hourly=temperature_2m&timezone=UTC&forecast_days=3";
+        if (elevations == null || elevations.length != pts.size()) return url;
+        StringBuilder elev = new StringBuilder();
+        for (int i = 0; i < elevations.length; i++) {
+            if (Double.isNaN(elevations[i])) return url;
+            if (i > 0) elev.append(',');
+            elev.append(Math.round(elevations[i]));
+        }
+        return url + "&elevation=" + elev;
+    }
+
+    public TemperatureGrid fetchTemperatures(List<RouteSampler.Sample> pts, double[] elevations)
+            throws IOException {
+        if (pts.isEmpty()) throw new IOException("route heeft geen punten");
+        return TemperatureGrid.parse(get(temperatureUrl(pts, elevations)), pts.size());
     }
 
     /** Issue #197: particulate matter, European AQI and pollen (Europe only) for two days. */

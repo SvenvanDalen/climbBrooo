@@ -120,6 +120,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
   the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
+- **Temperature trend over the ride** — route detail → "Temperatuurtrend tonen", pick a start
+  time (today, or tomorrow if already past) and see a chart of the expected temperature at each
+  point of the route at the moment you pass it, plus start/finish/warmest/coldest. Pace comes
+  from your pacing plan (25 km/h without a profile). Open-Meteo, height-corrected. Phone-only.
+
 - **Wind-optimised loop direction** — route detail → "Beste rijrichting (wind)" says which way
   round to ride a loop so the last kilometres home have the wind at your back (Open-Meteo
   wind at the start, averaged over the next 3 hours). Point-to-point routes are recognised
