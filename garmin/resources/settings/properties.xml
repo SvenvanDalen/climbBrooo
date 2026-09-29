@@ -16,4 +16,8 @@
          tone sequence instead of the single default TONE_LAP; see
          triggerClimbAlertDistinctTone() in ClimbProView.mc. -->
     <property id="climbAlertDistinctTone" type="boolean">false</property>
+    <!-- Issue #66: segment color mode. 0 = Helling (gradient colors from segs, default),
+         1 = FTP-zone (the phone's per-segment intensity-zone colors "zc"; climbs without
+         zc still use the gradient colors). -->
+    <property id="colorMode" type="number">0</property>
 </properties>

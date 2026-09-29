@@ -62,6 +62,15 @@ public final class WatchRequestHandler {
     }
 
     /**
+     * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
+     * when a rider profile is available; without one the payload is unchanged.
+     */
+    private ClimbPayloadBuilder payloadBuilder() {
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
+    }
+
+    /**
      * Per-climb per-segment refsec: manual WR/pro reference (issue #59) takes priority over
      * the rider's own PR when set for that climb. Own PR is unavailable (null) when no
      * attempt repo is wired up, but a manual reference still works in that case. Climbs
@@ -117,7 +126,7 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route   = routeRepo.loadRoute(routeId);
-            byte[]      payload = new ClimbPayloadBuilder(mapper)
+            byte[]      payload = payloadBuilder()
                     .buildRoutePayload(route, pacingPlan(route), refPlan(route));
             connectIqClient.sendPayload(payload);
             Log.i(TAG, "Sent route payload for " + routeId + " (" + payload.length + " bytes)");
@@ -133,7 +142,7 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
-            ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+            ClimbPayloadBuilder builder = payloadBuilder();
             boolean ok = connectIqClient.sendPayloadToDatafield(
                     builder.buildRoutePayload(route, pacingPlan(route), refPlan(route)));
             // Always push the surface payload — an empty surfSec clears stale sections.
@@ -154,7 +163,7 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
-            byte[] payload = new ClimbPayloadBuilder(mapper)
+            byte[] payload = payloadBuilder()
                     .buildSingleClimbPayload(route, climbIndex, pacingPlan(route), refPlan(route));
             boolean ok = connectIqClient.sendPayloadToDatafield(payload);
             StoredClimb climb = route.climbs.get(climbIndex);

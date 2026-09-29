@@ -70,7 +70,6 @@ public final class RouteSyncWorker extends Worker {
         SyncStateRepository  syncStateRepo  = new SyncStateRepository(ctx);
         StravaAuthRepository authRepo        = new StravaAuthRepository(ctx);
         ObjectMapper         mapper          = new ObjectMapper();
-        ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper);
         ConnectIqClient      ciqClient       =
                 ((nl.paree.climbpro.ClimbProApplication) ctx).connectIqClient();
         SharedPreferences    prefs           = PreferenceManager.getDefaultSharedPreferences(ctx);
@@ -79,6 +78,10 @@ public final class RouteSyncWorker extends Worker {
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(ctx);
         nl.paree.climbpro.domain.power.RiderProfile profile = riderRepo.load();
         nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo.loadGhostTarget();
+        // Issue #66: also send per-segment FTP intensity-zone colors when the profile allows.
+        // The profile is already part of wantHash, so an FTP change triggers a resync.
+        ClimbPayloadBuilder  payloadBuilder  =
+                new ClimbPayloadBuilder(mapper).withIntensityZones(profile);
 
         boolean authorised = authRepo.isAuthorised();
 

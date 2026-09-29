@@ -64,6 +64,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<String>            error        = new MutableLiveData<>();
     private final MutableLiveData<Boolean>           saved        = new MutableLiveData<>(false);
     private final MutableLiveData<ClimbTimeEstimate> timeEstimate = new MutableLiveData<>();
+    /** Issue #66: Coggan zone (0 = Z1) per segment, null without a complete rider profile. */
+    private final MutableLiveData<int[]>             segmentZones = new MutableLiveData<>();
     private final MutableLiveData<List<HistoryRow>>  history      = new MutableLiveData<>();
     private final MutableLiveData<SeasonalComparisonCalculator.Result> seasonalComparison =
             new MutableLiveData<>();
@@ -95,6 +97,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     public LiveData<String>            error()        { return error; }
     public LiveData<Boolean>           saved()        { return saved; }
     public LiveData<ClimbTimeEstimate> timeEstimate() { return timeEstimate; }
+    public LiveData<int[]>             segmentZones() { return segmentZones; }
     public LiveData<List<HistoryRow>>  history()      { return history; }
     public LiveData<SeasonalComparisonCalculator.Result> seasonalComparison() {
         return seasonalComparison;
@@ -634,9 +637,13 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private void computeEstimate(StoredClimb c) {
         if (c.segments == null || c.segments.isEmpty()) {
             timeEstimate.postValue(null);
+            segmentZones.postValue(null);
             return;
         }
         RiderProfile profile = riderRepo.load();
+        // Same zones the watch shows in its FTP-zone color mode (sent as 'zc').
+        segmentZones.postValue(
+                nl.paree.climbpro.domain.power.SegmentIntensityZones.zones(c.segments, profile));
 
         // Preferred path: whole-route, fatigue-aware estimate.
         StoredRoute r = lastRoute;

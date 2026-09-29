@@ -88,6 +88,9 @@ class ClimbData {
     var segVamAvg;        // gradient-implied average VAM (m/h) per segment; 0 = none
     var segVamPeak;       // gradient-implied peak VAM (m/h) per segment; 0 = none
     var hasVam;           // bool per climb: true when vam was provided
+    var segZone;          // per climb: Array of FTP intensity-zone color indices (0-5, "zc",
+                          // issue #66) or null when the payload carried none. Allocated only
+                          // when zc arrives, so riders without an FTP pay no memory for it.
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -135,6 +138,7 @@ class ClimbData {
         segVamAvg = new [MAX_CLIMBS];
         segVamPeak = new [MAX_CLIMBS];
         hasVam = new [MAX_CLIMBS];
+        segZone = new [MAX_CLIMBS];   // all null until a payload carries zc
         climbEntered = new [MAX_CLIMBS];
         climbSkipped = new [MAX_CLIMBS];
 
@@ -196,6 +200,21 @@ class ClimbData {
                 calibLon[i][k]  = 0.0f;
             }
         }
+    }
+
+    // Color index (0-5) to paint segment s of climb ci with. useZones = the "colorMode"
+    // setting is FTP-zone (issue #66): then the phone's intensity-zone color (zc) is used
+    // when this climb has one, otherwise -- and always in the default gradient mode -- the
+    // gradient color from segs. Clamped so a bad value can never index past the palette.
+    function colorIndexAt(ci, s, useZones) {
+        var c = segColor[ci][s];
+        if (useZones) {
+            var z = segZone[ci];
+            if (z != null && s < z.size()) { c = z[s]; }
+        }
+        if (c < 0) { c = 0; }
+        if (c > 5) { c = 5; }
+        return c;
     }
 
     function resetNavTrust() {

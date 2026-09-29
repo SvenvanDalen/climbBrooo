@@ -4,4 +4,7 @@
     <string id="SettingsDarkThemeTitle">Low-light dark theme</string>
     <string id="SettingsLargeTextModeTitle">Large text mode</string>
     <string id="SettingsClimbAlertDistinctToneTitle">Distinct climb alert tone</string>
+    <string id="SettingsColorModeTitle">Kleurmodus</string>
+    <string id="ColorModeGradient">Helling</string>
+    <string id="ColorModeFtpZone">FTP-zone</string>
 </strings>

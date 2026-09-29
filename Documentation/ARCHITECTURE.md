@@ -719,6 +719,32 @@ sentinel) is sent without `vam` rather than partial data. The climb datafield
 parses it and shows the active segment's avg/peak VAM next to the gradient
 stat on the active-climb page.
 
+### FTP intensity-zone colors (issue #66)
+
+The fixed gradient → color mapping stays the default and the single source of
+truth in the protocol. A **second, optional** color source rides next to it:
+`domain/power/SegmentIntensityZones` estimates each segment's power with the
+indoor-workout pacing model (`ClimbWorkoutWriter.plan`: the climb's sustainable
+power from `ClimbTimeEstimator`/`PowerSpeedSolver`, swung up/down with the
+segment's gradient), places it in a Coggan zone (`ZoneCalculator.powerZoneIndex`)
+and maps that onto the same six color indices (`GradientColor.forPowerZone`,
+table in `protocol/colors.md`). `ClimbPayloadBuilder.withIntensityZones(profile)`
+emits the result as an optional packed int array `zc` (one colorIndex per
+segment, both modes) when the rider profile is complete (FTP + weights);
+`RouteSyncWorker` and `WatchRequestHandler` use it. `zc` is stripped from any
+payload that would exceed `PayloadBudget.MAX_BYTES`. The rider profile is part of
+the route sync hash, so an FTP change resyncs.
+
+On the watch, `garmin` (datafield) and `garmin-widget` parse `zc` into
+`ClimbData.segZone[climb]` (allocated only when present; null otherwise, and
+cleared on a resync without it). A new app setting **Kleurmodus** (`colorMode`:
+0 = Helling, default; 1 = FTP-zone) selects the source; `ClimbData.colorIndexAt`
+returns the zone color only in FTP-zone mode on a climb that has `zc`, and the
+gradient color otherwise. `garmin-surface` carries no climbs, and
+`garmin-onboard` computes its climbs on the watch without a rider profile, so
+both keep gradient colors only. The climb detail screen on the phone shows the
+zone per segment (a `Z1`–`Z7` badge in the watch's zone color).
+
 ---
 
 ## Configuration Management
