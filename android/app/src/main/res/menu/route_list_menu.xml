@@ -235,6 +235,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_badges"
+        android:title="Badges"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_monthly_challenge"
         android:title="Maanduitdaging"
         app:showAsAction="never"/>

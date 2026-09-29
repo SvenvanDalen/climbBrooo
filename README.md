@@ -159,6 +159,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Badges** — automatic achievements such as your first 100 km, 10.000 km in total, an
+  Everest of climbing, five rides before 7:00 and every climb of a collection, with date or
+  progress. Phone-only.
+
 - **Climb repeats workout** — climb detail → "Exporteer als indoor-workout" → "Herhaal-klim"
   writes "N× deze klim" (2–10×, default 5) as a Zwift `.zwo` or `.erg`: warm-up, the climb's
   segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
