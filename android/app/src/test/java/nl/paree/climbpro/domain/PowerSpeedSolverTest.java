@@ -26,6 +26,30 @@ public class PowerSpeedSolverTest {
     }
 
     @Test
+    public void zeroHeadwindMatchesTheWindlessSolver() {
+        double still = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.06, ASPHALT);
+        double zero = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.06, ASPHALT, 0.0);
+        assertEquals(still, zero, 1e-9);
+    }
+
+    @Test
+    public void headwindSlowsAndTailwindSpeedsUp() {
+        double still = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.06, ASPHALT, 0.0);
+        double head = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.06, ASPHALT, 5.0);
+        double tail = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.06, ASPHALT, -5.0);
+        assertTrue(head < still);
+        assertTrue(tail > still);
+    }
+
+    // Strong tailwind faster than the rider pushes them along: drag becomes a push, and
+    // the solver must still return a sane, capped speed rather than NaN.
+    @Test
+    public void strongTailwindOnTheFlatStaysFinite() {
+        double v = PowerSpeedSolver.speedMetersPerSecond(100, 80, 0.0, ASPHALT, -15.0);
+        assertTrue(v > 0 && v <= PowerConstants.MAX_SPEED_MPS);
+    }
+
+    @Test
     public void steeperIsSlower() {
         double v4 = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.04, ASPHALT);
         double v8 = PowerSpeedSolver.speedMetersPerSecond(250, 80, 0.08, ASPHALT);

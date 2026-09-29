@@ -125,6 +125,22 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <!-- Wind-impact op klimtijd-voorspelling (issue #47) -->
+    <string name="wind_impact_loading">Windcorrectie: weer ophalen…</string>
+    <string name="wind_impact_unavailable">Zonder windcorrectie — geen winddata (offline of geen verwachting)</string>
+    <string name="wind_impact_headwind">Met wind: %1$s (+%2$s, wind tegen · %3$d km/u uit het %4$s)</string>
+    <string name="wind_impact_tailwind">Met wind: %1$s (−%2$s, wind mee · %3$d km/u uit het %4$s)</string>
+    <string name="wind_impact_negligible">Wind (%1$d km/u uit het %2$s) heeft nauwelijks invloed op je tijd</string>
+    <string-array name="wind_compass_points">
+        <item>noorden</item>
+        <item>noordoosten</item>
+        <item>oosten</item>
+        <item>zuidoosten</item>
+        <item>zuiden</item>
+        <item>zuidwesten</item>
+        <item>westen</item>
+        <item>noordwesten</item>
+    </string-array>
     <!-- Trainingsadvies na een klim (issue #64) -->
     <string name="training_advice_header">Trainingsadvies (poging van %1$s)</string>
     <string name="training_advice_bullet">• %1$s</string>

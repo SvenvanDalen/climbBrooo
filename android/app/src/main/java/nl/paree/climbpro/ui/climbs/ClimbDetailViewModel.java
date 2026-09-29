@@ -30,8 +30,10 @@ import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.export.ClimbWorkoutWriter;
 import nl.paree.climbpro.domain.power.RouteAwareClimbEstimator;
 import nl.paree.climbpro.domain.power.RouteTile;
-import nl.paree.climbpro.domain.training.FitnessCalculator;
+import nl.paree.climbpro.domain.power.WindImpactEstimator;
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.ClimbWindImpact;
+import nl.paree.climbpro.domain.training.FitnessCalculator;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.service.RouteEffortProfileBuilder;
@@ -70,6 +72,12 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<WorkoutExport>     workoutExport = new MutableLiveData<>();
     private final MutableLiveData<PrChance>          prChance      = new MutableLiveData<>();
 
+    private final MutableLiveData<WindImpactState>   windImpact    = new MutableLiveData<>();
+    /** Separate thread so a slow/offline weather request never blocks the other work. */
+    private final ExecutorService windExecutor = Executors.newSingleThreadExecutor();
+    /** Forecast at the climb top, cached per loaded climb; null until fetched or when offline. */
+    private volatile HourlyForecast windForecast;
+
     private volatile StoredClimb lastClimb;
     private volatile StoredRoute lastRoute;
     private volatile int lastClimbIndex;
@@ -106,6 +114,29 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         }
     }
     public LiveData<WorkoutExport>     workoutExport() { return workoutExport; }
+    /** Issue #47: wind correction of the time estimate; null = no estimate to correct. */
+    public LiveData<WindImpactState>   windImpact()   { return windImpact; }
+
+    /** Wind-corrected view of the current estimate (issue #47). */
+    public static final class WindImpactState {
+        /** Estimate being corrected (the one shown as "Geschatte tijd"). */
+        public final ClimbTimeEstimate base;
+        /** Null when no correction is possible (offline, no forecast, no geometry). */
+        public final WindImpactEstimator.Result result;
+        public final boolean loading;
+
+        WindImpactState(ClimbTimeEstimate base, WindImpactEstimator.Result result, boolean loading) {
+            this.base = base;
+            this.result = result;
+            this.loading = loading;
+        }
+
+        /** Displayed estimate plus the modelled wind delta. */
+        public int windTotalSeconds() {
+            return base.totalSeconds + (result != null ? result.deltaSeconds : 0);
+        }
+    }
+
     public LiveData<PrChance>          prChance()      { return prChance; }
 
     /** Issue #58: the PR-chance prediction and whether the weather could be taken into account. */
@@ -135,6 +166,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
                 lastRoute = r;
+                windForecast = null; // other climb, other place: fetch the wind afresh
                 lastClimbIndex = climbIndex;
                 route.postValue(r);
                 if (r.climbs != null && climbIndex < r.climbs.size()) {
@@ -623,8 +655,47 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         }
 
         timeEstimate.postValue(estimate);
+        updateWindImpact(r, c, estimate, profile);
+    }
+
+    /**
+     * Issue #47: correct the estimate for head/tailwind along the climb, using the Open-Meteo
+     * forecast at the climb top for the current hour. Offline or without a forecast the
+     * state carries a null result so the UI can say the estimate is uncorrected.
+     */
+    private void updateWindImpact(StoredRoute r, StoredClimb c, ClimbTimeEstimate estimate,
+                                  RiderProfile profile) {
+        if (estimate == null || r == null) {
+            windImpact.postValue(null);
+            return;
+        }
+        double mass = profile.totalMassKg();
+        double power = estimate.assumedPowerWatts;
+        HourlyForecast cached = windForecast;
+        if (cached == null) {
+            windImpact.postValue(new WindImpactState(estimate, null, true));
+        }
+        windExecutor.execute(() -> {
+            HourlyForecast f = windForecast;
+            if (f == null) {
+                try {
+                    f = new OpenMeteoClient().fetch(ClimbEndpoints.top(r, c));
+                    windForecast = f;
+                } catch (Exception e) {
+                    android.util.Log.i(TAG, "No wind forecast, estimate stays uncorrected: "
+                            + e.getMessage());
+                }
+            }
+            if (c != lastClimb) return; // user moved on to another climb meanwhile
+            WindImpactEstimator.Result result = ClimbWindImpact.compute(
+                    r, c, f, java.time.Instant.now(), mass, power);
+            windImpact.postValue(new WindImpactState(estimate, result, false));
+        });
     }
 
     @Override
-    protected void onCleared() { executor.shutdown(); }
+    protected void onCleared() {
+        executor.shutdown();
+        windExecutor.shutdownNow();
+    }
 }

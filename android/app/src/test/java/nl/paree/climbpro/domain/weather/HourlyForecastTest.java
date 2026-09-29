@@ -32,6 +32,19 @@ public class HourlyForecastTest {
         assertNull(f.rainPct[1]);
     }
 
+    @Test public void parsesWindDirectionWithNullAsNaN() throws IOException {
+        HourlyForecast f = HourlyForecast.parse(JSON);
+        assertEquals(250, f.windDirDeg[0], 1e-9);
+        assertTrue(Double.isNaN(f.windDirDeg[1]));
+        assertEquals(265, f.windDirDeg[2], 1e-9);
+    }
+
+    @Test public void missingWindDirectionFieldIsNaN() throws IOException {
+        HourlyForecast f = HourlyForecast.parse("{\"hourly\":{\"time\":[\"2026-09-24T10:00\"],"
+                + "\"wind_speed_10m\":[10.0]}}");
+        assertTrue(Double.isNaN(f.windDirDeg[0]));
+    }
+
     @Test public void indexAtUsesTheHourContainingTheInstant() throws IOException {
         HourlyForecast f = HourlyForecast.parse(JSON);
         assertEquals(0, f.indexAt(Instant.parse("2026-09-24T10:59:59Z")));
