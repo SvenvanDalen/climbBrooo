@@ -8,6 +8,32 @@
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <!-- Windgeoptimaliseerde rijrichting voor een rondje (issue #174) -->
+    <string name="loop_wind_action">Beste rijrichting (wind)</string>
+    <string name="loop_wind_loading">Windverwachting laden…</string>
+    <string name="loop_wind_no_route">Deze route heeft te weinig punten voor een windadvies.</string>
+    <string name="loop_wind_not_a_loop">Geen rondje: start en finish liggen %1$.1f km uit elkaar, dus de rijrichting ligt vast.</string>
+    <string name="loop_wind_no_wind">Geen windverwachting beschikbaar voor deze plek.</string>
+    <string name="loop_wind_failed">Windverwachting ophalen mislukt: %1$s</string>
+    <string name="loop_wind_header">Wind: %1$.0f km/u uit het %2$s (gemiddeld komende %3$d uur)</string>
+    <string name="loop_wind_calm">Nauwelijks wind, de rijrichting maakt weinig uit.</string>
+    <string name="loop_wind_either">Beide richtingen eindigen met ongeveer dezelfde wind; kies wat je wilt.</string>
+    <string name="loop_wind_forward">Rijd de route zoals getekend: op het laatste stuk naar huis heb je dan %1$s in plaats van %2$s.</string>
+    <string name="loop_wind_reverse">Rijd de route andersom: op het laatste stuk naar huis heb je dan %1$s in plaats van %2$s. Maak een omgekeerde kopie met \"%3$s\".</string>
+    <string name="loop_wind_tail">%1$.0f km/u rugwind</string>
+    <string name="loop_wind_head">%1$.0f km/u tegenwind</string>
+    <string name="loop_wind_cross">vooral zijwind</string>
+    <string name="loop_wind_source">Bron: Open-Meteo</string>
+    <string-array name="loop_wind_compass">
+        <item>noorden</item>
+        <item>noordoosten</item>
+        <item>oosten</item>
+        <item>zuidoosten</item>
+        <item>zuiden</item>
+        <item>zuidwesten</item>
+        <item>westen</item>
+        <item>noordwesten</item>
+    </string-array>
     <string name="route_profile_title">Hoogteprofiel</string>
     <string name="route_profile_empty">Geen hoogtegegevens voor deze route</string>
     <string name="route_profile_description">Hoogteprofiel van %1$.1f km, van %2$d tot %3$d m hoogte, met %4$d klimmen gemarkeerd</string>

@@ -33,6 +33,9 @@ import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.domain.weather.LoopWindAdvice;
+import nl.paree.climbpro.domain.weather.LoopWindAdvisor;
 import nl.paree.climbpro.domain.weather.PrecipitationGrid;
 import nl.paree.climbpro.domain.weather.RadarTiles;
 import nl.paree.climbpro.domain.weather.RainRadarFrame;
@@ -65,6 +68,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private static final double RAIN_SAMPLE_STEP_M = 5_000;
     private static final int    RAIN_MAX_SAMPLES   = 25;
     private static final int    RAIN_FORECAST_HOURS = 6;
+
+    /** Issue #174: wind averaged over this many forecast hours from now for the loop advice. */
+    private static final int LOOP_WIND_HOURS = 3;
 
     private RainRadarOverlay rainOverlay;
     private boolean          rainShown;
@@ -185,6 +191,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnFuelPlanner.setOnClickListener(v -> startActivity(
                 nl.paree.climbpro.ui.nutrition.FuelPlannerActivity.intentFor(this, routeId)));
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
+        binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
 
         viewModel.loadRoute(routeId);
     }
@@ -402,6 +409,92 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 binding.rainSummary.setVisibility(View.VISIBLE);
             });
         }, "rain-radar").start();
+    }
+
+    /**
+     * Issue #174: which way round to ride a loop so the wind helps on the way home. The loop
+     * check needs no network; the wind comes from Open-Meteo at the start, off the UI thread.
+     */
+    private void showLoopWindAdvice() {
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null) return;
+        LoopWindAdvice shape = LoopWindAdvisor.advise(r.lats, r.lons, r.distances,
+                Double.NaN, Double.NaN);
+        if (shape.verdict != LoopWindAdvice.Verdict.NO_WIND) {
+            showLoopWindText(describeLoopWind(shape));
+            return;
+        }
+        binding.btnLoopWind.setEnabled(false); // one request at a time
+        binding.btnLoopWind.setText(R.string.loop_wind_loading);
+        final double lat = r.lats[0];
+        final double lon = r.lons[0];
+        new Thread(() -> {
+            String text;
+            try {
+                HourlyForecast f = new OpenMeteoClient().fetch(lat, lon, Double.NaN);
+                LoopWindAdvisor.Wind w =
+                        LoopWindAdvisor.averageWind(f, Instant.now(), LOOP_WIND_HOURS);
+                LoopWindAdvice a = w == null ? shape
+                        : LoopWindAdvisor.advise(r.lats, r.lons, r.distances, w.fromDeg, w.kmh);
+                text = describeLoopWind(a);
+            } catch (Exception e) {
+                text = getString(R.string.loop_wind_failed, reason(e));
+            }
+            final String result = text;
+            runOnUiThread(() -> {
+                binding.btnLoopWind.setEnabled(true);
+                binding.btnLoopWind.setText(R.string.loop_wind_action);
+                showLoopWindText(result);
+            });
+        }, "loop-wind").start();
+    }
+
+    private void showLoopWindText(String text) {
+        binding.loopWindSummary.setText(text);
+        binding.loopWindSummary.setVisibility(View.VISIBLE);
+    }
+
+    private String describeLoopWind(LoopWindAdvice a) {
+        switch (a.verdict) {
+            case NO_ROUTE:
+                return getString(R.string.loop_wind_no_route);
+            case NOT_A_LOOP:
+                return getString(R.string.loop_wind_not_a_loop, a.loopGapM / 1000.0);
+            case NO_WIND:
+                return getString(R.string.loop_wind_no_wind);
+            default:
+                break;
+        }
+        String[] compass = getResources().getStringArray(R.array.loop_wind_compass);
+        String header = getString(R.string.loop_wind_header, a.windKmh,
+                compass[LoopWindAdvisor.compassIndex(a.windFromDeg)], LOOP_WIND_HOURS);
+        String body;
+        switch (a.verdict) {
+            case CALM:
+                body = getString(R.string.loop_wind_calm);
+                break;
+            case EITHER:
+                body = getString(R.string.loop_wind_either);
+                break;
+            case FORWARD:
+                body = getString(R.string.loop_wind_forward,
+                        homeWind(a.bestHomeHeadwindKmh()), homeWind(a.otherHomeHeadwindKmh()));
+                break;
+            default:
+                body = getString(R.string.loop_wind_reverse,
+                        homeWind(a.bestHomeHeadwindKmh()), homeWind(a.otherHomeHeadwindKmh()),
+                        getString(R.string.route_reverse_action));
+                break;
+        }
+        return header + "\n" + body + "\n\n" + getString(R.string.loop_wind_source);
+    }
+
+    /** "12 km/u rugwind", "8 km/u tegenwind" or "vooral zijwind" for a headwind component. */
+    private String homeWind(double headwindKmh) {
+        if (Math.abs(headwindKmh) < 1) return getString(R.string.loop_wind_cross);
+        return headwindKmh < 0
+                ? getString(R.string.loop_wind_tail, -headwindKmh)
+                : getString(R.string.loop_wind_head, headwindKmh);
     }
 
     private static String reason(Exception e) {
