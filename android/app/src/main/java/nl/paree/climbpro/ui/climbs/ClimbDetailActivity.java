@@ -29,11 +29,14 @@ import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.data.planning.PlannedClimb;
 import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.databinding.ActivityClimbDetailBinding;
+import nl.paree.climbpro.data.weather.ClimateCache;
 import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.DurationFormat;
 import nl.paree.climbpro.domain.sun.SunriseCalculator;
 import nl.paree.climbpro.domain.sun.SunriseRidePlanner;
+import nl.paree.climbpro.domain.weather.BestTimeScorer;
+import nl.paree.climbpro.domain.weather.ClimateNormals;
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.SummitWeather;
@@ -63,6 +66,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private StoredClimb loadedClimb;
     private String lastTimeEstimateText;
     private Integer lastEstimateSeconds;
+
+    // Issue #41 best-time section: cache checked once on open, network only on tap.
+    private boolean bestTimeCacheChecked;
+    private boolean bestTimeBusy;
+    private boolean bestTimeLoaded;
 
     // Pending state while the note/photo edit dialog (issue #46) is open: the row being
     // edited and the photo the user just picked (persisted only on Save).
@@ -132,10 +140,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             loadedRoute = route;
             tryDrawMap();
             updateDescentInfo();
+            loadBestTime(false);
         });
 
         viewModel.climb().observe(this, climb -> {
             if (climb == null) return;
+            loadBestTime(false);
 
             String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
             binding.toolbar.setTitle(name != null ? name : "Climb " + (climbIndex + 1));
@@ -314,6 +324,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         });
         binding.btnSunriseRide.setOnClickListener(v -> pickSunriseDate());
         binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
+        binding.bestTime.setOnClickListener(v -> {
+            if (bestTimeLoaded) {
+                boolean shown = binding.bestTimeTable.getVisibility() == android.view.View.VISIBLE;
+                binding.bestTimeTable.setVisibility(
+                        shown ? android.view.View.GONE : android.view.View.VISIBLE);
+            } else {
+                loadBestTime(true);
+            }
+        });
         binding.btnCompareClimb.setOnClickListener(v ->
                 startActivity(ClimbCompareActivity.intentFor(this, routeId, climbIndex)));
 
@@ -597,6 +616,67 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         .show();
             });
         }, "summit-weather").start();
+    }
+
+    /**
+     * Issue #41: best months and part of the day for this climb from a cached climatology
+     * (Open-Meteo archive). {@code fetch=false} only reads the offline cache; a tap fetches.
+     */
+    private void loadBestTime(boolean fetch) {
+        StoredRoute r = viewModel.route().getValue();
+        StoredClimb c = viewModel.climb().getValue();
+        if (r == null || c == null || bestTimeBusy || bestTimeLoaded) return;
+        if (!fetch && bestTimeCacheChecked) return;
+        bestTimeCacheChecked = true;
+        bestTimeBusy = true;
+        if (fetch) binding.bestTime.setText("Beste moment: laden…");
+        ClimbEndpoints.Point foot = ClimbEndpoints.foot(r, c);
+        ClimbEndpoints.Point top = ClimbEndpoints.top(r, c);
+        double bearing = ClimateNormals.bearingDeg(foot.lat, foot.lon, top.lat, top.lon);
+        double elevation = Double.isNaN(foot.elevationM) ? top.elevationM
+                : Double.isNaN(top.elevationM) ? foot.elevationM
+                : (foot.elevationM + top.elevationM) / 2;
+        java.io.File filesDir = getFilesDir();
+        new Thread(() -> {
+            ClimateCache cache = new ClimateCache(filesDir);
+            ClimateNormals normals = cache.load(foot.lat, foot.lon);
+            String error = null;
+            if (normals == null && fetch) {
+                try {
+                    normals = new OpenMeteoClient().fetchClimate(
+                            foot.lat, foot.lon, elevation, LocalDate.now().getYear());
+                    cache.save(foot.lat, foot.lon, normals);
+                } catch (java.net.UnknownHostException | java.net.ConnectException
+                         | java.io.InterruptedIOException e) { // offline or timed out
+                    error = "Beste moment: niet beschikbaar zonder verbinding (tik om opnieuw "
+                            + "te proberen)";
+                } catch (Exception e) {
+                    String reason = e.getMessage() != null ? e.getMessage()
+                            : e.getClass().getSimpleName();
+                    error = "Beste moment: ophalen mislukt (" + reason + "), tik om opnieuw "
+                            + "te proberen";
+                }
+            }
+            BestTimeScorer.Result result =
+                    normals == null ? null : BestTimeScorer.evaluate(normals, bearing);
+            String message = error;
+            boolean hadData = normals != null;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                bestTimeBusy = false;
+                if (result != null) {
+                    bestTimeLoaded = true;
+                    binding.bestTime.setText("Beste moment: " + result.summary());
+                    binding.bestTimeTable.setText(result.monthTable()
+                            + "\nGemiddelden over 3 jaar · bron: Open-Meteo");
+                    binding.bestTimeTable.setVisibility(android.view.View.VISIBLE);
+                } else if (message != null) {
+                    binding.bestTime.setText(message);
+                } else if (hadData) {
+                    binding.bestTime.setText("Beste moment: geen weerhistorie voor deze plek");
+                }
+            });
+        }, "best-time").start();
     }
 
     private void showRenameDialog() {
