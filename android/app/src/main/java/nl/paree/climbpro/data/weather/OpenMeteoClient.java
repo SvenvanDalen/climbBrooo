@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.weather;
 
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.DailyForecast;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
 import nl.paree.climbpro.domain.weather.PrecipitationGrid;
@@ -92,5 +93,10 @@ public final class OpenMeteoClient {
 
     public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
         return HourlyPrecipitation.parse(get(precipitationUrl(lat, lon)));
+    }
+
+    /** Issue #40: daily outlook for the coming week at one location ("klim van de week"). */
+    public List<DailyForecast.Day> fetchDaily(double lat, double lon) throws IOException {
+        return DailyForecast.parse(get(DailyForecast.url(lat, lon)));
     }
 }

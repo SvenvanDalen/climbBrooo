@@ -553,6 +553,26 @@ change), applied by `RouteRepository.saveRoute`:
   the route-wide offset (median of the matched climbs' offsets). User-drawn surface sections
   are still copied verbatim (absolute distances).
 
+### Climb of the week (phone-only, issue #40)
+
+Menu entry *Klim van de week* (`ui/climbs/ClimbOfTheWeekActivity`) suggests one known climb for
+the current ISO week with the reasons behind it. `ClimbOfTheWeekViewModel` gathers every stored
+climb (keyed by `ClimbIdentity`), the last attempt date per climb from `ClimbAttemptRepository`,
+the phone's last-known location (`ui/planning/LastKnownLocation`, only when a location
+permission is already granted — otherwise the distance factor is skipped) and a 7-day daily
+outlook from Open-Meteo (`OpenMeteoClient.fetchDaily` / pure `domain/weather/DailyForecast`,
+taken at the location or, without one, at the most recently ridden climb). The pure,
+deterministic `domain/climb/ClimbOfTheWeek` skips climbs ridden in the last 14 days and — with a
+location — climbs starting more than 80 km away (each filter is dropped again if it would leave
+nothing), then scores the rest as a weighted mean of the available factors: freshness (never
+ridden = 1, else up to 0.9 at 180 days), distance (`1 / (1 + d / 40 km)`) and weather fit (the
+week's best day sets a good/mixed/poor outlook that favours hard, middling or easy climbs by
+`DifficultyScoreCalculator`). Missing factors are left out of the mean, so offline or without
+location the suggestion still works. A tiny jitter seeded by ISO week + climb id rotates between
+otherwise equal climbs from week to week. The chosen climb is pinned in the default
+SharedPreferences (`climb_of_week_pin` = `<isoWeek>|<climbId>`) so it stays the suggestion for the
+whole week; a pinned climb ridden this week is shown as completed. No wire-format change.
+
 ### Hardest climbs in the region (phone-only, issue #211)
 
 Menu entry *Zwaarste klimmen in de regio* (`ui/climbs/TopClimbsActivity`) lists the top 10

@@ -118,6 +118,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
   the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
 
+- **Klim van de week** — one suggested climb per ISO week, chosen from your climb catalog by
+  riding history (never / long not ridden), distance from your last known location and the
+  week's weather (Open-Meteo); stays the same all week. Offline it skips the weather and says so.
+  Phone-only.
+
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
