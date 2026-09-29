@@ -83,6 +83,37 @@ public class ClimbWorkoutWriterTest {
     }
 
     @Test
+    public void myWhooshZwoKeepsOnlyPlainStepsAndWholePercentPower() {
+        List<ClimbWorkoutWriter.Step> steps = plan(0.05, 0.08);
+        String zwo = ClimbWorkoutWriter.toMyWhooshZwo("Col d'Izoard", steps);
+
+        assertTrue(zwo.startsWith("<?xml"));
+        assertTrue(zwo.contains("<name>Klim: Col d&apos;Izoard</name>"));
+        assertTrue(zwo.contains("<Warmup Duration=\"600\" PowerLow=\"0.45\" PowerHigh=\"0.75\"/>"));
+        assertTrue(zwo.contains("<Cooldown Duration=\"300\" PowerLow=\"0.60\" PowerHigh=\"0.40\"/>"));
+        assertEquals(2, count(zwo, "<SteadyState "));
+        // Self-closing steps without text events or tags; the builder rejects or drops those.
+        assertEquals(0, count(zwo, "textevent"));
+        assertEquals(0, count(zwo, "<tags>"));
+        String first = String.format(java.util.Locale.US,
+                "<SteadyState Duration=\"%d\" Power=\"%.2f\"/>",
+                steps.get(0).seconds, steps.get(0).ftpFraction);
+        assertTrue(zwo, zwo.contains(first));
+        // Gradients move to the description, since the steps can't carry them.
+        assertTrue(zwo, zwo.contains("5,0 % · 8,0 %"));
+    }
+
+    @Test
+    public void myWhooshNameIsCapped() {
+        String longName = "Een hele lange klimnaam die maar doorgaat en doorgaat tot voorbij de limiet";
+        String zwo = ClimbWorkoutWriter.toMyWhooshZwo(longName, plan(0.05));
+        int start = zwo.indexOf("<name>") + "<name>".length();
+        int end = zwo.indexOf("</name>");
+        assertTrue(end - start <= ClimbWorkoutWriter.MYWHOOSH_NAME_MAX);
+        assertTrue(zwo.contains("<name>Klim: Een hele lange"));
+    }
+
+    @Test
     public void ergUsesAbsoluteWattsAndCumulativeMinutes() {
         List<ClimbWorkoutWriter.Step> steps = plan(0.05, 0.08);
         String erg = ClimbWorkoutWriter.toErg("Test", steps, 250);
@@ -103,6 +134,8 @@ public class ClimbWorkoutWriterTest {
     public void fileNameIsSafe() {
         assertEquals("col_d_izoard.zwo", ClimbWorkoutWriter.fileName("Col d'Izoard", "zwo"));
         assertEquals("klim.erg", ClimbWorkoutWriter.fileName("  ", "erg"));
+        assertEquals("col_d_izoard_mywhoosh.zwo",
+                ClimbWorkoutWriter.fileName("Col d'Izoard MyWhoosh", "zwo"));
     }
 
     private static int count(String s, String needle) {

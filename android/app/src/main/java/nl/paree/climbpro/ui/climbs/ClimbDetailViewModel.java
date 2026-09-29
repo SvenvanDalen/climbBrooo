@@ -154,12 +154,17 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     public static final class WorkoutExport {
         public final File file;
         public final String mime;
+        public final WorkoutFormat format;
 
-        WorkoutExport(File file, String mime) {
+        WorkoutExport(File file, String mime, WorkoutFormat format) {
             this.file = file;
             this.mime = mime;
+            this.format = format;
         }
     }
+
+    /** Indoor-workout flavours the climb can be exported as (issues #223, #85). */
+    public enum WorkoutFormat { ZWIFT, ERG, MYWHOOSH }
 
     public void loadClimb(String routeId, int climbIndex) {
         executor.execute(() -> {
@@ -379,12 +384,13 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * sheet; PR lookup and file I/O both happen off the main thread.
      */
     /**
-     * Writes the climb as an indoor workout (issue #223): Zwift {@code .zwo} when {@code zwift},
-     * else ERG. Uses the fresh per-climb estimate, not the route-aware one: indoors you start
-     * the climb rested. Needs a complete rider profile for the power targets.
+     * Writes the climb as an indoor workout (issue #223): Zwift {@code .zwo}, ERG, or the
+     * stricter MyWhoosh {@code .zwo} (issue #85). Uses the fresh per-climb estimate, not the
+     * route-aware one: indoors you start the climb rested. Needs a complete rider profile for
+     * the power targets.
      */
-    public void exportWorkout(boolean zwift) {
-        exportWorkout(zwift, 1, RECOVERY_AUTO);
+    public void exportWorkout(WorkoutFormat format) {
+        exportWorkout(format, 1, RECOVERY_AUTO);
     }
 
     /** Recovery value meaning "use {@link ClimbWorkoutWriter#defaultRecoverySeconds}". */
@@ -395,7 +401,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * between. {@code recoverySec} of {@link #RECOVERY_AUTO} picks the writer's default (half
      * the climb time, 3–10 min). One repeat is the plain climb workout.
      */
-    public void exportWorkout(boolean zwift, int repeats, int recoverySec) {
+    public void exportWorkout(WorkoutFormat format, int repeats, int recoverySec) {
         StoredClimb c = lastClimb;
         if (c == null || c.segments == null || c.segments.isEmpty()) {
             error.postValue("Klim nog niet geladen");
@@ -424,14 +430,30 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                         ? c.userDisplayName : c.name;
                 int recovery = recoverySec == RECOVERY_AUTO
                         ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
-                String content = zwift
-                        ? ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery)
-                        : ClimbWorkoutWriter.toErg(name, plan.steps, plan.ftpWatts,
+                String content;
+                String fileName;
+                String mime;
+                switch (format) {
+                    case ERG:
+                        content = ClimbWorkoutWriter.toErg(name, plan.steps, plan.ftpWatts,
                                 repeats, recovery);
-                File file = ClimbWorkoutExportHandoff.writeFile(getApplication(), content,
-                        ClimbWorkoutWriter.fileName(name, zwift ? "zwo" : "erg", repeats));
-                workoutExport.postValue(new WorkoutExport(file, zwift
-                        ? ClimbWorkoutExportHandoff.ZWO_MIME : ClimbWorkoutExportHandoff.ERG_MIME));
+                        fileName = ClimbWorkoutWriter.fileName(name, "erg", repeats);
+                        mime = ClimbWorkoutExportHandoff.ERG_MIME;
+                        break;
+                    case MYWHOOSH:
+                        // Plain climb only: the stricter MyWhoosh importer gets no repeat blocks.
+                        content = ClimbWorkoutWriter.toMyWhooshZwo(name, plan.steps);
+                        fileName = ClimbWorkoutWriter.fileName(name + " MyWhoosh", "zwo");
+                        mime = ClimbWorkoutExportHandoff.ZWO_MIME;
+                        break;
+                    default:
+                        content = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery);
+                        fileName = ClimbWorkoutWriter.fileName(name, "zwo", repeats);
+                        mime = ClimbWorkoutExportHandoff.ZWO_MIME;
+                        break;
+                }
+                File file = ClimbWorkoutExportHandoff.writeFile(getApplication(), content, fileName);
+                workoutExport.postValue(new WorkoutExport(file, mime, format));
             } catch (Exception e) {
                 error.postValue("Workout-export mislukt: " + e.getMessage());
             }

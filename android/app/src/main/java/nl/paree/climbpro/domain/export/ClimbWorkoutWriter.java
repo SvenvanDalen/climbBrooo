@@ -38,6 +38,9 @@ public final class ClimbWorkoutWriter {
     static final double COOLDOWN_HIGH = 0.60;
     static final double COOLDOWN_LOW = 0.40;
 
+    /** Longest workout name we hand MyWhoosh; its library list truncates longer ones anyway. */
+    static final int MYWHOOSH_NAME_MAX = 40;
+
     // Repeats mode (issue #19): "N× this climb" with recovery blocks in between.
     public static final int MIN_REPEATS = 2;
     public static final int MAX_REPEATS = 10;
@@ -198,6 +201,48 @@ public final class ClimbWorkoutWriter {
                         ? String.format(nl, "Herhaling %d/%d · segment %s", r + 1, repeats, segment)
                         : "Segment " + segment);
             }
+        }
+        sb.append(String.format(Locale.US,
+                "    <Cooldown Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
+                COOLDOWN_SEC, COOLDOWN_HIGH, COOLDOWN_LOW));
+        sb.append("  </workout>\n");
+        sb.append("</workout_file>\n");
+        return sb.toString();
+    }
+
+    /**
+     * MyWhoosh flavour of the {@code .zwo} (issue #85). MyWhoosh can't import custom routes, but
+     * its web workout builder uploads {@code .zwo} files, so the climb goes there as a workout.
+     * Its importer is stricter than Zwift's: only plain self-closing warm-up, steady and
+     * cool-down steps, power as whole percentages of FTP, no tags or on-screen text events, and
+     * a short name. The per-segment gradients move into the description instead.
+     */
+    public static String toMyWhooshZwo(String climbName, List<Step> steps) {
+        String name = "Klim: " + displayName(climbName);
+        if (name.length() > MYWHOOSH_NAME_MAX) {
+            name = name.substring(0, MYWHOOSH_NAME_MAX - 1).trim() + "…";
+        }
+        StringBuilder gradients = new StringBuilder();
+        for (Step s : steps) {
+            if (gradients.length() > 0) gradients.append(" · ");
+            gradients.append(String.format(new Locale("nl"), "%.1f %%", s.gradient * 100));
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<workout_file>\n");
+        sb.append("  <author>ClimbPro</author>\n");
+        sb.append("  <name>").append(xml(name)).append("</name>\n");
+        sb.append("  <description>").append(xml(description(steps, displayName(climbName), 1, 0)
+                + " Hellingen per segment: "
+                + gradients)).append("</description>\n");
+        sb.append("  <sportType>bike</sportType>\n");
+        sb.append("  <workout>\n");
+        sb.append(String.format(Locale.US,
+                "    <Warmup Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
+                WARMUP_SEC, WARMUP_LOW, WARMUP_HIGH));
+        for (Step s : steps) {
+            sb.append(String.format(Locale.US,
+                    "    <SteadyState Duration=\"%d\" Power=\"%.2f\"/>\n", s.seconds, s.ftpFraction));
         }
         sb.append(String.format(Locale.US,
                 "    <Cooldown Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
