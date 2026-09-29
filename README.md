@@ -198,6 +198,13 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
   power, short name, gradients in the description). MyWhoosh can't import custom routes, so
   the climb goes in as a workout; a dialog explains the upload. Phone-only.
+- **intervals.icu** — Settings → "intervals.icu koppelen": paste your personal API key
+  (intervals.icu → Settings → Developer Settings) and athlete id (0 = your own), with a
+  connection test. Climb detail → "Exporteer als indoor-workout" → "Naar intervals.icu" (or
+  the repeat-climb variant) plans the `.zwo` workout on your intervals.icu calendar on a
+  chosen date, as indoor (`VirtualRide`) or outdoor (`Ride`); from there it syncs on to
+  Zwift/Garmin if you set that up in intervals.icu. The description carries the climb's PR and
+  attempt count. The key is stored encrypted and kept out of backups. Phone-only.
 
 - **Training advice after a climb** — climb screen: short, concrete pacing tips for your
   latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your

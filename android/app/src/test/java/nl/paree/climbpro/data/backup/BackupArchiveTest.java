@@ -141,6 +141,7 @@ public class BackupArchiveTest {
         assertFalse(BackupArchive.isIncluded("/catalog.json"));
         assertFalse(BackupArchive.isIncluded("sync_state.json"));
         assertFalse(BackupArchive.isIncluded("shared_prefs/strava_auth.xml"));
+        assertFalse(BackupArchive.isIncluded("shared_prefs/intervals_icu_auth.xml"));
         assertFalse(BackupArchive.isIncluded("routes\\x.json"));
     }
 

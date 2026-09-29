@@ -332,4 +332,36 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="fuel_result_temp_assumed">Geen temperatuur ingevuld — uitgegaan van %1$.0f °C.</string>
     <string name="fuel_result_temp">Temperatuur: %1$.0f °C</string>
     <string name="fuel_route_error">Route laden mislukt: %1$s</string>
+    <!-- intervals.icu export (issue #78) -->
+    <string name="intervals_title">intervals.icu</string>
+    <string name="intervals_settings_button">intervals.icu koppelen</string>
+    <string name="intervals_explanation">Stuur klim-workouts als geplande training naar je intervals.icu-kalender; van daaruit gaan ze door naar Zwift of Garmin als je dat in intervals.icu hebt ingesteld. Je API-sleutel vind je in intervals.icu onder Settings → Developer Settings. Laat het atleet-id op 0 staan voor je eigen account. De sleutel wordt versleuteld op deze telefoon bewaard en niet meegenomen in back-ups.</string>
+    <string name="intervals_api_key_label">API-sleutel</string>
+    <string name="intervals_api_key_hint">Plak je API-sleutel</string>
+    <string name="intervals_api_key_hint_saved">Opgeslagen — laat leeg om te behouden</string>
+    <string name="intervals_athlete_id_label">Atleet-id</string>
+    <string name="intervals_athlete_id_hint">0 of bijv. i12345</string>
+    <string name="intervals_save">Opslaan</string>
+    <string name="intervals_test">Verbinding testen</string>
+    <string name="intervals_clear">Koppeling wissen</string>
+    <string name="intervals_clear_confirm">De API-sleutel wordt van deze telefoon gewist. Workouts op je intervals.icu-kalender blijven staan.</string>
+    <string name="intervals_cancel">Annuleren</string>
+    <string name="intervals_status_saved">Opgeslagen.</string>
+    <string name="intervals_status_cleared">Koppeling gewist.</string>
+    <string name="intervals_status_testing">Verbinding testen…</string>
+    <string name="intervals_status_ok">Verbonden als %1$s.</string>
+    <string name="intervals_status_failed">Mislukt: %1$s</string>
+    <string name="intervals_status_key_invalid">Vul een geldige API-sleutel in.</string>
+    <string name="intervals_status_athlete_invalid">Ongeldig atleet-id: gebruik 0 of iets als i12345.</string>
+    <string name="intervals_format_single">Naar intervals.icu (geplande workout)</string>
+    <string name="intervals_format_repeat">Herhaal-klim naar intervals.icu</string>
+    <string name="intervals_not_configured">Koppel eerst intervals.icu met je API-sleutel in Instellingen.</string>
+    <string name="intervals_open_settings">Naar instellingen</string>
+    <string name="intervals_pick_date">Plan op datum</string>
+    <string name="intervals_pick_type">Waar rijd je hem?</string>
+    <string name="intervals_type_indoor">Indoor op de trainer (VirtualRide)</string>
+    <string name="intervals_type_outdoor">Buiten (Ride)</string>
+    <string name="intervals_send">Versturen</string>
+    <string name="intervals_push_ok">Workout gepland op intervals.icu voor %1$s.</string>
+    <string name="intervals_push_failed">Naar intervals.icu mislukt: %1$s</string>
 </resources>

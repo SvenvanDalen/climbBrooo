@@ -237,6 +237,8 @@ public final class SettingsActivity extends AppCompatActivity {
 
         binding.btnStravaTitleTemplate.setOnClickListener(v -> startActivity(
                 new android.content.Intent(this, StravaTitleTemplateActivity.class)));
+        binding.btnIntervalsIcu.setOnClickListener(v -> startActivity(
+                new android.content.Intent(this, IntervalsIcuSettingsActivity.class)));
 
         binding.btnStravaHistoryBackfill.setOnClickListener(v -> confirmHistoryBackfill());
         SyncScheduler.historyBackfillInfo(this).observe(this, this::renderHistoryBackfill);

@@ -98,6 +98,9 @@ public final class PrivacyDashboardActivity extends AppCompatActivity {
                         + "je agenda blijven staan.";
             case STRAVA:
                 return "Strava wordt ontkoppeld. Routes en pogingen blijven staan.";
+            case INTERVALS_ICU:
+                return "De intervals.icu-sleutel wordt gewist. Workouts op je kalender daar "
+                        + "blijven staan.";
             default:
                 return "Dit kan niet ongedaan worden gemaakt.";
         }

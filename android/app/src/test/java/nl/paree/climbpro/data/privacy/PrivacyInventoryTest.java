@@ -87,6 +87,7 @@ public class PrivacyInventoryTest {
     public void preferenceCategoriesHaveNoFiles() throws IOException {
         write(files, "catalog.json", 5);
         assertEquals(0, inventory.usage(PrivacyCategory.STRAVA).fileCount);
+        assertEquals(0, inventory.usage(PrivacyCategory.INTERVALS_ICU).fileCount);
         assertEquals(0, inventory.usage(PrivacyCategory.LOCATION).fileCount);
         assertEquals(0, inventory.usage(PrivacyCategory.RIDER_PROFILE).fileCount);
     }
