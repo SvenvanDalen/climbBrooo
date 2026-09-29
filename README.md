@@ -185,6 +185,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
   3–10 min), cool-down. Phone-only.
 
+- **MyWhoosh import** — "Route toevoegen" → "MyWhoosh-rit importeren (FIT)" reads a ride
+  exported from MyWhoosh (or Strava / Garmin Connect "export original"), runs the normal climb
+  detection and files the route under the collection "MyWhoosh". Rides without GPS positions
+  are laid out by distance and shown as profile only (not usable for radius mode or
+  navigation). Phone-only.
 - **MyWhoosh export** — climb detail → "Exporteer als indoor-workout" → "MyWhoosh-workout"
   writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
   power, short name, gradients in the description). MyWhoosh can't import custom routes, so
