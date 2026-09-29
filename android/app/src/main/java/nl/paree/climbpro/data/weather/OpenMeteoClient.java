@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.weather;
 
 import nl.paree.climbpro.domain.weather.AirQualityForecast;
+import nl.paree.climbpro.domain.weather.ClimateNormals;
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
 import nl.paree.climbpro.domain.weather.DailyForecast;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
@@ -144,6 +145,31 @@ public final class OpenMeteoClient {
 
     public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
         return HourlyPrecipitation.parse(get(precipitationUrl(lat, lon)));
+    }
+
+    /** Years of history behind a climatology (issue #41). */
+    static final int CLIMATE_YEARS = 3;
+
+    /**
+     * Issue #41: hourly history for the last {@link #CLIMATE_YEARS} full calendar years, in the
+     * location's local time ({@code timezone=auto}) so day-parts line up with the clock. Only
+     * the four variables the climatology needs; OkHttp's transparent gzip keeps the transfer to
+     * a few hundred kB, and the result is aggregated and cached so this runs once per location.
+     */
+    public static String archiveUrl(double lat, double lon, double elevationM, int currentYear) {
+        String base = String.format(Locale.US,
+                "https://archive-api.open-meteo.com/v1/archive?latitude=%.5f&longitude=%.5f"
+                        + "&start_date=%d-01-01&end_date=%d-12-31"
+                        + "&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,precipitation"
+                        + "&wind_speed_unit=kmh&timezone=auto",
+                lat, lon, currentYear - CLIMATE_YEARS, currentYear - 1);
+        return Double.isNaN(elevationM) ? base
+                : base + "&elevation=" + Math.round(elevationM);
+    }
+
+    public ClimateNormals fetchClimate(double lat, double lon, double elevationM, int currentYear)
+            throws IOException {
+        return ClimateNormals.fromArchive(get(archiveUrl(lat, lon, elevationM, currentYear)));
     }
 
     /** Issue #40: daily outlook for the coming week at one location ("klim van de week"). */

@@ -80,6 +80,11 @@ public enum PrivacyCategory {
     FAVORITE_START_POINTS("Favoriete startpunten",
             "Door jou opgeslagen startpunten (naam en coördinaten) voor de planning.",
             "favorite_start_points.json"),
+    CLIMATE("Klimaatgegevens bij klimmen",
+            "Weerhistorie (temperatuur, wind, regen per maand en dagdeel) rond je klimmen, "
+                    + "voor het beste moment om te rijden. Wordt opnieuw opgehaald als je het "
+                    + "wist.",
+            "climate/"),
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",

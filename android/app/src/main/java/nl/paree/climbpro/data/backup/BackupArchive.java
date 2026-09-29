@@ -30,7 +30,8 @@ import java.util.zip.ZipOutputStream;
  * {@link #INCLUDED_PATHS}. Deliberately left out: {@code sync_state.json} (describes what
  * the <em>old</em> phone last sent to the watch — a restored copy would make the new phone
  * skip the first sync) and every Strava credential (the encrypted token is bound to the old
- * phone's keystore and cannot be decrypted elsewhere; the user signs in again).
+ * phone's keystore and cannot be decrypted elsewhere; the user signs in again), and the
+ * {@code climate/} weather-history cache (issue #41: public data, re-fetched on demand).
  */
 public final class BackupArchive {
 

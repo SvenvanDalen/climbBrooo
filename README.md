@@ -124,6 +124,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
   the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
+- **Best time to ride a climb** — climb detail → "Beste moment: juni–september, ochtend" with
+  a small month table (temperature, wind, rain chance per month's best day-part), scored from
+  3 years of Open-Meteo weather history at the climb (incl. headwind along the climb). Tap to
+  load once; cached under `climate/`, so it works offline afterwards. Phone-only.
+
 - **Temperature trend over the ride** — route detail → "Temperatuurtrend tonen", pick a start
   time (today, or tomorrow if already past) and see a chart of the expected temperature at each
   point of the route at the moment you pass it, plus start/finish/warmest/coldest. Pace comes

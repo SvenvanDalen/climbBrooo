@@ -216,6 +216,29 @@
                 android:layout_marginBottom="8dp"
                 android:text="Weer op de top"/>
 
+            <TextView
+                android:id="@+id/best_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_accent"
+                android:textSize="14sp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="?attr/selectableItemBackground"
+                android:layout_marginBottom="4dp"
+                android:text="Beste moment: tik om te laden"/>
+
+            <TextView
+                android:id="@+id/best_time_table"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="12sp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/>
+
             <Button
                 android:id="@+id/btn_compare_climb"
                 style="@style/Widget.ClimbPro.Button.Outline"
