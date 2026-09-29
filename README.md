@@ -159,6 +159,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Bike theft passport** — frame number, brand/model, purchase details, photos and the
+  receipt per bike, shared in one go (text + attachments) for a police report or insurance
+  claim. Phone-only.
+
 - **Badges** — automatic achievements such as your first 100 km, 10.000 km in total, an
   Everest of climbing, five rides before 7:00 and every climb of a collection, with date or
   progress. Phone-only.

@@ -235,6 +235,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_bike_passport"
+        android:title="Fietspaspoort"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_badges"
         android:title="Badges"
         app:showAsAction="never"/>

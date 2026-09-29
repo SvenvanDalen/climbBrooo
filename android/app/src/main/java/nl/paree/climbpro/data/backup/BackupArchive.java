@@ -44,6 +44,7 @@ public final class BackupArchive {
             "torque_values.json",
             "friend_feed.json",
             "bike_costs.json",
+            "bike_passports.json", "bike_passport_photos/",
             "battery_status.json",
             "pain_log.json",
             "sweat_loss_log.json",
