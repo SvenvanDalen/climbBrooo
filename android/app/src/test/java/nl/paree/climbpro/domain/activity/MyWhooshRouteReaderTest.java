@@ -30,6 +30,24 @@ public class MyWhooshRouteReaderTest {
     }
 
     @Test
+    public void recognisesMyWhooshStravaUploadsOnly() {
+        assertTrue(MyWhooshRouteReader.isMyWhooshActivity(
+                "MyWhoosh - Hautacam Summit", "VirtualRide", "VirtualRide"));
+        assertTrue(MyWhooshRouteReader.isMyWhooshActivity("mywhoosh: Alula", "VirtualRide", null));
+        assertFalse(MyWhooshRouteReader.isMyWhooshActivity(
+                "Zwift - Watopia", "VirtualRide", "VirtualRide"));
+        assertFalse(MyWhooshRouteReader.isMyWhooshActivity("MyWhoosh - x", "Ride", "Ride"));
+        assertFalse(MyWhooshRouteReader.isMyWhooshActivity(null, "VirtualRide", "VirtualRide"));
+    }
+
+    @Test
+    public void routeTitleDropsTheMyWhooshPrefix() {
+        assertEquals("Hautacam Summit", MyWhooshRouteReader.routeTitle("MyWhoosh - Hautacam Summit"));
+        assertEquals("Jabel Hafeet", MyWhooshRouteReader.routeTitle("MyWhoosh: Jabel Hafeet"));
+        assertEquals("MyWhoosh", MyWhooshRouteReader.routeTitle("MyWhoosh"));
+    }
+
+    @Test
     public void positionedRideKeepsItsGpsTrack() throws IOException {
         List<FitTrackDecoder.Record> records = new ArrayList<>();
         records.add(gps(24.0, 55.0, 10));
@@ -37,7 +55,7 @@ public class MyWhooshRouteReaderTest {
         records.add(gps(24.001, 55.0, 12));
         records.add(virtual(20, 13));           // lone position-less sample in a GPS ride: dropped
 
-        MyWhooshRouteReader.Result r = MyWhooshRouteReader.fromFit(records);
+        MyWhooshRouteReader.Result r = MyWhooshRouteReader.fromRecords(records);
 
         assertFalse(r.virtual);
         assertEquals(2, r.points.size());
@@ -53,7 +71,7 @@ public class MyWhooshRouteReaderTest {
         records.add(virtual(500, 110));
         records.add(virtual(1000, 130));
 
-        MyWhooshRouteReader.Result r = MyWhooshRouteReader.fromFit(records);
+        MyWhooshRouteReader.Result r = MyWhooshRouteReader.fromRecords(records);
 
         assertTrue(r.virtual);
         assertEquals(3, r.points.size());
@@ -73,7 +91,7 @@ public class MyWhooshRouteReaderTest {
         noDistance.add(virtual(Double.NaN, 110));
         for (List<FitTrackDecoder.Record> bad : java.util.Arrays.asList(noAltitude, noDistance)) {
             try {
-                MyWhooshRouteReader.fromFit(bad);
+                MyWhooshRouteReader.fromRecords(bad);
                 fail("expected IOException");
             } catch (IOException expected) {
                 // ok

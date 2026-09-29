@@ -190,6 +190,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   detection and files the route under the collection "MyWhoosh". Rides without GPS positions
   are laid out by distance and shown as profile only (not usable for radius mode or
   navigation). Phone-only.
+- **MyWhoosh via Strava (automatic)**: with MyWhoosh linked to Strava, every sync turns new
+  "MyWhoosh - <route>" rides from the ride archive into routes with climbs (at most 10 per
+  sync, rate limit). Rides without climbs and repeats of an already-imported route add
+  nothing; repeats show up as logbook attempts instead. Phone-only.
 - **MyWhoosh export** — climb detail → "Exporteer als indoor-workout" → "MyWhoosh-workout"
   writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
   power, short name, gradients in the description). MyWhoosh can't import custom routes, so
