@@ -125,6 +125,18 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <string name="menu_periodization">Trainingsblok</string>
+    <string name="periodization_title">Trainingsblok</string>
+    <string name="periodization_intro">Een blok van vier weken op basis van klimmen die je al kent: drie opbouwweken waarin de hoogtemeters en de zwaarte van de klimmen stap voor stap toenemen, gevolgd door een herstelweek.</string>
+    <string name="periodization_start_history">Startbelasting: %1$d hm per week (je gemiddelde op klimmen van de laatste vier weken). Opbouw: +10%% per week.</string>
+    <string name="periodization_start_default">Startbelasting: %1$d hm per week (standaardwaarde; nog geen recente klimgeschiedenis). Opbouw: +10%% per week.</string>
+    <string name="periodization_not_ridden">Je hebt nog geen bekende klim gereden; het schema gebruikt de klimmen uit je routes.</string>
+    <string name="periodization_week_build">Week %1$d — opbouw</string>
+    <string name="periodization_week_recovery">Week %1$d — herstel</string>
+    <string name="periodization_week_load">Gepland %1$d hm · doel %2$d hm</string>
+    <string name="periodization_session">%1$d× %2$s (%3$s km, %4$s%%) · %5$d hm</string>
+    <string name="periodization_unnamed_climb">Naamloze klim</string>
+    <string name="periodization_empty">Nog geen klimmen bekend. Importeer of synchroniseer eerst routes met klimmen.</string>
     <!-- Trainingsbelasting-kalender (issue #182) -->
     <string name="load_calendar_menu">Trainingskalender</string>
     <string name="load_calendar_title">Trainingskalender</string>
