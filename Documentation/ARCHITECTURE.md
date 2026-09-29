@@ -677,6 +677,18 @@ by a different (auto-derived) reference instead of a manual rider-profile plan.
   not carry `refsec` (mirrors `tsec`'s route-mode-only precedent — radius-mode
   climbs are not resegmented per-route the same way). The end-of-climb summary
   screen still only shows the `tsec` delta, not a PR delta.
+- **Virtual target-speed ghost (issue #31)**: brand-new climbs have no attempts, so
+  there is no PR to race. `service/TargetSpeedRefTimePlanner` turns the rider's
+  `domain/power/GhostTarget` (constant speed in km/h and/or constant VAM in m/h, stored
+  by `RiderProfileRepository` in default prefs, edited in Settings → "Ghost voor nieuwe
+  klimmen") into per-segment seconds: length / speed, gain / VAM (a gainless segment
+  uses the speed the VAM implies at the climb's average gradient), or the slower of the
+  two when both are set; cumulative rounding keeps the sum exact.
+  `CombinedRefTimePlanner` uses it as the lowest-priority source per climb — manual
+  reference > own PR > target ghost > none — so it only fills climbs without a usable
+  PR or manual time. Output rides the existing `refsec` field (phone-only, no wire or
+  watch change); the target's signature is part of `RouteSyncWorker`'s change hash so
+  editing it triggers a resync.
 
 ### VAM / climb-rate per segment (phone → watch)
 

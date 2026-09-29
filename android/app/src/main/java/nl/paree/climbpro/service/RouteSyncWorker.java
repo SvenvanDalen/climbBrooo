@@ -78,6 +78,7 @@ public final class RouteSyncWorker extends Worker {
         nl.paree.climbpro.data.rider.RiderProfileRepository riderRepo =
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(ctx);
         nl.paree.climbpro.domain.power.RiderProfile profile = riderRepo.load();
+        nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo.loadGhostTarget();
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -103,7 +104,7 @@ public final class RouteSyncWorker extends Worker {
         };
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, attemptRepo);
+                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -171,9 +172,11 @@ public final class RouteSyncWorker extends Worker {
      * a manual edit would never trigger a re-sync on its own (only an unrelated change that
      * happens to move {@code sourceHash} or the profile would surface it).
      */
-    private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile) {
+    private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
+                                   nl.paree.climbpro.domain.power.GhostTarget ghost) {
         return route.sourceHash + "|" + profile.signature()
-                + "|" + SegmentTargetOverrideMerger.signature(route);
+                + "|" + SegmentTargetOverrideMerger.signature(route)
+                + "|" + ghost.signature();
     }
 
     /**
@@ -185,6 +188,7 @@ public final class RouteSyncWorker extends Worker {
             SharedPreferences prefs, RouteRepository routeRepo,
             SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
             nl.paree.climbpro.domain.power.RiderProfile profile,
+            nl.paree.climbpro.domain.power.GhostTarget ghost,
             ClimbAttemptRepository attemptRepo) {
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
@@ -224,7 +228,7 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-                String wantHash = wantHash(route, profile);
+                String wantHash = wantHash(route, profile, ghost);
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -233,7 +237,7 @@ public final class RouteSyncWorker extends Worker {
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
-                        route, attemptRepo.loadAll());
+                        route, attemptRepo.loadAll(), ghost);
                 byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
@@ -245,7 +249,7 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, wantHash(route, profile));
+                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost));
                 }
             }
         };

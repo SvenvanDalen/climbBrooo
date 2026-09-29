@@ -173,6 +173,22 @@ public final class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "Profiel opgeslagen", Toast.LENGTH_SHORT).show();
         });
 
+        // Issue #31: virtual ghost at a target speed/VAM for climbs without a PR or
+        // manual reference. Empty/0 switches that part off.
+        viewModel.ghostTarget().observe(this, target -> {
+            if (target == null) return;
+            binding.inputGhostSpeed.setText(target.hasSpeed() ? formatKg(target.speedKmh) : "");
+            binding.inputGhostVam.setText(target.hasVam() ? String.valueOf(target.vamMPerH) : "");
+        });
+        binding.btnSaveGhost.setOnClickListener(v -> {
+            double speed = parseDoubleSafe(binding.inputGhostSpeed.getText().toString());
+            int vam = parseIntSafe(binding.inputGhostVam.getText().toString());
+            viewModel.saveGhostTarget(speed, vam);
+            Toast.makeText(this, speed > 0 || vam > 0
+                    ? "Ghost-doel opgeslagen" : "Ghost-doel uitgeschakeld",
+                    Toast.LENGTH_SHORT).show();
+        });
+
         binding.radioRoute.setOnClickListener(v ->
                 viewModel.setSyncMode("route"));
         binding.radioRadius.setOnClickListener(v -> {
