@@ -70,6 +70,16 @@
                 android:visibility="gone"/>
 
             <TextView
+                android:id="@+id/pr_chance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <TextView
                 android:id="@+id/climb_manual_ref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -125,6 +125,38 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <!-- PR-kans vooraf (issue #58) -->
+    <string name="pr_chance_title">PR-kans vandaag: %1$s</string>
+    <string name="pr_chance_good">goede kans</string>
+    <string name="pr_chance_moderate">matig</string>
+    <string name="pr_chance_unlikely">onwaarschijnlijk</string>
+    <string name="pr_chance_first_title">PR-kans vandaag</string>
+    <string name="pr_chance_first_attempt">Nog geen poging op deze klim: je eerste beklimming is meteen je PR.</string>
+    <plurals name="pr_chance_pr_line">
+        <item quantity="one">Te verslaan: %1$s (uit %2$d poging)</item>
+        <item quantity="other">Te verslaan: %1$s (uit %2$d pogingen)</item>
+    </plurals>
+    <string name="pr_chance_reason_recent_pr">PR pas %1$d dagen geleden gezet: je zit in vorm op deze klim</string>
+    <string name="pr_chance_reason_close_to_pr">Je recente beste tijd zit maar %1$.1f%% van je PR</string>
+    <string name="pr_chance_reason_far_from_pr">Je recente beste tijd zit %1$.0f%% boven je PR</string>
+    <string name="pr_chance_reason_no_recent">Laatste poging %1$d dagen geleden: geen recente vergelijking</string>
+    <string name="pr_chance_reason_no_recent_undated">Geen recente poging om mee te vergelijken</string>
+    <plurals name="pr_chance_reason_few_attempts">
+        <item quantity="one">Pas %1$d poging: je PR heeft waarschijnlijk nog ruimte</item>
+        <item quantity="other">Pas %1$d pogingen: je PR heeft waarschijnlijk nog ruimte</item>
+    </plurals>
+    <string name="pr_chance_reason_fitter">Je fitheid ligt %1$.0f%% hoger dan op de dag van je PR</string>
+    <string name="pr_chance_reason_less_fit">Je fitheid ligt %1$.0f%% lager dan op de dag van je PR</string>
+    <string name="pr_chance_reason_fresh">Je bent uitgerust (vorm %1$+.0f)</string>
+    <string name="pr_chance_reason_neutral_form">Je vorm is neutraal (%1$+.0f)</string>
+    <string name="pr_chance_reason_tired">Je hebt vermoeidheid van recente training (vorm %1$+.0f)</string>
+    <string name="pr_chance_reason_very_tired">Je bent flink vermoeid (vorm %1$+.0f)</string>
+    <string name="pr_chance_reason_weather_ideal">Prima klimweer op de top (voelt als %1$.0f °C, weinig wind)</string>
+    <string name="pr_chance_reason_weather_rain">%1$.0f%% regenkans op de top</string>
+    <string name="pr_chance_reason_weather_wind">Harde wind op de top (%1$.0f km/u)</string>
+    <string name="pr_chance_reason_weather_cold">Koud op de top (voelt als %1$.0f °C)</string>
+    <string name="pr_chance_reason_weather_hot">Heet op de top (voelt als %1$.0f °C)</string>
+    <string name="pr_chance_weather_unknown">Weer onbekend (offline): niet meegenomen</string>
     <string name="menu_periodization">Trainingsblok</string>
     <string name="periodization_title">Trainingsblok</string>
     <string name="periodization_intro">Een blok van vier weken op basis van klimmen die je al kent: drie opbouwweken waarin de hoogtemeters en de zwaarte van de klimmen stap voor stap toenemen, gevolgd door een herstelweek.</string>
