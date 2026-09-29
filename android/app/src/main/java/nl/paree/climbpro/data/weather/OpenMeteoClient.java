@@ -1,6 +1,8 @@
 package nl.paree.climbpro.data.weather;
 
+import nl.paree.climbpro.domain.weather.AirQualityForecast;
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.DailyForecast;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
 import nl.paree.climbpro.domain.weather.PrecipitationGrid;
@@ -28,7 +30,7 @@ public final class OpenMeteoClient {
     public static String url(double lat, double lon, double elevationM) {
         String base = String.format(Locale.US,
                 "https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f"
-                        + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,precipitation_probability,uv_index"
+                        + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,precipitation_probability,uv_index"
                         + "&wind_speed_unit=kmh&timezone=UTC&forecast_days=2", lat, lon);
         return Double.isNaN(elevationM) ? base
                 : base + "&elevation=" + Math.round(elevationM);
@@ -102,6 +104,21 @@ public final class OpenMeteoClient {
         return TemperatureGrid.parse(get(temperatureUrl(pts, elevations)), pts.size());
     }
 
+    /** Issue #197: particulate matter, European AQI and pollen (Europe only) for two days. */
+    public static String airQualityUrl(double lat, double lon) {
+        StringBuilder fields = new StringBuilder("pm10,pm2_5,european_aqi");
+        for (AirQualityForecast.Pollen p : AirQualityForecast.Pollen.values()) {
+            fields.append(',').append(p.field);
+        }
+        return String.format(Locale.US,
+                "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=%s&timezone=UTC&forecast_days=2", lat, lon, fields);
+    }
+
+    public AirQualityForecast fetchAirQuality(double lat, double lon) throws IOException {
+        return AirQualityForecast.parse(get(airQualityUrl(lat, lon)));
+    }
+
     private String get(String url) throws IOException {
         Request req = new Request.Builder().url(url).build();
         try (Response resp = http.newCall(req).execute()) {
@@ -127,5 +144,10 @@ public final class OpenMeteoClient {
 
     public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
         return HourlyPrecipitation.parse(get(precipitationUrl(lat, lon)));
+    }
+
+    /** Issue #40: daily outlook for the coming week at one location ("klim van de week"). */
+    public List<DailyForecast.Day> fetchDaily(double lat, double lon) throws IOException {
+        return DailyForecast.parse(get(DailyForecast.url(lat, lon)));
     }
 }
