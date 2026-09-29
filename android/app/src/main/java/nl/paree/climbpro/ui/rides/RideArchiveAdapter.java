@@ -30,12 +30,18 @@ import java.util.concurrent.Executors;
 /** Flat list of archived rides, newest first, each with its automatic category. */
 public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAdapter.RowVH> {
 
+    /** Tap on a ride row, e.g. to compare it with another ride (issue #199). */
+    interface OnRideClick { void onRideClick(StoredRide ride); }
+
     private final List<Row> rows = new ArrayList<>();
+    private final OnRideClick onRideClick;
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
 
     /** Decodes group-photo thumbnails off the main thread. */
     private final ExecutorService thumbnailExecutor = Executors.newSingleThreadExecutor();
+
+    RideArchiveAdapter(OnRideClick onRideClick) { this.onRideClick = onRideClick; }
 
     public void shutdown() { thumbnailExecutor.shutdownNow(); }
 
@@ -67,6 +73,7 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
                 date, r.distanceM / 1000f, Math.round(r.elevationGainM), r.avgSpeedMps * 3.6f));
 
         bindGroupPhoto(holder, row);
+        holder.itemView.setOnClickListener(v -> onRideClick.onRideClick(r));
     }
 
     @Override

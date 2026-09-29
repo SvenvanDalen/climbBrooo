@@ -21,9 +21,10 @@ android {
         targetSdk 34
         // CI (build-android.yml) passes the GitHub Actions run number here so every
         // release build gets a strictly increasing versionCode; local builds fall
-        // back to 1.
+        // back to 1. versionName is "1.0.<run_number>", matching the release tag
+        // (minus the "v"); local builds fall back to "1.0.0-dev".
         versionCode (System.getenv('VERSION_CODE') ? System.getenv('VERSION_CODE').toInteger() : 1)
-        versionName '0.1.0'
+        versionName (System.getenv('VERSION_NAME') ?: '1.0.0-dev')
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
