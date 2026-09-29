@@ -11,6 +11,33 @@
     <string name="route_profile_title">Hoogteprofiel</string>
     <string name="route_profile_empty">Geen hoogtegegevens voor deze route</string>
     <string name="route_profile_description">Hoogteprofiel van %1$.1f km, van %2$d tot %3$d m hoogte, met %4$d klimmen gemarkeerd</string>
+    <!-- Klim van de week (issue #40) -->
+    <string name="menu_climb_of_the_week">Klim van de week</string>
+    <string name="cotw_title">Klim van de week</string>
+    <string name="cotw_week">Suggestie voor week %1$s</string>
+    <string name="cotw_empty">Nog geen klimmen bekend. Importeer routes of synchroniseer met Strava om een klim van de week te krijgen.</string>
+    <string name="cotw_why">Waarom deze klim?</string>
+    <string name="cotw_stats">%1$.1f km · %2$d hm · gem. %3$.1f%%</string>
+    <string name="cotw_never_ridden">Nog nooit gereden</string>
+    <string name="cotw_ridden_today">Vandaag nog gereden</string>
+    <plurals name="cotw_days_since">
+        <item quantity="one">%d dag niet gereden</item>
+        <item quantity="other">%d dagen niet gereden</item>
+    </plurals>
+    <string name="cotw_completed">Deze week al gereden — goed bezig!</string>
+    <string name="cotw_distance">%1$.1f km hemelsbreed van je laatst bekende locatie</string>
+    <string name="cotw_distance_unknown">Locatie onbekend — afstand niet meegewogen</string>
+    <string name="cotw_weather_good">Goed fietsweer verwacht, beste dag %1$s — tijd voor een pittige klim</string>
+    <string name="cotw_weather_mixed">Wisselend weer, beste dag %1$s — een middelzware klim past goed</string>
+    <string name="cotw_weather_poor">Matig weer deze week, beste dag %1$s — daarom een lichtere klim</string>
+    <string name="cotw_weather_offline">Geen weerbericht (offline) — weer niet meegewogen</string>
+    <string name="cotw_day_detail">%1$s (%2$s%% regenkans, wind %3$s km/u, max %4$s °C)</string>
+    <string name="cotw_pinned">Deze suggestie blijft de hele week staan</string>
+    <string name="cotw_open_climb">Open klim</string>
+    <string name="cotw_open_route">Open route</string>
+    <string name="cotw_use_location">Locatie gebruiken voor afstand</string>
+    <string name="cotw_alternatives">Andere kandidaten</string>
+    <string name="cotw_alternative_row">%1$s\n    %2$s · %3$s</string>
     <!-- Top 10 zwaarste klimmen in je regio (issue #211) -->
     <string name="top_climbs_title">Zwaarste klimmen in de regio</string>
     <string name="top_climbs_intro">De zwaarste bekende klimmen binnen een straal rond je startpunt, gesorteerd op moeilijkheidsscore (hoogtemeters × gemiddeld stijgingspercentage).</string>

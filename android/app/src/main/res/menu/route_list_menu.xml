@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_climb_of_the_week"
+        android:title="@string/menu_climb_of_the_week"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_top_climbs"
         android:title="@string/menu_top_climbs"
         app:showAsAction="never"/>
