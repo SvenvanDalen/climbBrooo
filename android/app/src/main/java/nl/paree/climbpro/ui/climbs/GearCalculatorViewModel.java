@@ -9,6 +9,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.bike.BikeCostRepository;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -31,8 +32,9 @@ import java.util.concurrent.Executors;
  */
 public final class GearCalculatorViewModel extends AndroidViewModel {
 
-    static final String PREF_CHAINRINGS = "gear_chainrings";
-    static final String PREF_CASSETTE = "gear_cassette";
+    // Shared with the bike garage (issue #187), which mirrors the active bike into them.
+    static final String PREF_CHAINRINGS = BikeCostRepository.PREF_GEAR_CHAINRINGS;
+    static final String PREF_CASSETTE = BikeCostRepository.PREF_GEAR_CASSETTE;
     static final String PREF_WHEEL_MM = "gear_wheel_circumference_mm";
     static final String PREF_CADENCE = "gear_target_cadence_rpm";
 

@@ -2,6 +2,8 @@ package nl.paree.climbpro.ui.maintenance;
 
 import android.content.Context;
 
+import nl.paree.climbpro.data.bike.BikeCostLog;
+import nl.paree.climbpro.data.bike.BikeCostRepository;
 import nl.paree.climbpro.data.maintenance.MaintenanceComponent;
 import nl.paree.climbpro.data.maintenance.MaintenanceLog;
 import nl.paree.climbpro.data.maintenance.MaintenanceRepository;
@@ -25,10 +27,13 @@ public final class MaintenanceStatusLoader {
     public static final class Snapshot {
         public final MaintenanceLog log;
         public final List<Status> statuses;
+        /** The bike garage (issue #187), for the component's bike picker and labels. */
+        public final BikeCostLog garage;
 
-        Snapshot(MaintenanceLog log, List<Status> statuses) {
+        Snapshot(MaintenanceLog log, List<Status> statuses, BikeCostLog garage) {
             this.log = log;
             this.statuses = statuses;
+            this.garage = garage;
         }
 
         /** Banner text for the route list, or null when nothing is due. */
@@ -48,9 +53,10 @@ public final class MaintenanceStatusLoader {
                 break;
             }
         }
+        BikeCostLog garage = new BikeCostRepository(context).load();
         List<Status> statuses = MaintenanceCalculator.evaluateAll(log.components,
                 needRides ? new RideRepository(context).loadAll() : null,
-                nowEpochSec, ZoneId.systemDefault());
-        return new Snapshot(log, statuses);
+                nowEpochSec, ZoneId.systemDefault(), garage);
+        return new Snapshot(log, statuses, garage);
     }
 }

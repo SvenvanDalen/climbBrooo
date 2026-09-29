@@ -44,4 +44,9 @@ public final class StoredRide {
     public Float   avgWatts;
     public Integer weightedAvgWatts;
     public boolean deviceWatts;
+    /**
+     * Strava gear id of the bike the ride was on (e.g. "b1234567"), used to assign the ride to
+     * a garage bike (issue #187). Null when Strava reports none or for rides archived before.
+     */
+    public String  gearId;
 }

@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        android:title="Fietskosten" />
+        android:title="Fietsgarage" />
 
     <TextView
         android:layout_width="match_parent"
@@ -19,7 +19,7 @@
         android:paddingTop="12dp"
         android:textColor="@color/color_text_tertiary"
         android:textSize="13sp"
-        android:text="Kosten per km = aankoop plus onderdelen, gedeeld door de km van de fiets. Km komen uit je gesynchroniseerde Strava-ritten vanaf de ingestelde datum, plus handmatige km. Welke rit bij welke fiets hoort, bepaal je in de Fietsgarage (Strava-fiets, binnenfiets, actieve fiets). Tik op een fiets voor de kosten." />
+        android:text="Ritten horen bij de fiets met hun Strava-fiets (gear). Zonder koppeling gaan indoorritten (VirtualRide) naar de binnenfiets en overige ritten naar de actieve fiets. Het gewicht en de versnellingen van de actieve fiets gebruikt de app voor tijdschattingen en de versnellingscalculator." />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -44,7 +44,7 @@
         android:layout_height="wrap_content"
         android:padding="16dp"
         android:visibility="gone"
-        android:text="Nog geen fietsen. Tik op Fiets toevoegen om de kosten bij te houden." />
+        android:text="Nog geen fietsen. Voeg je buitenfiets en je trainer(fiets) toe, zodat indoorritten op de juiste fiets terechtkomen." />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"
