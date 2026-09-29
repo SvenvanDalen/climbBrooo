@@ -25,7 +25,8 @@ import java.util.Map;
  *      surf:[surfType, ...],                             // 1 int × segCount (optional, omitted if all UNKNOWN)
  *      tsec:[targetSec, ...],                            // 1 int × segCount (optional, manual pacing plan)
  *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
- *      vam:[avgVamMPerH,peakVamMPerH, ...]}              // 2 ints × segCount (optional, omitted unless every segment has VAM)
+ *      vam:[avgVamMPerH,peakVamMPerH, ...],              // 2 ints × segCount (optional, omitted unless every segment has VAM)
+ *      ib:[targetW, lowW, highW]}                        // interval block (optional, issue #180; needs FTP)
  *   ],
  *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
  *
@@ -42,9 +43,20 @@ public final class ClimbPayloadBuilder {
     static final int MAX_CHECKPOINTS_PER_SECTION = 12;
 
     private final ObjectMapper mapper;
+    /** Rider FTP used to turn a climb's interval block (% FTP) into watts; 0 = unknown. */
+    private int ftpWatts;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
         this.mapper = mapper;
+    }
+
+    /**
+     * Sets the FTP used for the optional per-climb interval block 'ib' (issue #180). Without a
+     * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
+     */
+    public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
+        this.ftpWatts = Math.max(0, ftpWatts);
+        return this;
     }
 
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
@@ -264,6 +276,10 @@ public final class ClimbPayloadBuilder {
         if (surf != null) c.put("surf", surf);
         int[] vam = buildVam(sc.segments);
         if (vam != null) c.put("vam", vam);
+        nl.paree.climbpro.domain.power.IntervalBlock block =
+                nl.paree.climbpro.domain.power.IntervalBlock.fromStored(sc.intervalBlock);
+        int[] ib = block != null ? block.wireWatts(ftpWatts) : null;
+        if (ib != null) c.put("ib", ib);
     }
 
     /** Emits 'tsec' only when the array is non-null and exactly one value per segment. */

@@ -70,7 +70,6 @@ public final class RouteSyncWorker extends Worker {
         SyncStateRepository  syncStateRepo  = new SyncStateRepository(ctx);
         StravaAuthRepository authRepo        = new StravaAuthRepository(ctx);
         ObjectMapper         mapper          = new ObjectMapper();
-        ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper);
         ConnectIqClient      ciqClient       =
                 ((nl.paree.climbpro.ClimbProApplication) ctx).connectIqClient();
         SharedPreferences    prefs           = PreferenceManager.getDefaultSharedPreferences(ctx);
@@ -79,6 +78,9 @@ public final class RouteSyncWorker extends Worker {
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(ctx);
         nl.paree.climbpro.domain.power.RiderProfile profile = riderRepo.load();
         nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo.loadGhostTarget();
+        // FTP turns each climb's interval block (% FTP) into watts for 'ib' (issue #180).
+        ClimbPayloadBuilder  payloadBuilder  =
+                new ClimbPayloadBuilder(mapper).withFtpWatts(profile.ftpWatts);
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -182,7 +184,8 @@ public final class RouteSyncWorker extends Worker {
                                    nl.paree.climbpro.domain.power.GhostTarget ghost) {
         return route.sourceHash + "|" + profile.signature()
                 + "|" + SegmentTargetOverrideMerger.signature(route)
-                + "|" + ghost.signature();
+                + "|" + ghost.signature()
+                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route);
     }
 
     /**

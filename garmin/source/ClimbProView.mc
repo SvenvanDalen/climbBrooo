@@ -58,6 +58,7 @@ class ClimbProView extends Ui.DataField {
     hidden var lastActiveClimb = -1;
     hidden var lastActiveSeg = -1;
     hidden var batteryWarnedClimbIndex = -1;
+    hidden var blockDoneClimbIndex = -1;   // interval block "klaar" already signalled (issue #180)
 
     // Ghost / summary state
     hidden var lastGhostTimerMs = 0;
@@ -89,6 +90,7 @@ class ClimbProView extends Ui.DataField {
             lastActiveClimb = -1;
             alertedClimbIndex = -1;
             batteryWarnedClimbIndex = -1;
+            blockDoneClimbIndex = -1;
             data.batteryWarningActive = false;
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
@@ -107,6 +109,9 @@ class ClimbProView extends Ui.DataField {
         // smoothing beyond what Activity.Info already applies).
         data.currentSpeedMps = (info != null && info has :currentSpeed && info.currentSpeed != null)
                 ? info.currentSpeed : 0.0;
+        // Current power for the interval-block band (issue #180); null without a power meter.
+        data.currentPower = (info != null && info has :currentPower && info.currentPower != null)
+                ? info.currentPower : null;
 
         // Navigation-anchored distance: when the route is loaded as a Garmin course,
         // distance-along-course (rtl - distanceToDestination) is a more accurate axis
@@ -138,6 +143,16 @@ class ClimbProView extends Ui.DataField {
             var totalTarget = climbTotalTarget(data, lastActiveClimb);
             summaryDeltaSec = (totalTarget >= 0) ? (summaryActualSec - totalTarget) : 0;
             summaryUntilMs = timerMs + 12000;   // show for 12 s
+        }
+
+        // Interval block done (issue #180): short vibration once the rider tops out a climb
+        // that carries a block. The block itself starts with the climb-start alert below.
+        // Latched per climb, like the start alert, so it can't re-fire.
+        if (lastActiveClimb >= 0 && data.activeClimbIndex != lastActiveClimb
+                && lastActiveClimb != blockDoneClimbIndex
+                && data.blockFinished(lastActiveClimb, axis)) {
+            triggerBlockDoneAlert();
+            blockDoneClimbIndex = lastActiveClimb;
         }
 
         // Capture the timer at the start of a newly entered climb.
@@ -320,7 +335,11 @@ class ClimbProView extends Ui.DataField {
         // gradient stat above. Data-plumbing only: no new computation happens on the watch, this
         // just renders the avg/peak pair CommListener already parsed into segVamAvg/segVamPeak.
         // Secondary stat: skipped in large-text mode (issue #82).
-        if (showSecondaryStat(large) && data.hasVam[ci] && data.activeSegmentIndex >= 0
+        // An interval block (issue #180) takes this slot instead: it's the rider's chosen
+        // training target, so it stays visible in large-text mode too.
+        if (data.hasBlock[ci]) {
+            drawIntervalBlock(dc, data, ci, w, (h * 0.80).toNumber());
+        } else if (showSecondaryStat(large) && data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
             var vamAvg = data.segVamAvg[ci][data.activeSegmentIndex];
             var vamPeak = data.segVamPeak[ci][data.activeSegmentIndex];
@@ -360,6 +379,26 @@ class ClimbProView extends Ui.DataField {
             dc.drawText(w / 2, ghostY, statFont(large),
                 "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
         }
+    }
+
+    // Interval-block line (issue #180): "Doel 266-280W" without a power meter, otherwise
+    // "252W 266-280" coloured blue (under), green (in band) or red (over).
+    hidden function drawIntervalBlock(dc, data, ci, w, y) {
+        var band = data.blockLow[ci] + "-" + data.blockHigh[ci];
+        var zone = data.blockZone(ci, data.currentPower);
+        dc.setColor(intervalZoneColor(zone), Gfx.COLOR_TRANSPARENT);
+        var text = (zone == data.ZONE_NONE)
+            ? "Doel " + band + "W"
+            : data.currentPower.toNumber() + "W " + band;
+        dc.drawText(w / 2, y, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Colour per power zone; not hidden so tests can check it directly.
+    function intervalZoneColor(zone) {
+        if (zone == -1) { return Gfx.COLOR_BLUE; }
+        if (zone == 0) { return Gfx.COLOR_DK_GREEN; }
+        if (zone == 1) { return Gfx.COLOR_RED; }
+        return Gfx.COLOR_DK_GRAY;
     }
 
     // + = behind (red), - or 0 = ahead/on pace (green).
@@ -683,6 +722,14 @@ class ClimbProView extends Ui.DataField {
     }
 
     // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
+    // Interval block done at the top (issue #180): one short buzz, no tone -- deliberately
+    // lighter than the climb-start and battery alerts so it can't be mistaken for either.
+    hidden function triggerBlockDoneAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([new Attention.VibeProfile(100, 300)]);
+        }
+    }
+
     // warning apart from a climb-start alert by feel/sound alone.
     hidden function triggerBatteryAlert() {
         if (Attention has :vibrate) {

@@ -120,6 +120,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
   target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
   virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
+- **Interval block per climb** — climb detail → "Intervalblok koppelen": pick Drempel,
+  Sweet spot, VO2max, Tempo or your own % FTP; the block lasts from the foot to the top.
+  Outdoors the datafield starts it at the climb-start alert, shows the target band (and
+  under/in/over with a power meter) and buzzes once at the top ("blok klaar"). Indoors the
+  `.zwo`/`.erg`/MyWhoosh export holds the block's target on every climb step. Survives resync.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
@@ -326,6 +331,8 @@ fit the watch's tight memory (cap `4096 bytes` per message). Gradients are fixed
 An optional parallel array `vam = [avgVamMPerH, peakVamMPerH, …]` (2 ints/segment)
 carries a gradient-implied VAM (vertical ascent m/h, not a measured ascent rate —
 routes have no elapsed-time data) per segment, omitted unless every segment has one.
+An optional `ib = [targetWatts, lowWatts, highWatts]` carries a climb's interval block
+(issue #180), computed on the phone from % FTP; omitted without a block or FTP.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

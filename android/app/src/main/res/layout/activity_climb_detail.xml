@@ -113,6 +113,16 @@
                 android:visibility="gone"/>
 
             <TextView
+                android:id="@+id/climb_interval_block"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <TextView
                 android:id="@+id/descent_info"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -151,6 +161,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="WR/pro-referentietijd instellen"/>
+
+            <Button
+                android:id="@+id/btn_interval_block"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Intervalblok koppelen"/>
 
             <Button
                 android:id="@+id/btn_share_climb"

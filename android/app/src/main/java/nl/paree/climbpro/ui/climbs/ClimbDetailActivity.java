@@ -34,6 +34,7 @@ import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.power.IntervalBlock;
 import nl.paree.climbpro.domain.sun.SunriseCalculator;
 import nl.paree.climbpro.domain.sun.SunriseRidePlanner;
 import nl.paree.climbpro.domain.weather.BestTimeScorer;
@@ -178,6 +179,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                             ? "Beoordeling aanpassen" : "Klim beoordelen");
             tryDrawMap();
             updateManualRefText();
+            updateIntervalBlockText();
             updateDescentInfo();
         });
 
@@ -310,6 +312,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
+        binding.btnIntervalBlock.setOnClickListener(v -> showIntervalBlockDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnRateClimb.setOnClickListener(v -> showRatingDialog());
@@ -969,6 +972,89 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         }
         binding.climbManualRef.setText(sb.toString());
         binding.climbManualRef.setVisibility(android.view.View.VISIBLE);
+    }
+
+    /**
+     * Issue #180: attach an interval block to this climb — a preset or a custom target % FTP.
+     * The block runs from the foot to the top: the watch starts it at the climb-start alert and
+     * shows the power band, and the indoor workout export uses it instead of gradient pacing.
+     */
+    private void showIntervalBlockDialog() {
+        IntervalBlock.Preset[] presets = IntervalBlock.Preset.values();
+        String[] labels = new String[presets.length];
+        for (int i = 0; i < presets.length; i++) {
+            labels[i] = presets[i] == IntervalBlock.Preset.CUSTOM
+                    ? "Eigen doel (% FTP)…" : IntervalBlock.of(presets[i]).label();
+        }
+        IntervalBlock current = loadedClimb != null
+                ? IntervalBlock.fromStored(loadedClimb.intervalBlock) : null;
+        int checked = current != null ? current.preset.ordinal() : -1;
+
+        new AlertDialog.Builder(this)
+                .setTitle("Intervalblok op deze klim")
+                .setSingleChoiceItems(labels, checked, null)
+                .setPositiveButton("Opslaan", (dialog, which) -> {
+                    int chosen = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
+                    if (chosen < 0 || chosen >= presets.length) return;
+                    if (presets[chosen] == IntervalBlock.Preset.CUSTOM) {
+                        showCustomIntervalBlockDialog(current);
+                    } else {
+                        viewModel.setIntervalBlock(routeId, climbIndex,
+                                IntervalBlock.of(presets[chosen]));
+                    }
+                })
+                .setNeutralButton("Verwijderen", (d, w) ->
+                        viewModel.setIntervalBlock(routeId, climbIndex, null))
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    private void showCustomIntervalBlockDialog(IntervalBlock current) {
+        EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint("Doel in % FTP (" + IntervalBlock.MIN_TARGET_PCT + "–"
+                + IntervalBlock.MAX_TARGET_PCT + ")");
+        if (current != null && current.preset == IntervalBlock.Preset.CUSTOM) {
+            input.setText(String.valueOf(Math.round(current.targetFraction() * 100)));
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Eigen intervaldoel")
+                .setView(input)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    try {
+                        int pct = Integer.parseInt(input.getText().toString().trim());
+                        viewModel.setIntervalBlock(routeId, climbIndex, IntervalBlock.custom(pct));
+                    } catch (IllegalArgumentException e) {
+                        // NumberFormatException is an IllegalArgumentException too.
+                        Toast.makeText(this, "Kies een doel tussen "
+                                + IntervalBlock.MIN_TARGET_PCT + " en "
+                                + IntervalBlock.MAX_TARGET_PCT + " % FTP",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Annuleer", null)
+                .show();
+    }
+
+    /** Shows the attached interval block with its watts at the current FTP, if any. */
+    private void updateIntervalBlockText() {
+        IntervalBlock block = loadedClimb != null
+                ? IntervalBlock.fromStored(loadedClimb.intervalBlock) : null;
+        if (block == null) {
+            binding.climbIntervalBlock.setVisibility(android.view.View.GONE);
+            binding.btnIntervalBlock.setText("Intervalblok koppelen");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Intervalblok: ").append(block.label());
+        int[] watts = block.wireWatts(viewModel.ftpWatts());
+        if (watts != null) {
+            sb.append(" · ").append(watts[1]).append("–").append(watts[2]).append(" W");
+        } else {
+            sb.append(" · stel je FTP in voor wattages op het horloge");
+        }
+        binding.climbIntervalBlock.setText(sb.toString());
+        binding.climbIntervalBlock.setVisibility(android.view.View.VISIBLE);
+        binding.btnIntervalBlock.setText("Intervalblok aanpassen");
     }
 
     private void showReSegmentDialog() {

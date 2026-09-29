@@ -195,6 +195,20 @@ class PhoneMessageCallback {
         } else {
             data.hasVam[idx] = false;
         }
+
+        // Optional interval block "ib" (issue #180): [targetWatts, lowWatts, highWatts],
+        // computed on the phone from % FTP. Anything malformed disables the block.
+        data.hasBlock[idx] = false;
+        var ib = climbDict.get("ib");
+        if (ib != null && ib instanceof Toybox.Lang.Array && ib.size() >= 3
+                && ib[0] instanceof Toybox.Lang.Number && ib[1] instanceof Toybox.Lang.Number
+                && ib[2] instanceof Toybox.Lang.Number
+                && ib[1] > 0 && ib[1] <= ib[2]) {
+            data.hasBlock[idx]    = true;
+            data.blockTarget[idx] = ib[0];
+            data.blockLow[idx]    = ib[1];
+            data.blockHigh[idx]   = ib[2];
+        }
     }
 
     hidden function getInt(dict, key, defaultVal) {
