@@ -188,6 +188,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
             StoredRoute r = viewModel.route().getValue();
             if (r != null) TirePressureAdviceDialog.show(this, r);
         });
+        binding.btnFuelPlanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.nutrition.FuelPlannerActivity.intentFor(this, routeId)));
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
 

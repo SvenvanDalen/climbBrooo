@@ -92,6 +92,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
   detail screen; the route list shows the status and can be filtered on it (menu →
   "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Fuel planner** — "Voedingsplanner" on the route detail screen estimates ride time from
+  your profile and the route's climbing, and tells you how many bars, gels and bottles to
+  bring; temperature comes from the forecast at the start or is typed in.
 - **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
   "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
   untouched and tapping again reopens the existing reversed route.
@@ -110,6 +113,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   per-surface rolling resistance and route-wide fatigue (W'-balance). Phone-only.
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
+- **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
+  target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
+  virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
@@ -119,12 +125,46 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   wind at the start, averaged over the next 3 hours). Point-to-point routes are recognised
   and left alone. Phone-only, keyless, on demand.
 
+- **Klim van de week** — one suggested climb per ISO week, chosen from your climb catalog by
+  riding history (never / long not ridden), distance from your last known location and the
+  week's weather (Open-Meteo); stays the same all week. Offline it skips the weather and says so.
+  Phone-only.
+
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
+
+- **Clothing advice** — what to wear for your planned ride window, from the forecast with
+  the riding wind in the wind chill, plus rain and removable-layer hints. Phone-only.
+
+- **Air quality and pollen** — particulate matter, European AQI and pollen for your planned
+  ride window at your location, with a warning for asthma or hay fever (Open-Meteo, keyless).
+  Phone-only.
+
+- **Ride comparer** — tap a ride in Ritten and pick another ride over the same route to see
+  time, speed, heart rate and the running time difference per kilometre. Phone-only.
+
+- **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
+  route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
 
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
+
+- **Training-load calendar** — menu → "Trainingskalender" shows a year of daily training load
+  as a GitHub-style heatmap (TSS-style load per ride from the ride archive, plus climb
+  attempts); tap a day for load, rides, climbs and elevation. Phone-only.
+
+- **Sweat-loss estimator** — weigh yourself before and after a ride, log what you drank and
+  get your sweat rate (L/h) plus a personal drinking advice (ml and bottles per hour) for
+  future rides. Phone-only.
+
+- **Gear calculator for a climb** — climb screen → "Versnellingen berekenen": enter your
+  chainrings, cassette, wheel size and target cadence to see the cadence per gear on the
+  steepest segment and at the average gradient, and whether your easiest gear is light
+  enough. Phone-only.
+
+- **Monthly challenge** — pick a goal for the month (distinct climbs, hoogtemeters, km or
+  rides) or let the app suggest one from your last three months, with progress and pace. Phone-only.
 
 ---
 

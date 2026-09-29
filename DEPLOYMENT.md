@@ -67,13 +67,15 @@ On every push to `main` (and on manual `workflow_dispatch`), CI:
 
 1. Checks out the repo, sets up JDK 17, gives `gradlew` execute permission.
 2. Builds the release APK: `./gradlew assembleRelease`, with `versionCode` set to the
-   GitHub Actions run number (`VERSION_CODE=${{ github.run_number }}` — see
-   `android/app/build.gradle`, which reads that env var and falls back to `1` for
-   local builds).
+   GitHub Actions run number (`VERSION_CODE=${{ github.run_number }}`) and
+   `versionName` set to `1.0.<run_number>` (`VERSION_NAME`) — see
+   `android/app/build.gradle`, which reads those env vars and falls back to `1` /
+   `1.0.0-dev` for local builds.
 3. Signs the APK with the `SIGNING_KEY`/`KEY_ALIAS`/`KEYSTORE_PASSWORD`/`KEY_PASSWORD`
    secrets from Step 0.
 4. Publishes the signed APK as an asset on a new GitHub Release tagged
-   `v${{ github.run_number }}`.
+   `v1.0.${{ github.run_number }}` — the patch number increments automatically on
+   every release. (Releases up to `v96` used the older `v<run_number>` scheme.)
 
 This means every merge to `main` produces a new, installable, monotonically
 versioned release — no manual signing step, no keystore ever leaving GitHub's secret
@@ -87,7 +89,7 @@ The app can check GitHub Releases for a newer build and offer to install it:
 
 - **`UpdateChecker.java`** — calls
   `https://api.github.com/repos/SvenvanDalen/climbBrooo/releases/latest`, compares the
-  release's `tag_name` (`v<run_number>`) against `BuildConfig.VERSION_CODE`, and
+  release's `tag_name` (`v1.0.<run_number>`; its last component) against `BuildConfig.VERSION_CODE`, and
   invokes a callback when a newer release is available.
 - **`downloadAndInstall(...)`** — hands the APK asset URL to `DownloadManager`.
 - **`DownloadCompleteReceiver.java`** — listens for
