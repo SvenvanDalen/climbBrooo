@@ -316,6 +316,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
         binding.btnCompareClimb.setOnClickListener(v ->
                 startActivity(ClimbCompareActivity.intentFor(this, routeId, climbIndex)));
+        binding.btnGearCalculator.setOnClickListener(v ->
+                startActivity(GearCalculatorActivity.intentFor(this, routeId, climbIndex)));
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
         viewModel.workoutExport().observe(this, this::shareWorkout);

@@ -192,6 +192,14 @@
                 android:text="Vergelijk met andere klim"/>
 
             <Button
+                android:id="@+id/btn_gear_calculator"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Versnellingen berekenen"/>
+
+            <Button
                 android:id="@+id/btn_re_segment"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

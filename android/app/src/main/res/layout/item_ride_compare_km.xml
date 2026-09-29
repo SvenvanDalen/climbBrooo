@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <TextView android:id="@+id/km" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="13sp" android:layout_weight="0.6" android:textStyle="bold" />
+    <TextView android:id="@+id/time" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="13sp" android:layout_weight="1.2" />
+    <TextView android:id="@+id/speed" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="13sp" android:layout_weight="1.2" />
+    <TextView android:id="@+id/hr" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="13sp" android:layout_weight="1" />
+    <TextView android:id="@+id/delta" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="13sp" android:layout_weight="0.9" android:gravity="end" android:textStyle="bold" />
+</LinearLayout>

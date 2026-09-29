@@ -64,12 +64,15 @@ public final class WatchRequestHandler {
     /**
      * Per-climb per-segment refsec: manual WR/pro reference (issue #59) takes priority over
      * the rider's own PR when set for that climb. Own PR is unavailable (null) when no
-     * attempt repo is wired up, but a manual reference still works in that case.
+     * attempt repo is wired up, but a manual reference still works in that case. Climbs
+     * with neither fall back to the virtual target-speed ghost (issue #31) when set.
      */
     private int[][] refPlan(StoredRoute route) {
         List<StoredClimbAttempt> attempts = attemptRepo != null
                 ? attemptRepo.loadAll() : Collections.emptyList();
-        return CombinedRefTimePlanner.plan(route, attempts);
+        nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo != null
+                ? riderRepo.loadGhostTarget() : null;
+        return CombinedRefTimePlanner.plan(route, attempts, ghost);
     }
 
     public void handleMessage(Map<String, Object> message) {
