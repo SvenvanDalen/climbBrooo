@@ -11,6 +11,7 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
 import nl.paree.climbpro.domain.climb.ClimbMerger;
+import nl.paree.climbpro.domain.climb.SegmentExploreTiler;
 import nl.paree.climbpro.domain.climb.StarredSegmentLocator;
 import nl.paree.climbpro.domain.route.CumulativeDistance;
 import nl.paree.climbpro.domain.route.ElevationSmoother;
@@ -33,7 +34,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Coordinates Strava auth + API + domain processing + persistence.
@@ -63,6 +66,13 @@ public final class StravaRoutesRepository {
     private final StravaApiClient      api;
     private final Sleeper              sleeper;
 
+    /**
+     * False once a {@code segments/explore} call in this sync hit (or neared) Strava's rate
+     * limit (issue #35). From then on no route is explored, and unchanged routes that are only
+     * waiting to be explored are left for a later sync instead of re-downloading their GPX.
+     */
+    private boolean exploreBudgetLeft = true;
+
     public StravaRoutesRepository(StravaAuthRepository auth, RouteRepository routeRepo) {
         this(auth, routeRepo, buildRetrofit().create(StravaApiClient.class));
     }
@@ -89,6 +99,7 @@ public final class StravaRoutesRepository {
      */
     public int syncRoutes() throws IOException {
         String token = "Bearer " + auth.getAccessToken();
+        exploreBudgetLeft = true;
         List<StravaRouteDto> routes = new ArrayList<>();
         for (int page = 1; ; page++) {
             final int p = page;
@@ -134,8 +145,11 @@ public final class StravaRoutesRepository {
             // segments were matched, so reprocess them once to populate the field even when
             // the Strava sourceHash is unchanged. After that first reprocess the field is
             // non-null (possibly empty) and the route skips normally again.
+            // Likewise for the public-segment match (issue #35): a route that hasn't been
+            // explored yet is reprocessed once, but only while this sync has budget for it.
             if (existing != null && hash.equals(existing.sourceHash)
-                    && existing.starredSegments != null) {
+                    && existing.starredSegments != null
+                    && (Boolean.TRUE.equals(existing.stravaSegmentsExplored) || !exploreBudgetLeft)) {
                 Log.d(TAG, "Route " + routeId + " unchanged, skipping");
                 return false;
             }
@@ -156,7 +170,19 @@ public final class StravaRoutesRepository {
             List<RoutePoint> simplified = RouteSimplifier.simplify(smoothed, SIMPLIFY_EPSILON);
             List<Climb>      climbs     = ClimbDetector.detect(simplified);
 
-            List<Climb> starredClimbs = matchStarredClimbs(simplified, starredSegments);
+            // Known public Strava segments along the route replace the detected bounds and
+            // name the climb (issue #35). Starred segments are merged after, so they still win.
+            ExploreResult explored = exploreSegments(token, simplified);
+            List<Climb> segmentClimbs = ClimbMerger.longestNonOverlapping(matchSegmentClimbs(
+                    simplified, withoutIds(explored.segments, starredSegments),
+                    ClimbConstants.MIN_CLIMB_LENGTH_M));
+            if (!segmentClimbs.isEmpty()) {
+                climbs = ClimbMerger.merge(climbs, segmentClimbs);
+                Log.i(TAG, "Matched " + segmentClimbs.size()
+                        + " Strava segment(s) to climbs on " + routeId);
+            }
+
+            List<Climb> starredClimbs = matchSegmentClimbs(simplified, starredSegments, 0);
             if (!starredClimbs.isEmpty()) {
                 climbs = ClimbMerger.merge(climbs, starredClimbs);
                 Log.i(TAG, "Promoted " + starredClimbs.size()
@@ -170,6 +196,7 @@ public final class StravaRoutesRepository {
             stored.sourceHash   = hash;
             stored.name         = dto.name;
             stored.importedAtMs = System.currentTimeMillis();
+            stored.stravaSegmentsExplored = explored.complete;
 
             // Preserve user display name across re-imports
             if (existing != null && existing.userDisplayName != null) {
@@ -211,19 +238,20 @@ public final class StravaRoutesRepository {
     }
 
     /**
-     * Builds a {@link Climb} for every starred segment that lies on {@code route} and has
-     * an average gradient >= {@link ClimbConstants#MIN_AVG_GRADIENT} (keep the >= 3% rule,
-     * drop the 800 m minimum — product decision 2026-06-20). Pure CPU, no network: the
-     * starred segments (with their own geometry + grade) are fetched once per sync and a
-     * segment counts as "on the route" when {@link StarredSegmentLocator} can place its
-     * start/end on the route geometry. Returns an empty list (never null) when nothing
-     * qualifies.
+     * Builds a {@link Climb} for every segment that lies on {@code route}, has an average
+     * gradient >= {@link ClimbConstants#MIN_AVG_GRADIENT} and is at least {@code minLengthM}
+     * long. Starred segments pass 0 (keep the >= 3% rule, drop the 800 m minimum — product
+     * decision 2026-06-20: the user picked them); public segments found by explore (issue #35)
+     * pass the full 800 m climb minimum. Pure CPU, no network: a segment counts as "on the
+     * route" when {@link StarredSegmentLocator} can place its start/end on the route geometry.
+     * Returns an empty list (never null) when nothing qualifies.
      */
-    private static List<Climb> matchStarredClimbs(List<RoutePoint> route,
-                                                  List<StravaSegmentDto> starredSegments) {
-        if (starredSegments.isEmpty()) return Collections.emptyList();
+    private static List<Climb> matchSegmentClimbs(List<RoutePoint> route,
+                                                  List<StravaSegmentDto> segments,
+                                                  int minLengthM) {
+        if (segments.isEmpty()) return Collections.emptyList();
         List<Climb> result = new ArrayList<>();
-        for (StravaSegmentDto seg : starredSegments) {
+        for (StravaSegmentDto seg : segments) {
             if (seg == null) continue;
             if (seg.averageGrade / 100.0 < ClimbConstants.MIN_AVG_GRADIENT) continue;
             if (seg.startLatlng == null || seg.startLatlng.length < 2
@@ -235,7 +263,7 @@ public final class StravaRoutesRepository {
                     seg.endLatlng[0], seg.endLatlng[1],
                     seg.name,
                     ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M);
-            if (c != null) result.add(c);
+            if (c != null && c.endDistance - c.startDistance >= minLengthM) result.add(c);
         }
         return result;
     }
@@ -274,6 +302,69 @@ public final class StravaRoutesRepository {
             result.add(s);
         }
         return result;
+    }
+
+    /** Public segments found along a route, and whether every tile was actually asked. */
+    static final class ExploreResult {
+        final List<StravaSegmentDto> segments;
+        final boolean complete;
+
+        ExploreResult(List<StravaSegmentDto> segments, boolean complete) {
+            this.segments = segments;
+            this.complete = complete;
+        }
+    }
+
+    /**
+     * Asks {@code segments/explore} for each tile of the route (issue #35) and collects the
+     * segments, de-duplicated by id. Stops early, marking the result incomplete so a later sync
+     * retries, when Strava answers 429 or its rate-limit headers say the budget is nearly used
+     * up; that leaves the rest for the essential GPX downloads. Any other failure (network, a
+     * 4xx because the segment API is unavailable) counts as done, so a route isn't downloaded
+     * again every sync for an endpoint that won't answer.
+     */
+    private ExploreResult exploreSegments(String token, List<RoutePoint> route) {
+        List<double[]> tiles = SegmentExploreTiler.tiles(route);
+        List<StravaSegmentDto> found = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        for (int t = 0; t < tiles.size(); t++) {
+            if (!exploreBudgetLeft) return new ExploreResult(found, false);
+            String bounds = SegmentExploreTiler.toBoundsParam(tiles.get(t));
+            Response<StravaSegmentExploreDto> resp;
+            try {
+                resp = executeWithRetry(() -> api.exploreSegments(token, bounds, "riding"));
+            } catch (IOException e) {
+                Log.w(TAG, "Segment explore failed; keeping what was found", e);
+                return new ExploreResult(found, true);
+            }
+            if (resp == null) return new ExploreResult(found, true);
+            if (resp.code() == 429) {
+                exploreBudgetLeft = false;
+                return new ExploreResult(found, false);
+            }
+            if (!resp.isSuccessful()) return new ExploreResult(found, true);
+            if (resp.body() != null && resp.body().segments != null) {
+                for (StravaSegmentExploreDto.Entry e : resp.body().segments) {
+                    if (e != null && seen.add(e.id)) found.add(e.toSegment());
+                }
+            }
+            if (StravaRateLimit.nearLimit(resp.headers())) {
+                exploreBudgetLeft = false;
+                return new ExploreResult(found, t == tiles.size() - 1);
+            }
+        }
+        return new ExploreResult(found, true);
+    }
+
+    /** {@code segments} without the ones whose id is in {@code exclude}. */
+    private static List<StravaSegmentDto> withoutIds(List<StravaSegmentDto> segments,
+                                                     List<StravaSegmentDto> exclude) {
+        if (segments.isEmpty() || exclude.isEmpty()) return segments;
+        Set<Long> ids = new HashSet<>();
+        for (StravaSegmentDto s : exclude) if (s != null) ids.add(s.id);
+        List<StravaSegmentDto> out = new ArrayList<>();
+        for (StravaSegmentDto s : segments) if (!ids.contains(s.id)) out.add(s);
+        return out;
     }
 
     /** Hard cap on starred-segment pages — guards against a misbehaving API looping forever. */

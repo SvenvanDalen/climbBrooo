@@ -85,6 +85,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Rename routes and climbs** — names survive resync (kept separate from source data).
 - **Starred segments as climbs** — a starred Strava segment on a synced route is always
   shown as a climb (when `≥ 3 %`), regardless of length, named after the segment.
+- **Automatic Strava segment matching** — during Strava route sync, known public Strava
+  segments along the route (`segments/explore`, up to 8 map tiles per route) that meet the
+  climb rule (`≥ 800 m` and `≥ 3 %`) replace the detected climb's bounds and give it the
+  segment's name. Starred segments still take precedence. When the Strava rate limit gets
+  close, exploring stops and continues on a later sync. Phone-only.
 - **Flat starred segments** — a starred Strava segment that is too flat to be a climb
   (`< 3 %`) is kept as a separate entity. All such segments appear in the route detail
   screen with a ★. Tap one to tag it with a surface type (asphalt, gravel, dirt,
