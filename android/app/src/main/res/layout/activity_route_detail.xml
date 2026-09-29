@@ -217,6 +217,14 @@
                 android:text="Bandenspanning-advies" />
 
             <Button
+                android:id="@+id/btn_fuel_planner"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/fuel_action" />
+
+            <Button
                 android:id="@+id/btn_reverse_route"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

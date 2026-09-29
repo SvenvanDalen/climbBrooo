@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_climb_of_the_week"
+        android:title="@string/menu_climb_of_the_week"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_top_climbs"
         android:title="@string/menu_top_climbs"
         app:showAsAction="never"/>
@@ -117,6 +122,11 @@
     <item
         android:id="@+id/action_clothing"
         android:title="Kledingadvies"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_air_quality"
+        android:title="Luchtkwaliteit en pollen"
         app:showAsAction="never"/>
 
     <item
@@ -207,6 +217,11 @@
     <item
         android:id="@+id/action_goal_event"
         android:title="Doelevenement"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_monthly_challenge"
+        android:title="Maanduitdaging"
         app:showAsAction="never"/>
 
     <item

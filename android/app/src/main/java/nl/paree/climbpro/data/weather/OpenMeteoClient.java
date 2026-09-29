@@ -1,6 +1,8 @@
 package nl.paree.climbpro.data.weather;
 
+import nl.paree.climbpro.domain.weather.AirQualityForecast;
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.DailyForecast;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
 import nl.paree.climbpro.domain.weather.PrecipitationGrid;
@@ -67,6 +69,21 @@ public final class OpenMeteoClient {
         return PrecipitationGrid.parse(get(precipitationUrl(pts, hours)), pts.size());
     }
 
+    /** Issue #197: particulate matter, European AQI and pollen (Europe only) for two days. */
+    public static String airQualityUrl(double lat, double lon) {
+        StringBuilder fields = new StringBuilder("pm10,pm2_5,european_aqi");
+        for (AirQualityForecast.Pollen p : AirQualityForecast.Pollen.values()) {
+            fields.append(',').append(p.field);
+        }
+        return String.format(Locale.US,
+                "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=%s&timezone=UTC&forecast_days=2", lat, lon, fields);
+    }
+
+    public AirQualityForecast fetchAirQuality(double lat, double lon) throws IOException {
+        return AirQualityForecast.parse(get(airQualityUrl(lat, lon)));
+    }
+
     private String get(String url) throws IOException {
         Request req = new Request.Builder().url(url).build();
         try (Response resp = http.newCall(req).execute()) {
@@ -92,5 +109,10 @@ public final class OpenMeteoClient {
 
     public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
         return HourlyPrecipitation.parse(get(precipitationUrl(lat, lon)));
+    }
+
+    /** Issue #40: daily outlook for the coming week at one location ("klim van de week"). */
+    public List<DailyForecast.Day> fetchDaily(double lat, double lon) throws IOException {
+        return DailyForecast.parse(get(DailyForecast.url(lat, lon)));
     }
 }
