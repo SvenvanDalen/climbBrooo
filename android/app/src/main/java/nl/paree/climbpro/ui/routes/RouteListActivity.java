@@ -272,8 +272,8 @@ public final class RouteListActivity extends AppCompatActivity {
                         // a manually triggered check still confirms it actually ran.
                         if (verbose) {
                             Toast.makeText(RouteListActivity.this,
-                                    "Je hebt al de nieuwste versie (build "
-                                            + nl.paree.climbpro.BuildConfig.VERSION_CODE + ")",
+                                    "Je hebt al de nieuwste versie (v"
+                                            + nl.paree.climbpro.BuildConfig.VERSION_NAME + ")",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
