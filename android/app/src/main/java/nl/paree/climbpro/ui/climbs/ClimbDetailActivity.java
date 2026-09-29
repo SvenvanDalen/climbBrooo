@@ -564,15 +564,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     /**
      * Issue #223: choose Zwift or ERG, then export the climb as an indoor workout. Issue #19
-     * adds the "N× deze klim" variants, which first ask for repeats and recovery.
+     * adds the "N× deze klim" variants, which first ask for repeats and recovery; issue #85
+     * adds a MyWhoosh-compatible {@code .zwo}.
      */
     private void pickWorkoutFormat() {
         String[] formats = {"Zwift-workout (.zwo)", "ERG-bestand (.erg, TrainerRoad e.a.)",
-                "Herhaal-klim als Zwift-workout (.zwo)", "Herhaal-klim als ERG-bestand (.erg)"};
+                "Herhaal-klim als Zwift-workout (.zwo)", "Herhaal-klim als ERG-bestand (.erg)",
+                "MyWhoosh-workout (.zwo)"};
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Exporteer als indoor-workout")
                 .setItems(formats, (d, which) -> {
-                    if (which < 2) viewModel.exportWorkout(which == 0);
+                    if (which == 0) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.ZWIFT);
+                    else if (which == 1) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.ERG);
+                    else if (which == 4) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.MYWHOOSH);
                     else showRepeatWorkoutDialog(which == 2);
                 })
                 .setNegativeButton("Annuleren", null)
@@ -611,7 +615,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .setTitle("Herhaal-klim workout")
                 .setMessage("Auto herstel = de helft van je klimtijd (3–10 min), op 50 % FTP.")
                 .setView(pickers)
-                .setPositiveButton("Exporteer", (d, w) -> viewModel.exportWorkout(zwift,
+                .setPositiveButton("Exporteer", (d, w) -> viewModel.exportWorkout(zwift
+                                ? ClimbDetailViewModel.WorkoutFormat.ZWIFT
+                                : ClimbDetailViewModel.WorkoutFormat.ERG,
                         repeats.getValue(), recovery.getValue() == 0
                                 ? ClimbDetailViewModel.RECOVERY_AUTO
                                 : recovery.getValue() * 60))
@@ -635,7 +641,23 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
                 this, getPackageName() + ".fileprovider", export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
-        startActivity(Intent.createChooser(share, "Deel workout"));
+        if (export.format != ClimbDetailViewModel.WorkoutFormat.MYWHOOSH) {
+            startActivity(Intent.createChooser(share, "Deel workout"));
+            return;
+        }
+        // MyWhoosh has no import folder or share target: the file goes in via its web builder.
+        new AlertDialog.Builder(this)
+                .setTitle("Naar MyWhoosh")
+                .setMessage("MyWhoosh kan geen eigen routes importeren, dus de klim gaat erin als "
+                        + "workout: elk segment een blok met vermogen dat de helling volgt. "
+                        + "Zet het bestand op een plek die je op je trainer-pc of tablet kunt "
+                        + "openen (bijv. Drive of mail), log in op de MyWhoosh-website en kies "
+                        + "bij Workouts voor uploaden. De workout staat daarna in je bibliotheek "
+                        + "in de app.")
+                .setPositiveButton("Delen", (d, w) ->
+                        startActivity(Intent.createChooser(share, "Deel MyWhoosh-workout")))
+                .setNegativeButton("Annuleren", null)
+                .show();
     }
 
     /** Issue #47: wind-corrected estimate and its delta, or a clear "uncorrected" label. */

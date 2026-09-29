@@ -185,6 +185,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
   3–10 min), cool-down. Phone-only.
 
+- **MyWhoosh export** — climb detail → "Exporteer als indoor-workout" → "MyWhoosh-workout"
+  writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
+  power, short name, gradients in the description). MyWhoosh can't import custom routes, so
+  the climb goes in as a workout; a dialog explains the upload. Phone-only.
+
 - **Training advice after a climb** — climb screen: short, concrete pacing tips for your
   latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
   average, where you lost most time against your best splits), from the stored segment
