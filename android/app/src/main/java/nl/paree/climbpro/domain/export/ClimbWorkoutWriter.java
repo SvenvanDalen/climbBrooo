@@ -16,6 +16,11 @@ import java.util.Locale;
  * (non-fatigued) climb time estimate, and its target power rises and falls with the segment's
  * gradient around the power that estimate assumes, the way you'd pace the real climb. A
  * 10-minute warm-up ramp comes first and a 5-minute cool-down last. Pure; phone-only.
+ *
+ * <p>Repeats mode (issue #19): the same file can hold "N× this climb" — the climb's segment
+ * blocks N times with an easy recovery block ({@link #RECOVERY_FRACTION} of FTP, default
+ * {@link #defaultRecoverySeconds half the climb time}) between each pass, still inside one
+ * warm-up and cool-down.
  */
 public final class ClimbWorkoutWriter {
 
@@ -33,17 +38,38 @@ public final class ClimbWorkoutWriter {
     static final double COOLDOWN_HIGH = 0.60;
     static final double COOLDOWN_LOW = 0.40;
 
+    // Repeats mode (issue #19): "N× this climb" with recovery blocks in between.
+    public static final int MIN_REPEATS = 2;
+    public static final int MAX_REPEATS = 10;
+    public static final int DEFAULT_REPEATS = 5;
+    /**
+     * Recovery power: 50 % FTP, inside the active-recovery zone (Coggan Z1, below 55 %). Easy
+     * enough to flush the legs between efforts, like freewheeling and soft-pedalling a descent.
+     */
+    public static final double RECOVERY_FRACTION = 0.50;
+    /** Default recovery never shorter than 3 min: heart rate needs that long to settle. */
+    public static final int MIN_RECOVERY_SEC = 180;
+    /** ...and never longer than 10 min, so long climbs don't turn into a half-day session. */
+    public static final int MAX_RECOVERY_SEC = 600;
+
     public static final class Step {
         public final int seconds;
         /** Target power as a fraction of FTP. */
         public final double ftpFraction;
         /** Gradient as a fraction (0.06 = 6 %), shown in the on-screen message. */
         public final double gradient;
+        /** True for a recovery block between two repeats (issue #19); gradient is then 0. */
+        public final boolean recovery;
 
         Step(int seconds, double ftpFraction, double gradient) {
+            this(seconds, ftpFraction, gradient, false);
+        }
+
+        private Step(int seconds, double ftpFraction, double gradient, boolean recovery) {
             this.seconds = seconds;
             this.ftpFraction = ftpFraction;
             this.gradient = gradient;
+            this.recovery = recovery;
         }
     }
 
@@ -97,29 +123,81 @@ public final class ClimbWorkoutWriter {
         return new Plan(Collections.unmodifiableList(steps), avgFraction, profile.ftpWatts);
     }
 
+    /** Total climbing time of one pass up the climb. */
+    public static int climbSeconds(List<Step> steps) {
+        int total = 0;
+        for (Step s : steps) total += s.seconds;
+        return total;
+    }
+
+    /**
+     * Default recovery between repeats (issue #19): half the climb time, rounded to whole
+     * minutes and kept within {@link #MIN_RECOVERY_SEC}..{@link #MAX_RECOVERY_SEC}. Half
+     * matches both the classic 2:1 work:rest ratio for threshold repeats and roughly how long
+     * the descent back to the foot of a hill-repeat climb takes.
+     */
+    public static int defaultRecoverySeconds(List<Step> steps) {
+        int half = (int) Math.round(climbSeconds(steps) / 2.0 / 60.0) * 60;
+        return Math.max(MIN_RECOVERY_SEC, Math.min(MAX_RECOVERY_SEC, half));
+    }
+
+    /**
+     * The main set between warm-up and cool-down: {@code repeats} passes of the climb with a
+     * recovery block at {@link #RECOVERY_FRACTION} between each pair (none after the last one,
+     * the cool-down follows). One repeat is just the climb.
+     */
+    public static List<Step> mainSet(List<Step> steps, int repeats, int recoverySec) {
+        checkRepeats(repeats, recoverySec);
+        List<Step> out = new ArrayList<>();
+        for (int r = 0; r < repeats; r++) {
+            if (r > 0) out.add(new Step(recoverySec, RECOVERY_FRACTION, 0, true));
+            out.addAll(steps);
+        }
+        return Collections.unmodifiableList(out);
+    }
+
+    /** Whole session length in seconds: warm-up, main set and cool-down. */
+    public static int totalSeconds(List<Step> steps, int repeats, int recoverySec) {
+        return WARMUP_SEC + climbSeconds(mainSet(steps, repeats, recoverySec)) + COOLDOWN_SEC;
+    }
+
     public static String toZwo(String climbName, List<Step> steps) {
+        return toZwo(climbName, steps, 1, 0);
+    }
+
+    /** Zwift workout of {@code repeats} passes; one repeat is the plain climb export. */
+    public static String toZwo(String climbName, List<Step> steps, int repeats, int recoverySec) {
+        checkRepeats(repeats, recoverySec);
         String name = displayName(climbName);
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         sb.append("<workout_file>\n");
         sb.append("  <author>ClimbPro</author>\n");
-        sb.append("  <name>").append(xml("Klim: " + name)).append("</name>\n");
-        sb.append("  <description>").append(xml(description(steps))).append("</description>\n");
+        sb.append("  <name>").append(xml(title(name, repeats))).append("</name>\n");
+        sb.append("  <description>").append(xml(description(steps, name, repeats, recoverySec)))
+                .append("</description>\n");
         sb.append("  <sportType>bike</sportType>\n");
-        sb.append("  <tags>\n    <tag name=\"CLIMB\"/>\n  </tags>\n");
+        sb.append("  <tags>\n    <tag name=\"CLIMB\"/>\n");
+        if (repeats > 1) sb.append("    <tag name=\"INTERVALS\"/>\n");
+        sb.append("  </tags>\n");
         sb.append("  <workout>\n");
         sb.append(String.format(Locale.US,
                 "    <Warmup Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
                 WARMUP_SEC, WARMUP_LOW, WARMUP_HIGH));
-        for (int i = 0; i < steps.size(); i++) {
-            Step s = steps.get(i);
-            sb.append(String.format(Locale.US,
-                    "    <SteadyState Duration=\"%d\" Power=\"%.3f\">\n", s.seconds, s.ftpFraction));
-            sb.append("      <textevent timeoffset=\"0\" message=\"")
-                    .append(xml(String.format(new Locale("nl"), "Segment %d/%d: %.1f %%",
-                            i + 1, steps.size(), s.gradient * 100)))
-                    .append("\"/>\n");
-            sb.append("    </SteadyState>\n");
+        Locale nl = new Locale("nl");
+        for (int r = 0; r < repeats; r++) {
+            if (r > 0) {
+                zwoSteady(sb, recoverySec, RECOVERY_FRACTION, String.format(nl,
+                        "Herstel %d/%d: rustig trappen", r, repeats - 1));
+            }
+            for (int i = 0; i < steps.size(); i++) {
+                Step s = steps.get(i);
+                String segment = String.format(nl, "%d/%d: %.1f %%",
+                        i + 1, steps.size(), s.gradient * 100);
+                zwoSteady(sb, s.seconds, s.ftpFraction, repeats > 1
+                        ? String.format(nl, "Herhaling %d/%d · segment %s", r + 1, repeats, segment)
+                        : "Segment " + segment);
+            }
         }
         sb.append(String.format(Locale.US,
                 "    <Cooldown Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
@@ -131,13 +209,21 @@ public final class ClimbWorkoutWriter {
 
     /** ERG: absolute watts against cumulative minutes; a step repeats its minute mark. */
     public static String toErg(String climbName, List<Step> steps, int ftpWatts) {
+        return toErg(climbName, steps, ftpWatts, 1, 0);
+    }
+
+    /** ERG workout of {@code repeats} passes; one repeat is the plain climb export. */
+    public static String toErg(String climbName, List<Step> steps, int ftpWatts,
+                               int repeats, int recoverySec) {
+        List<Step> set = mainSet(steps, repeats, recoverySec);
         String name = displayName(climbName);
         StringBuilder sb = new StringBuilder();
         sb.append("[COURSE HEADER]\n");
         sb.append("VERSION = 2\n");
         sb.append("UNITS = METRIC\n");
-        sb.append("DESCRIPTION = ").append(oneLine(description(steps))).append('\n');
-        sb.append("FILE NAME = ").append(oneLine("Klim: " + name)).append('\n');
+        sb.append("DESCRIPTION = ")
+                .append(oneLine(description(steps, name, repeats, recoverySec))).append('\n');
+        sb.append("FILE NAME = ").append(oneLine(title(name, repeats))).append('\n');
         sb.append("FTP = ").append(ftpWatts).append('\n');
         sb.append("MINUTES WATTS\n");
         sb.append("[END COURSE HEADER]\n");
@@ -146,7 +232,7 @@ public final class ClimbWorkoutWriter {
         ergLine(sb, t, WARMUP_LOW * ftpWatts);
         t += WARMUP_SEC / 60.0;
         ergLine(sb, t, WARMUP_HIGH * ftpWatts);
-        for (Step s : steps) {
+        for (Step s : set) {
             double watts = s.ftpFraction * ftpWatts;
             ergLine(sb, t, watts);
             t += s.seconds / 60.0;
@@ -157,6 +243,12 @@ public final class ClimbWorkoutWriter {
         ergLine(sb, t, COOLDOWN_LOW * ftpWatts);
         sb.append("[END COURSE DATA]\n");
         return sb.toString();
+    }
+
+    /** File name for a repeats export: {@code 5x_col_d_izoard.zwo}; one repeat has no prefix. */
+    public static String fileName(String climbName, String extension, int repeats) {
+        String base = fileName(climbName, extension);
+        return repeats > 1 ? repeats + "x_" + base : base;
     }
 
     /** Lower-case ASCII file name from the climb name, e.g. {@code col_d_izoard.zwo}. */
@@ -171,13 +263,40 @@ public final class ClimbWorkoutWriter {
         return base + "." + extension;
     }
 
-    private static String description(List<Step> steps) {
-        int total = 0;
-        for (Step s : steps) total += s.seconds;
+    private static String title(String name, int repeats) {
+        return repeats > 1 ? repeats + "× " + name : "Klim: " + name;
+    }
+
+    private static String description(List<Step> steps, String name, int repeats,
+                                      int recoverySec) {
+        int climb = climbSeconds(steps);
+        if (repeats <= 1) {
+            return String.format(new Locale("nl"),
+                    "Klimsimulatie uit ClimbPro: %d segmenten, %d:%02d min klimmen, vermogen per "
+                            + "segment volgt de helling. 10 min opwarmen en 5 min uitrijden.",
+                    steps.size(), climb / 60, climb % 60);
+        }
+        int total = totalSeconds(steps, repeats, recoverySec);
         return String.format(new Locale("nl"),
-                "Klimsimulatie uit ClimbPro: %d segmenten, %d:%02d min klimmen, vermogen per "
-                        + "segment volgt de helling. 10 min opwarmen en 5 min uitrijden.",
-                steps.size(), total / 60, total % 60);
+                "Herhaal-klim uit ClimbPro: %d× %s (%d segmenten, %d:%02d min per keer) met "
+                        + "%d:%02d min herstel op %d %% FTP ertussen. Vermogen per segment volgt "
+                        + "de helling. 10 min opwarmen en 5 min uitrijden. Totaal %d:%02d min.",
+                repeats, name, steps.size(), climb / 60, climb % 60,
+                recoverySec / 60, recoverySec % 60, Math.round(RECOVERY_FRACTION * 100),
+                total / 60, total % 60);
+    }
+
+    private static void checkRepeats(int repeats, int recoverySec) {
+        if (repeats < 1) throw new IllegalArgumentException("repeats < 1: " + repeats);
+        if (recoverySec < 0) throw new IllegalArgumentException("recovery < 0: " + recoverySec);
+    }
+
+    private static void zwoSteady(StringBuilder sb, int seconds, double fraction, String message) {
+        sb.append(String.format(Locale.US,
+                "    <SteadyState Duration=\"%d\" Power=\"%.3f\">\n", seconds, fraction));
+        sb.append("      <textevent timeoffset=\"0\" message=\"").append(xml(message))
+                .append("\"/>\n");
+        sb.append("    </SteadyState>\n");
     }
 
     private static String displayName(String name) {

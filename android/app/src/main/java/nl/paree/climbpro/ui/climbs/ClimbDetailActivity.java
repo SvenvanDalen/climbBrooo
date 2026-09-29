@@ -535,14 +535,72 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(share, "Exporteer klim als GPX"));
     }
 
-    /** Issue #223: choose Zwift or ERG, then export the climb as an indoor workout. */
+    /**
+     * Issue #223: choose Zwift or ERG, then export the climb as an indoor workout. Issue #19
+     * adds the "N× deze klim" variants, which first ask for repeats and recovery.
+     */
     private void pickWorkoutFormat() {
-        String[] formats = {"Zwift-workout (.zwo)", "ERG-bestand (.erg, TrainerRoad e.a.)"};
+        String[] formats = {"Zwift-workout (.zwo)", "ERG-bestand (.erg, TrainerRoad e.a.)",
+                "Herhaal-klim als Zwift-workout (.zwo)", "Herhaal-klim als ERG-bestand (.erg)"};
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Exporteer als indoor-workout")
-                .setItems(formats, (d, which) -> viewModel.exportWorkout(which == 0))
+                .setItems(formats, (d, which) -> {
+                    if (which < 2) viewModel.exportWorkout(which == 0);
+                    else showRepeatWorkoutDialog(which == 2);
+                })
                 .setNegativeButton("Annuleren", null)
                 .show();
+    }
+
+    /** Max recovery (min) offered in the repeat dialog; index 0 of the picker is "auto". */
+    private static final int REPEAT_RECOVERY_MAX_MIN = 15;
+
+    /** Issue #19: pick the number of repeats and the recovery between them. */
+    private void showRepeatWorkoutDialog(boolean zwift) {
+        android.widget.NumberPicker repeats = new android.widget.NumberPicker(this);
+        repeats.setMinValue(nl.paree.climbpro.domain.export.ClimbWorkoutWriter.MIN_REPEATS);
+        repeats.setMaxValue(nl.paree.climbpro.domain.export.ClimbWorkoutWriter.MAX_REPEATS);
+        repeats.setValue(nl.paree.climbpro.domain.export.ClimbWorkoutWriter.DEFAULT_REPEATS);
+        repeats.setFormatter(v -> v + "×");
+
+        String[] recoveryLabels = new String[REPEAT_RECOVERY_MAX_MIN + 1];
+        recoveryLabels[0] = "Auto";
+        for (int m = 1; m <= REPEAT_RECOVERY_MAX_MIN; m++) recoveryLabels[m] = m + " min";
+        android.widget.NumberPicker recovery = new android.widget.NumberPicker(this);
+        recovery.setMinValue(0);
+        recovery.setMaxValue(REPEAT_RECOVERY_MAX_MIN);
+        recovery.setDisplayedValues(recoveryLabels);
+        recovery.setValue(0);
+
+        android.widget.LinearLayout pickers = new android.widget.LinearLayout(this);
+        pickers.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        pickers.setGravity(android.view.Gravity.CENTER);
+        android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(
+                0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        pickers.addView(labeled("Herhalingen", repeats), lp);
+        pickers.addView(labeled("Herstel", recovery), lp);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Herhaal-klim workout")
+                .setMessage("Auto herstel = de helft van je klimtijd (3–10 min), op 50 % FTP.")
+                .setView(pickers)
+                .setPositiveButton("Exporteer", (d, w) -> viewModel.exportWorkout(zwift,
+                        repeats.getValue(), recovery.getValue() == 0
+                                ? ClimbDetailViewModel.RECOVERY_AUTO
+                                : recovery.getValue() * 60))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    private android.view.View labeled(String label, android.view.View child) {
+        android.widget.LinearLayout col = new android.widget.LinearLayout(this);
+        col.setOrientation(android.widget.LinearLayout.VERTICAL);
+        col.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText(label);
+        col.addView(tv);
+        col.addView(child);
+        return col;
     }
 
     private void shareWorkout(ClimbDetailViewModel.WorkoutExport export) {

@@ -263,6 +263,18 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * the climb rested. Needs a complete rider profile for the power targets.
      */
     public void exportWorkout(boolean zwift) {
+        exportWorkout(zwift, 1, RECOVERY_AUTO);
+    }
+
+    /** Recovery value meaning "use {@link ClimbWorkoutWriter#defaultRecoverySeconds}". */
+    public static final int RECOVERY_AUTO = -1;
+
+    /**
+     * Issue #19: "N× this climb" — the climb's blocks {@code repeats} times with recovery in
+     * between. {@code recoverySec} of {@link #RECOVERY_AUTO} picks the writer's default (half
+     * the climb time, 3–10 min). One repeat is the plain climb workout.
+     */
+    public void exportWorkout(boolean zwift, int repeats, int recoverySec) {
         StoredClimb c = lastClimb;
         if (c == null || c.segments == null || c.segments.isEmpty()) {
             error.postValue("Klim nog niet geladen");
@@ -289,10 +301,14 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 }
                 String name = c.userDisplayName != null && !c.userDisplayName.trim().isEmpty()
                         ? c.userDisplayName : c.name;
-                String content = zwift ? ClimbWorkoutWriter.toZwo(name, plan.steps)
-                        : ClimbWorkoutWriter.toErg(name, plan.steps, plan.ftpWatts);
+                int recovery = recoverySec == RECOVERY_AUTO
+                        ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
+                String content = zwift
+                        ? ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery)
+                        : ClimbWorkoutWriter.toErg(name, plan.steps, plan.ftpWatts,
+                                repeats, recovery);
                 File file = ClimbWorkoutExportHandoff.writeFile(getApplication(), content,
-                        ClimbWorkoutWriter.fileName(name, zwift ? "zwo" : "erg"));
+                        ClimbWorkoutWriter.fileName(name, zwift ? "zwo" : "erg", repeats));
                 workoutExport.postValue(new WorkoutExport(file, zwift
                         ? ClimbWorkoutExportHandoff.ZWO_MIME : ClimbWorkoutExportHandoff.ERG_MIME));
             } catch (Exception e) {
