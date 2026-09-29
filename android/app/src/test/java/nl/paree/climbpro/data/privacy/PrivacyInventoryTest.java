@@ -116,6 +116,7 @@ public class PrivacyInventoryTest {
                 "ride_stream_stats.json",
                 "goal_event.json",
                 "favorite_start_points.json",
+                "recovery_checks.json",
                 "packing_lists.json"};
         java.util.Set<String> covered = new java.util.HashSet<>();
         for (PrivacyCategory c : PrivacyCategory.values()) {
