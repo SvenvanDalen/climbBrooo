@@ -201,6 +201,10 @@
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
         <activity
+            android:name=".ui.records.FtpTestActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
             android:name=".ui.records.ZoneDistributionActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />

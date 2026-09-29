@@ -88,7 +88,8 @@ public enum PrivacyCategory {
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",
-            "FTP, gewicht van jou en je fiets, rit-intensiteit en maximale hartslag."),
+            "FTP, gewicht van jou en je fiets, rit-intensiteit en maximale hartslag, en wanneer "
+                    + "je een FTP-test exporteerde en welke testrit je al verwerkte."),
     STRAVA("Strava-koppeling",
             "Versleuteld toegangstoken en de voortgang van de activiteiten-sync."),
     CACHE("Tijdelijke bestanden",

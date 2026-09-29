@@ -227,26 +227,76 @@ public final class ClimbWorkoutWriter {
             if (gradients.length() > 0) gradients.append(" · ");
             gradients.append(String.format(new Locale("nl"), "%.1f %%", s.gradient * 100));
         }
+        List<Block> blocks = new ArrayList<>();
+        blocks.add(Block.warmup(WARMUP_SEC, WARMUP_LOW, WARMUP_HIGH));
+        for (Step s : steps) blocks.add(Block.steady(s.seconds, s.ftpFraction));
+        blocks.add(Block.cooldown(COOLDOWN_SEC, COOLDOWN_HIGH, COOLDOWN_LOW));
+        return toPlainZwo(name, description(steps, displayName(climbName), 1, 0)
+                + " Hellingen per segment: " + gradients, blocks);
+    }
+
+    /**
+     * One block of a {@link #toPlainZwo plain} {@code .zwo}: a warm-up ramp, a steady block or
+     * a cool-down ramp, with power as a fraction of FTP.
+     */
+    public static final class Block {
+        public enum Kind { WARMUP, STEADY, COOLDOWN }
+
+        public final Kind kind;
+        public final int seconds;
+        /** Power at the start of the block (the only power of a steady block). */
+        public final double from;
+        /** Power at the end of the block; equal to {@link #from} for a steady block. */
+        public final double to;
+
+        private Block(Kind kind, int seconds, double from, double to) {
+            this.kind = kind;
+            this.seconds = seconds;
+            this.from = from;
+            this.to = to;
+        }
+
+        public static Block warmup(int seconds, double from, double to) {
+            return new Block(Kind.WARMUP, seconds, from, to);
+        }
+
+        public static Block steady(int seconds, double fraction) {
+            return new Block(Kind.STEADY, seconds, fraction, fraction);
+        }
+
+        public static Block cooldown(int seconds, double from, double to) {
+            return new Block(Kind.COOLDOWN, seconds, from, to);
+        }
+    }
+
+    /**
+     * The lowest common denominator {@code .zwo} (issue #85, reused by the FTP test of issue
+     * #181): only self-closing warm-up, steady and cool-down steps with power as fractions of
+     * FTP, no tags and no text events. MyWhoosh's web builder accepts it and so does Zwift.
+     * The caller keeps {@code name} within {@link #MYWHOOSH_NAME_MAX}. Like Zwift's own files,
+     * a ramp's {@code PowerLow} is its start and {@code PowerHigh} its end, so a cool-down
+     * reads high-to-low.
+     */
+    public static String toPlainZwo(String name, String description, List<Block> blocks) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         sb.append("<workout_file>\n");
         sb.append("  <author>ClimbPro</author>\n");
         sb.append("  <name>").append(xml(name)).append("</name>\n");
-        sb.append("  <description>").append(xml(description(steps, displayName(climbName), 1, 0)
-                + " Hellingen per segment: "
-                + gradients)).append("</description>\n");
+        sb.append("  <description>").append(xml(description)).append("</description>\n");
         sb.append("  <sportType>bike</sportType>\n");
         sb.append("  <workout>\n");
-        sb.append(String.format(Locale.US,
-                "    <Warmup Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
-                WARMUP_SEC, WARMUP_LOW, WARMUP_HIGH));
-        for (Step s : steps) {
-            sb.append(String.format(Locale.US,
-                    "    <SteadyState Duration=\"%d\" Power=\"%.2f\"/>\n", s.seconds, s.ftpFraction));
+        for (Block b : blocks) {
+            if (b.kind == Block.Kind.STEADY) {
+                sb.append(String.format(Locale.US,
+                        "    <SteadyState Duration=\"%d\" Power=\"%.2f\"/>\n", b.seconds, b.from));
+            } else {
+                sb.append(String.format(Locale.US,
+                        "    <%s Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
+                        b.kind == Block.Kind.WARMUP ? "Warmup" : "Cooldown",
+                        b.seconds, b.from, b.to));
+            }
         }
-        sb.append(String.format(Locale.US,
-                "    <Cooldown Duration=\"%d\" PowerLow=\"%.2f\" PowerHigh=\"%.2f\"/>\n",
-                COOLDOWN_SEC, COOLDOWN_HIGH, COOLDOWN_LOW));
         sb.append("  </workout>\n");
         sb.append("</workout_file>\n");
         return sb.toString();
