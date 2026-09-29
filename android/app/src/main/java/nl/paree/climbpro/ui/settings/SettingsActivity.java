@@ -65,6 +65,17 @@ public final class SettingsActivity extends AppCompatActivity {
                 }
             });
 
+    // Radius mode (issue #310) searches around the last known fix, which needs a location grant.
+    private final ActivityResultLauncher<String> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    viewModel.refreshRadiusLocation();
+                } else {
+                    Toast.makeText(this, "Zonder locatie weet de radiusmodus niet waar je bent",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+
     // Back-up (issue #257): Storage Access Framework pickers, so the target can be a local
     // folder or a cloud provider such as Google Drive.
     private final ActivityResultLauncher<String> backupCreator = registerForActivityResult(
@@ -162,10 +173,31 @@ public final class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "Profiel opgeslagen", Toast.LENGTH_SHORT).show();
         });
 
+        // Issue #31: virtual ghost at a target speed/VAM for climbs without a PR or
+        // manual reference. Empty/0 switches that part off.
+        viewModel.ghostTarget().observe(this, target -> {
+            if (target == null) return;
+            binding.inputGhostSpeed.setText(target.hasSpeed() ? formatKg(target.speedKmh) : "");
+            binding.inputGhostVam.setText(target.hasVam() ? String.valueOf(target.vamMPerH) : "");
+        });
+        binding.btnSaveGhost.setOnClickListener(v -> {
+            double speed = parseDoubleSafe(binding.inputGhostSpeed.getText().toString());
+            int vam = parseIntSafe(binding.inputGhostVam.getText().toString());
+            viewModel.saveGhostTarget(speed, vam);
+            Toast.makeText(this, speed > 0 || vam > 0
+                    ? "Ghost-doel opgeslagen" : "Ghost-doel uitgeschakeld",
+                    Toast.LENGTH_SHORT).show();
+        });
+
         binding.radioRoute.setOnClickListener(v ->
                 viewModel.setSyncMode("route"));
-        binding.radioRadius.setOnClickListener(v ->
-                viewModel.setSyncMode("radius"));
+        binding.radioRadius.setOnClickListener(v -> {
+            viewModel.setSyncMode("radius");
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+        });
 
         binding.radiusSeekBar.setMax(100);
         binding.radiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

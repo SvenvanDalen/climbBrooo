@@ -47,6 +47,7 @@ public final class BackupArchive {
             "bike_passports.json", "bike_passport_photos/",
             "battery_status.json",
             "pain_log.json",
+            "sweat_loss_log.json",
             "safe_home.json",
             "comeback_plan.json",
             "ride_stream_stats.json",

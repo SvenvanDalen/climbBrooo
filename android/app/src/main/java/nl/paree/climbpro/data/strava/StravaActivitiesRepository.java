@@ -30,6 +30,7 @@ import nl.paree.climbpro.domain.matching.ClimbEntryOnlyDetector;
 import nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 import nl.paree.climbpro.domain.ride.RideStreams;
+import nl.paree.climbpro.domain.ride.RideTrack;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -725,6 +726,63 @@ public final class StravaActivitiesRepository {
         }
         streamStatsRepo.upsertAll(out);
         return out.size();
+    }
+
+    /**
+     * One ride's streams fetched on demand, e.g. for the ride comparer (issue #199). Null when
+     * Strava has none (manual entry, deleted) or the request is refused.
+     */
+    public RideStreams fetchRideStreams(long activityId) throws IOException {
+        Response<StravaStreamsDto> resp = api.getStreams(
+                "Bearer " + auth.getAccessToken(), activityId, RIDE_STREAM_KEYS).execute();
+        if (!resp.isSuccessful()) {
+            Log.w(TAG, "Streams for " + activityId + " failed (HTTP " + resp.code() + ")");
+            return null;
+        }
+        return toRideStreams(resp.body());
+    }
+
+    /**
+     * GPS track and average device temperature of one ride, fetched on demand for the ride
+     * story (issue #193). Null when Strava has no track or the request is refused.
+     */
+    public RideTrack fetchRideTrack(long activityId) throws IOException {
+        Response<StravaStreamsDto> resp = api.getStreams(
+                "Bearer " + auth.getAccessToken(), activityId, "latlng,temp").execute();
+        if (!resp.isSuccessful()) {
+            Log.w(TAG, "Track for " + activityId + " failed (HTTP " + resp.code() + ")");
+            return null;
+        }
+        return toRideTrack(resp.body());
+    }
+
+    /** Null without at least two valid lat/lon samples; null temperature samples are skipped. */
+    static RideTrack toRideTrack(StravaStreamsDto s) {
+        if (s == null || s.latlng == null || s.latlng.data == null) return null;
+        List<List<Double>> ll = s.latlng.data;
+        double[] lat = new double[ll.size()];
+        double[] lon = new double[ll.size()];
+        int n = 0;
+        for (List<Double> p : ll) {
+            if (p == null || p.size() < 2 || p.get(0) == null || p.get(1) == null) continue;
+            lat[n] = p.get(0);
+            lon[n] = p.get(1);
+            n++;
+        }
+        if (n < 2) return null;
+        Double avgTemp = null;
+        if (s.temp != null && s.temp.data != null) {
+            double sum = 0;
+            int count = 0;
+            for (Double t : s.temp.data) {
+                if (t == null) continue;
+                sum += t;
+                count++;
+            }
+            if (count > 0) avgTemp = sum / count;
+        }
+        return new RideTrack(java.util.Arrays.copyOf(lat, n), java.util.Arrays.copyOf(lon, n),
+                avgTemp);
     }
 
     /**

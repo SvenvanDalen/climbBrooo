@@ -40,6 +40,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_climb_of_the_week"
+        android:title="@string/menu_climb_of_the_week"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_top_climbs"
         android:title="@string/menu_top_climbs"
         app:showAsAction="never"/>
@@ -105,6 +110,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_sweat_loss"
+        android:title="@string/sweat_title"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_safe_home"
         android:title="Veilig thuis-bericht"
         app:showAsAction="never"/>
@@ -112,6 +122,16 @@
     <item
         android:id="@+id/action_sunscreen"
         android:title="Zonnebrand-check"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_clothing"
+        android:title="Kledingadvies"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_air_quality"
+        android:title="Luchtkwaliteit en pollen"
         app:showAsAction="never"/>
 
     <item
@@ -135,8 +155,18 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_periodization"
+        android:title="@string/menu_periodization"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_fitness"
         android:title="Fitheid &amp; vorm"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_training_load_calendar"
+        android:title="@string/load_calendar_menu"
         app:showAsAction="never"/>
 
     <item
@@ -207,6 +237,16 @@
     <item
         android:id="@+id/action_bike_passport"
         android:title="Fietspaspoort"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_badges"
+        android:title="Badges"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_monthly_challenge"
+        android:title="Maanduitdaging"
         app:showAsAction="never"/>
 
     <item
