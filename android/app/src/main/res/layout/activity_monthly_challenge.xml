@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:title="Maanduitdaging" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            style="@style/TextAppearance.ClimbPro.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Deze maand" />
+
+        <TextView
+            android:id="@+id/challengeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="10 verschillende klimmen in september" />
+
+        <TextView
+            android:id="@+id/challengeProgressText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textSize="18sp"
+            tools:text="4 / 10 klimmen" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/challengeProgressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            app:trackCornerRadius="6dp"
+            tools:progress="40" />
+
+        <TextView
+            android:id="@+id/challengeHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            tools:text="Nog 6 klimmen in 12 dagen (op schema)" />
+
+        <Button
+            android:id="@+id/pickChallengeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Uitdaging kiezen" />
+
+        <Button
+            android:id="@+id/surpriseChallengeButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Verras me" />
+
+        <Button
+            android:id="@+id/clearChallengeButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Uitdaging stoppen" />
+
+    </LinearLayout>
+</LinearLayout>

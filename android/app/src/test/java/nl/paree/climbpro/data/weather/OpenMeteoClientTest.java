@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.weather;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import nl.paree.climbpro.domain.weather.RouteSampler;
 
@@ -18,6 +19,29 @@ public class OpenMeteoClientTest {
         assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
                 + "&longitude=5.6900,5.8000&hourly=precipitation&timezone=UTC&forecast_hours=7",
                 OpenMeteoClient.precipitationUrl(pts, 6));
+    }
+
+    @Test public void temperatureUrlListsSamplesWithTheirElevations() {
+        List<RouteSampler.Sample> pts = new ArrayList<>();
+        pts.add(new RouteSampler.Sample(0, 50.85, 5.69));
+        pts.add(new RouteSampler.Sample(5_000, 50.9, 5.8));
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
+                + "&longitude=5.6900,5.8000&hourly=temperature_2m&timezone=UTC&forecast_days=3"
+                + "&elevation=100,312",
+                OpenMeteoClient.temperatureUrl(pts, new double[]{100.2, 312.4}));
+    }
+
+    @Test public void temperatureUrlLeavesElevationOutWhenAnyIsUnknown() {
+        // Open-Meteo reads elevation=nan as "no downscaling"; better to let it use its own DEM.
+        List<RouteSampler.Sample> pts = new ArrayList<>();
+        pts.add(new RouteSampler.Sample(0, 50.85, 5.69));
+        pts.add(new RouteSampler.Sample(5_000, 50.9, 5.8));
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
+                + "&longitude=5.6900,5.8000&hourly=temperature_2m&timezone=UTC&forecast_days=3",
+                OpenMeteoClient.temperatureUrl(pts, new double[]{100, Double.NaN}));
+        assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.8500,50.9000"
+                + "&longitude=5.6900,5.8000&hourly=temperature_2m&timezone=UTC&forecast_days=3",
+                OpenMeteoClient.temperatureUrl(pts, null));
     }
 
     @Test public void urlWithElevationUsesDotDecimals() {
@@ -38,5 +62,14 @@ public class OpenMeteoClientTest {
         assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.85000&longitude=5.69000"
                 + "&hourly=precipitation&timezone=UTC&past_days=5&forecast_days=1",
                 OpenMeteoClient.precipitationUrl(50.85, 5.69));
+    }
+
+    @Test public void airQualityUrlAsksForAqiAndAllPollenInUtc() {
+        String url = OpenMeteoClient.airQualityUrl(52.1, 5.2);
+        assertTrue(url.startsWith("https://air-quality-api.open-meteo.com/v1/air-quality?"));
+        assertTrue(url.contains("latitude=52.10000&longitude=5.20000"));
+        assertTrue(url.contains("european_aqi"));
+        assertTrue(url.contains("grass_pollen") && url.contains("ragweed_pollen"));
+        assertTrue(url.contains("timezone=UTC"));
     }
 }

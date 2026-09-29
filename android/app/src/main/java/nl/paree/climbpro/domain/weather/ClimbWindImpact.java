@@ -38,6 +38,6 @@ public final class ClimbWindImpact {
         }
         double[] bearings = ClimbSegmentBearings.compute(r, c);
         return WindImpactEstimator.estimate(dist, grad, surface, bearings, totalMassKg, powerWatts,
-                forecast.windKmh[h], forecast.windFromDeg[h]);
+                forecast.windKmh[h], forecast.windDirDeg[h]);
     }
 }

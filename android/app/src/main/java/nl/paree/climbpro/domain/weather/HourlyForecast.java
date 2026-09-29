@@ -15,22 +15,22 @@ public final class HourlyForecast {
     public final double[] temperature;
     public final double[] apparent;
     public final double[] windKmh;
+    /** Direction the wind blows FROM, degrees (0 = north), per hour (issue #174); NaN if absent. */
+    public final double[] windDirDeg;
     public final Integer[] rainPct;
     /** UV index per hour (issue #229); NaN when the service left it out. */
     public final double[] uvIndex;
-    /** Direction the wind comes from, degrees at 10 m (issue #47); NaN when missing. */
-    public final double[] windFromDeg;
 
     private HourlyForecast(Instant[] times, double[] temperature, double[] apparent,
-                           double[] windKmh, Integer[] rainPct, double[] uvIndex,
-                           double[] windFromDeg) {
+                           double[] windKmh, double[] windDirDeg, Integer[] rainPct,
+                           double[] uvIndex) {
         this.times = times;
         this.temperature = temperature;
         this.apparent = apparent;
         this.windKmh = windKmh;
+        this.windDirDeg = windDirDeg;
         this.rainPct = rainPct;
         this.uvIndex = uvIndex;
-        this.windFromDeg = windFromDeg;
     }
 
     public static HourlyForecast parse(String json) throws IOException {
@@ -49,12 +49,12 @@ public final class HourlyForecast {
             temp[i] = number(hourly, "temperature_2m", i);
             app[i] = number(hourly, "apparent_temperature", i);
             wind[i] = number(hourly, "wind_speed_10m", i);
-            uv[i] = number(hourly, "uv_index", i);
             windDir[i] = number(hourly, "wind_direction_10m", i);
+            uv[i] = number(hourly, "uv_index", i);
             JsonNode r = hourly.path("precipitation_probability").get(i);
             rain[i] = r == null || r.isNull() ? null : r.asInt();
         }
-        return new HourlyForecast(times, temp, app, wind, rain, uv, windDir);
+        return new HourlyForecast(times, temp, app, wind, windDir, rain, uv);
     }
 
     /** Index of the hour that contains {@code when}, or -1 outside the forecast. */

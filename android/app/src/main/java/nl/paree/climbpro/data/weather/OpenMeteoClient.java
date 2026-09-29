@@ -1,10 +1,13 @@
 package nl.paree.climbpro.data.weather;
 
+import nl.paree.climbpro.domain.weather.AirQualityForecast;
 import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.DailyForecast;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
 import nl.paree.climbpro.domain.weather.PrecipitationGrid;
 import nl.paree.climbpro.domain.weather.RouteSampler;
+import nl.paree.climbpro.domain.weather.TemperatureGrid;
 
 import java.io.IOException;
 import java.util.List;
@@ -67,6 +70,55 @@ public final class OpenMeteoClient {
         return PrecipitationGrid.parse(get(precipitationUrl(pts, hours)), pts.size());
     }
 
+    /**
+     * Issue #153: hourly temperature for every sample in one request, three days ahead so a ride
+     * planned for tomorrow is still covered. Elevations are sent only when every one is known:
+     * Open-Meteo reads {@code nan} as "no height correction", worse than its own terrain model.
+     */
+    public static String temperatureUrl(List<RouteSampler.Sample> pts, double[] elevations) {
+        StringBuilder lat = new StringBuilder();
+        StringBuilder lon = new StringBuilder();
+        for (int i = 0; i < pts.size(); i++) {
+            if (i > 0) {
+                lat.append(',');
+                lon.append(',');
+            }
+            lat.append(String.format(Locale.US, "%.4f", pts.get(i).lat));
+            lon.append(String.format(Locale.US, "%.4f", pts.get(i).lon));
+        }
+        String url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon
+                + "&hourly=temperature_2m&timezone=UTC&forecast_days=3";
+        if (elevations == null || elevations.length != pts.size()) return url;
+        StringBuilder elev = new StringBuilder();
+        for (int i = 0; i < elevations.length; i++) {
+            if (Double.isNaN(elevations[i])) return url;
+            if (i > 0) elev.append(',');
+            elev.append(Math.round(elevations[i]));
+        }
+        return url + "&elevation=" + elev;
+    }
+
+    public TemperatureGrid fetchTemperatures(List<RouteSampler.Sample> pts, double[] elevations)
+            throws IOException {
+        if (pts.isEmpty()) throw new IOException("route heeft geen punten");
+        return TemperatureGrid.parse(get(temperatureUrl(pts, elevations)), pts.size());
+    }
+
+    /** Issue #197: particulate matter, European AQI and pollen (Europe only) for two days. */
+    public static String airQualityUrl(double lat, double lon) {
+        StringBuilder fields = new StringBuilder("pm10,pm2_5,european_aqi");
+        for (AirQualityForecast.Pollen p : AirQualityForecast.Pollen.values()) {
+            fields.append(',').append(p.field);
+        }
+        return String.format(Locale.US,
+                "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=%s&timezone=UTC&forecast_days=2", lat, lon, fields);
+    }
+
+    public AirQualityForecast fetchAirQuality(double lat, double lon) throws IOException {
+        return AirQualityForecast.parse(get(airQualityUrl(lat, lon)));
+    }
+
     private String get(String url) throws IOException {
         Request req = new Request.Builder().url(url).build();
         try (Response resp = http.newCall(req).execute()) {
@@ -92,5 +144,10 @@ public final class OpenMeteoClient {
 
     public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
         return HourlyPrecipitation.parse(get(precipitationUrl(lat, lon)));
+    }
+
+    /** Issue #40: daily outlook for the coming week at one location ("klim van de week"). */
+    public List<DailyForecast.Day> fetchDaily(double lat, double lon) throws IOException {
+        return DailyForecast.parse(get(DailyForecast.url(lat, lon)));
     }
 }

@@ -48,8 +48,13 @@ public final class RouteSyncWorker extends Worker {
     public  static final String KEY_PULL_DONE  = "pull_done";
     public  static final String KEY_CHANGED    = "routes_changed";
     public  static final String KEY_WATCH_SENT = "watch_sent";
+    /** True when radius mode had no known position, so nothing was sent (issue #310). */
+    public  static final String KEY_NO_LOCATION = "no_location";
 
     private static final int DEFAULT_RADIUS_M = 30_000;
+
+    /** Set by the radius payload job when there is no known position to search around. */
+    private volatile boolean radiusWithoutLocation;
 
     public RouteSyncWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -73,6 +78,7 @@ public final class RouteSyncWorker extends Worker {
         nl.paree.climbpro.data.rider.RiderProfileRepository riderRepo =
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(ctx);
         nl.paree.climbpro.domain.power.RiderProfile profile = riderRepo.load();
+        nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo.loadGhostTarget();
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -98,7 +104,7 @@ public final class RouteSyncWorker extends Worker {
         };
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, attemptRepo);
+                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -114,6 +120,7 @@ public final class RouteSyncWorker extends Worker {
                 .putBoolean(KEY_PULL_DONE, true)
                 .putInt(KEY_CHANGED, r.routesChanged)
                 .putBoolean(KEY_WATCH_SENT, r.sendSucceeded)
+                .putBoolean(KEY_NO_LOCATION, radiusWithoutLocation)
                 .build();
 
         // The yearly km goal card (issue #157) reads the ride archive, which otherwise only
@@ -165,9 +172,11 @@ public final class RouteSyncWorker extends Worker {
      * a manual edit would never trigger a re-sync on its own (only an unrelated change that
      * happens to move {@code sourceHash} or the profile would surface it).
      */
-    private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile) {
+    private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
+                                   nl.paree.climbpro.domain.power.GhostTarget ghost) {
         return route.sourceHash + "|" + profile.signature()
-                + "|" + SegmentTargetOverrideMerger.signature(route);
+                + "|" + SegmentTargetOverrideMerger.signature(route)
+                + "|" + ghost.signature();
     }
 
     /**
@@ -179,6 +188,7 @@ public final class RouteSyncWorker extends Worker {
             SharedPreferences prefs, RouteRepository routeRepo,
             SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
             nl.paree.climbpro.domain.power.RiderProfile profile,
+            nl.paree.climbpro.domain.power.GhostTarget ghost,
             ClimbAttemptRepository attemptRepo) {
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
@@ -186,10 +196,16 @@ public final class RouteSyncWorker extends Worker {
         if (MODE_RADIUS.equals(mode)) {
             return new SyncOrchestrator.PayloadJob() {
                 @Override public byte[] build() throws IOException {
-                    double lat = Double.longBitsToDouble(
-                            prefs.getLong(PREF_LAST_LAT, Double.doubleToLongBits(0)));
-                    double lon = Double.longBitsToDouble(
-                            prefs.getLong(PREF_LAST_LON, Double.doubleToLongBits(0)));
+                    // Never search around 0,0 (issue #310): without a known position
+                    // there is nothing sensible to send.
+                    double[] position = RadiusLocation.current(getApplicationContext(), prefs);
+                    if (position == null) {
+                        Log.w(TAG, "Radius mode without a known location — nothing to send");
+                        radiusWithoutLocation = true;
+                        return null;
+                    }
+                    double lat = position[0];
+                    double lon = position[1];
                     double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
                     RadiusModeAssembler assembler =
                             new RadiusModeAssembler(routeRepo, payloadBuilder);
@@ -212,7 +228,7 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-                String wantHash = wantHash(route, profile);
+                String wantHash = wantHash(route, profile, ghost);
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -221,7 +237,7 @@ public final class RouteSyncWorker extends Worker {
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
-                        route, attemptRepo.loadAll());
+                        route, attemptRepo.loadAll(), ghost);
                 byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
@@ -233,7 +249,7 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, wantHash(route, profile));
+                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost));
                 }
             }
         };

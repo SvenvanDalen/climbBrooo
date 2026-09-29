@@ -96,6 +96,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
   detail screen; the route list shows the status and can be filtered on it (menu →
   "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Fuel planner** — "Voedingsplanner" on the route detail screen estimates ride time from
+  your profile and the route's climbing, and tells you how many bars, gels and bottles to
+  bring; temperature comes from the forecast at the start or is typed in.
 - **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
   "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
   untouched and tapping again reopens the existing reversed route.
@@ -114,17 +117,83 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   per-surface rolling resistance and route-wide fatigue (W'-balance). Phone-only.
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
+- **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
+  target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
+  virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
   the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
+- **Temperature trend over the ride** — route detail → "Temperatuurtrend tonen", pick a start
+  time (today, or tomorrow if already past) and see a chart of the expected temperature at each
+  point of the route at the moment you pass it, plus start/finish/warmest/coldest. Pace comes
+  from your pacing plan (25 km/h without a profile). Open-Meteo, height-corrected. Phone-only.
+
+- **Wind-optimised loop direction** — route detail → "Beste rijrichting (wind)" says which way
+  round to ride a loop so the last kilometres home have the wind at your back (Open-Meteo
+  wind at the start, averaged over the next 3 hours). Point-to-point routes are recognised
+  and left alone. Phone-only, keyless, on demand.
+
+- **Klim van de week** — one suggested climb per ISO week, chosen from your climb catalog by
+  riding history (never / long not ridden), distance from your last known location and the
+  week's weather (Open-Meteo); stays the same all week. Offline it skips the weather and says so.
+  Phone-only.
 
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
+- **Clothing advice** — what to wear for your planned ride window, from the forecast with
+  the riding wind in the wind chill, plus rain and removable-layer hints. Phone-only.
+
+- **Air quality and pollen** — particulate matter, European AQI and pollen for your planned
+  ride window at your location, with a warning for asthma or hay fever (Open-Meteo, keyless).
+  Phone-only.
+
+- **Ride comparer** — tap a ride in Ritten and pick another ride over the same route to see
+  time, speed, heart rate and the running time difference per kilometre. Phone-only.
+
+- **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
+  route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
+
+- **Climb repeats workout** — climb detail → "Exporteer als indoor-workout" → "Herhaal-klim"
+  writes "N× deze klim" (2–10×, default 5) as a Zwift `.zwo` or `.erg`: warm-up, the climb's
+  segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
+  3–10 min), cool-down. Phone-only.
+
+- **Training advice after a climb** — climb screen: short, concrete pacing tips for your
+  latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
+  average, where you lost most time against your best splits), from the stored segment
+  splits. Phone-only.
+
+- **PR chance before riding** — the climb screen shows whether a PR is realistic today
+  (goede kans / matig / onwaarschijnlijk) with the main reasons, combining your attempt
+  history on that climb, fitness and form from your ride archive, and the summit weather
+  forecast (left out when offline). Phone-only.
+
+- **Climb training block** — menu "Trainingsblok": a 4-week plan (3 build weeks, 1 recovery
+  week) built from climbs you have already ridden. Weekly climbing load starts at your recent
+  4-week average and rises 10 % per week while the allowed climbs get harder; each week lists
+  2-3 sessions as "N× climb". Phone-only.
+
+- **Training-load calendar** — menu → "Trainingskalender" shows a year of daily training load
+  as a GitHub-style heatmap (TSS-style load per ride from the ride archive, plus climb
+  attempts); tap a day for load, rides, climbs and elevation. Phone-only.
+
+- **Sweat-loss estimator** — weigh yourself before and after a ride, log what you drank and
+  get your sweat rate (L/h) plus a personal drinking advice (ml and bottles per hour) for
+  future rides. Phone-only.
+
+- **Gear calculator for a climb** — climb screen → "Versnellingen berekenen": enter your
+  chainrings, cassette, wheel size and target cadence to see the cadence per gear on the
+  steepest segment and at the average gradient, and whether your easiest gear is light
+  enough. Phone-only.
+
+- **Monthly challenge** — pick a goal for the month (distinct climbs, hoogtemeters, km or
+  rides) or let the app suggest one from your last three months, with progress and pace. Phone-only.
 
 ---
 
