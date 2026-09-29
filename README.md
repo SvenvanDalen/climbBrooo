@@ -129,6 +129,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
+- **Air quality and pollen** — particulate matter, European AQI and pollen for your planned
+  ride window at your location, with a warning for asthma or hay fever (Open-Meteo, keyless).
+  Phone-only.
+
 - **Ride comparer** — tap a ride in Ritten and pick another ride over the same route to see
   time, speed, heart rate and the running time difference per kilometre. Phone-only.
 
