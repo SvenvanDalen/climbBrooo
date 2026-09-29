@@ -160,6 +160,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_training_load_calendar"
+        android:title="@string/load_calendar_menu"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_photo_quiz"
         android:title="Fotoquiz"
         app:showAsAction="never"/>

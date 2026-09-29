@@ -99,6 +99,24 @@
     <string name="fav_start_manage">Beheren</string>
     <string name="fav_start_none_yet">Nog geen favoriete startpunten. Wil je er een toevoegen?</string>
     <string name="fav_start_spinner_item">Vertrekken vanaf %1$s</string>
+    <!-- Trainingsbelasting-kalender (issue #182) -->
+    <string name="load_calendar_menu">Trainingskalender</string>
+    <string name="load_calendar_title">Trainingskalender</string>
+    <string name="load_calendar_empty">Nog geen ritten of klimpogingen in het archief. Open Ritten en tik op Ophalen; je trainingsbelasting per dag verschijnt dan hier.</string>
+    <string name="load_calendar_summary">Afgelopen %1$d weken: %2$d actieve dagen, totale belasting %3$.0f.</string>
+    <string name="load_calendar_streak">Langste reeks dagen achter elkaar gefietst: %1$d.</string>
+    <string name="load_calendar_busiest_week">Zwaarste week: vanaf %1$s, belasting %2$.0f.</string>
+    <string name="load_calendar_no_ftp">Vul je FTP in bij Instellingen: dan telt vermogen mee en klopt de belasting per rit beter.</string>
+    <string name="load_calendar_tap_hint">Tik op een dag voor details.</string>
+    <string name="load_calendar_day_rest">%1$s: rustdag.</string>
+    <string name="load_calendar_day_detail">%1$s: belasting %2$.0f (%3$s) · %4$d rit(ten) · %5$d klim(men) · %6$.0f hm</string>
+    <string name="load_calendar_legend_less">Minder</string>
+    <string name="load_calendar_legend_more">Meer</string>
+    <string name="load_calendar_level_light">licht</string>
+    <string name="load_calendar_level_moderate">gemiddeld</string>
+    <string name="load_calendar_level_hard">zwaar</string>
+    <string name="load_calendar_level_very_hard">zeer zwaar</string>
+    <string name="load_calendar_explanation">Elk vakje is een dag, elke kolom een week (maandag bovenaan). Belasting per rit: uren × intensiteit² × 100, waarbij één uur op je FTP 100 is (zelfde berekening als Fitheid &amp; vorm). Klimpogingen van ritten die niet in het archief staan tellen mee als tijd op de klim op 85% van je FTP. Kleuren: onder 50 licht, onder 100 gemiddeld, onder 200 zwaar, 200 of meer zeer zwaar.</string>
     <!-- Zweetverlies-schatter (issue #186) -->
     <string name="sweat_title">Zweetverlies</string>
     <string name="sweat_intro">Weeg jezelf vlak voor en na de rit, zonder kleding en na toiletbezoek, en noteer hoeveel je onderweg dronk. Zo schat de app je zweetverlies en krijg je drinkadvies voor volgende ritten.</string>
