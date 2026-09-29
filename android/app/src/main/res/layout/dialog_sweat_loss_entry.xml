@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="8dp">
+
+        <Spinner
+            android:id="@+id/spinner_ride"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btn_date"
+            style="@style/Widget.ClimbPro.Button.Outline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/input_weight_before"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/sweat_weight_before_hint"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal" />
+
+        <EditText
+            android:id="@+id/input_weight_after"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/sweat_weight_after_hint"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal" />
+
+        <EditText
+            android:id="@+id/input_drunk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/sweat_drunk_hint"
+            android:importantForAutofill="no"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/input_duration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/sweat_duration_hint"
+            android:importantForAutofill="no"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/input_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/sweat_note_hint"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences" />
+    </LinearLayout>
+</ScrollView>
