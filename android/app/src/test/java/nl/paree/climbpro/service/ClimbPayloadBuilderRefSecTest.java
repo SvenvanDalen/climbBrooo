@@ -103,4 +103,45 @@ public class ClimbPayloadBuilderRefSecTest {
                 .get("climbs").get(0);
         assertFalse(climb.has("refsec"));
     }
+    @Test
+    public void targetSpeedGhost_flowsIntoRefsecForFreshClimb() throws Exception {
+        // Issue #31: no attempts, no manual reference → the virtual constant-speed ghost
+        // reaches the watch through the existing refsec field (18 km/h → 500 m = 100 s).
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute route = routeWith4SegClimb();
+        int[][] refPlan = CombinedRefTimePlanner.plan(route, java.util.Collections.emptyList(),
+                new nl.paree.climbpro.domain.power.GhostTarget(18, 0));
+        JsonNode refsec = mapper.readTree(b.buildRoutePayload(route, null, refPlan))
+                .get("climbs").get(0).get("refsec");
+        assertNotNull(refsec);
+        assertEquals(4, refsec.size());
+        for (int i = 0; i < 4; i++) assertEquals(100, refsec.get(i).asInt());
+    }
+
+    @Test
+    public void targetVamGhost_flowsIntoSingleClimbRefsec() throws Exception {
+        // 900 m/h VAM: each 20 m-gain segment = 80 s.
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute route = routeWith4SegClimb();
+        int[][] refPlan = CombinedRefTimePlanner.plan(route, java.util.Collections.emptyList(),
+                new nl.paree.climbpro.domain.power.GhostTarget(0, 900));
+        JsonNode refsec = mapper.readTree(b.buildSingleClimbPayload(route, 0, null, refPlan))
+                .get("climbs").get(0).get("refsec");
+        assertNotNull(refsec);
+        for (int i = 0; i < 4; i++) assertEquals(80, refsec.get(i).asInt());
+    }
+
+    @Test
+    public void unsetGhost_stillOmitsRefsecForFreshClimb() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(mapper);
+        StoredRoute route = routeWith4SegClimb();
+        int[][] refPlan = CombinedRefTimePlanner.plan(route, java.util.Collections.emptyList(),
+                nl.paree.climbpro.domain.power.GhostTarget.NONE);
+        JsonNode climb = mapper.readTree(b.buildRoutePayload(route, null, refPlan))
+                .get("climbs").get(0);
+        assertFalse(climb.has("refsec"));
+    }
 }

@@ -26,13 +26,16 @@ import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 import nl.paree.climbpro.domain.ride.RideCategory;
 import nl.paree.climbpro.domain.ride.RideCategoryLabel;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
  * "Ritten" archive (issue #160): synced rides automatically classified as woon-werk,
- * training or toerrit, filterable per category — no manual tagging. Tapping a ride opens its
- * post-ride recovery check (issue #183). Phone-only.
+ * training or toerrit, filterable per category — no manual tagging. Tapping a ride offers its
+ * post-ride recovery check (issue #183), the ride story and the ride comparer. Phone-only.
  */
 public final class RideArchiveActivity extends AppCompatActivity {
 
@@ -64,7 +67,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
         TextView empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RideArchiveAdapter(this::showRecoveryDialog);
+        adapter = new RideArchiveAdapter(this::showRideActions);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(RideArchiveViewModel.class);
@@ -104,6 +107,52 @@ public final class RideArchiveActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (adapter != null) adapter.shutdown();
+    }
+
+    /**
+     * Tap on a ride: recovery check (issue #183), share it as a story (issue #193) or compare
+     * it (issue #199).
+     */
+    private void showRideActions(RideArchiveViewModel.Row row) {
+        StoredRide ride = row.ride;
+        new AlertDialog.Builder(this)
+                .setTitle(ride.name != null && !ride.name.isEmpty() ? ride.name : "Rit")
+                .setItems(new String[]{
+                        getString(R.string.recovery_check_title), "Rit-verhaal delen",
+                        "Vergelijk met…"}, (d, which) -> {
+                    if (which == 0) {
+                        showRecoveryDialog(row);
+                    } else if (which == 1) {
+                        startActivity(RideStoryActivity.intentFor(this, ride.activityId));
+                    } else {
+                        pickRideToCompare(ride);
+                    }
+                })
+                .show();
+    }
+
+    /** Ride comparer (issue #199): offer the other rides that look like the same route. */
+    private void pickRideToCompare(StoredRide base) {
+        List<StoredRide> candidates = viewModel.sameRouteCandidates(base);
+        if (candidates.isEmpty()) {
+            Toast.makeText(this, "Geen andere rit over dezelfde route gevonden om mee te vergelijken",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        SimpleDateFormat fmt = new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+        String[] items = new String[candidates.size()];
+        for (int i = 0; i < items.length; i++) {
+            StoredRide r = candidates.get(i);
+            items[i] = String.format(Locale.getDefault(), "%s  •  %.1f km  •  %.1f km/u",
+                    r.startEpochSec > 0 ? fmt.format(new Date(r.startEpochSec * 1000L)) : "?",
+                    r.distanceM / 1000f, r.avgSpeedMps * 3.6f);
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Vergelijk met…")
+                .setItems(items, (d, which) -> startActivity(RideCompareActivity.intentFor(
+                        this, base.activityId, candidates.get(which).activityId)))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     /** Herstel-check (issue #183): RPE 1–10, sleep 1–5, optional hours and note. */

@@ -37,6 +37,9 @@ public enum PrivacyCategory {
     BIKE_COSTS("Fietskosten",
             "Je fietsen met aankopen, onderdelen en hun bedragen.",
             "bike_costs.json"),
+    BIKE_PASSPORTS("Fietspaspoort",
+            "Framenummer, merk, model, aankoopgegevens, foto's en aankoopbewijs van je fietsen.",
+            "bike_passports.json", "bike_passport_photos/"),
     BATTERIES("Accu's",
             "Je accu's (e-shifting, verlichting, powermeter) met de laatste laaddatum en "
                     + "herinneringsinterval.",
@@ -44,6 +47,9 @@ public enum PrivacyCategory {
     PAIN_LOG("Pijnlogboek",
             "Je gelogde klachten per rit, met fiets, afstelling en notities.",
             "pain_log.json"),
+    SWEAT_LOSS("Zweetverlies-metingen",
+            "Je gewicht voor en na ritten, hoeveel je onderweg dronk en je notities.",
+            "sweat_loss_log.json"),
     SAFE_HOME("Veilig thuis-bericht",
             "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
                     + "gemeld zijn.",
@@ -61,6 +67,9 @@ public enum PrivacyCategory {
     PLANNING("Klimplanning",
             "Geplande klimmen en hun herinneringen.",
             "planned_climbs.json"),
+    PACKING_LISTS("Paklijsten",
+            "Je paklijsten per rittype en wat je hebt afgevinkt.",
+            "packing_lists.json"),
     FRIENDS("Vriendenfeed",
             "Ritten en mijlpalen die vrienden met een deelcode met je deelden, en de naam "
                     + "waaronder je zelf deelt.",

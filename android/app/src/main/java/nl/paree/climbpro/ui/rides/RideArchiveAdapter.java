@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
 /** Flat list of archived rides, newest first, each with its automatic category. */
 public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAdapter.RowVH> {
 
-    /** Tap on a ride row: opens its recovery check (issue #183). */
+    /** Tap on a ride row: opens the ride actions (recovery check, story, compare). */
     public interface Listener {
         void onRideClicked(Row row);
     }

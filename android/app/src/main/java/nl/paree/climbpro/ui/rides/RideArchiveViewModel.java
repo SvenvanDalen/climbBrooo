@@ -24,6 +24,7 @@ import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.ride.RideCategory;
 import nl.paree.climbpro.domain.ride.RideClassifier;
+import nl.paree.climbpro.domain.ride.RideComparison;
 import nl.paree.climbpro.domain.ride.SummitGroupPhotos;
 
 import java.io.IOException;
@@ -146,6 +147,13 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         });
     }
 
+    /** Other archived rides over the same route as {@code base} (issue #199), newest first. */
+    public List<StoredRide> sameRouteCandidates(StoredRide base) {
+        List<StoredRide> rides = new ArrayList<>();
+        for (Row r : allRows) rides.add(r.ride);
+        return RideComparison.sameRouteCandidates(base, rides);
+    }
+
     public void setFilter(RideCategory category) {
         executor.execute(() -> {
             filter = category;
@@ -201,9 +209,15 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         return SummitGroupPhotos.byActivity(attempts, climbNames());
     }
 
-    /** Display name per ClimbIdentity key, same resolution as the photo quiz (issue #252). */
     private Map<String, String> climbNames() {
-        RouteRepository repo = new RouteRepository(getApplication());
+        return climbNames(new RouteRepository(getApplication()));
+    }
+
+    /**
+     * Display name per ClimbIdentity key, same resolution as the photo quiz (issue #252). Also
+     * used by the ride story (issue #193).
+     */
+    static Map<String, String> climbNames(RouteRepository repo) {
         Map<String, String> names = new HashMap<>();
         for (RouteCatalogEntry e : repo.loadCatalog()) {
             try {
