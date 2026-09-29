@@ -129,6 +129,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Ride comparer** — tap a ride in Ritten and pick another ride over the same route to see
   time, speed, heart rate and the running time difference per kilometre. Phone-only.
 
+- **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
+  route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.

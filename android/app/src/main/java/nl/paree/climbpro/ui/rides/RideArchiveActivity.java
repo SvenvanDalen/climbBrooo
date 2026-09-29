@@ -59,7 +59,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
         TextView empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RideArchiveAdapter(this::pickRideToCompare);
+        adapter = new RideArchiveAdapter(this::showRideActions);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(RideArchiveViewModel.class);
@@ -97,6 +97,20 @@ public final class RideArchiveActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (adapter != null) adapter.shutdown();
+    }
+
+    /** Tap on a ride: share it as a story (issue #193) or compare it (issue #199). */
+    private void showRideActions(StoredRide ride) {
+        new AlertDialog.Builder(this)
+                .setTitle(ride.name != null && !ride.name.isEmpty() ? ride.name : "Rit")
+                .setItems(new String[]{"Rit-verhaal delen", "Vergelijk met…"}, (d, which) -> {
+                    if (which == 0) {
+                        startActivity(RideStoryActivity.intentFor(this, ride.activityId));
+                    } else {
+                        pickRideToCompare(ride);
+                    }
+                })
+                .show();
     }
 
     /** Ride comparer (issue #199): offer the other rides that look like the same route. */
