@@ -272,8 +272,8 @@ public final class RouteListActivity extends AppCompatActivity {
                         // a manually triggered check still confirms it actually ran.
                         if (verbose) {
                             Toast.makeText(RouteListActivity.this,
-                                    "Je hebt al de nieuwste versie (build "
-                                            + nl.paree.climbpro.BuildConfig.VERSION_CODE + ")",
+                                    "Je hebt al de nieuwste versie (v"
+                                            + nl.paree.climbpro.BuildConfig.VERSION_NAME + ")",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -335,6 +335,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_elevation_target) {
             startActivity(nl.paree.climbpro.ui.planning.ElevationTargetActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_climb_of_the_week) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbOfTheWeekActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_top_climbs) {
             startActivity(nl.paree.climbpro.ui.climbs.TopClimbsActivity.intentFor(this));
             return true;
@@ -383,6 +386,12 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_sunscreen) {
             startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_clothing) {
+            startActivity(nl.paree.climbpro.ui.clothing.ClothingActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_air_quality) {
+            startActivity(nl.paree.climbpro.ui.airquality.AirQualityActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_comeback_plan) {
             startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
@@ -440,6 +449,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_goal_event) {
             startActivity(nl.paree.climbpro.ui.goals.GoalEventActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_monthly_challenge) {
+            startActivity(nl.paree.climbpro.ui.goals.MonthlyChallengeActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));

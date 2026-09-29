@@ -104,6 +104,11 @@
             android:parentActivityName=".ui.climbs.ClimbDetailActivity"/>
 
         <activity
+            android:name=".ui.climbs.GearCalculatorActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.climbs.ClimbDetailActivity"/>
+
+        <activity
             android:name=".ui.climbs.ClimbBulkRenameActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteDetailActivity"/>
@@ -130,6 +135,11 @@
 
         <activity
             android:name=".ui.planning.ElevationTargetActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.climbs.ClimbOfTheWeekActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
@@ -162,6 +172,16 @@
             android:name=".ui.rides.RideArchiveActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.rides.RideCompareActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.rides.RideArchiveActivity" />
+
+        <activity
+            android:name=".ui.rides.RideStoryActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.rides.RideArchiveActivity" />
 
         <activity
             android:name=".ui.records.RideRecordsActivity"
@@ -250,12 +270,32 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.clothing.ClothingActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.airquality.AirQualityActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.nutrition.FuelPlannerActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteDetailActivity" />
+
+        <activity
             android:name=".ui.comeback.ComebackPlanActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.collections.CollectionListActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.goals.MonthlyChallengeActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 

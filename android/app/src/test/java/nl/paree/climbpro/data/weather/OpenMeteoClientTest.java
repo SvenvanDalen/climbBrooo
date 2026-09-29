@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.weather;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import nl.paree.climbpro.domain.weather.RouteSampler;
 
@@ -38,5 +39,14 @@ public class OpenMeteoClientTest {
         assertEquals("https://api.open-meteo.com/v1/forecast?latitude=50.85000&longitude=5.69000"
                 + "&hourly=precipitation&timezone=UTC&past_days=5&forecast_days=1",
                 OpenMeteoClient.precipitationUrl(50.85, 5.69));
+    }
+
+    @Test public void airQualityUrlAsksForAqiAndAllPollenInUtc() {
+        String url = OpenMeteoClient.airQualityUrl(52.1, 5.2);
+        assertTrue(url.startsWith("https://air-quality-api.open-meteo.com/v1/air-quality?"));
+        assertTrue(url.contains("latitude=52.10000&longitude=5.20000"));
+        assertTrue(url.contains("european_aqi"));
+        assertTrue(url.contains("grass_pollen") && url.contains("ragweed_pollen"));
+        assertTrue(url.contains("timezone=UTC"));
     }
 }
