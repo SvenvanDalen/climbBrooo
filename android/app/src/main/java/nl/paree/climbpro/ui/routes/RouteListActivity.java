@@ -457,6 +457,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_goal_event) {
             startActivity(nl.paree.climbpro.ui.goals.GoalEventActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_packing_list) {
+            startActivity(nl.paree.climbpro.ui.planning.PackingListActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_bike_passport) {
             startActivity(nl.paree.climbpro.ui.bike.BikePassportActivity.intentFor(this));
             return true;

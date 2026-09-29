@@ -65,6 +65,9 @@ public enum PrivacyCategory {
     PLANNING("Klimplanning",
             "Geplande klimmen en hun herinneringen.",
             "planned_climbs.json"),
+    PACKING_LISTS("Paklijsten",
+            "Je paklijsten per rittype en wat je hebt afgevinkt.",
+            "packing_lists.json"),
     FRIENDS("Vriendenfeed",
             "Ritten en mijlpalen die vrienden met een deelcode met je deelden, en de naam "
                     + "waaronder je zelf deelt.",
