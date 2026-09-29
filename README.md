@@ -155,6 +155,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Climb repeats workout** — climb detail → "Exporteer als indoor-workout" → "Herhaal-klim"
+  writes "N× deze klim" (2–10×, default 5) as a Zwift `.zwo` or `.erg`: warm-up, the climb's
+  segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
+  3–10 min), cool-down. Phone-only.
+
 - **Training advice after a climb** — climb screen: short, concrete pacing tips for your
   latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
   average, where you lost most time against your best splits), from the stored segment
