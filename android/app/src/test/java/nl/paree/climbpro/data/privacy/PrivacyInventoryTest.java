@@ -109,6 +109,7 @@ public class PrivacyInventoryTest {
                 "bike_costs.json",
                 "battery_status.json",
                 "pain_log.json",
+                "sweat_loss_log.json",
                 "safe_home.json",
                 "comeback_plan.json",
                 "ride_stream_stats.json",

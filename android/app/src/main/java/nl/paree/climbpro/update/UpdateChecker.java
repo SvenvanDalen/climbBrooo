@@ -28,9 +28,10 @@ import java.util.regex.Pattern;
 
 /**
  * Polls GitHub Releases for a build newer than the one currently installed.
- * {@code build-android.yml} tags every release {@code v<run_number>} and sets that
- * same number as this build's versionCode, so tag vs. versionCode is a direct
- * numeric comparison.
+ * {@code build-android.yml} tags every release {@code v1.0.<run_number>} and sets that
+ * same run number as this build's versionCode, so the tag's last component vs.
+ * versionCode is a direct numeric comparison. Legacy {@code v<run_number>} tags
+ * are still understood.
  */
 public final class UpdateChecker {
 
@@ -41,7 +42,7 @@ public final class UpdateChecker {
     private static final String KEY_DOWNLOAD_ID = "pending_download_id";
     private static final String OWNER;
     private static final String REPO_NAME;
-    private static final Pattern TAG_VERSION = Pattern.compile("v?(\\d+)");
+    private static final Pattern TAG_VERSION = Pattern.compile("v?(?:\\d+\\.\\d+\\.)?(\\d+)");
 
     static {
         int slash = REPO.indexOf('/');
@@ -164,7 +165,7 @@ public final class UpdateChecker {
         return null;
     }
 
-    /** Parses "v42" / "42" -> 42; returns -1 if the tag doesn't match the expected shape. */
+    /** Parses "v1.0.42" / "v42" / "42" -> 42; returns -1 if the tag doesn't match the expected shape. */
     static int parseVersion(String tagName) {
         if (tagName == null) return -1;
         Matcher m = TAG_VERSION.matcher(tagName.trim());

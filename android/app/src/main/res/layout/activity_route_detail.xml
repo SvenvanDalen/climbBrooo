@@ -55,6 +55,51 @@
                 android:textSize="14sp"
                 android:visibility="gone" />
 
+            <Button
+                android:id="@+id/btn_temperature_trend"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Temperatuurtrend tonen" />
+
+            <nl.paree.climbpro.ui.routes.TemperatureTrendView
+                android:id="@+id/temperature_trend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:padding="4dp"
+                android:background="@drawable/bg_card"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/temperature_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_loop_wind"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/loop_wind_action" />
+
+            <TextView
+                android:id="@+id/loop_wind_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/route_profile_title"
                 style="@style/TextAppearance.ClimbPro.Label"
@@ -215,6 +260,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Bandenspanning-advies" />
+
+            <Button
+                android:id="@+id/btn_fuel_planner"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/fuel_action" />
 
             <Button
                 android:id="@+id/btn_reverse_route"

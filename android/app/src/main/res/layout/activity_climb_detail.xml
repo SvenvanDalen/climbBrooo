@@ -57,10 +57,43 @@
                 android:textColor="@color/color_accent"
                 android:textSize="15sp"
                 android:textStyle="bold"
+                android:layout_marginBottom="4dp"/>
+
+            <!-- Issue #47: wind-corrected estimate (or why it is uncorrected) -->
+            <TextView
+                android:id="@+id/climb_wind_impact"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone"
                 android:layout_marginBottom="16dp"/>
 
             <TextView
                 android:id="@+id/seasonal_comparison"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <!-- Trainingsadvies na een klim (issue #64) -->
+            <TextView
+                android:id="@+id/training_advice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_grotesk"
+                android:textColor="@color/color_text_primary"
+                android:textSize="14sp"
+                android:lineSpacingExtra="2dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/pr_chance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/space_grotesk"
@@ -190,6 +223,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="Vergelijk met andere klim"/>
+
+            <Button
+                android:id="@+id/btn_gear_calculator"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Versnellingen berekenen"/>
 
             <Button
                 android:id="@+id/btn_re_segment"
