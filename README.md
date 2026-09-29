@@ -155,6 +155,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.
 
+- **Training advice after a climb** — climb screen: short, concrete pacing tips for your
+  latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
+  average, where you lost most time against your best splits), from the stored segment
+  splits. Phone-only.
+
 - **PR chance before riding** — the climb screen shows whether a PR is realistic today
   (goede kans / matig / onwaarschijnlijk) with the main reasons, combining your attempt
   history on that climb, fitness and form from your ride archive, and the summit weather

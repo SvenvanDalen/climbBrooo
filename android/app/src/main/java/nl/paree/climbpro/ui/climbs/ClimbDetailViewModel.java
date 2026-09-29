@@ -17,6 +17,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.climb.ClimbGpxWriter;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.ClimbPacingAdvisor;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
@@ -65,6 +66,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<SeasonalComparisonCalculator.Result> seasonalComparison =
             new MutableLiveData<>();
     private final MutableLiveData<File>              gpxExportFile = new MutableLiveData<>();
+    private final MutableLiveData<TrainingAdvice>    trainingAdvice = new MutableLiveData<>();
     private final MutableLiveData<WorkoutExport>     workoutExport = new MutableLiveData<>();
     private final MutableLiveData<PrChance>          prChance      = new MutableLiveData<>();
 
@@ -90,6 +92,19 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         return seasonalComparison;
     }
     public LiveData<File>              gpxExportFile() { return gpxExportFile; }
+    /** Pacing advice for the latest analysable attempt (issue #64); null = none. */
+    public LiveData<TrainingAdvice>    trainingAdvice() { return trainingAdvice; }
+
+    /** {@link ClimbPacingAdvisor} output plus the date of the attempt it is about. */
+    public static final class TrainingAdvice {
+        public final long attemptDateEpochSec;
+        public final ClimbPacingAdvisor.Advice advice;
+
+        TrainingAdvice(long attemptDateEpochSec, ClimbPacingAdvisor.Advice advice) {
+            this.attemptDateEpochSec = attemptDateEpochSec;
+            this.advice = advice;
+        }
+    }
     public LiveData<WorkoutExport>     workoutExport() { return workoutExport; }
     public LiveData<PrChance>          prChance()      { return prChance; }
 
@@ -138,6 +153,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                     history.postValue(LogbookCalculator.historyFor(climbId, attempts));
                     seasonalComparison.postValue(
                             SeasonalComparisonCalculator.compare(climbId, attempts));
+                    trainingAdvice.postValue(computeTrainingAdvice(loaded, climbId, attempts));
                     predictPrChance(r, loaded, climbId, attempts);
                 } else {
                     error.postValue("Climb not found");
@@ -518,6 +534,31 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         if (c != null) {
             executor.execute(() -> computeEstimate(c));
         }
+    }
+
+    /** Issue #64: advice on how the latest attempt was paced; null when it can't be analysed. */
+    private TrainingAdvice computeTrainingAdvice(StoredClimb c, String climbId,
+                                                 List<StoredClimbAttempt> attempts) {
+        if (c.segments == null || c.segments.isEmpty()) return null;
+        int n = c.segments.size();
+        StoredClimbAttempt latest = ClimbPacingAdvisor.latestAnalyzable(climbId, n, attempts);
+        if (latest == null) return null;
+        int[] dist = new int[n];
+        double[] grad = new double[n];
+        int[] surface = new int[n];
+        for (int i = 0; i < n; i++) {
+            StoredSegment s = c.segments.get(i);
+            dist[i] = s.distance;
+            grad[i] = s.gradient;
+            surface[i] = s.surfaceType;
+        }
+        RiderProfile profile = riderRepo.load();
+        double mass = profile.riderWeightKg > 0 && profile.bikeWeightKg > 0
+                ? profile.totalMassKg() : ClimbPacingAdvisor.DEFAULT_MASS_KG;
+        int[] best = SegmentPrCalculator.bestSplits(climbId, n, attempts);
+        ClimbPacingAdvisor.Advice advice = ClimbPacingAdvisor.analyze(
+                dist, grad, surface, latest.segSplitSec, best, mass);
+        return advice == null ? null : new TrainingAdvice(latest.dateEpochSec, advice);
     }
 
     private void computeEstimate(StoredClimb c) {
