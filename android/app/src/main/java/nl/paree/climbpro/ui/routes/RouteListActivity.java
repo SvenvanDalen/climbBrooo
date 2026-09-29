@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.databinding.ActivityRouteListBinding;
+import nl.paree.climbpro.domain.activity.MyWhooshRouteReader;
 import nl.paree.climbpro.domain.route.GpxParseException;
 import nl.paree.climbpro.domain.route.GpxParser;
 import nl.paree.climbpro.domain.route.RoutePoint;
@@ -70,6 +71,11 @@ public final class RouteListActivity extends AppCompatActivity {
     private final ActivityResultLauncher<String[]> gpxPicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                     uri -> { if (uri != null) importGpx(uri); });
+
+    /** MyWhoosh ride import (issue #342): FIT or GPX exported from MyWhoosh. */
+    private final ActivityResultLauncher<String[]> myWhooshPicker =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(),
+                    uri -> { if (uri != null) importRoute(uri, true); });
 
     private final ActivityResultLauncher<String[]> btPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
@@ -657,9 +663,11 @@ public final class RouteListActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Add route")
                 .setItems(new String[]{"Import GPX file", "Sync from Strava",
-                        "Klimcode importeren"}, (d, which) -> {
+                        "Klimcode importeren", "MyWhoosh-rit importeren (FIT)"}, (d, which) -> {
                     if (which == 0) {
                         gpxPicker.launch(new String[]{"*/*"});
+                    } else if (which == 3) {
+                        showMyWhooshImportHelp();
                     } else if (which == 2) {
                         nl.paree.climbpro.ui.share.ClimbCodeSharing.showImportDialog(
                                 this, executor, viewModel::loadRoutes);
@@ -838,30 +846,68 @@ public final class RouteListActivity extends AppCompatActivity {
         getSupportActionBar().setSubtitle(filtered ? "Filter: " + STATUS_FILTER_LABELS[filter] : null);
     }
 
+    private static final String MYWHOOSH_COLLECTION = "MyWhoosh";
+
+    /** Explains where MyWhoosh keeps the FIT file before opening the picker (issue #342). */
+    private void showMyWhooshImportHelp() {
+        new AlertDialog.Builder(this)
+                .setTitle("MyWhoosh-rit importeren")
+                .setMessage("Download in MyWhoosh (of via Strava / Garmin Connect \u2192 "
+                        + "\"Exporteer origineel\") het FIT-bestand van je rit en kies het hier. "
+                        + "De klimmen worden gedetecteerd en de route komt in de collectie \""
+                        + MYWHOOSH_COLLECTION + "\".\n\nRitten zonder GPS-posities worden "
+                        + "alleen als profiel getoond (niet voor radius-modus of navigatie).")
+                .setPositiveButton("Kies bestand", (d, w) -> myWhooshPicker.launch(new String[]{"*/*"}))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
     private void importGpx(android.net.Uri uri) {
+        importRoute(uri, false);
+    }
+
+    /**
+     * Parses a GPX (or, for {@code myWhoosh}, a MyWhoosh FIT/GPX export) and runs the climb
+     * pipeline. Virtual MyWhoosh rides without GPS skip the duplicate check: their synthetic
+     * coordinates all start at 0,0 and would falsely match each other.
+     */
+    private void importRoute(android.net.Uri uri, boolean myWhoosh) {
         executor.execute(() -> {
             try (InputStream in = getContentResolver().openInputStream(uri)) {
                 if (in == null) throw new IOException("Cannot open file");
                 byte[] bytes = readStream(in);
 
-                List<RoutePoint> raw       = GpxParser.parse(new java.io.ByteArrayInputStream(bytes));
+                boolean virtual = false;
+                List<RoutePoint> raw;
+                if (myWhoosh) {
+                    MyWhooshRouteReader.Result read = MyWhooshRouteReader.read(bytes);
+                    raw = read.points;
+                    virtual = read.virtual;
+                } else {
+                    raw = GpxParser.parse(new java.io.ByteArrayInputStream(bytes));
+                }
                 List<RoutePoint> withDist  = CumulativeDistance.compute(raw);
                 List<RoutePoint> smoothed  = ElevationSmoother.smooth(withDist, 5);
-                List<RoutePoint> simple    = RouteSimplifier.simplify(smoothed, 5.0);
+                List<RoutePoint> simple    = myWhoosh
+                        ? MyWhooshRouteReader.simplify(smoothed, virtual)
+                        : RouteSimplifier.simplify(smoothed, 5.0);
                 List<Climb>      climbs    = ClimbDetector.detect(simple);
                 int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
                         .detectFromGpxBytes(bytes);
+                final boolean isVirtual = virtual;
 
                 RouteRepository repo = new RouteRepository(this);
-                List<DuplicateClimbMatcher.Match> duplicates = DuplicateClimbMatcher.findDuplicates(
-                        climbs, repo.loadCatalog(), ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
+                List<DuplicateClimbMatcher.Match> duplicates = isVirtual
+                        ? new ArrayList<>()
+                        : DuplicateClimbMatcher.findDuplicates(climbs, repo.loadCatalog(),
+                                ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
 
                 if (duplicates.isEmpty()) {
-                    finishImport(uri, bytes, simple, climbs, detectedSurface);
+                    finishImport(uri, bytes, simple, climbs, detectedSurface, myWhoosh, isVirtual);
                 } else {
                     runOnUiThread(() -> promptDuplicateResolution(duplicates,
-                            () -> executor.execute(
-                                    () -> finishImport(uri, bytes, simple, climbs, detectedSurface))));
+                            () -> executor.execute(() -> finishImport(uri, bytes, simple, climbs,
+                                    detectedSurface, myWhoosh, isVirtual))));
                 }
             } catch (GpxParseException e) {
                 runOnUiThread(() -> Toast.makeText(this,
@@ -904,17 +950,25 @@ public final class RouteListActivity extends AppCompatActivity {
     }
 
     private void finishImport(android.net.Uri uri, byte[] bytes, List<RoutePoint> simple,
-                              List<Climb> climbs, int detectedSurface) {
+                              List<Climb> climbs, int detectedSurface,
+                              boolean myWhoosh, boolean virtual) {
         try {
-            String routeId = "gpx_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+            String prefix = myWhoosh ? "mywhoosh_" : "gpx_";
+            String routeId = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             StoredRoute stored = new StoredRoute();
             stored.routeId      = routeId;
-            stored.name         = uri.getLastPathSegment();
+            stored.name         = myWhoosh ? "MyWhoosh \u2013 " + fileTitle(uri) : uri.getLastPathSegment();
             stored.importedAtMs = System.currentTimeMillis();
             stored.sourceHash   = sha256(bytes);
+            if (myWhoosh) {
+                stored.notes = virtual
+                        ? "Ge\u00efmporteerd uit MyWhoosh \u2014 virtuele rit zonder GPS, alleen profiel."
+                        : "Ge\u00efmporteerd uit MyWhoosh.";
+            }
 
             RouteRepository repo = new RouteRepository(this);
             repo.saveRoute(stored, simple, climbs);
+            if (myWhoosh) addToMyWhooshCollection(routeId);
             if (detectedSurface != SurfaceType.UNKNOWN) {
                 try {
                     StoredRoute saved = repo.loadRoute(routeId);
@@ -937,6 +991,30 @@ public final class RouteListActivity extends AppCompatActivity {
             runOnUiThread(() -> Toast.makeText(this,
                     "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
+    }
+
+    /** Files every MyWhoosh import under one collection so they're easy to find (issue #342). */
+    private void addToMyWhooshCollection(String routeId) {
+        nl.paree.climbpro.data.route.RouteCollectionRepository collections =
+                new nl.paree.climbpro.data.route.RouteCollectionRepository(this);
+        String collectionId = null;
+        for (nl.paree.climbpro.data.route.RouteCollection c : collections.loadAll()) {
+            if (MYWHOOSH_COLLECTION.equals(c.name)) {
+                collectionId = c.id;
+                break;
+            }
+        }
+        if (collectionId == null) collectionId = collections.create(MYWHOOSH_COLLECTION).id;
+        collections.addRoute(collectionId, routeId);
+    }
+
+    /** "primary:Download/Alula climb.fit" -> "Alula climb". */
+    private static String fileTitle(android.net.Uri uri) {
+        String name = uri.getLastPathSegment();
+        if (name == null) return "rit";
+        name = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf(':')) + 1);
+        int dot = name.lastIndexOf('.');
+        return dot > 0 ? name.substring(0, dot) : name;
     }
 
     private static byte[] readStream(InputStream in) throws IOException {

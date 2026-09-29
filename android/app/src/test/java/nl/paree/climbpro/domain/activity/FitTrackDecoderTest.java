@@ -21,7 +21,7 @@ public class FitTrackDecoderTest {
     private static final long UNIX_TS = FIT_TS + FitTrackDecoder.FIT_EPOCH_OFFSET;
 
     /** Little-endian writer for FIT content. */
-    private static final class Fit {
+    static final class Fit {
         final ByteArrayOutputStream body = new ByteArrayOutputStream();
 
         Fit u8(int v) { body.write(v & 0xFF); return this; }
@@ -54,7 +54,7 @@ public class FitTrackDecoderTest {
         }
     }
 
-    private static long semicircles(double deg) {
+    static long semicircles(double deg) {
         return Math.round(deg * 2147483648.0 / 180.0);
     }
 
@@ -112,6 +112,34 @@ public class FitTrackDecoderTest {
         assertEquals(-33.9, track.get(0).lat, 1e-6);
         assertEquals(151.2, track.get(0).lon, 1e-6);
         assertEquals(UNIX_TS, track.get(0).timeSec);
+    }
+
+    @Test
+    public void decodeRecordsReturnsAltitudeDistanceAndPositionlessRecords() throws IOException {
+        Fit f = new Fit();
+        // record: timestamp, lat, lon, altitude, distance.
+        f.def(0, false, 20, 253, 4, 0x86, 0, 4, 0x85, 1, 4, 0x85, 2, 2, 0x84, 5, 4, 0x86);
+        f.u8(0).u32(FIT_TS).u32(semicircles(50.85)).u32(semicircles(5.69)).u16(2600).u32(1234);
+        // Indoor record: no position, altitude invalid, distance present.
+        f.u8(0).u32(FIT_TS + 1).u32(0x7FFFFFFFL).u32(0x7FFFFFFFL).u16(0xFFFF).u32(2500);
+        // enhanced_altitude (78) wins over altitude (2).
+        f.def(1, false, 20, 253, 4, 0x86, 2, 2, 0x84, 78, 4, 0x86);
+        f.u8(1).u32(FIT_TS + 2).u16(2600).u32(3500);
+
+        List<FitTrackDecoder.Record> records = FitTrackDecoder.decodeRecords(f.build());
+
+        assertEquals(3, records.size());
+        assertTrue(records.get(0).hasPosition());
+        assertEquals(20.0, records.get(0).altitudeM, 1e-9);     // 2600 / 5 - 500
+        assertEquals(12.34, records.get(0).distanceM, 1e-9);    // 1234 / 100
+        assertEquals(UNIX_TS, records.get(0).timeSec);
+        assertFalse(records.get(1).hasPosition());
+        assertTrue(Double.isNaN(records.get(1).altitudeM));
+        assertEquals(25.0, records.get(1).distanceM, 1e-9);
+        assertEquals(200.0, records.get(2).altitudeM, 1e-9);    // 3500 / 5 - 500
+        assertTrue(Double.isNaN(records.get(2).distanceM));
+        // The GPS track still only holds the positioned record.
+        assertEquals(1, FitTrackDecoder.decode(f.build()).size());
     }
 
     @Test
