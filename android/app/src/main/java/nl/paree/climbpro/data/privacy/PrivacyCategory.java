@@ -42,6 +42,9 @@ public enum PrivacyCategory {
     PAIN_LOG("Pijnlogboek",
             "Je gelogde klachten per rit, met fiets, afstelling en notities.",
             "pain_log.json"),
+    SWEAT_LOSS("Zweetverlies-metingen",
+            "Je gewicht voor en na ritten, hoeveel je onderweg dronk en je notities.",
+            "sweat_loss_log.json"),
     SAFE_HOME("Veilig thuis-bericht",
             "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
                     + "gemeld zijn.",
