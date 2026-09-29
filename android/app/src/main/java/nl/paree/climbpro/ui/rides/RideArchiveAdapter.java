@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.recovery.RecoveryCheck;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.AttemptPhotoStore;
 import nl.paree.climbpro.domain.ride.RideCategoryLabel;
@@ -30,12 +31,22 @@ import java.util.concurrent.Executors;
 /** Flat list of archived rides, newest first, each with its automatic category. */
 public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAdapter.RowVH> {
 
+    /** Tap on a ride row: opens the ride actions (recovery check, story, compare). */
+    public interface Listener {
+        void onRideClicked(Row row);
+    }
+
     private final List<Row> rows = new ArrayList<>();
+    private final Listener listener;
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
 
     /** Decodes group-photo thumbnails off the main thread. */
     private final ExecutorService thumbnailExecutor = Executors.newSingleThreadExecutor();
+
+    public RideArchiveAdapter(Listener listener) {
+        this.listener = listener;
+    }
 
     public void shutdown() { thumbnailExecutor.shutdownNow(); }
 
@@ -66,7 +77,25 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
                 "%s  •  %.1f km  •  %d hm  •  %.1f km/u",
                 date, r.distanceM / 1000f, Math.round(r.elevationGainM), r.avgSpeedMps * 3.6f));
 
+        bindRecovery(holder, row.recovery);
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onRideClicked(row);
+        });
+
         bindGroupPhoto(holder, row);
+    }
+
+    private static void bindRecovery(RowVH holder, RecoveryCheck c) {
+        android.content.Context ctx = holder.itemView.getContext();
+        if (c == null) {
+            holder.recovery.setText(ctx.getString(R.string.recovery_row_empty));
+        } else if (c.sleepHours != null) {
+            holder.recovery.setText(ctx.getString(R.string.recovery_row_logged_hours,
+                    c.rpe, c.sleepQuality, c.sleepHours));
+        } else {
+            holder.recovery.setText(ctx.getString(R.string.recovery_row_logged,
+                    c.rpe, c.sleepQuality));
+        }
     }
 
     @Override
@@ -129,6 +158,7 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
         final TextView name;
         final TextView category;
         final TextView stats;
+        final TextView recovery;
         final View groupRow;
         final ImageView groupPhoto;
         final TextView groupCaption;
@@ -137,6 +167,7 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
             name = v.findViewById(R.id.name);
             category = v.findViewById(R.id.category);
             stats = v.findViewById(R.id.stats);
+            recovery = v.findViewById(R.id.recovery);
             groupRow = v.findViewById(R.id.group_photo_row);
             groupPhoto = v.findViewById(R.id.group_photo);
             groupCaption = v.findViewById(R.id.group_caption);

@@ -45,13 +45,17 @@ public final class BackupArchive {
             "torque_values.json",
             "friend_feed.json",
             "bike_costs.json",
+            "bike_passports.json", "bike_passport_photos/",
             "battery_status.json",
             "pain_log.json",
+            "sweat_loss_log.json",
             "safe_home.json",
             "comeback_plan.json",
             "ride_stream_stats.json",
             "goal_event.json",
-            "favorite_start_points.json"};
+            "favorite_start_points.json",
+            "recovery_checks.json",
+            "packing_lists.json"};
 
     static final String MANIFEST = "manifest.json";
     static final String PREFS = "prefs.json";

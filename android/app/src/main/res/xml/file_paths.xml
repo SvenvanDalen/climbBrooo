@@ -4,6 +4,7 @@
      cacheDir/shared_gpx/ so a single-climb GPX export (issue #79) is shareable,
      cacheDir/shared_csv/ so the CSV export (issue #256) is shareable,
      cacheDir/shared_workouts/ so a Zwift/ERG climb workout (issue #223) is shareable,
+     filesDir/bike_passport_photos/ so a bike passport (issue #190) can be shared with its photos,
      and getExternalFilesDir(DIRECTORY_DOWNLOADS)/ so the update-checker's downloaded
      APK is installable via the package installer. -->
 <paths>
@@ -12,5 +13,6 @@
     <cache-path name="shared_gpx" path="shared_gpx/"/>
     <cache-path name="shared_csv" path="shared_csv/"/>
     <cache-path name="shared_workouts" path="shared_workouts/"/>
+    <files-path name="bike_passport_photos" path="bike_passport_photos/"/>
     <external-files-path name="downloads" path="Download/"/>
 </paths>

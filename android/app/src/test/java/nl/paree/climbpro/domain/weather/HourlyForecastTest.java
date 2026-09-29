@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.weather;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -15,6 +16,7 @@ public class HourlyForecastTest {
             + "\"temperature_2m\":[12.4,13.0,13.9],"
             + "\"apparent_temperature\":[9.8,10.5,11.6],"
             + "\"wind_speed_10m\":[22.0,31.5,18.0],"
+            + "\"wind_direction_10m\":[250,null,265],"
             + "\"precipitation_probability\":[10,null,40]}}";
 
     @Test public void parsesArraysIncludingNullRainChance() throws IOException {
@@ -24,8 +26,23 @@ public class HourlyForecastTest {
         assertEquals(13.0, f.temperature[1], 1e-9);
         assertEquals(9.8, f.apparent[0], 1e-9);
         assertEquals(31.5, f.windKmh[1], 1e-9);
+        assertEquals(250, f.windDirDeg[0], 1e-9);
+        assertTrue(Double.isNaN(f.windDirDeg[1]));
         assertEquals(Integer.valueOf(10), f.rainPct[0]);
         assertNull(f.rainPct[1]);
+    }
+
+    @Test public void parsesWindDirectionWithNullAsNaN() throws IOException {
+        HourlyForecast f = HourlyForecast.parse(JSON);
+        assertEquals(250, f.windDirDeg[0], 1e-9);
+        assertTrue(Double.isNaN(f.windDirDeg[1]));
+        assertEquals(265, f.windDirDeg[2], 1e-9);
+    }
+
+    @Test public void missingWindDirectionFieldIsNaN() throws IOException {
+        HourlyForecast f = HourlyForecast.parse("{\"hourly\":{\"time\":[\"2026-09-24T10:00\"],"
+                + "\"wind_speed_10m\":[10.0]}}");
+        assertTrue(Double.isNaN(f.windDirDeg[0]));
     }
 
     @Test public void indexAtUsesTheHourContainingTheInstant() throws IOException {

@@ -8,6 +8,9 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.recovery.RecoveryCheck;
+import nl.paree.climbpro.data.recovery.RecoveryCheckRepository;
 import nl.paree.climbpro.data.ride.RideRepository;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
@@ -21,6 +24,7 @@ import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.ride.RideCategory;
 import nl.paree.climbpro.domain.ride.RideClassifier;
+import nl.paree.climbpro.domain.ride.RideComparison;
 import nl.paree.climbpro.domain.ride.SummitGroupPhotos;
 
 import java.io.IOException;
@@ -47,16 +51,21 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         public final RideCategory category;
         /** Group summit photos of this ride (issue #243), in ride order; never null. */
         public final List<SummitGroupPhotos.Moment> groupPhotos;
+        /** Post-ride recovery check (issue #183); null when not logged yet. */
+        public final RecoveryCheck recovery;
 
-        Row(StoredRide ride, RideCategory category, List<SummitGroupPhotos.Moment> groupPhotos) {
+        Row(StoredRide ride, RideCategory category, List<SummitGroupPhotos.Moment> groupPhotos,
+            RecoveryCheck recovery) {
             this.ride = ride;
             this.category = category;
             this.groupPhotos = groupPhotos != null
                     ? groupPhotos : Collections.<SummitGroupPhotos.Moment>emptyList();
+            this.recovery = recovery;
         }
     }
 
     private final RideRepository rideRepo;
+    private final RecoveryCheckRepository recoveryRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<Row>> rows = new MutableLiveData<>();
@@ -70,6 +79,7 @@ public final class RideArchiveViewModel extends AndroidViewModel {
     public RideArchiveViewModel(@NonNull Application app) {
         super(app);
         rideRepo = new RideRepository(app);
+        recoveryRepo = new RecoveryCheckRepository(app);
     }
 
     public LiveData<List<Row>> rows() { return rows; }
@@ -108,6 +118,42 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         });
     }
 
+    /** Stores (or replaces) the recovery check of one ride (issue #183), then reloads. */
+    public void saveRecovery(long rideActivityId, int rpe, int sleepQuality, Float sleepHours,
+                             String note) {
+        executor.execute(() -> {
+            try {
+                recoveryRepo.save(rideActivityId, rpe, sleepQuality, sleepHours, note,
+                        System.currentTimeMillis() / 1000L);
+                message.postValue(getApplication().getString(R.string.recovery_check_saved));
+            } catch (Exception e) {
+                message.postValue(getApplication().getString(R.string.recovery_check_save_failed,
+                        e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            }
+            loadNow();
+        });
+    }
+
+    public void deleteRecovery(long rideActivityId) {
+        executor.execute(() -> {
+            try {
+                recoveryRepo.delete(rideActivityId);
+                message.postValue(getApplication().getString(R.string.recovery_check_deleted));
+            } catch (Exception e) {
+                message.postValue(getApplication().getString(R.string.recovery_check_save_failed,
+                        e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            }
+            loadNow();
+        });
+    }
+
+    /** Other archived rides over the same route as {@code base} (issue #199), newest first. */
+    public List<StoredRide> sameRouteCandidates(StoredRide base) {
+        List<StoredRide> rides = new ArrayList<>();
+        for (Row r : allRows) rides.add(r.ride);
+        return RideComparison.sameRouteCandidates(base, rides);
+    }
+
     public void setFilter(RideCategory category) {
         executor.execute(() -> {
             filter = category;
@@ -120,8 +166,10 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         Map<Long, RideCategory> categories = RideClassifier.classifyAll(rides);
         List<Row> out = new ArrayList<>(rides.size());
         Map<Long, List<SummitGroupPhotos.Moment>> groupPhotos = loadGroupPhotos();
+        Map<Long, RecoveryCheck> recovery = recoveryRepo.byRide();
         for (StoredRide r : rides) {
-            out.add(new Row(r, categories.get(r.activityId), groupPhotos.get(r.activityId)));
+            out.add(new Row(r, categories.get(r.activityId), groupPhotos.get(r.activityId),
+                    recovery.get(r.activityId)));
         }
         out.sort((a, b) -> Long.compare(b.ride.startEpochSec, a.ride.startEpochSec));
         allRows = out;
@@ -161,9 +209,15 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         return SummitGroupPhotos.byActivity(attempts, climbNames());
     }
 
-    /** Display name per ClimbIdentity key, same resolution as the photo quiz (issue #252). */
     private Map<String, String> climbNames() {
-        RouteRepository repo = new RouteRepository(getApplication());
+        return climbNames(new RouteRepository(getApplication()));
+    }
+
+    /**
+     * Display name per ClimbIdentity key, same resolution as the photo quiz (issue #252). Also
+     * used by the ride story (issue #193).
+     */
+    static Map<String, String> climbNames(RouteRepository repo) {
         Map<String, String> names = new HashMap<>();
         for (RouteCatalogEntry e : repo.loadCatalog()) {
             try {

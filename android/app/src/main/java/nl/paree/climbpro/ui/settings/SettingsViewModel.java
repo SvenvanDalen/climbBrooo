@@ -17,8 +17,10 @@ import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.power.FtpEstimator;
+import nl.paree.climbpro.domain.power.GhostTarget;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.FtpEffortJoiner;
+import nl.paree.climbpro.service.RadiusLocation;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 
@@ -36,6 +38,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final MutableLiveData<Boolean> stravaSignedIn = new MutableLiveData<>();
     private final MutableLiveData<RiderProfile> riderProfile = new MutableLiveData<>();
+    private final MutableLiveData<GhostTarget> ghostTarget = new MutableLiveData<>();
     private final MutableLiveData<String>  syncMode       = new MutableLiveData<>();
     private final MutableLiveData<Integer> radiusKm       = new MutableLiveData<>();
     private final MutableLiveData<String>  syncStatus     = new MutableLiveData<>();
@@ -76,8 +79,25 @@ public final class SettingsViewModel extends AndroidViewModel {
         if (infos == null || infos.isEmpty() || !pendingSyncRebuild.get()) return;
         WorkInfo info = infos.get(infos.size() - 1);
         if (info.getState().isFinished() && pendingSyncRebuild.compareAndSet(true, false)) {
+            if (info.getOutputData().getBoolean(RouteSyncWorker.KEY_NO_LOCATION, false)) {
+                syncStatus.postValue(NO_LOCATION_MESSAGE);
+            }
             refreshSuggestedFtp(riderProfile.getValue(), true);
         }
+    }
+
+    /** Shown when radius mode had no known position, so nothing went to the watch (#310). */
+    static final String NO_LOCATION_MESSAGE =
+            "Radiusmodus: geen locatie bekend. Zet locatie aan en sync opnieuw.";
+
+    /**
+     * Stores the freshest cached fix as the radius-mode centre (issue #310). Runs while the
+     * app is in the foreground, where a cached fix is most likely available; the background
+     * worker falls back to what is stored here.
+     */
+    public void refreshRadiusLocation() {
+        executor.execute(() -> RadiusLocation.current(getApplication(),
+                PreferenceManager.getDefaultSharedPreferences(getApplication())));
     }
 
     public SettingsViewModel(@NonNull Application app) {
@@ -99,6 +119,8 @@ public final class SettingsViewModel extends AndroidViewModel {
     public LiveData<Integer>     radiusKm()       { return radiusKm; }
     public LiveData<String>      syncStatus()     { return syncStatus; }
     public LiveData<RiderProfile> riderProfile()  { return riderProfile; }
+    /** Virtual-ghost target for climbs without history (issue #31). */
+    public LiveData<GhostTarget> ghostTarget()    { return ghostTarget; }
     public LiveData<Integer>     privacyRadiusM() { return privacyRadiusM; }
 
     /**
@@ -119,6 +141,7 @@ public final class SettingsViewModel extends AndroidViewModel {
                 CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M)));
         RiderProfile profile = riderRepo.load();
         riderProfile.postValue(profile);
+        ghostTarget.postValue(riderRepo.loadGhostTarget());
         // reload() is called from onResume() on EVERY resume (permission dialogs,
         // notification shade, lock-screen unlock, not just a genuine screen (re)open),
         // so it must NOT force a rebuild each time — that would re-scan the whole route
@@ -163,6 +186,7 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putString(RouteSyncWorker.PREF_MODE, mode).apply();
         syncMode.postValue(mode);
+        if (RouteSyncWorker.MODE_RADIUS.equals(mode)) refreshRadiusLocation();
     }
 
     public void setRadiusKm(int km) {
@@ -177,6 +201,16 @@ public final class SettingsViewModel extends AndroidViewModel {
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(CoordinateFuzzer.PREF_PRIVACY_RADIUS_M, meters).apply();
         privacyRadiusM.postValue(meters);
+    }
+
+    /**
+     * Saves the virtual-ghost target (issue #31). 0 for either value switches that part
+     * off; the next sync sends it as the refsec fallback for climbs without history.
+     */
+    public void saveGhostTarget(double speedKmh, int vamMPerH) {
+        GhostTarget target = new GhostTarget(speedKmh, vamMPerH);
+        riderRepo.saveGhostTarget(target);
+        ghostTarget.postValue(target);
     }
 
     public void saveRiderProfile(int ftpWatts, double riderKg, double bikeKg, int rideIntensityPct) {
@@ -214,6 +248,7 @@ public final class SettingsViewModel extends AndroidViewModel {
         // tapped. manualSyncObserver forces the rebuild when the triggered work reaches
         // a finished state.
         pendingSyncRebuild.set(true);
+        refreshRadiusLocation();
         SyncScheduler.triggerImmediateSync(getApplication());
     }
 
