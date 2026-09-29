@@ -12,12 +12,16 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.KnownClimbCatalog;
+import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.domain.activity.MyWhooshRouteReader;
+import nl.paree.climbpro.domain.climb.ClimbConstants;
+import nl.paree.climbpro.domain.climb.DuplicateClimbMatcher;
 import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
@@ -93,6 +97,15 @@ public final class StravaActivitiesRepository {
      * minutes, shared with climb matching; a year of rides fills in over a few syncs instead.
      */
     static final int MAX_STREAM_ANALYSES_PER_RUN = 20;
+
+    /**
+     * Automatic MyWhoosh import (issue #344): archived rides already turned into a route, or
+     * found unusable, so their streams are never fetched again.
+     */
+    static final String PREF_MYWHOOSH_DONE = "mywhoosh_imported_activity_ids";
+    /** Stream requests per run; shares Strava's 100-per-15-minutes budget with the rest. */
+    static final int MAX_MYWHOOSH_IMPORTS_PER_RUN = 10;
+    static final String MYWHOOSH_STREAM_KEYS = "latlng,distance,altitude,time";
 
     /**
      * One-off history backfill (issue #312). Walks newest to oldest from the moment it was
@@ -181,6 +194,13 @@ public final class StravaActivitiesRepository {
             syncRideArchive(token);
         } catch (Exception e) {
             Log.w(TAG, "Ride archive sync failed; climb sync continues", e);
+        }
+        // Before the known climbs are enumerated, so a fresh MyWhoosh ride is matched against
+        // the climbs it just created and shows up in the logbook right away.
+        try {
+            importMyWhooshRides(token);
+        } catch (Exception e) {
+            Log.w(TAG, "MyWhoosh import failed; climb sync continues", e);
         }
 
         long lastSync = prefs.getLong(PREF_LAST, 0L);
@@ -726,6 +746,121 @@ public final class StravaActivitiesRepository {
         }
         streamStatsRepo.upsertAll(out);
         return out.size();
+    }
+
+    /**
+     * Turns archived MyWhoosh rides into routes (issue #344). MyWhoosh has no public API but
+     * uploads every ride to Strava as a "MyWhoosh - &lt;route&gt;" {@code VirtualRide}, which
+     * the ride archive already holds. For each ride not handled yet (newest first, at most
+     * {@link #MAX_MYWHOOSH_IMPORTS_PER_RUN}) the streams go through the same pipeline as the
+     * FIT import. A ride is saved when it has a climb that isn't known yet: a ride without
+     * climbs (a flat circuit) or a repeat of an imported MyWhoosh route adds nothing. MyWhoosh
+     * uses fixed virtual coordinates per world, so a repeat is caught by the duplicate-climb
+     * check and matched as a logbook attempt instead.
+     *
+     * @return number of routes created in this run
+     */
+    public int importMyWhooshRides() throws IOException {
+        return importMyWhooshRides("Bearer " + auth.getAccessToken());
+    }
+
+    private int importMyWhooshRides(String token) {
+        Set<String> done = new HashSet<>(
+                prefs.getStringSet(PREF_MYWHOOSH_DONE, Collections.<String>emptySet()));
+        List<StoredRide> todo = new ArrayList<>();
+        for (StoredRide r : rideRepo.loadAll()) {
+            if (MyWhooshRouteReader.isMyWhooshActivity(r.name, r.type, r.sportType)
+                    && !done.contains(String.valueOf(r.activityId))) {
+                todo.add(r);
+            }
+        }
+        if (todo.isEmpty()) return 0;
+        todo.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
+
+        MyWhooshRouteStore store = new MyWhooshRouteStore(context);
+        int fetched = 0;
+        int saved = 0;
+        try {
+            for (StoredRide r : todo) {
+                if (fetched >= MAX_MYWHOOSH_IMPORTS_PER_RUN) break;
+                fetched++;
+                Response<StravaStreamsDto> resp =
+                        api.getStreams(token, r.activityId, MYWHOOSH_STREAM_KEYS).execute();
+                if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
+                    Log.w(TAG, "MyWhoosh import paused (HTTP " + resp.code() + ")");
+                    break;
+                }
+                if (resp.code() >= 500) continue; // transient; retried next run
+                String id = String.valueOf(r.activityId);
+                if (resp.isSuccessful() && saveMyWhooshRide(store, r, resp.body())) saved++;
+                done.add(id); // saved, no new climbs, or unusable (404, no altitude): never again
+            }
+        } catch (IOException e) {
+            Log.w(TAG, "MyWhoosh stream fetch failed; " + saved + " route(s) imported", e);
+        }
+        prefs.edit().putStringSet(PREF_MYWHOOSH_DONE, done).apply();
+        Log.i(TAG, "MyWhoosh import: " + saved + " new route(s)");
+        return saved;
+    }
+
+    /** @return true when a route was saved */
+    private boolean saveMyWhooshRide(MyWhooshRouteStore store, StoredRide ride,
+                                     StravaStreamsDto streams) {
+        try {
+            MyWhooshRouteReader.Result read = toMyWhooshRoute(streams);
+            MyWhooshRouteReader.Detected detected = MyWhooshRouteReader.detectClimbs(read);
+            if (detected.climbs.isEmpty()) return false;
+            if (!read.virtual && DuplicateClimbMatcher.findDuplicates(detected.climbs,
+                    routeRepo.loadCatalog(), ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M)
+                    .size() == detected.climbs.size()) {
+                return false; // every climb is already known: a repeat of an imported route
+            }
+            store.save(MYWHOOSH_ROUTE_PREFIX + ride.activityId,
+                    MyWhooshRouteReader.routeTitle(ride.name),
+                    "strava:" + ride.activityId, read.virtual, detected.points, detected.climbs);
+            return true;
+        } catch (IOException e) {
+            Log.w(TAG, "MyWhoosh ride " + ride.activityId + " not imported: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Route-id prefix of automatically imported MyWhoosh rides; the Strava id follows. */
+    static final String MYWHOOSH_ROUTE_PREFIX = "mywhoosh_strava_";
+
+    /**
+     * Index-aligned stream arrays for {@link MyWhooshRouteReader#fromStreams}; a missing or
+     * misaligned latlng stream means "no GPS".
+     */
+    static MyWhooshRouteReader.Result toMyWhooshRoute(StravaStreamsDto s) throws IOException {
+        if (s == null || s.distance == null || s.distance.data == null
+                || s.altitude == null || s.altitude.data == null) {
+            throw new IOException("Geen hoogte- of afstandsstream");
+        }
+        double[] dist = toNaN(s.distance.data);
+        double[] alt = toNaN(s.altitude.data);
+        double[] lat = null;
+        double[] lon = null;
+        if (s.latlng != null && s.latlng.data != null && s.latlng.data.size() == dist.length) {
+            lat = new double[dist.length];
+            lon = new double[dist.length];
+            for (int i = 0; i < dist.length; i++) {
+                List<Double> p = s.latlng.data.get(i);
+                boolean ok = p != null && p.size() >= 2 && p.get(0) != null && p.get(1) != null;
+                lat[i] = ok ? p.get(0) : Double.NaN;
+                lon[i] = ok ? p.get(1) : Double.NaN;
+            }
+        }
+        return MyWhooshRouteReader.fromStreams(lat, lon, alt, dist);
+    }
+
+    private static double[] toNaN(List<Double> values) {
+        double[] out = new double[values.size()];
+        for (int i = 0; i < out.length; i++) {
+            Double v = values.get(i);
+            out[i] = v != null ? v : Double.NaN;
+        }
+        return out;
     }
 
     /**

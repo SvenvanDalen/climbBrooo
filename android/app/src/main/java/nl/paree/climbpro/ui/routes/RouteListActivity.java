@@ -35,6 +35,7 @@ import nl.paree.climbpro.domain.ride.YearlyDistanceGoalCalculator;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.data.ride.YearlyDistanceGoalRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
@@ -846,8 +847,6 @@ public final class RouteListActivity extends AppCompatActivity {
         getSupportActionBar().setSubtitle(filtered ? "Filter: " + STATUS_FILTER_LABELS[filter] : null);
     }
 
-    private static final String MYWHOOSH_COLLECTION = "MyWhoosh";
-
     /** Explains where MyWhoosh keeps the FIT file before opening the picker (issue #342). */
     private void showMyWhooshImportHelp() {
         new AlertDialog.Builder(this)
@@ -855,7 +854,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 .setMessage("Download in MyWhoosh (of via Strava / Garmin Connect \u2192 "
                         + "\"Exporteer origineel\") het FIT-bestand van je rit en kies het hier. "
                         + "De klimmen worden gedetecteerd en de route komt in de collectie \""
-                        + MYWHOOSH_COLLECTION + "\".\n\nRitten zonder GPS-posities worden "
+                        + MyWhooshRouteStore.COLLECTION + "\".\n\nRitten zonder GPS-posities worden "
                         + "alleen als profiel getoond (niet voor radius-modus of navigatie).")
                 .setPositiveButton("Kies bestand", (d, w) -> myWhooshPicker.launch(new String[]{"*/*"}))
                 .setNegativeButton("Annuleren", null)
@@ -955,20 +954,18 @@ public final class RouteListActivity extends AppCompatActivity {
         try {
             String prefix = myWhoosh ? "mywhoosh_" : "gpx_";
             String routeId = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-            StoredRoute stored = new StoredRoute();
-            stored.routeId      = routeId;
-            stored.name         = myWhoosh ? "MyWhoosh \u2013 " + fileTitle(uri) : uri.getLastPathSegment();
-            stored.importedAtMs = System.currentTimeMillis();
-            stored.sourceHash   = sha256(bytes);
-            if (myWhoosh) {
-                stored.notes = virtual
-                        ? "Ge\u00efmporteerd uit MyWhoosh \u2014 virtuele rit zonder GPS, alleen profiel."
-                        : "Ge\u00efmporteerd uit MyWhoosh.";
-            }
-
             RouteRepository repo = new RouteRepository(this);
-            repo.saveRoute(stored, simple, climbs);
-            if (myWhoosh) addToMyWhooshCollection(routeId);
+            if (myWhoosh) {
+                new MyWhooshRouteStore(this).save(routeId, fileTitle(uri), sha256(bytes), virtual,
+                        simple, climbs);
+            } else {
+                StoredRoute stored = new StoredRoute();
+                stored.routeId      = routeId;
+                stored.name         = uri.getLastPathSegment();
+                stored.importedAtMs = System.currentTimeMillis();
+                stored.sourceHash   = sha256(bytes);
+                repo.saveRoute(stored, simple, climbs);
+            }
             if (detectedSurface != SurfaceType.UNKNOWN) {
                 try {
                     StoredRoute saved = repo.loadRoute(routeId);
@@ -991,21 +988,6 @@ public final class RouteListActivity extends AppCompatActivity {
             runOnUiThread(() -> Toast.makeText(this,
                     "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
-    }
-
-    /** Files every MyWhoosh import under one collection so they're easy to find (issue #342). */
-    private void addToMyWhooshCollection(String routeId) {
-        nl.paree.climbpro.data.route.RouteCollectionRepository collections =
-                new nl.paree.climbpro.data.route.RouteCollectionRepository(this);
-        String collectionId = null;
-        for (nl.paree.climbpro.data.route.RouteCollection c : collections.loadAll()) {
-            if (MYWHOOSH_COLLECTION.equals(c.name)) {
-                collectionId = c.id;
-                break;
-            }
-        }
-        if (collectionId == null) collectionId = collections.create(MYWHOOSH_COLLECTION).id;
-        collections.addRoute(collectionId, routeId);
     }
 
     /** "primary:Download/Alula climb.fit" -> "Alula climb". */

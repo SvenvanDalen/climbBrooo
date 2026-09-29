@@ -140,6 +140,12 @@ public final class RouteSyncWorker extends Worker {
             } catch (Exception e) {
                 Log.w(TAG, "Ride stream analysis failed; sync continues", e);
             }
+            // MyWhoosh rides in the archive become routes with climbs (issue #344).
+            try {
+                rides.importMyWhooshRides();
+            } catch (Exception e) {
+                Log.w(TAG, "MyWhoosh import failed; sync continues", e);
+            }
         }
 
         // Opportunistic, never fails the sync: cleaning reminder after wet rides (issue #234).
