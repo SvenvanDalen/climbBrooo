@@ -120,6 +120,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_clothing"
+        android:title="Kledingadvies"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_air_quality"
         android:title="Luchtkwaliteit en pollen"
         app:showAsAction="never"/>

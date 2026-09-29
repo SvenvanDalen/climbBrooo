@@ -129,6 +129,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
   ranked by difficulty score (elevation gain × average gradient). Phone-only.
 
+- **Clothing advice** — what to wear for your planned ride window, from the forecast with
+  the riding wind in the wind chill, plus rain and removable-layer hints. Phone-only.
+
 - **Air quality and pollen** — particulate matter, European AQI and pollen for your planned
   ride window at your location, with a warning for asthma or hay fever (Open-Meteo, keyless).
   Phone-only.
