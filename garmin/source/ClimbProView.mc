@@ -329,7 +329,8 @@ class ClimbProView extends Ui.DataField {
         // large-text mode so distance and gradient can be drawn bigger without
         // crowding the small FR255M screen (issue #82).
         if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, statsY, sf, Units.formatElev(remElev, data.units) + "↑",
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
         dc.drawText(w - 32, statsY, sf,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
@@ -609,7 +610,9 @@ class ClimbProView extends Ui.DataField {
         // Elevation gain is the "nice to have" middle stat -- dropped in large-text
         // mode, same rationale as the active-climb stat row (issue #82).
         if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, statsY, sf,
+                Units.isImperial(data.units) ? Units.formatElev(elev, data.units) : elev + "hm",
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
         var nGrad = grad / 10;
         var nGradF = grad % 10;
@@ -642,13 +645,10 @@ class ClimbProView extends Ui.DataField {
             "No climbs ahead", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
 
+    // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
     hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            var km = meters / 1000;
-            var hm = (meters % 1000) / 100;
-            return km + "." + hm + "km";
-        }
-        return meters + "m";
+        var data = App.getApp().climbData;
+        return Units.formatDist(meters, data != null ? data.units : 0);
     }
 
     // Formats a whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown,
@@ -798,7 +798,8 @@ class ClimbProView extends Ui.DataField {
                 mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
 
         dc.drawText(w / 2, (h * 0.62).toNumber(), sf,
-                data.climbElevGain[ci] + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+                Units.formatElev(data.climbElevGain[ci], data.units) + "↑",
+                Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.hasTargets[ci]) {
             var d = summaryDeltaSec;

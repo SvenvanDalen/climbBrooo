@@ -812,6 +812,33 @@ gradient color otherwise. `garmin-surface` carries no climbs, and
 both keep gradient colors only. The climb detail screen on the phone shows the
 zone per segment (a `Z1`–`Z7` badge in the watch's zone color).
 
+### Display units (issue #262)
+
+Storage, computation and the wire format stay **metric**; only rendering
+converts. Settings → *Eenheden* holds three independent switches (mi/ft/mph,
+psi, °F) persisted by `data/settings/UnitPreferencesRepository` as the pure
+value `domain/units/UnitPreferences`. The phone UI formats through one helper,
+`domain/units/UnitFormatter` (distance, elevation, climb length, speed,
+pressure, temperature, plus value/label accessors for string resources); the
+climb list/detail/segment rows, route detail rows and passport, tyre-pressure
+advice and log (the log stays in bar, psi input is converted on entry), summit
+weather, temperature trend and clothing hourly forecast use it. Domain
+thresholds (clothing tips, wind warnings) keep reading the metric values.
+
+The watch gets the choice as the optional top-level payload key `un`, a
+bitmask (`1` = mi/ft, `2` = psi, `4` = °F) that `ClimbPayloadBuilder.withUnits`
+emits on every payload kind only when non-zero — a metric payload is
+byte-identical to before, and an absent key means metric on the watch. The
+route sync hash gains the units signature only when non-metric (so metric
+riders see no one-off resync), and `WatchRequestHandler` reads the current
+choice for every on-demand load. `garmin`, `garmin-widget` and
+`garmin-surface` parse `un` into their data object (reset on every payload)
+and render distances/elevations through a small shared `Units` module
+(`source/Units.mc`, identical copy per app: `1.2km`/`850m` or `0.7mi`/`520ft`,
+feet below ~0.2 mi). No watch view shows pressure or temperature yet; the
+other bits ride along for later. `garmin-onboard` uses the raw-route protocol
+and stays metric.
+
 ---
 
 ## Configuration Management
