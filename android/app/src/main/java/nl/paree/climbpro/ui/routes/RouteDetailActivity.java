@@ -144,6 +144,13 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
             binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
         });
+        viewModel.borderCrossings().observe(this, lines -> {
+            boolean none = lines == null || lines.isEmpty();
+            binding.borderCrossingsSummary.setText(
+                    none ? "" : android.text.TextUtils.join("\n", lines));
+            binding.borderCrossingsTitle.setVisibility(none ? View.GONE : View.VISIBLE);
+            binding.borderCrossingsSummary.setVisibility(none ? View.GONE : View.VISIBLE);
+        });
 
         viewModel.error().observe(this, msg -> {
             binding.btnReverseRoute.setEnabled(true);

@@ -145,6 +145,26 @@
                 android:textSize="14sp" />
 
             <TextView
+                android:id="@+id/border_crossings_title"
+                style="@style/TextAppearance.ClimbPro.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="@string/border_crossings_title"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/border_crossings_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/space_grotesk"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/color_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <TextView
                 style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
