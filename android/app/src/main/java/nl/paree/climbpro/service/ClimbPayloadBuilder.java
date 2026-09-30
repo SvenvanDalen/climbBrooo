@@ -7,6 +7,8 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.power.SegmentIntensityZones;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +27,8 @@ import java.util.Map;
  *      surf:[surfType, ...],                             // 1 int × segCount (optional, omitted if all UNKNOWN)
  *      tsec:[targetSec, ...],                            // 1 int × segCount (optional, manual pacing plan)
  *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
- *      vam:[avgVamMPerH,peakVamMPerH, ...]}              // 2 ints × segCount (optional, omitted unless every segment has VAM)
+ *      vam:[avgVamMPerH,peakVamMPerH, ...],              // 2 ints × segCount (optional, omitted unless every segment has VAM)
+ *      zc:[zoneColorIndex, ...]}                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
  *   ],
  *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
  *
@@ -41,10 +44,31 @@ public final class ClimbPayloadBuilder {
     /** Hard cap on checkpoints per section to bound the watch payload. */
     static final int MAX_CHECKPOINTS_PER_SECTION = 12;
 
+    /** Wire key of the optional per-segment FTP intensity-zone color array (issue #66). */
+    static final String KEY_ZONE_COLORS = "zc";
+
     private final ObjectMapper mapper;
+    /** Rider profile for the optional 'zc' arrays; null = never emit them. */
+    private final RiderProfile zoneProfile;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
+        this(mapper, null);
+    }
+
+    private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile) {
         this.mapper = mapper;
+        this.zoneProfile = zoneProfile;
+    }
+
+    /**
+     * A builder that also emits the optional per-segment intensity-zone colors 'zc' (issue
+     * #66) on every climb, computed from {@code profile} with {@link SegmentIntensityZones}.
+     * A null or incomplete profile (no FTP or weights) emits none. 'zc' is dropped again from
+     * a payload that would otherwise exceed {@link PayloadBudget#MAX_BYTES}: the zones are a
+     * nice-to-have and must never cost a sync (radius mode: never cost a climb).
+     */
+    public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
+        return new ClimbPayloadBuilder(mapper, profile);
     }
 
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
@@ -90,7 +114,7 @@ public final class ClimbPayloadBuilder {
         payload.put("climbs", climbs);
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
-        return mapper.writeValueAsBytes(payload);
+        return writeWithinBudget(payload, climbs);
     }
 
     public byte[] buildRadiusPayload(List<StoredClimb> climbs) throws IOException {
@@ -102,7 +126,7 @@ public final class ClimbPayloadBuilder {
             for (StoredClimb sc : climbs) out.add(buildRadiusClimb(sc));
         }
         payload.put("climbs", out);
-        return mapper.writeValueAsBytes(payload);
+        return writeWithinBudget(payload, out);
     }
 
     /** Route-mode payload containing exactly one climb (watch "set active climb"). */
@@ -134,7 +158,23 @@ public final class ClimbPayloadBuilder {
                 ? refSeconds[climbIndex] : null;
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
         payload.put("climbs", climbs);
-        return mapper.writeValueAsBytes(payload);
+        return writeWithinBudget(payload, climbs);
+    }
+
+    /**
+     * Serialises the payload; when it is over {@link PayloadBudget#MAX_BYTES} and carries
+     * optional 'zc' arrays, strips them and serialises again (the watch then falls back to
+     * the gradient colors). Anything else over budget is left to the caller as before.
+     */
+    private byte[] writeWithinBudget(Map<String, Object> payload,
+                                     List<Map<String, Object>> climbs) throws IOException {
+        byte[] bytes = mapper.writeValueAsBytes(payload);
+        if (bytes.length <= PayloadBudget.MAX_BYTES) return bytes;
+        boolean stripped = false;
+        for (Map<String, Object> c : climbs) {
+            if (c.remove(KEY_ZONE_COLORS) != null) stripped = true;
+        }
+        return stripped ? mapper.writeValueAsBytes(payload) : bytes;
     }
 
     /** Route-mode only: total route length (m), from the last cumulative distance. */
@@ -264,6 +304,10 @@ public final class ClimbPayloadBuilder {
         if (surf != null) c.put("surf", surf);
         int[] vam = buildVam(sc.segments);
         if (vam != null) c.put("vam", vam);
+        if (zoneProfile != null) {
+            int[] zc = SegmentIntensityZones.colorIndices(sc.segments, zoneProfile);
+            if (zc != null) c.put(KEY_ZONE_COLORS, zc);
+        }
     }
 
     /** Emits 'tsec' only when the array is non-null and exactly one value per segment. */

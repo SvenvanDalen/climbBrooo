@@ -337,6 +337,10 @@ fit the watch's tight memory (cap `4096 bytes` per message). Gradients are fixed
 An optional parallel array `vam = [avgVamMPerH, peakVamMPerH, …]` (2 ints/segment)
 carries a gradient-implied VAM (vertical ascent m/h, not a measured ascent rate —
 routes have no elapsed-time data) per segment, omitted unless every segment has one.
+With FTP and weights set, an optional parallel array `zc` (1 int/segment, issue #66)
+carries each segment's **FTP intensity-zone color** (Coggan zone → the same 0–5 color
+indices); the watch shows it instead of the gradient colors when its *Kleurmodus*
+setting is *FTP-zone*.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

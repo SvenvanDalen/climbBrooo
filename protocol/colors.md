@@ -27,6 +27,22 @@ Cutoffs are **inclusive lower, exclusive upper** (`[low, high)`). The mapping us
   3. Update watch-side color resolution in `ClimbView.mc` (Phase 6).
   4. Regenerate `protocol/examples/*.json` so the round-trip tests cover the new mapping.
 
+## FTP intensity zones (optional second color source, issue #66)
+
+The gradient table above stays the default and the only color source the watch needs. When the rider has set FTP and weights, the phone also sends a per-segment `zc` array: the segment's estimated power (`SegmentIntensityZones`, reusing the indoor-workout pacing model) placed in a Coggan zone, mapped onto the **same six indices** so the watch reuses its palette. The watch uses `zc` only when its *Kleurmodus* setting is *FTP-zone*.
+
+| Coggan zone | % of FTP       | `colorIndex` | Color label  |
+| ----------- | -------------- | ------------ | ------------ |
+| Z1          | `< 55`         | 0            | light yellow |
+| Z2          | `[55, 75)`     | 1            | yellow       |
+| Z3          | `[75, 90)`     | 2            | dark yellow  |
+| Z4          | `[90, 105)`    | 3            | orange       |
+| Z5          | `[105, 120)`   | 4            | dark orange  |
+| Z6          | `[120, 150)`   | 5            | red          |
+| Z7          | `>= 150`       | 5            | red          |
+
+Phone-side implementation: `GradientColor.forPowerZone` (zone → index) and `ZoneCalculator.POWER_ZONE_UPPER` (zone bounds). The watch never computes zones; it only picks between `segs[...colorIndex]` and `zc[i]`.
+
 ## Pseudocode (for both sides)
 
 ```text

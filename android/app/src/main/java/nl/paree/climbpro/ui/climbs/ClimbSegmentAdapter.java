@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.power.SegmentIntensityZones;
+import nl.paree.climbpro.domain.segment.GradientColor;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.util.ArrayList;
@@ -41,6 +43,7 @@ public final class ClimbSegmentAdapter
 
     private List<StoredSegment> items = new ArrayList<>();
     private int[] segmentSeconds; // auto (planner) estimate, null when unavailable
+    private int[] segmentZones;   // issue #66: Coggan zone (0 = Z1) per segment, null when unknown
     private OnSegmentLongClickListener longClickListener;
     private OnSegmentClickListener clickListener;
 
@@ -51,6 +54,12 @@ public final class ClimbSegmentAdapter
 
     public void setSegmentSeconds(int[] seconds) {
         this.segmentSeconds = seconds;
+        notifyDataSetChanged();
+    }
+
+    /** Issue #66: per-segment FTP intensity zones (what the watch's FTP-zone mode shows). */
+    public void setSegmentZones(int[] zones) {
+        this.segmentZones = zones;
         notifyDataSetChanged();
     }
 
@@ -97,6 +106,18 @@ public final class ClimbSegmentAdapter
         int ci = Math.max(0, Math.min(5, s.colorIndex));
         h.colorBar.setBackgroundColor(SEGMENT_COLORS[ci]);
 
+        // FTP intensity zone badge, colored the way the watch paints it in FTP-zone mode.
+        if (segmentZones != null && position < segmentZones.length) {
+            int zone = segmentZones[position];
+            h.zoneBadge.setVisibility(View.VISIBLE);
+            h.zoneBadge.setText(SegmentIntensityZones.label(zone));
+            h.zoneBadge.setBackgroundColor(SEGMENT_COLORS[GradientColor.forPowerZone(zone)]);
+            h.zoneBadge.setContentDescription("Intensiteitszone "
+                    + SegmentIntensityZones.label(zone));
+        } else {
+            h.zoneBadge.setVisibility(View.GONE);
+        }
+
         // Surface badge
         String label = SurfaceType.label(s.surfaceType);
         if (label != null) {
@@ -128,6 +149,7 @@ public final class ClimbSegmentAdapter
         TextView timeView;
         View     colorBar;
         TextView surfaceBadge;
+        TextView zoneBadge;
         int defaultTimeColor;
         ViewHolder(View v) {
             super(v);
@@ -136,6 +158,7 @@ public final class ClimbSegmentAdapter
             timeView      = v.findViewById(R.id.segment_time);
             colorBar      = v.findViewById(R.id.segment_color_bar);
             surfaceBadge  = v.findViewById(R.id.segment_surface_badge);
+            zoneBadge     = v.findViewById(R.id.segment_zone_badge);
             defaultTimeColor = timeView.getCurrentTextColor();
         }
     }

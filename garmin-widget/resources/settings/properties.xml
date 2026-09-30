@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    App-settings backed properties (Connect IQ "properties.xml"), configurable from
+    Garmin Connect Mobile / Garmin Express without a rebuild. See settings.xml.
+-->
+<properties>
+    <!-- Issue #66: segment color mode, same values as the datafield's colorMode.
+         0 = Helling (gradient colors from segs, default), 1 = FTP-zone (the phone's
+         per-segment intensity-zone colors "zc"; climbs without zc keep gradient colors). -->
+    <property id="colorMode" type="number">0</property>
+</properties>
