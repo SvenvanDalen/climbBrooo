@@ -37,6 +37,13 @@ public final class StoredRoute {
     public List<StoredStarredSegment> starredSegments;
 
     /**
+     * True once the Strava sync matched this route against the public segments along it
+     * ({@code segments/explore}, issue #35). False when that was cut short by the rate limit,
+     * null on routes stored before the feature: both get reprocessed on a later sync.
+     */
+    public Boolean stravaSegmentsExplored;
+
+    /**
      * Tombstone of climbs the user explicitly removed (e.g. via {@link ClimbMergeService}'s
      * near-duplicate merge), keyed by {@link nl.paree.climbpro.domain.climb.ClimbIdentity}. A
      * Strava resync re-runs climb detection from scratch against the raw route geometry and can

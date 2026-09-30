@@ -10,6 +10,10 @@ package nl.paree.climbpro.domain.segment;
  *   3  →  orange         ( 6.0% – 8.0%)
  *   4  →  dark orange    ( 8.0% – 10.0%)
  *   5  →  red            (10.0%+)
+ *
+ * Second, optional color source (issue #66, also in protocol/colors.md): a segment's Coggan
+ * power zone maps onto the same six indices via {@link #forPowerZone(int)}, so the watch
+ * renders FTP-zone colors with the palette it already has.
  */
 public final class GradientColor {
 
@@ -29,6 +33,22 @@ public final class GradientColor {
             }
         }
         return 5;
+    }
+
+    /** Coggan zone index (0 = Z1 ... 6 = Z7) → color index; Z6 and Z7 share red. */
+    private static final int[] POWER_ZONE_COLOR = {0, 1, 2, 3, 4, 5, 5};
+
+    /**
+     * Maps a Coggan power zone onto the protocol's color indices (protocol/colors.md, "FTP
+     * intensity zones"): Z1 → 0 light yellow, Z2 → 1, Z3 → 2, Z4 → 3 orange, Z5 → 4 dark
+     * orange, Z6 and Z7 → 5 red. Out-of-range zones are clamped.
+     *
+     * @param powerZoneIndex 0-based Coggan zone (0 = Z1 ... 6 = Z7)
+     * @return color index 0–5
+     */
+    public static int forPowerZone(int powerZoneIndex) {
+        int z = Math.max(0, Math.min(POWER_ZONE_COLOR.length - 1, powerZoneIndex));
+        return POWER_ZONE_COLOR[z];
     }
 
     /**

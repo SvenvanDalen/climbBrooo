@@ -63,4 +63,24 @@ public class ClimbMergerTest {
 
         assertEquals(2, result.size());
     }
+
+    @Test
+    public void longestNonOverlapping_keepsFullClimbOverItsParts() {
+        List<Climb> segs = Arrays.asList(
+                climb(1000, 1800, "first half"),
+                climb(1000, 3000, "full climb"),
+                climb(2500, 3000, "last bit"),
+                climb(5000, 6000, "other climb"));
+
+        List<Climb> result = ClimbMerger.longestNonOverlapping(segs);
+
+        assertEquals(2, result.size());
+        assertEquals("full climb", result.get(0).name);
+        assertEquals("other climb", result.get(1).name);
+    }
+
+    @Test
+    public void longestNonOverlapping_nullIsEmpty() {
+        assertEquals(0, ClimbMerger.longestNonOverlapping(null).size());
+    }
 }

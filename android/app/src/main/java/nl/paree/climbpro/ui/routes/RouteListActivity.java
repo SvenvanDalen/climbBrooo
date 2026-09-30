@@ -370,6 +370,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_power_curve) {
             startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_ftp_test) {
+            startActivity(nl.paree.climbpro.ui.records.FtpTestActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_zone_distribution) {
             startActivity(nl.paree.climbpro.ui.records.ZoneDistributionActivity.intentFor(this));
             return true;
@@ -439,6 +442,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_frame_size) {
             startActivity(nl.paree.climbpro.ui.frame.FrameSizeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_garage) {
+            startActivity(nl.paree.climbpro.ui.bike.BikeGarageActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_bike_costs) {
             startActivity(nl.paree.climbpro.ui.bike.BikeCostActivity.intentFor(this));

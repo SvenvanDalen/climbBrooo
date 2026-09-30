@@ -34,8 +34,9 @@ public enum PrivacyCategory {
     TORQUE("Aanhaalmomenten",
             "Je eigen aanhaalmomenten per fiets en onderdeel, met notities.",
             "torque_values.json"),
-    BIKE_COSTS("Fietskosten",
-            "Je fietsen met aankopen, onderdelen en hun bedragen.",
+    BIKE_COSTS("Fietsgarage en fietskosten",
+            "Je fietsen met soort, gewicht, banden, versnellingen en Strava-fiets-id, plus "
+                    + "aankopen, onderdelen en hun bedragen.",
             "bike_costs.json"),
     BIKE_PASSPORTS("Fietspaspoort",
             "Framenummer, merk, model, aankoopgegevens, foto's en aankoopbewijs van je fietsen.",
@@ -88,7 +89,8 @@ public enum PrivacyCategory {
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",
-            "FTP, gewicht van jou en je fiets, rit-intensiteit en maximale hartslag."),
+            "FTP, gewicht van jou en je fiets, rit-intensiteit en maximale hartslag, en wanneer "
+                    + "je een FTP-test exporteerde en welke testrit je al verwerkte."),
     STRAVA("Strava-koppeling",
             "Versleuteld toegangstoken en de voortgang van de activiteiten-sync."),
     INTERVALS_ICU("intervals.icu-koppeling",

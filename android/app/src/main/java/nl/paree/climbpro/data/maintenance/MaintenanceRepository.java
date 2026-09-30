@@ -57,6 +57,26 @@ public final class MaintenanceRepository {
     public String upsertComponent(String id, String name, int intervalKm, int intervalMonths,
                                   boolean includeVirtualRides,
                                   long correctedLastServicedEpochSec) throws IOException {
+        return upsertComponent(id, name, intervalKm, intervalMonths, includeVirtualRides,
+                correctedLastServicedEpochSec, false, null);
+    }
+
+    /**
+     * As {@link #upsertComponent(String, String, int, int, boolean, long)}, also linking the
+     * component to a garage bike (issue #187); {@code bikeId == null} unlinks it.
+     */
+    public String upsertComponent(String id, String name, int intervalKm, int intervalMonths,
+                                  boolean includeVirtualRides,
+                                  long correctedLastServicedEpochSec, String bikeId)
+            throws IOException {
+        return upsertComponent(id, name, intervalKm, intervalMonths, includeVirtualRides,
+                correctedLastServicedEpochSec, true, bikeId);
+    }
+
+    private String upsertComponent(String id, String name, int intervalKm, int intervalMonths,
+                                   boolean includeVirtualRides,
+                                   long correctedLastServicedEpochSec, boolean setBike,
+                                   String bikeId) throws IOException {
         WRITE_LOCK.lock();
         try {
             MaintenanceLog log = load();
@@ -70,6 +90,9 @@ public final class MaintenanceRepository {
             c.intervalKm          = Math.max(0, intervalKm);
             c.intervalMonths      = Math.max(0, intervalMonths);
             c.includeVirtualRides = includeVirtualRides;
+            if (setBike) {
+                c.bikeId = bikeId != null && !bikeId.trim().isEmpty() ? bikeId.trim() : null;
+            }
             if (correctedLastServicedEpochSec > 0) {
                 MaintenanceCalculator.correctLastService(c, correctedLastServicedEpochSec);
             }

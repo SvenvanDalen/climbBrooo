@@ -195,6 +195,31 @@ class PhoneMessageCallback {
         } else {
             data.hasVam[idx] = false;
         }
+
+        // Optional zc array (issue #66): FTP intensity-zone color index per segment, parallel
+        // to segs. Replaced (or cleared to null) on every payload so a resync without zc
+        // can't leave stale zones behind.
+        data.segZone[idx] = parseZoneColors(climbDict.get("zc"), data.segColor[idx], data.segCount[idx]);
+    }
+
+    // Returns a segCnt-long Array of color indices from zc, or null when zc is absent,
+    // not an Array, or shorter than the segment count (then the climb has no zones and the
+    // renderers use the gradient colors). An entry outside 0-5 falls back to that
+    // segment's gradient color instead of discarding the whole array.
+    hidden function parseZoneColors(zc, gradColors, segCnt) {
+        if (zc == null || !(zc instanceof Toybox.Lang.Array) || segCnt <= 0 || zc.size() < segCnt) {
+            return null;
+        }
+        var out = new [segCnt];
+        for (var s = 0; s < segCnt; s++) {
+            var zv = zc[s];
+            if (zv instanceof Toybox.Lang.Number && zv.toNumber() >= 0 && zv.toNumber() <= 5) {
+                out[s] = zv.toNumber();
+            } else {
+                out[s] = gradColors[s];
+            }
+        }
+        return out;
     }
 
     hidden function getInt(dict, key, defaultVal) {

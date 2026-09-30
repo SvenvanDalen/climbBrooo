@@ -51,6 +51,7 @@ Per-climb numeric data is packed into compact integer arrays (the watch slices t
 - `tsec` — per-segment target time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no pacing plan is available. Manual, power-based pacing target (see `RoutePacingPlanner`).
 - `refsec` — per-segment PR reference time in whole seconds, one int per segment, parallel to `segs`. Route mode, optional; omitted when no stored attempt has a matching segment count for that climb. The fastest ever split recorded per segment across all attempts (`SegmentPrCalculator`), used for the live "ahead/behind your PR" delta. Distinct from `tsec` — both may be present on the same climb.
 - `vam` — `[avgVamMPerH, peakVamMPerH, …]`, **2 ints per segment**, parallel to `segs`. Gradient-implied VAM (vertical ascent m/h) — route points carry no elapsed-time data, so this is gradient converted to m/h at a fixed reference climbing speed, not a measured ascent rate. `avg` comes straight from the segment's own gradient; `peak` is the steepest gradient found over any rolling 100 m window of the underlying route points, surfacing short ramps the segment average smooths over. Both modes, optional; omitted unless every segment in the climb has a computed value.
+- `zc` — per-segment **FTP intensity-zone color**, one `colorIndex` (0–5) per segment, parallel to `segs` (issue #66). A second, optional color source next to the gradient `colorIndex` inside `segs`, which stays the default: the watch uses `zc` only when its **Kleurmodus** setting is *FTP-zone*, and falls back to the gradient color for a climb without (valid) `zc`. Computed on the phone by `SegmentIntensityZones` (segment power from the workout pacing model → Coggan zone → `colorIndex`, mapping in `colors.md`). Both modes, optional; omitted without a complete rider profile (FTP + weights), and stripped from any payload that would otherwise exceed the 4 KB budget.
 
 `surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
@@ -70,6 +71,8 @@ When a pacing plan is present, the optional `tsec` array adds ~1 int per segment
 
 When VAM is computed, the optional `vam` array adds ~2 ints per segment — roughly **+140–160 bytes per climb** (minified). Combined with `tsec` this still stays well within 8 KB for typical routes; if budget ever gets tight, `vam` is the first candidate to drop since `avgVamMPerH` is a fixed linear function of the already-sent `gradient` and could be recomputed on the watch instead (only `peakVamMPerH` needs to keep coming from the phone).
 
+When the rider has a complete profile, the optional `zc` array adds ~1 small int per segment — roughly **+30–40 bytes per climb**. `ClimbPayloadBuilder` strips every `zc` again when a payload would exceed `PayloadBudget.MAX_BYTES`, so the zones can never cost a sync (route mode) or a climb (radius mode).
+
 If the budget ever feels tight, options in priority order:
 1. Drop optional `name` fields.
 2. Switch to a CBOR or MessagePack encoding (would require updating both decoders — not trivial).
@@ -83,6 +86,7 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 3       | 2026-09-29 | Added optional `zc` (per-segment FTP intensity-zone colorIndex) packed int array on Climb, parallel to `segs` (issue #66). Both modes; omitted without a complete rider profile and dropped when over budget. Additive, no version bump. |
 | 3       | 2026-09-17 | Added optional `refsec` (per-segment PR reference time) packed int array on Climb, parallel to `segs`. Route-mode only, omitted when no stored attempt has a matching segment count. Distinct from `tsec`; additive, no version bump. |
 | 3       | 2026-09-17 | Added optional `vam` (`[avgVamMPerH, peakVamMPerH, …]`) packed int array on Climb — gradient-implied VAM per segment, parallel to `segments` (wire key `segs`). Both modes, omitted unless every segment has a computed value. ~26 ints per climb; additive, no version bump. |
 | 3       | 2026-06-19 | `calib` point distances now coincide with the 8%-fraction segment-end grid (were an independent equal-division grid in the default detection path). Wire shape unchanged (still 3 ints/point); only the emitted distances differ. No version bump. |

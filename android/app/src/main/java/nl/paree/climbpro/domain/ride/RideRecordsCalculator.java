@@ -94,7 +94,7 @@ public final class RideRecordsCalculator {
     }
 
     /** Strava's assisted types: "EBikeRide", "EMountainBikeRide". */
-    static boolean isEBike(String type) {
+    public static boolean isEBike(String type) {
         return type != null && (type.startsWith("EBike") || type.startsWith("EMountainBike"));
     }
 

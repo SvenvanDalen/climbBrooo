@@ -15,4 +15,10 @@
     <setting propertyKey="@Properties.climbAlertDistinctTone" title="@Strings.SettingsClimbAlertDistinctToneTitle">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.colorMode" title="@Strings.SettingsColorModeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ColorModeGradient</listEntry>
+            <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
+        </settingConfig>
+    </setting>
 </settings>

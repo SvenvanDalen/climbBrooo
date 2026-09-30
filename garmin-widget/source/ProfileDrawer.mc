@@ -1,10 +1,14 @@
 using Toybox.Graphics as Gfx;
+using Toybox.Application.Properties as Properties;
 
 class ProfileDrawer {
 
     hidden const COLORS = [
         0x99FF99, 0xFFFF00, 0xFFAA00, 0xFF5500, 0xFF0000, 0xAA0000,
     ];
+    // "colorMode" setting value for FTP intensity-zone colors (issue #66); 0 = gradient.
+    const COLOR_MODE_ZONES = 1;
+
     hidden const SURFACE_COLORS = [
         0x404040, 0xC8A050, 0x8B4513, 0x909090, 0x9060C0,
     ];
@@ -17,15 +21,14 @@ class ProfileDrawer {
         var segCount = data.segCount[ci];
         if (segCount <= 0) { return; }
 
+        var useZones = zoneColorModeActive();
         var baseline = y + h - 3;
         var stepW = w.toFloat() / segCount.toFloat();
         var cumElev = 0;
 
         for (var s = 0; s < segCount; s++) {
             var segE = data.segElevGain[ci][s];
-            var colorIdx = data.segColor[ci][s];
-            if (colorIdx < 0) { colorIdx = 0; }
-            if (colorIdx > 5) { colorIdx = 5; }
+            var colorIdx = data.colorIndexAt(ci, s, useZones);
 
             var x1 = x + (s * stepW).toNumber();
             var x2 = x + ((s + 1) * stepW).toNumber();
@@ -50,6 +53,25 @@ class ProfileDrawer {
 
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
         dc.drawLine(x, baseline, x + w, baseline);
+    }
+
+    // Reads the "colorMode" app setting (issue #66, resources/settings/): 0 = Helling
+    // (default), 1 = FTP-zone. Properties.getValue can throw on a stale settings cache;
+    // a redraw must never crash, so fall back to gradient colors.
+    hidden function zoneColorModeActive() {
+        var v = null;
+        try {
+            v = Properties.getValue("colorMode");
+        } catch (e) {
+            v = null;
+        }
+        return zoneColorsSelected(v);
+    }
+
+    // Pure decision for zoneColorModeActive(): only the exact FTP-zone value selects zones.
+    function zoneColorsSelected(settingValue) {
+        return settingValue != null && settingValue instanceof Toybox.Lang.Number
+            && settingValue == COLOR_MODE_ZONES;
     }
 
     function drawSurfaceBar(dc, data, ci, barX, barY, barWidth) {

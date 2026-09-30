@@ -64,10 +64,10 @@ public final class TirePressureLogViewModel extends AndroidViewModel {
         });
     }
 
-    public void saveReminderSettings(int days, int km) {
+    public void saveReminderSettings(int days, int km, String bikeId) {
         executor.execute(() -> {
             try {
-                repo.saveReminderSettings(days, km);
+                repo.saveReminderSettings(days, km, bikeId);
             } catch (Exception e) {
                 message.postValue("Opslaan mislukt: " + e.getMessage());
             }

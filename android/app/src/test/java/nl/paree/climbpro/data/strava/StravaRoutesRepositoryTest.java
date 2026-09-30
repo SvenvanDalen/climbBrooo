@@ -376,4 +376,101 @@ public class StravaRoutesRepositoryTest {
         assertEquals("must wait the Retry-After seconds (2 s -> 2000 ms)",
                 2000L, (long) slept.get(0));
     }
+
+    // --- Issue #35: public Strava segments along the route become named climbs ---
+
+    private static StravaSegmentExploreDto.Entry exploreEntry(long id, String name,
+                                                             double startLat, double endLat) {
+        StravaSegmentExploreDto.Entry e = new StravaSegmentExploreDto.Entry();
+        e.id = id;
+        e.name = name;
+        e.avgGrade = 6.7f;
+        e.startLatlng = new double[]{startLat, 5.0};
+        e.endLatlng = new double[]{endLat, 5.0};
+        return e;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubExplore(Response<StravaSegmentExploreDto> response) throws Exception {
+        Call<StravaSegmentExploreDto> call = mock(Call.class);
+        when(call.execute()).thenReturn(response);
+        when(api.exploreSegments(anyString(), anyString(), eq("riding"))).thenReturn(call);
+    }
+
+    private static Response<StravaSegmentExploreDto> exploreOk(StravaSegmentExploreDto.Entry... entries) {
+        StravaSegmentExploreDto dto = new StravaSegmentExploreDto();
+        dto.segments = java.util.Arrays.asList(entries);
+        return Response.success(dto);
+    }
+
+    @Test
+    public void syncRoutes_publicSegmentOnRoute_namesTheClimb() throws Exception {
+        stubClimbRoute(0, "2026-01-01T00:00:00Z");
+        // The whole ~1.3 km climb is a known public segment.
+        stubExplore(exploreOk(exploreEntry(42L, "Publieke Klim", 51.0, 51.012)));
+
+        new StravaRoutesRepository(auth, routeRepo, api).syncRoutes();
+
+        StoredRoute stored = routeRepo.loadRoute("strava_123");
+        assertEquals(1, stored.climbs.size());
+        assertEquals("Publieke Klim", stored.climbs.get(0).name);
+        assertEquals(Boolean.TRUE, stored.stravaSegmentsExplored);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void syncRoutes_publicSegmentBelowClimbMinimum_isIgnored() throws Exception {
+        // The ~445 m route from the starred test, but now as a public segment, not starred:
+        // fine for a starred segment, too short for an automatic match.
+        stubStarredOnShortRoute();
+        Call<List<StravaSegmentDto>> none = mock(Call.class);
+        when(none.execute()).thenReturn(Response.success(Collections.<StravaSegmentDto>emptyList()));
+        when(api.listStarredSegments(anyString(), eq(1), anyInt())).thenReturn(none);
+        stubExplore(exploreOk(exploreEntry(43L, "Kort Stukje", 51.0, 51.004)));
+
+        new StravaRoutesRepository(auth, routeRepo, api).syncRoutes();
+
+        assertEquals(0, routeRepo.loadRoute("strava_123").climbs.size());
+    }
+
+    @Test
+    public void syncRoutes_exploreRateLimited_retriesOnLaterSyncWithoutRouteChange() throws Exception {
+        stubClimbRoute(0, "2026-01-01T00:00:00Z");
+        stubExplore(StravaRoutesRepositoryTest.<StravaSegmentExploreDto>error429("3600"));
+        StravaRoutesRepository repo = new StravaRoutesRepository(auth, routeRepo, api, millis -> { });
+        repo.syncRoutes();
+        assertEquals(Boolean.FALSE, routeRepo.loadRoute("strava_123").stravaSegmentsExplored);
+
+        // Same route (unchanged hash), explore answers now: reprocessed once, climb named.
+        stubClimbRoute(0, "2026-01-01T00:00:00Z");
+        stubExplore(exploreOk(exploreEntry(42L, "Publieke Klim", 51.0, 51.012)));
+        assertEquals(1, repo.syncRoutes());
+        StoredRoute stored = routeRepo.loadRoute("strava_123");
+        assertEquals("Publieke Klim", stored.climbs.get(0).name);
+        assertEquals(Boolean.TRUE, stored.stravaSegmentsExplored);
+
+        // And after that it skips like any unchanged route.
+        stubClimbRoute(0, "2026-01-01T00:00:00Z");
+        assertEquals(0, repo.syncRoutes());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void syncRoutes_starredSegmentBeatsSamePublicSegment() throws Exception {
+        stubClimbRoute(0, "2026-01-01T00:00:00Z");
+        stubExplore(exploreOk(exploreEntry(42L, "Publieke Klim", 51.0, 51.012)));
+        StravaSegmentDto starred = exploreEntry(42L, "Mijn Ster", 51.0, 51.012).toSegment();
+        Call<List<StravaSegmentDto>> s1 = mock(Call.class);
+        when(s1.execute()).thenReturn(Response.success(Collections.singletonList(starred)));
+        Call<List<StravaSegmentDto>> s2 = mock(Call.class);
+        when(s2.execute()).thenReturn(Response.success(Collections.<StravaSegmentDto>emptyList()));
+        when(api.listStarredSegments(anyString(), eq(1), anyInt())).thenReturn(s1);
+        when(api.listStarredSegments(anyString(), eq(2), anyInt())).thenReturn(s2);
+
+        new StravaRoutesRepository(auth, routeRepo, api).syncRoutes();
+
+        StoredRoute stored = routeRepo.loadRoute("strava_123");
+        assertEquals(1, stored.climbs.size());
+        assertEquals("Mijn Ster", stored.climbs.get(0).name);
+    }
 }

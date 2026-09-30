@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="8dp">
+
+        <EditText
+            android:id="@+id/input_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Naam (bv. Racefiets)"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="Soort"
+            android:textSize="13sp" />
+
+        <Spinner
+            android:id="@+id/spinner_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp" />
+
+        <EditText
+            android:id="@+id/input_weight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Gewicht in kg (bv. 8,2)"
+            android:importantForAutofill="no"
+            android:inputType="numberDecimal" />
+
+        <EditText
+            android:id="@+id/input_tyre_width"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Bandbreedte in mm (bv. 28)"
+            android:importantForAutofill="no"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/input_chainrings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Kettingbladen (bv. 50/34)"
+            android:importantForAutofill="no"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/input_cassette"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Cassette (bv. 11-30)"
+            android:importantForAutofill="no"
+            android:inputType="text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="Strava-fiets (uit je gesynchroniseerde ritten)"
+            android:textSize="13sp" />
+
+        <Spinner
+            android:id="@+id/spinner_gear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp" />
+
+        <CheckBox
+            android:id="@+id/check_active"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Actieve fiets (voor schattingen en ritten zonder koppeling)" />
+
+        <CheckBox
+            android:id="@+id/check_indoor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Binnenfiets: indoorritten (VirtualRide) gaan naar deze fiets" />
+    </LinearLayout>
+</ScrollView>

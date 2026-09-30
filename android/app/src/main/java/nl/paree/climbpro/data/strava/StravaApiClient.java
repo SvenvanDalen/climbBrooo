@@ -32,6 +32,16 @@ public interface StravaApiClient {
             @Query("page") int page,
             @Query("per_page") int perPage);
 
+    /**
+     * Top segments inside {@code bounds} ({@code sw_lat,sw_lng,ne_lat,ne_lng}), used to name
+     * climbs on a route after known Strava segments (issue #35). At most 10 per call.
+     */
+    @GET("segments/explore")
+    Call<StravaSegmentExploreDto> exploreSegments(
+            @Header("Authorization") String bearerToken,
+            @Query("bounds") String bounds,
+            @Query("activity_type") String activityType);
+
     @GET("athlete/activities")
     Call<List<StravaActivityDto>> listActivities(
             @Header("Authorization") String bearerToken,
