@@ -100,6 +100,20 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderPayloadsWithColorblindPaletteValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withPalette(
+                nl.paree.climbpro.domain.segment.GradientPalette.COLORBLIND);
+        JsonNode route = MAPPER.readTree(b.buildRoutePayload(routeFixture()));
+        assertTrue("route payload carries 'pal'", route.has("pal"));
+        assertValid(route, "route payload with pal");
+        assertValid(MAPPER.readTree(b.buildSingleClimbPayload(routeFixture(), 0)),
+                "single-climb payload with pal");
+        JsonNode radius = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));
+        assertTrue("radius payload carries 'pal'", radius.has("pal"));
+        assertValid(radius, "radius payload with pal");
+    }
+
+    @Test
     public void builderRadiusPayloadValidatesAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
         JsonNode payload = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));

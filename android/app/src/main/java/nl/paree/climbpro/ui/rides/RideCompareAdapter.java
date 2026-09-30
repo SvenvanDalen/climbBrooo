@@ -44,10 +44,12 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
         h.speed.setText(String.format(Locale.getDefault(), "%.1f / %.1f", k.speedA, k.speedB));
         h.hr.setText(bpm(k.hrA) + " / " + bpm(k.hrB));
         h.delta.setText(signedDuration(k.cumulativeDeltaSec));
-        h.delta.setTextColor(ContextCompat.getColor(h.delta.getContext(),
-                k.cumulativeDeltaSec < 0 ? R.color.color_success
-                        : k.cumulativeDeltaSec > 0 ? R.color.color_error
-                        : R.color.color_text_secondary));
+        // Ahead/behind use the palette's status colors (blue/orange when colorblind, #258).
+        h.delta.setTextColor(k.cumulativeDeltaSec < 0
+                ? nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusOk()
+                : k.cumulativeDeltaSec > 0
+                        ? nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusBad()
+                        : ContextCompat.getColor(h.delta.getContext(), R.color.color_text_secondary));
     }
 
     @Override

@@ -116,6 +116,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
+- **Kleurenblind-vriendelijk palet** (issue #258) — Settings → "Kleuren": swaps the
+  yellow → red gradient colors for pale yellow → light blue → navy (blue–yellow axis,
+  darker = steeper) and green/red status colors for blue/orange, in the app and — via the
+  optional payload key `pal` — on the watch datafield and widget. Gradient buckets and
+  color indices are unchanged; only the colors differ (table in `protocol/colors.md`).
 - **Start navigation** — hands the GPX to Garmin Connect, which pushes the course. Navigating the selected route as a Garmin course also improves on-watch distance accuracy: the datafield matches on course distance (`rtl − distanceToDestination`) with a calibration trust check, falling back to the activity odometer when you are not navigating.
 - **Import a single route/climb from a GPX file**.
 - **Join two routes** — "Samenvoegen met…" on a route saves it plus a second route as one
@@ -367,6 +372,8 @@ With FTP and weights set, an optional parallel array `zc` (1 int/segment, issue 
 carries each segment's **FTP intensity-zone color** (Coggan zone → the same 0–5 color
 indices); the watch shows it instead of the gradient colors when its *Kleurmodus*
 setting is *FTP-zone*.
+An optional top-level `"pal": 1` (issue #258) tells the watch to draw those same color
+indices with the colorblind-friendly palette; absent = default palette.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

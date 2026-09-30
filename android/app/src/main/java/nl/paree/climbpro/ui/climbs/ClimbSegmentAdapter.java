@@ -30,8 +30,6 @@ public final class ClimbSegmentAdapter
         void onSegmentClick(int position, StoredSegment segment);
     }
 
-    private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
-
     // Surface badge background colors (match SurfaceType constants)
     private static final int[] SURFACE_BG = {
         0xFF404040, // ASPHALT — dark grey
@@ -104,14 +102,14 @@ public final class ClimbSegmentAdapter
             }
         });
         int ci = Math.max(0, Math.min(5, s.colorIndex));
-        h.colorBar.setBackgroundColor(SEGMENT_COLORS[ci]);
+        h.colorBar.setBackgroundColor(SegmentColorPalette.toColor(ci));
 
         // FTP intensity zone badge, colored the way the watch paints it in FTP-zone mode.
         if (segmentZones != null && position < segmentZones.length) {
             int zone = segmentZones[position];
             h.zoneBadge.setVisibility(View.VISIBLE);
             h.zoneBadge.setText(SegmentIntensityZones.label(zone));
-            h.zoneBadge.setBackgroundColor(SEGMENT_COLORS[GradientColor.forPowerZone(zone)]);
+            h.zoneBadge.setBackgroundColor(SegmentColorPalette.toColor(GradientColor.forPowerZone(zone)));
             h.zoneBadge.setContentDescription("Intensiteitszone "
                     + SegmentIntensityZones.label(zone));
         } else {

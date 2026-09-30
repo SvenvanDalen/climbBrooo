@@ -68,8 +68,10 @@ public final class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAd
         String label = MaintenanceCalculator.stateLabel(s);
         holder.state.setText(label != null ? label : "");
         holder.state.setVisibility(label != null ? View.VISIBLE : View.GONE);
-        holder.state.setTextColor(ContextCompat.getColor(holder.itemView.getContext(),
-                s.due ? R.color.color_error : R.color.color_accent));
+        // Overdue uses the palette's "bad" status color (orange when colorblind, issue #258).
+        holder.state.setTextColor(s.due
+                ? nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusBad()
+                : ContextCompat.getColor(holder.itemView.getContext(), R.color.color_accent));
 
         holder.usage.setText(MaintenanceCalculator.usageText(s));
 

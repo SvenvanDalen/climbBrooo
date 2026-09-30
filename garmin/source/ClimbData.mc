@@ -51,6 +51,7 @@ class ClimbData {
     var routeId = null;
     var routeName = null;
     var routeTotalLen = 0;    // route total length (m) from payload "rtl"; 0 = unknown
+    var palette = 0;          // color palette from payload "pal" (issue #258): 0 default, 1 colorblind
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;

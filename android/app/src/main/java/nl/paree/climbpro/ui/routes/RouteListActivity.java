@@ -544,9 +544,10 @@ public final class RouteListActivity extends AppCompatActivity {
             binding.yearlyGoalProgress.setProgressCompat(
                     (int) Math.round(p.fraction * binding.yearlyGoalProgress.getMax()), false);
             binding.yearlyGoalHint.setText(YearlyDistanceGoalCalculator.paceHint(p));
-            binding.yearlyGoalHint.setTextColor(ContextCompat.getColor(this,
+            binding.yearlyGoalHint.setTextColor(
                     p.pace == YearlyDistanceGoalCalculator.Pace.BEHIND_SCHEDULE
-                            ? R.color.color_text_tertiary : R.color.color_success));
+                            ? ContextCompat.getColor(this, R.color.color_text_tertiary)
+                            : nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusOk());
         } else {
             binding.yearlyGoalProgress.setVisibility(android.view.View.GONE);
             binding.yearlyGoalHint.setText("Tik om een jaardoel in te stellen");

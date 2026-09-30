@@ -58,6 +58,9 @@ class PhoneMessageCallback {
         data.routeName = msg.get("name");
         var rtl = msg.get("rtl");
         data.routeTotalLen = (rtl != null && rtl instanceof Toybox.Lang.Number) ? rtl : 0;
+        // Optional "pal" (issue #258): 1 = colorblind-friendly palette. Set on every payload,
+        // so a resync without it returns to the default palette; unknown values -> default.
+        data.palette = parsePalette(msg.get("pal"));
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {
@@ -234,6 +237,11 @@ class PhoneMessageCallback {
             }
         }
         return out;
+    }
+
+    // Wire "pal" -> palette: only the exact Number 1 selects the colorblind palette.
+    function parsePalette(pal) {
+        return (pal != null && pal instanceof Toybox.Lang.Number && pal == 1) ? 1 : 0;
     }
 
     hidden function getInt(dict, key, defaultVal) {

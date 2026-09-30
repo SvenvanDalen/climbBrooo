@@ -32,6 +32,9 @@ public final class WatchRequestHandler {
     private final ObjectMapper    mapper;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    /** Color palette for 'pal' (issue #258); default palette until the app sets a source. */
+    private volatile java.util.function.IntSupplier paletteSource =
+            () -> nl.paree.climbpro.domain.segment.GradientPalette.DEFAULT;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -49,6 +52,14 @@ public final class WatchRequestHandler {
         this.mapper          = new ObjectMapper();
         this.riderRepo       = riderRepo;
         this.attemptRepo     = attemptRepo;
+    }
+
+    /**
+     * Where watch-requested payloads read the rider's palette choice from (issue #258), so a
+     * LOAD_ROUTE / SET_ACTIVE_ROUTE answer uses the same colors as the background sync.
+     */
+    public void setPaletteSource(java.util.function.IntSupplier source) {
+        if (source != null) this.paletteSource = source;
     }
 
     /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
@@ -71,7 +82,8 @@ public final class WatchRequestHandler {
      * when a rider profile is available; without one the payload is unchanged.
      */
     private ClimbPayloadBuilder payloadBuilder() {
-        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper)
+                .withPalette(paletteSource.getAsInt());
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 

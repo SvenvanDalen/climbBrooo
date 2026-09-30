@@ -62,7 +62,9 @@ class ClimbDetailView extends Ui.View {
         var rId = data.routeId;
         if (rId != null) {
             if (climbSaved == null) { refreshClimbSaved(); }
-            dc.setColor(climbSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            var pal = WidgetPalette.current();
+            dc.setColor(climbSaved ? WidgetPalette.badColor(pal)
+                                   : WidgetPalette.okColor(pal, Gfx.COLOR_GREEN), Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, (h * 0.88).toNumber(), Gfx.FONT_XTINY,
                 (climbSaved ? "SELECT: Remove" : "SELECT: Save") + "  MENU: Actief",
                 Gfx.TEXT_JUSTIFY_CENTER);

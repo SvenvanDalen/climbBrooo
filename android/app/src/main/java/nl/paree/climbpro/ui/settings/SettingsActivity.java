@@ -29,10 +29,12 @@ import nl.paree.climbpro.data.health.HealthConnectGateway;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
+import nl.paree.climbpro.domain.segment.GradientPalette;
 import nl.paree.climbpro.service.AutoBackupWorker;
 import nl.paree.climbpro.service.StravaHistoryBackfillWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 import nl.paree.climbpro.service.WetRideReminderJob;
+import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 
 import java.time.ZoneId;
 import java.util.Set;
@@ -255,6 +257,21 @@ public final class SettingsActivity extends AppCompatActivity {
             }
         });
         renderBackupStatus();
+
+        // Colorblind-friendly palette (issue #258): phone screens switch at once; the watch
+        // gets the new 'pal' flag with the next sync, which we kick off right away.
+        binding.switchColorblindPalette.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(GradientPalette.PREF_COLORBLIND, false));
+        binding.switchColorblindPalette.setOnCheckedChangeListener((b, on) -> {
+            PreferenceManager.getDefaultSharedPreferences(this).edit()
+                    .putBoolean(GradientPalette.PREF_COLORBLIND, on).apply();
+            SegmentColorPalette.setActive(GradientPalette.fromEnabled(on));
+            try {
+                SyncScheduler.triggerImmediateSync(this);
+            } catch (IllegalStateException e) {
+                // WorkManager not initialised (tests); the periodic sync picks it up later.
+            }
+        });
 
         // Cleaning reminder after wet rides (issue #234).
         binding.switchWetRideReminder.setChecked(PreferenceManager.getDefaultSharedPreferences(this)

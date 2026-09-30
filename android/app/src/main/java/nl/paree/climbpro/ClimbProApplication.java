@@ -26,12 +26,17 @@ public final class ClimbProApplication extends Application {
         nl.paree.climbpro.service.PlannedClimbNotifier.ensureChannel(this);
         nl.paree.climbpro.service.WetRideNotifier.ensureChannel(this);
 
+        // Colorblind-friendly palette choice (issue #258): phone screens read it process-wide.
+        nl.paree.climbpro.ui.climbs.SegmentColorPalette.init(this);
+
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
-        ciqClient.setWatchRequestHandler(new WatchRequestHandler(
+        WatchRequestHandler watchRequestHandler = new WatchRequestHandler(
                 routeRepo, ciqClient,
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(this),
-                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this)));
+                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this));
+        watchRequestHandler.setPaletteSource(nl.paree.climbpro.ui.climbs.SegmentColorPalette::active);
+        ciqClient.setWatchRequestHandler(watchRequestHandler);
         // Force a clean GCM rebind on startup so a phone-only app update can't leave
         // the watch talking to a dead process. See ConnectIqClient#forceRebind.
         ciqClient.forceRebind();

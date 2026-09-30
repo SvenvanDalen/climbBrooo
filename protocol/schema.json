@@ -29,6 +29,12 @@
       "type": "string",
       "maxLength": 32
     },
+    "pal": {
+      "description": "Optional color palette (issue #258): 1 = colorblind-friendly palette (pale yellow + light-to-dark blue ramp for the six colorIndex values, blue/orange status colors instead of green/red); absent = default yellow-to-red palette. Only the rendered colors change: colorIndex values in segs/zc and their gradient buckets are identical in both palettes. A phone setting; route, single-climb and radius payloads. Consumers treat any other value as the default palette.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1
+    },
     "rtl": {
       "description": "Route mode (optional): total route length in whole metres. The watch derives distance-along-course as (rtl - Activity.Info.distanceToDestination) when navigating.",
       "type": "integer",
