@@ -43,6 +43,11 @@ Three levels, because not all watch code can be asserted the same way:
 | garmin-surface | 13 | 13 (100%) | parser, GPS refine, view render, app lifecycle |
 | garmin-widget | 78 | ~65 (~83%) | all logic + all view render; gap is UI navigation glue |
 
+Felt temperature on descents (issue #248, `garmin/source/WindChill.mc`) is pure and
+asserted in `garmin/test/WindChillTest.mc` (windchill reference values + validity
+bounds, descent window/hysteresis, 1 °C display latch, show/hide gate); only the
+`Sensor.getInfo()` temperature read is on-device.
+
 **Business logic + rendering: ~100% across all three modules.** The widget gap is
 entirely UI/navigation/timer/transmit glue (below).
 

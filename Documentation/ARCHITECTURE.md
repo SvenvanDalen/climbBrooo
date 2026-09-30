@@ -786,6 +786,22 @@ workout export) from the same stored choice.
   the description names the block and the `.zwo` gets the `INTERVALS` tag. The same
   plan drives the `.erg` and MyWhoosh exports.
 
+### Felt temperature on descents (issue #248)
+
+Watch-only, no wire change: the climb datafield (`garmin`) shows the windchill the
+rider feels on a descent, since cooling from the riding wind is easy to underestimate.
+`garmin/source/WindChill.mc` holds pure helpers: `windChillC` (JAG/TI / Environment
+Canada formula, rider speed as wind speed, only for T ≤ 10 °C and v ≥ 4.8 km/h — else
+the air temperature), `DescentTracker` (grade over ≥ 150 m of `elapsedDistance` +
+`altitude`; on at ≥ 25 km/h and ≤ −3 %, off below 20 km/h or above −1 %) and
+`latchFeltTemp` (whole degrees, moves only on a ≥ 1 °C change so the banner does not
+churn). `ClimbProView.compute` feeds them each tick; the temperature comes from
+`Sensor.getInfo().temperature` (new `Sensor` permission) — a paired Tempe gives real
+ambient air, otherwise the FR255M's internal sensor, which reads high from wrist heat.
+The value is drawn as a blue top strip only between climbs (the climb view is
+untouched), below the off-route and battery banners in priority, and nothing is shown
+without a reading.
+
 ### FTP intensity-zone colors (issue #66)
 
 The fixed gradient → color mapping stays the default and the single source of

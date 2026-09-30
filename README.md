@@ -134,6 +134,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   Outdoors the datafield starts it at the climb-start alert, shows the target band (and
   under/in/over with a power meter) and buzzes once at the top ("blok klaar"). Indoors the
   `.zwo`/`.erg`/MyWhoosh export holds the block's target on every climb step. Survives resync.
+- **Felt temperature on descents** — between climbs, while descending (≥ 150 m at ≤ −3 %
+  and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
+  watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
+  true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

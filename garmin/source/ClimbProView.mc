@@ -5,6 +5,7 @@ using Toybox.Application.Properties as Properties;
 using Toybox.System as Sys;
 using Toybox.Activity as Activity;
 using Toybox.Attention as Attention;
+using Toybox.Sensor as Sensor;
 
 /**
  * Main DataField view for ClimbPro.
@@ -70,6 +71,10 @@ class ClimbProView extends Ui.DataField {
     hidden var summaryActualSec = 0;
     hidden var summaryDeltaSec = 0;
     hidden var lastRouteId = null;         // detect a new payload (route change) to reset ghost state
+
+    // Felt temperature on descents (issue #248); null = nothing shown.
+    hidden var descent = new DescentTracker();
+    hidden var feltShownC = null;
 
     function initialize() {
         DataField.initialize();
@@ -192,6 +197,30 @@ class ClimbProView extends Ui.DataField {
                 batteryWarnedClimbIndex = ci2;
             }
         }
+
+        // Felt temperature on descents (issue #248): grade over >= 150 m from odometer +
+        // altitude, riding speed as wind speed. Watch-only; nothing is shown on a climb or
+        // without a temperature reading.
+        var rawDist = (info != null && info has :elapsedDistance) ? info.elapsedDistance : null;
+        var alt = (info != null && info has :altitude) ? info.altitude : null;
+        var spd = (info != null && info has :currentSpeed) ? info.currentSpeed : null;
+        var desc = descent.update(rawDist, alt, spd);
+        feltShownC = feltTempToShow(desc, data.activeClimbIndex >= 0,
+                desc ? ambientTempC() : null, spd, feltShownC);
+    }
+
+    // Temperature from Sensor.Info: a paired Tempe sensor gives true ambient air; without
+    // one the FR255M reports its internal (wrist-warmed) sensor, which reads high, so the
+    // felt value is then an upper bound. null when no reading is available.
+    hidden function ambientTempC() {
+        if (!(Toybox has :Sensor)) { return null; }
+        try {
+            var si = Sensor.getInfo();
+            if (si != null && si has :temperature) { return si.temperature; }
+        } catch (e) {
+            return null;
+        }
+        return null;
     }
 
     function onUpdate(dc) {
@@ -225,7 +254,19 @@ class ClimbProView extends Ui.DataField {
             drawOffRouteBanner(dc);
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
+        } else if (feltShownC != null && data.activeClimbIndex < 0) {
+            drawFeltTempBanner(dc, feltShownC);
         }
+    }
+
+    // Blue strip in the header slot between climbs while descending (issue #248). The
+    // value is latched to whole degrees (latchFeltTemp) so it only changes on a >= 1 °C move.
+    hidden function drawFeltTempBanner(dc, c) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_BLUE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
