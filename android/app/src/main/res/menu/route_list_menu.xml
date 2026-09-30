@@ -92,6 +92,9 @@
                 android:id="@+id/action_friend_feed"
                 android:title="Vriendenfeed"/>
             <item
+                android:id="@+id/action_ride_buddies"
+                android:title="@string/ride_buddies_title"/>
+            <item
                 android:id="@+id/action_wrapped"
                 android:title="Jaaroverzicht"/>
         </menu>

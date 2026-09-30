@@ -75,6 +75,11 @@ public enum PrivacyCategory {
             "Ritten en mijlpalen die vrienden met een deelcode met je deelden, en de naam "
                     + "waaronder je zelf deelt.",
             "friend_feed.json"),
+    RIDE_BUDDIES("Ritmaatjes",
+            "Rijdersprofielen die anderen met een profielcode met je deelden: naam, tempo, "
+                    + "klimsnelheid, ritlengte, rittype, rijdagen en eventueel een grof gebied "
+                    + "(vak van ~5 km). Je eigen profiel wordt niet bewaard.",
+            "ride_buddies.json"),
     GOAL_EVENT("Doelevenement",
             "Naam, datum, afstand en hoogtemeters van je doelevenement.",
             "goal_event.json"),
