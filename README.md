@@ -79,6 +79,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 
 ## User features
 
+- **Grouped menu** — the route list's overflow menu keeps only Sync, Sorteer, Filter op
+  status and Instellingen at the top level; every other screen lives in one of six
+  submenus: Klimmen, Ritten & analyse, Training & doelen, Voor de rit, Fiets & materiaal
+  and Data & app. "menu → X" elsewhere in this README means: open the matching group first.
 - **Select a route to follow** — pick a synced route; it becomes active on the watch.
 - **Radius mode** — no fixed route; the watch alerts on any known climb within a
   configurable radius of your GPS position.
