@@ -350,6 +350,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
         viewModel.workoutExport().observe(this, this::shareWorkout);
+        viewModel.intervalsResult().observe(this, msg -> {
+            if (msg == null) return;
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+            viewModel.consumeIntervalsResult();
+        });
 
         setupBulkSurfaceSetter();
 
@@ -569,19 +574,25 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     /**
      * Issue #223: choose Zwift or ERG, then export the climb as an indoor workout. Issue #19
      * adds the "N× deze klim" variants, which first ask for repeats and recovery; issue #85
-     * adds a MyWhoosh-compatible {@code .zwo}.
+     * adds a MyWhoosh-compatible {@code .zwo}; issue #78 plans it on intervals.icu.
      */
     private void pickWorkoutFormat() {
         String[] formats = {"Zwift-workout (.zwo)", "ERG-bestand (.erg, TrainerRoad e.a.)",
                 "Herhaal-klim als Zwift-workout (.zwo)", "Herhaal-klim als ERG-bestand (.erg)",
-                "MyWhoosh-workout (.zwo)"};
+                "MyWhoosh-workout (.zwo)", getString(R.string.intervals_format_single),
+                getString(R.string.intervals_format_repeat)};
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Exporteer als indoor-workout")
                 .setItems(formats, (d, which) -> {
                     if (which == 0) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.ZWIFT);
                     else if (which == 1) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.ERG);
                     else if (which == 4) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.MYWHOOSH);
-                    else showRepeatWorkoutDialog(which == 2);
+                    else if (which == 5) startIntervalsPush(1, ClimbDetailViewModel.RECOVERY_AUTO);
+                    else if (which == 6) showRepeatWorkoutDialog(getString(R.string.intervals_send),
+                            this::startIntervalsPush);
+                    else showRepeatWorkoutDialog("Exporteer", (reps, rec) -> viewModel.exportWorkout(
+                            which == 2 ? ClimbDetailViewModel.WorkoutFormat.ZWIFT
+                                    : ClimbDetailViewModel.WorkoutFormat.ERG, reps, rec));
                 })
                 .setNegativeButton("Annuleren", null)
                 .show();
@@ -590,8 +601,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     /** Max recovery (min) offered in the repeat dialog; index 0 of the picker is "auto". */
     private static final int REPEAT_RECOVERY_MAX_MIN = 15;
 
+    /** Receives the repeat dialog's choice; recovery is {@link ClimbDetailViewModel#RECOVERY_AUTO} or seconds. */
+    private interface RepeatAction {
+        void run(int repeats, int recoverySec);
+    }
+
     /** Issue #19: pick the number of repeats and the recovery between them. */
-    private void showRepeatWorkoutDialog(boolean zwift) {
+    private void showRepeatWorkoutDialog(String positiveLabel, RepeatAction action) {
         android.widget.NumberPicker repeats = new android.widget.NumberPicker(this);
         repeats.setMinValue(nl.paree.climbpro.domain.export.ClimbWorkoutWriter.MIN_REPEATS);
         repeats.setMaxValue(nl.paree.climbpro.domain.export.ClimbWorkoutWriter.MAX_REPEATS);
@@ -619,13 +635,48 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .setTitle("Herhaal-klim workout")
                 .setMessage("Auto herstel = de helft van je klimtijd (3–10 min), op 50 % FTP.")
                 .setView(pickers)
-                .setPositiveButton("Exporteer", (d, w) -> viewModel.exportWorkout(zwift
-                                ? ClimbDetailViewModel.WorkoutFormat.ZWIFT
-                                : ClimbDetailViewModel.WorkoutFormat.ERG,
+                .setPositiveButton(positiveLabel, (d, w) -> action.run(
                         repeats.getValue(), recovery.getValue() == 0
                                 ? ClimbDetailViewModel.RECOVERY_AUTO
                                 : recovery.getValue() * 60))
                 .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    /**
+     * Issue #78: plan the workout on intervals.icu — needs a linked key, then a date and
+     * whether it is ridden indoors ({@code VirtualRide}) or outside ({@code Ride}).
+     */
+    private void startIntervalsPush(int repeats, int recoverySec) {
+        if (!viewModel.isIntervalsConfigured()) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.intervals_title)
+                    .setMessage(R.string.intervals_not_configured)
+                    .setPositiveButton(R.string.intervals_open_settings, (d, w) -> startActivity(
+                            new Intent(this, nl.paree.climbpro.ui.settings.IntervalsIcuSettingsActivity.class)))
+                    .setNegativeButton(R.string.intervals_cancel, null)
+                    .show();
+            return;
+        }
+        java.time.LocalDate today = java.time.LocalDate.now();
+        android.app.DatePickerDialog picker = new android.app.DatePickerDialog(this,
+                (view, y, m, d) -> pickIntervalsType(repeats, recoverySec,
+                        java.time.LocalDate.of(y, m + 1, d)),
+                today.getYear(), today.getMonthValue() - 1, today.getDayOfMonth());
+        picker.setTitle(R.string.intervals_pick_date);
+        picker.show();
+    }
+
+    private void pickIntervalsType(int repeats, int recoverySec, java.time.LocalDate date) {
+        String[] types = {getString(R.string.intervals_type_indoor),
+                getString(R.string.intervals_type_outdoor)};
+        final int[] choice = {0};
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.intervals_pick_type)
+                .setSingleChoiceItems(types, 0, (d, which) -> choice[0] = which)
+                .setPositiveButton(R.string.intervals_send, (d, w) ->
+                        viewModel.pushToIntervals(repeats, recoverySec, date, choice[0] == 0))
+                .setNegativeButton(R.string.intervals_cancel, null)
                 .show();
     }
 
