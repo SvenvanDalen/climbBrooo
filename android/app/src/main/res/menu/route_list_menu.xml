@@ -208,6 +208,9 @@
                 android:id="@+id/action_strava"
                 android:title="Strava"/>
             <item
+                android:id="@+id/action_import_share_link"
+                android:title="@string/share_link_title"/>
+            <item
                 android:id="@+id/action_batch_export"
                 android:title="Exporteer seizoen (GPX)"/>
             <item
