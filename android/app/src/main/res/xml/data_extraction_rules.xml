@@ -4,12 +4,14 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="strava_auth.xml" />
+        <exclude domain="sharedpref" path="intervals_icu_auth.xml" />
         <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
         <exclude domain="file" path="sync_state.json" />
         <exclude domain="file" path=".restore_staging" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="strava_auth.xml" />
+        <exclude domain="sharedpref" path="intervals_icu_auth.xml" />
         <exclude domain="sharedpref" path="__androidx_security_crypto_encrypted_prefs__.xml" />
         <exclude domain="file" path="sync_state.json" />
         <exclude domain="file" path=".restore_staging" />

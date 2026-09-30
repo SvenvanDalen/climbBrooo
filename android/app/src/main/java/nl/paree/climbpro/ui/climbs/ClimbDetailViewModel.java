@@ -7,6 +7,9 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.intervals.IntervalsIcuEventDto;
+import nl.paree.climbpro.data.intervals.IntervalsIcuRepository;
 import nl.paree.climbpro.data.ride.RideRepository;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
@@ -28,6 +31,7 @@ import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimator;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.export.ClimbWorkoutWriter;
+import nl.paree.climbpro.domain.export.IntervalsIcuExport;
 import nl.paree.climbpro.domain.power.RouteAwareClimbEstimator;
 import nl.paree.climbpro.domain.power.RouteTile;
 import nl.paree.climbpro.domain.power.WindImpactEstimator;
@@ -73,6 +77,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<TrainingAdvice>    trainingAdvice = new MutableLiveData<>();
     private final MutableLiveData<WorkoutExport>     workoutExport = new MutableLiveData<>();
     private final MutableLiveData<PrChance>          prChance      = new MutableLiveData<>();
+    private final MutableLiveData<String>            intervalsResult = new MutableLiveData<>();
+    private final IntervalsIcuRepository intervalsRepo;
 
     private final MutableLiveData<WindImpactState>   windImpact    = new MutableLiveData<>();
     /** Separate thread so a slow/offline weather request never blocks the other work. */
@@ -90,6 +96,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         riderRepo = new RiderProfileRepository(app);
         attemptRepo = new ClimbAttemptRepository(app);
         rideRepo = new RideRepository(app);
+        intervalsRepo = new IntervalsIcuRepository(app);
     }
 
     public LiveData<StoredClimb>       climb()        { return climb; }
@@ -412,25 +419,9 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         }
         executor.execute(() -> {
             try {
-                RiderProfile profile = riderRepo.load();
-                List<StoredSegment> segs = c.segments;
-                int[] dist = new int[segs.size()];
-                double[] grad = new double[segs.size()];
-                int[] surface = new int[segs.size()];
-                for (int i = 0; i < segs.size(); i++) {
-                    dist[i] = segs.get(i).distance;
-                    grad[i] = segs.get(i).gradient;
-                    surface[i] = segs.get(i).surfaceType;
-                }
-                ClimbWorkoutWriter.Plan plan =
-                        ClimbWorkoutWriter.plan(dist, grad, surface, profile);
-                if (plan == null) {
-                    error.postValue("Vul eerst je FTP en gewicht in bij Instellingen; daarmee "
-                            + "worden de vermogensdoelen per segment berekend.");
-                    return;
-                }
-                String name = c.userDisplayName != null && !c.userDisplayName.trim().isEmpty()
-                        ? c.userDisplayName : c.name;
+                ClimbWorkoutWriter.Plan plan = workoutPlan(c);
+                if (plan == null) return;
+                String name = workoutName(c);
                 int recovery = recoverySec == RECOVERY_AUTO
                         ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
                 String content;
@@ -459,6 +450,81 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 workoutExport.postValue(new WorkoutExport(file, mime, format));
             } catch (Exception e) {
                 error.postValue("Workout-export mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Power plan for {@code c}; posts the "fill in your profile" error and returns null. */
+    private ClimbWorkoutWriter.Plan workoutPlan(StoredClimb c) {
+        RiderProfile profile = riderRepo.load();
+        List<StoredSegment> segs = c.segments;
+        int[] dist = new int[segs.size()];
+        double[] grad = new double[segs.size()];
+        int[] surface = new int[segs.size()];
+        for (int i = 0; i < segs.size(); i++) {
+            dist[i] = segs.get(i).distance;
+            grad[i] = segs.get(i).gradient;
+            surface[i] = segs.get(i).surfaceType;
+        }
+        ClimbWorkoutWriter.Plan plan = ClimbWorkoutWriter.plan(dist, grad, surface, profile);
+        if (plan == null) {
+            error.postValue("Vul eerst je FTP en gewicht in bij Instellingen; daarmee "
+                    + "worden de vermogensdoelen per segment berekend.");
+        }
+        return plan;
+    }
+
+    private static String workoutName(StoredClimb c) {
+        return c.userDisplayName != null && !c.userDisplayName.trim().isEmpty()
+                ? c.userDisplayName : c.name;
+    }
+
+    /** Issue #78: outcome of a push to intervals.icu, consumed once by the activity. */
+    public LiveData<String> intervalsResult() { return intervalsResult; }
+
+    public void consumeIntervalsResult() { intervalsResult.setValue(null); }
+
+    /** Whether an intervals.icu API key is stored (checked before asking for a date). */
+    public boolean isIntervalsConfigured() {
+        return intervalsRepo.isConfigured();
+    }
+
+    /**
+     * Issue #78: plans the climb workout ({@code repeats}× with recovery, like the .zwo export)
+     * on the intervals.icu calendar on {@code date}. The description carries the climb's PR
+     * and attempt count, since intervals.icu has no climb object of its own.
+     */
+    public void pushToIntervals(int repeats, int recoverySec, LocalDate date, boolean indoor) {
+        StoredClimb c = lastClimb;
+        if (c == null || c.segments == null || c.segments.isEmpty()) {
+            error.postValue("Klim nog niet geladen");
+            return;
+        }
+        executor.execute(() -> {
+            try {
+                ClimbWorkoutWriter.Plan plan = workoutPlan(c);
+                if (plan == null) return;
+                String name = workoutName(c);
+                int recovery = recoverySec == RECOVERY_AUTO
+                        ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
+                String zwo = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery);
+
+                int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+                String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
+                LogbookCalculator.Summary summary =
+                        LogbookCalculator.summaries(attemptRepo.loadAll()).get(climbId);
+                String description = IntervalsIcuExport.description(name, repeats,
+                        summary != null ? summary.prSec : 0,
+                        summary != null ? summary.attemptCount : 0);
+
+                intervalsRepo.createEvent(IntervalsIcuEventDto.workout(
+                        IntervalsIcuExport.eventName(name, repeats), description, zwo,
+                        ClimbWorkoutWriter.fileName(name, "zwo", repeats), date, indoor));
+                intervalsResult.postValue(getApplication().getString(
+                        R.string.intervals_push_ok, date.toString()));
+            } catch (Exception e) {
+                intervalsResult.postValue(getApplication().getString(R.string.intervals_push_failed,
+                        e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
             }
         });
     }

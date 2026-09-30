@@ -93,6 +93,9 @@ public enum PrivacyCategory {
                     + "je een FTP-test exporteerde en welke testrit je al verwerkte."),
     STRAVA("Strava-koppeling",
             "Versleuteld toegangstoken en de voortgang van de activiteiten-sync."),
+    INTERVALS_ICU("intervals.icu-koppeling",
+            "Versleutelde persoonlijke API-sleutel en atleet-id om workouts naar je "
+                    + "intervals.icu-kalender te sturen."),
     CACHE("Tijdelijke bestanden",
             "Gedeelde exports en downloads in de cache; Android mag deze ook zelf wissen.");
 

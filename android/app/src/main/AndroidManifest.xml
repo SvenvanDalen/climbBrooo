@@ -441,6 +441,11 @@
             android:parentActivityName=".ui.settings.SettingsActivity"/>
 
         <activity
+            android:name=".ui.settings.IntervalsIcuSettingsActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.settings.SettingsActivity"/>
+
+        <activity
             android:name=".ui.strava.StravaAuthActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity"/>

@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.intervals.IntervalsIcuRepository;
 import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.data.planning.FavoriteStartPointStore;
 import nl.paree.climbpro.data.planning.PlannedClimb;
@@ -132,6 +133,10 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
                         : "Niet gekoppeld"), linked || syncState);
             }
+            case INTERVALS_ICU: {
+                boolean linked = new IntervalsIcuRepository(getApplication()).isConfigured();
+                return new Row(c, linked ? "Gekoppeld" : "Niet gekoppeld", linked);
+            }
             case FRIENDS: {
                 // The chosen share name lives in prefs, not friend_feed.json, so it must count
                 // as data on its own: otherwise a user who shared once but received nothing yet
@@ -240,6 +245,15 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 sb.append("\n\nVerwijderen ontkoppelt Strava; routes en pogingen blijven staan.");
                 return sb.toString();
             }
+            case INTERVALS_ICU: {
+                IntervalsIcuRepository icu = new IntervalsIcuRepository(getApplication());
+                boolean linked = icu.isConfigured();
+                sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
+                if (linked) sb.append("\nAtleet-id: ").append(icu.athleteId());
+                sb.append("\n\nVerwijderen wist de API-sleutel; workouts op je intervals.icu-"
+                        + "kalender blijven staan.");
+                return sb.toString();
+            }
             default:
                 break;
         }
@@ -313,6 +327,9 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
             case STRAVA:
                 new StravaAuthRepository(app).signOut();
                 stravaPrefs().edit().clear().apply();
+                return 0;
+            case INTERVALS_ICU:
+                new IntervalsIcuRepository(app).clear();
                 return 0;
             default:
                 return inventory.deleteFiles(c);
