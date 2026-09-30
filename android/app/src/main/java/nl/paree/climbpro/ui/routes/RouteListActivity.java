@@ -60,7 +60,9 @@ public final class RouteListActivity extends AppCompatActivity {
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
     /** Status filter labels; index order matches {@link RouteStatusFilter}. */
-    private static final String[] STATUS_FILTER_LABELS = {"Alle", "Wil ik rijden", "Gereden"};
+    private String[] statusFilterLabels() {
+        return getResources().getStringArray(R.array.route_list_status_filters);
+    }
 
     /**
      * The quick-start (issue #263) sync run whose outcome is still to be reported, or null.
@@ -106,8 +108,10 @@ public final class RouteListActivity extends AppCompatActivity {
                 String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
                 new AlertDialog.Builder(RouteListActivity.this)
                         .setTitle(name != null ? name : entry.routeId)
-                        .setItems(new String[]{"Toevoegen aan collectie", "Verwijderen",
-                                "Nu rijden (naar horloge)"}, (d, which) -> {
+                        .setItems(new String[]{
+                                getString(R.string.route_list_action_add_to_collection),
+                                getString(R.string.action_delete),
+                                getString(R.string.route_list_action_ride_now)}, (d, which) -> {
                             if (which == 2) {
                                 startQuickStart(entry);
                             } else if (which == 0) {
@@ -187,8 +191,8 @@ public final class RouteListActivity extends AppCompatActivity {
                         boolean sent = w.getOutputData().getBoolean(
                                 nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
                         Toast.makeText(this, sent
-                                        ? "Route staat klaar op je horloge"
-                                        : "Horloge niet bereikt; de sync probeert het later opnieuw",
+                                        ? R.string.route_list_quick_start_sent
+                                        : R.string.route_list_quick_start_not_sent,
                                 Toast.LENGTH_LONG).show();
                     }
                     break;
@@ -203,11 +207,11 @@ public final class RouteListActivity extends AppCompatActivity {
                     viewModel.loadYearlyGoal(); // the Strava pull also refreshes the ride archive
                     Toast.makeText(this,
                             changed > 0
-                                    ? ("Sync klaar: " + changed + " nieuwe/gewijzigde route(s)")
-                                    : "Sync klaar — geen wijzigingen",
+                                    ? getString(R.string.route_list_sync_done_changes, changed)
+                                    : getString(R.string.route_list_sync_done_none),
                             Toast.LENGTH_SHORT).show();
                 } else if (info.getState() == androidx.work.WorkInfo.State.FAILED) {
-                    Toast.makeText(this, "Sync mislukt", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.route_list_sync_failed, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -249,7 +253,7 @@ public final class RouteListActivity extends AppCompatActivity {
                     .connectIqClient().forceRebind();
         } else {
             Toast.makeText(this,
-                    "Zonder Bluetooth-toestemming kan de telefoon de horloge-app niet bereiken",
+                    R.string.route_list_bluetooth_denied,
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -265,11 +269,11 @@ public final class RouteListActivity extends AppCompatActivity {
                     @Override
                     public void onUpdateAvailable(String tagName, String apkDownloadUrl) {
                         new AlertDialog.Builder(RouteListActivity.this)
-                                .setTitle("Update beschikbaar")
-                                .setMessage("ClimbPro " + tagName + " is beschikbaar. Nu downloaden en installeren?")
-                                .setPositiveButton("Installeren",
+                                .setTitle(R.string.route_list_update_title)
+                                .setMessage(getString(R.string.route_list_update_message, tagName))
+                                .setPositiveButton(R.string.route_list_update_install,
                                         (d, w) -> startUpdateDownload(tagName, apkDownloadUrl))
-                                .setNegativeButton("Later", null)
+                                .setNegativeButton(R.string.action_later, null)
                                 .show();
                     }
 
@@ -279,8 +283,8 @@ public final class RouteListActivity extends AppCompatActivity {
                         // a manually triggered check still confirms it actually ran.
                         if (verbose) {
                             Toast.makeText(RouteListActivity.this,
-                                    "Je hebt al de nieuwste versie (v"
-                                            + nl.paree.climbpro.BuildConfig.VERSION_NAME + ")",
+                                    getString(R.string.route_list_update_latest,
+                                            nl.paree.climbpro.BuildConfig.VERSION_NAME),
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -292,7 +296,7 @@ public final class RouteListActivity extends AppCompatActivity {
                         // GitHub API rate limit, ...) indistinguishable from "no update
                         // available" — always surface it so it's not a mystery.
                         Toast.makeText(RouteListActivity.this,
-                                "Update-check mislukt: " + e.getMessage(),
+                                getString(R.string.route_list_update_failed, e.getMessage()),
                                 Toast.LENGTH_LONG).show();
                     }
                 });
@@ -303,16 +307,16 @@ public final class RouteListActivity extends AppCompatActivity {
                 new nl.paree.climbpro.update.UpdateChecker(this);
         if (!checker.canRequestPackageInstalls()) {
             new AlertDialog.Builder(this)
-                    .setTitle("Toestemming nodig")
-                    .setMessage("Sta \"apps installeren van deze bron\" toe om de update te installeren.")
-                    .setPositiveButton("Instellingen openen",
+                    .setTitle(R.string.route_list_update_permission_title)
+                    .setMessage(R.string.route_list_update_permission_message)
+                    .setPositiveButton(R.string.route_list_update_open_settings,
                             (d, w) -> startActivity(checker.unknownAppsSettingsIntent()))
-                    .setNegativeButton("Annuleren", null)
+                    .setNegativeButton(R.string.action_cancel, null)
                     .show();
             return;
         }
         checker.downloadAndInstall(apkDownloadUrl, tagName);
-        Toast.makeText(this, "Update wordt gedownload...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.route_list_update_downloading, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -326,7 +330,7 @@ public final class RouteListActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_sync) {
             viewModel.triggerSync();
-            Toast.makeText(this, "Sync started", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.route_list_sync_started, Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.action_strava) {
             startActivity(new Intent(this, StravaAuthActivity.class));
@@ -549,7 +553,7 @@ public final class RouteListActivity extends AppCompatActivity {
                             ? R.color.color_text_tertiary : R.color.color_success));
         } else {
             binding.yearlyGoalProgress.setVisibility(android.view.View.GONE);
-            binding.yearlyGoalHint.setText("Tik om een jaardoel in te stellen");
+            binding.yearlyGoalHint.setText(R.string.route_list_yearly_goal_tap);
             binding.yearlyGoalHint.setTextColor(
                     ContextCompat.getColor(this, R.color.color_text_tertiary));
         }
@@ -559,7 +563,7 @@ public final class RouteListActivity extends AppCompatActivity {
     private void showYearlyGoalDialog() {
         android.widget.EditText input = new android.widget.EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setHint("Doel in km, bv. 5000");
+        input.setHint(R.string.route_list_yearly_goal_hint);
         int current = viewModel.getYearlyGoalKm();
         if (current > 0) {
             input.setText(String.valueOf(current));
@@ -571,10 +575,11 @@ public final class RouteListActivity extends AppCompatActivity {
         container.addView(input);
 
         new AlertDialog.Builder(this)
-                .setTitle("Jaardoel " + java.time.LocalDate.now().getYear())
-                .setMessage("Hoeveel km wil je dit jaar fietsen? Leeg of 0 wist het doel.")
+                .setTitle(getString(R.string.route_list_yearly_goal_title,
+                        java.time.LocalDate.now().getYear()))
+                .setMessage(R.string.route_list_yearly_goal_message)
                 .setView(container)
-                .setPositiveButton("Opslaan", (d, w) -> {
+                .setPositiveButton(R.string.action_save, (d, w) -> {
                     String text = input.getText().toString().trim();
                     int km;
                     try {
@@ -583,14 +588,14 @@ public final class RouteListActivity extends AppCompatActivity {
                         km = -1; // too many digits for an int
                     }
                     if (km < 0 || km > YearlyDistanceGoalRepository.MAX_GOAL_KM) {
-                        Toast.makeText(this, "Ongeldig doel (max "
-                                        + YearlyDistanceGoalRepository.MAX_GOAL_KM + " km)",
+                        Toast.makeText(this, getString(R.string.route_list_yearly_goal_invalid,
+                                        YearlyDistanceGoalRepository.MAX_GOAL_KM),
                                 Toast.LENGTH_SHORT).show();
                         return;
                     }
                     viewModel.setYearlyGoalKm(km);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -622,7 +627,7 @@ public final class RouteListActivity extends AppCompatActivity {
     private void pickQuickStartRoute() {
         List<RouteCatalogEntry> catalog = viewModel.catalog().getValue();
         if (catalog == null || catalog.isEmpty()) {
-            Toast.makeText(this, "Importeer eerst een route", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.route_list_import_first, Toast.LENGTH_SHORT).show();
             return;
         }
         List<RouteCatalogEntry> sorted = RouteSorting.sort(
@@ -630,7 +635,7 @@ public final class RouteListActivity extends AppCompatActivity {
         String[] names = new String[sorted.size()];
         for (int i = 0; i < sorted.size(); i++) names[i] = QuickStart.displayName(sorted.get(i));
         new AlertDialog.Builder(this)
-                .setTitle("Welke route rij je?")
+                .setTitle(R.string.route_list_pick_quick_start)
                 .setItems(names, (d, which) -> startQuickStart(sorted.get(which)))
                 .show();
     }
@@ -638,7 +643,8 @@ public final class RouteListActivity extends AppCompatActivity {
     private void startQuickStart(RouteCatalogEntry route) {
         quickStartWorkId = QuickStart.start(this, route.routeId);
         updateQuickStartButton();
-        Toast.makeText(this, QuickStart.displayName(route) + " wordt naar je horloge gestuurd",
+        Toast.makeText(this, getString(R.string.route_list_quick_start_sending,
+                        QuickStart.displayName(route)),
                 Toast.LENGTH_SHORT).show();
     }
 
@@ -647,10 +653,11 @@ public final class RouteListActivity extends AppCompatActivity {
         executor.execute(() -> {
             try {
                 Intent share = nl.paree.climbpro.ui.export.CsvExportHandoff.export(this);
-                runOnUiThread(() -> startActivity(Intent.createChooser(share, "Exporteer CSV")));
+                runOnUiThread(() -> startActivity(Intent.createChooser(share,
+                        getString(R.string.menu_export_csv))));
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "CSV-export mislukt: " + (e.getMessage() != null
+                        getString(R.string.route_list_csv_failed, e.getMessage() != null
                                 ? e.getMessage() : e.getClass().getSimpleName()),
                         Toast.LENGTH_LONG).show());
             }
@@ -659,18 +666,20 @@ public final class RouteListActivity extends AppCompatActivity {
 
     private void confirmDeleteRoute(String routeId, String name) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete \"" + name + "\"?")
-                .setMessage("This cannot be undone.")
-                .setPositiveButton("Delete", (d, w) -> viewModel.deleteRoute(routeId))
-                .setNegativeButton("Cancel", null)
+                .setTitle(getString(R.string.route_list_delete_title, name))
+                .setMessage(R.string.route_list_delete_message)
+                .setPositiveButton(R.string.action_delete, (d, w) -> viewModel.deleteRoute(routeId))
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
     private void showImportDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Add route")
-                .setItems(new String[]{"Import GPX file", "Sync from Strava",
-                        "Klimcode importeren", "MyWhoosh-rit importeren (FIT)"}, (d, which) -> {
+                .setTitle(R.string.route_list_add_route)
+                .setItems(new String[]{getString(R.string.route_list_import_gpx),
+                        getString(R.string.route_list_import_strava),
+                        getString(R.string.route_list_import_climb_code),
+                        getString(R.string.route_list_import_mywhoosh)}, (d, which) -> {
                     if (which == 0) {
                         gpxPicker.launch(new String[]{"*/*"});
                     } else if (which == 3) {
@@ -681,7 +690,8 @@ public final class RouteListActivity extends AppCompatActivity {
                     } else {
                         if (viewModel.isSignedInToStrava()) {
                             viewModel.triggerSync();
-                            Toast.makeText(this, "Strava sync started", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, R.string.route_list_strava_sync_started,
+                                    Toast.LENGTH_SHORT).show();
                         } else {
                             startActivity(new Intent(this, StravaAuthActivity.class));
                         }
@@ -690,14 +700,10 @@ public final class RouteListActivity extends AppCompatActivity {
     }
 
     private void showSortDialog() {
-        final String[] labels = {
-                "Importdatum (nieuwste onderaan)",
-                "Importdatum (nieuwste bovenaan)",
-                "Naam (A–Z)"
-        };
+        final String[] labels = getResources().getStringArray(R.array.route_list_sort_modes);
         int current = viewModel.getSortMode();
         new AlertDialog.Builder(this)
-                .setTitle("Sorteer routes")
+                .setTitle(R.string.route_list_sort_title)
                 .setSingleChoiceItems(labels, current, (d, which) -> {
                     viewModel.setSortMode(which);
                     d.dismiss();
@@ -721,14 +727,14 @@ public final class RouteListActivity extends AppCompatActivity {
                     .yearsWithAttempts(attemptRepo.loadAll(), java.util.TimeZone.getDefault());
             runOnUiThread(() -> {
                 if (years.isEmpty()) {
-                    Toast.makeText(this, "Geen ritten met datum gevonden om te exporteren",
+                    Toast.makeText(this, R.string.route_list_season_none,
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
                 String[] labels = new String[years.size()];
                 for (int i = 0; i < years.size(); i++) labels[i] = String.valueOf(years.get(i));
                 new AlertDialog.Builder(this)
-                        .setTitle("Exporteer seizoen")
+                        .setTitle(R.string.route_list_season_title)
                         .setItems(labels, (d, which) -> exportSeason(years.get(which)))
                         .show();
             });
@@ -772,7 +778,8 @@ public final class RouteListActivity extends AppCompatActivity {
 
                 if (matches.isEmpty()) {
                     runOnUiThread(() -> Toast.makeText(this,
-                            "Geen klimmen gevonden in " + year, Toast.LENGTH_SHORT).show());
+                            getString(R.string.route_list_season_no_climbs, year),
+                            Toast.LENGTH_SHORT).show());
                     return;
                 }
 
@@ -818,10 +825,12 @@ public final class RouteListActivity extends AppCompatActivity {
                         privacyRadiusM);
                 File file = nl.paree.climbpro.ui.climbs.ClimbGpxExportHandoff.writeGpxFile(
                         this, gpx, "season_" + year);
-                runOnUiThread(() -> shareGpxFile(file, "Exporteer seizoen " + year));
+                runOnUiThread(() -> shareGpxFile(file,
+                        getString(R.string.route_list_season_title_year, year)));
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "Export mislukt: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        getString(R.string.route_list_export_failed, e.getMessage()),
+                        Toast.LENGTH_LONG).show());
             }
         });
     }
@@ -837,8 +846,8 @@ public final class RouteListActivity extends AppCompatActivity {
     private void showStatusFilterDialog() {
         int current = viewModel.getStatusFilter();
         new AlertDialog.Builder(this)
-                .setTitle("Filter op status")
-                .setSingleChoiceItems(STATUS_FILTER_LABELS, current, (d, which) -> {
+                .setTitle(R.string.menu_status_filter)
+                .setSingleChoiceItems(statusFilterLabels(), current, (d, which) -> {
                     viewModel.setStatusFilter(which);
                     updateStatusFilterSubtitle(which);
                     d.dismiss();
@@ -849,21 +858,21 @@ public final class RouteListActivity extends AppCompatActivity {
     /** Shows the active status filter in the toolbar so a filtered list isn't mistaken for missing routes. */
     private void updateStatusFilterSubtitle(int filter) {
         if (getSupportActionBar() == null) return;
-        boolean filtered = filter > RouteStatusFilter.FILTER_ALL && filter < STATUS_FILTER_LABELS.length;
-        getSupportActionBar().setSubtitle(filtered ? "Filter: " + STATUS_FILTER_LABELS[filter] : null);
+        String[] labels = statusFilterLabels();
+        boolean filtered = filter > RouteStatusFilter.FILTER_ALL && filter < labels.length;
+        getSupportActionBar().setSubtitle(filtered
+                ? getString(R.string.route_list_filter_subtitle, labels[filter]) : null);
     }
 
     /** Explains where MyWhoosh keeps the FIT file before opening the picker (issue #342). */
     private void showMyWhooshImportHelp() {
         new AlertDialog.Builder(this)
-                .setTitle("MyWhoosh-rit importeren")
-                .setMessage("Download in MyWhoosh (of via Strava / Garmin Connect \u2192 "
-                        + "\"Exporteer origineel\") het FIT-bestand van je rit en kies het hier. "
-                        + "De klimmen worden gedetecteerd en de route komt in de collectie \""
-                        + MyWhooshRouteStore.COLLECTION + "\".\n\nRitten zonder GPS-posities worden "
-                        + "alleen als profiel getoond (niet voor radius-modus of navigatie).")
-                .setPositiveButton("Kies bestand", (d, w) -> myWhooshPicker.launch(new String[]{"*/*"}))
-                .setNegativeButton("Annuleren", null)
+                .setTitle(R.string.route_list_mywhoosh_title)
+                .setMessage(getString(R.string.route_list_mywhoosh_message,
+                        MyWhooshRouteStore.COLLECTION))
+                .setPositiveButton(R.string.route_list_mywhoosh_pick,
+                        (d, w) -> myWhooshPicker.launch(new String[]{"*/*"}))
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -916,10 +925,12 @@ public final class RouteListActivity extends AppCompatActivity {
                 }
             } catch (GpxParseException e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "GPX error: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        getString(R.string.route_list_gpx_error, e.getMessage()),
+                        Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        getString(R.string.route_list_import_failed, e.getMessage()),
+                        Toast.LENGTH_LONG).show());
             }
         });
     }
@@ -939,18 +950,18 @@ public final class RouteListActivity extends AppCompatActivity {
                     ? m.existingRoute.userDisplayName : m.existingRoute.name;
             routeNames.add(name);
         }
-        String message = duplicates.size() + " klim(men) uit dit bestand lijk(t)(en) al bekend "
-                + "(uit: " + String.join(", ", routeNames) + "). Samenvoegen slaat deze import over "
-                + "zodat de radius-index geen dubbele klim krijgt.";
+        String message = getString(R.string.route_list_duplicate_message,
+                duplicates.size(), String.join(", ", routeNames));
 
         new AlertDialog.Builder(this)
-                .setTitle("Klim al bekend")
+                .setTitle(R.string.route_list_duplicate_title)
                 .setMessage(message)
-                .setPositiveButton("Samenvoegen", (d, w) ->
-                        Toast.makeText(this, "Niet geïmporteerd — klim is al bekend",
+                .setPositiveButton(R.string.route_list_duplicate_merge, (d, w) ->
+                        Toast.makeText(this, R.string.route_list_duplicate_skipped,
                                 Toast.LENGTH_LONG).show())
-                .setNegativeButton("Toch importeren", (d, w) -> onImportAnyway.run())
-                .setNeutralButton("Annuleren", null)
+                .setNegativeButton(R.string.route_list_duplicate_import_anyway,
+                        (d, w) -> onImportAnyway.run())
+                .setNeutralButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -987,12 +998,13 @@ public final class RouteListActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 viewModel.loadRoutes();
                 Toast.makeText(this,
-                        "Imported: " + climbs.size() + " climb(s) detected",
+                        getString(R.string.route_list_imported, climbs.size()),
                         Toast.LENGTH_LONG).show();
             });
         } catch (Exception e) {
             runOnUiThread(() -> Toast.makeText(this,
-                    "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                    getString(R.string.route_list_import_failed, e.getMessage()),
+                    Toast.LENGTH_LONG).show());
         }
     }
 

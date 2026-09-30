@@ -269,6 +269,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Monthly challenge** — pick a goal for the month (distinct climbs, hoogtemeters, km or
   rides) or let the app suggest one from your last three months, with progress and pace. Phone-only.
 
+- **Multilingual app** — Dutch (default), English, German, French and Italian. Settings → "Taal"
+  picks a language for ClimbPro only (or follows the system language); on Android 13+ it is
+  also available in the system's per-app language settings. The core screens (route list and
+  menu, route detail, climb detail, settings, Strava sign-in, widget) are translated; texts
+  computed in view models/domain code and some secondary screens still show Dutch. Phone-only.
+
 ---
 
 ## Repository layout

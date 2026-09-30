@@ -839,6 +839,29 @@ Planned config surfaces (none exist yet):
 | Strava OAuth client | `local.properties` / `BuildConfig` | Android       | Do not commit secrets                        |
 | Climb thresholds    | constants in `protocol/`           | Both sides    | Change in one place                          |
 | Device target       | Connect IQ `manifest.xml`          | Garmin module | Must include Forerunner 255 Music product ID |
+| App language        | AppCompat per-app locale           | Android       | See *Multilingual support* below             |
+
+### Multilingual support (issue #261)
+
+The phone app ships in Dutch (base, `res/values/`) plus English, German, French and Italian
+(`res/values-en/-de/-fr/-it/`). Each locale mirrors the base files one-to-one:
+`strings.xml` (feature strings), `strings_screens.xml` (strings extracted from the core screens:
+route list + overflow menu, route detail, climb detail, settings, Strava sign-in, home-screen
+widget) and `shortcuts.xml` (launcher/Assistant shortcuts). Strings that are pure formats or
+brand names (`%1$d km`, `Strava`, `Health Connect`, …) are `translatable="false"` and live only in
+the base. The language is chosen per app, not per device: Settings → *Taal / Language* offers
+System + the five languages (`ui/settings/AppLanguage`), applied with
+`AppCompatDelegate.setApplicationLocales`. On Android 13+ the system stores the choice (and the
+app appears under the system's per-app language settings through `res/xml/locales_config.xml`,
+wired via `android:localeConfig`); on older versions AppCompat persists it through the
+`AppLocalesMetadataHolderService` declared in the manifest. `StringTranslationCompletenessTest`
+(plain JVM XML parsing) fails the unit-test run when a translatable key is missing from any
+locale, a translation carries a stale key, placeholders (`%1$s`, `%2$.1f`, …) differ from the
+base, array sizes differ, or an apostrophe is unescaped — so a new Dutch string cannot ship
+untranslated. Domain-layer text (e.g. `RouteRideStatus.label`, climb shape/category labels,
+`LocalBackupService.status`) and the remaining feature screens are still Dutch-only; they move
+into resources screen by screen. The watch apps are unaffected (their only resource strings
+are a handful of settings labels; on-watch text is drawn in Monkey C).
 
 ---
 
