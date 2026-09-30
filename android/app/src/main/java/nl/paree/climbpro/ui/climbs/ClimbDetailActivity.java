@@ -74,6 +74,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private boolean bestTimeBusy;
     private boolean bestTimeLoaded;
 
+    // Issue #212: guards against a stale facts lookup landing after a newer one.
+    private int climbFactsGeneration;
+
     // Pending state while the note/photo edit dialog (issue #46) is open: the row being
     // edited and the photo the user just picked (persisted only on Save).
     private nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow pendingAttemptRow;
@@ -142,6 +145,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             loadedRoute = route;
             tryDrawMap();
             updateDescentInfo();
+            updateClimbFacts();
             loadBestTime(false);
         });
 
@@ -181,6 +185,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             updateManualRefText();
             updateIntervalBlockText();
             updateDescentInfo();
+            updateClimbFacts();
         });
 
         viewModel.timeEstimate().observe(this, estimate -> {
@@ -456,6 +461,57 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) { finish(); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Issue #212: "Weetjes" card for a well-known climb, matched against the bundled dataset by
+     * foot/top proximity (name as fallback). Dataset loads off the main thread; offline only.
+     */
+    private void updateClimbFacts() {
+        StoredRoute r = loadedRoute;
+        StoredClimb c = loadedClimb;
+        if (r == null || c == null) return;
+        int generation = ++climbFactsGeneration;
+        ClimbEndpoints.Point foot = ClimbEndpoints.foot(r, c);
+        ClimbEndpoints.Point top = ClimbEndpoints.top(r, c);
+        boolean hasGeometry = r.lats != null && r.lons != null && r.distances != null
+                && r.lats.length > 0;
+        String userName = c.userDisplayName;
+        String name = c.name;
+        Context app = getApplicationContext();
+        thumbnailExecutor.execute(() -> {
+            nl.paree.climbpro.domain.history.FamousClimbMatcher.Match match =
+                    nl.paree.climbpro.domain.history.FamousClimbMatcher.match(
+                            nl.paree.climbpro.data.history.ClimbFactsRepository.load(app),
+                            foot.lat, foot.lon,
+                            hasGeometry ? top.lat : Double.NaN,
+                            hasGeometry ? top.lon : Double.NaN,
+                            userName, name);
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed() || generation != climbFactsGeneration) return;
+                showClimbFacts(match);
+            });
+        });
+    }
+
+    private void showClimbFacts(nl.paree.climbpro.domain.history.FamousClimbMatcher.Match match) {
+        if (match == null) {
+            binding.climbFactsCard.setVisibility(android.view.View.GONE);
+            return;
+        }
+        binding.climbFactsTitle.setText(getString(R.string.climb_facts_title, match.climb.name));
+        StringBuilder sb = new StringBuilder();
+        if (match.sideLabel != null) {
+            sb.append(getString(R.string.climb_facts_side, match.sideLabel)).append('\n');
+        } else if (match.kind == nl.paree.climbpro.domain.history.FamousClimbMatcher.Kind.NAME) {
+            sb.append(getString(R.string.climb_facts_by_name)).append('\n');
+        }
+        for (String fact : match.climb.facts) {
+            if (sb.length() > 0) sb.append('\n');
+            sb.append("• ").append(fact);
+        }
+        binding.climbFactsBody.setText(sb.toString());
+        binding.climbFactsCard.setVisibility(android.view.View.VISIBLE);
     }
 
     /**

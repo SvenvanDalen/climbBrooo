@@ -414,4 +414,9 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="ftp_test_apply_confirm_message_new">Je FTP wordt %1$d W. Tijdschattingen, pacing en workouts gebruiken daarna deze waarde.</string>
     <string name="ftp_test_applied">FTP bijgewerkt naar %1$d W</string>
     <string name="ftp_test_unknown_ride">Rit</string>
+
+    <!-- Issue #212: climb history & facts -->
+    <string name="climb_facts_title">Weetjes · %1$s</string>
+    <string name="climb_facts_side">Via %1$s</string>
+    <string name="climb_facts_by_name">Herkend aan de naam van de klim</string>
 </resources>
