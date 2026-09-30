@@ -76,6 +76,13 @@ class ClimbProView extends Ui.DataField {
     hidden var descent = new DescentTracker();
     hidden var feltShownC = null;
 
+    // Heart-rate alarm (issue #228). hrShownBpm = banner value while above the limit;
+    // hrIrregularUntilMs = show the "onregelmatig" banner until this System timer value.
+    hidden var hrLimit = new HrLimitAlarm();
+    hidden var hrIrregular = new HrIrregularDetector();
+    hidden var hrShownBpm = null;
+    hidden var hrIrregularUntilMs = -1;
+
     function initialize() {
         DataField.initialize();
     }
@@ -84,6 +91,9 @@ class ClimbProView extends Ui.DataField {
      * Called every GPS tick. Update route progress.
      */
     function compute(info) {
+        // Safety alarms run before the payload gate: they don't need a route.
+        checkHeartRate(info);
+
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
             return;
@@ -209,6 +219,47 @@ class ClimbProView extends Ui.DataField {
                 desc ? ambientTempC() : null, spd, feltShownC);
     }
 
+    // Heart-rate alarm (issue #228): limit alarm (sustained > hrAlarmBpm) and, opt-in,
+    // the irregular-jumps detector. Cheap per-tick work on one number.
+    hidden function checkHeartRate(info) {
+        var hr = (info != null && info has :currentHeartRate) ? info.currentHeartRate : null;
+        var now = Sys.getTimer();
+        if (hrLimit.update(hr, readNumberSetting("hrAlarmBpm"), now)) {
+            triggerHeartRateAlert();
+        }
+        hrShownBpm = (hrLimit.high && hr != null) ? hr : null;
+        if (readBoolSetting("hrIrregularAlarm")) {
+            if (hrIrregular.update(hr, now)) {
+                triggerHeartRateAlert();
+                hrIrregularUntilMs = now + 30000;
+            }
+        }
+        if (hrIrregularUntilMs >= 0 && now >= hrIrregularUntilMs) {
+            hrIrregularUntilMs = -1;
+        }
+    }
+
+    // App-setting reads, defensive like activeColors() reads "darkTheme":
+    // Properties.getValue can throw on a stale settings cache. Default 0 / false.
+    hidden function readNumberSetting(key) {
+        try {
+            var v = Properties.getValue(key);
+            if (v instanceof Number) { return v; }
+        } catch (e) {
+            return 0;
+        }
+        return 0;
+    }
+
+    hidden function readBoolSetting(key) {
+        try {
+            var v = Properties.getValue(key);
+            return v != null && v == true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Temperature from Sensor.Info: a paired Tempe sensor gives true ambient air; without
     // one the FR255M reports its internal (wrist-warmed) sensor, which reads high, so the
     // felt value is then an upper bound. null when no reading is available.
@@ -252,6 +303,10 @@ class ClimbProView extends Ui.DataField {
         // banners would otherwise fight for the same top strip of a very small screen.
         if (data.offRoute) {
             drawOffRouteBanner(dc);
+        } else if (hrShownBpm != null) {
+            drawHeartRateBanner(dc, hrHighLabel(hrShownBpm));
+        } else if (hrIrregularUntilMs >= 0) {
+            drawHeartRateBanner(dc, hrIrregularLabel());
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
         } else if (feltShownC != null && data.activeClimbIndex < 0) {
@@ -267,6 +322,16 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Purple strip for the heart-rate alarm (issue #228), on and between climbs. Right
+    // below off-route in priority: it is a safety signal, battery/temperature can wait.
+    hidden function drawHeartRateBanner(dc, text) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_PURPLE, Gfx.COLOR_PURPLE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -780,6 +845,25 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_START);
+        }
+    }
+
+    // Heart-rate alarm (issue #228): four quick buzzes + the high alert tone, a different
+    // rhythm from the climb-start, battery and block-done alerts.
+    hidden function triggerHeartRateAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
         }
     }
 

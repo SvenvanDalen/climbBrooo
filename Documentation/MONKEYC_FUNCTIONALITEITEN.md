@@ -50,6 +50,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `ClimbProView.mc`, `ClimbProApp.mc`
 | 15 | **Klim-start-alert** (tril + toon, één keer/klim, off-route onderdrukt) | `triggerClimbAlert` (+ alert-gate in `compute`) | 🟡 | uitgevoerd via `compute`-pad; idempotentie/off-route-onderdrukking is smoke, niet exact geassert |
 | 16 | **App-lifecycle** (start, telefoonbericht, initiële view, stop) | `ClimbProApp.onStart/onPhoneMessage/getInitialView/onStop` | 🟡 | `app_lifecycle_startMessageStop` (assert `payloadReceived`/`climbCount`/view-lijst) |
 | 17 | **Gevoelstemperatuur in afdalingen** (issue #248: windchill uit temperatuur + rijsnelheid, alleen tussen klimmen tijdens een afdaling) | `windChillC`, `DescentTracker.update`, `latchFeltTemp`, `feltTempToShow`, `feltTempLabel` (`WindChill.mc`); `ambientTempC`, `drawFeltTempBanner` (`ClimbProView.mc`) | 🟢 | `WindChillTest.mc`: referentiewaarden Environment Canada (−10 °C/20 km/u, 0/30, 5/40), grenzen (>10 °C en <4,8 km/u → luchttemp., 10 °C inclusief, nooit warmer dan lucht, null), afdaling vereist ≥150 m venster, ≥25 km/u én ≤−3 %; hysterese (blijft aan tot <20 km/u of >−1 %), null-snelheid → uit, odometer-reset herankert; 1 °C-display-latch; verborgen op klim / zonder temperatuur. Sensor-read + banner: on-device |
+| 18 | **Hartslag-alarm** (issue #228: hartslag 10 s boven instelbare grens, en opt-in onregelmatige sprongen) | `HrLimitAlarm.update`, `HrIrregularDetector.update`, `hrHighLabel`, `hrIrregularLabel` (`HeartRateAlarm.mc`); `checkHeartRate`, `drawHeartRateBanner` (`ClimbProView.mc`) | 🟢 | `HeartRateAlarmTest.mc`: 10 s-sustain, precies-op-grens telt niet, korte piek vuurt niet, dropout breekt venster, herbewapening 5 bpm eronder, herinnering na 5 min, uit wist; 3 sprongen ≥25 bpm vuren, kleine wijzigingen/grote tussenpozen tellen niet, venster verloopt na 60 s, 10-min-cooldown; labels. Sensor-read + banner: on-device |
 
 ---
 
@@ -100,7 +101,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 
 | Module | Functionaliteiten | 🟢 Strak | 🟡 Smoke | 🔴 On-device |
 |---|---|---|---|---|
-| `garmin` | 17 | 11 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill) | 6 (render + lifecycle + alert) | 0 |
+| `garmin` | 18 | 12 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill, hartslag-alarm) | 6 (render + lifecycle + alert) | 0 |
 | `garmin-surface` | 8 | 4 (parser, voortgang, drift-correctie, GPS-verfijning) | 4 (render + lifecycle + alert) | 0 |
 | `garmin-widget` | 15 | 5 (parser, storage, index, starred, deel-logica) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
 
