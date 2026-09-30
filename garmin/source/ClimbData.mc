@@ -98,6 +98,11 @@ class ClimbData {
     var blockLow;         // lower band edge (W)
     var blockHigh;        // upper band edge (W)
 
+    // Everesting attempt (issue #217, wire "ev"): [targetM, repeats, startLat, startLon,
+    // topLat, topLon] or null; everestClimb = index of the climb that carried it (-1 = none).
+    var everest = null;
+    var everestClimb = -1;
+
     // Power-zone results for powerZone()/blockZone()
     const ZONE_NONE  = -2;   // no block or no power reading
     const ZONE_UNDER = -1;

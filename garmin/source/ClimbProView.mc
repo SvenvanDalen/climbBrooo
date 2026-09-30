@@ -76,6 +76,10 @@ class ClimbProView extends Ui.DataField {
     hidden var descent = new DescentTracker();
     hidden var feltShownC = null;
 
+    // Everesting attempt (issue #217); everestAscentM = last total ascent for the banner.
+    hidden var everest = new EverestTracker();
+    hidden var everestAscentM = null;
+
     function initialize() {
         DataField.initialize();
     }
@@ -198,6 +202,26 @@ class ClimbProView extends Ui.DataField {
             }
         }
 
+        // Everesting (issue #217): count summit passes and watch the total ascent. The plan
+        // comes from the payload; the same plan on a resync keeps the count.
+        everest.setPlan(data.everest);
+        if (everest.active()) {
+            everestAscentM = (info != null && info has :totalAscent) ? info.totalAscent : null;
+            var eLat = null;
+            var eLon = null;
+            if (info != null && info has :currentLocation && info.currentLocation != null) {
+                var ell = info.currentLocation.toDegrees();
+                eLat = ell[0];
+                eLon = ell[1];
+            }
+            var ev = everest.update(eLat, eLon, everestAscentM);
+            if (ev == EVEREST_DONE) {
+                triggerEverestDoneAlert();
+            } else if (ev == EVEREST_REPEAT) {
+                triggerEverestRepeatAlert();
+            }
+        }
+
         // Felt temperature on descents (issue #248): grade over >= 150 m from odometer +
         // altitude, riding speed as wind speed. Watch-only; nothing is shown on a climb or
         // without a temperature reading.
@@ -256,6 +280,8 @@ class ClimbProView extends Ui.DataField {
             drawBatteryWarningBanner(dc);
         } else if (feltShownC != null && data.activeClimbIndex < 0) {
             drawFeltTempBanner(dc, feltShownC);
+        } else if (everest.active()) {
+            drawEverestBanner(dc);
         }
     }
 
@@ -267,6 +293,20 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-green strip with the Everesting progress (issue #217): repeats done/planned and
+    // total ascent/target. Lowest priority -- it is always on during an attempt, so every
+    // warning banner may cover it.
+    hidden function drawEverestBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_GREEN, Gfx.COLOR_DK_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY,
+                everestLabel(everest.repeats, everest.plannedRepeats(), everestAscentM,
+                        everest.targetM()),
+                Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -780,6 +820,27 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_START);
+        }
+    }
+
+    // Everesting repeat done (issue #217): two short buzzes, no tone.
+    hidden function triggerEverestRepeatAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 200),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 200)
+            ]);
+        }
+    }
+
+    // Everesting target reached (issue #217): long buzz + success tone, once.
+    hidden function triggerEverestDoneAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([new Attention.VibeProfile(100, 1500)]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_SUCCESS);
         }
     }
 

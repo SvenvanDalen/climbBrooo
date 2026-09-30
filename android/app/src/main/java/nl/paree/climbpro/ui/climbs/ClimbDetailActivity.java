@@ -34,6 +34,7 @@ import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.power.DurationFormat;
+import nl.paree.climbpro.domain.climb.EverestingPlan;
 import nl.paree.climbpro.domain.power.IntervalBlock;
 import nl.paree.climbpro.domain.sun.SunriseCalculator;
 import nl.paree.climbpro.domain.sun.SunriseRidePlanner;
@@ -180,6 +181,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             tryDrawMap();
             updateManualRefText();
             updateIntervalBlockText();
+            updateEverestingText();
             updateDescentInfo();
         });
 
@@ -200,6 +202,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 lastEstimateSeconds = estimate.totalSeconds;
             }
             updateManualRefText();
+            updateEverestingText();
         });
 
         viewModel.segmentZones().observe(this, adapter::setSegmentZones);
@@ -314,6 +317,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
         binding.btnIntervalBlock.setOnClickListener(v -> showIntervalBlockDialog());
+        binding.btnEveresting.setOnClickListener(v -> showEverestingDialog());
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnRateClimb.setOnClickListener(v -> showRatingDialog());
@@ -1107,6 +1111,109 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.climbIntervalBlock.setText(sb.toString());
         binding.climbIntervalBlock.setVisibility(android.view.View.VISIBLE);
         binding.btnIntervalBlock.setText("Intervalblok aanpassen");
+    }
+
+    /**
+     * Issue #217: plan an Everesting attempt on this climb — full (8848 m) or a custom target.
+     * Shows the repeats, distance and (with a time estimate) the riding time before saving;
+     * the watch then counts repeats and total ascent.
+     */
+    private void showEverestingDialog() {
+        if (loadedClimb == null) return;
+        if (EverestingPlan.of(loadedClimb, EverestingPlan.EVEREST_M) == null) {
+            Toast.makeText(this, "Deze klim heeft geen hoogtemeters om te herhalen",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        Integer current = loadedClimb.everestTargetM;
+        input.setText(String.valueOf(current != null ? current : EverestingPlan.EVEREST_M));
+        input.setHint("Doel in hoogtemeters (" + EverestingPlan.MIN_TARGET_M + "–"
+                + EverestingPlan.MAX_TARGET_M + ")");
+        android.widget.TextView preview = new android.widget.TextView(this);
+        preview.setPadding(0, 16, 0, 0);
+        Runnable refresh = () -> {
+            EverestingPlan p = parseEverestingPlan(input.getText().toString());
+            preview.setText(p != null ? everestingSummary(p) : everestingRangeHint());
+        };
+        input.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(android.text.Editable s) { refresh.run(); }
+        });
+        refresh.run();
+        android.widget.LinearLayout box = new android.widget.LinearLayout(this);
+        box.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = (int) (20 * getResources().getDisplayMetrics().density);
+        box.setPadding(pad, pad / 2, pad, 0);
+        box.addView(input);
+        box.addView(preview);
+
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+                .setTitle("Everesting op deze klim")
+                .setView(box)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    EverestingPlan p = parseEverestingPlan(input.getText().toString());
+                    if (p == null) {
+                        Toast.makeText(this, everestingRangeHint(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.setEverestTarget(routeId, climbIndex, p.targetM);
+                })
+                .setNegativeButton("Annuleer", null);
+        if (current != null) {
+            b.setNeutralButton("Stoppen", (d, w) ->
+                    viewModel.setEverestTarget(routeId, climbIndex, null));
+        }
+        b.show();
+    }
+
+    private static String everestingRangeHint() {
+        return "Kies een doel tussen " + EverestingPlan.MIN_TARGET_M + " en "
+                + EverestingPlan.MAX_TARGET_M + " m";
+    }
+
+    private EverestingPlan parseEverestingPlan(String text) {
+        try {
+            return EverestingPlan.of(loadedClimb, Integer.parseInt(text.trim()));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** "12x klimmen · 8904 hm · 96,0 km · ca. 14:30 u"; the time only with an estimate. */
+    private String everestingSummary(EverestingPlan p) {
+        StringBuilder sb = new StringBuilder()
+                .append(p.repeats).append("× klimmen · ")
+                .append(p.totalElevationM).append(" hm · ")
+                .append(String.format(java.util.Locale.getDefault(), "%.1f km",
+                        p.totalDistanceM / 1000.0));
+        long sec = lastEstimateSeconds != null && loadedClimb != null
+                ? p.estimatedTotalSec(lastEstimateSeconds, loadedClimb.length) : -1;
+        if (sec > 0) {
+            sb.append(" · ca. ").append(sec / 3600).append(':')
+                    .append(String.format(java.util.Locale.ROOT, "%02d", (sec % 3600) / 60))
+                    .append(" u");
+        }
+        return sb.toString();
+    }
+
+    /** Shows the planned Everesting attempt, if any. */
+    private void updateEverestingText() {
+        EverestingPlan plan = EverestingPlan.fromClimb(loadedClimb);
+        if (plan == null) {
+            binding.climbEveresting.setVisibility(android.view.View.GONE);
+            binding.btnEveresting.setText("Everesting plannen");
+            return;
+        }
+        String text = "Everesting " + plan.targetM + " m: " + everestingSummary(plan);
+        if (EverestingPlan.wire(loadedClimb) == null) {
+            text += " · horloge telt niet mee (klim zonder GPS-punten)";
+        }
+        binding.climbEveresting.setText(text);
+        binding.climbEveresting.setVisibility(android.view.View.VISIBLE);
+        binding.btnEveresting.setText("Everesting aanpassen");
     }
 
     private void showReSegmentDialog() {

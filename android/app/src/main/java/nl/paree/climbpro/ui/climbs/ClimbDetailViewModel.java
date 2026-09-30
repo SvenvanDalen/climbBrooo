@@ -357,6 +357,22 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Plans (target in metres) or, with null, cancels an Everesting attempt on this climb
+     * (issue #217). Clears any other climb's attempt on the same route.
+     */
+    public void setEverestTarget(String routeId, int climbIndex, Integer targetM) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbEverestTarget(routeId, climbIndex, targetM);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
     /** Rider FTP in watts, 0 when not set; used to show the block's target watts. */
     public int ftpWatts() {
         return riderRepo.load().ftpWatts;

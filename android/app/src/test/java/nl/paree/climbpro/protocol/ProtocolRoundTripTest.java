@@ -88,6 +88,17 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderPayloadsWithEverestingValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        StoredRoute route = routeFixture();
+        route.climbs.get(0).everestTargetM = 8848;
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(route));
+        org.junit.Assert.assertTrue("ev emitted", payload.get("climbs").get(0).has("ev"));
+        assertValid(payload, "route payload with ev");
+        assertValid(MAPPER.readTree(b.buildRadiusPayload(route.climbs)), "radius payload with ev");
+    }
+
+    @Test
     public void builderPayloadsWithIntensityZonesValidateAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withIntensityZones(
                 new nl.paree.climbpro.domain.power.RiderProfile(250, 75, 8));

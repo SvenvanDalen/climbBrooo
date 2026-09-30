@@ -138,6 +138,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Everesting tracker** — climb detail → "Everesting plannen": pick a target (8848 m, or
+  1000–10000 m custom) and see the repeats (rounded up), distance and estimated riding time.
+  The datafield gets the plan in the payload (`ev`), counts a repeat each time you reach the
+  top (re-armed back at the start) and shows a green `EVEREST 3/12  2650/8848m` strip with the
+  activity's total ascent; two short buzzes per repeat, a long buzz + tone at the target.
+  One attempt per route, survives resync.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

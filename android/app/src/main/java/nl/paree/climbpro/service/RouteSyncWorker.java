@@ -187,7 +187,8 @@ public final class RouteSyncWorker extends Worker {
         return route.sourceHash + "|" + profile.signature()
                 + "|" + SegmentTargetOverrideMerger.signature(route)
                 + "|" + ghost.signature()
-                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route);
+                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route)
+                + "|" + nl.paree.climbpro.domain.climb.EverestingPlan.signature(route);
     }
 
     /**
