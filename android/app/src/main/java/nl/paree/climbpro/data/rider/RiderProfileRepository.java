@@ -22,6 +22,11 @@ public final class RiderProfileRepository {
     /** Virtual-ghost target VAM in m/h for climbs without history (issue #31); absent = off. */
     public static final String PREF_GHOST_VAM_M_PER_H = "rider_ghost_vam_m_per_h";
 
+    /** When the FTP-test workout was last exported (epoch seconds, issue #181); absent = never. */
+    public static final String PREF_FTP_TEST_EXPORTED_AT = "rider_ftp_test_exported_at";
+    /** Strava activity id of the FTP test the rider applied or dismissed (issue #181). */
+    public static final String PREF_FTP_TEST_HANDLED_ID = "rider_ftp_test_handled_activity_id";
+
     private final SharedPreferences prefs;
 
     public RiderProfileRepository(Context context) {
@@ -57,6 +62,29 @@ public final class RiderProfileRepository {
         } else {
             prefs.edit().remove(PREF_MAX_HEART_RATE).apply();
         }
+    }
+
+    /** Stores only the FTP, leaving weights and intensity as they are (FTP test, issue #181). */
+    public void saveFtp(int ftpWatts) {
+        prefs.edit().putInt(PREF_FTP_WATTS, ftpWatts).apply();
+    }
+
+    /** When the FTP-test workout was last exported, in epoch seconds; 0 if never. */
+    public long loadFtpTestExportedAt() {
+        return prefs.getLong(PREF_FTP_TEST_EXPORTED_AT, 0L);
+    }
+
+    public void saveFtpTestExportedAt(long epochSec) {
+        prefs.edit().putLong(PREF_FTP_TEST_EXPORTED_AT, epochSec).apply();
+    }
+
+    /** The FTP-test ride already applied or dismissed; 0 for none. */
+    public long loadFtpTestHandledActivityId() {
+        return prefs.getLong(PREF_FTP_TEST_HANDLED_ID, 0L);
+    }
+
+    public void saveFtpTestHandledActivityId(long activityId) {
+        prefs.edit().putLong(PREF_FTP_TEST_HANDLED_ID, activityId).apply();
     }
 
     /** The virtual-ghost target (issue #31); {@link GhostTarget#isSet()} false when unset. */

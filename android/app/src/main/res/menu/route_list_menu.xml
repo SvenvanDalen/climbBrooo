@@ -85,6 +85,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_ftp_test"
+        android:title="@string/ftp_test_action"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_zone_distribution"
         android:title="Zonetijd"
         app:showAsAction="never"/>

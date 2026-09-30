@@ -203,6 +203,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
   power, short name, gradients in the description). MyWhoosh can't import custom routes, so
   the climb goes in as a workout; a dialog explains the upload. Phone-only.
+- **FTP test assistant** — menu → "FTP-test" explains the 20-minute test (15 min warm-up,
+  5 min blow-out, 10 min recovery, 20 min all-out, 10 min cool-down) with targets from your
+  current FTP, and exports it as a plain `.zwo` for MyWhoosh/Zwift. After the Strava sync the
+  screen picks up the test ride (named "FTP", or a maximal effort within 14 days of the
+  export), shows best 20 min × 0.95 and offers "FTP bijwerken naar X W" — the FTP only
+  changes after you confirm. Phone-only.
 
 - **Training advice after a climb** — climb screen: short, concrete pacing tips for your
   latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
