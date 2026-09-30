@@ -181,6 +181,14 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   receipt per bike, shared in one go (text + attachments) for a police report or insurance
   claim. Phone-only.
 
+- **Bike garage ("Fietsgarage")** — several bikes (road, gravel, MTB, trainer) with weight,
+  tyre width, gearing and a link to the Strava bike. Synced rides land on the right bike via
+  Strava's gear id; unlinked indoor rides (MyWhoosh/VirtualRide) go to the trainer bike, the
+  rest to the active bike. The active bike's weight and gearing feed the time estimates and
+  the gear calculator; cost per km, maintenance parts and the tyre-pressure reminder can
+  count only one bike's km. Existing bike weight, cost bikes and passports are migrated
+  automatically. Phone-only.
+
 - **Badges** — automatic achievements such as your first 100 km, 10.000 km in total, an
   Everest of climbing, five rides before 7:00 and every climb of a collection, with date or
   progress. Phone-only.

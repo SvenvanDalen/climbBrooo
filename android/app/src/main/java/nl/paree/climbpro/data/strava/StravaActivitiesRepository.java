@@ -75,11 +75,11 @@ public final class StravaActivitiesRepository {
     private static final String PREF_RIDES_LAST = "rides_last_sync_epoch_sec";
     /**
      * Version of the fields {@link #toStoredRide} fills. When it grows (2: power summary, issue
-     * #220), the next archive sync re-lists the whole past year once so older rides get the new
+     * #220; 3: gear id for the bike garage, issue #187), the next archive sync re-lists the whole past year once so older rides get the new
      * fields too; that's the cheap list endpoint only, and upsert replaces the old entries.
      */
     static final String PREF_RIDES_SCHEMA = "rides_schema_version";
-    static final int RIDES_SCHEMA_VERSION = 2;
+    static final int RIDES_SCHEMA_VERSION = 3;
     /**
      * Strava's {@code after} filters on activity START time, so a ride uploaded after the last
      * archive sync but started before it would be skipped forever. Re-listing a few days of
@@ -991,6 +991,8 @@ public final class StravaActivitiesRepository {
         r.weightedAvgWatts = act.weightedAverageWatts != null && act.weightedAverageWatts > 0
                 ? act.weightedAverageWatts : null;
         r.deviceWatts      = act.deviceWatts;
+        r.gearId           = act.gearId != null && !act.gearId.trim().isEmpty()
+                ? act.gearId.trim() : null;
         if (act.startLatLng != null && act.startLatLng.size() >= 2) {
             r.startLat = act.startLatLng.get(0);
             r.startLon = act.startLatLng.get(1);

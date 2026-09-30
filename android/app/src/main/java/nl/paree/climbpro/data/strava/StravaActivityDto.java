@@ -71,4 +71,8 @@ public final class StravaActivityDto {
 
     @JsonProperty("device_watts")
     public boolean deviceWatts;
+
+    /** Bike the ride was on (bike garage, issue #187); null when none is set in Strava. */
+    @JsonProperty("gear_id")
+    public String gearId;
 }

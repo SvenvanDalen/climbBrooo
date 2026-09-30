@@ -217,6 +217,15 @@ public final class SettingsViewModel extends AndroidViewModel {
         RiderProfile profile = new RiderProfile(ftpWatts, riderKg, bikeKg, rideIntensityPct);
         riderRepo.save(profile);
         riderProfile.postValue(profile);
+        // The garage (issue #187) owns the bike weight: keep its active bike in step.
+        executor.execute(() -> {
+            try {
+                new nl.paree.climbpro.data.bike.BikeCostRepository(getApplication())
+                        .setActiveBikeWeight(bikeKg);
+            } catch (Exception e) {
+                android.util.Log.w("SettingsViewModel", "Active bike weight not saved", e);
+            }
+        });
         // Only ftpWatts (potentially) changed — the climb/route/attempt data behind the
         // effort cache did not, so reuse it instead of rescanning the whole catalog.
         refreshSuggestedFtp(profile, false);

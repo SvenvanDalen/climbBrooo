@@ -87,11 +87,25 @@ public final class TirePressureLogRepository {
 
     /** Stores the reminder thresholds; negative values are clamped to 0 (= off). */
     public void saveReminderSettings(int reminderDays, int reminderKm) throws IOException {
+        saveReminderSettings(reminderDays, reminderKm, false, null);
+    }
+
+    /** As above, also linking the log to a garage bike (issue #187); null unlinks. */
+    public void saveReminderSettings(int reminderDays, int reminderKm, String bikeId)
+            throws IOException {
+        saveReminderSettings(reminderDays, reminderKm, true, bikeId);
+    }
+
+    private void saveReminderSettings(int reminderDays, int reminderKm, boolean setBike,
+                                      String bikeId) throws IOException {
         WRITE_LOCK.lock();
         try {
             TirePressureLog log = load();
             log.reminderDays = Math.max(0, reminderDays);
             log.reminderKm   = Math.max(0, reminderKm);
+            if (setBike) {
+                log.bikeId = bikeId != null && !bikeId.trim().isEmpty() ? bikeId.trim() : null;
+            }
             write(log);
         } finally {
             WRITE_LOCK.unlock();

@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.bike;
 
 import nl.paree.climbpro.data.bike.Bike;
 import nl.paree.climbpro.data.bike.BikeCostEntry;
+import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.ride.StoredRide;
 
 import java.util.ArrayList;
@@ -13,7 +14,8 @@ import java.util.List;
  *
  * <p>Km = archived rides ({@code rides.json}, issue #160) that started in
  * {@code [sinceEpochSec, retiredEpochSec)} — only when the bike counts archive rides and has a
- * since-date — plus the manual {@link Bike#extraKm}. {@code VirtualRide} is excluded unless
+ * since-date — plus the manual {@link Bike#extraKm}. With the bike garage (issue #187),
+ * {@link #evaluateGarage} first narrows the archive to the rides assigned to each bike. {@code VirtualRide} is excluded unless
  * opted in; rides with an unknown start are skipped. Costs are integer cents; the rate is
  * {@code round_half_up(totalCents * 1000 / meters)} cents per km and is not given below
  * {@link #MIN_METERS_FOR_RATE}, so a bike without km never divides by zero.
@@ -54,10 +56,31 @@ public final class BikeCostCalculator {
     }
 
     public static Summary evaluate(Bike bike, List<StoredRide> rides) {
+        return evaluate(bike, rides, bike.includeVirtualRides);
+    }
+
+    /**
+     * Garage-aware overview (issue #187): each bike only counts the archived rides assigned to
+     * it ({@link BikeGarage#bikeIdForRide}), and a trainer-type bike always counts indoor
+     * rides. With a single bike every ride lands on it, so the result equals
+     * {@link #evaluateAll(List, List)}.
+     */
+    public static List<Summary> evaluateGarage(BikeCostLog garage, List<StoredRide> rides) {
+        if (garage == null || garage.bikes == null) return Collections.emptyList();
+        List<Summary> out = new ArrayList<>(garage.bikes.size());
+        for (Bike b : garage.bikes) {
+            if (b == null) continue;
+            out.add(evaluate(b, BikeGarage.ridesForBike(rides, garage, b.id),
+                    BikeGarage.countsVirtualRides(b, b.includeVirtualRides)));
+        }
+        return out;
+    }
+
+    private static Summary evaluate(Bike bike, List<StoredRide> rides, boolean includeVirtual) {
         long archive = 0;
         if (bike.countArchiveRides && bike.sinceEpochSec > 0) {
             archive = archiveMeters(rides, bike.sinceEpochSec, bike.retiredEpochSec,
-                    bike.includeVirtualRides);
+                    includeVirtual);
         }
         long total = archive + Math.max(0, bike.extraKm) * 1000L;
 

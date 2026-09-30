@@ -22,4 +22,9 @@ public final class TirePressureLog {
     public int reminderDays = DEFAULT_REMINDER_DAYS;
     /** Remind after this many outdoor km since the latest check; 0 = off. */
     public int reminderKm   = DEFAULT_REMINDER_KM;
+    /**
+     * Garage bike these tyres are on (issue #187): only that bike's rides count towards the
+     * km reminder. Null = not linked, every outdoor ride counts.
+     */
+    public String bikeId;
 }

@@ -205,6 +205,11 @@
         app:showAsAction="never"/>
 
     <item
+        android:id="@+id/action_bike_garage"
+        android:title="Fietsgarage"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_bike_costs"
         android:title="Fietskosten"
         app:showAsAction="never"/>

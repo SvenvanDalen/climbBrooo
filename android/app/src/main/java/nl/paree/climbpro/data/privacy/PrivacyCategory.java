@@ -34,8 +34,9 @@ public enum PrivacyCategory {
     TORQUE("Aanhaalmomenten",
             "Je eigen aanhaalmomenten per fiets en onderdeel, met notities.",
             "torque_values.json"),
-    BIKE_COSTS("Fietskosten",
-            "Je fietsen met aankopen, onderdelen en hun bedragen.",
+    BIKE_COSTS("Fietsgarage en fietskosten",
+            "Je fietsen met soort, gewicht, banden, versnellingen en Strava-fiets-id, plus "
+                    + "aankopen, onderdelen en hun bedragen.",
             "bike_costs.json"),
     BIKE_PASSPORTS("Fietspaspoort",
             "Framenummer, merk, model, aankoopgegevens, foto's en aankoopbewijs van je fietsen.",

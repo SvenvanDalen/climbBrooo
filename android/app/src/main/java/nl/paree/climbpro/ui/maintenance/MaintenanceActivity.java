@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,7 +25,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.maintenance.MaintenanceComponent;
+import nl.paree.climbpro.ui.bike.BikePicker;
 
 import java.util.Calendar;
 import java.util.List;
@@ -103,6 +106,11 @@ public final class MaintenanceActivity extends AppCompatActivity {
         TextView history = view.findViewById(R.id.history);
         Button purchaseButton = view.findViewById(R.id.btn_purchase_date);
         EditText warrantyMonths = view.findViewById(R.id.input_warranty_months);
+        Spinner bikeSpinner = view.findViewById(R.id.spinner_bike);
+        MaintenanceStatusLoader.Snapshot snap = viewModel.snapshot().getValue();
+        BikeCostLog garage = snap != null ? snap.garage : null;
+        BikePicker.bind(bikeSpinner, garage, "Alle ritten (geen fiets)",
+                existing != null ? existing.bikeId : null);
 
         if (existing != null) {
             name.setText(existing.name);
@@ -163,7 +171,8 @@ public final class MaintenanceActivity extends AppCompatActivity {
                             existing != null ? existing.id : null,
                             name.getText().toString(),
                             parseNonNegative(km), parseNonNegative(months),
-                            virtual.isChecked(), picked[0], purchase[0], warrantyTerm);
+                            virtual.isChecked(), picked[0], purchase[0], warrantyTerm,
+                            BikePicker.selectedId(bikeSpinner, garage));
                     if (purchase[0] > 0 && warrantyTerm > 0) ensureNotificationPermission();
                 })
                 .setNegativeButton("Annuleren", null);

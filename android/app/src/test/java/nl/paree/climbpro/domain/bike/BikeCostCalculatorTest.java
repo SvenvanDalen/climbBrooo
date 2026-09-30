@@ -176,4 +176,47 @@ public class BikeCostCalculatorTest {
         assertEquals(1, BikeCostCalculator.evaluateAll(bikes, null).size());
         assertEquals(0, BikeCostCalculator.evaluateAll(null, null).size());
     }
+
+    // --- bike garage (issue #187) ----------------------------------------------------------
+
+    private static StoredRide ride(long start, float meters, String type, String gearId) {
+        StoredRide r = ride(start, meters, type);
+        r.gearId = gearId;
+        return r;
+    }
+
+    @Test
+    public void garageSplitsArchiveKmPerBike() {
+        Bike road = bike(1000, 0, true, 0);
+        road.id = "road";
+        road.stravaGearId = "b1";
+        Bike trainer = bike(1000, 0, true, 0);
+        trainer.id = "trainer";
+        trainer.type = Bike.TYPE_TRAINER;
+        nl.paree.climbpro.data.bike.BikeCostLog log = new nl.paree.climbpro.data.bike.BikeCostLog();
+        log.bikes.add(road);
+        log.bikes.add(trainer);
+        List<StoredRide> rides = Arrays.asList(
+                ride(2000, 40_000, "Ride", "b1"),
+                ride(2000, 10_000, "Ride", null),         // fallback: active = road
+                ride(2000, 25_000, "VirtualRide", null)); // indoor bike = trainer
+
+        List<BikeCostCalculator.Summary> all = BikeCostCalculator.evaluateGarage(log, rides);
+        assertEquals(50_000, all.get(0).archiveMeters);
+        // A trainer counts indoor rides without the opt-in.
+        assertEquals(25_000, all.get(1).archiveMeters);
+    }
+
+    @Test
+    public void singleBikeGarageMatchesOldBehaviour() {
+        Bike b = bike(1000, 0, true, 0);
+        nl.paree.climbpro.data.bike.BikeCostLog log = new nl.paree.climbpro.data.bike.BikeCostLog();
+        log.bikes.add(b);
+        List<StoredRide> rides = Arrays.asList(ride(2000, 40_000, "Ride", "b7"),
+                ride(2000, 25_000, "VirtualRide", null));
+        assertEquals(BikeCostCalculator.evaluate(b, rides).archiveMeters,
+                BikeCostCalculator.evaluateGarage(log, rides).get(0).archiveMeters);
+        assertEquals(0, BikeCostCalculator.evaluateGarage(
+                (nl.paree.climbpro.data.bike.BikeCostLog) null, rides).size());
+    }
 }
