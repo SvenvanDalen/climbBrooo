@@ -138,6 +138,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Medical ID** — menu → "Medische ID": name, blood type, allergies, medication, emergency
+  contact and notes. Optional silent, always-on lock-screen notification (public visibility)
+  so first responders can read it without unlocking; re-posted after a reboot. The watch
+  widget gets a copy (`MEDICAL_ID` message, re-sent with every route list) and shows it
+  offline as a red first row "+ Medische ID" in its route list.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

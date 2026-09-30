@@ -159,6 +159,9 @@
                 android:id="@+id/action_safe_home"
                 android:title="Veilig thuis-bericht"/>
             <item
+                android:id="@+id/action_medical_id"
+                android:title="Medische ID"/>
+            <item
                 android:id="@+id/action_pain_log"
                 android:title="Pijnlogboek"/>
         </menu>
