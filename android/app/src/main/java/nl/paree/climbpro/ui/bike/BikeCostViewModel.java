@@ -100,7 +100,8 @@ public final class BikeCostViewModel extends AndroidViewModel {
         }
         List<StoredRide> rides = needRides
                 ? new RideRepository(getApplication()).loadAll() : null;
-        summaries.postValue(BikeCostCalculator.evaluateAll(log.bikes, rides));
+        // Garage-aware (issue #187): each bike only counts the rides assigned to it.
+        summaries.postValue(BikeCostCalculator.evaluateGarage(log, rides));
     }
 
     @Override

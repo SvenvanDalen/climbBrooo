@@ -78,9 +78,11 @@ public final class RouteSyncWorker extends Worker {
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(ctx);
         nl.paree.climbpro.domain.power.RiderProfile profile = riderRepo.load();
         nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo.loadGhostTarget();
-        // FTP turns each climb's interval block (% FTP) into watts for 'ib' (issue #180).
-        ClimbPayloadBuilder  payloadBuilder  =
-                new ClimbPayloadBuilder(mapper).withFtpWatts(profile.ftpWatts);
+        // Issue #66: also send per-segment FTP intensity-zone colors when the profile allows,
+        // and issue #180: FTP turns each climb's interval block (% FTP) into watts for 'ib'.
+        // The profile is already part of wantHash, so an FTP change triggers a resync.
+        ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper)
+                .withIntensityZones(profile).withFtpWatts(profile.ftpWatts);
 
         boolean authorised = authRepo.isAuthorised();
 

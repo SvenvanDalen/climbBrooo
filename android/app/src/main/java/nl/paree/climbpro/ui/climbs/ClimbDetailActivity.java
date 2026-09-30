@@ -202,6 +202,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             updateManualRefText();
         });
 
+        viewModel.segmentZones().observe(this, adapter::setSegmentZones);
         viewModel.windImpact().observe(this, this::showWindImpact);
 
         viewModel.seasonalComparison().observe(this, result -> {

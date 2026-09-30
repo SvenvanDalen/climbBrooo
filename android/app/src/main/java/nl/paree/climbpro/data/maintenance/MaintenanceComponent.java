@@ -39,6 +39,11 @@ public final class MaintenanceComponent {
      * 0 = none. Keyed by expiry so correcting the purchase date or term re-arms the reminder.
      */
     public long    warrantyReminderSentForExpiryEpochSec;
+    /**
+     * Bike garage link (issue #187): id of the bike this part sits on, so only that bike's
+     * rides count. Null = not linked, every ride counts (the pre-garage behaviour).
+     */
+    public String  bikeId;
 
     public MaintenanceComponent() {}
 

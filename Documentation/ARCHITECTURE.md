@@ -402,6 +402,34 @@ and saves via `RouteRepository.saveRoute` under a `join_` route id with the defa
 Phone-only; no wire-format change. Note the joined route's climbs duplicate those of its
 source routes in the catalog, like any overlapping import.
 
+### Automatic Strava segment matching (issue #35, phone-only)
+
+Strava sync also matches each new or changed route against public Strava segments, not just
+the athlete's starred ones. `segments/explore` returns at most the top 10 segments inside a
+bounding box, so `domain/climb/SegmentExploreTiler` splits the route by distance into
+~10 km stretches, each with its own box padded by 300 m (at most 8 tiles; longer routes get
+longer tiles). `StravaRoutesRepository.exploreSegments` asks each tile (`activity_type=riding`),
+de-duplicates by id and maps the response's `avg_grade` onto `StravaSegmentDto`
+(`StravaSegmentExploreDto`). These segments go through the same `StarredSegmentLocator` as
+starred ones (50 m endpoint match, direction check), but unlike starred segments they must
+meet the full climb rule: `≥ 3 %` **and** `≥ 800 m`, since nobody hand-picked them.
+`ClimbMerger.longestNonOverlapping` keeps the longest when Strava has a full-climb segment
+plus shorter pieces inside it. The result is merged over the detected climbs (the segment's
+bounds and name win, with no false-flat trim, like starred segments), and starred segments
+are merged after that, so a starred segment still beats a public one; a segment that is
+both is matched only as starred.
+
+**Rate-limit budget.** Explore costs up to 8 calls per route, which a full resync on a fresh
+phone can't afford next to the GPX downloads. After every explore response,
+`StravaRateLimit.nearLimit` checks the rate-limit headers. When the limit is near, or on a
+429, exploring stops for the rest of that sync and the route is saved with
+`StoredRoute.stravaSegmentsExplored = false`. The skip check reprocesses an unchanged route
+whose flag is not `true` (including `null` on routes stored before this feature), but only
+while the current sync still has budget. So the backlog drains over later syncs, and
+unchanged routes are never downloaded again just to wait for budget. Other explore failures
+(network, a 4xx) count as done, so a dead endpoint doesn't trigger a GPX download every sync.
+No wire-format change: the matched climbs go through the usual segmentation and payload.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as
@@ -625,6 +653,8 @@ the per-surface `Crr` values live in `SurfaceRollingResistance`.
 
 **MyWhoosh export (issue #85, phone-only).** MyWhoosh has no custom-route import, only a web workout builder that uploads `.zwo` files, so the climb goes there as a workout. The export dialog's "MyWhoosh-workout" option calls `ClimbWorkoutWriter.toMyWhooshZwo`, which uses the same plan as the Zwift export but writes only what MyWhoosh's stricter importer handles: self-closing `Warmup`/`SteadyState`/`Cooldown` steps, power rounded to whole percent of FTP, no `<tags>` and no `textevent`s, and a name capped at 40 characters. The per-segment gradients move into the description. The file is `<klimnaam>_mywhoosh.zwo`, and the activity explains the upload route (Drive/mail → MyWhoosh website → Workouts → upload) before the share sheet opens. Plain climb only; no repeats variant.
 
+**FTP test assistant (issue #181, phone-only).** The issue allowed the result to return from the watch as a new message type or through the Strava sync; it uses the Strava sync, so there is no wire-format change and no watch code. `domain/power/FtpTestPlan` defines the classic 20-minute protocol (15 min warm-up ramp 50→75 %, 5 min blow-out and 20 min test at 105 % of FTP, 10 min recovery at 50 %, 10 min cool-down 60→40 %), where 105 % is the current FTP / 0.95. It exports that protocol as a `.zwo` through `ClimbWorkoutWriter.toPlainZwo`. That method was extracted from the MyWhoosh export and writes only self-closing `Warmup`/`SteadyState`/`Cooldown` blocks, so both MyWhoosh and Zwift accept the file. The description asks the rider to switch ERG off for the hard blocks. The file is shared through the existing `ClimbWorkoutExportHandoff` cache. `domain/power/FtpTestResultDetector` reads the already stored `StoredRideStreamStats.powerCurve` 20-minute value (no extra Strava requests) and returns a ride as a test in two cases: it has "FTP" as a word in its name and started within the last 30 days, or it started within 14 days after the export (`RiderProfileRepository.PREF_FTP_TEST_EXPORTED_AT`) and its implied FTP is at least 85 % of the current one. In the second case the hardest such ride wins. E-bike rides and results above `FtpEstimator.MAX_PLAUSIBLE_FTP_WATTS` are ignored. FTP = 0.95 × best 20 min. The "FTP-test" screen (`ui/records/FtpTestActivity`, route-list menu) shows the result with the difference from the current FTP. "FTP bijwerken naar X W" asks for confirmation before `RiderProfileRepository.saveFtp`. Both applying and "Negeren" store the ride id in `PREF_FTP_TEST_HANDLED_ID`, so a result is offered only once. Both prefs belong to the Rijdersprofiel privacy category and are part of backups.
+
 ### Pacing plan (phone → watch)
 
 The phone precomputes a per-segment target time for every climb via
@@ -753,6 +783,32 @@ workout export) from the same stored choice.
   (`ClimbTimeEstimator.estimateAtFixedPower`); per-segment gradient text events stay,
   the description names the block and the `.zwo` gets the `INTERVALS` tag. The same
   plan drives the `.erg` and MyWhoosh exports.
+
+### FTP intensity-zone colors (issue #66)
+
+The fixed gradient → color mapping stays the default and the single source of
+truth in the protocol. A **second, optional** color source rides next to it:
+`domain/power/SegmentIntensityZones` estimates each segment's power with the
+indoor-workout pacing model (`ClimbWorkoutWriter.plan`: the climb's sustainable
+power from `ClimbTimeEstimator`/`PowerSpeedSolver`, swung up/down with the
+segment's gradient), places it in a Coggan zone (`ZoneCalculator.powerZoneIndex`)
+and maps that onto the same six color indices (`GradientColor.forPowerZone`,
+table in `protocol/colors.md`). `ClimbPayloadBuilder.withIntensityZones(profile)`
+emits the result as an optional packed int array `zc` (one colorIndex per
+segment, both modes) when the rider profile is complete (FTP + weights);
+`RouteSyncWorker` and `WatchRequestHandler` use it. `zc` is stripped from any
+payload that would exceed `PayloadBudget.MAX_BYTES`. The rider profile is part of
+the route sync hash, so an FTP change resyncs.
+
+On the watch, `garmin` (datafield) and `garmin-widget` parse `zc` into
+`ClimbData.segZone[climb]` (allocated only when present; null otherwise, and
+cleared on a resync without it). A new app setting **Kleurmodus** (`colorMode`:
+0 = Helling, default; 1 = FTP-zone) selects the source; `ClimbData.colorIndexAt`
+returns the zone color only in FTP-zone mode on a climb that has `zc`, and the
+gradient color otherwise. `garmin-surface` carries no climbs, and
+`garmin-onboard` computes its climbs on the watch without a rider profile, so
+both keep gradient colors only. The climb detail screen on the phone shows the
+zone per segment (a `Z1`–`Z7` badge in the watch's zone color).
 
 ---
 
@@ -901,6 +957,8 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 **Warranty** (issue #239) is an optional extra per component in the same `maintenance.json`: `warrantyPurchaseEpochSec` + `warrantyMonths` (0 = none); expiry = purchase + N calendar months (`domain/maintenance/WarrantyCalculator`, clamped to month end). A daily `service/WarrantyReminderWorker` (periodic, KEEP, scheduled on app start) posts one "Garantie verloopt bijna" notification (`WarrantyNotifier`, channel `warranty`) in the last 30 days before expiry; idempotent via `warrantyReminderSentForExpiryEpochSec` (keyed by expiry, so correcting the date/term re-arms it). Already expired warranties never notify. Shown as a line on the component card; edited in the component dialog.
 
 **Bike cost overview** (`bike_costs.json`, `data/bike/BikeCostRepository`, issue #233): one JSON object per bike (name, since/retired dates, archive/virtual-ride toggles, manual extra km, a list of purchase/part cost entries) with atomic writes (temp file + rename) behind a static write lock, the same pattern as `RideRepository`/`MaintenanceRepository`. Money is integer cents (`domain/bike/EuroAmount`), never a float, with Dutch-style parsing/formatting (`€ 1.234,56`). A bike's km are the archived `StoredRide.distanceM` for rides that started in `[sinceEpochSec, retiredEpochSec)` (open-ended when not retired), **excluding `VirtualRide`** unless the bike opts in, plus manually entered extra km; `domain/bike/BikeCostCalculator` (pure) sums the purchase and part costs and derives cents-per-km, never producing a rate below 1 km travelled. Riders who mix bikes on the same Strava account (which carries no gear id) can turn the archive off per bike and enter km by hand instead. Registered in `PrivacyCategory` and `BackupArchive.INCLUDED_PATHS`. Surfaced in-app only via the "Fietskosten" screen (route list overflow menu). Phone-only; never part of the wire payload.
+
+**Bike garage** (issue #187, extends `bike_costs.json` rather than adding a file): each `Bike` also carries `type` (road/gravel/mtb/trainer), `weightKg`, `tyreWidthMm`, `chainrings`/`cassette` and an optional `stravaGearId`; the root `BikeCostLog` gains `activeBikeId` and `indoorBikeId`. `StoredRide.gearId` is filled from Strava's `gear_id` on the activity list (`RIDES_SCHEMA_VERSION` 3 re-lists the past year once, so older archived rides get it too). `domain/bike/BikeGarage` (pure, JVM-tested) assigns a ride to a bike: gear-id match → for `VirtualRide` the indoor bike (explicit, else the first trainer-type bike) → the active bike (outdoor rides skip a trainer-type active bike when another exists). Consumers narrow the archive with `BikeGarage.ridesForBike` before their existing km math: `BikeCostCalculator.evaluateGarage` (cost overview), `MaintenanceCalculator.evaluate(..., garage)` for parts with a `MaintenanceComponent.bikeId`, and `TirePressureStatusLoader` when `TirePressureLog.bikeId` is set; a trainer-type bike always counts indoor rides, unlinked components/logs (or links to a deleted bike) keep the old all-rides + `includeVirtualRides` behaviour. The garage is the source of truth for bike weight and gearing: `BikeCostRepository` mirrors the active bike's known weight into `RiderProfileRepository.PREF_BIKE_WEIGHT_KG` and its gearing into the gear calculator's prefs on every write, and the settings screen writes an edited bike weight back to the active bike — so `RiderProfile` itself is unchanged. On the first load of a pre-garage file (`version` 1) `BikeGarage.migrate` runs once, losslessly: existing cost bikes keep everything (type guessed from the name), passport bikes not yet present by name are added, an empty garage gets a "Mijn fiets" from the profile weight/gear-calculator gearing, and the first non-trainer bike becomes active and takes over that weight/gearing; ids are deterministic and an unreadable file is never migrated over. UI: "Fietsgarage" screen (route list overflow menu), plus a bike picker in the maintenance-part and tyre-reminder dialogs. Phone-only; no wire-format change.
 
 **Battery tracker** (`battery_status.json`, `data/battery/BatteryRepository`, issue #238): the rider's rechargeable devices (e-shifting, lights, power meter, head unit/sensor, other) with the last charge moment and a per-device recharge interval in days (kind-specific default, 0 = no reminder). Atomic writes with a static write lock. `domain/battery/BatteryStatusCalculator` (pure, explicit now) marks a device due `intervalDays` after its last charge; a device without a logged charge is never due. `service/BatteryReminderWorker` runs daily (WorkManager, scheduled at app start) and posts one notification per charge cycle (`reminderSentForChargeEpochSec`, only marked once the notification was actually shown so a denied permission retries); logging a new charge ("Opgeladen") re-arms it. Screen "Accu's" in the overflow menu. Reading sensor battery levels from the watch is out of scope for now. Phone-only; never part of the wire payload.
 

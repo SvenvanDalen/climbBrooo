@@ -43,6 +43,9 @@ class ClimbProView extends Ui.DataField {
         0x440000,  // 5: muted deep red (10%+)
     ];
 
+    // "colorMode" setting value for FTP intensity-zone colors (issue #66); 0 = gradient.
+    const COLOR_MODE_ZONES = 1;
+
     // Surface type color palette (indices match SurfaceType constants)
     hidden const SURFACE_COLORS = [
         0x404040,  // 0: ASPHALT   — dark grey
@@ -447,6 +450,26 @@ class ClimbProView extends Ui.DataField {
         return large;
     }
 
+    // Reads the "colorMode" app setting (issue #66, resources/settings/): 0 = Helling
+    // (gradient colors, default), 1 = FTP-zone. Same defensive read as activeColors():
+    // a missing/stale property must never crash a redraw -- fall back to gradient colors.
+    hidden function zoneColorModeActive() {
+        var v = null;
+        try {
+            v = Properties.getValue("colorMode");
+        } catch (e) {
+            v = null;
+        }
+        return zoneColorsSelected(v);
+    }
+
+    // Pure decision for zoneColorModeActive() (no Properties access, so tests can call it):
+    // only the exact FTP-zone value selects zone colors; anything else is gradient mode.
+    function zoneColorsSelected(settingValue) {
+        return settingValue != null && settingValue instanceof Toybox.Lang.Number
+            && settingValue == COLOR_MODE_ZONES;
+    }
+
     // =========================================================================
     // Large-text-mode font/layout decisions (issue #82)
     // =========================================================================
@@ -479,6 +502,7 @@ class ClimbProView extends Ui.DataField {
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
 
         var colors = activeColors();
+        var useZones = zoneColorModeActive();
         var totalLen = data.climbLength[ci];
         if (totalLen <= 0) { return; }
 
@@ -500,10 +524,7 @@ class ClimbProView extends Ui.DataField {
         for (var s = 0; s < segCount; s++) {
 
             var segE = data.segElevGain[ci][s];
-            var colorIdx = data.segColor[ci][s];
-
-            if (colorIdx < 0) { colorIdx = 0; }
-            if (colorIdx > 5) { colorIdx = 5; }
+            var colorIdx = data.colorIndexAt(ci, s, useZones);
 
             var x1 = x + (s * stepW);
             var x2 = x + ((s + 1) * stepW);

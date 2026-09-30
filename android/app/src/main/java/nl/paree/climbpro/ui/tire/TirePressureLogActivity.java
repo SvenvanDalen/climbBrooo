@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,7 +20,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.tire.TirePressureLog;
+import nl.paree.climbpro.ui.bike.BikePicker;
 import nl.paree.climbpro.data.tire.TirePressureLogEntry;
 import nl.paree.climbpro.domain.tire.TirePressureReminderCalculator;
 import nl.paree.climbpro.domain.tire.TirePressureReminderCalculator.Status;
@@ -73,7 +76,9 @@ public final class TirePressureLogActivity extends AppCompatActivity {
             status.setText(statusText(s.status));
             status.setTextColor(ContextCompat.getColor(this,
                     s.status.due ? R.color.color_accent : R.color.color_text_primary));
-            reminderSettings.setText(reminderText(s.log));
+            String bike = BikePicker.nameOf(s.garage, s.log.bikeId);
+            reminderSettings.setText(bike != null
+                    ? reminderText(s.log) + " · fiets: " + bike : reminderText(s.log));
         });
         viewModel.message().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
@@ -171,6 +176,10 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         EditText days = view.findViewById(R.id.input_days);
         EditText km = view.findViewById(R.id.input_km);
         TirePressureLog log = viewModel.current() != null ? viewModel.current().log : null;
+        BikeCostLog garage = viewModel.current() != null ? viewModel.current().garage : null;
+        Spinner bikeSpinner = view.findViewById(R.id.spinner_bike);
+        BikePicker.bind(bikeSpinner, garage, "Alle fietsen",
+                log != null ? log.bikeId : null);
         days.setText(String.valueOf(
                 log != null ? log.reminderDays : TirePressureLog.DEFAULT_REMINDER_DAYS));
         km.setText(String.valueOf(
@@ -180,7 +189,8 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                 .setTitle("Herinnering")
                 .setView(view)
                 .setPositiveButton("Opslaan", (d, w) ->
-                        viewModel.saveReminderSettings(parseNonNegative(days), parseNonNegative(km)))
+                        viewModel.saveReminderSettings(parseNonNegative(days), parseNonNegative(km),
+                                BikePicker.selectedId(bikeSpinner, garage)))
                 .setNegativeButton("Annuleren", null)
                 .show();
     }

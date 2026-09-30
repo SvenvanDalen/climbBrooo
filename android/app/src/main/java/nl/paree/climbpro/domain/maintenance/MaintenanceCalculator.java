@@ -1,6 +1,9 @@
 package nl.paree.climbpro.domain.maintenance;
 
+import nl.paree.climbpro.data.bike.Bike;
+import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.maintenance.MaintenanceComponent;
+import nl.paree.climbpro.domain.bike.BikeGarage;
 import nl.paree.climbpro.data.ride.StoredRide;
 
 import java.time.Instant;
@@ -83,11 +86,42 @@ public final class MaintenanceCalculator {
 
     public static Status evaluate(MaintenanceComponent c, List<StoredRide> rides,
                                   long nowEpochSec, ZoneId zone) {
+        return evaluate(c, rides, c != null && c.includeVirtualRides, nowEpochSec, zone);
+    }
+
+    /**
+     * Garage-aware status (issue #187): a component linked to a garage bike
+     * ({@link MaintenanceComponent#bikeId}) only counts rides assigned to that bike, and a
+     * trainer-type bike always counts indoor rides. Unlinked components, a link to a bike that
+     * no longer exists, or a null garage behave exactly like {@link #evaluate(
+     * MaintenanceComponent, List, long, ZoneId)}.
+     */
+    public static Status evaluate(MaintenanceComponent c, List<StoredRide> rides,
+                                  long nowEpochSec, ZoneId zone, BikeCostLog garage) {
+        Bike bike = c != null ? BikeGarage.find(garage, c.bikeId) : null;
+        if (bike == null) return evaluate(c, rides, nowEpochSec, zone);
+        return evaluate(c, BikeGarage.ridesForBike(rides, garage, bike.id),
+                BikeGarage.countsVirtualRides(bike, c.includeVirtualRides), nowEpochSec, zone);
+    }
+
+    public static List<Status> evaluateAll(List<MaintenanceComponent> components,
+                                           List<StoredRide> rides, long nowEpochSec,
+                                           ZoneId zone, BikeCostLog garage) {
+        if (components == null) return Collections.emptyList();
+        List<Status> out = new ArrayList<>(components.size());
+        for (MaintenanceComponent c : components) {
+            if (c != null) out.add(evaluate(c, rides, nowEpochSec, zone, garage));
+        }
+        return out;
+    }
+
+    private static Status evaluate(MaintenanceComponent c, List<StoredRide> rides,
+                                   boolean includeVirtual, long nowEpochSec, ZoneId zone) {
         if (c == null || c.lastServicedEpochSec <= 0) {
             return new Status(c, false, 0, 0, 0, 0, false, false);
         }
         long last = c.lastServicedEpochSec;
-        double km = kmSince(rides, last, c.includeVirtualRides);
+        double km = kmSince(rides, last, includeVirtual);
 
         boolean byKm = false;
         double kmFraction = 0;

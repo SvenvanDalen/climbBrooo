@@ -52,11 +52,12 @@ public final class MaintenanceViewModel extends AndroidViewModel {
      */
     public void saveComponent(String id, String name, int intervalKm, int intervalMonths,
                               boolean includeVirtualRides, long correctedLastServicedEpochSec,
-                              long warrantyPurchaseEpochSec, int warrantyMonths) {
+                              long warrantyPurchaseEpochSec, int warrantyMonths,
+                              String bikeId) {
         executor.execute(() -> {
             try {
                 String savedId = repo.upsertComponent(id, name, intervalKm, intervalMonths,
-                        includeVirtualRides, correctedLastServicedEpochSec);
+                        includeVirtualRides, correctedLastServicedEpochSec, bikeId);
                 repo.setWarranty(savedId, warrantyPurchaseEpochSec, warrantyMonths);
             } catch (Exception e) {
                 message.postValue("Opslaan mislukt: " + e.getMessage());

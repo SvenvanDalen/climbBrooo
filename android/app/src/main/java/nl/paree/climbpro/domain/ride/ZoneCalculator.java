@@ -139,6 +139,15 @@ public final class ZoneCalculator {
         return best;
     }
 
+    /**
+     * Coggan power zone for a power given as a fraction of FTP: 0 = Z1 (active recovery) up to
+     * 6 = Z7 (neuromuscular), per {@link #POWER_ZONE_UPPER}. Shared with the per-segment
+     * intensity zones on the climb profile (issue #66).
+     */
+    public static int powerZoneIndex(double fractionOfFtp) {
+        return zoneOf(fractionOfFtp, POWER_ZONE_UPPER);
+    }
+
     public static int total(int[] zones) {
         int sum = 0;
         if (zones != null) for (int z : zones) sum += z;

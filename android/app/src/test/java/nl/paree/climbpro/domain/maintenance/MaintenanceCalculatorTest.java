@@ -220,4 +220,70 @@ public class MaintenanceCalculatorTest {
                 Collections.singletonList(pads), rides, SERVICED + 2 * DAY, UTC)));
         assertNull(MaintenanceCalculator.bannerText(null));
     }
+
+    // --- bike garage link (issue #187) -----------------------------------------------------
+
+    private static nl.paree.climbpro.data.bike.BikeCostLog garage() {
+        nl.paree.climbpro.data.bike.BikeCostLog log = new nl.paree.climbpro.data.bike.BikeCostLog();
+        nl.paree.climbpro.data.bike.Bike road = new nl.paree.climbpro.data.bike.Bike();
+        road.id = "road";
+        road.stravaGearId = "b1";
+        nl.paree.climbpro.data.bike.Bike trainer = new nl.paree.climbpro.data.bike.Bike();
+        trainer.id = "trainer";
+        trainer.type = nl.paree.climbpro.data.bike.Bike.TYPE_TRAINER;
+        nl.paree.climbpro.data.bike.Bike gravel = new nl.paree.climbpro.data.bike.Bike();
+        gravel.id = "gravel";
+        gravel.stravaGearId = "b2";
+        log.bikes.addAll(Arrays.asList(road, trainer, gravel));
+        return log;
+    }
+
+    private static StoredRide ride(long start, double km, String type, String gearId) {
+        StoredRide r = ride(start, km, type);
+        r.gearId = gearId;
+        return r;
+    }
+
+    private static final List<StoredRide> MIXED = Arrays.asList(
+            ride(SERVICED + DAY, 40, "Ride", "b1"),
+            ride(SERVICED + DAY, 60, "GravelRide", "b2"),
+            ride(SERVICED + DAY, 30, "VirtualRide", null),
+            ride(SERVICED + DAY, 10, "Ride", null)); // fallback: active = first = road
+
+    @Test
+    public void linkedComponentCountsOnlyItsBikesRides() {
+        MaintenanceComponent c = component(1000, 0, SERVICED);
+        c.bikeId = "gravel";
+        assertEquals(60.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                garage()).kmSince, 1e-6);
+        c.bikeId = "road";
+        assertEquals(50.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                garage()).kmSince, 1e-6);
+    }
+
+    @Test
+    public void componentOnTrainerBikeCountsIndoorRidesWithoutOptIn() {
+        MaintenanceComponent c = component(1000, 0, SERVICED);
+        c.bikeId = "trainer";
+        assertEquals(30.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                garage()).kmSince, 1e-6);
+    }
+
+    @Test
+    public void unlinkedOrDanglingComponentKeepsOldBehaviour() {
+        MaintenanceComponent c = component(1000, 0, SERVICED);
+        assertEquals(110.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                garage()).kmSince, 1e-6);
+        c.includeVirtualRides = true;
+        assertEquals(140.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                garage()).kmSince, 1e-6);
+        c.bikeId = "deleted";
+        assertEquals(140.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                garage()).kmSince, 1e-6);
+        c.bikeId = "road";
+        assertEquals(140.0, MaintenanceCalculator.evaluate(c, MIXED, SERVICED + 2 * DAY, UTC,
+                null).kmSince, 1e-6);
+        assertEquals(1, MaintenanceCalculator.evaluateAll(Collections.singletonList(c), MIXED,
+                SERVICED + 2 * DAY, UTC, garage()).size());
+    }
 }

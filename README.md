@@ -85,6 +85,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Rename routes and climbs** — names survive resync (kept separate from source data).
 - **Starred segments as climbs** — a starred Strava segment on a synced route is always
   shown as a climb (when `≥ 3 %`), regardless of length, named after the segment.
+- **Automatic Strava segment matching** — during Strava route sync, known public Strava
+  segments along the route (`segments/explore`, up to 8 map tiles per route) that meet the
+  climb rule (`≥ 800 m` and `≥ 3 %`) replace the detected climb's bounds and give it the
+  segment's name. Starred segments still take precedence. When the Strava rate limit gets
+  close, exploring stops and continues on a later sync. Phone-only.
 - **Flat starred segments** — a starred Strava segment that is too flat to be a climb
   (`< 3 %`) is kept as a separate entity. All such segments appear in the route detail
   screen with a ★. Tap one to tag it with a surface type (asphalt, gravel, dirt,
@@ -181,6 +186,14 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   receipt per bike, shared in one go (text + attachments) for a police report or insurance
   claim. Phone-only.
 
+- **Bike garage ("Fietsgarage")** — several bikes (road, gravel, MTB, trainer) with weight,
+  tyre width, gearing and a link to the Strava bike. Synced rides land on the right bike via
+  Strava's gear id; unlinked indoor rides (MyWhoosh/VirtualRide) go to the trainer bike, the
+  rest to the active bike. The active bike's weight and gearing feed the time estimates and
+  the gear calculator; cost per km, maintenance parts and the tyre-pressure reminder can
+  count only one bike's km. Existing bike weight, cost bikes and passports are migrated
+  automatically. Phone-only.
+
 - **Badges** — automatic achievements such as your first 100 km, 10.000 km in total, an
   Everest of climbing, five rides before 7:00 and every climb of a collection, with date or
   progress. Phone-only.
@@ -203,6 +216,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
   power, short name, gradients in the description). MyWhoosh can't import custom routes, so
   the climb goes in as a workout; a dialog explains the upload. Phone-only.
+- **FTP test assistant** — menu → "FTP-test" explains the 20-minute test (15 min warm-up,
+  5 min blow-out, 10 min recovery, 20 min all-out, 10 min cool-down) with targets from your
+  current FTP, and exports it as a plain `.zwo` for MyWhoosh/Zwift. After the Strava sync the
+  screen picks up the test ride (named "FTP", or a maximal effort within 14 days of the
+  export), shows best 20 min × 0.95 and offers "FTP bijwerken naar X W" — the FTP only
+  changes after you confirm. Phone-only.
 
 - **Training advice after a climb** — climb screen: short, concrete pacing tips for your
   latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
@@ -333,6 +352,10 @@ carries a gradient-implied VAM (vertical ascent m/h, not a measured ascent rate 
 routes have no elapsed-time data) per segment, omitted unless every segment has one.
 An optional `ib = [targetWatts, lowWatts, highWatts]` carries a climb's interval block
 (issue #180), computed on the phone from % FTP; omitted without a block or FTP.
+With FTP and weights set, an optional parallel array `zc` (1 int/segment, issue #66)
+carries each segment's **FTP intensity-zone color** (Coggan zone → the same 0–5 color
+indices); the watch shows it instead of the gradient colors when its *Kleurmodus*
+setting is *FTP-zone*.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

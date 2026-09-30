@@ -28,4 +28,17 @@
         android:hint="Elke X km"
         android:importantForAutofill="no"
         android:inputType="number" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:textSize="13sp"
+        android:text="Km tellen van fiets" />
+
+    <Spinner
+        android:id="@+id/spinner_bike"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp" />
 </LinearLayout>
