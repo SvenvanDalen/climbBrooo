@@ -2,6 +2,8 @@ package nl.paree.climbpro.domain.export;
 
 import nl.paree.climbpro.domain.power.ClimbTimeEstimate;
 import nl.paree.climbpro.domain.power.ClimbTimeEstimator;
+import nl.paree.climbpro.domain.power.IntervalBlock;
+import nl.paree.climbpro.domain.power.SurfaceRollingResistance;
 import nl.paree.climbpro.domain.power.RiderProfile;
 
 import java.util.ArrayList;
@@ -21,6 +23,10 @@ import java.util.Locale;
  * blocks N times with an easy recovery block ({@link #RECOVERY_FRACTION} of FTP, default
  * {@link #defaultRecoverySeconds half the climb time}) between each pass, still inside one
  * warm-up and cool-down.
+ *
+ * <p>Interval block (issue #180): when the climb carries an {@link IntervalBlock}, every climb
+ * step holds the block's target instead of following the gradient, and the segment durations
+ * are re-estimated at that fixed power. The per-segment gradient messages stay.
  */
 public final class ClimbWorkoutWriter {
 
@@ -81,11 +87,18 @@ public final class ClimbWorkoutWriter {
         /** Average power over the climb as a fraction of FTP (the estimate's assumption). */
         public final double avgFraction;
         public final int ftpWatts;
+        /** {@link IntervalBlock#label()} when the plan follows an interval block, else null. */
+        public final String blockLabel;
 
         Plan(List<Step> steps, double avgFraction, int ftpWatts) {
+            this(steps, avgFraction, ftpWatts, null);
+        }
+
+        Plan(List<Step> steps, double avgFraction, int ftpWatts, String blockLabel) {
             this.steps = steps;
             this.avgFraction = avgFraction;
             this.ftpWatts = ftpWatts;
+            this.blockLabel = blockLabel;
         }
     }
 
@@ -124,6 +137,36 @@ public final class ClimbWorkoutWriter {
                     avgFraction * factor[i] * scale, gradients[i]));
         }
         return new Plan(Collections.unmodifiableList(steps), avgFraction, profile.ftpWatts);
+    }
+
+    /**
+     * Like {@link #plan(int[], double[], int[], RiderProfile)}, but with an interval block
+     * (issue #180) every climb step holds {@link IntervalBlock#targetFraction()} and lasts as
+     * long as that segment takes at the block's power. A null block is the default plan.
+     */
+    public static Plan plan(int[] distances, double[] gradients, int[] surfaces,
+                            RiderProfile profile, IntervalBlock block) {
+        if (block == null) return plan(distances, gradients, surfaces, profile);
+        if (distances == null || distances.length == 0 || profile == null
+                || !profile.isComplete()) {
+            return null;
+        }
+        int n = distances.length;
+        if (gradients.length != n || surfaces.length != n) {
+            throw new IllegalArgumentException(
+                    "distances, gradients and surface types must be the same length");
+        }
+        double[] crr = new double[n];
+        for (int i = 0; i < n; i++) crr[i] = SurfaceRollingResistance.crr(surfaces[i]);
+        double fraction = block.targetFraction();
+        ClimbTimeEstimate est = ClimbTimeEstimator.estimateAtFixedPower(distances, gradients,
+                crr, profile.totalMassKg(), fraction * profile.ftpWatts);
+        List<Step> steps = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            steps.add(new Step(Math.max(1, est.segmentSeconds[i]), fraction, gradients[i]));
+        }
+        return new Plan(Collections.unmodifiableList(steps), fraction, profile.ftpWatts,
+                block.label());
     }
 
     /** Total climbing time of one pass up the climb. */
@@ -170,6 +213,15 @@ public final class ClimbWorkoutWriter {
 
     /** Zwift workout of {@code repeats} passes; one repeat is the plain climb export. */
     public static String toZwo(String climbName, List<Step> steps, int repeats, int recoverySec) {
+        return toZwo(climbName, steps, repeats, recoverySec, null);
+    }
+
+    /**
+     * Zwift workout; {@code blockLabel} ({@link Plan#blockLabel}) marks an interval-block plan
+     * (issue #180) in the description and tags. Null is the plain gradient-paced export.
+     */
+    public static String toZwo(String climbName, List<Step> steps, int repeats, int recoverySec,
+                               String blockLabel) {
         checkRepeats(repeats, recoverySec);
         String name = displayName(climbName);
         StringBuilder sb = new StringBuilder();
@@ -177,11 +229,12 @@ public final class ClimbWorkoutWriter {
         sb.append("<workout_file>\n");
         sb.append("  <author>ClimbPro</author>\n");
         sb.append("  <name>").append(xml(title(name, repeats))).append("</name>\n");
-        sb.append("  <description>").append(xml(description(steps, name, repeats, recoverySec)))
+        sb.append("  <description>")
+                .append(xml(description(steps, name, repeats, recoverySec, blockLabel)))
                 .append("</description>\n");
         sb.append("  <sportType>bike</sportType>\n");
         sb.append("  <tags>\n    <tag name=\"CLIMB\"/>\n");
-        if (repeats > 1) sb.append("    <tag name=\"INTERVALS\"/>\n");
+        if (repeats > 1 || blockLabel != null) sb.append("    <tag name=\"INTERVALS\"/>\n");
         sb.append("  </tags>\n");
         sb.append("  <workout>\n");
         sb.append(String.format(Locale.US,
@@ -218,6 +271,11 @@ public final class ClimbWorkoutWriter {
      * a short name. The per-segment gradients move into the description instead.
      */
     public static String toMyWhooshZwo(String climbName, List<Step> steps) {
+        return toMyWhooshZwo(climbName, steps, null);
+    }
+
+    /** MyWhoosh flavour with an optional interval-block label (issue #180). */
+    public static String toMyWhooshZwo(String climbName, List<Step> steps, String blockLabel) {
         String name = "Klim: " + displayName(climbName);
         if (name.length() > MYWHOOSH_NAME_MAX) {
             name = name.substring(0, MYWHOOSH_NAME_MAX - 1).trim() + "…";
@@ -231,7 +289,7 @@ public final class ClimbWorkoutWriter {
         blocks.add(Block.warmup(WARMUP_SEC, WARMUP_LOW, WARMUP_HIGH));
         for (Step s : steps) blocks.add(Block.steady(s.seconds, s.ftpFraction));
         blocks.add(Block.cooldown(COOLDOWN_SEC, COOLDOWN_HIGH, COOLDOWN_LOW));
-        return toPlainZwo(name, description(steps, displayName(climbName), 1, 0)
+        return toPlainZwo(name, description(steps, displayName(climbName), 1, 0, blockLabel)
                 + " Hellingen per segment: " + gradients, blocks);
     }
 
@@ -310,6 +368,12 @@ public final class ClimbWorkoutWriter {
     /** ERG workout of {@code repeats} passes; one repeat is the plain climb export. */
     public static String toErg(String climbName, List<Step> steps, int ftpWatts,
                                int repeats, int recoverySec) {
+        return toErg(climbName, steps, ftpWatts, repeats, recoverySec, null);
+    }
+
+    /** ERG workout with an optional interval-block label (issue #180). */
+    public static String toErg(String climbName, List<Step> steps, int ftpWatts,
+                               int repeats, int recoverySec, String blockLabel) {
         List<Step> set = mainSet(steps, repeats, recoverySec);
         String name = displayName(climbName);
         StringBuilder sb = new StringBuilder();
@@ -317,7 +381,8 @@ public final class ClimbWorkoutWriter {
         sb.append("VERSION = 2\n");
         sb.append("UNITS = METRIC\n");
         sb.append("DESCRIPTION = ")
-                .append(oneLine(description(steps, name, repeats, recoverySec))).append('\n');
+                .append(oneLine(description(steps, name, repeats, recoverySec, blockLabel)))
+                .append('\n');
         sb.append("FILE NAME = ").append(oneLine(title(name, repeats))).append('\n');
         sb.append("FTP = ").append(ftpWatts).append('\n');
         sb.append("MINUTES WATTS\n");
@@ -363,8 +428,22 @@ public final class ClimbWorkoutWriter {
     }
 
     private static String description(List<Step> steps, String name, int repeats,
-                                      int recoverySec) {
+                                      int recoverySec, String blockLabel) {
         int climb = climbSeconds(steps);
+        if (blockLabel != null) {
+            String block = String.format(new Locale("nl"),
+                    "Intervalblok %s uit ClimbPro: %s, %d segmenten, %d:%02d min van voet tot top "
+                            + "op vast doelvermogen.",
+                    blockLabel, name, steps.size(), climb / 60, climb % 60);
+            if (repeats > 1) {
+                int total = totalSeconds(steps, repeats, recoverySec);
+                block += String.format(new Locale("nl"),
+                        " %d× met %d:%02d min herstel op %d %% FTP ertussen. Totaal %d:%02d min.",
+                        repeats, recoverySec / 60, recoverySec % 60,
+                        Math.round(RECOVERY_FRACTION * 100), total / 60, total % 60);
+            }
+            return block + " 10 min opwarmen en 5 min uitrijden.";
+        }
         if (repeats <= 1) {
             return String.format(new Locale("nl"),
                     "Klimsimulatie uit ClimbPro: %d segmenten, %d:%02d min klimmen, vermogen per "

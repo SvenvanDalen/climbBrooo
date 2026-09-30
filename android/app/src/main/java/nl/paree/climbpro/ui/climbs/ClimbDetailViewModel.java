@@ -343,6 +343,25 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Attaches or (null) removes the climb's interval block (issue #180). */
+    public void setIntervalBlock(String routeId, int climbIndex,
+                                 nl.paree.climbpro.domain.power.IntervalBlock block) {
+        executor.execute(() -> {
+            try {
+                routeRepo.setClimbIntervalBlock(routeId, climbIndex, block);
+                loadClimb(routeId, climbIndex);
+                saved.postValue(true);
+            } catch (Exception e) {
+                error.postValue("Opslaan mislukt: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Rider FTP in watts, 0 when not set; used to show the block's target watts. */
+    public int ftpWatts() {
+        return riderRepo.load().ftpWatts;
+    }
+
     public void setBulkSurfaceType(String routeId, int climbIndex, int surfaceType) {
         executor.execute(() -> {
             try {
@@ -430,18 +449,20 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 switch (format) {
                     case ERG:
                         content = ClimbWorkoutWriter.toErg(name, plan.steps, plan.ftpWatts,
-                                repeats, recovery);
+                                repeats, recovery, plan.blockLabel);
                         fileName = ClimbWorkoutWriter.fileName(name, "erg", repeats);
                         mime = ClimbWorkoutExportHandoff.ERG_MIME;
                         break;
                     case MYWHOOSH:
                         // Plain climb only: the stricter MyWhoosh importer gets no repeat blocks.
-                        content = ClimbWorkoutWriter.toMyWhooshZwo(name, plan.steps);
+                        content = ClimbWorkoutWriter.toMyWhooshZwo(name, plan.steps,
+                                plan.blockLabel);
                         fileName = ClimbWorkoutWriter.fileName(name + " MyWhoosh", "zwo");
                         mime = ClimbWorkoutExportHandoff.ZWO_MIME;
                         break;
                     default:
-                        content = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery);
+                        content = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery,
+                                plan.blockLabel);
                         fileName = ClimbWorkoutWriter.fileName(name, "zwo", repeats);
                         mime = ClimbWorkoutExportHandoff.ZWO_MIME;
                         break;
@@ -466,7 +487,9 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
             grad[i] = segs.get(i).gradient;
             surface[i] = segs.get(i).surfaceType;
         }
-        ClimbWorkoutWriter.Plan plan = ClimbWorkoutWriter.plan(dist, grad, surface, profile);
+        // Issue #180: an attached interval block replaces the gradient pacing.
+        ClimbWorkoutWriter.Plan plan = ClimbWorkoutWriter.plan(dist, grad, surface, profile,
+                nl.paree.climbpro.domain.power.IntervalBlock.fromStored(c.intervalBlock));
         if (plan == null) {
             error.postValue("Vul eerst je FTP en gewicht in bij Instellingen; daarmee "
                     + "worden de vermogensdoelen per segment berekend.");
@@ -507,7 +530,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 String name = workoutName(c);
                 int recovery = recoverySec == RECOVERY_AUTO
                         ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
-                String zwo = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery);
+                String zwo = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery,
+                        plan.blockLabel);
 
                 int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
                 String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);

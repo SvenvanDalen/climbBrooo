@@ -426,6 +426,23 @@ public final class RouteRepository {
         }
     }
 
+    /**
+     * Attaches (or, with null, removes) an interval block to a climb (issue #180). Stored in
+     * % FTP; watts are computed when a payload or workout is built. Out-of-range indices are
+     * silently ignored, like {@link #setClimbHome}. Survives resync via
+     * {@link #mergePreviousClimbUserData}.
+     */
+    public void setClimbIntervalBlock(String routeId, int climbIndex,
+                                      nl.paree.climbpro.domain.power.IntervalBlock block)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            route.climbs.get(climbIndex).intervalBlock = block != null ? block.toStored() : null;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
     public void saveNotes(String routeId, String notes) throws IOException {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;
@@ -504,7 +521,7 @@ public final class RouteRepository {
 
     /**
      * Copies user-supplied climb data (display-name rename, shape-tag override, manual WR/pro
-     * reference time, per-segment surface type and per-segment manual target time) from a route's previous
+     * reference time, interval block, per-segment surface type and per-segment manual target time) from a route's previous
      * climbs onto the freshly detected ones. Which previous climb/segment feeds which fresh one
      * is decided by {@link SegmentRemapper} (issue #87): climbs are matched one-to-one by start
      * distance, start coordinate or distance-range overlap, and per-segment surface follows
@@ -535,6 +552,8 @@ public final class RouteRepository {
                 f.manualRefSec = p.manualRefSec;
                 f.manualRefLabel = p.manualRefLabel;
             }
+            // Interval block (issue #180) is a training choice for the whole climb: carry it.
+            if (p.intervalBlock != null) f.intervalBlock = p.intervalBlock;
             // Surface describes the road, so it is position-bound: carry by overlap.
             // Manual target times (issue #23) are grid-bound: segments are 8% of the climb, so a
             // lengthened/trimmed climb keeps 12-13 segments while every boundary moves.

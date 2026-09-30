@@ -77,4 +77,12 @@ public final class StoredClimb {
     public Integer ratingView;
     /** Optional short review text for the rating (issue #244). Null when empty. */
     public String ratingNote;
+    /**
+     * Interval block attached to this climb (issue #180): a power band in % FTP that runs from
+     * the foot to the top. Null = no block. Set only via {@code RouteRepository#setClimbIntervalBlock},
+     * carried across resync by {@code RouteRepository#mergePreviousClimbUserData}. Sent to the
+     * watch as absolute watts ('ib') and used by the indoor workout export. Always read through
+     * {@code domain.power.IntervalBlock#fromStored}.
+     */
+    public StoredIntervalBlock intervalBlock;
 }

@@ -751,6 +751,41 @@ sentinel) is sent without `vam` rather than partial data. The climb datafield
 parses it and shows the active segment's avg/peak VAM next to the gradient
 stat on the active-climb page.
 
+### Interval block per climb (issue #180)
+
+A climb can carry an **interval block**: a power band in % FTP held from the foot to
+the top (presets Drempel 95–100 %, Sweet spot 88–93 %, VO2max 110–120 %, Tempo
+80–85 %, or a custom target ±3 %). It works outdoors (watch) and indoors (trainer
+workout export) from the same stored choice.
+
+- **Phone**: `domain/power/IntervalBlock` (pure, validated) is stored as
+  `StoredClimb.intervalBlock` (`StoredIntervalBlock`: preset, lowPct, highPct) inside
+  the route JSON, set from the climb detail screen via
+  `RouteRepository#setClimbIntervalBlock` and carried across resync by
+  `mergePreviousClimbUserData` like renames. The band stays in % FTP so an FTP change
+  follows automatically; `RouteSyncWorker`'s want-hash includes
+  `IntervalBlock.signature(route)` so a new/changed block triggers a resend.
+- **Wire**: `ClimbPayloadBuilder.withFtpWatts(ftp)` turns the band into watts and emits
+  the optional per-climb `ib = [targetWatts, lowWatts, highWatts]` (both modes) — only
+  for climbs with a block and only when an FTP is set. ~20 bytes per climb with a
+  block; additive, no protocol version bump.
+- **Watch (datafield `garmin`)**: `CommListener.mc` parses `ib` into
+  `ClimbData.hasBlock/blockTarget/blockLow/blockHigh` (malformed or inverted arrays
+  disable the block; a resync without `ib` clears it). The block starts with the
+  existing once-per-climb, jitter-safe climb-start trigger — no new trigger logic. While
+  the climb is active, the VAM line slot shows the band: `Doel 266-280W` without a power
+  meter, or `252W 266-280` in blue/green/red for under/in/over
+  (`ClimbData.powerZone`, fed by a null-safe `Activity.Info.currentPower`). When the
+  rider tops out (`blockFinished`: left the climb at or past its end) a short single
+  vibration signals "blok klaar", latched per climb. `garmin-widget` and
+  `garmin-surface` ignore `ib`; `garmin-onboard` is exempt (it builds climbs on the
+  watch from the raw route and has no user data).
+- **Indoor**: `ClimbWorkoutWriter.plan(…, IntervalBlock)` sets every climb step to the
+  block's target and re-estimates segment durations at that fixed power
+  (`ClimbTimeEstimator.estimateAtFixedPower`); per-segment gradient text events stay,
+  the description names the block and the `.zwo` gets the `INTERVALS` tag. The same
+  plan drives the `.erg` and MyWhoosh exports.
+
 ### FTP intensity-zone colors (issue #66)
 
 The fixed gradient → color mapping stays the default and the single source of

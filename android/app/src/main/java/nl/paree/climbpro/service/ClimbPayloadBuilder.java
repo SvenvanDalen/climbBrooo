@@ -28,6 +28,7 @@ import java.util.Map;
  *      tsec:[targetSec, ...],                            // 1 int × segCount (optional, manual pacing plan)
  *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
  *      vam:[avgVamMPerH,peakVamMPerH, ...],              // 2 ints × segCount (optional, omitted unless every segment has VAM)
+ *      ib:[targetW, lowW, highW],                        // interval block (optional, issue #180; needs FTP)
  *      zc:[zoneColorIndex, ...]}                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
  *   ],
  *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
@@ -50,14 +51,17 @@ public final class ClimbPayloadBuilder {
     private final ObjectMapper mapper;
     /** Rider profile for the optional 'zc' arrays; null = never emit them. */
     private final RiderProfile zoneProfile;
+    /** Rider FTP used to turn a climb's interval block (% FTP) into watts; 0 = unknown. */
+    private final int ftpWatts;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
-        this(mapper, null);
+        this(mapper, null, 0);
     }
 
-    private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile) {
+    private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts) {
         this.mapper = mapper;
         this.zoneProfile = zoneProfile;
+        this.ftpWatts = ftpWatts;
     }
 
     /**
@@ -68,7 +72,15 @@ public final class ClimbPayloadBuilder {
      * nice-to-have and must never cost a sync (radius mode: never cost a climb).
      */
     public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
-        return new ClimbPayloadBuilder(mapper, profile);
+        return new ClimbPayloadBuilder(mapper, profile, ftpWatts);
+    }
+
+    /**
+     * Sets the FTP used for the optional per-climb interval block 'ib' (issue #180). Without a
+     * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
+     */
+    public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
+        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts));
     }
 
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
@@ -304,6 +316,10 @@ public final class ClimbPayloadBuilder {
         if (surf != null) c.put("surf", surf);
         int[] vam = buildVam(sc.segments);
         if (vam != null) c.put("vam", vam);
+        nl.paree.climbpro.domain.power.IntervalBlock block =
+                nl.paree.climbpro.domain.power.IntervalBlock.fromStored(sc.intervalBlock);
+        int[] ib = block != null ? block.wireWatts(ftpWatts) : null;
+        if (ib != null) c.put("ib", ib);
         if (zoneProfile != null) {
             int[] zc = SegmentIntensityZones.colorIndices(sc.segments, zoneProfile);
             if (zc != null) c.put(KEY_ZONE_COLORS, zc);

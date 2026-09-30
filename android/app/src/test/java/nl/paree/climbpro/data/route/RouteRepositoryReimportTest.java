@@ -121,6 +121,32 @@ public class RouteRepositoryReimportTest {
     }
 
     @Test
+    public void saveRoutePreservesIntervalBlockAcrossReimport() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setClimbIntervalBlock("r1", 0, nl.paree.climbpro.domain.power.IntervalBlock
+                .of(nl.paree.climbpro.domain.power.IntervalBlock.Preset.SWEET_SPOT));
+
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+
+        StoredClimb c = repo.loadRoute("r1").climbs.get(0);
+        assertEquals("interval block must survive re-import", "SWEET_SPOT",
+                c.intervalBlock.preset);
+        assertEquals(88, c.intervalBlock.lowPct);
+        assertEquals(93, c.intervalBlock.highPct);
+    }
+
+    @Test
+    public void setClimbIntervalBlockNullRemovesBlock() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setClimbIntervalBlock("r1", 0, nl.paree.climbpro.domain.power.IntervalBlock.custom(100));
+        repo.setClimbIntervalBlock("r1", 0, null);
+
+        assertEquals(null, repo.loadRoute("r1").climbs.get(0).intervalBlock);
+    }
+
+    @Test
     public void saveRoutePreservesClimbSegmentSurfaceAcrossReimport() throws Exception {
         RouteRepository repo = new RouteRepository(app);
         repo.saveRoute(routeShell("r1"), points(), climbs());
