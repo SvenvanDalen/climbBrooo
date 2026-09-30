@@ -146,6 +146,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   a small month table (temperature, wind, rain chance per month's best day-part), scored from
   3 years of Open-Meteo weather history at the climb (incl. headwind along the climb). Tap to
   load once; cached under `climate/`, so it works offline afterwards. Phone-only.
+- **Points of interest along the route** — route detail → "Bezienswaardigheden" lists
+  viewpoints, monuments, memorials, castles, ruins, artworks and attractions within 300 m of the
+  route from OpenStreetMap (Overpass API, keyless), with type, kilometre and distance beside the
+  route; tap one to open it in a map app. Fetched once per route and cached under `route_pois/`,
+  so it works offline afterwards ("Vernieuwen" refetches). Phone-only.
 
 - **Temperature trend over the ride** — route detail → "Temperatuurtrend tonen", pick a start
   time (today, or tomorrow if already past) and see a chart of the expected temperature at each

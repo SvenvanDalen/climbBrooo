@@ -196,6 +196,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
+        binding.btnRoutePois.setOnClickListener(v ->
+                startActivity(RoutePoiActivity.intentFor(this, routeId)));
 
         viewModel.loadRoute(routeId);
     }
