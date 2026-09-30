@@ -402,6 +402,34 @@ and saves via `RouteRepository.saveRoute` under a `join_` route id with the defa
 Phone-only; no wire-format change. Note the joined route's climbs duplicate those of its
 source routes in the catalog, like any overlapping import.
 
+### Automatic Strava segment matching (issue #35, phone-only)
+
+Strava sync also matches each new or changed route against public Strava segments, not just
+the athlete's starred ones. `segments/explore` returns at most the top 10 segments inside a
+bounding box, so `domain/climb/SegmentExploreTiler` splits the route by distance into
+~10 km stretches, each with its own box padded by 300 m (at most 8 tiles; longer routes get
+longer tiles). `StravaRoutesRepository.exploreSegments` asks each tile (`activity_type=riding`),
+de-duplicates by id and maps the response's `avg_grade` onto `StravaSegmentDto`
+(`StravaSegmentExploreDto`). These segments go through the same `StarredSegmentLocator` as
+starred ones (50 m endpoint match, direction check), but unlike starred segments they must
+meet the full climb rule: `≥ 3 %` **and** `≥ 800 m`, since nobody hand-picked them.
+`ClimbMerger.longestNonOverlapping` keeps the longest when Strava has a full-climb segment
+plus shorter pieces inside it. The result is merged over the detected climbs (the segment's
+bounds and name win, with no false-flat trim, like starred segments), and starred segments
+are merged after that, so a starred segment still beats a public one; a segment that is
+both is matched only as starred.
+
+**Rate-limit budget.** Explore costs up to 8 calls per route, which a full resync on a fresh
+phone can't afford next to the GPX downloads. After every explore response,
+`StravaRateLimit.nearLimit` checks the rate-limit headers. When the limit is near, or on a
+429, exploring stops for the rest of that sync and the route is saved with
+`StoredRoute.stravaSegmentsExplored = false`. The skip check reprocesses an unchanged route
+whose flag is not `true` (including `null` on routes stored before this feature), but only
+while the current sync still has budget. So the backlog drains over later syncs, and
+unchanged routes are never downloaded again just to wait for budget. Other explore failures
+(network, a 4xx) count as done, so a dead endpoint doesn't trigger a GPX download every sync.
+No wire-format change: the matched climbs go through the usual segmentation and payload.
+
 ### Flat starred Strava segments with surface tagging (2026-06-22)
 
 A Strava starred segment whose Strava `average_grade` is **< 3%** (too flat to qualify as

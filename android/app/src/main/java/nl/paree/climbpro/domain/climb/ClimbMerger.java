@@ -29,6 +29,27 @@ public final class ClimbMerger {
         return result;
     }
 
+    /**
+     * Drops climbs that overlap a longer one in the same list, keeping the longest (issue #35:
+     * Strava often has a full-climb segment plus shorter ones inside it, like "first half" or
+     * a sprint to a hairpin). The result is sorted by start distance.
+     */
+    public static List<Climb> longestNonOverlapping(List<Climb> climbs) {
+        List<Climb> byLength = new ArrayList<>(climbs != null ? climbs : Collections.<Climb>emptyList());
+        byLength.sort((a, b) -> Integer.compare(
+                b.endDistance - b.startDistance, a.endDistance - a.startDistance));
+        List<Climb> kept = new ArrayList<>();
+        for (Climb c : byLength) {
+            boolean clash = false;
+            for (Climb k : kept) {
+                if (overlaps(c, k)) { clash = true; break; }
+            }
+            if (!clash) kept.add(c);
+        }
+        kept.sort(Comparator.comparingInt(c -> c.startDistance));
+        return kept;
+    }
+
     private static boolean overlaps(Climb a, Climb b) {
         return a.startDistance < b.endDistance && b.startDistance < a.endDistance;
     }
