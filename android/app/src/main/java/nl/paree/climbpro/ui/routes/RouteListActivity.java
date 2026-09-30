@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.databinding.ActivityRouteListBinding;
+import nl.paree.climbpro.domain.activity.MyWhooshRouteReader;
 import nl.paree.climbpro.domain.route.GpxParseException;
 import nl.paree.climbpro.domain.route.GpxParser;
 import nl.paree.climbpro.domain.route.RoutePoint;
@@ -30,16 +31,23 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbDetector;
 import nl.paree.climbpro.domain.climb.DuplicateClimbMatcher;
+import nl.paree.climbpro.domain.ride.YearlyDistanceGoalCalculator;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.data.ride.YearlyDistanceGoalRepository;
+import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
 import nl.paree.climbpro.ui.strava.StravaAuthActivity;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,9 +59,24 @@ public final class RouteListActivity extends AppCompatActivity {
     private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
+    /** Status filter labels; index order matches {@link RouteStatusFilter}. */
+    private static final String[] STATUS_FILTER_LABELS = {"Alle", "Wil ik rijden", "Gereden"};
+
+    /**
+     * The quick-start (issue #263) sync run whose outcome is still to be reported, or null.
+     * Matched by id: with REPLACE the unique-work list can also hold the cancelled previous
+     * run, which must not be reported as "horloge niet bereikt".
+     */
+    private java.util.UUID quickStartWorkId;
+
     private final ActivityResultLauncher<String[]> gpxPicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
                     uri -> { if (uri != null) importGpx(uri); });
+
+    /** MyWhoosh ride import (issue #342): FIT or GPX exported from MyWhoosh. */
+    private final ActivityResultLauncher<String[]> myWhooshPicker =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(),
+                    uri -> { if (uri != null) importRoute(uri, true); });
 
     private final ActivityResultLauncher<String[]> btPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
@@ -67,6 +90,7 @@ public final class RouteListActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
 
         viewModel = new ViewModelProvider(this).get(RouteListViewModel.class);
+        updateStatusFilterSubtitle(viewModel.getStatusFilter()); // survives rotation via the ViewModel
         adapter   = new RouteListAdapter();
 
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -82,8 +106,11 @@ public final class RouteListActivity extends AppCompatActivity {
                 String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
                 new AlertDialog.Builder(RouteListActivity.this)
                         .setTitle(name != null ? name : entry.routeId)
-                        .setItems(new String[]{"Toevoegen aan collectie", "Verwijderen"}, (d, which) -> {
-                            if (which == 0) {
+                        .setItems(new String[]{"Toevoegen aan collectie", "Verwijderen",
+                                "Nu rijden (naar horloge)"}, (d, which) -> {
+                            if (which == 2) {
+                                startQuickStart(entry);
+                            } else if (which == 0) {
                                 nl.paree.climbpro.ui.collections.CollectionMembershipDialog
                                         .showForRoute(RouteListActivity.this, entry.routeId);
                             } else {
@@ -95,6 +122,18 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         viewModel.routes().observe(this, adapter::setItems);
+        viewModel.catalog().observe(this, catalog -> updateQuickStartButton());
+
+        binding.btnQuickStart.setOnClickListener(v -> {
+            RouteCatalogEntry route = QuickStart.resolve(
+                    QuickStart.activeRouteId(this), viewModel.catalog().getValue());
+            if (route != null) {
+                startQuickStart(route);
+            } else {
+                pickQuickStartRoute();
+            }
+        });
+        binding.btnQuickStartChange.setOnClickListener(v -> pickQuickStartRoute());
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
@@ -116,8 +155,15 @@ public final class RouteListActivity extends AppCompatActivity {
         binding.chipMixed.setOnCheckedChangeListener((btn, checked) -> {
             if (checked) viewModel.setSurfaceFilter(SurfaceType.MIXED);
         });
+        binding.maintenanceBanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this)));
 
         binding.fab.setOnClickListener(v -> showImportDialog());
+        binding.tirePressureBanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this)));
+
+        viewModel.yearlyGoal().observe(this, this::renderYearlyGoal);
+        binding.yearlyGoalCard.setOnClickListener(v -> showYearlyGoalDialog());
 
         nl.paree.climbpro.service.SyncScheduler.manualSyncInfo(this).observe(this, infos -> {
             if (infos == null || infos.isEmpty()) return;
@@ -132,11 +178,29 @@ public final class RouteListActivity extends AppCompatActivity {
                 viewModel.loadRoutes(); // new routes appear immediately (at the bottom with default sort)
             }
 
+            if (quickStartWorkId != null) {
+                for (androidx.work.WorkInfo w : infos) {
+                    if (!quickStartWorkId.equals(w.getId()) || !w.getState().isFinished()) continue;
+                    quickStartWorkId = null;
+                    // Cancelled = replaced by a newer sync, which reports for itself.
+                    if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
+                        boolean sent = w.getOutputData().getBoolean(
+                                nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
+                        Toast.makeText(this, sent
+                                        ? "Route staat klaar op je horloge"
+                                        : "Horloge niet bereikt; de sync probeert het later opnieuw",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    break;
+                }
+            }
+
             if (info.getState().isFinished()) {
                 if (info.getState() == androidx.work.WorkInfo.State.SUCCEEDED) {
                     int changed = info.getOutputData().getInt(
                             nl.paree.climbpro.service.RouteSyncWorker.KEY_CHANGED, 0);
                     viewModel.loadRoutes();
+                    viewModel.loadYearlyGoal(); // the Strava pull also refreshes the ride archive
                     Toast.makeText(this,
                             changed > 0
                                     ? ("Sync klaar: " + changed + " nieuwe/gewijzigde route(s)")
@@ -149,7 +213,7 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         ensureBluetoothPermission();
-        checkForAppUpdate();
+        checkForAppUpdate(false);
     }
 
     /**
@@ -195,7 +259,7 @@ public final class RouteListActivity extends AppCompatActivity {
      * if found, asks the user to confirm before downloading + installing it. See
      * DEPLOYMENT.md for how release APKs are built and signed.
      */
-    private void checkForAppUpdate() {
+    private void checkForAppUpdate(boolean verbose) {
         new nl.paree.climbpro.update.UpdateChecker(this).checkForUpdate(
                 new nl.paree.climbpro.update.UpdateChecker.Callback() {
                     @Override
@@ -211,12 +275,25 @@ public final class RouteListActivity extends AppCompatActivity {
 
                     @Override
                     public void onUpToDate() {
-                        // Nothing to do — already on the latest release.
+                        // The silent startup check stays silent when there's nothing new;
+                        // a manually triggered check still confirms it actually ran.
+                        if (verbose) {
+                            Toast.makeText(RouteListActivity.this,
+                                    "Je hebt al de nieuwste versie (v"
+                                            + nl.paree.climbpro.BuildConfig.VERSION_NAME + ")",
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
                     public void onCheckFailed(Exception e) {
                         Log.w("RouteListActivity", "Update check failed", e);
+                        // Previously fully silent, which made a real failure (network,
+                        // GitHub API rate limit, ...) indistinguishable from "no update
+                        // available" — always surface it so it's not a mystery.
+                        Toast.makeText(RouteListActivity.this,
+                                "Update-check mislukt: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -262,22 +339,160 @@ public final class RouteListActivity extends AppCompatActivity {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.planning.PlannedClimbListActivity.class));
             return true;
+        } else if (id == R.id.action_elevation_target) {
+            startActivity(nl.paree.climbpro.ui.planning.ElevationTargetActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_climb_of_the_week) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbOfTheWeekActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_top_climbs) {
+            startActivity(nl.paree.climbpro.ui.climbs.TopClimbsActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_favorite_start_points) {
+            startActivity(nl.paree.climbpro.ui.planning.FavoriteStartPointsActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_timeline) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbTimelineActivity.class));
+            return true;
+        } else if (id == R.id.action_rides) {
+            startActivity(nl.paree.climbpro.ui.rides.RideArchiveActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_records) {
+            startActivity(nl.paree.climbpro.ui.records.RideRecordsActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_friend_feed) {
+            startActivity(nl.paree.climbpro.ui.social.FriendFeedActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_hr_drift) {
+            startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_power_curve) {
+            startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_ftp_test) {
+            startActivity(nl.paree.climbpro.ui.records.FtpTestActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_zone_distribution) {
+            startActivity(nl.paree.climbpro.ui.records.ZoneDistributionActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_tire_pressure_log) {
+            startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_saddle_height) {
+            startActivity(nl.paree.climbpro.ui.fit.SaddleHeightActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_battery_status) {
+            startActivity(nl.paree.climbpro.ui.battery.BatteryActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_pain_log) {
+            startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_sweat_loss) {
+            startActivity(nl.paree.climbpro.ui.hydration.SweatLossActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_safe_home) {
+            startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_sunscreen) {
+            startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_clothing) {
+            startActivity(nl.paree.climbpro.ui.clothing.ClothingActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_air_quality) {
+            startActivity(nl.paree.climbpro.ui.airquality.AirQualityActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_comeback_plan) {
+            startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_unfinished_climbs) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
             return true;
         } else if (id == R.id.action_wrapped) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.wrapped.ClimbWrappedActivity.class));
             return true;
+        } else if (id == R.id.action_recovery) {
+            startActivity(new Intent(this,
+                    nl.paree.climbpro.ui.recovery.RecoveryAdviceActivity.class));
+            return true;
+        } else if (id == R.id.action_periodization) {
+            startActivity(nl.paree.climbpro.ui.training.ClimbPeriodizationActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_fitness) {
+            startActivity(nl.paree.climbpro.ui.fitness.FitnessActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_training_load_calendar) {
+            startActivity(
+                    nl.paree.climbpro.ui.fitness.TrainingLoadCalendarActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_photo_quiz) {
+            startActivity(nl.paree.climbpro.ui.quiz.PhotoQuizActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_collections) {
             startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_maintenance) {
+            startActivity(nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_torque) {
+            startActivity(nl.paree.climbpro.ui.maintenance.TorqueActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_frame_size) {
+            startActivity(nl.paree.climbpro.ui.frame.FrameSizeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_garage) {
+            startActivity(nl.paree.climbpro.ui.bike.BikeGarageActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_costs) {
+            startActivity(nl.paree.climbpro.ui.bike.BikeCostActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_climb_hygiene) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_batch_export) {
+            showBatchExportDialog();
+            return true;
+        } else if (id == R.id.action_export_csv) {
+            exportCsv();
+            return true;
+        } else if (id == R.id.action_privacy) {
+            startActivity(nl.paree.climbpro.ui.privacy.PrivacyDashboardActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_visited_regions) {
+            startActivity(nl.paree.climbpro.ui.regions.VisitedRegionsActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_elevation_goal) {
+            startActivity(nl.paree.climbpro.ui.goals.ElevationGoalActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_goal_event) {
+            startActivity(nl.paree.climbpro.ui.goals.GoalEventActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_packing_list) {
+            startActivity(nl.paree.climbpro.ui.planning.PackingListActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_bike_passport) {
+            startActivity(nl.paree.climbpro.ui.bike.BikePassportActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_badges) {
+            startActivity(nl.paree.climbpro.ui.goals.BadgesActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_monthly_challenge) {
+            startActivity(nl.paree.climbpro.ui.goals.MonthlyChallengeActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         } else if (id == R.id.action_sort) {
             showSortDialog();
+            return true;
+        } else if (id == R.id.action_status_filter) {
+            showStatusFilterDialog();
+            return true;
+        } else if (id == R.id.action_check_update) {
+            checkForAppUpdate(true);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -286,13 +501,160 @@ public final class RouteListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        refreshMaintenanceBanner();
         viewModel.loadRoutes();
+        viewModel.loadYearlyGoal();
+        refreshTirePressureBanner();
+    }
+
+    /**
+     * Shows the in-app tire-pressure reminder (issue #155) when a check is due. Evaluated on
+     * every resume, off the main thread; no notification or worker involved.
+     */
+    private void refreshTirePressureBanner() {
+        executor.execute(() -> {
+            String text = nl.paree.climbpro.ui.tire.TirePressureStatusLoader
+                    .load(getApplicationContext(), System.currentTimeMillis() / 1000L)
+                    .bannerText();
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                binding.tirePressureBanner.setText(text);
+                binding.tirePressureBanner.setVisibility(
+                        text != null ? android.view.View.VISIBLE : android.view.View.GONE);
+            });
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         executor.shutdown();
+    }
+
+    /**
+     * Yearly km goal card (issue #157). Without a goal the card stays visible with this year's
+     * km and a subtle prompt, so the feature is discoverable; the bar is then hidden.
+     */
+    private void renderYearlyGoal(YearlyDistanceGoalCalculator.Progress p) {
+        if (p == null) return;
+        binding.yearlyGoalCard.setVisibility(android.view.View.VISIBLE);
+        binding.yearlyGoalTitle.setText(YearlyDistanceGoalCalculator.headline(p));
+        if (p.hasGoal()) {
+            binding.yearlyGoalProgress.setVisibility(android.view.View.VISIBLE);
+            binding.yearlyGoalProgress.setProgressCompat(
+                    (int) Math.round(p.fraction * binding.yearlyGoalProgress.getMax()), false);
+            binding.yearlyGoalHint.setText(YearlyDistanceGoalCalculator.paceHint(p));
+            binding.yearlyGoalHint.setTextColor(ContextCompat.getColor(this,
+                    p.pace == YearlyDistanceGoalCalculator.Pace.BEHIND_SCHEDULE
+                            ? R.color.color_text_tertiary : R.color.color_success));
+        } else {
+            binding.yearlyGoalProgress.setVisibility(android.view.View.GONE);
+            binding.yearlyGoalHint.setText("Tik om een jaardoel in te stellen");
+            binding.yearlyGoalHint.setTextColor(
+                    ContextCompat.getColor(this, R.color.color_text_tertiary));
+        }
+    }
+
+    /** Sets or clears the yearly km goal; empty or 0 clears it. */
+    private void showYearlyGoalDialog() {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint("Doel in km, bv. 5000");
+        int current = viewModel.getYearlyGoalKm();
+        if (current > 0) {
+            input.setText(String.valueOf(current));
+            input.setSelection(input.getText().length());
+        }
+        android.widget.FrameLayout container = new android.widget.FrameLayout(this);
+        int pad = (int) (20 * getResources().getDisplayMetrics().density);
+        container.setPadding(pad, pad / 2, pad, 0);
+        container.addView(input);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Jaardoel " + java.time.LocalDate.now().getYear())
+                .setMessage("Hoeveel km wil je dit jaar fietsen? Leeg of 0 wist het doel.")
+                .setView(container)
+                .setPositiveButton("Opslaan", (d, w) -> {
+                    String text = input.getText().toString().trim();
+                    int km;
+                    try {
+                        km = text.isEmpty() ? 0 : Integer.parseInt(text);
+                    } catch (NumberFormatException e) {
+                        km = -1; // too many digits for an int
+                    }
+                    if (km < 0 || km > YearlyDistanceGoalRepository.MAX_GOAL_KM) {
+                        Toast.makeText(this, "Ongeldig doel (max "
+                                        + YearlyDistanceGoalRepository.MAX_GOAL_KM + " km)",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    viewModel.setYearlyGoalKm(km);
+                })
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
+    /**
+     * Shows the maintenance-due banner (issue #154) when a component needs service. Evaluated
+     * on every resume, off the main thread; no notification or worker involved.
+     */
+    private void refreshMaintenanceBanner() {
+        executor.execute(() -> {
+            String text = nl.paree.climbpro.ui.maintenance.MaintenanceStatusLoader
+                    .load(getApplicationContext(), System.currentTimeMillis() / 1000L)
+                    .bannerText();
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                binding.maintenanceBanner.setText(text);
+                binding.maintenanceBanner.setVisibility(
+                        text != null ? android.view.View.VISIBLE : android.view.View.GONE);
+            });
+        });
+    }
+
+    private void updateQuickStartButton() {
+        RouteCatalogEntry route = QuickStart.resolve(
+                QuickStart.activeRouteId(this), viewModel.catalog().getValue());
+        binding.btnQuickStart.setText(QuickStart.buttonLabel(route));
+    }
+
+    /** Lets the user choose which route quick start sends; the pick starts the ride at once. */
+    private void pickQuickStartRoute() {
+        List<RouteCatalogEntry> catalog = viewModel.catalog().getValue();
+        if (catalog == null || catalog.isEmpty()) {
+            Toast.makeText(this, "Importeer eerst een route", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        List<RouteCatalogEntry> sorted = RouteSorting.sort(
+                new java.util.ArrayList<>(catalog), RouteSorting.SORT_NAME_ASC);
+        String[] names = new String[sorted.size()];
+        for (int i = 0; i < sorted.size(); i++) names[i] = QuickStart.displayName(sorted.get(i));
+        new AlertDialog.Builder(this)
+                .setTitle("Welke route rij je?")
+                .setItems(names, (d, which) -> startQuickStart(sorted.get(which)))
+                .show();
+    }
+
+    private void startQuickStart(RouteCatalogEntry route) {
+        quickStartWorkId = QuickStart.start(this, route.routeId);
+        updateQuickStartButton();
+        Toast.makeText(this, QuickStart.displayName(route) + " wordt naar je horloge gestuurd",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /** Issue #256: exports routes + climb attempts as CSV via the share sheet. */
+    private void exportCsv() {
+        executor.execute(() -> {
+            try {
+                Intent share = nl.paree.climbpro.ui.export.CsvExportHandoff.export(this);
+                runOnUiThread(() -> startActivity(Intent.createChooser(share, "Exporteer CSV")));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "CSV-export mislukt: " + (e.getMessage() != null
+                                ? e.getMessage() : e.getClass().getSimpleName()),
+                        Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void confirmDeleteRoute(String routeId, String name) {
@@ -307,9 +669,15 @@ public final class RouteListActivity extends AppCompatActivity {
     private void showImportDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Add route")
-                .setItems(new String[]{"Import GPX file", "Sync from Strava"}, (d, which) -> {
+                .setItems(new String[]{"Import GPX file", "Sync from Strava",
+                        "Klimcode importeren", "MyWhoosh-rit importeren (FIT)"}, (d, which) -> {
                     if (which == 0) {
                         gpxPicker.launch(new String[]{"*/*"});
+                    } else if (which == 3) {
+                        showMyWhooshImportHelp();
+                    } else if (which == 2) {
+                        nl.paree.climbpro.ui.share.ClimbCodeSharing.showImportDialog(
+                                this, executor, viewModel::loadRoutes);
                     } else {
                         if (viewModel.isSignedInToStrava()) {
                             viewModel.triggerSync();
@@ -337,30 +705,214 @@ public final class RouteListActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Batch-export of every climb ridden within a chosen calendar year as one combined GPX
+     * file (issue #91) — reuses the single-climb export path ({@link
+     * nl.paree.climbpro.domain.climb.ClimbGpxWriter}) in a loop via {@link
+     * nl.paree.climbpro.domain.climb.BatchClimbGpxWriter}, filtered by {@link
+     * nl.paree.climbpro.domain.climb.SeasonClimbFilter}. "Season" here is kept simple: a
+     * year picker showing only years that actually have dated attempts.
+     */
+    private void showBatchExportDialog() {
+        executor.execute(() -> {
+            nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
+                    new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
+            List<Integer> years = nl.paree.climbpro.domain.climb.SeasonClimbFilter
+                    .yearsWithAttempts(attemptRepo.loadAll(), java.util.TimeZone.getDefault());
+            runOnUiThread(() -> {
+                if (years.isEmpty()) {
+                    Toast.makeText(this, "Geen ritten met datum gevonden om te exporteren",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String[] labels = new String[years.size()];
+                for (int i = 0; i < years.size(); i++) labels[i] = String.valueOf(years.get(i));
+                new AlertDialog.Builder(this)
+                        .setTitle("Exporteer seizoen")
+                        .setItems(labels, (d, which) -> exportSeason(years.get(which)))
+                        .show();
+            });
+        });
+    }
+
+    private void exportSeason(int year) {
+        executor.execute(() -> {
+            try {
+                RouteRepository repo = new RouteRepository(this);
+                nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
+                        new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
+                List<nl.paree.climbpro.data.route.StoredClimbAttempt> attempts = attemptRepo.loadAll();
+
+                long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(
+                        year, java.util.TimeZone.getDefault());
+                // One route at a time, keeping only routes with a climb ridden that year:
+                // holding every route's full geometry at once can exhaust the heap on a large
+                // library (OOM is not caught below).
+                List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches =
+                        new ArrayList<>();
+                java.util.Set<String> seenClimbIds = new java.util.HashSet<>();
+                for (nl.paree.climbpro.data.route.RouteCatalogEntry entry : repo.loadCatalog()) {
+                    try {
+                        StoredRoute route = repo.loadRoute(entry.routeId);
+                        for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m
+                                : nl.paree.climbpro.domain.climb.SeasonClimbFilter.climbsInPeriod(
+                                        java.util.Collections.singletonList(route), attempts,
+                                        range[0], range[1])) {
+                            int len = m.climb.length > 0 ? m.climb.length
+                                    : (m.climb.endDistance - m.climb.startDistance);
+                            if (seenClimbIds.add(nl.paree.climbpro.domain.climb.ClimbIdentity.of(
+                                    m.climb.startLat, m.climb.startLon, len))) {
+                                matches.add(m);
+                            }
+                        }
+                    } catch (IOException e) {
+                        Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
+                    }
+                }
+
+                if (matches.isEmpty()) {
+                    runOnUiThread(() -> Toast.makeText(this,
+                            "Geen klimmen gevonden in " + year, Toast.LENGTH_SHORT).show());
+                    return;
+                }
+
+                Map<String, nl.paree.climbpro.domain.climb.LogbookCalculator.Summary> summaries =
+                        nl.paree.climbpro.domain.climb.LogbookCalculator.summaries(attempts);
+
+                int privacyRadiusM = nl.paree.climbpro.domain.climb.CoordinateFuzzer.effectiveRadius(
+                        androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                                .getInt(nl.paree.climbpro.domain.climb.CoordinateFuzzer.PREF_PRIVACY_RADIUS_M,
+                                        nl.paree.climbpro.domain.climb.CoordinateFuzzer.DEFAULT_PRIVACY_RADIUS_M));
+
+                List<nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry> exportEntries =
+                        new ArrayList<>();
+                for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m : matches) {
+                    if (m.climb.isHome && !nl.paree.climbpro.domain.climb.CoordinateFuzzer
+                            .isUsableZoneCentre(m.climb.privacyCentreLat, m.climb.privacyCentreLon,
+                                    m.climb.startLat, m.climb.startLon, privacyRadiusM)) {
+                        // Home climb (issue #92) without a usable zone centre: draw and persist
+                        // one before sharing, exactly like the single-climb export does.
+                        double[] centre = nl.paree.climbpro.domain.climb.CoordinateFuzzer
+                                .randomZoneCentre(m.climb.startLat, m.climb.startLon,
+                                        privacyRadiusM, new java.security.SecureRandom());
+                        repo.setClimbPrivacyCentre(m.route.routeId, m.climbIndex,
+                                centre[0], centre[1]);
+                        m.climb.privacyCentreLat = centre[0];
+                        m.climb.privacyCentreLon = centre[1];
+                    }
+                    int segCount = m.climb.segments != null ? m.climb.segments.size() : 0;
+                    int len = m.climb.length > 0 ? m.climb.length
+                            : (m.climb.endDistance - m.climb.startDistance);
+                    String climbId = nl.paree.climbpro.domain.climb.ClimbIdentity.of(
+                            m.climb.startLat, m.climb.startLon, len);
+                    int[] bestSplitSec = nl.paree.climbpro.domain.climb.SegmentPrCalculator
+                            .bestSplits(climbId, segCount, attempts);
+                    nl.paree.climbpro.domain.climb.LogbookCalculator.Summary summary =
+                            summaries.get(climbId);
+                    Integer bestElapsedSec = summary != null ? summary.prSec : null;
+                    exportEntries.add(new nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry(
+                            m.route, m.climb, m.climbIndex, bestSplitSec, bestElapsedSec));
+                }
+
+                String gpx = nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.toGpx(exportEntries,
+                        privacyRadiusM);
+                File file = nl.paree.climbpro.ui.climbs.ClimbGpxExportHandoff.writeGpxFile(
+                        this, gpx, "season_" + year);
+                runOnUiThread(() -> shareGpxFile(file, "Exporteer seizoen " + year));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Export mislukt: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void shareGpxFile(File file, String chooserTitle) {
+        android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                this, getPackageName() + ".fileprovider", file);
+        Intent share = nl.paree.climbpro.ui.climbs.ClimbGpxExportHandoff.buildShareIntent(uri);
+        startActivity(Intent.createChooser(share, chooserTitle));
+    }
+
+    /** Bucket-list filter (issue #158): Alle / Wil ik rijden / Gereden. */
+    private void showStatusFilterDialog() {
+        int current = viewModel.getStatusFilter();
+        new AlertDialog.Builder(this)
+                .setTitle("Filter op status")
+                .setSingleChoiceItems(STATUS_FILTER_LABELS, current, (d, which) -> {
+                    viewModel.setStatusFilter(which);
+                    updateStatusFilterSubtitle(which);
+                    d.dismiss();
+                })
+                .show();
+    }
+
+    /** Shows the active status filter in the toolbar so a filtered list isn't mistaken for missing routes. */
+    private void updateStatusFilterSubtitle(int filter) {
+        if (getSupportActionBar() == null) return;
+        boolean filtered = filter > RouteStatusFilter.FILTER_ALL && filter < STATUS_FILTER_LABELS.length;
+        getSupportActionBar().setSubtitle(filtered ? "Filter: " + STATUS_FILTER_LABELS[filter] : null);
+    }
+
+    /** Explains where MyWhoosh keeps the FIT file before opening the picker (issue #342). */
+    private void showMyWhooshImportHelp() {
+        new AlertDialog.Builder(this)
+                .setTitle("MyWhoosh-rit importeren")
+                .setMessage("Download in MyWhoosh (of via Strava / Garmin Connect \u2192 "
+                        + "\"Exporteer origineel\") het FIT-bestand van je rit en kies het hier. "
+                        + "De klimmen worden gedetecteerd en de route komt in de collectie \""
+                        + MyWhooshRouteStore.COLLECTION + "\".\n\nRitten zonder GPS-posities worden "
+                        + "alleen als profiel getoond (niet voor radius-modus of navigatie).")
+                .setPositiveButton("Kies bestand", (d, w) -> myWhooshPicker.launch(new String[]{"*/*"}))
+                .setNegativeButton("Annuleren", null)
+                .show();
+    }
+
     private void importGpx(android.net.Uri uri) {
+        importRoute(uri, false);
+    }
+
+    /**
+     * Parses a GPX (or, for {@code myWhoosh}, a MyWhoosh FIT/GPX export) and runs the climb
+     * pipeline. Virtual MyWhoosh rides without GPS skip the duplicate check: their synthetic
+     * coordinates all start at 0,0 and would falsely match each other.
+     */
+    private void importRoute(android.net.Uri uri, boolean myWhoosh) {
         executor.execute(() -> {
             try (InputStream in = getContentResolver().openInputStream(uri)) {
                 if (in == null) throw new IOException("Cannot open file");
                 byte[] bytes = readStream(in);
 
-                List<RoutePoint> raw       = GpxParser.parse(new java.io.ByteArrayInputStream(bytes));
+                boolean virtual = false;
+                List<RoutePoint> raw;
+                if (myWhoosh) {
+                    MyWhooshRouteReader.Result read = MyWhooshRouteReader.read(bytes);
+                    raw = read.points;
+                    virtual = read.virtual;
+                } else {
+                    raw = GpxParser.parse(new java.io.ByteArrayInputStream(bytes));
+                }
                 List<RoutePoint> withDist  = CumulativeDistance.compute(raw);
                 List<RoutePoint> smoothed  = ElevationSmoother.smooth(withDist, 5);
-                List<RoutePoint> simple    = RouteSimplifier.simplify(smoothed, 5.0);
+                List<RoutePoint> simple    = myWhoosh
+                        ? MyWhooshRouteReader.simplify(smoothed, virtual)
+                        : RouteSimplifier.simplify(smoothed, 5.0);
                 List<Climb>      climbs    = ClimbDetector.detect(simple);
                 int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
                         .detectFromGpxBytes(bytes);
+                final boolean isVirtual = virtual;
 
                 RouteRepository repo = new RouteRepository(this);
-                List<DuplicateClimbMatcher.Match> duplicates = DuplicateClimbMatcher.findDuplicates(
-                        climbs, repo.loadCatalog(), ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
+                List<DuplicateClimbMatcher.Match> duplicates = isVirtual
+                        ? new ArrayList<>()
+                        : DuplicateClimbMatcher.findDuplicates(climbs, repo.loadCatalog(),
+                                ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
 
                 if (duplicates.isEmpty()) {
-                    finishImport(uri, bytes, simple, climbs, detectedSurface);
+                    finishImport(uri, bytes, simple, climbs, detectedSurface, myWhoosh, isVirtual);
                 } else {
                     runOnUiThread(() -> promptDuplicateResolution(duplicates,
-                            () -> executor.execute(
-                                    () -> finishImport(uri, bytes, simple, climbs, detectedSurface))));
+                            () -> executor.execute(() -> finishImport(uri, bytes, simple, climbs,
+                                    detectedSurface, myWhoosh, isVirtual))));
                 }
             } catch (GpxParseException e) {
                 runOnUiThread(() -> Toast.makeText(this,
@@ -403,17 +955,23 @@ public final class RouteListActivity extends AppCompatActivity {
     }
 
     private void finishImport(android.net.Uri uri, byte[] bytes, List<RoutePoint> simple,
-                              List<Climb> climbs, int detectedSurface) {
+                              List<Climb> climbs, int detectedSurface,
+                              boolean myWhoosh, boolean virtual) {
         try {
-            String routeId = "gpx_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-            StoredRoute stored = new StoredRoute();
-            stored.routeId      = routeId;
-            stored.name         = uri.getLastPathSegment();
-            stored.importedAtMs = System.currentTimeMillis();
-            stored.sourceHash   = sha256(bytes);
-
+            String prefix = myWhoosh ? "mywhoosh_" : "gpx_";
+            String routeId = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             RouteRepository repo = new RouteRepository(this);
-            repo.saveRoute(stored, simple, climbs);
+            if (myWhoosh) {
+                new MyWhooshRouteStore(this).save(routeId, fileTitle(uri), sha256(bytes), virtual,
+                        simple, climbs);
+            } else {
+                StoredRoute stored = new StoredRoute();
+                stored.routeId      = routeId;
+                stored.name         = uri.getLastPathSegment();
+                stored.importedAtMs = System.currentTimeMillis();
+                stored.sourceHash   = sha256(bytes);
+                repo.saveRoute(stored, simple, climbs);
+            }
             if (detectedSurface != SurfaceType.UNKNOWN) {
                 try {
                     StoredRoute saved = repo.loadRoute(routeId);
@@ -436,6 +994,15 @@ public final class RouteListActivity extends AppCompatActivity {
             runOnUiThread(() -> Toast.makeText(this,
                     "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
+    }
+
+    /** "primary:Download/Alula climb.fit" -> "Alula climb". */
+    private static String fileTitle(android.net.Uri uri) {
+        String name = uri.getLastPathSegment();
+        if (name == null) return "rit";
+        name = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf(':')) + 1);
+        int dot = name.lastIndexOf('.');
+        return dot > 0 ? name.substring(0, dot) : name;
     }
 
     private static byte[] readStream(InputStream in) throws IOException {

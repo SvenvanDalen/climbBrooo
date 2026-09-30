@@ -1,5 +1,6 @@
 package nl.paree.climbpro.domain.climb;
 
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.segment.Segment;
 
@@ -81,6 +82,31 @@ public final class ClimbShapeClassifier {
             gradients[i] = segments.get(i).gradient;
         }
         return classify(gradients);
+    }
+
+    /**
+     * Resolves the shape that should actually be shown/used for a stored climb: the user's
+     * manual override (issue #36) when set, otherwise the auto-computed {@link StoredClimb#shape}
+     * when set, otherwise a fresh classification of the currently stored segments. This is the
+     * single place override-wins-over-auto logic lives — callers should never read
+     * {@link StoredClimb#shape} or {@link StoredClimb#shapeOverride} directly.
+     */
+    public static ClimbShape effectiveShape(StoredClimb climb) {
+        if (climb == null) return ClimbShape.STEADY;
+        ClimbShape override = parse(climb.shapeOverride);
+        if (override != null) return override;
+        ClimbShape auto = parse(climb.shape);
+        if (auto != null) return auto;
+        return classifyStored(climb.segments);
+    }
+
+    private static ClimbShape parse(String name) {
+        if (name == null) return null;
+        try {
+            return ClimbShape.valueOf(name);
+        } catch (IllegalArgumentException unknownValue) {
+            return null;
+        }
     }
 
     private static double average(double[] values, int fromInclusive, int toExclusive) {

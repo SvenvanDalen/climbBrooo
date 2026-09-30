@@ -1,6 +1,8 @@
 package nl.paree.climbpro.ui.climbs;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -11,12 +13,14 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
+import nl.paree.climbpro.ui.activity.ActivityImportActivity;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,10 +56,49 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
         });
         viewModel.streak().observe(this, this::renderStreak);
 
+        TextView levelTitle = findViewById(R.id.levelTitle);
+        TextView levelXp = findViewById(R.id.levelXp);
+        LinearProgressIndicator bar =
+                findViewById(R.id.levelProgress);
+        viewModel.progress().observe(this, p -> {
+            levelTitle.setText(p.label());
+            bar.setProgress((int) (100 * p.xpIntoLevel / Math.max(1, p.xpForNextLevel)));
+            levelXp.setText(p.totalXp + " XP · nog " + (p.xpForNextLevel - p.xpIntoLevel)
+                    + " XP tot level " + (p.level + 1));
+        });
+
         Button sync = findViewById(R.id.syncButton);
         sync.setOnClickListener(v -> syncFromStrava());
+        findViewById(R.id.importGarminButton).setOnClickListener(v -> startActivity(
+                ActivityImportActivity.pickIntent(this)));
 
         viewModel.loadLogbook();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        viewModel.loadLogbook(); // back from a Garmin import
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.logbook_menu, menu);
+        // Restore the checked state after rotation: the ViewModel survives it, the menu doesn't.
+        MenuItem sortByRating = menu.findItem(R.id.action_sort_by_rating);
+        if (sortByRating != null) sortByRating.setChecked(viewModel.isSortByRating());
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_sort_by_rating) {
+            boolean byRating = !item.isChecked();
+            item.setChecked(byRating);
+            viewModel.setSortByRating(byRating);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void renderStreak(nl.paree.climbpro.domain.climb.ClimbStreakCalculator.Streak streak) {
@@ -85,8 +128,15 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
                         new RouteRepository(this),
                         new ClimbAttemptRepository(this));
                 int created = repo.syncActivities();
+                boolean reauthNeeded = repo.titleUpdateAuthExpired();
                 runOnUiThread(() -> {
                     Toast.makeText(this, created + " nieuwe poging(en)", Toast.LENGTH_SHORT).show();
+                    if (reauthNeeded) {
+                        Toast.makeText(this,
+                                "Strava-titel bijwerken mislukt — verbind Strava opnieuw "
+                                        + "om titel-sjablonen te gebruiken",
+                                Toast.LENGTH_LONG).show();
+                    }
                     viewModel.loadLogbook();
                 });
             } catch (Exception e) {

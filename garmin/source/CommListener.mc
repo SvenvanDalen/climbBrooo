@@ -195,6 +195,45 @@ class PhoneMessageCallback {
         } else {
             data.hasVam[idx] = false;
         }
+
+        // Optional interval block "ib" (issue #180): [targetWatts, lowWatts, highWatts],
+        // computed on the phone from % FTP. Anything malformed disables the block.
+        data.hasBlock[idx] = false;
+        var ib = climbDict.get("ib");
+        if (ib != null && ib instanceof Toybox.Lang.Array && ib.size() >= 3
+                && ib[0] instanceof Toybox.Lang.Number && ib[1] instanceof Toybox.Lang.Number
+                && ib[2] instanceof Toybox.Lang.Number
+                && ib[1] > 0 && ib[1] <= ib[2]) {
+            data.hasBlock[idx]    = true;
+            data.blockTarget[idx] = ib[0];
+            data.blockLow[idx]    = ib[1];
+            data.blockHigh[idx]   = ib[2];
+        }
+
+        // Optional zc array (issue #66): FTP intensity-zone color index per segment, parallel
+        // to segs. Replaced (or cleared to null) on every payload so a resync without zc
+        // can't leave stale zones behind.
+        data.segZone[idx] = parseZoneColors(climbDict.get("zc"), data.segColor[idx], data.segCount[idx]);
+    }
+
+    // Returns a segCnt-long Array of color indices from zc, or null when zc is absent,
+    // not an Array, or shorter than the segment count (then the climb has no zones and the
+    // renderers use the gradient colors). An entry outside 0-5 falls back to that
+    // segment's gradient color instead of discarding the whole array.
+    hidden function parseZoneColors(zc, gradColors, segCnt) {
+        if (zc == null || !(zc instanceof Toybox.Lang.Array) || segCnt <= 0 || zc.size() < segCnt) {
+            return null;
+        }
+        var out = new [segCnt];
+        for (var s = 0; s < segCnt; s++) {
+            var zv = zc[s];
+            if (zv instanceof Toybox.Lang.Number && zv.toNumber() >= 0 && zv.toNumber() <= 5) {
+                out[s] = zv.toNumber();
+            } else {
+                out[s] = gradColors[s];
+            }
+        }
+        return out;
     }
 
     hidden function getInt(dict, key, defaultVal) {

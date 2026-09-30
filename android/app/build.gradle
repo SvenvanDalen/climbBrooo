@@ -21,9 +21,10 @@ android {
         targetSdk 34
         // CI (build-android.yml) passes the GitHub Actions run number here so every
         // release build gets a strictly increasing versionCode; local builds fall
-        // back to 1.
+        // back to 1. versionName is "1.0.<run_number>", matching the release tag
+        // (minus the "v"); local builds fall back to "1.0.0-dev".
         versionCode (System.getenv('VERSION_CODE') ? System.getenv('VERSION_CODE').toInteger() : 1)
-        versionName '0.1.0'
+        versionName (System.getenv('VERSION_NAME') ?: '1.0.0-dev')
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
@@ -36,8 +37,11 @@ android {
         if (localPropsFile.exists()) {
             localProps.load(new FileInputStream(localPropsFile))
         }
-        def stravaClientId = localProps.getProperty('strava.client.id', '')
-        def stravaClientSecret = localProps.getProperty('strava.client.secret', '')
+        // CI has no local.properties (gitignored), so fall back to env vars there —
+        // same pattern as VERSION_CODE above. Set STRAVA_CLIENT_ID/STRAVA_CLIENT_SECRET
+        // as GitHub Actions secrets for the release workflow.
+        def stravaClientId = localProps.getProperty('strava.client.id', System.getenv('STRAVA_CLIENT_ID') ?: '')
+        def stravaClientSecret = localProps.getProperty('strava.client.secret', System.getenv('STRAVA_CLIENT_SECRET') ?: '')
         buildConfigField 'String', 'STRAVA_CLIENT_ID', "\"${stravaClientId}\""
         buildConfigField 'String', 'STRAVA_CLIENT_SECRET', "\"${stravaClientSecret}\""
         manifestPlaceholders = [
@@ -182,6 +186,16 @@ dependencies {
 
     // Map
     implementation 'org.osmdroid:osmdroid-android:6.1.18'
+
+    // Android Health Connect (issue #255). Pinned to 1.1.0-alpha08: later versions need
+    // compileSdk 35/36 and AGP 8.9+. Coroutines are only needed to call its suspend API
+    // from Java (runBlocking on a background thread).
+    implementation 'androidx.health.connect:connect-client:1.1.0-alpha08'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+    // connect-client pulls full Guava in at runtime, which swaps WorkManager's
+    // listenablefuture for Guava's empty placeholder; put Guava on the compile classpath too
+    // so ListenableWorker's ListenableFuture still resolves.
+    implementation 'com.google.guava:guava:31.1-android'
 
     // Tests
     testImplementation 'junit:junit:4.13.2'

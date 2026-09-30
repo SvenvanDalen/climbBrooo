@@ -2,14 +2,19 @@ package nl.paree.climbpro.ui.routes;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -18,13 +23,33 @@ import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
+import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
+import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
+import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.domain.weather.LoopWindAdvice;
+import nl.paree.climbpro.domain.weather.LoopWindAdvisor;
+import nl.paree.climbpro.domain.weather.PrecipitationGrid;
+import nl.paree.climbpro.domain.weather.RadarTiles;
+import nl.paree.climbpro.domain.weather.RainRadarFrame;
+import nl.paree.climbpro.domain.weather.RouteRainSummary;
+import nl.paree.climbpro.domain.weather.RouteSampler;
+import nl.paree.climbpro.domain.weather.TemperatureGrid;
+import nl.paree.climbpro.domain.weather.TemperatureTrend;
+import nl.paree.climbpro.ui.climbs.ClimbBulkRenameActivity;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 
+import java.io.File;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +65,18 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private RouteDetailViewModel        viewModel;
     private RouteDetailAdapter          adapter;
     private String                      routeId;
+
+    /** Issue #245: forecast samples every 5 km, at most 25 (one Open-Meteo request). */
+    private static final double RAIN_SAMPLE_STEP_M = 5_000;
+    private static final int    RAIN_MAX_SAMPLES   = 25;
+    private static final int    RAIN_FORECAST_HOURS = 6;
+
+    /** Issue #174: wind averaged over this many forecast hours from now for the loop advice. */
+    private static final int LOOP_WIND_HOURS = 3;
+
+    private RainRadarOverlay rainOverlay;
+    private boolean          rainShown;
+    private boolean          temperatureShown;
 
     public static Intent intentFor(Context ctx, String routeId) {
         Intent i = new Intent(ctx, RouteDetailActivity.class);
@@ -94,12 +131,24 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnSelectRoute.setEnabled(p != null);
             binding.btnShareToGarmin.setEnabled(p != null);
         });
+        viewModel.rideStatus().observe(this, status ->
+                binding.btnRideStatus.setText("Status: " + RouteRideStatus.label(status)));
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
+        viewModel.climbUsageTypes().observe(this, types -> adapter.setClimbUsageTypes(types));
+        viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
+        viewModel.elevationProfile().observe(this, profile -> {
+            boolean empty = profile == null || profile.isEmpty();
+            binding.routeProfile.setProfile(profile);
+            binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
+            binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+        });
 
-        viewModel.error().observe(this,
-                msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
+        viewModel.error().observe(this, msg -> {
+            binding.btnReverseRoute.setEnabled(true);
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        });
         viewModel.saved().observe(this, ok -> {
             if (Boolean.TRUE.equals(ok)) Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
         });
@@ -107,6 +156,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
+        binding.btnRideStatus.setOnClickListener(v -> showRideStatusDialog());
         binding.btnSaveNotes.setOnClickListener(v ->
                 viewModel.saveNotes(routeId, binding.notesEdit.getText().toString()));
         binding.btnSelectRoute.setOnClickListener(v ->
@@ -118,7 +168,34 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnShareToGarmin.setOnClickListener(v ->
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(),
                         this::shareToGarminConnect));
+        binding.btnExportBikeComputer.setOnClickListener(v -> showBikeComputerExport());
+        binding.btnJoinRoute.setOnClickListener(v -> RouteJoinDialog.show(this, routeId));
         binding.btnSurfaceSections.setOnClickListener(v -> showSurfaceSectionsManager());
+        binding.btnBulkRenameClimbs.setOnClickListener(v ->
+                startActivity(ClimbBulkRenameActivity.intentFor(this, routeId)));
+        binding.btnReverseRoute.setOnClickListener(v -> {
+            binding.btnReverseRoute.setEnabled(false);
+            viewModel.reverseRoute(routeId);
+        });
+        viewModel.reversedRoute().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeReversedRoute();
+            binding.btnReverseRoute.setEnabled(true);
+            Toast.makeText(this, result.created
+                            ? getString(R.string.route_reverse_created, result.climbCount)
+                            : getString(R.string.route_reverse_exists),
+                    Toast.LENGTH_LONG).show();
+            startActivity(intentFor(this, result.routeId));
+        });
+        binding.btnTirePressure.setOnClickListener(v -> {
+            StoredRoute r = viewModel.route().getValue();
+            if (r != null) TirePressureAdviceDialog.show(this, r);
+        });
+        binding.btnFuelPlanner.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.nutrition.FuelPlannerActivity.intentFor(this, routeId)));
+        binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
+        binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
+        binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
 
         viewModel.loadRoute(routeId);
     }
@@ -147,6 +224,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder();
         sb.append(p.climbCount).append(" klimmen · ")
           .append(p.totalElevationGain).append(" hm");
+        String cmp = ElevationComparisons.describe(p.totalElevationGain);
+        if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
         if (p.hardestClimbName != null) {
             sb.append("\nZwaarste: ").append(p.hardestClimbName)
               .append(String.format(java.util.Locale.US, " (%.1f%%)", p.hardestClimbGradient * 100));
@@ -175,6 +254,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         polyline.setPoints(points);
 
         binding.mapView.getOverlays().clear();
+        if (rainOverlay != null) binding.mapView.getOverlays().add(rainOverlay);
         binding.mapView.getOverlays().add(polyline);
 
         drawSurfaceSections(route);
@@ -210,6 +290,311 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
             binding.mapView.getOverlays().add(overlay);
         }
+    }
+
+    /**
+     * Issue #245: RainViewer's latest radar image over the map plus Open-Meteo's hourly rain
+     * forecast along the route. Both fetched off the UI thread; each fails independently.
+     */
+    private void toggleRainRadar() {
+        if (rainShown) {
+            if (rainOverlay != null) binding.mapView.getOverlays().remove(rainOverlay);
+            rainOverlay = null;
+            rainShown = false;
+            binding.rainSummary.setVisibility(View.GONE);
+            binding.btnRainRadar.setText("Regenradar tonen");
+            binding.mapView.invalidate();
+            return;
+        }
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null || r.lats == null || r.lons == null || r.lats.length == 0) {
+            Toast.makeText(this, "Route heeft geen coördinaten", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        binding.btnRainRadar.setEnabled(false); // one request at a time
+        binding.btnRainRadar.setText("Regenradar laden…");
+        final List<RadarTiles.Tile> tiles = RadarTiles.forRoute(r.lats, r.lons);
+        final List<RouteSampler.Sample> samples =
+                RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
+
+        // Issue #245 fix: the radar-tile fetch and the Open-Meteo forecast fetch are independent
+        // network calls. Run them on separate threads (forecast started first) instead of one
+        // after another, so a slow radar tile source can't make the forecast wait behind up to
+        // MAX_TILES sequential 15 s call timeouts.
+        final java.util.concurrent.atomic.AtomicReference<String> radarLineRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<RainRadarOverlay> overlayRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        final java.util.concurrent.atomic.AtomicReference<String> forecastRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+
+        Thread radarThread = new Thread(() -> {
+            RainRadarOverlay overlay = null;
+            String radarLine;
+            try {
+                RainViewerClient rv = new RainViewerClient();
+                RainRadarFrame frame = rv.fetchLatestFrame();
+                if (frame == null) {
+                    radarLine = "Geen radarbeeld beschikbaar";
+                } else {
+                    List<RadarTiles.Tile> got = new ArrayList<>();
+                    List<Bitmap> bitmaps = new ArrayList<>();
+                    for (RadarTiles.Tile t : tiles) {
+                        try {
+                            byte[] png = rv.fetchTile(frame.tileUrl(t));
+                            Bitmap b;
+                            try {
+                                b = BitmapFactory.decodeByteArray(png, 0, png.length);
+                            } catch (OutOfMemoryError oom) {
+                                b = null; // decode failed; skip this tile, keep the rest
+                            }
+                            if (b != null) {
+                                got.add(t);
+                                bitmaps.add(b);
+                            }
+                        } catch (java.io.InterruptedIOException timeout) {
+                            // slow network: stop asking for more tiles, keep what already decoded
+                            break;
+                        } catch (java.io.IOException ignored) {
+                            // skip this tile; the others still show
+                        }
+                    }
+                    if (got.isEmpty()) {
+                        radarLine = "Radar ophalen mislukt: geen tegels ontvangen";
+                    } else {
+                        overlay = new RainRadarOverlay(got, bitmaps);
+                        radarLine = "Radarbeeld van " + DateTimeFormatter.ofPattern("HH:mm")
+                                .withZone(ZoneId.systemDefault()).format(frame.time);
+                    }
+                }
+            } catch (Exception e) {
+                radarLine = "Radar ophalen mislukt: " + reason(e);
+            }
+            radarLineRef.set(radarLine);
+            overlayRef.set(overlay);
+        }, "rain-radar-tiles");
+
+        Thread forecastThread = new Thread(() -> {
+            String forecast;
+            try {
+                PrecipitationGrid g = new OpenMeteoClient()
+                        .fetchPrecipitation(samples, RAIN_FORECAST_HOURS);
+                forecast = RouteRainSummary.describe(samples, g, Instant.now(),
+                        RAIN_FORECAST_HOURS, ZoneId.systemDefault());
+            } catch (Exception e) {
+                forecast = "Verwachting ophalen mislukt: " + reason(e);
+            }
+            forecastRef.set(forecast);
+        }, "rain-radar-forecast");
+
+        new Thread(() -> {
+            forecastThread.start();
+            radarThread.start();
+            try {
+                forecastThread.join();
+                radarThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            final String text = radarLineRef.get() + "\n\n" + forecastRef.get()
+                    + "\n\nBron: RainViewer (radar), Open-Meteo (verwachting)";
+            final RainRadarOverlay result = overlayRef.get();
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnRainRadar.setEnabled(true);
+                binding.btnRainRadar.setText("Regenradar verbergen");
+                rainShown = true;
+                rainOverlay = result;
+                if (result != null) {
+                    binding.mapView.getOverlays().add(0, result);
+                    binding.mapView.invalidate();
+                }
+                binding.rainSummary.setText(text);
+                binding.rainSummary.setVisibility(View.VISIBLE);
+            });
+        }, "rain-radar").start();
+    }
+
+    /**
+     * Issue #153: ask the start time, then chart the expected temperature at each route sample
+     * at the moment the rider passes it (pace from the pacing plan, else 25 km/h).
+     */
+    private void toggleTemperatureTrend() {
+        if (temperatureShown) {
+            temperatureShown = false;
+            binding.temperatureTrend.setVisibility(View.GONE);
+            binding.temperatureSummary.setVisibility(View.GONE);
+            binding.btnTemperatureTrend.setText("Temperatuurtrend tonen");
+            return;
+        }
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null || r.lats == null || r.lons == null || r.lats.length == 0) {
+            Toast.makeText(this, "Route heeft geen coördinaten", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
+        new android.app.TimePickerDialog(this,
+                (picker, hour, minute) -> loadTemperatureTrend(r, hour, minute),
+                now.getHour(), now.getMinute(),
+                android.text.format.DateFormat.is24HourFormat(this))
+                .show();
+    }
+
+    private void loadTemperatureTrend(StoredRoute r, int hour, int minute) {
+        final ZoneId zone = ZoneId.systemDefault();
+        final Instant start = TemperatureTrend.nextStart(Instant.now(), hour, minute, zone);
+        final List<RouteSampler.Sample> samples =
+                RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
+        if (samples.isEmpty()) {
+            Toast.makeText(this, "Route heeft geen afstanden", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final double[] elevations = TemperatureTrend.elevationsAt(r, samples);
+        RoutePassport p = viewModel.passport().getValue();
+        double length = samples.get(samples.size() - 1).distanceM - samples.get(0).distanceM;
+        final long rideSeconds = TemperatureTrend.rideSeconds(
+                p != null ? p.totalEstimatedSeconds : -1, length);
+        final boolean planned = p != null && p.totalEstimatedSeconds > 0;
+
+        binding.btnTemperatureTrend.setEnabled(false); // one request at a time
+        binding.btnTemperatureTrend.setText("Temperatuurtrend laden…");
+        new Thread(() -> {
+            TemperatureTrend trend = null;
+            String text;
+            try {
+                TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
+                trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
+                text = trend.describe(zone) + "\n\nTempo: "
+                        + (planned ? "geschatte tijd uit je profiel"
+                                   : "25 km/u (vul je profiel in voor een eigen schatting)")
+                        + "\nBron: Open-Meteo";
+            } catch (Exception e) {
+                text = "Temperatuurverwachting ophalen mislukt: " + reason(e);
+            }
+            final TemperatureTrend result = trend;
+            final String summary = text;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnTemperatureTrend.setEnabled(true);
+                binding.btnTemperatureTrend.setText("Temperatuurtrend verbergen");
+                temperatureShown = true;
+                binding.temperatureTrend.setTrend(result, zone);
+                binding.temperatureTrend.setVisibility(
+                        result == null || result.isEmpty() ? View.GONE : View.VISIBLE);
+                binding.temperatureSummary.setText(summary);
+                binding.temperatureSummary.setVisibility(View.VISIBLE);
+            });
+        }, "temperature-trend").start();
+    }
+
+    /**
+     * Issue #174: which way round to ride a loop so the wind helps on the way home. The loop
+     * check needs no network; the wind comes from Open-Meteo at the start, off the UI thread.
+     */
+    private void showLoopWindAdvice() {
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null) return;
+        LoopWindAdvice shape = LoopWindAdvisor.advise(r.lats, r.lons, r.distances,
+                Double.NaN, Double.NaN);
+        if (shape.verdict != LoopWindAdvice.Verdict.NO_WIND) {
+            showLoopWindText(describeLoopWind(shape));
+            return;
+        }
+        binding.btnLoopWind.setEnabled(false); // one request at a time
+        binding.btnLoopWind.setText(R.string.loop_wind_loading);
+        final double lat = r.lats[0];
+        final double lon = r.lons[0];
+        new Thread(() -> {
+            String text;
+            try {
+                HourlyForecast f = new OpenMeteoClient().fetch(lat, lon, Double.NaN);
+                LoopWindAdvisor.Wind w =
+                        LoopWindAdvisor.averageWind(f, Instant.now(), LOOP_WIND_HOURS);
+                LoopWindAdvice a = w == null ? shape
+                        : LoopWindAdvisor.advise(r.lats, r.lons, r.distances, w.fromDeg, w.kmh);
+                text = describeLoopWind(a);
+            } catch (Exception e) {
+                text = getString(R.string.loop_wind_failed, reason(e));
+            }
+            final String result = text;
+            runOnUiThread(() -> {
+                binding.btnLoopWind.setEnabled(true);
+                binding.btnLoopWind.setText(R.string.loop_wind_action);
+                showLoopWindText(result);
+            });
+        }, "loop-wind").start();
+    }
+
+    private void showLoopWindText(String text) {
+        binding.loopWindSummary.setText(text);
+        binding.loopWindSummary.setVisibility(View.VISIBLE);
+    }
+
+    private String describeLoopWind(LoopWindAdvice a) {
+        switch (a.verdict) {
+            case NO_ROUTE:
+                return getString(R.string.loop_wind_no_route);
+            case NOT_A_LOOP:
+                return getString(R.string.loop_wind_not_a_loop, a.loopGapM / 1000.0);
+            case NO_WIND:
+                return getString(R.string.loop_wind_no_wind);
+            default:
+                break;
+        }
+        String[] compass = getResources().getStringArray(R.array.loop_wind_compass);
+        String header = getString(R.string.loop_wind_header, a.windKmh,
+                compass[LoopWindAdvisor.compassIndex(a.windFromDeg)], LOOP_WIND_HOURS);
+        String body;
+        switch (a.verdict) {
+            case CALM:
+                body = getString(R.string.loop_wind_calm);
+                break;
+            case EITHER:
+                body = getString(R.string.loop_wind_either);
+                break;
+            case FORWARD:
+                body = getString(R.string.loop_wind_forward,
+                        homeWind(a.bestHomeHeadwindKmh()), homeWind(a.otherHomeHeadwindKmh()));
+                break;
+            default:
+                body = getString(R.string.loop_wind_reverse,
+                        homeWind(a.bestHomeHeadwindKmh()), homeWind(a.otherHomeHeadwindKmh()),
+                        getString(R.string.route_reverse_action));
+                break;
+        }
+        return header + "\n" + body + "\n\n" + getString(R.string.loop_wind_source);
+    }
+
+    /** "12 km/u rugwind", "8 km/u tegenwind" or "vooral zijwind" for a headwind component. */
+    private String homeWind(double headwindKmh) {
+        if (Math.abs(headwindKmh) < 1) return getString(R.string.loop_wind_cross);
+        return headwindKmh < 0
+                ? getString(R.string.loop_wind_tail, -headwindKmh)
+                : getString(R.string.loop_wind_head, headwindKmh);
+    }
+
+    private static String reason(Exception e) {
+        return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
+    /** Bucket-list status picker (issue #158); purely manual, never changed automatically. */
+    private void showRideStatusDialog() {
+        final String[] values = {null, RouteRideStatus.WANT_TO_RIDE, RouteRideStatus.RIDDEN};
+        final String[] labels = new String[values.length];
+        for (int i = 0; i < values.length; i++) labels[i] = RouteRideStatus.label(values[i]);
+        String current = RouteRideStatus.normalize(viewModel.rideStatus().getValue());
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (java.util.Objects.equals(values[i], current)) checked = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Route-status")
+                .setSingleChoiceItems(labels, checked, (d, which) -> {
+                    viewModel.setRideStatus(routeId, values[which]);
+                    d.dismiss();
+                })
+                .setNegativeButton("Annuleren", null)
+                .show();
     }
 
     private void showRenameDialog() {
@@ -462,6 +847,46 @@ public final class RouteDetailActivity extends AppCompatActivity {
             return (int) Math.round(Double.parseDouble(text.trim()) * 1000.0);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    /** Issue #254: route + climb waypoints as GPX to the Wahoo or Hammerhead companion app. */
+    private void showBikeComputerExport() {
+        StoredRoute route = viewModel.route().getValue();
+        if (route == null || route.lats == null || route.lats.length == 0) {
+            Toast.makeText(this, "Route heeft nog geen geometrie om te exporteren",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BikeComputerExport.Target[] targets = BikeComputerExport.Target.values();
+        String[] labels = new String[targets.length + 1];
+        for (int i = 0; i < targets.length; i++) {
+            labels[i] = targets[i].label + (BikeComputerExport.isInstalled(this, targets[i])
+                    ? "" : " (app niet gevonden)");
+        }
+        labels[targets.length] = "Ander apparaat of bestand";
+        new AlertDialog.Builder(this)
+                .setTitle("Exporteer route met klimmen")
+                .setItems(labels, (d, which) ->
+                        exportToBikeComputer(route, which < targets.length ? targets[which] : null))
+                .show();
+    }
+
+    private void exportToBikeComputer(StoredRoute route, BikeComputerExport.Target target) {
+        try {
+            File gpx = BikeComputerExport.writeGpx(this, route);
+            Uri uri = FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", gpx);
+            Intent share = BikeComputerExport.buildShareIntent(this, uri, target);
+            if (target != null && share.getPackage() == null) {
+                Toast.makeText(this, target.label + "-app niet gevonden; kies zelf een app",
+                        Toast.LENGTH_LONG).show();
+            }
+            startActivity(share.getPackage() != null ? share
+                    : Intent.createChooser(share, "Exporteer route"));
+        } catch (Exception e) {
+            String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            Toast.makeText(this, "Exporteren mislukt: " + reason, Toast.LENGTH_LONG).show();
         }
     }
 

@@ -88,6 +88,21 @@ class ClimbData {
     var segVamAvg;        // gradient-implied average VAM (m/h) per segment; 0 = none
     var segVamPeak;       // gradient-implied peak VAM (m/h) per segment; 0 = none
     var hasVam;           // bool per climb: true when vam was provided
+    var segZone;          // per climb: Array of FTP intensity-zone color indices (0-5, "zc",
+                          // issue #66) or null when the payload carried none. Allocated only
+                          // when zc arrives, so riders without an FTP pay no memory for it.
+
+    // Interval block per climb (issue #180, wire "ib"): power band in watts, foot to top.
+    var hasBlock;         // bool per climb: true when a valid ib was provided
+    var blockTarget;      // target watts
+    var blockLow;         // lower band edge (W)
+    var blockHigh;        // upper band edge (W)
+
+    // Power-zone results for powerZone()/blockZone()
+    const ZONE_NONE  = -2;   // no block or no power reading
+    const ZONE_UNDER = -1;
+    const ZONE_IN    = 0;
+    const ZONE_OVER  = 1;
 
     // Runtime state (set by RouteTracker)
     var activeClimbIndex = -1;     // -1 = not on a climb
@@ -106,6 +121,7 @@ class ClimbData {
     var navDistThisTick = -1;     // navDist for the current tick (-1 = not navigating); set by view
     var climbSkipped;             // bool per climb: rider bypassed it; progression skips over it
     var currentSpeedMps = 0.0;    // most recent Activity.Info.currentSpeed; set by view.compute()
+    var currentPower = null;      // most recent Activity.Info.currentPower (W); null = no power meter
     var batteryWarningActive = false; // true once the low-battery-vs-climb-time warning has
                                        // fired for the current climb; cleared when the climb ends
                                        // or the route changes. Drives the view's persistent banner.
@@ -135,6 +151,11 @@ class ClimbData {
         segVamAvg = new [MAX_CLIMBS];
         segVamPeak = new [MAX_CLIMBS];
         hasVam = new [MAX_CLIMBS];
+        hasBlock = new [MAX_CLIMBS];
+        blockTarget = new [MAX_CLIMBS];
+        blockLow = new [MAX_CLIMBS];
+        blockHigh = new [MAX_CLIMBS];
+        segZone = new [MAX_CLIMBS];   // all null until a payload carries zc
         climbEntered = new [MAX_CLIMBS];
         climbSkipped = new [MAX_CLIMBS];
 
@@ -165,6 +186,10 @@ class ClimbData {
             segVamAvg[i] = new [MAX_SEGMENTS];
             segVamPeak[i] = new [MAX_SEGMENTS];
             hasVam[i] = false;
+            hasBlock[i] = false;
+            blockTarget[i] = 0;
+            blockLow[i] = 0;
+            blockHigh[i] = 0;
             for (var s = 0; s < MAX_SEGMENTS; s++) {
                 segDist[i][s] = 0;
                 segElevGain[i][s] = 0;
@@ -196,6 +221,21 @@ class ClimbData {
                 calibLon[i][k]  = 0.0f;
             }
         }
+    }
+
+    // Color index (0-5) to paint segment s of climb ci with. useZones = the "colorMode"
+    // setting is FTP-zone (issue #66): then the phone's intensity-zone color (zc) is used
+    // when this climb has one, otherwise -- and always in the default gradient mode -- the
+    // gradient color from segs. Clamped so a bad value can never index past the palette.
+    function colorIndexAt(ci, s, useZones) {
+        var c = segColor[ci][s];
+        if (useZones) {
+            var z = segZone[ci];
+            if (z != null && s < z.size()) { c = z[s]; }
+        }
+        if (c < 0) { c = 0; }
+        if (c > 5) { c = 5; }
+        return c;
     }
 
     function resetNavTrust() {
@@ -472,6 +512,34 @@ class ClimbData {
             cumDist = segEnd;
         }
         return cum;
+    }
+
+    /**
+     * Pure calculation (issue #180): where does the current power sit relative to the band?
+     * Returns ZONE_UNDER / ZONE_IN / ZONE_OVER, or ZONE_NONE when power is null (no power
+     * meter) so the view shows just the target. Band edges are inclusive.
+     */
+    function powerZone(power, low, high) {
+        if (power == null) { return ZONE_NONE; }
+        if (power < low) { return ZONE_UNDER; }
+        if (power > high) { return ZONE_OVER; }
+        return ZONE_IN;
+    }
+
+    // Zone for climb ci's interval block; ZONE_NONE when the climb has no block.
+    function blockZone(ci, power) {
+        if (ci < 0 || ci >= climbCount || !hasBlock[ci]) { return ZONE_NONE; }
+        return powerZone(power, blockLow[ci], blockHigh[ci]);
+    }
+
+    /**
+     * True when climb ci's interval block is done: the rider left the climb at or past its
+     * end (reached the top), not by skipping it or going off-route before the summit.
+     * axisDist is the route distance used for progress (see chooseAxis()).
+     */
+    function blockFinished(ci, axisDist) {
+        if (ci < 0 || ci >= climbCount || !hasBlock[ci]) { return false; }
+        return axisDist >= climbEndDist[ci];
     }
 
     /**

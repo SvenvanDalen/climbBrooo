@@ -68,11 +68,28 @@ drie nieuwe UUID's** en pas manifest + `ConnectIqAppId` samen aan.
 De Android-app (`nl.paree.climbpro`, MVVM + Repository) is de hub. Hieronder elke
 gebruikersfunctie en waar die leeft.
 
+**Het menu (⋮ rechtsboven in de routelijst)** is ingedeeld in groepen. Bovenaan staan
+alleen Sorteer, Filter op status en Instellingen (Sync is het icoon in de balk); de rest
+zit in zes submenu's:
+
+| Groep | Inhoud |
+|-------|--------|
+| Klimmen | Logboek, Klimplanning, Klim van de week, Zwaarste klimmen, Favoriete startpunten, Nooit voltooide klimmen, Tijdlijn, Collecties, Landen & provincies, Fotoquiz, Klim-opschoning |
+| Ritten & analyse | Ritten, Records, Vermogenscurve, FTP-test, Zonetijd, Hartslag-drift, Vriendenfeed, Jaaroverzicht |
+| Training & doelen | Fitheid & vorm, Trainingskalender, Trainingsblok, Herstel, Terugkomstplan, Doelevenement, Hoogtemeter-doel, Hoogtemeters per week/maand, Maanduitdaging, Badges |
+| Voor de rit | Kledingadvies, Luchtkwaliteit en pollen, Zonnebrand-check, Paklijst, Zweetverlies, Veilig thuis-bericht, Pijnlogboek |
+| Fiets & materiaal | Fietsgarage, Fietspaspoort, Fietskosten, Onderhoud, Bandenspanning, Accu's, Aanhaalmomenten, Zadelhoogte, Framemaat |
+| Data & app | Strava, Exporteer seizoen (GPX), Exporteer CSV, Privacy-dashboard, Controleer op updates |
+
+Staat hieronder "via het overflow-menu (X)", open dan eerst de groep waar X in zit.
+
 ### 3.1 Routes binnenhalen
 
 - **Strava-import.** Koppel je Strava-account (OAuth) en de app haalt je routes binnen.
   `data/strava/` (`StravaAuthRepository`, `StravaRoutesRepository`, `StravaApiClient`).
   De eerste sync haalt ook 12 maanden activiteiten op voor het logboek (zie 3.9).
+  Oudere ritten (tot 10 jaar terug) haal je eenmalig op via Instellingen → "Volledige
+  historie ophalen (10 jaar)".
 - **GPX-import.** Importeer een losse route/klim uit een GPX-bestand
   (`domain/route/GpxParser.java`). Robuust tegen ontbrekende/0-hoogtesamples en corrupte
   bestanden (gooit `GpxParseException` i.p.v. te crashen).
@@ -143,7 +160,7 @@ top. `service/RoutePacingPlanner`, `ui/routes/RoutePassport`.
 ### 3.9 Klimlogboek (alleen telefoon)
 
 Per-klim historie en PR's, afgeleid uit je Strava-ritten (eerste sync: 12 maanden, daarna
-incrementeel). Bereikbaar via het overflow-menu van de routelijst ("Logboek"); elk
+incrementeel; eenmalig tot 10 jaar terug via Instellingen → "Volledige historie ophalen"). Bereikbaar via het overflow-menu van de routelijst ("Logboek"); elk
 klimdetail toont een "Historie"-blok met eerdere pogingen en delta-tot-PR. Elke klim
 heeft een route-onafhankelijke `ClimbIdentity` (gebucketeerde startcoördinaat + lengte),
 zodat dezelfde fysieke klim over routes heen wordt gegroepeerd. `domain/matching/ClimbAttemptMatcher`,

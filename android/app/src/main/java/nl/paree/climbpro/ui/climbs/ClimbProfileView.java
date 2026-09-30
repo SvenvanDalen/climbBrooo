@@ -63,12 +63,12 @@ public final class ClimbProfileView extends View {
 
         outlinePaint.setStyle(Paint.Style.STROKE);
         outlinePaint.setStrokeWidth(2f);
-        outlinePaint.setColor(Color.parseColor("#424242"));
+        outlinePaint.setColor(Color.parseColor("#F4F5F2"));
 
-        textPaint.setColor(Color.parseColor("#616161"));
+        textPaint.setColor(Color.parseColor("#9299A1"));
         textPaint.setTextSize(24f);
 
-        axisPaint.setColor(Color.parseColor("#BDBDBD"));
+        axisPaint.setColor(Color.parseColor("#2A2F35"));
         axisPaint.setStrokeWidth(1f);
         axisPaint.setStyle(Paint.Style.STROKE);
     }
@@ -169,7 +169,7 @@ public final class ClimbProfileView extends View {
         }
 
         // Draw profile outline on top
-        outlinePaint.setColor(Color.parseColor("#424242"));
+        outlinePaint.setColor(Color.parseColor("#F4F5F2"));
         outlinePaint.setStrokeWidth(2f * density);
         profilePath.reset();
         cumulativeElevation = 0;
@@ -187,7 +187,7 @@ public final class ClimbProfileView extends View {
 
         // Draw axis labels
         textPaint.setTextSize(10f * density);
-        textPaint.setColor(Color.parseColor("#757575"));
+        textPaint.setColor(Color.parseColor("#9299A1"));
         textPaint.setTextAlign(Paint.Align.LEFT);
 
         // Distance label (bottom)

@@ -47,6 +47,8 @@ class ClimbData {
     var segGradient;      // segment gradient fixed-point (pct×10)
     var segColor;         // color index 0-5
     var segSurf;          // surface type per segment: 0=asphalt 1=gravel 2=dirt 3=cobble 4=mixed 5=unknown
+    var segZone;          // per climb: Array of FTP intensity-zone color indices (0-5, "zc",
+                          // issue #66) or null when the payload carried none
 
     // Flat starred segments (specialized Strava starred segments, route mode only)
     var flatStarredCount = 0;
@@ -79,6 +81,7 @@ class ClimbData {
         segGradient = new [MAX_CLIMBS];
         segColor = new [MAX_CLIMBS];
         segSurf = new [MAX_CLIMBS];
+        segZone = new [MAX_CLIMBS];   // all null until a payload carries zc
 
         for (var i = 0; i < MAX_CLIMBS; i++) {
             climbStartDist[i] = 0;
@@ -134,6 +137,20 @@ class ClimbData {
             flatStarredSurf[i]  = 5;
             flatStarredName[i]  = null;
         }
+    }
+
+    // Color index (0-5) for segment s of climb ci. useZones = the "colorMode" setting is
+    // FTP-zone (issue #66): the phone's zone color (zc) when this climb has one, else the
+    // gradient color from segs. Clamped so a bad value can never index past the palette.
+    function colorIndexAt(ci, s, useZones) {
+        var c = segColor[ci][s];
+        if (useZones) {
+            var z = segZone[ci];
+            if (z != null && s < z.size()) { c = z[s]; }
+        }
+        if (c < 0) { c = 0; }
+        if (c > 5) { c = 5; }
+        return c;
     }
 
     function updateProgress(elapsedDistance) {

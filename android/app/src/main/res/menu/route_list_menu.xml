@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Overflow menu of the route list. Features are grouped into a handful of
+    submenus so the top level stays short (issue #351). Leaf ids are unchanged:
+    RouteListActivity.onOptionsItemSelected still dispatches on them, and
+    RouteListMenuStructureTest keeps menu and handler in lockstep.
+-->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -9,44 +15,216 @@
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/action_strava"
-        android:iconTint="#F27100"
-        android:title="Strava"
-        app:showAsAction="never" />
-
-    <item
         android:id="@+id/action_sort"
         android:title="Sorteer"
         app:showAsAction="never"/>
 
     <item
-        android:id="@+id/action_logbook"
-        android:title="Logboek"
+        android:id="@+id/action_status_filter"
+        android:title="Filter op status"
         app:showAsAction="never"/>
 
     <item
-        android:id="@+id/action_planning"
-        android:title="Klimplanning"
-        app:showAsAction="never"/>
+        android:id="@+id/menu_group_climbs"
+        android:title="@string/menu_group_climbs"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_logbook"
+                android:title="Logboek"/>
+            <item
+                android:id="@+id/action_planning"
+                android:title="Klimplanning"/>
+            <item
+                android:id="@+id/action_climb_of_the_week"
+                android:title="@string/menu_climb_of_the_week"/>
+            <item
+                android:id="@+id/action_top_climbs"
+                android:title="@string/menu_top_climbs"/>
+            <item
+                android:id="@+id/action_favorite_start_points"
+                android:title="@string/fav_start_title"/>
+            <item
+                android:id="@+id/action_unfinished_climbs"
+                android:title="Nooit voltooide klimmen"/>
+            <item
+                android:id="@+id/action_timeline"
+                android:title="Tijdlijn"/>
+            <item
+                android:id="@+id/action_collections"
+                android:title="Collecties"/>
+            <item
+                android:id="@+id/action_visited_regions"
+                android:title="Landen &amp; provincies"/>
+            <item
+                android:id="@+id/action_photo_quiz"
+                android:title="Fotoquiz"/>
+            <item
+                android:id="@+id/action_climb_hygiene"
+                android:title="Klim-opschoning"/>
+        </menu>
+    </item>
 
     <item
-        android:id="@+id/action_timeline"
-        android:title="Tijdlijn"
-        app:showAsAction="never"/>
+        android:id="@+id/menu_group_rides"
+        android:title="@string/menu_group_rides"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_rides"
+                android:title="Ritten"/>
+            <item
+                android:id="@+id/action_records"
+                android:title="Records"/>
+            <item
+                android:id="@+id/action_power_curve"
+                android:title="Vermogenscurve"/>
+            <item
+                android:id="@+id/action_ftp_test"
+                android:title="@string/ftp_test_action"/>
+            <item
+                android:id="@+id/action_zone_distribution"
+                android:title="Zonetijd"/>
+            <item
+                android:id="@+id/action_hr_drift"
+                android:title="Hartslag-drift"/>
+            <item
+                android:id="@+id/action_friend_feed"
+                android:title="Vriendenfeed"/>
+            <item
+                android:id="@+id/action_wrapped"
+                android:title="Jaaroverzicht"/>
+        </menu>
+    </item>
 
     <item
-        android:id="@+id/action_wrapped"
-        android:title="Jaaroverzicht"
-        app:showAsAction="never"/>
+        android:id="@+id/menu_group_training"
+        android:title="@string/menu_group_training"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_fitness"
+                android:title="Fitheid &amp; vorm"/>
+            <item
+                android:id="@+id/action_training_load_calendar"
+                android:title="@string/load_calendar_menu"/>
+            <item
+                android:id="@+id/action_periodization"
+                android:title="@string/menu_periodization"/>
+            <item
+                android:id="@+id/action_recovery"
+                android:title="Herstel"/>
+            <item
+                android:id="@+id/action_comeback_plan"
+                android:title="Terugkomstplan"/>
+            <item
+                android:id="@+id/action_goal_event"
+                android:title="Doelevenement"/>
+            <item
+                android:id="@+id/action_elevation_target"
+                android:title="Hoogtemeter-doel"/>
+            <item
+                android:id="@+id/action_elevation_goal"
+                android:title="Hoogtemeters per week/maand"/>
+            <item
+                android:id="@+id/action_monthly_challenge"
+                android:title="Maanduitdaging"/>
+            <item
+                android:id="@+id/action_badges"
+                android:title="Badges"/>
+        </menu>
+    </item>
 
     <item
-        android:id="@+id/action_collections"
-        android:title="Collecties"
-        app:showAsAction="never"/>
+        android:id="@+id/menu_group_ride_prep"
+        android:title="@string/menu_group_ride_prep"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_clothing"
+                android:title="Kledingadvies"/>
+            <item
+                android:id="@+id/action_air_quality"
+                android:title="Luchtkwaliteit en pollen"/>
+            <item
+                android:id="@+id/action_sunscreen"
+                android:title="Zonnebrand-check"/>
+            <item
+                android:id="@+id/action_packing_list"
+                android:title="Paklijst"/>
+            <item
+                android:id="@+id/action_sweat_loss"
+                android:title="@string/sweat_title"/>
+            <item
+                android:id="@+id/action_safe_home"
+                android:title="Veilig thuis-bericht"/>
+            <item
+                android:id="@+id/action_pain_log"
+                android:title="Pijnlogboek"/>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/menu_group_bike"
+        android:title="@string/menu_group_bike"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_bike_garage"
+                android:title="Fietsgarage"/>
+            <item
+                android:id="@+id/action_bike_passport"
+                android:title="Fietspaspoort"/>
+            <item
+                android:id="@+id/action_bike_costs"
+                android:title="Fietskosten"/>
+            <item
+                android:id="@+id/action_maintenance"
+                android:title="Onderhoud"/>
+            <item
+                android:id="@+id/action_tire_pressure_log"
+                android:title="Bandenspanning"/>
+            <item
+                android:id="@+id/action_battery_status"
+                android:title="Accu's"/>
+            <item
+                android:id="@+id/action_torque"
+                android:title="Aanhaalmomenten"/>
+            <item
+                android:id="@+id/action_saddle_height"
+                android:title="Zadelhoogte"/>
+            <item
+                android:id="@+id/action_frame_size"
+                android:title="Framemaat"/>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/menu_group_data"
+        android:title="@string/menu_group_data"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_strava"
+                android:title="Strava"/>
+            <item
+                android:id="@+id/action_batch_export"
+                android:title="Exporteer seizoen (GPX)"/>
+            <item
+                android:id="@+id/action_export_csv"
+                android:title="Exporteer CSV"/>
+            <item
+                android:id="@+id/action_privacy"
+                android:title="Privacy-dashboard"/>
+            <item
+                android:id="@+id/action_check_update"
+                android:title="Controleer op updates"/>
+        </menu>
+    </item>
 
     <item
         android:id="@+id/action_settings"
-        android:title="Settings"
+        android:title="Instellingen"
         app:showAsAction="never"/>
 
 </menu>

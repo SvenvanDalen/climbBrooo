@@ -9,14 +9,16 @@ import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
+import nl.paree.climbpro.service.CombinedRefTimePlanner;
 import nl.paree.climbpro.service.RoutePacingPlanner;
-import nl.paree.climbpro.service.RouteRefTimePlanner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,15 +53,40 @@ public final class WatchRequestHandler {
 
     /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
     private int[][] pacingPlan(StoredRoute route) {
-        if (riderRepo == null) return null;
-        RiderProfile profile = riderRepo.load();
-        return RoutePacingPlanner.plan(route, profile);
+        int[][] plan = null;
+        if (riderRepo != null) {
+            RiderProfile profile = riderRepo.load();
+            plan = RoutePacingPlanner.plan(route, profile);
+        }
+        return nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
     }
 
-    /** Per-climb per-segment PR reference seconds, or null when no attempt repo is wired up. */
+    /** Rider FTP for interval blocks (issue #180); 0 when unknown or no profile repo. */
+    private int ftpWatts() {
+        return riderRepo != null ? riderRepo.load().ftpWatts : 0;
+    }
+
+    /**
+     * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
+     * when a rider profile is available; without one the payload is unchanged.
+     */
+    private ClimbPayloadBuilder payloadBuilder() {
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
+    }
+
+    /**
+     * Per-climb per-segment refsec: manual WR/pro reference (issue #59) takes priority over
+     * the rider's own PR when set for that climb. Own PR is unavailable (null) when no
+     * attempt repo is wired up, but a manual reference still works in that case. Climbs
+     * with neither fall back to the virtual target-speed ghost (issue #31) when set.
+     */
     private int[][] refPlan(StoredRoute route) {
-        if (attemptRepo == null) return null;
-        return RouteRefTimePlanner.plan(route, attemptRepo.loadAll());
+        List<StoredClimbAttempt> attempts = attemptRepo != null
+                ? attemptRepo.loadAll() : Collections.emptyList();
+        nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo != null
+                ? riderRepo.loadGhostTarget() : null;
+        return CombinedRefTimePlanner.plan(route, attempts, ghost);
     }
 
     public void handleMessage(Map<String, Object> message) {
@@ -104,7 +131,7 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route   = routeRepo.loadRoute(routeId);
-            byte[]      payload = new ClimbPayloadBuilder(mapper)
+            byte[]      payload = payloadBuilder().withFtpWatts(ftpWatts())
                     .buildRoutePayload(route, pacingPlan(route), refPlan(route));
             connectIqClient.sendPayload(payload);
             Log.i(TAG, "Sent route payload for " + routeId + " (" + payload.length + " bytes)");
@@ -120,7 +147,7 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
-            ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+            ClimbPayloadBuilder builder = payloadBuilder().withFtpWatts(ftpWatts());
             boolean ok = connectIqClient.sendPayloadToDatafield(
                     builder.buildRoutePayload(route, pacingPlan(route), refPlan(route)));
             // Always push the surface payload — an empty surfSec clears stale sections.
@@ -141,7 +168,7 @@ public final class WatchRequestHandler {
         }
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
-            byte[] payload = new ClimbPayloadBuilder(mapper)
+            byte[] payload = payloadBuilder().withFtpWatts(ftpWatts())
                     .buildSingleClimbPayload(route, climbIndex, pacingPlan(route), refPlan(route));
             boolean ok = connectIqClient.sendPayloadToDatafield(payload);
             StoredClimb climb = route.climbs.get(climbIndex);

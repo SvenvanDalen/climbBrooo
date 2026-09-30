@@ -1,0 +1,179 @@
+package nl.paree.climbpro.data.weather;
+
+import nl.paree.climbpro.domain.weather.AirQualityForecast;
+import nl.paree.climbpro.domain.weather.ClimateNormals;
+import nl.paree.climbpro.domain.weather.ClimbEndpoints;
+import nl.paree.climbpro.domain.weather.DailyForecast;
+import nl.paree.climbpro.domain.weather.HourlyForecast;
+import nl.paree.climbpro.domain.weather.HourlyPrecipitation;
+import nl.paree.climbpro.domain.weather.PrecipitationGrid;
+import nl.paree.climbpro.domain.weather.RouteSampler;
+import nl.paree.climbpro.domain.weather.TemperatureGrid;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+/**
+ * Open-Meteo forecast (issue #246): free, keyless, and elevation-aware (it corrects the
+ * temperature from the grid height to the given elevation). Blocking — call off the main thread.
+ */
+public final class OpenMeteoClient {
+
+    private final OkHttpClient http = new OkHttpClient.Builder()
+            .callTimeout(15, TimeUnit.SECONDS).build();
+
+    public static String url(double lat, double lon, double elevationM) {
+        String base = String.format(Locale.US,
+                "https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,precipitation_probability,uv_index"
+                        + "&wind_speed_unit=kmh&timezone=UTC&forecast_days=2", lat, lon);
+        return Double.isNaN(elevationM) ? base
+                : base + "&elevation=" + Math.round(elevationM);
+    }
+
+    public HourlyForecast fetch(ClimbEndpoints.Point p) throws IOException {
+        return fetch(p.lat, p.lon, p.elevationM);
+    }
+
+    /** Forecast for a plain location, e.g. the rider's position (sunscreen check, issue #229). */
+    public HourlyForecast fetch(double lat, double lon, double elevationM) throws IOException {
+        return HourlyForecast.parse(get(url(lat, lon, elevationM)));
+    }
+
+    /**
+     * Issue #245: hourly precipitation for every sample in one request. Open-Meteo starts at the
+     * current (already begun) hour, so ask one hour extra to cover {@code hours} full hours.
+     */
+    public static String precipitationUrl(List<RouteSampler.Sample> pts, int hours) {
+        StringBuilder lat = new StringBuilder();
+        StringBuilder lon = new StringBuilder();
+        for (int i = 0; i < pts.size(); i++) {
+            if (i > 0) {
+                lat.append(',');
+                lon.append(',');
+            }
+            lat.append(String.format(Locale.US, "%.4f", pts.get(i).lat));
+            lon.append(String.format(Locale.US, "%.4f", pts.get(i).lon));
+        }
+        return "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon
+                + "&hourly=precipitation&timezone=UTC&forecast_hours=" + (hours + 1);
+    }
+
+    public PrecipitationGrid fetchPrecipitation(List<RouteSampler.Sample> pts, int hours)
+            throws IOException {
+        if (pts.isEmpty()) throw new IOException("route heeft geen punten");
+        return PrecipitationGrid.parse(get(precipitationUrl(pts, hours)), pts.size());
+    }
+
+    /**
+     * Issue #153: hourly temperature for every sample in one request, three days ahead so a ride
+     * planned for tomorrow is still covered. Elevations are sent only when every one is known:
+     * Open-Meteo reads {@code nan} as "no height correction", worse than its own terrain model.
+     */
+    public static String temperatureUrl(List<RouteSampler.Sample> pts, double[] elevations) {
+        StringBuilder lat = new StringBuilder();
+        StringBuilder lon = new StringBuilder();
+        for (int i = 0; i < pts.size(); i++) {
+            if (i > 0) {
+                lat.append(',');
+                lon.append(',');
+            }
+            lat.append(String.format(Locale.US, "%.4f", pts.get(i).lat));
+            lon.append(String.format(Locale.US, "%.4f", pts.get(i).lon));
+        }
+        String url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon
+                + "&hourly=temperature_2m&timezone=UTC&forecast_days=3";
+        if (elevations == null || elevations.length != pts.size()) return url;
+        StringBuilder elev = new StringBuilder();
+        for (int i = 0; i < elevations.length; i++) {
+            if (Double.isNaN(elevations[i])) return url;
+            if (i > 0) elev.append(',');
+            elev.append(Math.round(elevations[i]));
+        }
+        return url + "&elevation=" + elev;
+    }
+
+    public TemperatureGrid fetchTemperatures(List<RouteSampler.Sample> pts, double[] elevations)
+            throws IOException {
+        if (pts.isEmpty()) throw new IOException("route heeft geen punten");
+        return TemperatureGrid.parse(get(temperatureUrl(pts, elevations)), pts.size());
+    }
+
+    /** Issue #197: particulate matter, European AQI and pollen (Europe only) for two days. */
+    public static String airQualityUrl(double lat, double lon) {
+        StringBuilder fields = new StringBuilder("pm10,pm2_5,european_aqi");
+        for (AirQualityForecast.Pollen p : AirQualityForecast.Pollen.values()) {
+            fields.append(',').append(p.field);
+        }
+        return String.format(Locale.US,
+                "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=%s&timezone=UTC&forecast_days=2", lat, lon, fields);
+    }
+
+    public AirQualityForecast fetchAirQuality(double lat, double lon) throws IOException {
+        return AirQualityForecast.parse(get(airQualityUrl(lat, lon)));
+    }
+
+    private String get(String url) throws IOException {
+        Request req = new Request.Builder().url(url).build();
+        try (Response resp = http.newCall(req).execute()) {
+            if (!resp.isSuccessful() || resp.body() == null) {
+                throw new IOException("weerdienst gaf HTTP " + resp.code());
+            }
+            return resp.body().string();
+        }
+    }
+
+    /**
+     * Past hourly precipitation for the wet-ride check (issue #234). {@code past_days=5}
+     * covers rides that ended up to 3 days ago ({@code WetRideDetector#MAX_AGE_SEC}) plus the
+     * 24 h off-road lead-in counted back from that ride's start — a ride ending right at the
+     * 3-day limit still needs weather from up to 4 days before now.
+     */
+    public static String precipitationUrl(double lat, double lon) {
+        return String.format(Locale.US,
+                "https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f"
+                        + "&hourly=precipitation&timezone=UTC&past_days=5&forecast_days=1",
+                lat, lon);
+    }
+
+    public HourlyPrecipitation fetchPrecipitation(double lat, double lon) throws IOException {
+        return HourlyPrecipitation.parse(get(precipitationUrl(lat, lon)));
+    }
+
+    /** Years of history behind a climatology (issue #41). */
+    static final int CLIMATE_YEARS = 3;
+
+    /**
+     * Issue #41: hourly history for the last {@link #CLIMATE_YEARS} full calendar years, in the
+     * location's local time ({@code timezone=auto}) so day-parts line up with the clock. Only
+     * the four variables the climatology needs; OkHttp's transparent gzip keeps the transfer to
+     * a few hundred kB, and the result is aggregated and cached so this runs once per location.
+     */
+    public static String archiveUrl(double lat, double lon, double elevationM, int currentYear) {
+        String base = String.format(Locale.US,
+                "https://archive-api.open-meteo.com/v1/archive?latitude=%.5f&longitude=%.5f"
+                        + "&start_date=%d-01-01&end_date=%d-12-31"
+                        + "&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,precipitation"
+                        + "&wind_speed_unit=kmh&timezone=auto",
+                lat, lon, currentYear - CLIMATE_YEARS, currentYear - 1);
+        return Double.isNaN(elevationM) ? base
+                : base + "&elevation=" + Math.round(elevationM);
+    }
+
+    public ClimateNormals fetchClimate(double lat, double lon, double elevationM, int currentYear)
+            throws IOException {
+        return ClimateNormals.fromArchive(get(archiveUrl(lat, lon, elevationM, currentYear)));
+    }
+
+    /** Issue #40: daily outlook for the coming week at one location ("klim van de week"). */
+    public List<DailyForecast.Day> fetchDaily(double lat, double lon) throws IOException {
+        return DailyForecast.parse(get(DailyForecast.url(lat, lon)));
+    }
+}

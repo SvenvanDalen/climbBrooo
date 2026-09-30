@@ -1,3 +1,6 @@
 <strings>
     <string id="AppName">ClimbPro Browse</string>
+    <string id="SettingsColorModeTitle">Kleurmodus</string>
+    <string id="ColorModeGradient">Helling</string>
+    <string id="ColorModeFtpZone">FTP-zone</string>
 </strings>

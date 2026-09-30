@@ -5,6 +5,7 @@ using Toybox.Application.Properties as Properties;
 using Toybox.System as Sys;
 using Toybox.Activity as Activity;
 using Toybox.Attention as Attention;
+using Toybox.Sensor as Sensor;
 
 /**
  * Main DataField view for ClimbPro.
@@ -43,6 +44,9 @@ class ClimbProView extends Ui.DataField {
         0x440000,  // 5: muted deep red (10%+)
     ];
 
+    // "colorMode" setting value for FTP intensity-zone colors (issue #66); 0 = gradient.
+    const COLOR_MODE_ZONES = 1;
+
     // Surface type color palette (indices match SurfaceType constants)
     hidden const SURFACE_COLORS = [
         0x404040,  // 0: ASPHALT   — dark grey
@@ -58,6 +62,7 @@ class ClimbProView extends Ui.DataField {
     hidden var lastActiveClimb = -1;
     hidden var lastActiveSeg = -1;
     hidden var batteryWarnedClimbIndex = -1;
+    hidden var blockDoneClimbIndex = -1;   // interval block "klaar" already signalled (issue #180)
 
     // Ghost / summary state
     hidden var lastGhostTimerMs = 0;
@@ -66,6 +71,10 @@ class ClimbProView extends Ui.DataField {
     hidden var summaryActualSec = 0;
     hidden var summaryDeltaSec = 0;
     hidden var lastRouteId = null;         // detect a new payload (route change) to reset ghost state
+
+    // Felt temperature on descents (issue #248); null = nothing shown.
+    hidden var descent = new DescentTracker();
+    hidden var feltShownC = null;
 
     function initialize() {
         DataField.initialize();
@@ -89,6 +98,7 @@ class ClimbProView extends Ui.DataField {
             lastActiveClimb = -1;
             alertedClimbIndex = -1;
             batteryWarnedClimbIndex = -1;
+            blockDoneClimbIndex = -1;
             data.batteryWarningActive = false;
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
@@ -107,6 +117,9 @@ class ClimbProView extends Ui.DataField {
         // smoothing beyond what Activity.Info already applies).
         data.currentSpeedMps = (info != null && info has :currentSpeed && info.currentSpeed != null)
                 ? info.currentSpeed : 0.0;
+        // Current power for the interval-block band (issue #180); null without a power meter.
+        data.currentPower = (info != null && info has :currentPower && info.currentPower != null)
+                ? info.currentPower : null;
 
         // Navigation-anchored distance: when the route is loaded as a Garmin course,
         // distance-along-course (rtl - distanceToDestination) is a more accurate axis
@@ -138,6 +151,16 @@ class ClimbProView extends Ui.DataField {
             var totalTarget = climbTotalTarget(data, lastActiveClimb);
             summaryDeltaSec = (totalTarget >= 0) ? (summaryActualSec - totalTarget) : 0;
             summaryUntilMs = timerMs + 12000;   // show for 12 s
+        }
+
+        // Interval block done (issue #180): short vibration once the rider tops out a climb
+        // that carries a block. The block itself starts with the climb-start alert below.
+        // Latched per climb, like the start alert, so it can't re-fire.
+        if (lastActiveClimb >= 0 && data.activeClimbIndex != lastActiveClimb
+                && lastActiveClimb != blockDoneClimbIndex
+                && data.blockFinished(lastActiveClimb, axis)) {
+            triggerBlockDoneAlert();
+            blockDoneClimbIndex = lastActiveClimb;
         }
 
         // Capture the timer at the start of a newly entered climb.
@@ -174,6 +197,30 @@ class ClimbProView extends Ui.DataField {
                 batteryWarnedClimbIndex = ci2;
             }
         }
+
+        // Felt temperature on descents (issue #248): grade over >= 150 m from odometer +
+        // altitude, riding speed as wind speed. Watch-only; nothing is shown on a climb or
+        // without a temperature reading.
+        var rawDist = (info != null && info has :elapsedDistance) ? info.elapsedDistance : null;
+        var alt = (info != null && info has :altitude) ? info.altitude : null;
+        var spd = (info != null && info has :currentSpeed) ? info.currentSpeed : null;
+        var desc = descent.update(rawDist, alt, spd);
+        feltShownC = feltTempToShow(desc, data.activeClimbIndex >= 0,
+                desc ? ambientTempC() : null, spd, feltShownC);
+    }
+
+    // Temperature from Sensor.Info: a paired Tempe sensor gives true ambient air; without
+    // one the FR255M reports its internal (wrist-warmed) sensor, which reads high, so the
+    // felt value is then an upper bound. null when no reading is available.
+    hidden function ambientTempC() {
+        if (!(Toybox has :Sensor)) { return null; }
+        try {
+            var si = Sensor.getInfo();
+            if (si != null && si has :temperature) { return si.temperature; }
+        } catch (e) {
+            return null;
+        }
+        return null;
     }
 
     function onUpdate(dc) {
@@ -207,7 +254,19 @@ class ClimbProView extends Ui.DataField {
             drawOffRouteBanner(dc);
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
+        } else if (feltShownC != null && data.activeClimbIndex < 0) {
+            drawFeltTempBanner(dc, feltShownC);
         }
+    }
+
+    // Blue strip in the header slot between climbs while descending (issue #248). The
+    // value is latched to whole degrees (latchFeltTemp) so it only changes on a >= 1 °C move.
+    hidden function drawFeltTempBanner(dc, c) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_BLUE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -242,6 +301,7 @@ class ClimbProView extends Ui.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ci = data.activeClimbIndex;
+        var large = largeTextModeActive();
 
         // Header (same slot as the next-climb page, text swapped)
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
@@ -253,7 +313,7 @@ class ClimbProView extends Ui.DataField {
             name = "Climb " + (ci + 1);
         }
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, (h * 0.15).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.15).toNumber(), nameFont(large), name, Gfx.TEXT_JUSTIFY_CENTER);
 
         // Profile (same geometry as the next-climb preview)
         var profileTop = (h * 0.30).toNumber();
@@ -303,16 +363,27 @@ class ClimbProView extends Ui.DataField {
         var gradFrac = curGrad % 10;
         if (gradFrac < 0) { gradFrac = -gradFrac; }
 
+        var sf = statFont(large);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, Gfx.FONT_XTINY, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(w / 2, statsY, Gfx.FONT_XTINY, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
-        dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
+        dc.drawText(32, statsY, sf, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
+        // Remaining elevation is the "nice to have" middle stat -- dropped in
+        // large-text mode so distance and gradient can be drawn bigger without
+        // crowding the small FR255M screen (issue #82).
+        if (showSecondaryStat(large)) {
+            dc.drawText(w / 2, statsY, sf, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+        }
+        dc.drawText(w - 32, statsY, sf,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
         // Current segment's gradient-implied VAM (vertical ascent m/h), complementary to the
         // gradient stat above. Data-plumbing only: no new computation happens on the watch, this
         // just renders the avg/peak pair CommListener already parsed into segVamAvg/segVamPeak.
-        if (data.hasVam[ci] && data.activeSegmentIndex >= 0
+        // Secondary stat: skipped in large-text mode (issue #82).
+        // An interval block (issue #180) takes this slot instead: it's the rider's chosen
+        // training target, so it stays visible in large-text mode too.
+        if (data.hasBlock[ci]) {
+            drawIntervalBlock(dc, data, ci, w, (h * 0.80).toNumber());
+        } else if (showSecondaryStat(large) && data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
             var vamAvg = data.segVamAvg[ci][data.activeSegmentIndex];
             var vamPeak = data.segVamPeak[ci][data.activeSegmentIndex];
@@ -335,13 +406,13 @@ class ClimbProView extends Ui.DataField {
             if (data.hasRefTargets[ci]) {
                 var ref = data.refSecondsAt();
                 if (ref >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR");
+                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR", large);
                     ghostDrawn = true;
                 }
             } else if (data.hasTargets[ci]) {
                 var target = data.targetSecondsAt();
                 if (target >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan");
+                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan", large);
                     ghostDrawn = true;
                 }
             }
@@ -349,19 +420,40 @@ class ClimbProView extends Ui.DataField {
         if (!ghostDrawn) {
             var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, ghostY, Gfx.FONT_XTINY,
+            dc.drawText(w / 2, ghostY, statFont(large),
                 "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
+    // Interval-block line (issue #180): "Doel 266-280W" without a power meter, otherwise
+    // "252W 266-280" coloured blue (under), green (in band) or red (over).
+    hidden function drawIntervalBlock(dc, data, ci, w, y) {
+        var band = data.blockLow[ci] + "-" + data.blockHigh[ci];
+        var zone = data.blockZone(ci, data.currentPower);
+        dc.setColor(intervalZoneColor(zone), Gfx.COLOR_TRANSPARENT);
+        var text = (zone == data.ZONE_NONE)
+            ? "Doel " + band + "W"
+            : data.currentPower.toNumber() + "W " + band;
+        dc.drawText(w / 2, y, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Colour per power zone; not hidden so tests can check it directly.
+    function intervalZoneColor(zone) {
+        if (zone == -1) { return Gfx.COLOR_BLUE; }
+        if (zone == 0) { return Gfx.COLOR_DK_GREEN; }
+        if (zone == 1) { return Gfx.COLOR_RED; }
+        return Gfx.COLOR_DK_GRAY;
+    }
+
     // + = behind (red), - or 0 = ahead/on pace (green).
-    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix) {
+    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix, large) {
+        var f = statFont(large);
         if (deltaSec > 0) {
             dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, Gfx.FONT_XTINY, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, y, f, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         } else {
             dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, Gfx.FONT_XTINY, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, y, f, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -384,9 +476,74 @@ class ClimbProView extends Ui.DataField {
         return dark ? DARK_COLORS : COLORS;
     }
 
+    // Reads the "largeTextMode" app setting (issue #82, resources/settings/) the same
+    // defensive way activeColors() reads "darkTheme" -- Properties.getValue can throw
+    // on a stale/older simulator settings cache and this must never crash a per-tick
+    // redraw. Independent of darkTheme; the two settings compose freely.
+    hidden function largeTextModeActive() {
+        var large = false;
+        try {
+            var v = Properties.getValue("largeTextMode");
+            large = (v != null && v == true);
+        } catch (e) {
+            large = false;
+        }
+        return large;
+    }
+
+    // Reads the "colorMode" app setting (issue #66, resources/settings/): 0 = Helling
+    // (gradient colors, default), 1 = FTP-zone. Same defensive read as activeColors():
+    // a missing/stale property must never crash a redraw -- fall back to gradient colors.
+    hidden function zoneColorModeActive() {
+        var v = null;
+        try {
+            v = Properties.getValue("colorMode");
+        } catch (e) {
+            v = null;
+        }
+        return zoneColorsSelected(v);
+    }
+
+    // Pure decision for zoneColorModeActive() (no Properties access, so tests can call it):
+    // only the exact FTP-zone value selects zone colors; anything else is gradient mode.
+    function zoneColorsSelected(settingValue) {
+        return settingValue != null && settingValue instanceof Toybox.Lang.Number
+            && settingValue == COLOR_MODE_ZONES;
+    }
+
+    // =========================================================================
+    // Large-text-mode font/layout decisions (issue #82)
+    // =========================================================================
+    // Kept as small pure functions (no Dc/Properties access) so they're directly
+    // unit-testable -- see garmin/test/LargeTextModeTest.mc. Not "hidden" so tests
+    // can call them straight, the way ClimbData's targetSecondsAt()/refSecondsAt()
+    // are tested directly rather than only smoke-tested through onUpdate().
+
+    // Climb/route name: the single most important line to make legible for a
+    // low-vision or bright-sunlight rider, so it gets the biggest bump.
+    function nameFont(large) {
+        return large ? Gfx.FONT_MEDIUM : Gfx.FONT_TINY;
+    }
+
+    // Stat-row numbers (remaining distance, gradient, ETA/ghost line, etc.).
+    function statFont(large) {
+        return large ? Gfx.FONT_SMALL : Gfx.FONT_XTINY;
+    }
+
+    // Whether to draw a "secondary" stat/line this tick. Per issue #82 ("minder
+    // informatie per scherm ten gunste van leesbaarheid"), large-text mode shows
+    // LESS information rather than cramming bigger text into the same layout: it
+    // drops nice-to-have items (VAM numbers, the middle elevation stat column) and
+    // keeps only what's most critical to a glancing rider (climb name, primary
+    // progress stat, remaining distance, current gradient, pacing/ETA line).
+    function showSecondaryStat(large) {
+        return !large;
+    }
+
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
 
         var colors = activeColors();
+        var useZones = zoneColorModeActive();
         var totalLen = data.climbLength[ci];
         if (totalLen <= 0) { return; }
 
@@ -408,10 +565,7 @@ class ClimbProView extends Ui.DataField {
         for (var s = 0; s < segCount; s++) {
 
             var segE = data.segElevGain[ci][s];
-            var colorIdx = data.segColor[ci][s];
-
-            if (colorIdx < 0) { colorIdx = 0; }
-            if (colorIdx > 5) { colorIdx = 5; }
+            var colorIdx = data.colorIndexAt(ci, s, useZones);
 
             var x1 = x + (s * stepW);
             var x2 = x + ((s + 1) * stepW);
@@ -466,6 +620,7 @@ class ClimbProView extends Ui.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ni = data.nextClimbIndex;
+        var large = largeTextModeActive();
 
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "NEXT CLIMB", Gfx.TEXT_JUSTIFY_CENTER);
@@ -476,7 +631,7 @@ class ClimbProView extends Ui.DataField {
             name = "Climb " + (ni + 1);
         }
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, (h * 0.15).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.15).toNumber(), nameFont(large), name, Gfx.TEXT_JUSTIFY_CENTER);
 
         // Mini profile
         var profileTop = (h * 0.30).toNumber();
@@ -489,19 +644,25 @@ class ClimbProView extends Ui.DataField {
         var elev = data.climbElevGain[ni];
         var grad = data.climbAvgGrad[ni];
 
+        var sf = statFont(large);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, Gfx.FONT_XTINY, formatDist(length), Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(w / 2, statsY, Gfx.FONT_XTINY, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(32, statsY, sf, formatDist(length), Gfx.TEXT_JUSTIFY_LEFT);
+        // Elevation gain is the "nice to have" middle stat -- dropped in large-text
+        // mode, same rationale as the active-climb stat row (issue #82).
+        if (showSecondaryStat(large)) {
+            dc.drawText(w / 2, statsY, sf, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+        }
         var nGrad = grad / 10;
         var nGradF = grad % 10;
-        dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
+        dc.drawText(w - 32, statsY, sf,
             nGrad + "." + nGradF + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
-        // Distance to climb
+        // Distance to climb -- kept in large-text mode, it's the key "when do I
+        // need to be ready" stat on this screen, not a nice-to-have.
         if (data.distToNextClimb >= 0) {
             var distY = (h * 0.88).toNumber();
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, distY, Gfx.FONT_XTINY,
+            dc.drawText(w / 2, distY, sf,
                 "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -540,7 +701,26 @@ class ClimbProView extends Ui.DataField {
         return m + ":" + (s < 10 ? "0" + s : "" + s);
     }
 
+    // Reads the "climbAlertDistinctTone" app setting (resources/settings/, issue #83)
+    // the same defensive way activeColors() reads "darkTheme": Properties.getValue can
+    // throw on a stale/older simulator settings cache, and this must never crash the
+    // climb-start-alert trigger path -- fall back to the default (off) alert style.
+    hidden function useDistinctClimbAlertTone() {
+        var distinct = false;
+        try {
+            var v = Properties.getValue("climbAlertDistinctTone");
+            distinct = (v != null && v == true);
+        } catch (e) {
+            distinct = false;
+        }
+        return distinct;
+    }
+
     hidden function triggerClimbAlert() {
+        if (useDistinctClimbAlertTone()) {
+            triggerClimbAlertDistinctTone();
+            return;
+        }
         if (Attention has :vibrate) {
             var vibePattern = [
                 new Attention.VibeProfile(100, 500),
@@ -554,7 +734,64 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
+    // Issue #83: riders wearing earbuds/headphones can miss the wrist vibration
+    // climb-start alert. The literal ask was a spoken "voice prompt", but
+    // Toybox.Attention exposes no TTS / audio-clip-playback API on the FR255M --
+    // it only offers vibrate(), playTone() (from a fixed set of built-in tone
+    // constants) and backlight(). There is no way for a third-party Connect IQ
+    // datafield to speak arbitrary words on this device/SDK tier.
+    //
+    // This is the most faithful available approximation: an opt-in, more
+    // attention-grabbing alert layered on top of the normal vibration, instead
+    // of the single TONE_LAP chime used by the default alert. Purely additive --
+    // default (setting off/unset) keeps today's vibrate+TONE_LAP behavior
+    // unchanged.
+    //
+    // Code review on PR #133 flagged that the first version of this alert was too
+    // similar to triggerBatteryAlert(): both used a 5-entry, evenly-spaced
+    // (3 pulses / 2 gaps) vibe pattern with identical 150ms gaps and the same
+    // terminal TONE_ALERT_HI tone -- differing only in pulse length (400ms vs
+    // 250ms), which is not reliably distinguishable by feel mid-ride. Fixed by
+    // using a genuinely different vibe SHAPE (short-short-short-long "here it
+    // comes" rhythm, 4 pulses / 3 gaps, 80ms gaps instead of 150ms) and a
+    // different terminal tone (TONE_START, which also fits the "climb start"
+    // semantics -- distinct from both TONE_LAP and TONE_ALERT_HI).
+    //
+    // Also fixed: the original used three back-to-back playTone() calls
+    // (TONE_LAP, TONE_LAP, TONE_ALERT_HI) with no gap between them. Toybox.Attention
+    // on real hardware does not reliably queue playTone() calls -- a later call
+    // can cut off/interrupt an earlier one's playback, so a rider was likely to
+    // hear only the final tone rather than the intended 3-tone cadence. The
+    // "distinct pattern" signal now lives entirely in the VIBE profile (which IS
+    // a proper timed sequence on this API), and the tone is reduced to a single
+    // playTone() call so there is nothing to race/drop.
+    hidden function triggerClimbAlertDistinctTone() {
+        if (Attention has :vibrate) {
+            var vibePattern = [
+                new Attention.VibeProfile(100, 120),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 120),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 120),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 600)
+            ];
+            Attention.vibrate(vibePattern);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_START);
+        }
+    }
+
     // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
+    // Interval block done at the top (issue #180): one short buzz, no tone -- deliberately
+    // lighter than the climb-start and battery alerts so it can't be mistaken for either.
+    hidden function triggerBlockDoneAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([new Attention.VibeProfile(100, 300)]);
+        }
+    }
+
     // warning apart from a climb-start alert by feel/sound alone.
     hidden function triggerBatteryAlert() {
         if (Attention has :vibrate) {
@@ -583,6 +820,8 @@ class ClimbProView extends Ui.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var ci = summaryClimbIndex;
+        var large = largeTextModeActive();
+        var sf = statFont(large);
 
         var name = data.climbName[ci];
         if (name == null) { name = "Climb " + (ci + 1); }
@@ -591,7 +830,7 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "KLIM KLAAR", Gfx.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, (h * 0.18).toNumber(), Gfx.FONT_TINY, name, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, (h * 0.18).toNumber(), nameFont(large), name, Gfx.TEXT_JUSTIFY_CENTER);
 
         var mins = summaryActualSec / 60;
         var secs = summaryActualSec % 60;
@@ -599,18 +838,18 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w / 2, (h * 0.40).toNumber(), Gfx.FONT_NUMBER_MEDIUM,
                 mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
 
-        dc.drawText(w / 2, (h * 0.62).toNumber(), Gfx.FONT_XTINY,
+        dc.drawText(w / 2, (h * 0.62).toNumber(), sf,
                 data.climbElevGain[ci] + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.hasTargets[ci]) {
             var d = summaryDeltaSec;
             if (d > 0) {
                 dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(w / 2, (h * 0.78).toNumber(), Gfx.FONT_XTINY,
+                dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         "+" + d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             } else {
                 dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-                dc.drawText(w / 2, (h * 0.78).toNumber(), Gfx.FONT_XTINY,
+                dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             }
         }

@@ -14,11 +14,65 @@ public final class StravaActivityDto {
     public String name;
 
     @JsonProperty("type")
-    public String type;          // e.g. "Ride"
+    public String type;          // e.g. "Ride" (legacy field; gravel/MTB rides still say "Ride" here)
+
+    /**
+     * Strava's newer, more specific activity classification, e.g. "GravelRide",
+     * "MountainBikeRide" — {@code type} alone does not carry this (issue #234). Null on
+     * responses/records from before this field was added.
+     */
+    @JsonProperty("sport_type")
+    public String sportType;
 
     @JsonProperty("start_date")
     public String startDate;     // ISO-8601
 
     @JsonProperty("distance")
     public float distance;       // metres
+
+    // Summary fields on the list item, no extra call: ride archive (issue #160) and the
+    // Health Connect export (issue #255).
+    @JsonProperty("start_date_local")
+    public String startDateLocal; // local wall time, ISO-8601 with a misleading "Z"
+
+    @JsonProperty("moving_time")
+    public int movingTime;       // seconds
+
+    @JsonProperty("elapsed_time")
+    public int elapsedTime;      // seconds
+
+    @JsonProperty("total_elevation_gain")
+    public float totalElevationGain; // metres
+
+    @JsonProperty("average_speed")
+    public float averageSpeed;   // m/s
+
+    @JsonProperty("max_speed")
+    public float maxSpeed;       // m/s
+
+    @JsonProperty("commute")
+    public boolean commute;
+
+    @JsonProperty("start_latlng")
+    public java.util.List<Double> startLatLng; // [lat, lon], empty/absent without GPS
+
+    @JsonProperty("end_latlng")
+    public java.util.List<Double> endLatLng;
+
+    @JsonProperty("kilojoules")
+    public Double kilojoules;    // work done; rides only, null when unknown
+
+    // Power summary for the training-load chart (issue #220).
+    @JsonProperty("average_watts")
+    public Float averageWatts;   // estimated by Strava when device_watts is false
+
+    @JsonProperty("weighted_average_watts")
+    public Integer weightedAverageWatts; // power-meter rides only
+
+    @JsonProperty("device_watts")
+    public boolean deviceWatts;
+
+    /** Bike the ride was on (bike garage, issue #187); null when none is set in Strava. */
+    @JsonProperty("gear_id")
+    public String gearId;
 }

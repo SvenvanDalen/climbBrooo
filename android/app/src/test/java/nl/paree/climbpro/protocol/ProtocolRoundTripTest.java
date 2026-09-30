@@ -76,6 +76,30 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderPayloadsWithIntervalBlockValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withFtpWatts(280);
+        StoredRoute route = routeFixture();
+        route.climbs.get(0).intervalBlock = nl.paree.climbpro.domain.power.IntervalBlock
+                .of(nl.paree.climbpro.domain.power.IntervalBlock.Preset.DREMPEL).toStored();
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(route));
+        org.junit.Assert.assertTrue("ib emitted", payload.get("climbs").get(0).has("ib"));
+        assertValid(payload, "route payload with ib");
+        assertValid(MAPPER.readTree(b.buildRadiusPayload(route.climbs)), "radius payload with ib");
+    }
+
+    @Test
+    public void builderPayloadsWithIntensityZonesValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withIntensityZones(
+                new nl.paree.climbpro.domain.power.RiderProfile(250, 75, 8));
+        JsonNode route = MAPPER.readTree(b.buildRoutePayload(routeFixture()));
+        assertTrue("route payload carries 'zc'", route.get("climbs").get(0).has("zc"));
+        assertValid(route, "route payload with zc");
+        JsonNode radius = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));
+        assertTrue("radius payload carries 'zc'", radius.get("climbs").get(0).has("zc"));
+        assertValid(radius, "radius payload with zc");
+    }
+
+    @Test
     public void builderRadiusPayloadValidatesAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
         JsonNode payload = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));

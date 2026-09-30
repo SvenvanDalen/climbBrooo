@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_bg">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/color_bg"
+            android:titleTextColor="@color/color_text_primary"
+            android:title="Strava-titelsjabloon"
+            app:popupTheme="@style/ThemeOverlay.Material3.Dark"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/color_bg"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Placeholders"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:fontFamily="@font/space_grotesk"
+                    android:lineSpacingExtra="4dp"
+                    android:text="{climb} — naam van de klim\n{time} — tijd op de klim (mm:ss)\n{delta} — verschil t.o.v. PR (+mm:ss, of PR)\n{vam} — gemiddelde VAM (m/h)"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="@color/color_text_tertiary"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textSize="12sp"
+                    android:text="Onbekende placeholders worden letterlijk overgenomen. {power} wordt (nog) niet ondersteund — er is nog geen vermogensdata per klim-poging beschikbaar. Alleen ritten die je ná het instellen van het sjabloon maakt (max. 7 dagen oud) krijgen een nieuwe titel; bestaande titels blijven staan."/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sjabloon"
+                    android:layout_marginBottom="10dp"/>
+
+                <EditText
+                    android:id="@+id/input_template"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="{climb} in {time}, PR-delta {delta}"
+                    android:inputType="text"
+                    android:layout_marginBottom="16dp"/>
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Live preview"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:padding="10dp"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:text=""/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

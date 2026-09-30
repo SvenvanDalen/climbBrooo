@@ -40,6 +40,10 @@ phone and no network. Sync is opportunistic.
 - **Phone-side extras**: per-climb time estimate (fatigue-aware), pacing plan, and a
   climb logbook built from your Strava history — including per-segment PR splits, once
   an activity has been matched against a segmented climb.
+- **Wind-impact on the climb time** (issue #47): the climb screen adds a wind-corrected
+  estimate with the delta vs. windless ("wind tegen" / "wind mee"), from the current
+  Open-Meteo wind at the climb top projected onto each segment's direction. Offline it
+  is clearly labelled as uncorrected. Phone-only.
 
 ---
 
@@ -75,12 +79,21 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 
 ## User features
 
+- **Grouped menu** — the route list's overflow menu keeps only Sync, Sorteer, Filter op
+  status and Instellingen at the top level; every other screen lives in one of six
+  submenus: Klimmen, Ritten & analyse, Training & doelen, Voor de rit, Fiets & materiaal
+  and Data & app. "menu → X" elsewhere in this README means: open the matching group first.
 - **Select a route to follow** — pick a synced route; it becomes active on the watch.
 - **Radius mode** — no fixed route; the watch alerts on any known climb within a
   configurable radius of your GPS position.
 - **Rename routes and climbs** — names survive resync (kept separate from source data).
 - **Starred segments as climbs** — a starred Strava segment on a synced route is always
   shown as a climb (when `≥ 3 %`), regardless of length, named after the segment.
+- **Automatic Strava segment matching** — during Strava route sync, known public Strava
+  segments along the route (`segments/explore`, up to 8 map tiles per route) that meet the
+  climb rule (`≥ 800 m` and `≥ 3 %`) replace the detected climb's bounds and give it the
+  segment's name. Starred segments still take precedence. When the Strava rate limit gets
+  close, exploring stops and continues on a later sync. Phone-only.
 - **Flat starred segments** — a starred Strava segment that is too flat to be a climb
   (`< 3 %`) is kept as a separate entity. All such segments appear in the route detail
   screen with a ★. Tap one to tag it with a surface type (asphalt, gravel, dirt,
@@ -89,17 +102,172 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   datafield payload so the Ondergrond field knows what surface you're on. Untagged
   segments stay phone-only. Surface tags and user renames survive Strava re-sync.
 - **Custom notes/tags on routes** — phone-side only; not synced to the watch.
+- **Route bucket list** — mark a route as "Wil ik rijden" or "Gereden" from the route
+  detail screen; the route list shows the status and can be filtered on it (menu →
+  "Filter op status"). Manual only, phone-side only, survives Strava re-sync.
+- **Fuel planner** — "Voedingsplanner" on the route detail screen estimates ride time from
+  your profile and the route's climbing, and tells you how many bars, gels and bottles to
+  bring; temperature comes from the forecast at the start or is typed in.
+- **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
+  "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
+  untouched and tapping again reopens the existing reversed route.
+- **Whole-route elevation profile** — the route detail screen shows the elevation
+  profile of the full route with every climb highlighted in its gradient colors. Phone-only.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
 - **Start navigation** — hands the GPX to Garmin Connect, which pushes the course. Navigating the selected route as a Garmin course also improves on-watch distance accuracy: the datafield matches on course distance (`rtl − distanceToDestination`) with a calibration trust check, falling back to the activity odometer when you are not navigating.
 - **Import a single route/climb from a GPX file**.
+- **Join two routes** — "Samenvoegen met…" on a route saves it plus a second route as one
+  new route (e.g. approach + climbing loop), with climbs re-detected across the joint.
+  Originals are kept; a gap between the routes is bridged in a straight line after a warning.
 - **Sort the route library** (import time or name); auto-refreshes after a Strava sync.
 - **Estimated climb time** — per-climb / per-segment, from your FTP + weights, with
   per-surface rolling resistance and route-wide fatigue (W'-balance). Phone-only.
 - **Pacing passport + live ghost** — per-climb target times synced to the watch;
   the climb datafield shows `+/−s` vs plan and a post-summit summary.
+- **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
+  target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
+  virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
+- **Interval block per climb** — climb detail → "Intervalblok koppelen": pick Drempel,
+  Sweet spot, VO2max, Tempo or your own % FTP; the block lasts from the foot to the top.
+  Outdoors the datafield starts it at the climb-start alert, shows the target band (and
+  under/in/over with a power meter) and buzzes once at the top ("blok klaar"). Indoors the
+  `.zwo`/`.erg`/MyWhoosh export holds the block's target on every climb step. Survives resync.
+- **Felt temperature on descents** — between climbs, while descending (≥ 150 m at ≤ −3 %
+  and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
+  watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
+  true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
+- **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
+  radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
+  the route rain is expected (Open-Meteo, sampled every 5 km). Phone-only, keyless, on demand.
+- **Best time to ride a climb** — climb detail → "Beste moment: juni–september, ochtend" with
+  a small month table (temperature, wind, rain chance per month's best day-part), scored from
+  3 years of Open-Meteo weather history at the climb (incl. headwind along the climb). Tap to
+  load once; cached under `climate/`, so it works offline afterwards. Phone-only.
+
+- **Temperature trend over the ride** — route detail → "Temperatuurtrend tonen", pick a start
+  time (today, or tomorrow if already past) and see a chart of the expected temperature at each
+  point of the route at the moment you pass it, plus start/finish/warmest/coldest. Pace comes
+  from your pacing plan (25 km/h without a profile). Open-Meteo, height-corrected. Phone-only.
+
+- **Wind-optimised loop direction** — route detail → "Beste rijrichting (wind)" says which way
+  round to ride a loop so the last kilometres home have the wind at your back (Open-Meteo
+  wind at the start, averaged over the next 3 hours). Point-to-point routes are recognised
+  and left alone. Phone-only, keyless, on demand.
+
+- **Klim van de week** — one suggested climb per ISO week, chosen from your climb catalog by
+  riding history (never / long not ridden), distance from your last known location and the
+  week's weather (Open-Meteo); stays the same all week. Offline it skips the weather and says so.
+  Phone-only.
+
+- **Hardest climbs in your region** — top 10 known climbs within a radius of your location,
+  ranked by difficulty score (elevation gain × average gradient). Phone-only.
+
+- **Clothing advice** — what to wear for your planned ride window, from the forecast with
+  the riding wind in the wind chill, plus rain and removable-layer hints. Phone-only.
+
+- **Air quality and pollen** — particulate matter, European AQI and pollen for your planned
+  ride window at your location, with a warning for asthma or hay fever (Open-Meteo, keyless).
+  Phone-only.
+
+- **Ride comparer** — tap a ride in Ritten and pick another ride over the same route to see
+  time, speed, heart rate and the running time difference per kilometre. Phone-only.
+
+- **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
+  route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
+
+- **Favorite start points** — save home, work or a parking spot once (current location or
+  typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
+  planning. Phone-only.
+
+- **Recovery check after a ride** — tap a ride in "Ritten" → "Herstel-check" to log how hard it felt (RPE 1–10)
+  and how you slept (1–5, optional hours and a note); "Herstel" shows the trend next to each
+  ride's distance, time, speed and power, and warns when rides feel harder while sleep gets
+  worse. Phone-only.
+
+- **Packing list per ride type** — editable checklists (Training, Toerrit, Bikepacking or
+  your own) to tick off before you leave, with a one-tap reset. Phone-only.
+
+- **Bike theft passport** — frame number, brand/model, purchase details, photos and the
+  receipt per bike, shared in one go (text + attachments) for a police report or insurance
+  claim. Phone-only.
+
+- **Bike garage ("Fietsgarage")** — several bikes (road, gravel, MTB, trainer) with weight,
+  tyre width, gearing and a link to the Strava bike. Synced rides land on the right bike via
+  Strava's gear id; unlinked indoor rides (MyWhoosh/VirtualRide) go to the trainer bike, the
+  rest to the active bike. The active bike's weight and gearing feed the time estimates and
+  the gear calculator; cost per km, maintenance parts and the tyre-pressure reminder can
+  count only one bike's km. Existing bike weight, cost bikes and passports are migrated
+  automatically. Phone-only.
+
+- **Badges** — automatic achievements such as your first 100 km, 10.000 km in total, an
+  Everest of climbing, five rides before 7:00 and every climb of a collection, with date or
+  progress. Phone-only.
+
+- **Climb repeats workout** — climb detail → "Exporteer als indoor-workout" → "Herhaal-klim"
+  writes "N× deze klim" (2–10×, default 5) as a Zwift `.zwo` or `.erg`: warm-up, the climb's
+  segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
+  3–10 min), cool-down. Phone-only.
+
+- **MyWhoosh import** — "Route toevoegen" → "MyWhoosh-rit importeren (FIT)" reads a ride
+  exported from MyWhoosh (or Strava / Garmin Connect "export original"), runs the normal climb
+  detection and files the route under the collection "MyWhoosh". Rides without GPS positions
+  are laid out by distance and shown as profile only (not usable for radius mode or
+  navigation). Phone-only.
+- **MyWhoosh via Strava (automatic)**: with MyWhoosh linked to Strava, every sync turns new
+  "MyWhoosh - <route>" rides from the ride archive into routes with climbs (at most 10 per
+  sync, rate limit). Rides without climbs and repeats of an already-imported route add
+  nothing; repeats show up as logbook attempts instead. Phone-only.
+- **MyWhoosh export** — climb detail → "Exporteer als indoor-workout" → "MyWhoosh-workout"
+  writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
+  power, short name, gradients in the description). MyWhoosh can't import custom routes, so
+  the climb goes in as a workout; a dialog explains the upload. Phone-only.
+- **intervals.icu** — Settings → "intervals.icu koppelen": paste your personal API key
+  (intervals.icu → Settings → Developer Settings) and athlete id (0 = your own), with a
+  connection test. Climb detail → "Exporteer als indoor-workout" → "Naar intervals.icu" (or
+  the repeat-climb variant) plans the `.zwo` workout on your intervals.icu calendar on a
+  chosen date, as indoor (`VirtualRide`) or outdoor (`Ride`); from there it syncs on to
+  Zwift/Garmin if you set that up in intervals.icu. The description carries the climb's PR and
+  attempt count. The key is stored encrypted and kept out of backups. Phone-only.
+- **FTP test assistant** — menu → "FTP-test" explains the 20-minute test (15 min warm-up,
+  5 min blow-out, 10 min recovery, 20 min all-out, 10 min cool-down) with targets from your
+  current FTP, and exports it as a plain `.zwo` for MyWhoosh/Zwift. After the Strava sync the
+  screen picks up the test ride (named "FTP", or a maximal effort within 14 days of the
+  export), shows best 20 min × 0.95 and offers "FTP bijwerken naar X W" — the FTP only
+  changes after you confirm. Phone-only.
+
+- **Training advice after a climb** — climb screen: short, concrete pacing tips for your
+  latest attempt ("begin de eerste 400 m rustiger", where you dropped furthest below your
+  average, where you lost most time against your best splits), from the stored segment
+  splits. Phone-only.
+
+- **PR chance before riding** — the climb screen shows whether a PR is realistic today
+  (goede kans / matig / onwaarschijnlijk) with the main reasons, combining your attempt
+  history on that climb, fitness and form from your ride archive, and the summit weather
+  forecast (left out when offline). Phone-only.
+
+- **Climb training block** — menu "Trainingsblok": a 4-week plan (3 build weeks, 1 recovery
+  week) built from climbs you have already ridden. Weekly climbing load starts at your recent
+  4-week average and rises 10 % per week while the allowed climbs get harder; each week lists
+  2-3 sessions as "N× climb". Phone-only.
+
+- **Training-load calendar** — menu → "Trainingskalender" shows a year of daily training load
+  as a GitHub-style heatmap (TSS-style load per ride from the ride archive, plus climb
+  attempts); tap a day for load, rides, climbs and elevation. Phone-only.
+
+- **Sweat-loss estimator** — weigh yourself before and after a ride, log what you drank and
+  get your sweat rate (L/h) plus a personal drinking advice (ml and bottles per hour) for
+  future rides. Phone-only.
+
+- **Gear calculator for a climb** — climb screen → "Versnellingen berekenen": enter your
+  chainrings, cassette, wheel size and target cadence to see the cadence per gear on the
+  steepest segment and at the average gradient, and whether your easiest gear is light
+  enough. Phone-only.
+
+- **Monthly challenge** — pick a goal for the month (distinct climbs, hoogtemeters, km or
+  rides) or let the app suggest one from your last three months, with progress and pace. Phone-only.
 
 ---
 
@@ -197,6 +365,12 @@ fit the watch's tight memory (cap `4096 bytes` per message). Gradients are fixed
 An optional parallel array `vam = [avgVamMPerH, peakVamMPerH, …]` (2 ints/segment)
 carries a gradient-implied VAM (vertical ascent m/h, not a measured ascent rate —
 routes have no elapsed-time data) per segment, omitted unless every segment has one.
+An optional `ib = [targetWatts, lowWatts, highWatts]` carries a climb's interval block
+(issue #180), computed on the phone from % FTP; omitted without a block or FTP.
+With FTP and weights set, an optional parallel array `zc` (1 int/segment, issue #66)
+carries each segment's **FTP intensity-zone color** (Coggan zone → the same 0–5 color
+indices); the watch shows it instead of the gradient colors when its *Kleurmodus*
+setting is *FTP-zone*.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

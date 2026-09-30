@@ -20,6 +20,21 @@ public final class PowerSpeedSolver {
                                               double totalMassKg,
                                               double gradientFraction,
                                               double crr) {
+        return speedMetersPerSecond(pedalPowerWatts, totalMassKg, gradientFraction, crr, 0.0);
+    }
+
+    /**
+     * Issue #47: same balance with a wind component along the direction of travel. The aero
+     * term becomes 0.5*ρ*CdA*(v+w)*|v+w|*v, with w the headwind in m/s at rider height
+     * (negative = tailwind). A tailwind faster than the rider turns drag into a push. The
+     * residual is then not strictly monotone near v = 0, but it is negative at 0 and
+     * positive at the top of the bracket, so bisection still lands on a root.
+     */
+    public static double speedMetersPerSecond(double pedalPowerWatts,
+                                              double totalMassKg,
+                                              double gradientFraction,
+                                              double crr,
+                                              double headwindMps) {
         double wheelPower = pedalPowerWatts * PowerConstants.DRIVETRAIN_EFFICIENCY;
         double theta = Math.atan(gradientFraction);
         double gravRoll = totalMassKg * PowerConstants.GRAVITY
@@ -37,12 +52,12 @@ public final class PowerSpeedSolver {
         // Root is the equilibrium speed.
         double lo = 0.0;
         double hi = PowerConstants.MAX_SPEED_MPS;
-        if (residual(hi, gravRoll, dragCoef, wheelPower) <= 0) {
+        if (residual(hi, gravRoll, dragCoef, wheelPower, headwindMps) <= 0) {
             return PowerConstants.MAX_SPEED_MPS; // even at top speed we have power to spare
         }
         for (int i = 0; i < 60; i++) {
             double mid = 0.5 * (lo + hi);
-            if (residual(mid, gravRoll, dragCoef, wheelPower) > 0) {
+            if (residual(mid, gravRoll, dragCoef, wheelPower, headwindMps) > 0) {
                 hi = mid;
             } else {
                 lo = mid;
@@ -52,7 +67,25 @@ public final class PowerSpeedSolver {
         return Math.max(PowerConstants.MIN_SPEED_MPS, Math.min(PowerConstants.MAX_SPEED_MPS, v));
     }
 
-    private static double residual(double v, double gravRoll, double dragCoef, double wheelPower) {
-        return gravRoll * v + dragCoef * v * v * v - wheelPower;
+    private static double residual(double v, double gravRoll, double dragCoef, double wheelPower,
+                                   double headwindMps) {
+        double air = v + headwindMps;
+        return gravRoll * v + dragCoef * air * Math.abs(air) * v - wheelPower;
+    }
+
+    /**
+     * Sums per-segment time (distance / speed) at a fixed pedal power over raw segment
+     * arrays. Shared by {@link ClimbTimeEstimator} (forward: power -> time, used inside its
+     * fixed-point duration iteration) and {@link FtpEstimator} (inverse: bisects on power to
+     * match an observed time) so both sides of that inverse relationship use one loop.
+     */
+    static double totalSecondsAtPower(int[] segDistMeters, double[] segGradient, double[] segCrr,
+                                      double totalMassKg, double pedalPowerWatts) {
+        double total = 0;
+        for (int i = 0; i < segDistMeters.length; i++) {
+            double v = speedMetersPerSecond(pedalPowerWatts, totalMassKg, segGradient[i], segCrr[i]);
+            total += segDistMeters[i] / v;
+        }
+        return total;
     }
 }

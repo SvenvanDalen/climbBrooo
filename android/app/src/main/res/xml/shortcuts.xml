@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Voice-assistant and launcher shortcuts (issue #260). Long-press the app icon to see
+     them, or ask Google Assistant "open volgende klim in ClimbPro" / "open rit starten in
+     ClimbPro" (OPEN_APP_FEATURE). Both land in VoiceShortcutActivity. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="nl.paree.climbpro"
+            android:targetClass="nl.paree.climbpro.ui.voice.VoiceShortcutActivity">
+            <parameter
+                android:name="feature"
+                android:key="feature" />
+        </intent>
+    </capability>
+
+    <shortcut
+        android:shortcutId="start_ride"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_media_play"
+        android:shortcutShortLabel="@string/shortcut_start_ride_short"
+        android:shortcutLongLabel="@string/shortcut_start_ride_long">
+        <intent
+            android:action="nl.paree.climbpro.action.START_RIDE"
+            android:targetPackage="nl.paree.climbpro"
+            android:targetClass="nl.paree.climbpro.ui.voice.VoiceShortcutActivity" />
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/shortcut_start_ride_synonyms" />
+        </capability-binding>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="next_climb"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_directions"
+        android:shortcutShortLabel="@string/shortcut_next_climb_short"
+        android:shortcutLongLabel="@string/shortcut_next_climb_long">
+        <intent
+            android:action="nl.paree.climbpro.action.NEXT_CLIMB"
+            android:targetPackage="nl.paree.climbpro"
+            android:targetClass="nl.paree.climbpro.ui.voice.VoiceShortcutActivity" />
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-binding
+                android:key="feature"
+                android:value="@array/shortcut_next_climb_synonyms" />
+        </capability-binding>
+    </shortcut>
+</shortcuts>

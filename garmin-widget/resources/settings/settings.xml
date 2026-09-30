@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Connect IQ app settings for the widget: the segment color mode (issue #66).
+-->
+<settings>
+    <setting propertyKey="@Properties.colorMode" title="@Strings.SettingsColorModeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ColorModeGradient</listEntry>
+            <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
+        </settingConfig>
+    </setting>
+</settings>

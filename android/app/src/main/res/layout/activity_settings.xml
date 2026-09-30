@@ -2,8 +2,10 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/color_bg">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -12,13 +14,16 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:title="Settings"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+            android:background="@color/color_bg"
+            android:titleTextColor="@color/color_text_primary"
+            android:title="Instellingen"
+            app:popupTheme="@style/ThemeOverlay.Material3.Dark"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/color_bg"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -27,134 +32,467 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Watch mode"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
-
-            <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <RadioButton
-                    android:id="@+id/radio_route"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Follow a selected route"/>
-
-                <RadioButton
-                    android:id="@+id/radio_radius"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Radius — detect nearby climbs"/>
-
-            </RadioGroup>
-
             <LinearLayout
-                android:id="@+id/radius_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="8dp"
-                android:visibility="gone">
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
                 <TextView
-                    android:id="@+id/radius_label"
+                    style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="30 km"
+                    android:text="Watch mode"
+                    android:layout_marginBottom="10dp"/>
+
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/radio_route"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/color_accent"
+                        android:textColor="@color/color_text_primary"
+                        android:text="Follow a selected route"/>
+
+                    <RadioButton
+                        android:id="@+id/radio_radius"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/color_accent"
+                        android:textColor="@color/color_text_primary"
+                        android:text="Radius — detect nearby climbs"/>
+
+                </RadioGroup>
+
+                <LinearLayout
+                    android:id="@+id/radius_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/radius_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="30 km"
+                        android:textColor="@color/color_accent"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/space_grotesk"
+                        android:layout_marginBottom="4dp"/>
+
+                    <SeekBar
+                        android:id="@+id/radius_seek_bar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:progressTint="@color/color_accent"
+                        android:thumbTint="@color/color_accent"
+                        android:max="100"
+                        android:progress="30"/>
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Strava"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_strava_auth"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sign in to Strava"/>
+
+                <Button
+                    android:id="@+id/btn_strava_title_template"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Titel-sjabloon"/>
+
+                <Button
+                    android:id="@+id/btn_strava_history_backfill"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Volledige historie ophalen (10 jaar)"/>
+
+                <TextView
+                    android:id="@+id/strava_history_backfill_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="13sp"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <!-- intervals.icu (issue #78): planned workouts on the intervals.icu calendar. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/intervals_title"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_intervals_icu"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/intervals_settings_button"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rider profile"
+                    android:layout_marginBottom="10dp"/>
+
+                <EditText
+                    android:id="@+id/input_ftp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="FTP (watts)"
+                    android:inputType="number"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:id="@+id/suggested_ftp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:padding="4dp"
+                    android:visibility="gone"
+                    android:layout_marginBottom="8dp"
+                    tools:text="Voorgestelde FTP: 245 W (toepassen?)"/>
+
+                <EditText
+                    android:id="@+id/input_rider_weight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Rider weight (kg)"
+                    android:inputType="numberDecimal"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/input_bike_weight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Bike weight (kg)"
+                    android:inputType="numberDecimal"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/input_ride_intensity"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Rit-intensiteit (% FTP, 40-95)"
+                    android:inputType="number"
+                    android:layout_marginBottom="12dp"/>
+
+                <Button
+                    android:id="@+id/btn_save_profile"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Save rider profile"/>
+            </LinearLayout>
+
+            <!-- Virtual ghost for climbs without history (issue #31). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ghost voor nieuwe klimmen"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:text="Zonder PR of eigen referentietijd rijd je tegen een virtuele renner op deze streefsnelheid en/of VAM. Vul beide in en de ghost rijdt het langzaamste van de twee. Leeg = uit."
+                    android:layout_marginBottom="10dp"/>
+
+                <EditText
+                    android:id="@+id/input_ghost_speed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Streefsnelheid (km/u)"
+                    android:inputType="numberDecimal"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/input_ghost_vam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_primary"
+                    android:textColorHint="@color/color_text_tertiary"
+                    android:hint="Streef-VAM (m/u)"
+                    android:inputType="number"
+                    android:layout_marginBottom="12dp"/>
+
+                <Button
+                    android:id="@+id/btn_save_ghost"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ghost-doel opslaan"/>
+            </LinearLayout>
+
+            <!-- Home-climb privacy zone (issue #92). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Privacy"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="10dp"
+                    android:text="Zone rond het startpunt van een als &quot;thuisklim&quot; gemarkeerde klim die bij export/delen wordt gewazigd."/>
+
+                <TextView
+                    android:id="@+id/privacy_radius_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="500 m"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
                     android:layout_marginBottom="4dp"/>
 
                 <SeekBar
-                    android:id="@+id/radius_seek_bar"
+                    android:id="@+id/privacy_radius_seek_bar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:max="100"
-                    android:progress="30"/>
+                    android:progressTint="@color/color_accent"
+                    android:thumbTint="@color/color_accent"
+                    android:max="1900"
+                    android:progress="400"/>
 
             </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Strava"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
-
-            <Button
-                android:id="@+id/btn_strava_auth"
+            <!-- Cleaning reminder after wet rides (issue #234). -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sign in to Strava"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"/>
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Schoonmaakherinnering"
+                    android:layout_marginBottom="6dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Rider profile"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="Na een rit in de regen (of een gravel- of MTB-rit na regen) krijg je een melding om fiets en ketting schoon te maken. Het startpunt van je rit wordt hiervoor naar Open-Meteo gestuurd. Werkt voor Strava-ritten van de laatste 3 dagen, na elke sync."/>
 
-            <EditText
-                android:id="@+id/input_ftp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="FTP (watts)"
-                android:inputType="number"
-                android:layout_marginBottom="8dp"/>
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_wet_ride_reminder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Herinner me na natte ritten"/>
+            </LinearLayout>
 
-            <EditText
-                android:id="@+id/input_rider_weight"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Rider weight (kg)"
-                android:inputType="numberDecimal"
-                android:layout_marginBottom="8dp"/>
-
-            <EditText
-                android:id="@+id/input_bike_weight"
+            <!-- Health Connect (issue #255). -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Bike weight (kg)"
-                android:inputType="numberDecimal"
-                android:layout_marginBottom="8dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-            <EditText
-                android:id="@+id/input_ride_intensity"
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Health Connect"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/health_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_health_connect"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Koppelen met Health Connect"/>
+
+                <Button
+                    android:id="@+id/btn_health_export"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Ritten nu naar Health Connect"/>
+
+                <Button
+                    android:id="@+id/btn_health_weight"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Gewicht overnemen"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_health_auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Nieuwe ritten automatisch na elke sync"/>
+            </LinearLayout>
+
+            <!-- Back-up (issue #257): manual zip + daily automatic copy to a picked folder. -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Rit-intensiteit (% FTP, 40-95)"
-                android:inputType="number"
-                android:layout_marginBottom="8dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
 
-            <Button
-                android:id="@+id/btn_save_profile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Save rider profile"
-                android:layout_marginBottom="16dp"/>
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Back-up"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/backup_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_backup_create"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Back-up maken"/>
+
+                <Button
+                    android:id="@+id/btn_backup_restore"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Back-up terugzetten"/>
+
+                <Button
+                    android:id="@+id/btn_backup_auto"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Automatische back-up aanzetten"/>
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btn_sync_now"
+                style="@style/Widget.ClimbPro.Button.Accent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Sync now"/>

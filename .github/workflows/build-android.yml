@@ -26,6 +26,9 @@ jobs:
       - name: Build release APK
         env:
           VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
         run: ./gradlew assembleRelease --console=plain
 
       - name: Sign release APK
@@ -43,6 +46,6 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: v${{ github.run_number }}
+          tag_name: v1.0.${{ github.run_number }}
+          name: v1.0.${{ github.run_number }}
           files: ${{ steps.sign.outputs.signedReleaseFile }}
