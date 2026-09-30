@@ -116,6 +116,7 @@ public class PrivacyInventoryTest {
                 "comeback_plan.json",
                 "ride_stream_stats.json",
                 "goal_event.json",
+                "event_calendar.json",
                 "favorite_start_points.json",
                 "climate/",
                 "recovery_checks.json",

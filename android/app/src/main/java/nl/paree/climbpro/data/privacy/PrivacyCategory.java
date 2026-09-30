@@ -78,6 +78,10 @@ public enum PrivacyCategory {
     GOAL_EVENT("Doelevenement",
             "Naam, datum, afstand en hoogtemeters van je doelevenement.",
             "goal_event.json"),
+    EVENT_CALENDAR("Evenementenkalender",
+            "De agenda-links (iCal) die je toevoegde, de daaruit opgehaalde evenementen en je "
+                    + "zelf ingevoerde evenementen, met de zoekstraal.",
+            "event_calendar.json"),
     FAVORITE_START_POINTS("Favoriete startpunten",
             "Door jou opgeslagen startpunten (naam en coördinaten) voor de planning.",
             "favorite_start_points.json"),

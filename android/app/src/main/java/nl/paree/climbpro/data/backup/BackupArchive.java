@@ -53,6 +53,7 @@ public final class BackupArchive {
             "comeback_plan.json",
             "ride_stream_stats.json",
             "goal_event.json",
+            "event_calendar.json",
             "favorite_start_points.json",
             "recovery_checks.json",
             "packing_lists.json"};

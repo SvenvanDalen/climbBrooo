@@ -138,6 +138,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Local event calendar** — menu → "Evenementen in de buurt": tour rides and gran fondos
+  within a chosen radius (25–250 km) of your last known location, for the coming year, with
+  date, route options (km) and elevation. Add the iCal links (`.ics` / `webcal://`) organisers
+  and clubs publish, or enter events by hand. Each event says whether it fits your level
+  (longest ride / most climbing in the last 90 days), and can be set as your goal event.
+  Phone-only.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

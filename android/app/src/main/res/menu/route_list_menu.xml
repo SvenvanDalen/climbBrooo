@@ -121,6 +121,9 @@
                 android:id="@+id/action_goal_event"
                 android:title="Doelevenement"/>
             <item
+                android:id="@+id/action_event_calendar"
+                android:title="Evenementen in de buurt"/>
+            <item
                 android:id="@+id/action_elevation_target"
                 android:title="Hoogtemeter-doel"/>
             <item
