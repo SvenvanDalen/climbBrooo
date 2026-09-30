@@ -76,6 +76,9 @@ class ClimbProView extends Ui.DataField {
     hidden var descent = new DescentTracker();
     hidden var feltShownC = null;
 
+    // "Vlakker stuk" notice during a climb (issue #213).
+    hidden var easier = new EasierAheadTracker();
+
     function initialize() {
         DataField.initialize();
     }
@@ -103,6 +106,7 @@ class ClimbProView extends Ui.DataField {
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
             data.climbStartTimerMs = -1;
+            easier.reset();
         }
 
         var elapsed = 0;
@@ -198,6 +202,15 @@ class ClimbProView extends Ui.DataField {
             }
         }
 
+        // Easier stretch ahead (issue #213): banner + one short double buzz, latched per
+        // stretch. Candidate is only recomputed when the active segment changes.
+        var eci = data.activeClimbIndex;
+        if (easier.update(eci, data.activeSegmentIndex, data.progressInClimb,
+                eci >= 0 ? data.segDist[eci] : null, eci >= 0 ? data.segGradient[eci] : null,
+                eci >= 0 ? data.segCount[eci] : 0, data.offRoute, easierAheadEnabled())) {
+            triggerEasierAheadAlert();
+        }
+
         // Felt temperature on descents (issue #248): grade over >= 150 m from odometer +
         // altitude, riding speed as wind speed. Watch-only; nothing is shown on a climb or
         // without a temperature reading.
@@ -254,9 +267,20 @@ class ClimbProView extends Ui.DataField {
             drawOffRouteBanner(dc);
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
+        } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
+            drawEasierAheadBanner(dc, easier.shownLenM);
         } else if (feltShownC != null && data.activeClimbIndex < 0) {
             drawFeltTempBanner(dc, feltShownC);
         }
+    }
+
+    // Green strip in the header slot while an easier stretch is coming up (issue #213).
+    hidden function drawEasierAheadBanner(dc, lenM) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_GREEN, Gfx.COLOR_DK_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, easierAheadLabel(lenM), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Blue strip in the header slot between climbs while descending (issue #248). The
@@ -714,6 +738,29 @@ class ClimbProView extends Ui.DataField {
             distinct = false;
         }
         return distinct;
+    }
+
+    // Reads the "easierAheadAlert" app setting (issue #213, default on). Same defensive read
+    // as the other settings: a missing/stale property falls back to on.
+    hidden function easierAheadEnabled() {
+        try {
+            var v = Properties.getValue("easierAheadAlert");
+            return v == null || v != false;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    // Easier stretch ahead (issue #213): two short light buzzes, no tone -- lighter than
+    // the climb-start and battery alerts so it can't be mistaken for either.
+    hidden function triggerEasierAheadAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(50, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(50, 150)
+            ]);
+        }
     }
 
     hidden function triggerClimbAlert() {

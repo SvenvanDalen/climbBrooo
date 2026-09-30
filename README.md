@@ -138,6 +138,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Easier stretch ahead** — on a climb, when the next segments (≥ 200 m) are at least
+  3 %-points less steep than the current one, the datafield shows a green `300 m vlakker`
+  strip ~150 m before it and buzzes twice lightly, once per stretch. Watch-only, uses the
+  synced segment gradients; toggle "Melding vlakker stuk" in the Connect IQ app settings.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

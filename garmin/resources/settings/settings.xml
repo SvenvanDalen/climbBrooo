@@ -21,4 +21,7 @@
             <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.easierAheadAlert" title="@Strings.SettingsEasierAheadAlertTitle">
+        <settingConfig type="boolean"/>
+    </setting>
 </settings>

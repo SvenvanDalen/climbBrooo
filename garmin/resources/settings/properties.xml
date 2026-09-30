@@ -20,4 +20,7 @@
          1 = FTP-zone (the phone's per-segment intensity-zone colors "zc"; climbs without
          zc still use the gradient colors). -->
     <property id="colorMode" type="number">0</property>
+    <!-- Issue #213: "300 m vlakker" notice + short buzz during a climb when the upcoming
+         segments are >= 3 %-points less steep than the current one. On by default. -->
+    <property id="easierAheadAlert" type="boolean">true</property>
 </properties>
