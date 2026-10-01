@@ -120,6 +120,10 @@ class ClimbProView extends Ui.DataField {
         // Current power for the interval-block band (issue #180); null without a power meter.
         data.currentPower = (info != null && info has :currentPower && info.currentPower != null)
                 ? info.currentPower : null;
+        data.currentHeartRate = (info != null && info has :currentHeartRate && info.currentHeartRate != null)
+                ? info.currentHeartRate : null;
+        data.currentCadence = (info != null && info has :currentCadence && info.currentCadence != null)
+                ? info.currentCadence : null;
 
         // Navigation-anchored distance: when the route is loaded as a Garmin course,
         // distance-along-course (rtl - distanceToDestination) is a more accurate axis
@@ -359,82 +363,124 @@ class ClimbProView extends Ui.DataField {
         if (data.activeSegmentIndex >= 0 && data.activeSegmentIndex < data.segCount[ci]) {
             curGrad = data.segGradient[ci][data.activeSegmentIndex];
         }
-        var gradWhole = curGrad / 10;
-        var gradFrac = curGrad % 10;
-        if (gradFrac < 0) { gradFrac = -gradFrac; }
-
-        var sf = statFont(large);
-        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, sf, FieldLayout.formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
-        // Remaining elevation is the "nice to have" middle stat -- dropped in
-        // large-text mode so distance and gradient can be drawn bigger without
-        // crowding the small FR255M screen (issue #82).
-        if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
-        }
-        dc.drawText(w - 32, statsY, sf,
-            gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
-
-        // Current segment's gradient-implied VAM (vertical ascent m/h), complementary to the
-        // gradient stat above. Data-plumbing only: no new computation happens on the watch, this
-        // just renders the avg/peak pair CommListener already parsed into segVamAvg/segVamPeak.
-        // Secondary stat: skipped in large-text mode (issue #82).
-        // An interval block (issue #180) takes this slot instead: it's the rider's chosen
-        // training target, so it stays visible in large-text mode too.
-        if (data.hasBlock[ci]) {
-            drawIntervalBlock(dc, data, ci, w, (h * 0.80).toNumber());
-        } else if (showSecondaryStat(large) && data.hasVam[ci] && data.activeSegmentIndex >= 0
+        // Values every slot may need, gathered once per redraw for FieldLayout.metricText.
+        var vals = {
+            :remaining => remaining, :remElev => remElev, :curGrad => curGrad,
+            :avgGrad => data.climbAvgGrad[ci],
+            :etaSec => data.etaSeconds(remaining, data.currentSpeedMps),
+            :hasVam => false, :vamAvg => 0, :vamPeak => 0,
+            :speedMps => data.currentSpeedMps, :hr => data.currentHeartRate,
+            :power => data.currentPower, :cadence => data.currentCadence,
+            :timerMs => lastGhostTimerMs
+        };
+        if (data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
-            var vamAvg = data.segVamAvg[ci][data.activeSegmentIndex];
-            var vamPeak = data.segVamPeak[ci][data.activeSegmentIndex];
-            var vamY = (h * 0.80).toNumber();
-            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, vamY, Gfx.FONT_XTINY,
-                "VAM " + vamAvg + "/" + vamPeak, Gfx.TEXT_JUSTIFY_CENTER);
+            vals[:hasVam] = true;
+            vals[:vamAvg] = data.segVamAvg[ci][data.activeSegmentIndex];
+            vals[:vamPeak] = data.segVamPeak[ci][data.activeSegmentIndex];
         }
 
-        // Bottom line (where the preview shows "in X km"): live ghost delta when the climb
-        // carries a pacing reference, otherwise the ETA to the summit at current speed.
-        // Among ghost deltas, the per-segment PR delta ("vs PR") takes priority over the
-        // manual pacing-plan delta ("vs plan") — it's the more actionable, always-on signal
-        // (repeat-climb comparison). Screen space is too tight on the FR255M to show more
-        // than one of these three at once.
-        var ghostY = (h * 0.88).toNumber();
-        var ghostDrawn = false;
-        if (data.climbStartTimerMs >= 0) {
-            var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
-            if (data.hasRefTargets[ci]) {
-                var ref = data.refSecondsAt();
-                if (ref >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR", large);
-                    ghostDrawn = true;
-                }
-            } else if (data.hasTargets[ci]) {
-                var target = data.targetSecondsAt();
-                if (target >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan", large);
-                    ghostDrawn = true;
-                }
+        // Five phone-chosen slots ('lay'); the default layout is the pre-layout screen.
+        // Large-text mode (#82) drops the middle slot and row 4 so the rest can be bigger,
+        // except an interval block in row 4: that is the rider's training target (#180).
+        var lay = data.layout;
+        var sf = statFont(large);
+        drawSlot(dc, data, ci, lay[0], 32, statsY, sf, Gfx.TEXT_JUSTIFY_LEFT, false,
+            Gfx.COLOR_BLACK, vals);
+        if (showSecondaryStat(large)) {
+            drawSlot(dc, data, ci, lay[1], w / 2, statsY, sf, Gfx.TEXT_JUSTIFY_CENTER, true,
+                Gfx.COLOR_BLACK, vals);
+        }
+        drawSlot(dc, data, ci, lay[2], w - 32, statsY, sf, Gfx.TEXT_JUSTIFY_RIGHT, false,
+            Gfx.COLOR_BLACK, vals);
+        if (showSecondaryStat(large) || slotShowsBlock(lay[3], data.hasBlock[ci])) {
+            drawSlot(dc, data, ci, lay[3], w / 2, (h * 0.80).toNumber(), Gfx.FONT_XTINY,
+                Gfx.TEXT_JUSTIFY_CENTER, true, Gfx.COLOR_DK_GRAY, vals);
+        }
+        drawSlot(dc, data, ci, lay[4], w / 2, (h * 0.88).toNumber(), sf,
+            Gfx.TEXT_JUSTIFY_CENTER, true, Gfx.COLOR_DK_GRAY, vals);
+    }
+
+    // True when this slot code ends up drawing the interval block for a climb with/without one.
+    function slotShowsBlock(code, hasBlock) {
+        return code == FieldLayout.BLOCK || (code == FieldLayout.AUTO_ROW4 && hasBlock);
+    }
+
+    // Draws one stat slot. AUTO_ROW4 / AUTO_BOTTOM resolve to their pre-layout fallbacks;
+    // GHOST and BLOCK keep their own colours and show "--" when the climb has neither.
+    hidden function drawSlot(dc, data, ci, code, x, y, font, justify, wide, color, vals) {
+        if (code == FieldLayout.AUTO_ROW4) {
+            if (data.hasBlock[ci]) {
+                code = FieldLayout.BLOCK;
+            } else if (vals[:hasVam]) {
+                code = FieldLayout.VAM;
+            } else {
+                return;
+            }
+        } else if (code == FieldLayout.AUTO_BOTTOM) {
+            if (drawGhost(dc, data, ci, x, y, font, justify, wide)) {
+                return;
+            }
+            code = FieldLayout.ETA;
+        }
+
+        var text = null;
+        if (code == FieldLayout.GHOST) {
+            if (drawGhost(dc, data, ci, x, y, font, justify, wide)) {
+                return;
+            }
+            text = "--";
+        } else if (code == FieldLayout.BLOCK) {
+            if (data.hasBlock[ci]) {
+                drawIntervalBlock(dc, data, ci, x, y, font, justify);
+                return;
+            }
+            text = "--";
+        } else {
+            text = FieldLayout.metricText(code, vals, wide);
+        }
+        if (text != null && text.length() > 0) {
+            dc.setColor(color, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(x, y, font, text, justify);
+        }
+    }
+
+    // Live delta against the per-segment PR ("vs PR"), else the manual pacing plan
+    // ("vs plan"); PR takes priority as the always-on repeat-climb signal. Returns false
+    // (nothing drawn) before the climb timer started or without a reference.
+    hidden function drawGhost(dc, data, ci, x, y, font, justify, wide) {
+        if (data.climbStartTimerMs < 0) {
+            return false;
+        }
+        var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
+        if (data.hasRefTargets[ci]) {
+            var ref = data.refSecondsAt();
+            if (ref >= 0) {
+                drawGhostDelta(dc, x, y, font, justify, (actual - ref).toNumber(),
+                    wide ? " vs PR" : "");
+                return true;
+            }
+        } else if (data.hasTargets[ci]) {
+            var target = data.targetSecondsAt();
+            if (target >= 0) {
+                drawGhostDelta(dc, x, y, font, justify, (actual - target).toNumber(),
+                    wide ? " vs plan" : "");
+                return true;
             }
         }
-        if (!ghostDrawn) {
-            var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
-            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, ghostY, statFont(large),
-                "ETA " + FieldLayout.formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
-        }
+        return false;
     }
 
     // Interval-block line (issue #180): "Doel 266-280W" without a power meter, otherwise
     // "252W 266-280" coloured blue (under), green (in band) or red (over).
-    hidden function drawIntervalBlock(dc, data, ci, w, y) {
+    hidden function drawIntervalBlock(dc, data, ci, x, y, font, justify) {
         var band = data.blockLow[ci] + "-" + data.blockHigh[ci];
         var zone = data.blockZone(ci, data.currentPower);
         dc.setColor(intervalZoneColor(zone), Gfx.COLOR_TRANSPARENT);
         var text = (zone == data.ZONE_NONE)
             ? "Doel " + band + "W"
             : data.currentPower.toNumber() + "W " + band;
-        dc.drawText(w / 2, y, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x, y, font, text, justify);
     }
 
     // Colour per power zone; not hidden so tests can check it directly.
@@ -446,14 +492,13 @@ class ClimbProView extends Ui.DataField {
     }
 
     // + = behind (red), - or 0 = ahead/on pace (green).
-    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix, large) {
-        var f = statFont(large);
+    hidden function drawGhostDelta(dc, x, y, font, justify, deltaSec, suffix) {
         if (deltaSec > 0) {
             dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, f, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(x, y, font, "+" + deltaSec + "s" + suffix, justify);
         } else {
             dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, f, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(x, y, font, deltaSec + "s" + suffix, justify);
         }
     }
 
