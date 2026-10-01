@@ -32,6 +32,10 @@ public final class WatchRequestHandler {
     private final ObjectMapper    mapper;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    /** Medical ID re-sent with every route list (issue #230); null = never sent. */
+    private nl.paree.climbpro.data.medical.MedicalIdRepository medicalIdRepo;
+    /** Display units sent as 'un' (issue #262); null = metric (no key). */
+    private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -44,11 +48,26 @@ public final class WatchRequestHandler {
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
                                RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo) {
+        this(routeRepo, connectIqClient, riderRepo, attemptRepo, null);
+    }
+
+    public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
+                               RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo,
+                               nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo) {
+        this.unitsRepo       = unitsRepo;
         this.routeRepo       = routeRepo;
         this.connectIqClient = connectIqClient;
         this.mapper          = new ObjectMapper();
         this.riderRepo       = riderRepo;
         this.attemptRepo     = attemptRepo;
+    }
+
+    /**
+     * Enables the MEDICAL_ID message (issue #230): the widget receives phone messages only
+     * while it is open, so the phone re-sends the ID every time the widget lists routes.
+     */
+    public void setMedicalIdRepository(nl.paree.climbpro.data.medical.MedicalIdRepository repo) {
+        this.medicalIdRepo = repo;
     }
 
     /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
@@ -68,10 +87,12 @@ public final class WatchRequestHandler {
 
     /**
      * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
-     * when a rider profile is available; without one the payload is unchanged.
+     * when a rider profile is available; without one the payload is unchanged. Also carries
+     * the rider's display units (issue #262) when a units repo is wired up.
      */
     private ClimbPayloadBuilder payloadBuilder() {
         ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 
@@ -122,6 +143,17 @@ public final class WatchRequestHandler {
         response.put("routes", routes);
         boolean ok = connectIqClient.sendMessage(response);
         Log.i(TAG, "ROUTE_LIST with " + routes.size() + " routes — sent=" + ok);
+        sendMedicalId();
+    }
+
+    /**
+     * Sends the stored medical ID to the widget (issue #230). An empty ID is sent too: it
+     * tells the watch to delete a copy the rider has since cleared on the phone.
+     */
+    private void sendMedicalId() {
+        if (medicalIdRepo == null) return;
+        boolean ok = connectIqClient.sendMessage(medicalIdRepo.load().toWatchMessage());
+        Log.i(TAG, "MEDICAL_ID sent=" + ok);
     }
 
     private void handleLoadRoute(String routeId) {

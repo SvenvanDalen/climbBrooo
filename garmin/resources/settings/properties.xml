@@ -24,4 +24,7 @@
          this for 10 s (0 = off); hrIrregularAlarm = alert on repeated sudden jumps. -->
     <property id="hrAlarmBpm" type="number">0</property>
     <property id="hrIrregularAlarm" type="boolean">false</property>
+    <!-- Issue #227: heat-index warning threshold in °C (NWS heat index from Garmin Weather
+         temperature + humidity). 0 = off. 32 = NWS "extreme caution" upper band. -->
+    <property id="heatIndexThreshold" type="number">32</property>
 </properties>

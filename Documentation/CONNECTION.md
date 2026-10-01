@@ -136,6 +136,7 @@ Maximale berichtgrootte: **4096 bytes** (`PayloadBudget.MAX_BYTES`).
 | watch → telefoon | `{ "type": "LIST_ROUTES" }` | widget vraagt de routelijst |
 | watch → telefoon | `{ "type": "LOAD_ROUTE", "id": "…" }` | widget vraagt één route |
 | telefoon → watch | `{ "type": "ROUTE_LIST", "routes": [{id,name,climbCount}] }` | antwoord op LIST_ROUTES |
+| telefoon → watch | `{ "type": "MEDICAL_ID", "nm"?, "bt"?, "al"?, "md"?, "ec"?, "ep"?, "nt"? }` | medische ID (issue #230): na elke `ROUTE_LIST` en bij opslaan; zonder velden = wissen op het horloge |
 | telefoon → watch | `{ "type": "HELLO" }` | telefoon meldt zich na (her)verbinden; widget vraagt opnieuw `LIST_ROUTES` |
 | telefoon → watch | v3 route-payload (`{v:3, mode, routeId, name, climbs:[…]}`) | antwoord op LOAD_ROUTE / periodieke sync |
 

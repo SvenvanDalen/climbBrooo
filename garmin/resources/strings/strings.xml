@@ -10,4 +10,9 @@
     <string id="SettingsHrAlarmTitle">Hartslag-alarm (bpm, 0 = uit)</string>
     <string id="SettingsHrAlarmPrompt">Waarschuw als je hartslag 10 s boven deze grens blijft</string>
     <string id="SettingsHrIrregularTitle">Waarschuw bij onregelmatige hartslag</string>
+    <string id="SettingsHeatIndexTitle">Hitte-index-waarschuwing</string>
+    <string id="HeatIndexOff">Uit</string>
+    <string id="HeatIndex27">Vanaf 27 °C (voorzichtig)</string>
+    <string id="HeatIndex32">Vanaf 32 °C (extra voorzichtig)</string>
+    <string id="HeatIndex39">Vanaf 39 °C (gevaar)</string>
 </strings>

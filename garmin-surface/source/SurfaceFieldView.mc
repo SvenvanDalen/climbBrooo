@@ -170,11 +170,10 @@ class SurfaceFieldView extends Ui.DataField {
             "in " + formatDist(data.distToNext), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
+    // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
     hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            return (meters / 1000) + "." + ((meters % 1000) / 100) + "km";
-        }
-        return meters + "m";
+        var data = App.getApp().surfaceData;
+        return Units.formatDist(meters, data != null ? data.units : 0);
     }
 
     // Tril + geluid bij binnenkomst van een ondergrond-stuk (zelfde toon TONE_LAP als de klim-alert;

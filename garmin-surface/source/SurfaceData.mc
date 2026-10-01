@@ -22,6 +22,7 @@ class SurfaceData {
     var payloadReceived = false;
     var routeId = null;
     var routeName = null;
+    var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
 
     var count = 0;
     var secStart;   // metres from route start
@@ -72,6 +73,7 @@ class SurfaceData {
 
         routeId   = msg.get("routeId");
         routeName = msg.get("name");
+        units     = Units.parseFlags(msg.get("un"));
 
         var n = surfSec.size();
         if (n > MAX_SECTIONS) { n = MAX_SECTIONS; }

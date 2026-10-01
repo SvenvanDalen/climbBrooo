@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings extracted from the core screens for multilingual support (issue #261).
+     Dutch is the base language; every key here must also exist in values-en/-de/-fr/-it
+     (StringTranslationCompletenessTest enforces this). -->
+<resources>
+    <!-- Common actions -->
+    <string name="action_cancel">Annuleren</string>
+    <string name="action_save">Opslaan</string>
+    <string name="action_delete">Verwijderen</string>
+    <string name="action_add">Toevoegen</string>
+    <string name="action_close">Sluiten</string>
+    <string name="action_rename">Hernoemen</string>
+    <string name="action_apply">Toepassen</string>
+    <string name="action_later">Later</string>
+    <string name="unit_km_value" translatable="false">%1$d km</string>
+    <string name="unit_m_value" translatable="false">%1$d m</string>
+    <string name="brand_strava" translatable="false">Strava</string>
+    <string name="brand_health_connect" translatable="false">Health Connect</string>
+
+    <!-- Surface types, index = SurfaceType constant (0..5) -->
+    <string name="surface_asphalt">Asfalt</string>
+    <string name="surface_gravel">Gravel</string>
+    <string name="surface_unpaved">Onverhard</string>
+    <string name="surface_cobbles">Kasseien</string>
+    <string name="surface_mixed">Mixed</string>
+    <string name="surface_unknown">Onbekend</string>
+    <string-array name="surface_labels" translatable="false">
+        <item>@string/surface_asphalt</item>
+        <item>@string/surface_gravel</item>
+        <item>@string/surface_unpaved</item>
+        <item>@string/surface_cobbles</item>
+        <item>@string/surface_mixed</item>
+        <item>@string/surface_unknown</item>
+    </string-array>
+    <string name="surface_all">Alle</string>
+
+    <!-- Settings: language (issue #261) -->
+    <string name="settings_title">Instellingen</string>
+    <string name="settings_language_label">Taal</string>
+    <string name="settings_language_button">Taal: %1$s</string>
+    <string name="settings_language_system">Systeemtaal</string>
+    <string name="settings_language_dialog_title">Kies een taal</string>
+
+    <!-- Settings -->
+    <string name="settings_watch_mode">Horlogemodus</string>
+    <string name="settings_mode_route">Volg een gekozen route</string>
+    <string name="settings_mode_radius">Radius — klimmen in de buurt detecteren</string>
+    <string name="settings_strava_sign_in">Inloggen bij Strava</string>
+    <string name="settings_strava_sign_out">Uitloggen bij Strava</string>
+    <string name="settings_title_template">Titel-sjabloon</string>
+    <string name="settings_history_backfill">Volledige historie ophalen (10 jaar)</string>
+    <string name="settings_rider_profile">Rennersprofiel</string>
+    <string name="settings_ftp_hint">FTP (watt)</string>
+    <string name="settings_rider_weight_hint">Gewicht renner (kg)</string>
+    <string name="settings_bike_weight_hint">Gewicht fiets (kg)</string>
+    <string name="settings_ride_intensity_hint">Rit-intensiteit (procent van FTP, 40-95)</string>
+    <string name="settings_save_profile">Profiel opslaan</string>
+    <string name="settings_suggested_ftp">Voorgestelde FTP: %1$d W (toepassen?)</string>
+    <string name="settings_ftp_updated">FTP bijgewerkt</string>
+    <string name="settings_profile_saved">Profiel opgeslagen</string>
+    <string name="settings_ghost_title">Ghost voor nieuwe klimmen</string>
+    <string name="settings_ghost_explanation">Zonder PR of eigen referentietijd rijd je tegen een virtuele renner op deze streefsnelheid en/of VAM. Vul beide in en de ghost rijdt het langzaamste van de twee. Leeg = uit.</string>
+    <string name="settings_ghost_speed_hint">Streefsnelheid (km/u)</string>
+    <string name="settings_ghost_vam_hint">Streef-VAM (m/u)</string>
+    <string name="settings_ghost_save">Ghost-doel opslaan</string>
+    <string name="settings_ghost_saved">Ghost-doel opgeslagen</string>
+    <string name="settings_ghost_disabled">Ghost-doel uitgeschakeld</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_explanation">Zone rond het startpunt van een als \"thuisklim\" gemarkeerde klim die bij export/delen wordt gewazigd.</string>
+    <string name="settings_wet_title">Schoonmaakherinnering</string>
+    <string name="settings_wet_explanation">Na een rit in de regen (of een gravel- of MTB-rit na regen) krijg je een melding om fiets en ketting schoon te maken. Het startpunt van je rit wordt hiervoor naar Open-Meteo gestuurd. Werkt voor Strava-ritten van de laatste 3 dagen, na elke sync.</string>
+    <string name="settings_wet_switch">Herinner me na natte ritten</string>
+    <string name="settings_wet_no_notifications">Zonder meldingen krijg je geen schoonmaakherinnering</string>
+    <string name="settings_radius_no_permission">Zonder locatie weet de radiusmodus niet waar je bent</string>
+    <string name="settings_radius_no_location">Radiusmodus: geen locatie bekend. Zet locatie aan en sync opnieuw.</string>
+    <string name="settings_syncing">Synchroniseren…</string>
+    <string name="settings_health_connect">Koppelen met Health Connect</string>
+    <string name="settings_health_export">Ritten nu naar Health Connect</string>
+    <string name="settings_health_weight">Gewicht overnemen</string>
+    <string name="settings_health_auto">Nieuwe ritten automatisch na elke sync</string>
+    <string name="settings_health_unavailable">Health Connect is niet beschikbaar op deze telefoon.</string>
+    <string name="settings_health_needs_update">Installeer of update de Health Connect-app om te koppelen.</string>
+    <string name="settings_health_linked">Gekoppeld (%1$d van %2$d toestemmingen)</string>
+    <string name="settings_health_not_linked">Nog niet gekoppeld.</string>
+    <string name="settings_health_install">Health Connect installeren</string>
+    <string name="settings_health_change_permissions">Toestemmingen wijzigen</string>
+    <string name="settings_health_open_store">Open de Play Store en installeer Health Connect</string>
+    <string name="settings_health_fetching">Ritten ophalen uit Strava…</string>
+    <string name="settings_health_no_new">Geen nieuwe ritten</string>
+    <string name="settings_health_exported">%1$d rit(ten) naar Health Connect geschreven</string>
+    <string name="settings_health_write_failed">Schrijven mislukt: %1$s</string>
+    <string name="settings_health_no_weight">Geen gewicht gevonden in Health Connect (laatste 90 dagen)</string>
+    <string name="settings_health_weight_filled">Gewicht %1$s kg ingevuld; tik op Profiel opslaan</string>
+    <string name="settings_backup">Back-up</string>
+    <string name="settings_backup_create">Back-up maken</string>
+    <string name="settings_backup_restore">Back-up terugzetten</string>
+    <string name="settings_backup_auto_on">Automatische back-up aanzetten</string>
+    <string name="settings_backup_auto_off">Automatische back-up uitzetten</string>
+    <string name="settings_backup_created">Back-up gemaakt: %1$d bestand(en)</string>
+    <string name="settings_backup_failed">Back-up mislukt: %1$s</string>
+    <string name="settings_restore_title">Back-up terugzetten?</string>
+    <string name="settings_restore_message">Routes, pogingen, foto\'s, collecties, planning en instellingen worden vervangen door die uit de back-up. Strava moet je daarna opnieuw koppelen.</string>
+    <string name="settings_restore_confirm">Terugzetten</string>
+    <string name="settings_restored">Back-up teruggezet: %1$d bestand(en)</string>
+    <string name="settings_restore_failed">Terugzetten mislukt: %1$s</string>
+    <string name="settings_backup_no_access">Geen blijvende toegang tot deze map</string>
+    <string name="settings_backup_auto_enabled">Automatische back-up staat aan; eerste back-up gemaakt</string>
+    <string name="settings_backup_auto_first_failed">Automatische back-up staat aan, maar de eerste back-up mislukte: %1$s</string>
+    <string name="settings_backup_auto_disabled">Automatische back-up uitgezet</string>
+    <string name="settings_strava_login_first">Log eerst in bij Strava</string>
+    <string name="settings_backfill_title">Volledige historie ophalen</string>
+    <string name="settings_backfill_message">Haalt eenmalig al je Strava-activiteiten van de afgelopen 10 jaar op en zoekt je klimpogingen erin. Strava beperkt het aantal verzoeken per dag, dus bij veel ritten kan dit een paar dagen duren. Het gaat vanzelf verder op de achtergrond.</string>
+    <string name="settings_backfill_start">Starten</string>
+    <string name="settings_backfill_done">Volledige historie opgehaald</string>
+    <string name="settings_backfill_progress">Bezig — opgehaald tot %1$s</string>
+    <string name="settings_backfill_busy">Bezig…</string>
+    <string name="settings_backfill_paused">%1$s (wacht op Strava-limiet)</string>
+    <string name="settings_sync_now">Nu synchroniseren</string>
+
+    <!-- Route list -->
+    <string name="menu_sync_now">Nu synchroniseren</string>
+    <string name="menu_sort">Sorteer</string>
+    <string name="menu_status_filter">Filter op status</string>
+    <string name="menu_logbook">Logboek</string>
+    <string name="menu_climb_planning">Klimplanning</string>
+    <string name="menu_unfinished_climbs">Nooit voltooide klimmen</string>
+    <string name="menu_timeline">Tijdlijn</string>
+    <string name="menu_collections">Collecties</string>
+    <string name="menu_regions">Landen &amp; provincies</string>
+    <string name="menu_photo_quiz">Fotoquiz</string>
+    <string name="menu_climb_hygiene">Klim-opschoning</string>
+    <string name="menu_rides">Ritten</string>
+    <string name="menu_records">Records</string>
+    <string name="menu_power_curve">Vermogenscurve</string>
+    <string name="menu_zone_time">Zonetijd</string>
+    <string name="menu_hr_drift">Hartslag-drift</string>
+    <string name="menu_friend_feed">Vriendenfeed</string>
+    <string name="menu_year_review">Jaaroverzicht</string>
+    <string name="menu_fitness">Fitheid &amp; vorm</string>
+    <string name="menu_recovery">Herstel</string>
+    <string name="menu_comeback">Terugkomstplan</string>
+    <string name="menu_goal_event">Doelevenement</string>
+    <string name="menu_elevation_goal">Hoogtemeter-doel</string>
+    <string name="menu_elevation_target">Hoogtemeters per week/maand</string>
+    <string name="menu_monthly_challenge">Maanduitdaging</string>
+    <string name="menu_badges">Badges</string>
+    <string name="menu_clothing">Kledingadvies</string>
+    <string name="menu_air_quality">Luchtkwaliteit en pollen</string>
+    <string name="menu_sunscreen">Zonnebrand-check</string>
+    <string name="menu_packing_list">Paklijst</string>
+    <string name="menu_safe_home">Veilig thuis-bericht</string>
+    <string name="menu_pain_log">Pijnlogboek</string>
+    <string name="menu_bike_garage">Fietsgarage</string>
+    <string name="menu_bike_passport">Fietspaspoort</string>
+    <string name="menu_bike_costs">Fietskosten</string>
+    <string name="menu_maintenance">Onderhoud</string>
+    <string name="menu_tire_pressure">Bandenspanning</string>
+    <string name="menu_batteries">Accu\'s</string>
+    <string name="menu_torque">Aanhaalmomenten</string>
+    <string name="menu_saddle_height">Zadelhoogte</string>
+    <string name="menu_frame_size">Framemaat</string>
+    <string name="menu_export_season">Exporteer seizoen (GPX)</string>
+    <string name="menu_export_csv">Exporteer CSV</string>
+    <string name="menu_privacy_dashboard">Privacy-dashboard</string>
+    <string name="menu_check_updates">Controleer op updates</string>
+
+    <string name="route_list_quick_start">Rit nu starten</string>
+    <string name="route_list_quick_start_change">Wijzig</string>
+    <string name="route_list_quick_start_change_description">Andere route kiezen voor snelle start</string>
+    <string name="route_list_add_route">Route toevoegen</string>
+    <string-array name="route_list_status_filters">
+        <item>Alle</item>
+        <item>Wil ik rijden</item>
+        <item>Gereden</item>
+    </string-array>
+    <string name="route_list_filter_subtitle">Filter: %1$s</string>
+    <string name="route_list_action_add_to_collection">Toevoegen aan collectie</string>
+    <string name="route_list_action_ride_now">Nu rijden (naar horloge)</string>
+    <string name="route_list_quick_start_sent">Route staat klaar op je horloge</string>
+    <string name="route_list_quick_start_not_sent">Horloge niet bereikt; de sync probeert het later opnieuw</string>
+    <string name="route_list_sync_done_changes">Sync klaar: %1$d nieuwe/gewijzigde route(s)</string>
+    <string name="route_list_sync_done_none">Sync klaar — geen wijzigingen</string>
+    <string name="route_list_sync_failed">Sync mislukt</string>
+    <string name="route_list_sync_started">Sync gestart</string>
+    <string name="route_list_bluetooth_denied">Zonder Bluetooth-toestemming kan de telefoon de horloge-app niet bereiken</string>
+    <string name="route_list_update_title">Update beschikbaar</string>
+    <string name="route_list_update_message">ClimbPro %1$s is beschikbaar. Nu downloaden en installeren?</string>
+    <string name="route_list_update_install">Installeren</string>
+    <string name="route_list_update_latest">Je hebt al de nieuwste versie (v%1$s)</string>
+    <string name="route_list_update_failed">Update-check mislukt: %1$s</string>
+    <string name="route_list_update_permission_title">Toestemming nodig</string>
+    <string name="route_list_update_permission_message">Sta \"apps installeren van deze bron\" toe om de update te installeren.</string>
+    <string name="route_list_update_open_settings">Instellingen openen</string>
+    <string name="route_list_update_downloading">Update wordt gedownload…</string>
+    <string name="route_list_yearly_goal_tap">Tik om een jaardoel in te stellen</string>
+    <string name="route_list_yearly_goal_hint">Doel in km, bv. 5000</string>
+    <string name="route_list_yearly_goal_title">Jaardoel %1$d</string>
+    <string name="route_list_yearly_goal_message">Hoeveel km wil je dit jaar fietsen? Leeg of 0 wist het doel.</string>
+    <string name="route_list_yearly_goal_invalid">Ongeldig doel (max %1$d km)</string>
+    <string name="route_list_import_first">Importeer eerst een route</string>
+    <string name="route_list_pick_quick_start">Welke route rij je?</string>
+    <string name="route_list_quick_start_sending">%1$s wordt naar je horloge gestuurd</string>
+    <string name="route_list_csv_failed">CSV-export mislukt: %1$s</string>
+    <string name="route_list_delete_title">\"%1$s\" verwijderen?</string>
+    <string name="route_list_delete_message">Dit kan niet ongedaan worden gemaakt.</string>
+    <string name="route_list_import_gpx">GPX-bestand importeren</string>
+    <string name="route_list_import_strava">Synchroniseren met Strava</string>
+    <string name="route_list_import_climb_code">Klimcode importeren</string>
+    <string name="route_list_import_mywhoosh">MyWhoosh-rit importeren (FIT)</string>
+    <string name="route_list_strava_sync_started">Strava-sync gestart</string>
+    <string-array name="route_list_sort_modes">
+        <item>Importdatum (nieuwste onderaan)</item>
+        <item>Importdatum (nieuwste bovenaan)</item>
+        <item>Naam (A–Z)</item>
+    </string-array>
+    <string name="route_list_sort_title">Sorteer routes</string>
+    <string name="route_list_season_none">Geen ritten met datum gevonden om te exporteren</string>
+    <string name="route_list_season_title">Exporteer seizoen</string>
+    <string name="route_list_season_title_year">Exporteer seizoen %1$d</string>
+    <string name="route_list_season_no_climbs">Geen klimmen gevonden in %1$d</string>
+    <string name="route_list_export_failed">Export mislukt: %1$s</string>
+    <string name="route_list_mywhoosh_title">MyWhoosh-rit importeren</string>
+    <string name="route_list_mywhoosh_message">Download in MyWhoosh (of via Strava / Garmin Connect → \"Exporteer origineel\") het FIT-bestand van je rit en kies het hier. De klimmen worden gedetecteerd en de route komt in de collectie \"%1$s\".\n\nRitten zonder GPS-posities worden alleen als profiel getoond (niet voor radius-modus of navigatie).</string>
+    <string name="route_list_mywhoosh_pick">Kies bestand</string>
+    <string name="route_list_gpx_error">GPX-fout: %1$s</string>
+    <string name="route_list_import_failed">Import mislukt: %1$s</string>
+    <string name="route_list_duplicate_message">%1$d klim(men) uit dit bestand lijk(t)(en) al bekend (uit: %2$s). Samenvoegen slaat deze import over zodat de radius-index geen dubbele klim krijgt.</string>
+    <string name="route_list_duplicate_title">Klim al bekend</string>
+    <string name="route_list_duplicate_merge">Samenvoegen</string>
+    <string name="route_list_duplicate_skipped">Niet geïmporteerd — klim is al bekend</string>
+    <string name="route_list_duplicate_import_anyway">Toch importeren</string>
+    <string name="route_list_imported">Geïmporteerd: %1$d klim(men) gedetecteerd</string>
+    <string name="route_list_default_ride_name">rit</string>
+
+    <!-- Route detail -->
+    <string name="route_detail_rain_show">Regenradar tonen</string>
+    <string name="route_detail_rain_hide">Regenradar verbergen</string>
+    <string name="route_detail_rain_loading">Regenradar laden…</string>
+    <string name="route_detail_temperature_show">Temperatuurtrend tonen</string>
+    <string name="route_detail_temperature_hide">Temperatuurtrend verbergen</string>
+    <string name="route_detail_temperature_loading">Temperatuurtrend laden…</string>
+    <string name="route_detail_pacing_passport">Pacing-paspoort</string>
+    <string name="route_detail_notes">Notities</string>
+    <string name="route_detail_notes_hint">Notities over deze route…</string>
+    <string name="route_detail_rename">Hernoemen</string>
+    <string name="route_detail_save_notes">Notities opslaan</string>
+    <string name="route_detail_status">Status: %1$s</string>
+    <string name="route_detail_status_none">Status: Geen status</string>
+    <string name="route_detail_select_for_watch">Kies voor horloge</string>
+    <string name="route_detail_send_to_watch">Verstuur naar horloge</string>
+    <string name="route_detail_start_navigation">Start navigatie</string>
+    <string name="route_detail_bike_computer">Naar Wahoo / Hammerhead</string>
+    <string name="route_detail_surface_sections">Ondergrond-stukken</string>
+    <string name="route_detail_bulk_rename">Klimmen hernoemen</string>
+    <string name="route_detail_tire_pressure">Bandenspanning-advies</string>
+    <string name="route_detail_climbs_and_flats">Klimmen &amp; vlakke stukken</string>
+    <string name="route_detail_saved">Opgeslagen</string>
+    <string name="route_detail_selected_for_watch">Route gekozen voor het horloge</string>
+    <string name="route_detail_passport_climbs">%1$d klimmen · %2$s hoogteverschil</string>
+    <string name="route_detail_passport_comparison"> (≈ %1$s)</string>
+    <string name="route_detail_passport_hardest">Zwaarste: %1$s (%2$.1f%%)</string>
+    <string name="route_detail_passport_time">Geschatte tijd: %1$s</string>
+    <string name="route_detail_passport_time_unknown">Geschatte tijd: vul je profiel in (Instellingen)</string>
+    <string name="route_detail_unnamed">(naamloos)</string>
+    <string name="route_detail_no_coordinates">Route heeft geen coördinaten</string>
+    <string name="route_detail_no_distances">Route heeft geen afstanden</string>
+    <string name="route_detail_radar_none">Geen radarbeeld beschikbaar</string>
+    <string name="route_detail_radar_no_tiles">Radar ophalen mislukt: geen tegels ontvangen</string>
+    <string name="route_detail_radar_time">Radarbeeld van %1$s</string>
+    <string name="route_detail_radar_failed">Radar ophalen mislukt: %1$s</string>
+    <string name="route_detail_forecast_failed">Verwachting ophalen mislukt: %1$s</string>
+    <string name="route_detail_rain_source">Bron: RainViewer (radar), Open-Meteo (verwachting)</string>
+    <string name="route_detail_temperature_pace_planned">Tempo: geschatte tijd uit je profiel</string>
+    <string name="route_detail_temperature_pace_default">Tempo: 25 km/u (vul je profiel in voor een eigen schatting)</string>
+    <string name="route_detail_temperature_source">Bron: Open-Meteo</string>
+    <string name="route_detail_temperature_failed">Temperatuurverwachting ophalen mislukt: %1$s</string>
+    <string name="route_detail_status_title">Route-status</string>
+    <string name="route_detail_rename_hint">Nieuwe routenaam</string>
+    <string name="route_detail_rename_title">Route hernoemen</string>
+    <string name="route_detail_name_optional">Naam (optioneel)</string>
+    <string name="route_detail_name">Naam</string>
+    <string name="route_detail_flat_title">Vlak segment</string>
+    <string name="route_detail_starred_title">Ster-segment</string>
+    <string name="route_detail_section_title">Ondergrond-stuk</string>
+    <string name="route_detail_sections_empty">(nog geen stukken)</string>
+    <string name="route_detail_section_rename_title">Hernoem stuk</string>
+    <string name="route_detail_section_delete_title">Stuk verwijderen?</string>
+    <string name="route_detail_section_start_hint">Start (km)</string>
+    <string name="route_detail_section_end_hint">Eind (km)</string>
+    <string name="route_detail_section_new_title">Nieuw ondergrond-stuk</string>
+    <string name="route_detail_section_range_required">Vul start en eind in km in</string>
+    <string name="route_detail_no_geometry_export">Route heeft nog geen geometrie om te exporteren</string>
+    <string name="route_detail_app_not_found_suffix">%1$s (app niet gevonden)</string>
+    <string name="route_detail_other_device">Ander apparaat of bestand</string>
+    <string name="route_detail_export_title">Exporteer route met klimmen</string>
+    <string name="route_detail_export_app_missing">%1$s-app niet gevonden; kies zelf een app</string>
+    <string name="route_detail_export_chooser">Exporteer route</string>
+    <string name="route_detail_export_failed">Exporteren mislukt: %1$s</string>
+    <string name="route_detail_no_geometry_share">Route heeft nog geen geometrie om te delen</string>
+    <string name="route_detail_open_garmin">Open in Garmin Connect</string>
+    <string name="route_detail_gpx_failed">Kon GPX niet aanmaken</string>
+
+    <!-- Climb detail layout -->
+    <string name="climb_detail_not_rated">Nog niet beoordeeld</string>
+    <string name="climb_detail_rename">Klim hernoemen</string>
+    <string name="climb_detail_pro_reference">WR/pro-referentietijd instellen</string>
+    <string name="climb_detail_link_interval">Intervalblok koppelen</string>
+    <string name="climb_detail_share_image">Deel als afbeelding</string>
+    <string name="climb_detail_export_gpx">Exporteer als GPX</string>
+    <string name="climb_detail_share_code">Deel als code</string>
+    <string name="climb_detail_rate">Klim beoordelen</string>
+    <string name="climb_detail_export_workout">Exporteer als Zwift-/ERG-workout</string>
+    <string name="climb_detail_mark_home">Markeer als thuisklim</string>
+    <string name="climb_detail_sunrise_ride">Zonsopkomst-rit plannen</string>
+    <string name="climb_detail_summit_weather">Weer op de top</string>
+    <string name="climb_detail_best_moment_tap">Beste moment: tik om te laden</string>
+    <string name="climb_detail_compare">Vergelijk met andere klim</string>
+    <string name="climb_detail_gears">Versnellingen berekenen</string>
+    <string name="climb_detail_recompute_segments">Herbereken segmenten</string>
+    <string name="climb_detail_adjust_shape">Vorm aanpassen</string>
+    <string name="climb_detail_segments">Segmenten</string>
+    <string name="climb_detail_history">Historie</string>
+
+    <!-- Climb detail -->
+    <string name="action_clear">Wissen</string>
+    <string name="action_share">Delen</string>
+    <string name="source_open_meteo">Bron: Open-Meteo</string>
+    <string name="climb_detail_default_name">Klim %1$d</string>
+    <string name="climb_detail_stats">%1$s totaal · gem. %2$.1f%% helling · %3$s hoogteverschil · %4$s</string>
+    <string name="climb_detail_home_on">Thuisklim — startlocatie wordt gewazigd bij export</string>
+    <string name="climb_detail_rate_edit">Beoordeling aanpassen</string>
+    <string name="climb_detail_estimate_missing">Stel je FTP en gewicht in (Instellingen) voor een tijdschatting</string>
+    <string name="climb_detail_estimate">Geschatte tijd: %1$s · %2$.0f W</string>
+    <string name="climb_detail_seasonal_faster">%1$.0f%% sneller dan in %2$d rond deze tijd van het jaar</string>
+    <string name="climb_detail_seasonal_slower">%1$.0f%% langzamer dan in %2$d rond deze tijd van het jaar</string>
+    <string name="climb_detail_history_best_of_year">🏆 Beste van dit jaar</string>
+    <string name="climb_detail_history_deviation">⚠️ Afwijkende route (niet meegeteld voor PR)</string>
+    <string name="climb_detail_group_photo">👥 Groepsfoto op de top · %1$s</string>
+    <string name="climb_detail_attempt_edit">Notitie/foto/groep bewerken</string>
+    <string name="climb_detail_attempt_add">+ Notitie/foto/groep toevoegen</string>
+    <string name="climb_detail_not_loaded">Klim nog niet geladen</string>
+    <string name="climb_detail_no_sunrise">Op deze datum komt de zon hier niet op of gaat ze niet onder.</string>
+    <string name="climb_detail_sunrise_message">Zon op: %1$s\nOp de top: %2$s (%3$d min vooraf)\nVertrek vanaf de routestart: %4$s\n\nAanrit %5$s km à 25 km/u (%6$s) + klim %7$s</string>
+    <string name="climb_detail_sunrise_estimate_default">(schatting op 10 km/u; vul je profiel in voor een betere schatting)</string>
+    <string name="climb_detail_sunrise_title">Zonsopkomst op %1$s</string>
+    <string name="climb_detail_sunrise_plan">Zet in klimplanning</string>
+    <string name="climb_detail_sunrise_past">Het vertrektijdstip is al voorbij</string>
+    <string name="climb_detail_sunrise_planned_name">Zonsopkomst: %1$s</string>
+    <string name="climb_detail_sunrise_planned">Gepland; je krijgt een herinnering</string>
+    <string name="climb_detail_sunrise_failed">Plannen mislukt: %1$s</string>
+    <string name="climb_detail_share_chooser">Deel klim</string>
+    <string name="climb_detail_image_failed">Kon afbeelding niet aanmaken</string>
+    <string name="climb_detail_gpx_chooser">Exporteer klim als GPX</string>
+    <string name="climb_detail_workout_zwift">Zwift-workout (.zwo)</string>
+    <string name="climb_detail_workout_erg">ERG-bestand (.erg, TrainerRoad e.a.)</string>
+    <string name="climb_detail_workout_repeat_zwift">Herhaal-klim als Zwift-workout (.zwo)</string>
+    <string name="climb_detail_workout_repeat_erg">Herhaal-klim als ERG-bestand (.erg)</string>
+    <string name="climb_detail_workout_mywhoosh">MyWhoosh-workout (.zwo)</string>
+    <string name="climb_detail_workout_title">Exporteer als indoor-workout</string>
+    <string name="climb_detail_export">Exporteer</string>
+    <string name="climb_detail_repeat_auto">Auto</string>
+    <string name="climb_detail_repeat_minutes" translatable="false">%1$d min</string>
+    <string name="climb_detail_repeat_count">Herhalingen</string>
+    <string name="climb_detail_repeat_recovery">Herstel</string>
+    <string name="climb_detail_repeat_title">Herhaal-klim workout</string>
+    <string name="climb_detail_repeat_message" formatted="false">Auto herstel = de helft van je klimtijd (3–10 min), op 50 % FTP.</string>
+    <string name="climb_detail_workout_share">Deel workout</string>
+    <string name="climb_detail_mywhoosh_title">Naar MyWhoosh</string>
+    <string name="climb_detail_mywhoosh_message">MyWhoosh kan geen eigen routes importeren, dus de klim gaat erin als workout: elk segment een blok met vermogen dat de helling volgt. Zet het bestand op een plek die je op je trainer-pc of tablet kunt openen (bijv. Drive of mail), log in op de MyWhoosh-website en kies bij Workouts voor uploaden. De workout staat daarna in je bibliotheek in de app.</string>
+    <string name="climb_detail_mywhoosh_chooser">Deel MyWhoosh-workout</string>
+    <string name="climb_detail_weather_loading">Weer ophalen…</string>
+    <string name="climb_detail_weather_now">NU</string>
+    <string name="climb_detail_weather_later">OVER 3 UUR</string>
+    <string name="climb_detail_weather_none">Geen verwachting beschikbaar voor dit moment</string>
+    <string name="climb_detail_weather_failed">Weer ophalen mislukt: %1$s</string>
+    <string name="climb_detail_best_loading">Beste moment: laden…</string>
+    <string name="climb_detail_best_offline">Beste moment: niet beschikbaar zonder verbinding (tik om opnieuw te proberen)</string>
+    <string name="climb_detail_best_failed">Beste moment: ophalen mislukt (%1$s), tik om opnieuw te proberen</string>
+    <string name="climb_detail_best">Beste moment: %1$s</string>
+    <string name="climb_detail_best_footer">Gemiddelden over 3 jaar · bron: Open-Meteo</string>
+    <string name="climb_detail_best_no_history">Beste moment: geen weerhistorie voor deze plek</string>
+    <string name="climb_detail_rename_hint">Naam van de klim</string>
+    <string name="climb_detail_ref_time_hint">Tijd (m:ss of h:mm:ss)</string>
+    <string name="climb_detail_ref_source_hint">Bron (bv. Pogačar 2024)</string>
+    <string name="climb_detail_ref_title">WR/pro-referentietijd</string>
+    <string name="climb_detail_ref_invalid">Ongeldige tijd (gebruik Wissen om te legen)</string>
+    <string name="climb_detail_ref_text">Referentie: %1$s</string>
+    <string name="climb_detail_ref_estimate">jouw schatting %1$s</string>
+    <string name="climb_detail_interval_custom" formatted="false">Eigen doel (% FTP)…</string>
+    <string name="climb_detail_interval_title">Intervalblok op deze klim</string>
+    <string name="climb_detail_interval_custom_hint">Doel in %% FTP (%1$d–%2$d)</string>
+    <string name="climb_detail_interval_custom_title">Eigen intervaldoel</string>
+    <string name="climb_detail_interval_custom_invalid">Kies een doel tussen %1$d en %2$d %% FTP</string>
+    <string name="climb_detail_interval_text">Intervalblok: %1$s</string>
+    <string name="climb_detail_interval_no_ftp">stel je FTP in voor wattages op het horloge</string>
+    <string name="climb_detail_interval_edit">Intervalblok aanpassen</string>
+    <string name="climb_detail_resegment_title">Segmenten per klim</string>
+    <string name="climb_detail_resegment_confirm">Herbereken</string>
+    <string name="climb_detail_shape_auto">Automatisch</string>
+    <string name="climb_detail_shape_title">Vorm van de klim</string>
+    <string name="climb_detail_rating_road">Wegdek</string>
+    <string name="climb_detail_rating_traffic">Verkeer (5 = rustig)</string>
+    <string name="climb_detail_rating_view">Uitzicht</string>
+    <string name="climb_detail_note_optional">Notitie (optioneel)</string>
+    <string name="climb_detail_bulk_surface_title">Alle segmenten instellen?</string>
+    <string name="climb_detail_bulk_surface_message">Dit overschrijft alle individuele instellingen voor deze klim.</string>
+    <string name="climb_detail_segment_target_title">Doeltijd segment %1$d</string>
+    <string name="climb_detail_segment_target_message">Laat leeg en kies \"Automatisch\" om de berekende tijd te gebruiken.</string>
+    <string name="climb_detail_segment_target_invalid">Ongeldige tijd, gebruik mm:ss</string>
+    <string name="climb_detail_segment_surface_title">Oppervlak voor segment %1$d</string>
+    <string name="climb_detail_note">Notitie</string>
+    <string name="climb_detail_companions_hint">Meegereden met (namen, gescheiden door komma\'s)</string>
+    <string name="climb_detail_group_hint">Met een foto en namen wordt dit een groepsfoto op de top, zichtbaar bij de rit in het rittenarchief.</string>
+    <string name="climb_detail_photo_change">Andere foto kiezen</string>
+    <string name="climb_detail_photo_pick">Foto kiezen</string>
+    <string name="climb_detail_attempt_title">Notitie, foto &amp; groep</string>
+
+    <!-- Home-screen widget -->
+    <string name="widget_this_week">DEZE WEEK</string>
+    <string name="widget_no_climbs_this_week">Nog geen klimmen deze week</string>
+    <string name="widget_next_planned">VOLGENDE GEPLANDE KLIM</string>
+    <string name="widget_no_climb_planned">Geen klim gepland</string>
+
+    <!-- Strava sign-in -->
+    <string name="strava_auth_title">Inloggen bij Strava</string>
+    <string name="strava_auth_explanation">Koppel je Strava-account om je routes automatisch te importeren en klimmen te detecteren.</string>
+    <string name="strava_auth_button">Inloggen met Strava</string>
+    <string name="strava_auth_completing">Inloggen afronden…</string>
+</resources>

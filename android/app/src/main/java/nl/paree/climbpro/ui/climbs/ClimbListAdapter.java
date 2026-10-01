@@ -49,8 +49,12 @@ public final class ClimbListAdapter
         h.nameView.setText(name != null ? name : "Climb " + (position + 1));
         String categoryLabel = ClimbCategoryLabel.forStoredClimb(c);
         String categorySuffix = categoryLabel.isEmpty() ? "" : " · " + categoryLabel;
-        h.statsView.setText(String.format("%d m · %.1f%% avg · %d m gain · %s%s",
-                c.length, c.avgGradient * 100, c.elevationGain,
+        // Issue #262: length and gain in the rider's display units.
+        nl.paree.climbpro.domain.units.UnitFormatter units =
+                nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(h.itemView.getContext());
+        h.statsView.setText(String.format("%s · %.1f%% avg · %s gain · %s%s",
+                units.climbLength(c.length),
+                c.avgGradient * 100, units.elevation(c.elevationGain),
                 ClimbShapeLabel.forStoredClimb(c), categorySuffix));
         h.colorBar.setBackgroundColor(
                 SegmentColorPalette.toColor(GradientColor.forGradient(c.avgGradient)));

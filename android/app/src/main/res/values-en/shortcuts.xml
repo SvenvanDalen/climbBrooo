@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_start_ride_short">Start my ride</string>
+    <string name="shortcut_start_ride_long">Start my ride on the watch</string>
+    <string name="shortcut_next_climb_short">Next climb</string>
+    <string name="shortcut_next_climb_long">How far is the next climb?</string>
+
+    <string-array name="shortcut_start_ride_synonyms">
+        <item>start ride</item>
+        <item>start my ride</item>
+        <item>ride</item>
+    </string-array>
+    <string-array name="shortcut_next_climb_synonyms">
+        <item>next climb</item>
+        <item>how far is the next climb</item>
+        <item>climb</item>
+    </string-array>
+</resources>
