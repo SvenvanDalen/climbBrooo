@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_start_ride_short">Fahrt starten</string>
+    <string name="shortcut_start_ride_long">Meine Fahrt auf der Uhr starten</string>
+    <string name="shortcut_next_climb_short">Nächster Anstieg</string>
+    <string name="shortcut_next_climb_long">Wie weit ist der nächste Anstieg?</string>
+
+    <string-array name="shortcut_start_ride_synonyms">
+        <item>Fahrt starten</item>
+        <item>meine Fahrt starten</item>
+        <item>Fahrt</item>
+    </string-array>
+    <string-array name="shortcut_next_climb_synonyms">
+        <item>nächster Anstieg</item>
+        <item>wie weit ist der nächste Anstieg</item>
+        <item>Anstieg</item>
+    </string-array>
+</resources>

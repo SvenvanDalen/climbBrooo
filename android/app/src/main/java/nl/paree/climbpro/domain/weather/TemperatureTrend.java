@@ -137,6 +137,13 @@ public final class TemperatureTrend {
 
     /** Dutch multi-line summary: start, finish, warmest and coldest point. */
     public String describe(ZoneId zone) {
+        return describe(zone, nl.paree.climbpro.domain.units.UnitPreferences.METRIC);
+    }
+
+    /** As {@link #describe(ZoneId)} in the rider's display units (issue #262). */
+    public String describe(ZoneId zone, nl.paree.climbpro.domain.units.UnitPreferences units) {
+        nl.paree.climbpro.domain.units.UnitFormatter fmt =
+                new nl.paree.climbpro.domain.units.UnitFormatter(units, NL);
         if (points.isEmpty()) return "Geen temperatuurverwachting beschikbaar voor dit tijdstip.";
         Point first = points.get(0);
         Point last = points.get(points.size() - 1);
@@ -147,13 +154,13 @@ public final class TemperatureTrend {
             if (p.celsius < cold.celsius) cold = p;
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("Start ").append(time(first, zone)).append(": ").append(deg(first.celsius));
-        sb.append("\nFinish ").append(time(last, zone)).append(": ").append(deg(last.celsius));
-        sb.append("\nWarmst: ").append(deg(warm.celsius)).append(" rond ").append(km(warm))
+        sb.append("Start ").append(time(first, zone)).append(": ").append(deg(first.celsius, fmt));
+        sb.append("\nFinish ").append(time(last, zone)).append(": ").append(deg(last.celsius, fmt));
+        sb.append("\nWarmst: ").append(deg(warm.celsius, fmt)).append(" rond ").append(km(warm, fmt))
                 .append(" (").append(time(warm, zone)).append(')');
-        sb.append("\nKoudst: ").append(deg(cold.celsius)).append(" rond ").append(km(cold))
+        sb.append("\nKoudst: ").append(deg(cold.celsius, fmt)).append(" rond ").append(km(cold, fmt))
                 .append(" (").append(time(cold, zone)).append(')');
-        sb.append(" · verschil ").append(deg(maxCelsius - minCelsius));
+        sb.append(" · verschil ").append(degDelta(maxCelsius - minCelsius, fmt));
         if (missing > 0) {
             sb.append("\nLet op: ").append(missing)
                     .append(missing == 1 ? " punt valt" : " punten vallen")
@@ -166,11 +173,17 @@ public final class TemperatureTrend {
         return HOUR.format(p.eta.atZone(zone));
     }
 
-    private static String deg(double c) {
-        return Math.round(c) + " °C";
+    private static String deg(double c, nl.paree.climbpro.domain.units.UnitFormatter fmt) {
+        return Math.round(fmt.temperatureValue(c)) + " " + fmt.temperatureUnit();
     }
 
-    private static String km(Point p) {
-        return "km " + String.format(NL, "%.0f", p.distanceM / 1000.0);
+    /** A temperature difference: °F scales by 9/5 but has no +32 offset. */
+    private static String degDelta(double dc, nl.paree.climbpro.domain.units.UnitFormatter fmt) {
+        double d = fmt.preferences().fahrenheit ? dc * 9.0 / 5.0 : dc;
+        return Math.round(d) + " " + fmt.temperatureUnit();
+    }
+
+    private static String km(Point p, nl.paree.climbpro.domain.units.UnitFormatter fmt) {
+        return fmt.distanceUnit() + " " + String.format(NL, "%.0f", fmt.distanceValue(p.distanceM));
     }
 }

@@ -50,6 +50,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `ClimbProView.mc`, `ClimbProApp.mc`
 | 15 | **Klim-start-alert** (tril + toon, één keer/klim, off-route onderdrukt) | `triggerClimbAlert` (+ alert-gate in `compute`) | 🟡 | uitgevoerd via `compute`-pad; idempotentie/off-route-onderdrukking is smoke, niet exact geassert |
 | 16 | **App-lifecycle** (start, telefoonbericht, initiële view, stop) | `ClimbProApp.onStart/onPhoneMessage/getInitialView/onStop` | 🟡 | `app_lifecycle_startMessageStop` (assert `payloadReceived`/`climbCount`/view-lijst) |
 | 17 | **Gevoelstemperatuur in afdalingen** (issue #248: windchill uit temperatuur + rijsnelheid, alleen tussen klimmen tijdens een afdaling) | `windChillC`, `DescentTracker.update`, `latchFeltTemp`, `feltTempToShow`, `feltTempLabel` (`WindChill.mc`); `ambientTempC`, `drawFeltTempBanner` (`ClimbProView.mc`) | 🟢 | `WindChillTest.mc`: referentiewaarden Environment Canada (−10 °C/20 km/u, 0/30, 5/40), grenzen (>10 °C en <4,8 km/u → luchttemp., 10 °C inclusief, nooit warmer dan lucht, null), afdaling vereist ≥150 m venster, ≥25 km/u én ≤−3 %; hysterese (blijft aan tot <20 km/u of >−1 %), null-snelheid → uit, odometer-reset herankert; 1 °C-display-latch; verborgen op klim / zonder temperatuur. Sensor-read + banner: on-device |
+| 18 | **Hitte-index-waarschuwing** (issue #227: NWS-hitte-index uit Garmin Weather temp + luchtvochtigheid, alarm met hysterese en 20-min-herinnering) | `heatIndexC`, `HeatAlarm.update`, `heatLabel` (`HeatIndex.mc`); `checkHeatIndex`, `heatReading`, `drawHeatBanner` (`ClimbProView.mc`) | 🟢 | `HeatIndexTest.mc`: NWS-referentiewaarden (90 °F/70 %, 35 °C/50 %, 28 °C/90 %), lage-vochtcorrectie, simpele formule, onbekende vochtigheid → luchttemp., clamp; alarm één keer, hysterese −2 °C, herinnering na 20 min, uit/null wist zonder alarm; labelafronding. Weather/Sensor-read + banner: on-device |
 
 ---
 
@@ -93,6 +94,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 | 13 | **Veilige (niet-navigerende) delegate-handlers** | `ClimbListDelegate`/`RouteListDelegate` `onNextPage/onPreviousPage/onSelect` (guard-pad) | 🟡 | `*_delegate_safeHandlers` (guard-pad geeft `true` terug zonder navigeren) |
 | 14 | **App-lifecycle** (glance, initiële view, bericht, stop) | `ClimbWidgetApp.onStart/getGlanceView/getInitialView/processMessage/onPhoneMessage/onStop` | 🟡 | `widgetApp_lifecycle_initGlanceMessageStop` (assert `payloadReceived`, 2 views) |
 | 15 | **Navigatie- & telefoon-glue** (view-wissels, timer, transmit) | Navigerende takken van `onBack/onMenu/onSelect/onNextPage/onPreviousPage`, `SyncView.onShow/onTimeout` (`Timer` + `switchToView`), `CommListener.handleHello` (`Comm.transmit`), `RouteListDelegate.openSavedClimb`/`splitOnLastUnderscore` | 🔴 | **Alleen on-device.** Empirisch bevestigd: een view pushen in een `(:test)` maakt `Ui.getCurrentView()` niet die view, dus view-afhankelijke takken en `Timer`/`Comm.transmit` draaien niet headless |
+| 16 | **Medische ID** (issue #230: `MEDICAL_ID`-bericht opslaan/wissen, eerste rij in de routelijst, scrollbaar scherm) | `medicalIdFromMessage`, `storeMedicalId`, `loadMedicalId`, `medicalIdLines`, `wrapText`, `MedicalIdView` (`MedicalId.mc`); `RouteListView.medicalOffset` | 🟢 | `MedicalIdTest.mc`: alleen gevulde String-velden, leeg bericht → null/wissen, opslaan + wissen via bericht, labels in volgorde, woordafbreking + lange woorden knippen, view render + scroll-grens, routelijst krijgt live een eerste rij met behoud van selectie |
 
 ---
 
@@ -100,9 +102,9 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 
 | Module | Functionaliteiten | 🟢 Strak | 🟡 Smoke | 🔴 On-device |
 |---|---|---|---|---|
-| `garmin` | 17 | 11 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill) | 6 (render + lifecycle + alert) | 0 |
+| `garmin` | 18 | 12 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill, hitte-index) | 6 (render + lifecycle + alert) | 0 |
 | `garmin-surface` | 8 | 4 (parser, voortgang, drift-correctie, GPS-verfijning) | 4 (render + lifecycle + alert) | 0 |
-| `garmin-widget` | 15 | 5 (parser, storage, index, starred, deel-logica) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
+| `garmin-widget` | 16 | 6 (parser, storage, index, starred, deel-logica, medische ID) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
 
 **Bedrijfslogica + wire-parser: ~100% strak geassert over alle drie modules.**
 De enige echte gap is de UI-navigatie/timer/transmit-glue in de widget, die

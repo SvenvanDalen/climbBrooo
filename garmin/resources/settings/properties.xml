@@ -20,4 +20,7 @@
          1 = FTP-zone (the phone's per-segment intensity-zone colors "zc"; climbs without
          zc still use the gradient colors). -->
     <property id="colorMode" type="number">0</property>
+    <!-- Issue #227: heat-index warning threshold in °C (NWS heat index from Garmin Weather
+         temperature + humidity). 0 = off. 32 = NWS "extreme caution" upper band. -->
+    <property id="heatIndexThreshold" type="number">32</property>
 </properties>

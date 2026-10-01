@@ -11,10 +11,12 @@ import androidx.preference.PreferenceManager;
 import nl.paree.climbpro.ClimbProApplication;
 import nl.paree.climbpro.data.offline.OfflinePackageStore;
 import nl.paree.climbpro.data.osm.OverpassPoiClient;
+import nl.paree.climbpro.data.border.BorderCrossingService;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.RouteReverseService;
+import nl.paree.climbpro.data.route.RouteShortenService;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
@@ -48,6 +50,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final ClimbAttemptRepository attemptRepo;
     private final OnboardPushService onboardPushService;
     private final HistoricClimbScoreCache historicClimbScoreCache;
+    private final BorderCrossingService borderCrossingService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredRoute> route      = new MutableLiveData<>();
@@ -65,8 +68,12 @@ public final class RouteDetailViewModel extends AndroidViewModel {
             new MutableLiveData<>();
     /** One-shot result of {@link #reverseRoute}; cleared via {@link #consumeReversedRoute}. */
     private final MutableLiveData<RouteReverseService.Result> reversedRoute = new MutableLiveData<>();
+    /** One-shot result of {@link #shortenRoute}; cleared via {@link #consumeShortenedRoute}. */
+    private final MutableLiveData<RouteShortenService.Result> shortenedRoute = new MutableLiveData<>();
     private final MutableLiveData<RouteElevationProfile> elevationProfile =
             new MutableLiveData<>();
+    /** Start country + border crossings as display lines (issue #209); empty = no crossing. */
+    private final MutableLiveData<List<String>> borderCrossings = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
@@ -76,6 +83,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         onboardPushService = new OnboardPushService(
                 ((ClimbProApplication) app).connectIqClient());
         historicClimbScoreCache = ((ClimbProApplication) app).historicClimbScoreCache();
+        borderCrossingService = new BorderCrossingService(app);
     }
 
     public LiveData<StoredRoute>  route()      { return route; }
@@ -146,6 +154,23 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         });
     }
 
+    public LiveData<RouteShortenService.Result> shortenedRoute() { return shortenedRoute; }
+
+    public void consumeShortenedRoute() { shortenedRoute.setValue(null); }
+
+    /** Saves (or reuses) a shortened variant of the route (issue #205); original untouched. */
+    public void shortenRoute(String routeId, int fromIndex, int toIndex) {
+        executor.execute(() -> {
+            try {
+                shortenedRoute.postValue(
+                        new RouteShortenService(routeRepo).create(routeId, fromIndex, toIndex));
+            } catch (Exception e) {
+                error.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.route_shorten_failed, e.getMessage()));
+            }
+        });
+    }
+
     public void deleteOfflinePackage(String routeId) {
         executor.execute(() -> offlineStore().delete(routeId));
     }
@@ -168,6 +193,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
     /** Whole-route elevation profile with climbs highlighted (issue #207). */
     public LiveData<RouteElevationProfile> elevationProfile() { return elevationProfile; }
+    /** Border crossings along the route (issue #209); see {@link BorderCrossingService}. */
+    public LiveData<List<String>> borderCrossings() { return borderCrossings; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -189,6 +216,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
                 restSuggestions.postValue(computeRestSuggestions(r));
+                borderCrossings.postValue(borderCrossingService.describe(r));
             } catch (Exception e) {
                 error.postValue("Could not load route: " + e.getMessage());
             }
