@@ -32,7 +32,7 @@ intervalblok in vak 3 zichtbaar blijft (huidig gedrag, #180).
 | 0    | REM_DIST      | rest-afstand klim (`formatDist`)                             |
 | 1    | REM_ELEV      | rest-hoogtemeters `123m↑`                                    |
 | 2    | CUR_GRAD      | stijging huidig segment `7.4%`                               |
-| 3    | AVG_GRAD      | gemiddelde stijging klim `ø6.1%` (uit `ag`)                  |
+| 3    | AVG_GRAD      | gemiddelde stijging klim `~6.1%` (uit `ag`; `ø` zit niet in de Garmin-fonts) |
 | 4    | VAM           | middenvakken: `VAM 900/1100`; zijvakken: alleen gemiddelde   |
 | 5    | ETA           | `ETA 12:34`                                                  |
 | 6    | GHOST         | `vs PR` / `vs plan` delta met bestaande kleuren; anders `--` |
