@@ -154,15 +154,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             loadBestTime(false);
 
             String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
-            binding.toolbar.setTitle(name != null ? name : "Climb " + (climbIndex + 1));
+            binding.toolbar.setTitle(name != null ? name
+                    : getString(R.string.climb_detail_default_name, climbIndex + 1));
             String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
             String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(climb);
             // Issue #262: length and gain in the rider's display units.
             nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
-            String statsText = String.format(
-                    "%s total · %.1f%% avg gradient · %s elevation gain · %s",
-                    units.climbLength(climb.length),
-                    climb.avgGradient * 100, units.elevation(climb.elevationGain),
+            String statsText = getString(R.string.climb_detail_stats,
+                    units.climbLength(climb.length), climb.avgGradient * 100,
+                    units.elevation(climb.elevationGain),
                     nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb));
             if (!categoryLabel.isEmpty()) {
                 statsText += " · " + categoryLabel;
@@ -176,14 +176,14 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
             loadedClimb = climb;
             binding.btnToggleHomeClimb.setText(climb.isHome
-                    ? "Thuisklim — startlocatie wordt gewazigd bij export"
-                    : "Markeer als thuisklim");
+                    ? R.string.climb_detail_home_on
+                    : R.string.climb_detail_mark_home);
             binding.climbRating.setText(
                     nl.paree.climbpro.domain.climb.ClimbRating.detailText(climb));
             binding.btnRateClimb.setText(
                     nl.paree.climbpro.domain.climb.ClimbRating.isRated(climb)
                             || climb.ratingNote != null
-                            ? "Beoordeling aanpassen" : "Klim beoordelen");
+                            ? R.string.climb_detail_rate_edit : R.string.climb_detail_rate);
             tryDrawMap();
             updateManualRefText();
             updateIntervalBlockText();
@@ -193,14 +193,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         viewModel.timeEstimate().observe(this, estimate -> {
             if (estimate == null) {
-                binding.climbTimeEstimate.setText(
-                        "Stel je FTP en gewicht in (Instellingen) voor een tijdschatting");
+                binding.climbTimeEstimate.setText(R.string.climb_detail_estimate_missing);
                 adapter.setSegmentSeconds(null);
                 lastTimeEstimateText = null;
                 lastEstimateSeconds = null;
             } else {
-                lastTimeEstimateText = String.format(java.util.Locale.US,
-                        "Geschatte tijd: %s · %.0f W",
+                lastTimeEstimateText = getString(R.string.climb_detail_estimate,
                         DurationFormat.format(estimate.totalSeconds),
                         estimate.assumedPowerWatts);
                 binding.climbTimeEstimate.setText(lastTimeEstimateText);
@@ -218,10 +216,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 binding.seasonalComparison.setVisibility(android.view.View.GONE);
                 return;
             }
-            String direction = result.percentFaster >= 0 ? "sneller" : "langzamer";
-            binding.seasonalComparison.setText(String.format(java.util.Locale.getDefault(),
-                    "%.0f%% %s dan in %d rond deze tijd van het jaar",
-                    Math.abs(result.percentFaster), direction, result.priorYear));
+            binding.seasonalComparison.setText(getString(result.percentFaster >= 0
+                            ? R.string.climb_detail_seasonal_faster
+                            : R.string.climb_detail_seasonal_slower,
+                    Math.abs(result.percentFaster), result.priorYear));
             binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
         });
 
@@ -232,7 +230,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
         viewModel.saved().observe(this, isSaved -> {
             if (Boolean.TRUE.equals(isSaved))
-                Toast.makeText(this, "Opgeslagen", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.route_detail_saved, Toast.LENGTH_SHORT).show();
         });
 
         viewModel.history().observe(this, rows -> {
@@ -257,9 +255,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 String delta = row.deltaToPrSec == 0
                         ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
                         + String.format(java.util.Locale.getDefault(), "%02d", row.deltaToPrSec % 60);
-                String badge = row.bestOfYear ? "  🏆 Beste van dit jaar" : "";
+                String badge = row.bestOfYear
+                        ? "  " + getString(R.string.climb_detail_history_best_of_year) : "";
                 String deviationBadge = row.routeDeviation
-                        ? "  ⚠️ Afwijkende route (niet meegeteld voor PR)" : "";
+                        ? "  " + getString(R.string.climb_detail_history_deviation) : "";
                 tv.setText(String.format(java.util.Locale.getDefault(),
                         "%s   %d:%02d   (%s)%s%s", date, m, s, delta, badge, deviationBadge));
                 rowLayout.addView(tv);
@@ -287,7 +286,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     android.widget.TextView groupView = new android.widget.TextView(this);
                     boolean hasPhoto = row.photoFileName != null && !row.photoFileName.isEmpty();
                     groupView.setText(hasPhoto
-                            ? "👥 Groepsfoto op de top · " + companionsLabel
+                            ? getString(R.string.climb_detail_group_photo, companionsLabel)
                             : "👥 " + companionsLabel);
                     groupView.setTextSize(13f);
                     groupView.setPadding(0, 4, 0, 0);
@@ -309,7 +308,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 android.widget.TextView editLink = new android.widget.TextView(this);
                 editLink.setText(row.note != null || row.photoFileName != null
                         || row.companions != null
-                        ? "Notitie/foto/groep bewerken" : "+ Notitie/foto/groep toevoegen");
+                        ? R.string.climb_detail_attempt_edit : R.string.climb_detail_attempt_add);
                 editLink.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
                 editLink.setPadding(0, 8, 0, 0);
                 editLink.setOnClickListener(v -> showAttemptNoteDialog(row));
@@ -331,7 +330,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnShareCode.setOnClickListener(v -> {
             StoredRoute r = viewModel.route().getValue();
             if (r == null) {
-                Toast.makeText(this, "Klim nog niet geladen", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.climb_detail_not_loaded, Toast.LENGTH_SHORT).show();
                 return;
             }
             nl.paree.climbpro.ui.share.ClimbCodeSharing.shareClimb(this, r, climbIndex);
@@ -398,8 +397,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 .sunrise(date, c.startLat, c.startLon);
         if (sunrise == null) {
             new AlertDialog.Builder(this)
-                    .setMessage("Op deze datum komt de zon hier niet op of gaat ze niet onder.")
-                    .setPositiveButton("OK", null).show();
+                    .setMessage(R.string.climb_detail_no_sunrise)
+                    .setPositiveButton(android.R.string.ok, null).show();
             return;
         }
         ClimbTimeEstimate est = viewModel.timeEstimate().getValue();
@@ -409,46 +408,49 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         est != null ? est.totalSeconds : 0, c.length,
                         SunriseRidePlanner.DEFAULT_BUFFER_MIN);
         ZoneId zone = ZoneId.systemDefault();
-        Locale dutch = new Locale("nl");
+        Locale locale = getResources().getConfiguration().getLocales().get(0);
         DateTimeFormatter hm = DateTimeFormatter.ofPattern("HH:mm");
         DateTimeFormatter dayHm =
-                DateTimeFormatter.ofPattern("EEE d MMM HH:mm", dutch);
+                DateTimeFormatter.ofPattern("EEE d MMM HH:mm", locale);
         String name = c.userDisplayName != null ? c.userDisplayName
-                : (c.name != null ? c.name : "Klim " + (climbIndex + 1));
-        String msg = "Zon op: " + hm.format(sunrise.atZone(zone))
-                + "\nOp de top: " + hm.format(plan.arrivalTop.atZone(zone))
-                + " (" + SunriseRidePlanner.DEFAULT_BUFFER_MIN + " min vooraf)"
-                + "\nVertrek vanaf de routestart: " + dayHm.format(plan.departure.atZone(zone))
-                + "\n\nAanrit " + String.format(dutch, "%.1f", c.startDistance / 1000.0)
-                + " km à 25 km/u (" + DurationFormat.format(plan.approachSec)
-                + ") + klim " + DurationFormat.format(plan.climbSec)
-                + (est == null ? " (schatting op 10 km/u; vul je profiel in voor een betere schatting)" : "");
+                : (c.name != null ? c.name
+                        : getString(R.string.climb_detail_default_name, climbIndex + 1));
+        String msg = getString(R.string.climb_detail_sunrise_message,
+                hm.format(sunrise.atZone(zone)),
+                hm.format(plan.arrivalTop.atZone(zone)),
+                SunriseRidePlanner.DEFAULT_BUFFER_MIN,
+                dayHm.format(plan.departure.atZone(zone)),
+                String.format(locale, "%.1f", c.startDistance / 1000.0),
+                DurationFormat.format(plan.approachSec),
+                DurationFormat.format(plan.climbSec))
+                + (est == null ? " " + getString(R.string.climb_detail_sunrise_estimate_default) : "");
         new AlertDialog.Builder(this)
-                .setTitle("Zonsopkomst op " + name)
+                .setTitle(getString(R.string.climb_detail_sunrise_title, name))
                 .setMessage(msg)
-                .setPositiveButton("Zet in klimplanning", (d, w) -> saveSunrisePlan(plan, name))
-                .setNegativeButton("Sluiten", null)
+                .setPositiveButton(R.string.climb_detail_sunrise_plan, (d, w) -> saveSunrisePlan(plan, name))
+                .setNegativeButton(R.string.action_close, null)
                 .show();
     }
 
     private void saveSunrisePlan(SunriseRidePlanner.Plan plan, String name) {
         if (SunriseRidePlanner.isInPast(plan, Instant.now())) {
-            Toast.makeText(this, "Het vertrektijdstip is al voorbij", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.climb_detail_sunrise_past, Toast.LENGTH_LONG).show();
             return;
         }
         PlannedClimb p = new PlannedClimb(
                 UUID.randomUUID().toString(), routeId, climbIndex,
-                "Zonsopkomst: " + name, plan.departure.getEpochSecond(), System.currentTimeMillis());
+                getString(R.string.climb_detail_sunrise_planned_name, name),
+                plan.departure.getEpochSecond(), System.currentTimeMillis());
         Context app = getApplicationContext();
         new Thread(() -> {
             try {
                 new PlannedClimbRepository(app).add(p);
                 PlannedClimbWorkScheduler.schedule(app, p);
-                runOnUiThread(() -> Toast.makeText(app, "Gepland; je krijgt een herinnering",
+                runOnUiThread(() -> Toast.makeText(app, R.string.climb_detail_sunrise_planned,
                         Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(app, "Plannen mislukt: "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
+                runOnUiThread(() -> Toast.makeText(app, getString(R.string.climb_detail_sunrise_failed,
+                        e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
                         Toast.LENGTH_LONG).show());
             }
         }, "sunrise-plan").start();
@@ -598,12 +600,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
      */
     private void shareClimbAsImage() {
         if (loadedClimb == null) {
-            Toast.makeText(this, "Klim nog niet geladen", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.climb_detail_not_loaded, Toast.LENGTH_SHORT).show();
             return;
         }
         String title = loadedClimb.userDisplayName != null
                 ? loadedClimb.userDisplayName
-                : (loadedClimb.name != null ? loadedClimb.name : "Klim " + (climbIndex + 1));
+                : (loadedClimb.name != null ? loadedClimb.name
+                        : getString(R.string.climb_detail_default_name, climbIndex + 1));
         try {
             android.graphics.Bitmap bitmap = ClimbShareImageComposer.compose(
                     this, title, loadedClimb, lastTimeEstimateText);
@@ -611,9 +614,9 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
                     this, getPackageName() + ".fileprovider", file);
             Intent share = ClimbShareHandoff.buildShareIntent(uri);
-            startActivity(Intent.createChooser(share, "Deel klim"));
+            startActivity(Intent.createChooser(share, getString(R.string.climb_detail_share_chooser)));
         } catch (java.io.IOException e) {
-            Toast.makeText(this, "Kon afbeelding niet aanmaken", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.climb_detail_image_failed, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -627,7 +630,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
                 this, getPackageName() + ".fileprovider", file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
-        startActivity(Intent.createChooser(share, "Exporteer klim als GPX"));
+        startActivity(Intent.createChooser(share, getString(R.string.climb_detail_gpx_chooser)));
     }
 
     /**
@@ -636,12 +639,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
      * adds a MyWhoosh-compatible {@code .zwo}; issue #78 plans it on intervals.icu.
      */
     private void pickWorkoutFormat() {
-        String[] formats = {"Zwift-workout (.zwo)", "ERG-bestand (.erg, TrainerRoad e.a.)",
-                "Herhaal-klim als Zwift-workout (.zwo)", "Herhaal-klim als ERG-bestand (.erg)",
-                "MyWhoosh-workout (.zwo)", getString(R.string.intervals_format_single),
+        String[] formats = {getString(R.string.climb_detail_workout_zwift),
+                getString(R.string.climb_detail_workout_erg),
+                getString(R.string.climb_detail_workout_repeat_zwift),
+                getString(R.string.climb_detail_workout_repeat_erg),
+                getString(R.string.climb_detail_workout_mywhoosh),
+                getString(R.string.intervals_format_single),
                 getString(R.string.intervals_format_repeat)};
         new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Exporteer als indoor-workout")
+                .setTitle(R.string.climb_detail_workout_title)
                 .setItems(formats, (d, which) -> {
                     if (which == 0) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.ZWIFT);
                     else if (which == 1) viewModel.exportWorkout(ClimbDetailViewModel.WorkoutFormat.ERG);
@@ -649,11 +655,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     else if (which == 5) startIntervalsPush(1, ClimbDetailViewModel.RECOVERY_AUTO);
                     else if (which == 6) showRepeatWorkoutDialog(getString(R.string.intervals_send),
                             this::startIntervalsPush);
-                    else showRepeatWorkoutDialog("Exporteer", (reps, rec) -> viewModel.exportWorkout(
+                    else showRepeatWorkoutDialog(getString(R.string.climb_detail_export),
+                            (reps, rec) -> viewModel.exportWorkout(
                             which == 2 ? ClimbDetailViewModel.WorkoutFormat.ZWIFT
                                     : ClimbDetailViewModel.WorkoutFormat.ERG, reps, rec));
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -674,8 +681,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         repeats.setFormatter(v -> v + "×");
 
         String[] recoveryLabels = new String[REPEAT_RECOVERY_MAX_MIN + 1];
-        recoveryLabels[0] = "Auto";
-        for (int m = 1; m <= REPEAT_RECOVERY_MAX_MIN; m++) recoveryLabels[m] = m + " min";
+        recoveryLabels[0] = getString(R.string.climb_detail_repeat_auto);
+        for (int m = 1; m <= REPEAT_RECOVERY_MAX_MIN; m++) {
+            recoveryLabels[m] = getString(R.string.climb_detail_repeat_minutes, m);
+        }
         android.widget.NumberPicker recovery = new android.widget.NumberPicker(this);
         recovery.setMinValue(0);
         recovery.setMaxValue(REPEAT_RECOVERY_MAX_MIN);
@@ -687,18 +696,18 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         pickers.setGravity(android.view.Gravity.CENTER);
         android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(
                 0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        pickers.addView(labeled("Herhalingen", repeats), lp);
-        pickers.addView(labeled("Herstel", recovery), lp);
+        pickers.addView(labeled(getString(R.string.climb_detail_repeat_count), repeats), lp);
+        pickers.addView(labeled(getString(R.string.climb_detail_repeat_recovery), recovery), lp);
 
         new AlertDialog.Builder(this)
-                .setTitle("Herhaal-klim workout")
-                .setMessage("Auto herstel = de helft van je klimtijd (3–10 min), op 50 % FTP.")
+                .setTitle(R.string.climb_detail_repeat_title)
+                .setMessage(R.string.climb_detail_repeat_message)
                 .setView(pickers)
                 .setPositiveButton(positiveLabel, (d, w) -> action.run(
                         repeats.getValue(), recovery.getValue() == 0
                                 ? ClimbDetailViewModel.RECOVERY_AUTO
                                 : recovery.getValue() * 60))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -756,21 +765,16 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 this, getPackageName() + ".fileprovider", export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
         if (export.format != ClimbDetailViewModel.WorkoutFormat.MYWHOOSH) {
-            startActivity(Intent.createChooser(share, "Deel workout"));
+            startActivity(Intent.createChooser(share, getString(R.string.climb_detail_workout_share)));
             return;
         }
         // MyWhoosh has no import folder or share target: the file goes in via its web builder.
         new AlertDialog.Builder(this)
-                .setTitle("Naar MyWhoosh")
-                .setMessage("MyWhoosh kan geen eigen routes importeren, dus de klim gaat erin als "
-                        + "workout: elk segment een blok met vermogen dat de helling volgt. "
-                        + "Zet het bestand op een plek die je op je trainer-pc of tablet kunt "
-                        + "openen (bijv. Drive of mail), log in op de MyWhoosh-website en kies "
-                        + "bij Workouts voor uploaden. De workout staat daarna in je bibliotheek "
-                        + "in de app.")
-                .setPositiveButton("Delen", (d, w) ->
-                        startActivity(Intent.createChooser(share, "Deel MyWhoosh-workout")))
-                .setNegativeButton("Annuleren", null)
+                .setTitle(R.string.climb_detail_mywhoosh_title)
+                .setMessage(R.string.climb_detail_mywhoosh_message)
+                .setPositiveButton(R.string.action_share, (d, w) -> startActivity(
+                        Intent.createChooser(share, getString(R.string.climb_detail_mywhoosh_chooser))))
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -880,7 +884,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         StoredClimb c = viewModel.climb().getValue();
         if (r == null || c == null) return;
         binding.btnSummitWeather.setEnabled(false); // one request at a time, no stacked dialogs
-        Toast.makeText(this, "Weer ophalen…", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.climb_detail_weather_loading, Toast.LENGTH_SHORT).show();
         ClimbEndpoints.Point foot =
                 ClimbEndpoints.foot(r, c);
         ClimbEndpoints.Point top =
@@ -900,23 +904,27 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 String laterText = SummitWeather.describe(
                         f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM, units);
                 StringBuilder sb = new StringBuilder();
-                if (nowText != null) sb.append("NU\n").append(nowText);
-                if (laterText != null) {
-                    sb.append(sb.length() > 0 ? "\n\n" : "").append("OVER 3 UUR\n").append(laterText);
+                if (nowText != null) {
+                    sb.append(getString(R.string.climb_detail_weather_now)).append('\n').append(nowText);
                 }
-                msg = sb.length() > 0 ? sb.toString() : "Geen verwachting beschikbaar voor dit moment";
+                if (laterText != null) {
+                    sb.append(sb.length() > 0 ? "\n\n" : "")
+                            .append(getString(R.string.climb_detail_weather_later))
+                            .append('\n').append(laterText);
+                }
+                msg = sb.length() > 0 ? sb.toString() : getString(R.string.climb_detail_weather_none);
             } catch (Exception e) {
                 String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-                msg = "Weer ophalen mislukt: " + reason;
+                msg = getString(R.string.climb_detail_weather_failed, reason);
             }
-            String text = msg + "\n\nBron: Open-Meteo";
+            String text = msg + "\n\n" + getString(R.string.source_open_meteo);
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 binding.btnSummitWeather.setEnabled(true);
                 new AlertDialog.Builder(this)
-                        .setTitle("Weer op de top")
+                        .setTitle(R.string.climb_detail_summit_weather)
                         .setMessage(text)
-                        .setPositiveButton("OK", null)
+                        .setPositiveButton(android.R.string.ok, null)
                         .show();
             });
         }, "summit-weather").start();
@@ -933,7 +941,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         if (!fetch && bestTimeCacheChecked) return;
         bestTimeCacheChecked = true;
         bestTimeBusy = true;
-        if (fetch) binding.bestTime.setText("Beste moment: laden…");
+        if (fetch) binding.bestTime.setText(R.string.climb_detail_best_loading);
         ClimbEndpoints.Point foot = ClimbEndpoints.foot(r, c);
         ClimbEndpoints.Point top = ClimbEndpoints.top(r, c);
         double bearing = ClimateNormals.bearingDeg(foot.lat, foot.lon, top.lat, top.lon);
@@ -952,13 +960,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     cache.save(foot.lat, foot.lon, normals);
                 } catch (java.net.UnknownHostException | java.net.ConnectException
                          | java.io.InterruptedIOException e) { // offline or timed out
-                    error = "Beste moment: niet beschikbaar zonder verbinding (tik om opnieuw "
-                            + "te proberen)";
+                    error = getString(R.string.climb_detail_best_offline);
                 } catch (Exception e) {
                     String reason = e.getMessage() != null ? e.getMessage()
                             : e.getClass().getSimpleName();
-                    error = "Beste moment: ophalen mislukt (" + reason + "), tik om opnieuw "
-                            + "te proberen";
+                    error = getString(R.string.climb_detail_best_failed, reason);
                 }
             }
             BestTimeScorer.Result result =
@@ -970,14 +976,14 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 bestTimeBusy = false;
                 if (result != null) {
                     bestTimeLoaded = true;
-                    binding.bestTime.setText("Beste moment: " + result.summary());
+                    binding.bestTime.setText(getString(R.string.climb_detail_best, result.summary()));
                     binding.bestTimeTable.setText(result.monthTable()
-                            + "\nGemiddelden over 3 jaar · bron: Open-Meteo");
+                            + "\n" + getString(R.string.climb_detail_best_footer));
                     binding.bestTimeTable.setVisibility(android.view.View.VISIBLE);
                 } else if (message != null) {
                     binding.bestTime.setText(message);
                 } else if (hadData) {
-                    binding.bestTime.setText("Beste moment: geen weerhistorie voor deze plek");
+                    binding.bestTime.setText(R.string.climb_detail_best_no_history);
                 }
             });
         }, "best-time").start();
@@ -985,14 +991,14 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     private void showRenameDialog() {
         EditText input = new EditText(this);
-        input.setHint("Climb name");
+        input.setHint(R.string.climb_detail_rename_hint);
         new AlertDialog.Builder(this)
-                .setTitle("Rename climb")
+                .setTitle(R.string.climb_detail_rename)
                 .setView(input)
-                .setPositiveButton("Save", (d, w) ->
+                .setPositiveButton(R.string.action_save, (d, w) ->
                         viewModel.renameClimb(routeId, climbIndex,
                                 input.getText().toString().trim()))
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1009,7 +1015,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         container.setPadding(pad, pad, pad, pad);
 
         EditText timeInput = new EditText(this);
-        timeInput.setHint("Tijd (m:ss of h:mm:ss)");
+        timeInput.setHint(R.string.climb_detail_ref_time_hint);
         StoredClimb current = viewModel.climb().getValue();
         if (current != null && current.manualRefSec != null) {
             timeInput.setText(DurationFormat.format(current.manualRefSec));
@@ -1017,28 +1023,28 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         container.addView(timeInput);
 
         EditText labelInput = new EditText(this);
-        labelInput.setHint("Bron (bv. Pogačar 2024)");
+        labelInput.setHint(R.string.climb_detail_ref_source_hint);
         if (current != null && current.manualRefLabel != null) {
             labelInput.setText(current.manualRefLabel);
         }
         container.addView(labelInput);
 
         new AlertDialog.Builder(this)
-                .setTitle("WR/pro-referentietijd")
+                .setTitle(R.string.climb_detail_ref_title)
                 .setView(container)
-                .setPositiveButton("Opslaan", (d, w) -> {
+                .setPositiveButton(R.string.action_save, (d, w) -> {
                     Integer sec = parseDurationToSeconds(timeInput.getText().toString().trim());
                     if (sec == null) {
-                        Toast.makeText(this, "Ongeldige tijd (gebruik Wissen om te legen)",
+                        Toast.makeText(this, R.string.climb_detail_ref_invalid,
                                 Toast.LENGTH_SHORT).show();
                         return;
                     }
                     viewModel.setManualRefTime(routeId, climbIndex, sec,
                             labelInput.getText().toString().trim());
                 })
-                .setNeutralButton("Wissen", (d, w) ->
+                .setNeutralButton(R.string.action_clear, (d, w) ->
                         viewModel.setManualRefTime(routeId, climbIndex, null, null))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1073,15 +1079,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             return;
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("Referentie: ").append(DurationFormat.format(c.manualRefSec));
+        sb.append(getString(R.string.climb_detail_ref_text, DurationFormat.format(c.manualRefSec)));
         if (c.manualRefLabel != null && !c.manualRefLabel.isEmpty()) {
             sb.append(" (").append(c.manualRefLabel).append(")");
         }
         if (lastEstimateSeconds != null) {
             int deltaSec = lastEstimateSeconds - c.manualRefSec;
             String sign = deltaSec >= 0 ? "+" : "-";
-            sb.append(" · jouw schatting ").append(sign)
-                    .append(DurationFormat.format(Math.abs(deltaSec)));
+            sb.append(" · ").append(getString(R.string.climb_detail_ref_estimate,
+                    sign + DurationFormat.format(Math.abs(deltaSec))));
         }
         binding.climbManualRef.setText(sb.toString());
         binding.climbManualRef.setVisibility(android.view.View.VISIBLE);
@@ -1097,16 +1103,17 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         String[] labels = new String[presets.length];
         for (int i = 0; i < presets.length; i++) {
             labels[i] = presets[i] == IntervalBlock.Preset.CUSTOM
-                    ? "Eigen doel (% FTP)…" : IntervalBlock.of(presets[i]).label();
+                    ? getString(R.string.climb_detail_interval_custom)
+                    : IntervalBlock.of(presets[i]).label();
         }
         IntervalBlock current = loadedClimb != null
                 ? IntervalBlock.fromStored(loadedClimb.intervalBlock) : null;
         int checked = current != null ? current.preset.ordinal() : -1;
 
         new AlertDialog.Builder(this)
-                .setTitle("Intervalblok op deze klim")
+                .setTitle(R.string.climb_detail_interval_title)
                 .setSingleChoiceItems(labels, checked, null)
-                .setPositiveButton("Opslaan", (dialog, which) -> {
+                .setPositiveButton(R.string.action_save, (dialog, which) -> {
                     int chosen = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
                     if (chosen < 0 || chosen >= presets.length) return;
                     if (presets[chosen] == IntervalBlock.Preset.CUSTOM) {
@@ -1116,36 +1123,35 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                                 IntervalBlock.of(presets[chosen]));
                     }
                 })
-                .setNeutralButton("Verwijderen", (d, w) ->
+                .setNeutralButton(R.string.action_delete, (d, w) ->
                         viewModel.setIntervalBlock(routeId, climbIndex, null))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
     private void showCustomIntervalBlockDialog(IntervalBlock current) {
         EditText input = new EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setHint("Doel in % FTP (" + IntervalBlock.MIN_TARGET_PCT + "–"
-                + IntervalBlock.MAX_TARGET_PCT + ")");
+        input.setHint(getString(R.string.climb_detail_interval_custom_hint,
+                IntervalBlock.MIN_TARGET_PCT, IntervalBlock.MAX_TARGET_PCT));
         if (current != null && current.preset == IntervalBlock.Preset.CUSTOM) {
             input.setText(String.valueOf(Math.round(current.targetFraction() * 100)));
         }
         new AlertDialog.Builder(this)
-                .setTitle("Eigen intervaldoel")
+                .setTitle(R.string.climb_detail_interval_custom_title)
                 .setView(input)
-                .setPositiveButton("Opslaan", (d, w) -> {
+                .setPositiveButton(R.string.action_save, (d, w) -> {
                     try {
                         int pct = Integer.parseInt(input.getText().toString().trim());
                         viewModel.setIntervalBlock(routeId, climbIndex, IntervalBlock.custom(pct));
                     } catch (IllegalArgumentException e) {
                         // NumberFormatException is an IllegalArgumentException too.
-                        Toast.makeText(this, "Kies een doel tussen "
-                                + IntervalBlock.MIN_TARGET_PCT + " en "
-                                + IntervalBlock.MAX_TARGET_PCT + " % FTP",
+                        Toast.makeText(this, getString(R.string.climb_detail_interval_custom_invalid,
+                                IntervalBlock.MIN_TARGET_PCT, IntervalBlock.MAX_TARGET_PCT),
                                 Toast.LENGTH_SHORT).show();
                     }
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1155,19 +1161,20 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 ? IntervalBlock.fromStored(loadedClimb.intervalBlock) : null;
         if (block == null) {
             binding.climbIntervalBlock.setVisibility(android.view.View.GONE);
-            binding.btnIntervalBlock.setText("Intervalblok koppelen");
+            binding.btnIntervalBlock.setText(R.string.climb_detail_link_interval);
             return;
         }
-        StringBuilder sb = new StringBuilder("Intervalblok: ").append(block.label());
+        StringBuilder sb = new StringBuilder(
+                getString(R.string.climb_detail_interval_text, block.label()));
         int[] watts = block.wireWatts(viewModel.ftpWatts());
         if (watts != null) {
             sb.append(" · ").append(watts[1]).append("–").append(watts[2]).append(" W");
         } else {
-            sb.append(" · stel je FTP in voor wattages op het horloge");
+            sb.append(" · ").append(getString(R.string.climb_detail_interval_no_ftp));
         }
         binding.climbIntervalBlock.setText(sb.toString());
         binding.climbIntervalBlock.setVisibility(android.view.View.VISIBLE);
-        binding.btnIntervalBlock.setText("Intervalblok aanpassen");
+        binding.btnIntervalBlock.setText(R.string.climb_detail_interval_edit);
     }
 
     private void showReSegmentDialog() {
@@ -1178,11 +1185,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         int defaultCount = (current != null && current.segmentCount > 0) ? current.segmentCount : 16;
         picker.setValue(defaultCount);
         new AlertDialog.Builder(this)
-                .setTitle("Segmenten per klim")
+                .setTitle(R.string.climb_detail_resegment_title)
                 .setView(picker)
-                .setPositiveButton("Herbereken", (dialog, which) ->
+                .setPositiveButton(R.string.climb_detail_resegment_confirm, (dialog, which) ->
                         viewModel.reSegment(routeId, climbIndex, picker.getValue()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1196,7 +1203,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         nl.paree.climbpro.domain.climb.ClimbShape[] shapes =
                 nl.paree.climbpro.domain.climb.ClimbShape.values();
         String[] labels = new String[shapes.length + 1];
-        labels[0] = "Automatisch";
+        labels[0] = getString(R.string.climb_detail_shape_auto);
         for (int i = 0; i < shapes.length; i++) {
             labels[i + 1] = nl.paree.climbpro.domain.climb.ClimbShapeLabel.forShape(shapes[i]);
         }
@@ -1212,16 +1219,16 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Vorm van de klim")
+                .setTitle(R.string.climb_detail_shape_title)
                 .setSingleChoiceItems(labels, current, null)
-                .setPositiveButton("Opslaan", (dialog, which) -> {
+                .setPositiveButton(R.string.action_save, (dialog, which) -> {
                     android.widget.ListView lv = ((AlertDialog) dialog).getListView();
                     int chosen = lv.getCheckedItemPosition();
                     String shapeName = (chosen >= 1 && chosen <= shapes.length)
                             ? shapes[chosen - 1].name() : null;
                     viewModel.setShapeOverride(routeId, climbIndex, shapeName);
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1242,29 +1249,29 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         container.setPadding(pad, pad, pad, 0);
 
         StoredClimb c = loadedClimb;
-        android.widget.RatingBar road = addRatingRow(container, "Wegdek",
-                c != null ? c.ratingRoad : null);
-        android.widget.RatingBar traffic = addRatingRow(container, "Verkeer (5 = rustig)",
-                c != null ? c.ratingTraffic : null);
-        android.widget.RatingBar view = addRatingRow(container, "Uitzicht",
-                c != null ? c.ratingView : null);
+        android.widget.RatingBar road = addRatingRow(container,
+                getString(R.string.climb_detail_rating_road), c != null ? c.ratingRoad : null);
+        android.widget.RatingBar traffic = addRatingRow(container,
+                getString(R.string.climb_detail_rating_traffic), c != null ? c.ratingTraffic : null);
+        android.widget.RatingBar view = addRatingRow(container,
+                getString(R.string.climb_detail_rating_view), c != null ? c.ratingView : null);
 
         EditText note = new EditText(this);
-        note.setHint("Notitie (optioneel)");
+        note.setHint(R.string.climb_detail_note_optional);
         if (c != null && c.ratingNote != null) note.setText(c.ratingNote);
         container.addView(note);
 
         new AlertDialog.Builder(this)
-                .setTitle("Klim beoordelen")
+                .setTitle(R.string.climb_detail_rate)
                 .setView(container)
-                .setPositiveButton("Opslaan", (d, w) -> viewModel.setRating(routeId, climbIndex,
+                .setPositiveButton(R.string.action_save, (d, w) -> viewModel.setRating(routeId, climbIndex,
                         starsOrNull(road.getRating()),
                         starsOrNull(traffic.getRating()),
                         starsOrNull(view.getRating()),
                         note.getText().toString()))
-                .setNeutralButton("Wissen", (d, w) ->
+                .setNeutralButton(R.string.action_clear, (d, w) ->
                         viewModel.setRating(routeId, climbIndex, null, null, null, null))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1285,7 +1292,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     }
 
     private void setupBulkSurfaceSetter() {
-        String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed"};
+        String[] typeLabels = java.util.Arrays.copyOf(
+                getResources().getStringArray(R.array.surface_labels), SurfaceType.MIXED + 1);
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, typeLabels);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -1295,11 +1303,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             int selected = binding.spinnerSurfaceType.getSelectedItemPosition();
             if (loadedClimb != null && loadedClimb.segments != null && !loadedClimb.segments.isEmpty()) {
                 new AlertDialog.Builder(this)
-                        .setTitle("Alle segmenten instellen?")
-                        .setMessage("Dit overschrijft alle individuele instellingen voor deze klim.")
-                        .setPositiveButton("Toepassen", (d, w) ->
+                        .setTitle(R.string.climb_detail_bulk_surface_title)
+                        .setMessage(R.string.climb_detail_bulk_surface_message)
+                        .setPositiveButton(R.string.action_apply, (d, w) ->
                                 viewModel.setBulkSurfaceType(routeId, climbIndex, selected))
-                        .setNegativeButton("Annuleer", null)
+                        .setNegativeButton(R.string.action_cancel, null)
                         .show();
             }
         });
@@ -1317,20 +1325,21 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             input.setText(DurationFormat.format(segment.manualTargetSec));
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Doeltijd segment " + (segmentIndex + 1))
-                .setMessage("Laat leeg en kies \"Automatisch\" om de berekende tijd te gebruiken.")
+                .setTitle(getString(R.string.climb_detail_segment_target_title, segmentIndex + 1))
+                .setMessage(R.string.climb_detail_segment_target_message)
                 .setView(input)
-                .setPositiveButton("Opslaan", (d, w) -> {
+                .setPositiveButton(R.string.action_save, (d, w) -> {
                     Integer seconds = parseMmSs(input.getText().toString().trim());
                     if (seconds == null) {
-                        Toast.makeText(this, "Ongeldige tijd, gebruik mm:ss", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, R.string.climb_detail_segment_target_invalid,
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                     viewModel.setSegmentManualTargetSec(routeId, climbIndex, segmentIndex, seconds);
                 })
-                .setNegativeButton("Annuleer", null);
+                .setNegativeButton(R.string.action_cancel, null);
         if (segment.manualTargetSec != null) {
-            builder.setNeutralButton("Automatisch",
+            builder.setNeutralButton(R.string.climb_detail_shape_auto,
                     (d, w) -> viewModel.setSegmentManualTargetSec(
                             routeId, climbIndex, segmentIndex, null));
         }
@@ -1360,13 +1369,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     }
 
     private void showSegmentSurfaceDialog(int segmentIndex, nl.paree.climbpro.data.route.StoredSegment segment) {
-        String[] typeLabels = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed", "Onbekend"};
+        String[] typeLabels = getResources().getStringArray(R.array.surface_labels);
         int current = SurfaceType.fromInt(segment.surfaceType);
 
         new AlertDialog.Builder(this)
-                .setTitle("Oppervlak voor segment " + (segmentIndex + 1))
+                .setTitle(getString(R.string.climb_detail_segment_surface_title, segmentIndex + 1))
                 .setSingleChoiceItems(typeLabels, current, null)
-                .setPositiveButton("Opslaan", (dialog, which) -> {
+                .setPositiveButton(R.string.action_save, (dialog, which) -> {
                     android.widget.ListView lv =
                             ((AlertDialog) dialog).getListView();
                     int chosen = lv.getCheckedItemPosition();
@@ -1374,7 +1383,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                         viewModel.setSurfaceType(routeId, climbIndex, segmentIndex, chosen);
                     }
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -1428,20 +1437,19 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         dialogLayout.setPadding(pad, pad, pad, pad);
 
         EditText noteInput = new EditText(this);
-        noteInput.setHint("Notitie");
+        noteInput.setHint(R.string.climb_detail_note);
         noteInput.setText(row.note);
         dialogLayout.addView(noteInput);
 
         EditText companionsInput = new EditText(this);
-        companionsInput.setHint("Meegereden met (namen, gescheiden door komma's)");
+        companionsInput.setHint(R.string.climb_detail_companions_hint);
         companionsInput.setText(row.companions);
         companionsInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT
                 | android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         dialogLayout.addView(companionsInput);
 
         android.widget.TextView groupHint = new android.widget.TextView(this);
-        groupHint.setText("Met een foto en namen wordt dit een groepsfoto op de top, "
-                + "zichtbaar bij de rit in het rittenarchief.");
+        groupHint.setText(R.string.climb_detail_group_hint);
         groupHint.setTextSize(12f);
         dialogLayout.addView(groupHint);
 
@@ -1461,14 +1469,15 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         pendingPhotoPreview = preview;
 
         android.widget.Button pickPhotoButton = new android.widget.Button(this);
-        pickPhotoButton.setText(row.photoFileName != null ? "Andere foto kiezen" : "Foto kiezen");
+        pickPhotoButton.setText(row.photoFileName != null
+                ? R.string.climb_detail_photo_change : R.string.climb_detail_photo_pick);
         pickPhotoButton.setOnClickListener(v -> photoPickerLauncher.launch("image/*"));
         dialogLayout.addView(pickPhotoButton);
 
         new AlertDialog.Builder(this)
-                .setTitle("Notitie, foto & groep")
+                .setTitle(R.string.climb_detail_attempt_title)
                 .setView(dialogLayout)
-                .setPositiveButton("Opslaan", (d, w) -> {
+                .setPositiveButton(R.string.action_save, (d, w) -> {
                     viewModel.saveAttemptNote(routeId, climbIndex, row.activityId, row.passIndex,
                             noteInput.getText().toString(),
                             companionsInput.getText().toString(), pendingPhotoUri);
@@ -1476,7 +1485,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;
                 })
-                .setNegativeButton("Annuleer", (d, w) -> {
+                .setNegativeButton(R.string.action_cancel, (d, w) -> {
                     pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;

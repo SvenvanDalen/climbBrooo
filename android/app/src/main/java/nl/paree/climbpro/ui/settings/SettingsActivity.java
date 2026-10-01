@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import androidx.work.WorkInfo;
 
+import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.backup.BackupArchive;
 import nl.paree.climbpro.data.backup.BackupRetention;
 import nl.paree.climbpro.data.backup.LocalBackupService;
@@ -56,7 +57,7 @@ public final class SettingsActivity extends AppCompatActivity {
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
                 if (!granted) {
-                    Toast.makeText(this, "Zonder meldingen krijg je geen schoonmaakherinnering",
+                    Toast.makeText(this, R.string.settings_wet_no_notifications,
                             Toast.LENGTH_LONG).show();
                     // The switch stayed on when the user tapped it; without the grant the
                     // reminder can never fire, so turn it (and the preference) back off rather
@@ -73,7 +74,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 if (granted) {
                     viewModel.refreshRadiusLocation();
                 } else {
-                    Toast.makeText(this, "Zonder locatie weet de radiusmodus niet waar je bent",
+                    Toast.makeText(this, R.string.settings_radius_no_permission,
                             Toast.LENGTH_LONG).show();
                 }
             });
@@ -100,9 +101,12 @@ public final class SettingsActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(SettingsViewModel.class);
 
+        renderLanguageButton();
+        binding.btnLanguage.setOnClickListener(v -> showLanguageDialog());
+
         viewModel.stravaSignedIn().observe(this, signedIn -> {
             binding.btnStravaAuth.setText(Boolean.TRUE.equals(signedIn)
-                    ? "Sign out of Strava" : "Sign in to Strava");
+                    ? R.string.settings_strava_sign_out : R.string.settings_strava_sign_in);
         });
 
         viewModel.syncMode().observe(this, mode -> {
@@ -115,7 +119,7 @@ public final class SettingsActivity extends AppCompatActivity {
         viewModel.radiusKm().observe(this, km -> {
             if (km != null) {
                 binding.radiusSeekBar.setProgress(km);
-                binding.radiusLabel.setText(km + " km");
+                binding.radiusLabel.setText(getString(R.string.unit_km_value, km));
             }
         });
 
@@ -123,7 +127,7 @@ public final class SettingsActivity extends AppCompatActivity {
             if (meters != null) {
                 binding.privacyRadiusSeekBar.setProgress(
                         meters - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
-                binding.privacyRadiusLabel.setText(meters + " m");
+                binding.privacyRadiusLabel.setText(getString(R.string.unit_m_value, meters));
             }
         });
 
@@ -151,7 +155,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 binding.suggestedFtp.setVisibility(android.view.View.GONE);
                 return;
             }
-            binding.suggestedFtp.setText("Voorgestelde FTP: " + suggestion + " W (toepassen?)");
+            binding.suggestedFtp.setText(getString(R.string.settings_suggested_ftp, suggestion));
             binding.suggestedFtp.setVisibility(android.view.View.VISIBLE);
         });
         // Issue #20 fix: apply the suggestion using whatever is currently typed in the
@@ -163,7 +167,7 @@ public final class SettingsActivity extends AppCompatActivity {
             double bike = parseDoubleSafe(binding.inputBikeWeight.getText().toString());
             int intensity = currentRideIntensityPct();
             viewModel.applySuggestedFtp(rider, bike, intensity);
-            Toast.makeText(this, "FTP bijgewerkt", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.settings_ftp_updated, Toast.LENGTH_SHORT).show();
         });
 
         binding.btnSaveProfile.setOnClickListener(v -> {
@@ -172,7 +176,7 @@ public final class SettingsActivity extends AppCompatActivity {
             double bike = parseDoubleSafe(binding.inputBikeWeight.getText().toString());
             int intensity = currentRideIntensityPct();
             viewModel.saveRiderProfile(ftp, rider, bike, intensity);
-            Toast.makeText(this, "Profiel opgeslagen", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.settings_profile_saved, Toast.LENGTH_SHORT).show();
         });
 
         // Issue #31: virtual ghost at a target speed/VAM for climbs without a PR or
@@ -187,7 +191,7 @@ public final class SettingsActivity extends AppCompatActivity {
             int vam = parseIntSafe(binding.inputGhostVam.getText().toString());
             viewModel.saveGhostTarget(speed, vam);
             Toast.makeText(this, speed > 0 || vam > 0
-                    ? "Ghost-doel opgeslagen" : "Ghost-doel uitgeschakeld",
+                    ? R.string.settings_ghost_saved : R.string.settings_ghost_disabled,
                     Toast.LENGTH_SHORT).show();
         });
 
@@ -205,7 +209,7 @@ public final class SettingsActivity extends AppCompatActivity {
         binding.radiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar sb, int progress, boolean user) {
                 int km = Math.max(1, progress);
-                binding.radiusLabel.setText(km + " km");
+                binding.radiusLabel.setText(getString(R.string.unit_km_value, km));
                 if (user) viewModel.setRadiusKm(km);
             }
             public void onStartTrackingTouch(SeekBar sb) {}
@@ -219,7 +223,7 @@ public final class SettingsActivity extends AppCompatActivity {
         binding.privacyRadiusSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar sb, int progress, boolean user) {
                 int meters = CoordinateFuzzer.MIN_PRIVACY_RADIUS_M + progress;
-                binding.privacyRadiusLabel.setText(meters + " m");
+                binding.privacyRadiusLabel.setText(getString(R.string.unit_m_value, meters));
                 if (user) viewModel.setPrivacyRadiusM(meters);
             }
             public void onStartTrackingTouch(SeekBar sb) {}
@@ -281,6 +285,29 @@ public final class SettingsActivity extends AppCompatActivity {
         renderHealthStatus();
     }
 
+    private void renderLanguageButton() {
+        int index = AppLanguage.currentIndex();
+        String name = index == 0
+                ? getString(R.string.settings_language_system) : AppLanguage.ENDONYMS[index];
+        binding.btnLanguage.setText(getString(R.string.settings_language_button, name));
+    }
+
+    /** Issue #261: per-app language; AppCompat recreates the activity in the new language. */
+    private void showLanguageDialog() {
+        String[] labels = new String[AppLanguage.TAGS.length];
+        labels[0] = getString(R.string.settings_language_system);
+        for (int i = 1; i < labels.length; i++) labels[i] = AppLanguage.ENDONYMS[i];
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.settings_language_dialog_title)
+                .setSingleChoiceItems(labels, AppLanguage.currentIndex(), (d, which) -> {
+                    d.dismiss();
+                    AppLanguage.apply(which);
+                    renderLanguageButton();
+                })
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
     /** Display units (issue #262): three independent switches, all off = metric. */
     private void bindUnitSwitches() {
         UnitPreferencesRepository repo = new UnitPreferencesRepository(this);
@@ -301,7 +328,7 @@ public final class SettingsActivity extends AppCompatActivity {
         LocalBackupService service = new LocalBackupService(this);
         binding.backupStatus.setText(String.join("\n", service.status()));
         binding.btnBackupAuto.setText(service.autoBackupEnabled()
-                ? "Automatische back-up uitzetten" : "Automatische back-up aanzetten");
+                ? R.string.settings_backup_auto_off : R.string.settings_backup_auto_on);
     }
 
     private void createBackup(Uri uri) {
@@ -309,9 +336,9 @@ public final class SettingsActivity extends AppCompatActivity {
             String msg;
             try {
                 BackupArchive.Summary s = new LocalBackupService(this).writeTo(uri);
-                msg = "Back-up gemaakt: " + s.fileCount + " bestand(en)";
+                msg = getString(R.string.settings_backup_created, s.fileCount);
             } catch (Exception e) {
-                msg = "Back-up mislukt: " + LocalBackupService.reason(e);
+                msg = getString(R.string.settings_backup_failed, LocalBackupService.reason(e));
             }
             String toast = msg;
             runOnUiThread(() -> Toast.makeText(this, toast, Toast.LENGTH_LONG).show());
@@ -320,12 +347,10 @@ public final class SettingsActivity extends AppCompatActivity {
 
     private void confirmRestore(Uri uri) {
         new AlertDialog.Builder(this)
-                .setTitle("Back-up terugzetten?")
-                .setMessage("Routes, pogingen, foto's, collecties, planning en instellingen "
-                        + "worden vervangen door die uit de back-up. Strava moet je daarna "
-                        + "opnieuw koppelen.")
-                .setPositiveButton("Terugzetten", (d, w) -> restoreBackup(uri))
-                .setNegativeButton("Annuleren", null)
+                .setTitle(R.string.settings_restore_title)
+                .setMessage(R.string.settings_restore_message)
+                .setPositiveButton(R.string.settings_restore_confirm, (d, w) -> restoreBackup(uri))
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -334,9 +359,9 @@ public final class SettingsActivity extends AppCompatActivity {
             String msg;
             try {
                 BackupArchive.Summary s = new LocalBackupService(this).restoreFrom(uri);
-                msg = "Back-up teruggezet: " + s.fileCount + " bestand(en)";
+                msg = getString(R.string.settings_restored, s.fileCount);
             } catch (Exception e) {
-                msg = "Terugzetten mislukt: " + LocalBackupService.reason(e);
+                msg = getString(R.string.settings_restore_failed, LocalBackupService.reason(e));
             }
             String toast = msg;
             runOnUiThread(() -> {
@@ -352,7 +377,7 @@ public final class SettingsActivity extends AppCompatActivity {
             getContentResolver().takePersistableUriPermission(treeUri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         } catch (SecurityException e) {
-            Toast.makeText(this, "Geen blijvende toegang tot deze map", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.settings_backup_no_access, Toast.LENGTH_LONG).show();
             return;
         }
         PreferenceManager.getDefaultSharedPreferences(this).edit()
@@ -365,10 +390,10 @@ public final class SettingsActivity extends AppCompatActivity {
             String msg;
             try {
                 new LocalBackupService(this).writeAutoBackup();
-                msg = "Automatische back-up staat aan; eerste back-up gemaakt";
+                msg = getString(R.string.settings_backup_auto_enabled);
             } catch (Exception e) {
-                msg = "Automatische back-up staat aan, maar de eerste back-up mislukte: "
-                        + LocalBackupService.reason(e);
+                msg = getString(R.string.settings_backup_auto_first_failed,
+                        LocalBackupService.reason(e));
             }
             String toast = msg;
             runOnUiThread(() -> {
@@ -392,7 +417,7 @@ public final class SettingsActivity extends AppCompatActivity {
         prefs.edit().remove(LocalBackupService.PREF_TREE_URI).apply();
         AutoBackupWorker.cancel(this);
         renderBackupStatus();
-        Toast.makeText(this, "Automatische back-up uitgezet", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.settings_backup_auto_disabled, Toast.LENGTH_SHORT).show();
     }
 
     private void ensureNotificationPermission() {
@@ -423,24 +448,25 @@ public final class SettingsActivity extends AppCompatActivity {
                 String status;
                 switch (availability) {
                     case UNAVAILABLE:
-                        status = "Health Connect is niet beschikbaar op deze telefoon.";
+                        status = getString(R.string.settings_health_unavailable);
                         break;
                     case NEEDS_UPDATE:
-                        status = "Installeer of update de Health Connect-app om te koppelen.";
+                        status = getString(R.string.settings_health_needs_update);
                         break;
                     default:
                         status = linked
-                                ? "Gekoppeld (" + grantedCount + " van "
-                                        + HealthConnectGateway.PERMISSIONS.size() + " toestemmingen)"
-                                : "Nog niet gekoppeld.";
+                                ? getString(R.string.settings_health_linked, grantedCount,
+                                        HealthConnectGateway.PERMISSIONS.size())
+                                : getString(R.string.settings_health_not_linked);
                 }
                 binding.healthStatus.setText(status);
                 binding.btnHealthConnect.setEnabled(
                         availability != HealthConnectGateway.Availability.UNAVAILABLE);
                 binding.btnHealthConnect.setText(availability
                         == HealthConnectGateway.Availability.NEEDS_UPDATE
-                        ? "Health Connect installeren"
-                        : linked ? "Toestemmingen wijzigen" : "Koppelen met Health Connect");
+                        ? R.string.settings_health_install
+                        : linked ? R.string.settings_health_change_permissions
+                                 : R.string.settings_health_connect);
                 binding.btnHealthExport.setEnabled(linked);
                 binding.btnHealthWeight.setEnabled(linked);
                 binding.switchHealthAuto.setEnabled(linked);
@@ -455,7 +481,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(
                         "market://details?id=com.google.android.apps.healthdata")));
             } catch (android.content.ActivityNotFoundException e) {
-                Toast.makeText(this, "Open de Play Store en installeer Health Connect",
+                Toast.makeText(this, R.string.settings_health_open_store,
                         Toast.LENGTH_LONG).show();
             }
             return;
@@ -465,17 +491,15 @@ public final class SettingsActivity extends AppCompatActivity {
 
     private void confirmHistoryBackfill() {
         if (!Boolean.TRUE.equals(viewModel.stravaSignedIn().getValue())) {
-            Toast.makeText(this, "Log eerst in bij Strava", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.settings_strava_login_first, Toast.LENGTH_SHORT).show();
             return;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Volledige historie ophalen")
-                .setMessage("Haalt eenmalig al je Strava-activiteiten van de afgelopen 10 jaar "
-                        + "op en zoekt je klimpogingen erin. Strava beperkt het aantal "
-                        + "verzoeken per dag, dus bij veel ritten kan dit een paar dagen duren. "
-                        + "Het gaat vanzelf verder op de achtergrond.")
-                .setPositiveButton("Starten", (d, w) -> SyncScheduler.startHistoryBackfill(this))
-                .setNegativeButton("Annuleren", null)
+                .setTitle(R.string.settings_backfill_title)
+                .setMessage(R.string.settings_backfill_message)
+                .setPositiveButton(R.string.settings_backfill_start,
+                        (d, w) -> SyncScheduler.startHistoryBackfill(this))
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -486,7 +510,7 @@ public final class SettingsActivity extends AppCompatActivity {
         boolean active = info != null && !info.getState().isFinished();
         binding.btnStravaHistoryBackfill.setEnabled(!done && !active);
         if (done) {
-            binding.btnStravaHistoryBackfill.setText("Volledige historie opgehaald");
+            binding.btnStravaHistoryBackfill.setText(R.string.settings_backfill_done);
             binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.GONE);
             return;
         }
@@ -497,25 +521,26 @@ public final class SettingsActivity extends AppCompatActivity {
         long cursor = info.getProgress().getLong(StravaHistoryBackfillWorker.KEY_CURSOR, 0L);
         boolean paused = info.getProgress().getBoolean(StravaHistoryBackfillWorker.KEY_PAUSED, false);
         String status = cursor > 0
-                ? "Bezig — opgehaald tot " + java.time.format.DateTimeFormatter
-                        .ofPattern("MMMM yyyy", new java.util.Locale("nl"))
-                        .format(java.time.Instant.ofEpochSecond(cursor).atZone(ZoneId.systemDefault()))
-                : "Bezig…";
-        if (paused) status += " (wacht op Strava-limiet)";
+                ? getString(R.string.settings_backfill_progress, java.time.format.DateTimeFormatter
+                        .ofPattern("MMMM yyyy", getResources().getConfiguration().getLocales().get(0))
+                        .format(java.time.Instant.ofEpochSecond(cursor).atZone(ZoneId.systemDefault())))
+                : getString(R.string.settings_backfill_busy);
+        if (paused) status = getString(R.string.settings_backfill_paused, status);
         binding.stravaHistoryBackfillStatus.setText(status);
         binding.stravaHistoryBackfillStatus.setVisibility(android.view.View.VISIBLE);
     }
 
     private void exportRidesToHealth() {
-        Toast.makeText(this, "Ritten ophalen uit Strava…", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.settings_health_fetching, Toast.LENGTH_SHORT).show();
         healthExecutor.execute(() -> {
             String msg;
             try {
                 int n = new HealthConnectGateway(this).exportRides();
-                msg = n == 0 ? "Geen nieuwe ritten" : n + " rit(ten) naar Health Connect geschreven";
+                msg = n == 0 ? getString(R.string.settings_health_no_new)
+                        : getString(R.string.settings_health_exported, n);
             } catch (Exception e) {
-                msg = "Schrijven mislukt: "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                msg = getString(R.string.settings_health_write_failed,
+                        e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
             }
             String toast = msg;
             runOnUiThread(() -> Toast.makeText(this, toast, Toast.LENGTH_LONG).show());
@@ -533,14 +558,14 @@ public final class SettingsActivity extends AppCompatActivity {
             Double weight = kg;
             runOnUiThread(() -> {
                 if (weight == null) {
-                    Toast.makeText(this, "Geen gewicht gevonden in Health Connect (laatste 90 dagen)",
+                    Toast.makeText(this, R.string.settings_health_no_weight,
                             Toast.LENGTH_LONG).show();
                     return;
                 }
                 // Only fills the field; the user still saves the profile, like any edit.
                 binding.inputRiderWeight.setText(formatKg(weight));
-                Toast.makeText(this, "Gewicht " + formatKg(weight)
-                        + " kg ingevuld; tik op Save rider profile", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.settings_health_weight_filled,
+                        formatKg(weight)), Toast.LENGTH_LONG).show();
             });
         });
     }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_start_ride_short">Démarrer ma sortie</string>
+    <string name="shortcut_start_ride_long">Démarrer ma sortie sur la montre</string>
+    <string name="shortcut_next_climb_short">Prochaine montée</string>
+    <string name="shortcut_next_climb_long">À quelle distance est la prochaine montée ?</string>
+
+    <string-array name="shortcut_start_ride_synonyms">
+        <item>démarrer la sortie</item>
+        <item>démarrer ma sortie</item>
+        <item>sortie</item>
+    </string-array>
+    <string-array name="shortcut_next_climb_synonyms">
+        <item>prochaine montée</item>
+        <item>à quelle distance est la prochaine montée</item>
+        <item>montée</item>
+    </string-array>
+</resources>

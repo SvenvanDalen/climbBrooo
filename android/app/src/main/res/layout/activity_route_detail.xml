@@ -43,7 +43,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Regenradar tonen" />
+                android:text="@string/route_detail_rain_show" />
 
             <TextView
                 android:id="@+id/rain_summary"
@@ -61,7 +61,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Temperatuurtrend tonen" />
+                android:text="@string/route_detail_temperature_show" />
 
             <nl.paree.climbpro.ui.routes.TemperatureTrendView
                 android:id="@+id/temperature_trend"
@@ -141,7 +141,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="6dp"
-                android:text="Pacing-paspoort" />
+                android:text="@string/route_detail_pacing_passport" />
 
             <TextView
                 android:id="@+id/passport_summary"
@@ -177,7 +177,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="6dp"
-                android:text="Notities" />
+                android:text="@string/route_detail_notes" />
 
             <EditText
                 android:id="@+id/notes_edit"
@@ -189,7 +189,7 @@
                 android:textColor="@color/color_text_primary"
                 android:textColorHint="@color/color_text_tertiary"
                 android:gravity="top|start"
-                android:hint="Add notes about this route…"
+                android:hint="@string/route_detail_notes_hint"
                 android:inputType="textMultiLine" />
 
             <LinearLayout
@@ -204,7 +204,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
-                    android:text="Rename" />
+                    android:text="@string/route_detail_rename" />
 
                 <Button
                     android:id="@+id/btn_save_notes"
@@ -213,7 +213,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_weight="1"
-                    android:text="Save notes" />
+                    android:text="@string/route_detail_save_notes" />
 
             </LinearLayout>
 
@@ -223,7 +223,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Status: Geen status" />
+                android:text="@string/route_detail_status_none" />
 
             <Button
                 android:id="@+id/btn_select_route"
@@ -231,7 +231,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Select for watch" />
+                android:text="@string/route_detail_select_for_watch" />
 
             <Button
                 android:id="@+id/btn_send_to_onboard"
@@ -239,7 +239,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Verstuur naar horloge" />
+                android:text="@string/route_detail_send_to_watch" />
 
             <Button
                 android:id="@+id/btn_share_to_garmin"
@@ -247,7 +247,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Start navigatie" />
+                android:text="@string/route_detail_start_navigation" />
 
             <Button
                 android:id="@+id/btn_export_bike_computer"
@@ -255,7 +255,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Naar Wahoo / Hammerhead" />
+                android:text="@string/route_detail_bike_computer" />
 
             <Button
                 android:id="@+id/btn_join_route"
@@ -271,7 +271,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Ondergrond-stukken" />
+                android:text="@string/route_detail_surface_sections" />
 
             <Button
                 android:id="@+id/btn_bulk_rename_climbs"
@@ -279,7 +279,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Klimmen hernoemen" />
+                android:text="@string/route_detail_bulk_rename" />
 
             <Button
                 android:id="@+id/btn_tire_pressure"
@@ -287,7 +287,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Bandenspanning-advies" />
+                android:text="@string/route_detail_tire_pressure" />
 
             <Button
                 android:id="@+id/btn_fuel_planner"
@@ -319,7 +319,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
-                android:text="Klimmen &amp; vlakke stukken" />
+                android:text="@string/route_detail_climbs_and_flats" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/climbs_recycler"

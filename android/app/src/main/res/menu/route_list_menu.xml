@@ -10,18 +10,18 @@
 
     <item
         android:id="@+id/action_sync"
-        android:title="Sync now"
+        android:title="@string/menu_sync_now"
         android:icon="@android:drawable/ic_popup_sync"
         app:showAsAction="ifRoom"/>
 
     <item
         android:id="@+id/action_sort"
-        android:title="Sorteer"
+        android:title="@string/menu_sort"
         app:showAsAction="never"/>
 
     <item
         android:id="@+id/action_status_filter"
-        android:title="Filter op status"
+        android:title="@string/menu_status_filter"
         app:showAsAction="never"/>
 
     <item
@@ -31,10 +31,10 @@
         <menu>
             <item
                 android:id="@+id/action_logbook"
-                android:title="Logboek"/>
+                android:title="@string/menu_logbook"/>
             <item
                 android:id="@+id/action_planning"
-                android:title="Klimplanning"/>
+                android:title="@string/menu_climb_planning"/>
             <item
                 android:id="@+id/action_climb_of_the_week"
                 android:title="@string/menu_climb_of_the_week"/>
@@ -46,22 +46,22 @@
                 android:title="@string/fav_start_title"/>
             <item
                 android:id="@+id/action_unfinished_climbs"
-                android:title="Nooit voltooide klimmen"/>
+                android:title="@string/menu_unfinished_climbs"/>
             <item
                 android:id="@+id/action_timeline"
-                android:title="Tijdlijn"/>
+                android:title="@string/menu_timeline"/>
             <item
                 android:id="@+id/action_collections"
-                android:title="Collecties"/>
+                android:title="@string/menu_collections"/>
             <item
                 android:id="@+id/action_visited_regions"
-                android:title="Landen &amp; provincies"/>
+                android:title="@string/menu_regions"/>
             <item
                 android:id="@+id/action_photo_quiz"
-                android:title="Fotoquiz"/>
+                android:title="@string/menu_photo_quiz"/>
             <item
                 android:id="@+id/action_climb_hygiene"
-                android:title="Klim-opschoning"/>
+                android:title="@string/menu_climb_hygiene"/>
         </menu>
     </item>
 
@@ -72,31 +72,31 @@
         <menu>
             <item
                 android:id="@+id/action_rides"
-                android:title="Ritten"/>
+                android:title="@string/menu_rides"/>
             <item
                 android:id="@+id/action_records"
-                android:title="Records"/>
+                android:title="@string/menu_records"/>
             <item
                 android:id="@+id/action_power_curve"
-                android:title="Vermogenscurve"/>
+                android:title="@string/menu_power_curve"/>
             <item
                 android:id="@+id/action_ftp_test"
                 android:title="@string/ftp_test_action"/>
             <item
                 android:id="@+id/action_zone_distribution"
-                android:title="Zonetijd"/>
+                android:title="@string/menu_zone_time"/>
             <item
                 android:id="@+id/action_hr_drift"
-                android:title="Hartslag-drift"/>
+                android:title="@string/menu_hr_drift"/>
             <item
                 android:id="@+id/action_friend_feed"
-                android:title="Vriendenfeed"/>
+                android:title="@string/menu_friend_feed"/>
             <item
                 android:id="@+id/action_ride_buddies"
                 android:title="@string/ride_buddies_title"/>
             <item
                 android:id="@+id/action_wrapped"
-                android:title="Jaaroverzicht"/>
+                android:title="@string/menu_year_review"/>
         </menu>
     </item>
 
@@ -107,7 +107,7 @@
         <menu>
             <item
                 android:id="@+id/action_fitness"
-                android:title="Fitheid &amp; vorm"/>
+                android:title="@string/menu_fitness"/>
             <item
                 android:id="@+id/action_training_load_calendar"
                 android:title="@string/load_calendar_menu"/>
@@ -116,31 +116,31 @@
                 android:title="@string/menu_periodization"/>
             <item
                 android:id="@+id/action_recovery"
-                android:title="Herstel"/>
+                android:title="@string/menu_recovery"/>
             <item
                 android:id="@+id/action_comeback_plan"
-                android:title="Terugkomstplan"/>
+                android:title="@string/menu_comeback"/>
             <item
                 android:id="@+id/action_goal_event"
-                android:title="Doelevenement"/>
+                android:title="@string/menu_goal_event"/>
             <item
                 android:id="@+id/action_event_calendar"
                 android:title="Evenementen in de buurt"/>
             <item
                 android:id="@+id/action_elevation_target"
-                android:title="Hoogtemeter-doel"/>
+                android:title="@string/menu_elevation_goal"/>
             <item
                 android:id="@+id/action_loop_generator"
                 android:title="@string/loop_gen_menu"/>
             <item
                 android:id="@+id/action_elevation_goal"
-                android:title="Hoogtemeters per week/maand"/>
+                android:title="@string/menu_elevation_target"/>
             <item
                 android:id="@+id/action_monthly_challenge"
-                android:title="Maanduitdaging"/>
+                android:title="@string/menu_monthly_challenge"/>
             <item
                 android:id="@+id/action_badges"
-                android:title="Badges"/>
+                android:title="@string/menu_badges"/>
         </menu>
     </item>
 
@@ -151,28 +151,28 @@
         <menu>
             <item
                 android:id="@+id/action_clothing"
-                android:title="Kledingadvies"/>
+                android:title="@string/menu_clothing"/>
             <item
                 android:id="@+id/action_air_quality"
-                android:title="Luchtkwaliteit en pollen"/>
+                android:title="@string/menu_air_quality"/>
             <item
                 android:id="@+id/action_sunscreen"
-                android:title="Zonnebrand-check"/>
+                android:title="@string/menu_sunscreen"/>
             <item
                 android:id="@+id/action_packing_list"
-                android:title="Paklijst"/>
+                android:title="@string/menu_packing_list"/>
             <item
                 android:id="@+id/action_sweat_loss"
                 android:title="@string/sweat_title"/>
             <item
                 android:id="@+id/action_safe_home"
-                android:title="Veilig thuis-bericht"/>
+                android:title="@string/menu_safe_home"/>
             <item
                 android:id="@+id/action_medical_id"
                 android:title="Medische ID"/>
             <item
                 android:id="@+id/action_pain_log"
-                android:title="Pijnlogboek"/>
+                android:title="@string/menu_pain_log"/>
         </menu>
     </item>
 
@@ -183,31 +183,31 @@
         <menu>
             <item
                 android:id="@+id/action_bike_garage"
-                android:title="Fietsgarage"/>
+                android:title="@string/menu_bike_garage"/>
             <item
                 android:id="@+id/action_bike_passport"
-                android:title="Fietspaspoort"/>
+                android:title="@string/menu_bike_passport"/>
             <item
                 android:id="@+id/action_bike_costs"
-                android:title="Fietskosten"/>
+                android:title="@string/menu_bike_costs"/>
             <item
                 android:id="@+id/action_maintenance"
-                android:title="Onderhoud"/>
+                android:title="@string/menu_maintenance"/>
             <item
                 android:id="@+id/action_tire_pressure_log"
-                android:title="Bandenspanning"/>
+                android:title="@string/menu_tire_pressure"/>
             <item
                 android:id="@+id/action_battery_status"
-                android:title="Accu's"/>
+                android:title="@string/menu_batteries"/>
             <item
                 android:id="@+id/action_torque"
-                android:title="Aanhaalmomenten"/>
+                android:title="@string/menu_torque"/>
             <item
                 android:id="@+id/action_saddle_height"
-                android:title="Zadelhoogte"/>
+                android:title="@string/menu_saddle_height"/>
             <item
                 android:id="@+id/action_frame_size"
-                android:title="Framemaat"/>
+                android:title="@string/menu_frame_size"/>
         </menu>
     </item>
 
@@ -218,28 +218,28 @@
         <menu>
             <item
                 android:id="@+id/action_strava"
-                android:title="Strava"/>
+                android:title="@string/brand_strava"/>
             <item
                 android:id="@+id/action_import_share_link"
                 android:title="@string/share_link_title"/>
             <item
                 android:id="@+id/action_batch_export"
-                android:title="Exporteer seizoen (GPX)"/>
+                android:title="@string/menu_export_season"/>
             <item
                 android:id="@+id/action_export_csv"
-                android:title="Exporteer CSV"/>
+                android:title="@string/menu_export_csv"/>
             <item
                 android:id="@+id/action_privacy"
-                android:title="Privacy-dashboard"/>
+                android:title="@string/menu_privacy_dashboard"/>
             <item
                 android:id="@+id/action_check_update"
-                android:title="Controleer op updates"/>
+                android:title="@string/menu_check_updates"/>
         </menu>
     </item>
 
     <item
         android:id="@+id/action_settings"
-        android:title="Instellingen"
+        android:title="@string/settings_title"
         app:showAsAction="never"/>
 
 </menu>
