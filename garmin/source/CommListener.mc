@@ -58,6 +58,9 @@ class PhoneMessageCallback {
         data.routeName = msg.get("name");
         var rtl = msg.get("rtl");
         data.routeTotalLen = (rtl != null && rtl instanceof Toybox.Lang.Number) ? rtl : 0;
+        // Every payload sets the layout: one without 'lay' (default chosen on the phone)
+        // must reset an earlier custom layout, not keep it.
+        data.layout = FieldLayout.parse(msg.get("lay"));
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {

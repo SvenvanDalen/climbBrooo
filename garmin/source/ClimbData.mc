@@ -122,11 +122,15 @@ class ClimbData {
     var climbSkipped;             // bool per climb: rider bypassed it; progression skips over it
     var currentSpeedMps = 0.0;    // most recent Activity.Info.currentSpeed; set by view.compute()
     var currentPower = null;      // most recent Activity.Info.currentPower (W); null = no power meter
+    var currentHeartRate = null;  // most recent Activity.Info.currentHeartRate (bpm); null = no sensor
+    var currentCadence = null;    // most recent Activity.Info.currentCadence (rpm); null = no sensor
+    var layout;                   // stat-slot metric codes for the active-climb page ('lay')
     var batteryWarningActive = false; // true once the low-battery-vs-climb-time warning has
                                        // fired for the current climb; cleared when the climb ends
                                        // or the route changes. Drives the view's persistent banner.
 
     function initialize() {
+        layout = FieldLayout.defaults();
         climbStartDist = new [MAX_CLIMBS];
         climbEndDist = new [MAX_CLIMBS];
         climbStartDist0 = new [MAX_CLIMBS];

@@ -365,7 +365,7 @@ class ClimbProView extends Ui.DataField {
 
         var sf = statFont(large);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, sf, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(32, statsY, sf, FieldLayout.formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
         // Remaining elevation is the "nice to have" middle stat -- dropped in
         // large-text mode so distance and gradient can be drawn bigger without
         // crowding the small FR255M screen (issue #82).
@@ -421,7 +421,7 @@ class ClimbProView extends Ui.DataField {
             var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, ghostY, statFont(large),
-                "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
+                "ETA " + FieldLayout.formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -646,7 +646,7 @@ class ClimbProView extends Ui.DataField {
 
         var sf = statFont(large);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, sf, formatDist(length), Gfx.TEXT_JUSTIFY_LEFT);
+        dc.drawText(32, statsY, sf, FieldLayout.formatDist(length), Gfx.TEXT_JUSTIFY_LEFT);
         // Elevation gain is the "nice to have" middle stat -- dropped in large-text
         // mode, same rationale as the active-climb stat row (issue #82).
         if (showSecondaryStat(large)) {
@@ -663,7 +663,7 @@ class ClimbProView extends Ui.DataField {
             var distY = (h * 0.88).toNumber();
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, distY, sf,
-                "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
+                "in " + FieldLayout.formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -681,24 +681,6 @@ class ClimbProView extends Ui.DataField {
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() / 2, dc.getHeight() / 2, Gfx.FONT_SMALL,
             "No climbs ahead", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
-    }
-
-    hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            var km = meters / 1000;
-            var hm = (meters % 1000) / 100;
-            return km + "." + hm + "km";
-        }
-        return meters + "m";
-    }
-
-    // Formats a whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown,
-    // see ClimbData.etaSeconds) renders as a placeholder rather than a bogus duration.
-    hidden function formatEta(seconds) {
-        if (seconds < 0) { return "--:--"; }
-        var m = seconds / 60;
-        var s = seconds % 60;
-        return m + ":" + (s < 10 ? "0" + s : "" + s);
     }
 
     // Reads the "climbAlertDistinctTone" app setting (resources/settings/, issue #83)
