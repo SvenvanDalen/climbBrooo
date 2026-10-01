@@ -14,8 +14,8 @@ public enum PrivacyCategory {
             "routes/", "catalog.json", "sync_state.json"),
     ATTEMPTS("Klimpogingen",
             "Tijden per klim uit je Strava-activiteiten, met notities en de namen van wie er "
-                    + "meereed.",
-            "climb_attempts.json", "incomplete_climb_attempts.json"),
+                    + "meereed, en je snelste rit per route (de virtuele tegenstander).",
+            "climb_attempts.json", "incomplete_climb_attempts.json", "route_ghosts.json"),
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid, "
                     + "gemiddeld vermogen en start- en eindpunt, de gemeten regen voor de "

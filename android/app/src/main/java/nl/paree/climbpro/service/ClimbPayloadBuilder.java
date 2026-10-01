@@ -38,7 +38,8 @@ import java.util.Map;
  *      zc:[zoneColorIndex, ...]}                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
  *   ],
  *   fss:[{s,e,t,n?}, ...],                              // specialized starred segments (optional, omitted when none qualify)
- *   hz:[startM, endM, type, ...]}                       // tunnels (0) + technical descents (1) (optional, issue #203)
+ *   hz:[startM, endM, type, ...],                       // tunnels (0) + technical descents (1) (optional, issue #203)
+ *   gh:[stepM, sec1, sec2, ...]}                        // route ghost: best earlier ride, seconds per step (optional, issue #178)
  *
  * un = optional display-unit bitmask (issue #262): 1 = imperial distance/elevation/speed,
  *      2 = psi, 4 = °F. Emitted on every payload kind only when non-zero; absent = metric.
@@ -60,6 +61,12 @@ public final class ClimbPayloadBuilder {
     static final String KEY_PALETTE = "pal";
     /** Route-level packed hazard markers (issue #203). */
     static final String KEY_HAZARDS = "hz";
+
+    /**
+     * Route-level virtual opponent (issue #178): {@code [stepM, sec1, ..., secN]}, the rider's
+     * best earlier ride of this route as seconds per step. Route payloads only.
+     */
+    static final String KEY_ROUTE_GHOST = "gh";
 
     /** Wire key of the optional top-level display-unit bitmask (issue #262). */
     static final String KEY_UNITS = "un";
@@ -173,6 +180,16 @@ public final class ClimbPayloadBuilder {
      */
     public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds, int[][] refSeconds)
             throws IOException {
+        return buildRoutePayload(route, targetSeconds, refSeconds, null);
+    }
+
+    /**
+     * @param routeGhost the route's virtual-opponent profile ({@code [stepM, sec1, ...]},
+     *                   {@link nl.paree.climbpro.domain.route.RouteGhostProfile#wire}); null
+     *                   or shorter than two values omits 'gh'.
+     */
+    public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds, int[][] refSeconds,
+                                    int[] routeGhost) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
         payload.put("mode",    "route");
@@ -197,6 +214,9 @@ public final class ClimbPayloadBuilder {
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
         putHazards(payload, route);
+        if (routeGhost != null && routeGhost.length >= 2 && routeGhost[0] > 0) {
+            payload.put(KEY_ROUTE_GHOST, routeGhost);
+        }
         return writeWithinBudget(payload, climbs);
     }
 
@@ -265,6 +285,11 @@ public final class ClimbPayloadBuilder {
             if (c.remove(KEY_ZONE_COLORS) != null) stripped = true;
         }
         if (stripped) {
+            bytes = mapper.writeValueAsBytes(payload);
+            if (bytes.length <= PayloadBudget.MAX_BYTES) return bytes;
+        }
+        // The route ghost (issue #178) goes next: the climbs themselves matter more.
+        if (payload.remove(KEY_ROUTE_GHOST) != null) {
             bytes = mapper.writeValueAsBytes(payload);
             if (bytes.length <= PayloadBudget.MAX_BYTES) return bytes;
         }

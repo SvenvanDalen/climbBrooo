@@ -77,6 +77,15 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderRoutePayloadWithRouteGhostValidatesAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        int[] gh = {250, 31, 30, 33, 35};  // virtual opponent (issue #178)
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(routeFixture(), null, null, gh));
+        assertTrue("gh emitted", payload.has("gh"));
+        assertValid(payload, "route payload with gh");
+    }
+
+    @Test
     public void builderPayloadsWithIntervalBlockValidateAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withFtpWatts(280);
         StoredRoute route = routeFixture();

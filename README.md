@@ -174,6 +174,14 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   technical descents found in the route profile (≤ −8 % over 300 m, or ≤ −5 % with hairpins).
   Both ride along to the climb datafield as compact markers: from 400 m ahead a purple strip
   (`TUNNEL 300m - LICHT` / `TECHN. AFDALING 250m`) and one buzz per hazard.
+- **Virtual opponent on a route** — ride against your own best earlier ride of the active
+  route. Every Strava ride the sync already fetches for climb matching is also checked against
+  your stored routes; a ride that covers a route from start to finish (checkpoints every 250 m,
+  coarser on long routes) becomes that route's reference when it is the fastest so far
+  (`route_ghosts.json`). It reaches the watch as a compact `gh` profile (seconds per step) and
+  the datafield shows `+12s vs beste` / `-8s vs beste` live: on the next-climb page, after the
+  last climb, and on a climb without its own PR/plan ghost. The opponent starts alongside you
+  where you join the route; nothing is shown off-route, in radius mode or without a ride.
 - **Everesting tracker** — climb detail → "Everesting plannen": pick a target (8848 m, or
   1000–10000 m custom) and see the repeats (rounded up), distance and estimated riding time.
   The datafield gets the plan in the payload (`ev`), counts a repeat each time you reach the

@@ -14,7 +14,10 @@ import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.KnownClimbCatalog;
 import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.RouteGhostRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.StoredRouteGhost;
+import nl.paree.climbpro.domain.route.RouteGhostProfile;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
@@ -143,6 +146,12 @@ public final class StravaActivitiesRepository {
     private final IncompleteClimbAttemptRepository incompleteAttemptRepo;
     private final RideRepository         rideRepo;
     private final RideStreamStatsRepository streamStatsRepo;
+    private final RouteGhostRepository   ghostRepo;
+    /**
+     * Checkpoints of every stored route for the virtual opponent (issue #178), loaded lazily
+     * once per sync / backfill run; null = not loaded yet.
+     */
+    private List<GhostRoute> ghostRoutes;
     private final StravaApiClient        api;
     private final android.content.SharedPreferences prefs;
 
@@ -175,6 +184,7 @@ public final class StravaActivitiesRepository {
         this.incompleteAttemptRepo = new IncompleteClimbAttemptRepository(context);
         this.rideRepo = new RideRepository(context);
         this.streamStatsRepo = new RideStreamStatsRepository(context);
+        this.ghostRepo = new RouteGhostRepository(context);
         this.api = api;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -188,6 +198,7 @@ public final class StravaActivitiesRepository {
     public int syncActivities() throws IOException {
         String token = "Bearer " + auth.getAccessToken();
         titleUpdateAuthExpired = false;
+        ghostRoutes = null; // routes may have changed since the previous run
 
         // The ride archive is a side feature: it must never block or fail climb matching.
         try {
@@ -420,6 +431,7 @@ public final class StravaActivitiesRepository {
         }
 
         String token = "Bearer " + auth.getAccessToken();
+        ghostRoutes = null;
         List<KnownClimb> climbs = enumerateKnownClimbs();
         Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
         known.addAll(incompleteAttemptRepo.knownActivityIds());
@@ -604,11 +616,71 @@ public final class StravaActivitiesRepository {
 
             out.addAll(ActivityClimbMatcher.match(track, trackTemps, climbs, act.id,
                     parseStartDate(act.startDate), incompleteOut));
+            offerRouteGhosts(act, track);
             return new MatchResult(StreamOutcome.OK, out, headers);
         } catch (IOException e) {
             Log.w(TAG, "Stream fetch failed for activity " + act.id, e);
             return new MatchResult(StreamOutcome.TRANSIENT_FAILURE, out, null);
         }
+    }
+
+    /** One stored route's checkpoints for the virtual opponent (issue #178). */
+    static final class GhostRoute {
+        final String routeId;
+        final RouteGhostProfile.Line line;
+
+        GhostRoute(String routeId, RouteGhostProfile.Line line) {
+            this.routeId = routeId;
+            this.line = line;
+        }
+    }
+
+    /**
+     * Virtual opponent (issue #178): checks whether this ride covered any stored route from
+     * start to finish and keeps it as that route's reference profile when it is the fastest
+     * so far. Reuses the GPS track fetched for climb matching, so it costs no extra Strava
+     * request. Never throws: a failure here must not undo the climb matches.
+     */
+    private void offerRouteGhosts(StravaActivityDto act, List<TrackSample> track) {
+        try {
+            List<StoredRouteGhost> found = routeGhostsFor(loadGhostRoutes(), track, act.id,
+                    parseStartDate(act.startDate));
+            if (!found.isEmpty()) ghostRepo.offer(found);
+        } catch (Exception e) {
+            Log.w(TAG, "Route ghost matching failed for activity " + act.id, e);
+        }
+    }
+
+    /** Every route in {@code routes} that {@code track} rode in full, as a candidate profile. */
+    static List<StoredRouteGhost> routeGhostsFor(List<GhostRoute> routes, List<TrackSample> track,
+                                                 long activityId, long startEpochSec) {
+        List<StoredRouteGhost> out = new ArrayList<>();
+        if (routes == null) return out;
+        for (GhostRoute r : routes) {
+            int[] secs = RouteGhostProfile.match(r.line, track);
+            if (secs != null) {
+                out.add(new StoredRouteGhost(r.routeId, activityId, startEpochSec,
+                        r.line.lengthM, r.line.stepM, secs));
+            }
+        }
+        return out;
+    }
+
+    private List<GhostRoute> loadGhostRoutes() {
+        if (ghostRoutes != null) return ghostRoutes;
+        List<GhostRoute> out = new ArrayList<>();
+        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
+            try {
+                StoredRoute route = routeRepo.loadRoute(entry.routeId);
+                RouteGhostProfile.Line line =
+                        RouteGhostProfile.line(route.lats, route.lons, route.distances);
+                if (line != null) out.add(new GhostRoute(entry.routeId, line));
+            } catch (IOException e) {
+                Log.w(TAG, "Skipping route " + entry.routeId + " for the route ghost", e);
+            }
+        }
+        ghostRoutes = out;
+        return out;
     }
 
     private List<KnownClimb> enumerateKnownClimbs() {
