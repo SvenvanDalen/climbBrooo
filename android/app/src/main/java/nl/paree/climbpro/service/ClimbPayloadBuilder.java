@@ -9,6 +9,7 @@ import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.power.SegmentIntensityZones;
+import nl.paree.climbpro.domain.watch.WatchFieldLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,15 +54,19 @@ public final class ClimbPayloadBuilder {
     private final RiderProfile zoneProfile;
     /** Rider FTP used to turn a climb's interval block (% FTP) into watts; 0 = unknown. */
     private final int ftpWatts;
+    /** Optional top-level 'lay' (datafield slot layout); null = default layout, key omitted. */
+    private final int[] fieldLayout;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
-        this(mapper, null, 0);
+        this(mapper, null, 0, null);
     }
 
-    private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts) {
+    private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts,
+                                int[] fieldLayout) {
         this.mapper = mapper;
         this.zoneProfile = zoneProfile;
         this.ftpWatts = ftpWatts;
+        this.fieldLayout = fieldLayout;
     }
 
     /**
@@ -72,7 +77,7 @@ public final class ClimbPayloadBuilder {
      * nice-to-have and must never cost a sync (radius mode: never cost a climb).
      */
     public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
-        return new ClimbPayloadBuilder(mapper, profile, ftpWatts);
+        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, fieldLayout);
     }
 
     /**
@@ -80,7 +85,16 @@ public final class ClimbPayloadBuilder {
      * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
      */
     public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts));
+        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), fieldLayout);
+    }
+
+    /**
+     * Sets the stat-slot layout the datafield uses on its active-climb page ('lay'). A null or
+     * default layout emits nothing, so riders who never customise send the same bytes as before.
+     */
+    public ClimbPayloadBuilder withFieldLayout(WatchFieldLayout layout) {
+        int[] lay = (layout == null || layout.isDefault()) ? null : layout.codes();
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, lay);
     }
 
     public byte[] buildRoutePayload(StoredRoute route) throws IOException {
@@ -123,6 +137,7 @@ public final class ClimbPayloadBuilder {
                 climbs.add(buildRouteClimb(route.climbs.get(i), tsec, refsec));
             }
         }
+        putFieldLayout(payload);
         payload.put("climbs", climbs);
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
@@ -137,6 +152,7 @@ public final class ClimbPayloadBuilder {
         if (climbs != null) {
             for (StoredClimb sc : climbs) out.add(buildRadiusClimb(sc));
         }
+        putFieldLayout(payload);
         payload.put("climbs", out);
         return writeWithinBudget(payload, out);
     }
@@ -169,6 +185,7 @@ public final class ClimbPayloadBuilder {
         int[] refsec = (refSeconds != null && climbIndex < refSeconds.length)
                 ? refSeconds[climbIndex] : null;
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
+        putFieldLayout(payload);
         payload.put("climbs", climbs);
         return writeWithinBudget(payload, climbs);
     }
@@ -190,6 +207,13 @@ public final class ClimbPayloadBuilder {
     }
 
     /** Route-mode only: total route length (m), from the last cumulative distance. */
+    private void putFieldLayout(Map<String, Object> payload) {
+        if (fieldLayout == null) return;
+        List<Integer> lay = new ArrayList<>(fieldLayout.length);
+        for (int code : fieldLayout) lay.add(code);
+        payload.put("lay", lay);
+    }
+
     private static void putRouteTotalLength(Map<String, Object> payload, StoredRoute route) {
         if (route.distances != null && route.distances.length > 0) {
             payload.put("rtl", (int) Math.round(route.distances[route.distances.length - 1]));

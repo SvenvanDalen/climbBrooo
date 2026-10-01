@@ -24,6 +24,7 @@ import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.domain.segment.SurfaceType;
+import nl.paree.climbpro.domain.watch.WatchFieldLayout;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
 
 /**
@@ -97,6 +98,17 @@ public class ProtocolRoundTripTest {
         JsonNode radius = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));
         assertTrue("radius payload carries 'zc'", radius.get("climbs").get(0).has("zc"));
         assertValid(radius, "radius payload with zc");
+    }
+
+    @Test
+    public void builderPayloadsWithFieldLayoutValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withFieldLayout(
+                WatchFieldLayout.of(new int[]{8, 9, 10, 6, 5}));
+        JsonNode route = MAPPER.readTree(b.buildRoutePayload(routeFixture()));
+        assertTrue("route payload carries 'lay'", route.has("lay"));
+        assertValid(route, "route payload with lay");
+        assertValid(MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs)),
+                "radius payload with lay");
     }
 
     @Test

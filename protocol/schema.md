@@ -57,6 +57,7 @@ Per-climb numeric data is packed into compact integer arrays (the watch slices t
 `surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
 - `rtl` (route mode, optional): total route length in whole metres. The watch derives distance-along-course = `rtl - Activity.Info.distanceToDestination` when the rider navigates the route as a Garmin course, giving a more accurate matching axis than the activity odometer (with a calibration-based trust check; falls back to the odometer otherwise).
+- `lay` (both modes, optional): datafield stat-slot layout chosen on the phone ("Horloge-velden"), exactly 5 metric codes for `[left, middle, right, row 4, bottom line]` of the active-climb page. Codes 0–15 as listed in `schema.json` (`WatchFieldLayout.java` / `FieldLayout.mc`). Omitted for the default `[0,1,2,14,15]`, which is the pre-layout screen. The watch uses the default per slot for an unknown code and the full default for a missing or malformed array.
 
 ## Byte budget
 
@@ -89,6 +90,7 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 3       | 2026-10-01 | Added optional top-level `lay` (5 datafield stat-slot metric codes, chosen on the phone). Both modes; omitted for the default layout. Additive, no version bump. |
 | 3       | 2026-09-29 | Added optional `zc` (per-segment FTP intensity-zone colorIndex) packed int array on Climb, parallel to `segs` (issue #66). Both modes; omitted without a complete rider profile and dropped when over budget. Additive, no version bump. |
 | 3       | 2026-09-17 | Added optional `refsec` (per-segment PR reference time) packed int array on Climb, parallel to `segs`. Route-mode only, omitted when no stored attempt has a matching segment count. Distinct from `tsec`; additive, no version bump. |
 | 3       | 2026-09-17 | Added optional `vam` (`[avgVamMPerH, peakVamMPerH, …]`) packed int array on Climb — gradient-implied VAM per segment, parallel to `segments` (wire key `segs`). Both modes, omitted unless every segment has a computed value. ~26 ints per climb; additive, no version bump. |
