@@ -236,7 +236,7 @@
     <string name="route_detail_climbs_and_flats">Salite &amp; tratti pianeggianti</string>
     <string name="route_detail_saved">Salvato</string>
     <string name="route_detail_selected_for_watch">Percorso scelto per l\'orologio</string>
-    <string name="route_detail_passport_climbs">%1$d salite · %2$d m disl.</string>
+    <string name="route_detail_passport_climbs">%1$d salite · %2$s disl.</string>
     <string name="route_detail_passport_comparison"> (≈ %1$s)</string>
     <string name="route_detail_passport_hardest">La più dura: %1$s (%2$.1f%%)</string>
     <string name="route_detail_passport_time">Tempo stimato: %1$s</string>
@@ -304,7 +304,7 @@
     <string name="action_share">Condividi</string>
     <string name="source_open_meteo">Fonte: Open-Meteo</string>
     <string name="climb_detail_default_name">Salita %1$d</string>
-    <string name="climb_detail_stats">%1$d m totali · pendenza media %2$.1f%% · %3$d m disl. · %4$s</string>
+    <string name="climb_detail_stats">%1$s totali · pendenza media %2$.1f%% · %3$s disl. · %4$s</string>
     <string name="climb_detail_home_on">Salita di casa — il luogo di partenza viene sfocato nell\'esportazione</string>
     <string name="climb_detail_rate_edit">Modifica valutazione</string>
     <string name="climb_detail_estimate_missing">Imposta FTP e peso (Impostazioni) per una stima del tempo</string>

@@ -236,7 +236,7 @@
     <string name="route_detail_climbs_and_flats">Anstiege &amp; flache Abschnitte</string>
     <string name="route_detail_saved">Gespeichert</string>
     <string name="route_detail_selected_for_watch">Route für die Uhr ausgewählt</string>
-    <string name="route_detail_passport_climbs">%1$d Anstiege · %2$d Hm</string>
+    <string name="route_detail_passport_climbs">%1$d Anstiege · %2$s bergauf</string>
     <string name="route_detail_passport_comparison"> (≈ %1$s)</string>
     <string name="route_detail_passport_hardest">Härtester: %1$s (%2$.1f%%)</string>
     <string name="route_detail_passport_time">Geschätzte Zeit: %1$s</string>
@@ -304,7 +304,7 @@
     <string name="action_share">Teilen</string>
     <string name="source_open_meteo">Quelle: Open-Meteo</string>
     <string name="climb_detail_default_name">Anstieg %1$d</string>
-    <string name="climb_detail_stats">%1$d m gesamt · Ø %2$.1f%% Steigung · %3$d Hm · %4$s</string>
+    <string name="climb_detail_stats">%1$s gesamt · Ø %2$.1f%% Steigung · %3$s Anstieg · %4$s</string>
     <string name="climb_detail_home_on">Hausberg — Startort wird beim Export verschleiert</string>
     <string name="climb_detail_rate_edit">Bewertung ändern</string>
     <string name="climb_detail_estimate_missing">Lege deine FTP und dein Gewicht fest (Einstellungen) für eine Zeitschätzung</string>

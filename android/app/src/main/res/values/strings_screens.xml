@@ -256,7 +256,7 @@
     <string name="route_detail_climbs_and_flats">Klimmen &amp; vlakke stukken</string>
     <string name="route_detail_saved">Opgeslagen</string>
     <string name="route_detail_selected_for_watch">Route gekozen voor het horloge</string>
-    <string name="route_detail_passport_climbs">%1$d klimmen · %2$d hm</string>
+    <string name="route_detail_passport_climbs">%1$d klimmen · %2$s hoogteverschil</string>
     <string name="route_detail_passport_comparison"> (≈ %1$s)</string>
     <string name="route_detail_passport_hardest">Zwaarste: %1$s (%2$.1f%%)</string>
     <string name="route_detail_passport_time">Geschatte tijd: %1$s</string>
@@ -326,7 +326,7 @@
     <string name="action_share">Delen</string>
     <string name="source_open_meteo">Bron: Open-Meteo</string>
     <string name="climb_detail_default_name">Klim %1$d</string>
-    <string name="climb_detail_stats">%1$d m totaal · gem. %2$.1f%% helling · %3$d hm · %4$s</string>
+    <string name="climb_detail_stats">%1$s totaal · gem. %2$.1f%% helling · %3$s hoogteverschil · %4$s</string>
     <string name="climb_detail_home_on">Thuisklim — startlocatie wordt gewazigd bij export</string>
     <string name="climb_detail_rate_edit">Beoordeling aanpassen</string>
     <string name="climb_detail_estimate_missing">Stel je FTP en gewicht in (Instellingen) voor een tijdschatting</string>

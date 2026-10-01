@@ -236,7 +236,7 @@
     <string name="route_detail_climbs_and_flats">Climbs &amp; flat sections</string>
     <string name="route_detail_saved">Saved</string>
     <string name="route_detail_selected_for_watch">Route selected for watch</string>
-    <string name="route_detail_passport_climbs">%1$d climbs · %2$d m gain</string>
+    <string name="route_detail_passport_climbs">%1$d climbs · %2$s gain</string>
     <string name="route_detail_passport_comparison"> (≈ %1$s)</string>
     <string name="route_detail_passport_hardest">Hardest: %1$s (%2$.1f%%)</string>
     <string name="route_detail_passport_time">Estimated time: %1$s</string>
@@ -304,7 +304,7 @@
     <string name="action_share">Share</string>
     <string name="source_open_meteo">Source: Open-Meteo</string>
     <string name="climb_detail_default_name">Climb %1$d</string>
-    <string name="climb_detail_stats">%1$d m total · %2$.1f%% avg gradient · %3$d m elevation gain · %4$s</string>
+    <string name="climb_detail_stats">%1$s total · %2$.1f%% avg gradient · %3$s elevation gain · %4$s</string>
     <string name="climb_detail_home_on">Home climb — start location is blurred on export</string>
     <string name="climb_detail_rate_edit">Edit rating</string>
     <string name="climb_detail_estimate_missing">Set your FTP and weight (Settings) for a time estimate</string>
