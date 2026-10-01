@@ -9,10 +9,15 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
+import nl.paree.climbpro.data.osm.OverpassTunnelClient;
+import nl.paree.climbpro.data.offline.OfflinePackageStore;
+import nl.paree.climbpro.data.osm.OverpassPoiClient;
+import nl.paree.climbpro.data.border.BorderCrossingService;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.RouteReverseService;
+import nl.paree.climbpro.data.route.RouteShortenService;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
@@ -20,11 +25,16 @@ import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.domain.climb.ClimbUsageClassifier;
 import nl.paree.climbpro.domain.climb.ClimbUsageType;
 import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
 import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
+import nl.paree.climbpro.domain.offline.OfflinePackage;
+import nl.paree.climbpro.domain.offline.OfflinePackageBuilder;
 import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.route.RouteHazards;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
@@ -43,6 +53,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final ClimbAttemptRepository attemptRepo;
     private final OnboardPushService onboardPushService;
     private final HistoricClimbScoreCache historicClimbScoreCache;
+    private final BorderCrossingService borderCrossingService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredRoute> route      = new MutableLiveData<>();
@@ -60,8 +71,12 @@ public final class RouteDetailViewModel extends AndroidViewModel {
             new MutableLiveData<>();
     /** One-shot result of {@link #reverseRoute}; cleared via {@link #consumeReversedRoute}. */
     private final MutableLiveData<RouteReverseService.Result> reversedRoute = new MutableLiveData<>();
+    /** One-shot result of {@link #shortenRoute}; cleared via {@link #consumeShortenedRoute}. */
+    private final MutableLiveData<RouteShortenService.Result> shortenedRoute = new MutableLiveData<>();
     private final MutableLiveData<RouteElevationProfile> elevationProfile =
             new MutableLiveData<>();
+    /** Start country + border crossings as display lines (issue #209); empty = no crossing. */
+    private final MutableLiveData<List<String>> borderCrossings = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
@@ -71,6 +86,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         onboardPushService = new OnboardPushService(
                 ((ClimbProApplication) app).connectIqClient());
         historicClimbScoreCache = ((ClimbProApplication) app).historicClimbScoreCache();
+        borderCrossingService = new BorderCrossingService(app);
     }
 
     public LiveData<StoredRoute>  route()      { return route; }
@@ -86,6 +102,125 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<RouteReverseService.Result> reversedRoute() { return reversedRoute; }
 
     public void consumeReversedRoute() { reversedRoute.setValue(null); }
+
+    /** Result of {@link #lookupTunnels}: null error = lookup succeeded. */
+    public static final class TunnelLookup {
+        public final StoredRoute route;
+        public final String error;
+
+        TunnelLookup(StoredRoute route, String error) {
+            this.route = route;
+            this.error = error;
+        }
+    }
+
+    private final MutableLiveData<TunnelLookup> tunnelLookup = new MutableLiveData<>();
+
+    public LiveData<TunnelLookup> tunnelLookup() { return tunnelLookup; }
+
+    public void consumeTunnelLookup() { tunnelLookup.setValue(null); }
+
+    /**
+     * Looks up road tunnels along the route in OpenStreetMap and stores them (issue #203); the
+     * watch gets them as 'hz' markers on the next sync. On failure the stored ones stay.
+     */
+    public void lookupTunnels(String routeId) {
+        executor.execute(() -> {
+            String err = null;
+            try {
+                StoredRoute r = routeRepo.loadRoute(routeId);
+                List<double[][]> ways = new OverpassTunnelClient().fetch(r.lats, r.lons);
+                List<StoredTunnel> tunnels = new ArrayList<>();
+                for (RouteHazards.Hazard h
+                        : RouteHazards.matchTunnels(r.lats, r.lons, r.distances, ways)) {
+                    tunnels.add(new StoredTunnel(h.startM, h.endM));
+                }
+                routeRepo.setTunnels(routeId, tunnels);
+            } catch (Exception e) {
+                err = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            }
+            try {
+                tunnelLookup.postValue(new TunnelLookup(routeRepo.loadRoute(routeId), err));
+            } catch (Exception e) {
+                error.postValue(e.getMessage());
+            }
+        });
+    }
+
+    /** Offline route package (issue #200): one-shot result of a load or download. */
+    public static final class OfflineResult {
+        /** The package, or null when there is none yet. */
+        public final OfflinePackage pkg;
+        public final boolean downloaded;
+
+        OfflineResult(OfflinePackage pkg, boolean downloaded) {
+            this.pkg = pkg;
+            this.downloaded = downloaded;
+        }
+    }
+
+    private final MutableLiveData<OfflineResult> offlinePackage = new MutableLiveData<>();
+
+    public LiveData<OfflineResult> offlinePackage() { return offlinePackage; }
+
+    public void consumeOfflinePackage() { offlinePackage.setValue(null); }
+
+    private OfflinePackageStore offlineStore() {
+        return new OfflinePackageStore(getApplication().getFilesDir());
+    }
+
+    /** Reads the stored package from disk (works offline). */
+    public void loadOfflinePackage(String routeId) {
+        executor.execute(() ->
+                offlinePackage.postValue(new OfflineResult(offlineStore().load(routeId), false)));
+    }
+
+    /** Downloads weather + POIs for the route and stores them; a partial package is kept. */
+    public void downloadOfflinePackage(String routeId) {
+        executor.execute(() -> {
+            try {
+                StoredRoute r = routeRepo.loadRoute(routeId);
+                OpenMeteoClient weather = new OpenMeteoClient();
+                OverpassPoiClient pois = new OverpassPoiClient();
+                OfflinePackage pkg = new OfflinePackageBuilder(
+                        (lat, lon) -> weather.fetchRawForecast(lat, lon, Double.NaN),
+                        pois::fetch).build(r, System.currentTimeMillis());
+                if (pkg.weatherError != null && pkg.poiError != null) {
+                    error.postValue(getApplication().getString(
+                            nl.paree.climbpro.R.string.offline_pkg_failed, pkg.weatherError));
+                    offlinePackage.postValue(new OfflineResult(null, false));
+                    return;
+                }
+                offlineStore().save(pkg);
+                offlinePackage.postValue(new OfflineResult(pkg, true));
+            } catch (Exception e) {
+                error.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.offline_pkg_failed, e.getMessage()));
+                offlinePackage.postValue(new OfflineResult(null, false));
+            }
+        });
+    }
+
+    public LiveData<RouteShortenService.Result> shortenedRoute() { return shortenedRoute; }
+
+    public void consumeShortenedRoute() { shortenedRoute.setValue(null); }
+
+    /** Saves (or reuses) a shortened variant of the route (issue #205); original untouched. */
+    public void shortenRoute(String routeId, int fromIndex, int toIndex) {
+        executor.execute(() -> {
+            try {
+                shortenedRoute.postValue(
+                        new RouteShortenService(routeRepo).create(routeId, fromIndex, toIndex));
+            } catch (Exception e) {
+                error.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.route_shorten_failed, e.getMessage()));
+            }
+        });
+    }
+
+    public void deleteOfflinePackage(String routeId) {
+        executor.execute(() -> offlineStore().delete(routeId));
+    }
 
     /**
      * Creates (or reuses) the opposite-direction variant of the route with climbs re-detected
@@ -105,6 +240,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
     /** Whole-route elevation profile with climbs highlighted (issue #207). */
     public LiveData<RouteElevationProfile> elevationProfile() { return elevationProfile; }
+    /** Border crossings along the route (issue #209); see {@link BorderCrossingService}. */
+    public LiveData<List<String>> borderCrossings() { return borderCrossings; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -126,6 +263,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
                 restSuggestions.postValue(computeRestSuggestions(r));
+                borderCrossings.postValue(borderCrossingService.describe(r));
             } catch (Exception e) {
                 error.postValue("Could not load route: " + e.getMessage());
             }

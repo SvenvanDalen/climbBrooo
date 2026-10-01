@@ -137,6 +137,38 @@ public class RouteRepositoryReimportTest {
     }
 
     @Test
+    public void saveRoutePreservesEverestTargetAcrossReimport() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+        repo.setClimbEverestTarget("r1", 0, 8848);
+
+        repo.saveRoute(routeShell("r1"), points(), climbs());
+
+        assertEquals(Integer.valueOf(8848), repo.loadRoute("r1").climbs.get(0).everestTargetM);
+        repo.setClimbEverestTarget("r1", 0, null);
+        assertEquals(null, repo.loadRoute("r1").climbs.get(0).everestTargetM);
+    }
+
+    @Test
+    public void setClimbEverestTargetKeepsOneAttemptPerRoute() throws Exception {
+        RouteRepository repo = new RouteRepository(app);
+        List<Climb> two = climbs();
+        two.add(Climb.builder()
+                .startDistance(5000).endDistance(6000)
+                .length(1000).elevationGain(60).avgGradient(0.06)
+                .startLat(51.1).startLon(5.1)
+                .segments(two.get(0).segments)
+                .build());
+        repo.saveRoute(routeShell("r1"), points(), two);
+        repo.setClimbEverestTarget("r1", 0, 8848);
+        repo.setClimbEverestTarget("r1", 1, 4424);
+
+        StoredRoute r = repo.loadRoute("r1");
+        assertEquals(null, r.climbs.get(0).everestTargetM);
+        assertEquals(Integer.valueOf(4424), r.climbs.get(1).everestTargetM);
+    }
+
+    @Test
     public void setClimbIntervalBlockNullRemovesBlock() throws Exception {
         RouteRepository repo = new RouteRepository(app);
         repo.saveRoute(routeShell("r1"), points(), climbs());

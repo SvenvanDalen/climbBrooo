@@ -48,11 +48,11 @@ module FieldLayout {
 
     // Text for the plain metrics. GHOST, BLOCK and the AUTO_* codes need colour or a
     // fallback and are drawn by the view, so they return null; EMPTY returns "".
-    // v: values the view gathers once per redraw. wide: centred slot (middle, row 4,
+    // v: values the view gathers once per redraw (:units = payload "un" bitmask). wide: centred slot (middle, row 4,
     // bottom line) -- the narrow side slots get the compact form.
     function metricText(code, v, wide) {
-        if (code == REM_DIST) { return formatDist(v[:remaining]); }
-        if (code == REM_ELEV) { return v[:remElev] + "m↑"; }
+        if (code == REM_DIST) { return Units.formatDist(v[:remaining], v[:units]); }
+        if (code == REM_ELEV) { return Units.formatElev(v[:remElev], v[:units]) + "↑"; }
         if (code == CUR_GRAD) { return formatGrad(v[:curGrad]); }
         if (code == AVG_GRAD) { return "~" + formatGrad(v[:avgGrad]); }
         if (code == VAM) {
@@ -60,22 +60,17 @@ module FieldLayout {
             return wide ? "VAM " + v[:vamAvg] + "/" + v[:vamPeak] : "" + v[:vamAvg];
         }
         if (code == ETA) { return "ETA " + formatEta(v[:etaSec]); }
-        if (code == SPEED) { return (v[:speedMps] * 3.6).format("%.1f") + "km/u"; }
+        if (code == SPEED) {
+            return Units.isImperial(v[:units])
+                ? (v[:speedMps] * 2.23694).format("%.1f") + "mph"
+                : (v[:speedMps] * 3.6).format("%.1f") + "km/u";
+        }
         if (code == HEART_RATE) { return v[:hr] == null ? "--" : v[:hr] + "bpm"; }
         if (code == POWER) { return v[:power] == null ? "--" : v[:power].toNumber() + "W"; }
         if (code == CADENCE) { return v[:cadence] == null ? "--" : v[:cadence] + "rpm"; }
         if (code == ELAPSED) { return formatElapsed(v[:timerMs]); }
         if (code == EMPTY) { return ""; }
         return null;
-    }
-
-    function formatDist(meters) {
-        if (meters >= 1000) {
-            var km = meters / 1000;
-            var hm = (meters % 1000) / 100;
-            return km + "." + hm + "km";
-        }
-        return meters + "m";
     }
 
     // Whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown, see

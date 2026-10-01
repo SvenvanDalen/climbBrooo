@@ -25,8 +25,6 @@ import nl.paree.climbpro.data.route.StoredSegment;
  */
 public final class ClimbProfileView extends View {
 
-    private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
-
     private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint outlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -146,7 +144,7 @@ public final class ClimbProfileView extends View {
             segPath.close();
 
             int ci = Math.max(0, Math.min(5, seg.colorIndex));
-            fillPaint.setColor(SEGMENT_COLORS[ci]);
+            fillPaint.setColor(SegmentColorPalette.toColor(ci));
             canvas.drawPath(segPath, fillPaint);
 
             // Draw segment border

@@ -54,7 +54,7 @@ class ClimbDetailView extends Ui.View {
         dc.drawText(32, statsY, Gfx.FONT_XTINY,
             formatDist(data.climbLength[ci]), Gfx.TEXT_JUSTIFY_LEFT);
         dc.drawText(w / 2, statsY, Gfx.FONT_XTINY,
-            data.climbElevGain[ci] + "m", Gfx.TEXT_JUSTIFY_CENTER);
+            Units.formatElev(data.climbElevGain[ci], data.units), Gfx.TEXT_JUSTIFY_CENTER);
         dc.drawText(w - 32, statsY, Gfx.FONT_XTINY,
             (grad / 10) + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
 
@@ -62,18 +62,19 @@ class ClimbDetailView extends Ui.View {
         var rId = data.routeId;
         if (rId != null) {
             if (climbSaved == null) { refreshClimbSaved(); }
-            dc.setColor(climbSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            var pal = WidgetPalette.current();
+            dc.setColor(climbSaved ? WidgetPalette.badColor(pal)
+                                   : WidgetPalette.okColor(pal, Gfx.COLOR_GREEN), Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, (h * 0.88).toNumber(), Gfx.FONT_XTINY,
                 (climbSaved ? "SELECT: Remove" : "SELECT: Save") + "  MENU: Actief",
                 Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
 
+    // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
     hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            return (meters / 1000) + "." + ((meters % 1000) / 100) + "km";
-        }
-        return meters + "m";
+        var data = App.getApp().climbData;
+        return Units.formatDist(meters, data != null ? data.units : 0);
     }
 
     function refreshClimbSaved() {

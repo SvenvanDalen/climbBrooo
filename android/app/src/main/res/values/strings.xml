@@ -1,13 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ClimbPro</string>
-    <string name="placeholder_main">ClimbPro</string>
+    <string name="app_name" translatable="false">ClimbPro</string>
+    <string name="placeholder_main" translatable="false">ClimbPro</string>
     <string name="widget_week_label">ClimbPro week</string>
     <string name="widget_week_description">Klimmen van deze week en je volgende geplande klim</string>
     <string name="route_reverse_action">Omgekeerde richting</string>
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <!-- Tunnels en technische afdalingen (issue #203) -->
+    <string name="hazards_action">Tunnels en gevaarlijke afdalingen</string>
+    <string name="hazards_loading">Tunnels zoeken in OpenStreetMap…</string>
+    <string name="hazards_header">Tunnels: %1$d · technische afdalingen: %2$d</string>
+    <string name="hazards_tunnel_row">Tunnel km %1$.1f–%2$.1f (%3$d m) — licht aan</string>
+    <string name="hazards_descent_row">Technische afdaling km %1$.1f–%2$.1f (%3$.1f km)</string>
+    <string name="hazards_none">Geen tunnels of technische afdalingen gevonden.</string>
+    <string name="hazards_lookup_failed">Tunnels konden niet worden opgehaald (%1$s); eerder gevonden tunnels blijven staan.</string>
+    <string name="hazards_note">Afdalingen: ≤ −8 % over 300 m, of ≤ −5 % met veel bochten. Tunnels © OpenStreetMap-bijdragers. Het horloge waarschuwt 400 m vooraf (na de volgende sync).</string>
+    <!-- Offline-pakket voor een route (issue #200) -->
+    <string name="offline_pkg_action">Offline-pakket</string>
+    <string name="offline_pkg_loading">Offline-pakket downloaden…</string>
+    <string name="offline_pkg_title">Offline-pakket</string>
+    <string name="offline_pkg_intro">Download vooraf het weer langs de route (komende 2 dagen) en water-, eet-, toilet- en fietspunten binnen 300 m (OpenStreetMap). Daarna is alles zonder bereik te bekijken; route en klimmen staan al op je telefoon.</string>
+    <string name="offline_pkg_download">Downloaden</string>
+    <string name="offline_pkg_refresh">Vernieuwen</string>
+    <string name="offline_pkg_delete">Verwijderen</string>
+    <string name="offline_pkg_close">Sluiten</string>
+    <string name="offline_pkg_deleted">Offline-pakket verwijderd</string>
+    <string name="offline_pkg_failed">Downloaden mislukt: %1$s</string>
+    <string name="offline_pkg_source">Weer: Open-Meteo · punten © OpenStreetMap-bijdragers</string>
+    <!-- Route inkorten (issue #205) -->
+    <string name="route_shorten_action">Route inkorten</string>
+    <string name="route_shorten_title">Kortere variant (%1$.1f km nu)</string>
+    <string name="route_shorten_none">Geen kortere variant gevonden: de route komt nergens dicht genoeg bij zichzelf terug om af te snijden (er is geen wegrouter).</string>
+    <string name="route_shorten_item">%1$.1f km (−%2$.1f km, −%3$d hm)\nAfsnijden bij km %4$.1f → km %5$.1f (%6$d m hemelsbreed)</string>
+    <string name="route_shorten_skips">\nSlaat over: %1$s</string>
+    <string name="route_shorten_partial">\nKapt deels af: %1$s</string>
+    <string name="route_shorten_note">Afsnijpunten liggen waar de route zichzelf tot op 200 m nadert; controleer de verbinding op de kaart.</string>
+    <string name="route_shorten_created">Ingekorte route aangemaakt — klimmen gevonden: %1$d</string>
+    <string name="route_shorten_exists">Deze ingekorte route bestaat al — geopend</string>
+    <string name="route_shorten_failed">Inkorten mislukt: %1$s</string>
+    <!-- Rondje-generator (issue #202) -->
+    <string name="loop_gen_menu">Rondje-generator</string>
+    <string name="loop_gen_title">Rondje-generator</string>
+    <string name="loop_gen_intro">Geef op hoeveel km je wilt rijden. De app stelt een rondje voor dat begint en eindigt bij je startpunt, opgebouwd uit je opgeslagen routes: een bekend rondje, een ingekorte of gecombineerde variant, of heen en terug langs een route.</string>
+    <string name="loop_gen_distance_hint">Afstand in km (bijv. 60)</string>
+    <string name="loop_gen_use_location">Huidige locatie</string>
+    <string name="loop_gen_start_none">Startpunt: nog niet gekozen</string>
+    <string name="loop_gen_start">Startpunt: %1$s</string>
+    <string name="loop_gen_suggest">Stel rondjes voor</string>
+    <string name="loop_gen_invalid_distance">Vul een afstand tussen 2 en 400 km in</string>
+    <string name="loop_gen_no_permission">Geen locatietoestemming — kies een favoriet startpunt.</string>
+    <string name="loop_gen_none">Geen passend rondje gevonden: geen opgeslagen route komt binnen 1,5 km van het startpunt met een lengte binnen 25 % van je doel. Importeer meer routes of kies een ander startpunt.</string>
+    <string name="loop_gen_tap_hint">Tik op een voorstel om het als nieuwe route op te slaan en te openen.</string>
+    <string name="loop_gen_row">%1$.1f km · %2$s\n%3$s\nvan/naar startpunt: %4$.1f km hemelsbreed</string>
+    <string name="loop_gen_kind_loop">rondje</string>
+    <string name="loop_gen_kind_shortened">ingekort rondje</string>
+    <string name="loop_gen_kind_combined">twee rondjes gecombineerd</string>
+    <string name="loop_gen_kind_out_and_back">heen en terug</string>
+    <string name="loop_gen_disclaimer">Er is geen wegrouter: voorstellen volgen alleen je opgeslagen routes. Het stukje van en naar het startpunt (max. 1,5 km) en eventuele afsnijdingen zijn hemelsbreed — controleer de route op de kaart voor je vertrekt.</string>
+    <!-- Bezienswaardigheden langs de route (issue #208) -->
+    <string name="route_pois_action">Bezienswaardigheden</string>
+    <string name="route_pois_title">Bezienswaardigheden</string>
+    <string name="route_pois_refresh">Vernieuwen</string>
+    <string name="route_pois_loading">Bezienswaardigheden zoeken…</string>
+    <string name="route_pois_summary">%1$d bezienswaardigheden binnen %2$d m van de route (opgehaald %3$s). Tik om op de kaart te openen.</string>
+    <string name="route_pois_none">Geen bezienswaardigheden binnen %1$d m van de route gevonden (opgehaald %2$s).</string>
+    <string name="route_pois_no_route">Deze route heeft geen coördinaten.</string>
+    <string name="route_pois_failed">Bezienswaardigheden ophalen mislukt: %1$s</string>
+    <string name="route_pois_no_map_app">Geen kaart-app gevonden</string>
+    <string name="route_pois_attribution">Bron: © OpenStreetMap-bijdragers (ODbL)</string>
     <!-- Windgeoptimaliseerde rijrichting voor een rondje (issue #174) -->
     <string name="loop_wind_action">Beste rijrichting (wind)</string>
     <string name="loop_wind_loading">Windverwachting laden…</string>
@@ -36,6 +98,7 @@
     </string-array>
     <string name="route_profile_title">Hoogteprofiel</string>
     <string name="route_profile_empty">Geen hoogtegegevens voor deze route</string>
+    <string name="border_crossings_title">Grensovergangen</string>
     <string name="route_profile_description">Hoogteprofiel van %1$.1f km, van %2$d tot %3$d m hoogte, met %4$d klimmen gemarkeerd</string>
     <!-- Overflow-menu groups (#351) -->
     <string name="menu_group_climbs">Klimmen</string>
@@ -45,6 +108,10 @@
     <string name="menu_group_bike">Fiets &amp; materiaal</string>
     <string name="menu_group_data">Data &amp; app</string>
     <!-- Klim van de week (issue #40) -->
+    <string name="ride_buddies_title">Ritmaatjes</string>
+    <string name="ride_buddies_share">Deel mijn profiel</string>
+    <string name="ride_buddies_import">Code plakken</string>
+    <string name="ride_buddies_empty">Nog geen rijders. Vraag iemand om in ClimbPro onder Ritmaatjes op Deel mijn profiel te tikken en plak de ontvangen code hier. Je ziet dan hoe goed jullie tempo, ritlengte, rittype, rijdagen en gebied bij elkaar passen. Tik op een rijder voor details, houd lang ingedrukt om te verwijderen.</string>
     <string name="menu_climb_of_the_week">Klim van de week</string>
     <string name="cotw_title">Klim van de week</string>
     <string name="cotw_week">Suggestie voor week %1$s</string>
@@ -70,7 +137,7 @@
     <string name="cotw_open_route">Open route</string>
     <string name="cotw_use_location">Locatie gebruiken voor afstand</string>
     <string name="cotw_alternatives">Andere kandidaten</string>
-    <string name="cotw_alternative_row">%1$s\n    %2$s · %3$s</string>
+    <string name="cotw_alternative_row" translatable="false">%1$s\n    %2$s · %3$s</string>
     <!-- Top 10 zwaarste klimmen in je regio (issue #211) -->
     <string name="top_climbs_title">Zwaarste klimmen in de regio</string>
     <string name="top_climbs_intro">De zwaarste bekende klimmen binnen een straal rond je startpunt, gesorteerd op moeilijkheidsscore (hoogtemeters × gemiddeld stijgingspercentage).</string>
@@ -115,12 +182,12 @@
     <string name="fav_start_name_required">Vul een naam in</string>
     <string name="fav_start_coordinates_invalid">Ongeldige coördinaten</string>
     <string name="fav_start_new_title">Nieuw startpunt</string>
-    <string name="fav_start_location_message">%1$s: %2$.5f, %3$.5f</string>
+    <string name="fav_start_location_message" translatable="false">%1$s: %2$.5f, %3$.5f</string>
     <string name="fav_start_no_location">Geen recente locatie bekend. Voer de coördinaten in.</string>
     <string name="fav_start_no_permission">Geen locatietoestemming. Voer de coördinaten in.</string>
     <string name="fav_start_saved">Startpunt "%1$s" opgeslagen</string>
     <string name="fav_start_save_failed">Opslaan mislukt: %1$s</string>
-    <string name="fav_start_row">%1$s
+    <string name="fav_start_row" translatable="false">%1$s
 %2$.5f, %3$.5f</string>
     <string name="fav_start_rename">Hernoemen</string>
     <string name="fav_start_delete">Verwijderen</string>
@@ -179,12 +246,12 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="recovery_trend_warning">Je ritten voelen zwaarder terwijl je slechter slaapt. Plan wat extra rust.</string>
     <string name="recovery_trend_legend">Geel: RPE (1–10) · Blauw: slaap (1–5, ×2 geschaald). Laatste %1$d checks.</string>
     <string name="recovery_trend_chart_description">Verloop van RPE en slaap over de laatste %1$d gelogde ritten</string>
-    <string name="recovery_point_title">%1$s · %2$s</string>
+    <string name="recovery_point_title" translatable="false">%1$s · %2$s</string>
     <string name="recovery_point_stats">%1$.1f km · %2$s · %3$.1f km/u · %4$d hm</string>
-    <string name="recovery_point_watts"> · %1$d W</string>
+    <string name="recovery_point_watts" translatable="false"> · %1$d W</string>
     <string name="recovery_point_check">RPE %1$d/10 · slaap %2$d/5 · belasting %3$d</string>
     <string name="recovery_point_hours"> · %1$.1f u geslapen</string>
-    <string name="recovery_duration">%1$d:%2$02d u</string>
+    <string name="recovery_duration" translatable="false">%1$d:%2$02d u</string>
     <string name="recovery_ride_default_name">Rit</string>
     <string name="recovery_unknown_date">onbekende datum</string>
     <!-- Wind-impact op klimtijd-voorspelling (issue #47) -->
@@ -205,7 +272,7 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     </string-array>
     <!-- Trainingsadvies na een klim (issue #64) -->
     <string name="training_advice_header">Trainingsadvies (poging van %1$s)</string>
-    <string name="training_advice_bullet">• %1$s</string>
+    <string name="training_advice_bullet" translatable="false">• %1$s</string>
     <string name="training_advice_faded">Begin de eerste %1$d m rustiger: in het laatste derde zakte je vermogen %2$d%% in t.o.v. het begin.</string>
     <string name="training_advice_held_back">Je eindigde %1$d%% sterker dan je begon: de eerste %2$d m mag volgende keer gerust wat harder.</string>
     <string name="training_advice_even">Mooi gelijkmatig gedoseerd: begin en eind liggen maar %1$d%% uit elkaar. Houd dit tempo vast.</string>
@@ -340,7 +407,7 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="fuel_result_temp">Temperatuur: %1$.0f °C</string>
     <string name="fuel_route_error">Route laden mislukt: %1$s</string>
     <!-- intervals.icu export (issue #78) -->
-    <string name="intervals_title">intervals.icu</string>
+    <string name="intervals_title" translatable="false">intervals.icu</string>
     <string name="intervals_settings_button">intervals.icu koppelen</string>
     <string name="intervals_explanation">Stuur klim-workouts als geplande training naar je intervals.icu-kalender; van daaruit gaan ze door naar Zwift of Garmin als je dat in intervals.icu hebt ingesteld. Je API-sleutel vind je in intervals.icu onder Settings → Developer Settings. Laat het atleet-id op 0 staan voor je eigen account. De sleutel wordt versleuteld op deze telefoon bewaard en niet meegenomen in back-ups.</string>
     <string name="intervals_api_key_label">API-sleutel</string>
@@ -378,7 +445,7 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="ftp_test_current_ftp">Huidige FTP: %1$d W. Richtwaarde voor de 20 minuten: %2$d W.</string>
     <string name="ftp_test_no_ftp">Nog geen FTP in je profiel. De blokken staan in procenten; begin de 20 minuten rustig en voer daarna op.</string>
     <string name="ftp_test_total">Totaal %1$d minuten</string>
-    <string name="ftp_test_phase_title">%1$s · %2$d min</string>
+    <string name="ftp_test_phase_title" translatable="false">%1$s · %2$d min</string>
     <string name="ftp_test_phase_warmup">Opwarmen</string>
     <string name="ftp_test_phase_blow_out">Blow-out</string>
     <string name="ftp_test_phase_recovery">Herstel</string>
@@ -389,10 +456,10 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="ftp_test_detail_recovery">Rustig doortrappen en herstellen voor de test.</string>
     <string name="ftp_test_detail_test">Zo hard als je 20 minuten volhoudt. Begin iets onder de richtwaarde, rij gelijkmatig en geef in de laatste minuten alles. Zet ERG uit.</string>
     <string name="ftp_test_detail_cooldown">Rustig uitrijden.</string>
-    <string name="ftp_test_watts_ramp">%1$d–%2$d W</string>
-    <string name="ftp_test_watts_steady">%1$d W</string>
-    <string name="ftp_test_pct_ramp">%1$d–%2$d %% FTP</string>
-    <string name="ftp_test_pct_steady">%1$d %% FTP</string>
+    <string name="ftp_test_watts_ramp" translatable="false">%1$d–%2$d W</string>
+    <string name="ftp_test_watts_steady" translatable="false">%1$d W</string>
+    <string name="ftp_test_pct_ramp" translatable="false">%1$d–%2$d %% FTP</string>
+    <string name="ftp_test_pct_steady" translatable="false">%1$d %% FTP</string>
     <string name="ftp_test_export">Exporteer als workout (.zwo)</string>
     <string name="ftp_test_export_failed">Exporteren mislukt: %1$s</string>
     <string name="ftp_test_export_dialog_title">FTP-test naar je trainer</string>
@@ -414,4 +481,19 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="ftp_test_apply_confirm_message_new">Je FTP wordt %1$d W. Tijdschattingen, pacing en workouts gebruiken daarna deze waarde.</string>
     <string name="ftp_test_applied">FTP bijgewerkt naar %1$d W</string>
     <string name="ftp_test_unknown_ride">Rit</string>
+
+    <!-- Issue #212: climb history & facts -->
+    <string name="climb_facts_title">Weetjes · %1$s</string>
+    <string name="climb_facts_side">Via %1$s</string>
+    <string name="climb_facts_by_name">Herkend aan de naam van de klim</string>
+    <!-- Share-link import (issue #210) -->
+    <string name="share_link_title">Route via deellink (Komoot/RideWithGPS)</string>
+    <string name="share_link_message">Plak een openbare link naar een Komoot-tour of RideWithGPS-route.</string>
+    <string name="share_link_hint">https://www.komoot.com/tour/…</string>
+    <string name="share_link_import">Importeren</string>
+    <string name="share_link_cancel">Annuleren</string>
+    <string name="share_link_not_recognised">Geen Komoot- of RideWithGPS-link gevonden</string>
+    <string name="share_link_fetching">Route ophalen…</string>
+    <string name="share_link_failed">Importeren mislukt: %1$s</string>
+    <string name="share_link_share_label">Route importeren (ClimbPro)</string>
 </resources>

@@ -51,6 +51,9 @@ class ClimbData {
     var routeId = null;
     var routeName = null;
     var routeTotalLen = 0;    // route total length (m) from payload "rtl"; 0 = unknown
+    var palette = 0;          // color palette from payload "pal" (issue #258): 0 default, 1 colorblind
+    var hazards = null;       // packed "hz" [startM, endM, type, ...] (issue #203); null = none
+    var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;
@@ -97,6 +100,11 @@ class ClimbData {
     var blockTarget;      // target watts
     var blockLow;         // lower band edge (W)
     var blockHigh;        // upper band edge (W)
+
+    // Everesting attempt (issue #217, wire "ev"): [targetM, repeats, startLat, startLon,
+    // topLat, topLon] or null; everestClimb = index of the climb that carried it (-1 = none).
+    var everest = null;
+    var everestClimb = -1;
 
     // Power-zone results for powerZone()/blockZone()
     const ZONE_NONE  = -2;   // no block or no power reading

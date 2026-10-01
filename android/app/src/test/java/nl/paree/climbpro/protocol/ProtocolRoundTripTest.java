@@ -89,6 +89,30 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderPayloadWithHazardsValidatesAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        StoredRoute route = routeFixture();
+        route.tunnels = new java.util.ArrayList<>();
+        route.tunnels.add(new nl.paree.climbpro.data.route.StoredTunnel(1200, 1450));
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(route));
+        assertTrue("hz emitted", payload.has("hz"));
+        assertValid(payload, "route payload with hz");
+        assertValid(MAPPER.readTree(b.buildSingleClimbPayload(route, 0)),
+                "single-climb payload with hz");
+    }
+
+    @Test
+    public void builderPayloadsWithEverestingValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        StoredRoute route = routeFixture();
+        route.climbs.get(0).everestTargetM = 8848;
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(route));
+        org.junit.Assert.assertTrue("ev emitted", payload.get("climbs").get(0).has("ev"));
+        assertValid(payload, "route payload with ev");
+        assertValid(MAPPER.readTree(b.buildRadiusPayload(route.climbs)), "radius payload with ev");
+    }
+
+    @Test
     public void builderPayloadsWithIntensityZonesValidateAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withIntensityZones(
                 new nl.paree.climbpro.domain.power.RiderProfile(250, 75, 8));
@@ -109,6 +133,33 @@ public class ProtocolRoundTripTest {
         assertValid(route, "route payload with lay");
         assertValid(MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs)),
                 "radius payload with lay");
+    }
+
+    @Test
+    public void builderPayloadsWithColorblindPaletteValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withPalette(
+                nl.paree.climbpro.domain.segment.GradientPalette.COLORBLIND);
+        JsonNode route = MAPPER.readTree(b.buildRoutePayload(routeFixture()));
+        assertTrue("route payload carries 'pal'", route.has("pal"));
+        assertValid(route, "route payload with pal");
+        assertValid(MAPPER.readTree(b.buildSingleClimbPayload(routeFixture(), 0)),
+                "single-climb payload with pal");
+        JsonNode radius = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));
+        assertTrue("radius payload carries 'pal'", radius.has("pal"));
+        assertValid(radius, "radius payload with pal");
+    }
+
+    @Test
+    public void builderPayloadsWithUnitsValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withUnits(
+                new nl.paree.climbpro.domain.units.UnitPreferences(true, true, true));
+        JsonNode route = MAPPER.readTree(b.buildRoutePayload(routeFixture()));
+        assertTrue("route payload carries 'un'", route.has("un"));
+        assertValid(route, "route payload with un");
+        assertValid(MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs)),
+                "radius payload with un");
+        assertValid(MAPPER.readTree(b.buildSurfaceSectionPayload(routeFixture())),
+                "surface payload with un");
     }
 
     @Test

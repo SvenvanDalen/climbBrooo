@@ -40,6 +40,24 @@ public class WatchRequestHandlerTest {
     }
 
     @Test
+    public void listRoutes_withMedicalIdRepo_alsoSendsMedicalId() {
+        when(mockRepo.loadCatalog()).thenReturn(Collections.emptyList());
+        nl.paree.climbpro.data.medical.MedicalIdRepository medRepo =
+                mock(nl.paree.climbpro.data.medical.MedicalIdRepository.class);
+        nl.paree.climbpro.data.medical.MedicalId id = new nl.paree.climbpro.data.medical.MedicalId();
+        id.bloodType = "A+";
+        when(medRepo.load()).thenReturn(id);
+        WatchRequestHandler handler = new WatchRequestHandler(mockRepo, mockClient);
+        handler.setMedicalIdRepository(medRepo);
+        handler.handleMessage(msg("type", "LIST_ROUTES"));
+        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+        verify(mockClient, times(2)).sendMessage(captor.capture());
+        assertEquals("ROUTE_LIST", captor.getAllValues().get(0).get("type"));
+        assertEquals("MEDICAL_ID", captor.getAllValues().get(1).get("type"));
+        assertEquals("A+", captor.getAllValues().get(1).get("bt"));
+    }
+
+    @Test
     public void listRoutes_withEntries_includesIdNameClimbCount() {
         RouteCatalogEntry e = new RouteCatalogEntry();
         e.routeId    = "abc123";

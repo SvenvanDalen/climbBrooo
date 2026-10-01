@@ -16,7 +16,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.R;
@@ -166,9 +165,9 @@ public final class PhotoQuizActivity extends AppCompatActivity {
             b.setEnabled(false);
             String text = b.getText().toString();
             if (text.equals(q.answer)) {
-                tint(b, R.color.color_success);
+                tint(b, nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusOk());
             } else if (text.equals(chosen)) {
-                tint(b, R.color.color_error);
+                tint(b, nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusBad());
             }
         }
         progress.setText("Foto " + (index + 1) + " van " + questions.size() + " · score " + score);
@@ -192,8 +191,9 @@ public final class PhotoQuizActivity extends AppCompatActivity {
         next.setVisibility(View.VISIBLE);
     }
 
-    private void tint(Button b, int colorRes) {
-        b.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, colorRes)));
+    /** Tints with a color int; right/wrong use the palette's status colors (issue #258). */
+    private void tint(Button b, int color) {
+        b.setBackgroundTintList(ColorStateList.valueOf(color));
     }
 
     /** Display name per climb identity; the first route containing a climb wins. */
