@@ -21,6 +21,9 @@
             <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.easierAheadAlert" title="@Strings.SettingsEasierAheadAlertTitle">
+        <settingConfig type="boolean"/>
+    </setting>
     <setting propertyKey="@Properties.hrAlarmBpm" title="@Strings.SettingsHrAlarmTitle" prompt="@Strings.SettingsHrAlarmPrompt">
         <settingConfig type="numeric" min="0" max="230"/>
     </setting>

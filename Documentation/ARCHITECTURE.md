@@ -888,6 +888,23 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Easier stretch ahead during a climb (issue #213)
+
+Watch-only, no wire change: the climb datafield (`garmin`) tells the rider an easier
+stretch is coming so they can dose their effort. `garmin/source/EasierAhead.mc` holds
+pure helpers: `findEasierStretch` (the contiguous run of segments directly after the
+active one whose gradient is ≥ 3.0 %-points below it, from the synced `segGradient` /
+`segDist`; must total ≥ 200 m, the false-flat length floor), `easierAheadLabel`
+(`300 m vlakker`, rounded to 50 m; km above 1000 m) and `EasierAheadTracker`. The
+tracker recomputes the candidate only when the active (climb, segment) changes, so the
+per-tick cost is a few comparisons. It fires once per (climb, start segment) key when
+the rider is within 150 m of the stretch (not inside the first 50 m, which belongs to
+the climb-start alert) and latches, like the climb-start alert: once shown, the green
+top strip stays until the rider enters the stretch, so GPS jitter can neither hide it
+nor re-fire the light double buzz (no tone). Suppressed while off-route; below the
+off-route and battery banners in priority; reset on route change. App setting
+`easierAheadAlert` (default on) disables banner and buzz.
+
 ### Heart-rate alarm (issue #228)
 
 Watch-only, no wire change. `garmin/source/HeartRateAlarm.mc` holds two pure detectors fed
