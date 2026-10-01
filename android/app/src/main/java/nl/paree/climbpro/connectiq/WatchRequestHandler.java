@@ -32,6 +32,8 @@ public final class WatchRequestHandler {
     private final ObjectMapper    mapper;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    /** Display units sent as 'un' (issue #262); null = metric (no key). */
+    private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -44,6 +46,13 @@ public final class WatchRequestHandler {
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
                                RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo) {
+        this(routeRepo, connectIqClient, riderRepo, attemptRepo, null);
+    }
+
+    public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
+                               RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo,
+                               nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo) {
+        this.unitsRepo       = unitsRepo;
         this.routeRepo       = routeRepo;
         this.connectIqClient = connectIqClient;
         this.mapper          = new ObjectMapper();
@@ -68,10 +77,12 @@ public final class WatchRequestHandler {
 
     /**
      * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
-     * when a rider profile is available; without one the payload is unchanged.
+     * when a rider profile is available; without one the payload is unchanged. Also carries
+     * the rider's display units (issue #262) when a units repo is wired up.
      */
     private ClimbPayloadBuilder payloadBuilder() {
         ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 

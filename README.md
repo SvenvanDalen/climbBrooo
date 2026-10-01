@@ -83,6 +83,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   status and Instellingen at the top level; every other screen lives in one of six
   submenus: Klimmen, Ritten & analyse, Training & doelen, Voor de rit, Fiets & materiaal
   and Data & app. "menu → X" elsewhere in this README means: open the matching group first.
+- **Choose your units** — Settings → "Eenheden": km or miles (also feet and mph), bar or
+  psi, °C or °F. Only the display changes; everything is stored metric. The climb
+  datafield, widget and surface datafield follow the distance choice after the next sync
+  (optional payload key `un`).
 - **Select a route to follow** — pick a synced route; it becomes active on the watch.
 - **Radius mode** — no fixed route; the watch alerts on any known climb within a
   configurable radius of your GPS position.
@@ -379,6 +383,8 @@ With FTP and weights set, an optional parallel array `zc` (1 int/segment, issue 
 carries each segment's **FTP intensity-zone color** (Coggan zone → the same 0–5 color
 indices); the watch shows it instead of the gradient colors when its *Kleurmodus*
 setting is *FTP-zone*.
+An optional top-level `un` bitmask (issue #262: 1 = mi/ft, 2 = psi, 4 = °F; absent =
+metric) tells the watch which display units the rider chose; all wire values stay metric.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

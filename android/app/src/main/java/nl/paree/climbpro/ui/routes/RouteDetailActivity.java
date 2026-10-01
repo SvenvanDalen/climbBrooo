@@ -222,8 +222,11 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private void renderPassport(RoutePassport p) {
         if (p == null) { binding.passportSummary.setText(""); return; }
         StringBuilder sb = new StringBuilder();
+        nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
         sb.append(p.climbCount).append(" klimmen · ")
-          .append(p.totalElevationGain).append(" hm");
+          .append(units.preferences().imperial
+                  ? units.elevation(p.totalElevationGain) // issue #262
+                  : p.totalElevationGain + " hm");
         String cmp = ElevationComparisons.describe(p.totalElevationGain);
         if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
         if (p.hardestClimbName != null) {
@@ -464,7 +467,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             try {
                 TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
                 trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
-                text = trend.describe(zone) + "\n\nTempo: "
+                text = trend.describe(zone, new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load()) + "\n\nTempo: "
                         + (planned ? "geschatte tijd uit je profiel"
                                    : "25 km/u (vul je profiel in voor een eigen schatting)")
                         + "\nBron: Open-Meteo";
