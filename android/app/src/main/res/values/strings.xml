@@ -8,6 +8,17 @@
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <!-- Bezienswaardigheden langs de route (issue #208) -->
+    <string name="route_pois_action">Bezienswaardigheden</string>
+    <string name="route_pois_title">Bezienswaardigheden</string>
+    <string name="route_pois_refresh">Vernieuwen</string>
+    <string name="route_pois_loading">Bezienswaardigheden zoeken…</string>
+    <string name="route_pois_summary">%1$d bezienswaardigheden binnen %2$d m van de route (opgehaald %3$s). Tik om op de kaart te openen.</string>
+    <string name="route_pois_none">Geen bezienswaardigheden binnen %1$d m van de route gevonden (opgehaald %2$s).</string>
+    <string name="route_pois_no_route">Deze route heeft geen coördinaten.</string>
+    <string name="route_pois_failed">Bezienswaardigheden ophalen mislukt: %1$s</string>
+    <string name="route_pois_no_map_app">Geen kaart-app gevonden</string>
+    <string name="route_pois_attribution">Bron: © OpenStreetMap-bijdragers (ODbL)</string>
     <!-- Windgeoptimaliseerde rijrichting voor een rondje (issue #174) -->
     <string name="loop_wind_action">Beste rijrichting (wind)</string>
     <string name="loop_wind_loading">Windverwachting laden…</string>

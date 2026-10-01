@@ -91,6 +91,10 @@ public enum PrivacyCategory {
                     + "voor het beste moment om te rijden. Wordt opnieuw opgehaald als je het "
                     + "wist.",
             "climate/"),
+    ROUTE_POIS("Bezienswaardigheden bij routes",
+            "Uitzichtpunten, monumenten en andere bezienswaardigheden langs je routes, uit "
+                    + "OpenStreetMap. Wordt opnieuw opgehaald als je het wist.",
+            "route_pois/"),
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",
