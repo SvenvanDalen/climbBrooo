@@ -388,6 +388,23 @@ route with deterministic id `short_<id>_<from>_<to>`, name `"<name> (ingekort, N
 `0..from` + `to..end` with distances recomputed, and `ClimbDetector` re-run. Picking the same
 shortcut again reopens it. Phone-only; no wire-format change.
 
+### Loop generator (issue #202)
+
+"Rondje-generator" (`ui/planning/LoopGeneratorActivity`) suggests a ride of about X km that
+starts and ends at a chosen point, complementing the elevation-target planner (#68). There is
+no road router, so the pure `domain/planning/LoopGenerator` only reuses saved route geometry.
+Every route whose nearest point lies within 1.5 km of the start (straight-line approach, counted
+twice) is a source; a route whose ends are within 500 m is a loop. Suggestions: **LOOP** (the
+loop rotated to start at its nearest point), **SHORTENED_LOOP** (a too-long loop with the
+`RouteShortener` shortcut closest to the target, see #205), **COMBINED** (two loops through
+the start ridden back to back) and **OUT_AND_BACK** (along any route from its nearest point,
+forward or backward, turning at half the target). Ranking is `|length − target| / target`
+plus a small penalty per kind (out-and-back +0.15 so a real loop within ~15 % wins); anything
+over 25 % off is dropped, one suggestion per kind and route set, at most five. Geometry is only
+built for a suggestion the user taps; it is then saved as an ordinary new route
+(`loop_<timestamp>`, "Rondje N km (A + B)") with `ClimbDetector` run. Phone-only; no
+wire-format change.
+
 ### Whole-route elevation profile (issue #207)
 
 The route detail screen shows the elevation profile of the entire route above the pacing

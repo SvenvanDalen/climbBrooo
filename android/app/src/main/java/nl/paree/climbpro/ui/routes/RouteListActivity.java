@@ -342,6 +342,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_elevation_target) {
             startActivity(nl.paree.climbpro.ui.planning.ElevationTargetActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_loop_generator) {
+            startActivity(nl.paree.climbpro.ui.planning.LoopGeneratorActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_climb_of_the_week) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbOfTheWeekActivity.intentFor(this));
             return true;

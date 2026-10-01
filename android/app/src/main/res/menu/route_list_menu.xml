@@ -124,6 +124,9 @@
                 android:id="@+id/action_elevation_target"
                 android:title="Hoogtemeter-doel"/>
             <item
+                android:id="@+id/action_loop_generator"
+                android:title="@string/loop_gen_menu"/>
+            <item
                 android:id="@+id/action_elevation_goal"
                 android:title="Hoogtemeters per week/maand"/>
             <item
