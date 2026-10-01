@@ -83,7 +83,8 @@ public final class ClimbSegmentAdapter
     public void onBindViewHolder(@NonNull ViewHolder h, int position) {
         StoredSegment s = items.get(position);
         h.gradientView.setText(String.format("%.1f%%", s.gradient * 100));
-        h.distView.setText(s.distance + " m");
+        h.distView.setText(nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(h.itemView.getContext())
+                .shortDistance(s.distance)); // issue #262
         if (s.manualTargetSec != null) {
             h.timeView.setVisibility(View.VISIBLE);
             h.timeView.setText(DurationFormat.format(s.manualTargetSec) + " ✎");

@@ -19,6 +19,7 @@ class ClimbData {
     var mode = "route";       // "route" or "radius"
     var routeId = null;
     var routeName = null;
+    var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;

@@ -143,11 +143,10 @@ class ClimbListView extends Ui.View {
         routeSaved = StorageManager.isRouteSaved(routeId);
     }
 
+    // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
     hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            return (meters / 1000) + "." + ((meters % 1000) / 100) + "km";
-        }
-        return meters + "m";
+        var data = App.getApp().climbData;
+        return Units.formatDist(meters, data != null ? data.units : 0);
     }
 }
 

@@ -159,6 +159,18 @@ Garmin course ──► Connect IQ event ─────────────
                                                                           Garmin datafield cache
 ```
 
+**Share-link import (issue #210, phone-only).** A Komoot or RideWithGPS link — pasted in the
+"Route via deellink" dialog (FAB and *Data & app* menu) or shared as `text/plain` to
+`RouteListActivity` (`ACTION_SEND`) — is recognised by the pure `domain/route/ShareLink`
+(Komoot `/tour/<id>` on any `komoot.xx` host with optional `share_token`; RideWithGPS
+`/routes/<id>` and `/trips/<id>`). `data/route/ShareLinkRouteFetcher` (OkHttp, background
+executor) downloads it with keyless public endpoints: RideWithGPS
+`/<routes|trips>/<id>.gpx?sub_format=track`, Komoot `api.komoot.de/v007/tours/<id>/coordinates`
+(+ `/tours/<id>` for the name), converted to GPX by `domain/route/KomootTourConverter`. The
+GPX bytes then run through the same `importBytes` pipeline as a picked GPX file (duplicate-climb
+prompt, surface detection, `saveRoute`). Private routes (401/403) surface a Dutch message. No
+wire-format change.
+
 ### Activity-time (on watch, no phone needed)
 
 ```
@@ -385,6 +397,26 @@ summits survive, and each climb becomes colored bands — one per `StoredSegment
 segments — clamped to the route and palette. `RouteDetailViewModel` builds it on its executor;
 the thin `RouteElevationProfileView` only scales and paints, coloring bands via
 `SegmentColorPalette`. Routes without usable elevation show "Geen hoogtegegevens" instead.
+
+### Border crossings (issue #209)
+
+The route detail screen lists the start country and every national border crossing along the
+route with the country's Dutch name, languages and emergency number ("km 84,3 → België ·
+Nederlands/Frans/Duits · 112"); the section is hidden for single-country routes. Phone-only,
+offline, no wire-format change and nothing persisted. Country lookup uses a bundled asset
+(`assets/borders/europe_countries.txt`, ~175 KB): Natural Earth 1:50m admin-0 boundaries
+(public domain) for Europe minus Russia, Douglas-Peucker simplified by
+`tools/gen_country_borders.py`. Polygons were chosen over `android.location.Geocoder` because
+Geocoder needs network, is rate-limited and slow (hundreds of calls per route), while the
+polygon lookup is instant, deterministic and unit-testable; the trade-off is ~1 km boundary
+accuracy and coastal points that may fall "in the sea" (treated as unknown). Pure, unit-tested
+`domain/border`: `CountryPolygons` (even-odd point-in-polygon, smallest country wins so
+enclaves beat neighbours), `BorderCrossingFinder` (samples every 250 m, bisects to 10 m,
+ignores unknown samples, drops back-and-forth excursions shorter than 1 km along border roads)
+and `CountryInfo` (static code → name/languages/emergency table; 112 fallback). The thin
+`data/border/BorderCrossingService` parses the asset once per process and formats the lines
+for `RouteDetailViewModel`. Follow-up (not done): a watch-side banner at the crossing would
+need a compact crossing marker in the wire payload.
 
 ### Joining two routes (issue #204)
 
@@ -802,6 +834,36 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Local event calendar (issue #241)
+
+Phone-only, no wire change. There is no free central API for tour rides and gran fondos,
+so the data source is the rider's own subscriptions: iCal feeds (organisers, clubs and
+cycling unions publish these) plus manual entries, stored in `event_calendar.json`
+(`data/events/EventCalendarRepository`; privacy dashboard + backup). A refresh downloads
+each feed (OkHttp, `webcal://` → `https://`, ≤ 2 MB, must contain `BEGIN:VCALENDAR`); a
+failing feed keeps its previous events and shows its error. `domain/events/IcsParser` reads
+VEVENTs (line folding, parameters, escapes, `GEO`); `EventTextStats` pulls route options
+("60/110/160 km") and elevation ("2.150 hm", "D+ 1600") from summary + description.
+Events without `GEO` are forward-geocoded from `LOCATION` with the platform `Geocoder`
+(cached per text). `EventFilter` keeps events from today up to a year ahead within the
+radius of `RadiusLocation` (events without coordinates, or no known position, are kept),
+de-duplicated by UID. `EventLevel` compares the options with the longest outdoor ride and
+most climbing in one ride over the last 90 days: fits (≤ 1.2×), challenge (≤ 1.5×) or a
+big step up. An event can be made the goal event (`GoalEventStore`, issue #221).
+
+### Heat-index warning (issue #227)
+
+Watch-only, no wire change. `garmin/source/HeatIndex.mc` holds pure helpers:
+`heatIndexC` (NWS Rothfusz regression with the low/high-humidity adjustments, Steadman's
+simple formula below ~27 °C; unknown humidity → air temperature) and `HeatAlarm` (fires
+once at the threshold, stays hot until 2 °C below it, reminder every 20 min).
+`ClimbProView.compute` runs `checkHeatIndex` once a minute **before** the payload gate, so
+it also works without a route. Input is `Weather.getCurrentConditions()` first (outdoor air
++ real humidity, cached from the phone) and `Sensor.getInfo().temperature` as fallback —
+the FR255M's internal sensor reads high from wrist heat and would false-alarm on its own.
+Threshold is the `heatIndexThreshold` app setting (0 = off, default 32 °C). The banner
+sits below off-route and battery in priority, above the descent felt temperature.
+
 ### FTP intensity-zone colors (issue #66)
 
 The fixed gradient → color mapping stays the default and the single source of
@@ -827,6 +889,33 @@ gradient color otherwise. `garmin-surface` carries no climbs, and
 `garmin-onboard` computes its climbs on the watch without a rider profile, so
 both keep gradient colors only. The climb detail screen on the phone shows the
 zone per segment (a `Z1`–`Z7` badge in the watch's zone color).
+
+### Display units (issue #262)
+
+Storage, computation and the wire format stay **metric**; only rendering
+converts. Settings → *Eenheden* holds three independent switches (mi/ft/mph,
+psi, °F) persisted by `data/settings/UnitPreferencesRepository` as the pure
+value `domain/units/UnitPreferences`. The phone UI formats through one helper,
+`domain/units/UnitFormatter` (distance, elevation, climb length, speed,
+pressure, temperature, plus value/label accessors for string resources); the
+climb list/detail/segment rows, route detail rows and passport, tyre-pressure
+advice and log (the log stays in bar, psi input is converted on entry), summit
+weather, temperature trend and clothing hourly forecast use it. Domain
+thresholds (clothing tips, wind warnings) keep reading the metric values.
+
+The watch gets the choice as the optional top-level payload key `un`, a
+bitmask (`1` = mi/ft, `2` = psi, `4` = °F) that `ClimbPayloadBuilder.withUnits`
+emits on every payload kind only when non-zero — a metric payload is
+byte-identical to before, and an absent key means metric on the watch. The
+route sync hash gains the units signature only when non-metric (so metric
+riders see no one-off resync), and `WatchRequestHandler` reads the current
+choice for every on-demand load. `garmin`, `garmin-widget` and
+`garmin-surface` parse `un` into their data object (reset on every payload)
+and render distances/elevations through a small shared `Units` module
+(`source/Units.mc`, identical copy per app: `1.2km`/`850m` or `0.7mi`/`520ft`,
+feet below ~0.2 mi). No watch view shows pressure or temperature yet; the
+other bits ride along for later. `garmin-onboard` uses the raw-route protocol
+and stays metric.
 
 ---
 
@@ -972,6 +1061,8 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 
 **Friends' feed** (`friend_feed.json`, `data/social/FriendFeedRepository`, issue #240): social sharing without a backend. "Deel mijn ritten" builds a snapshot (`domain/social/OwnFeedBuilder`: rides from the ride archive and first ascents from climb attempts, last 30 days, max 15 + 5, never thuisklimmen) and encodes it as a text share code `CPF1:` + base64url(gzip(JSON)) (`domain/social/FriendShareCode`, max 20 entries, titles ≤ 60 chars; no coordinates, no Strava ids), sent through the Android share sheet. Friends paste the code in "Vriendenfeed" or share the chat message to ClimbPro (`ACTION_SEND text/plain`). Decoding treats the text as untrusted: size limits before and after inflating, version check (`CPF2:` / `"v":2` → "werk de app bij"), malformed entries skipped. `FriendFeedMerger` de-duplicates re-imports (ride = friend + start second, milestone = + title), updates a renamed friend and keeps ≤ 100 entries per friend. Sharer identity is a random UUID + chosen name in default prefs (`FriendShareIdentity`). Registered in the privacy dashboard and backup. Phone-only; never part of the wire payload.
 
+**Ride-buddy matcher** (`ride_buddies.json`, `data/social/RideBuddyRepository`, issue #242): find riders with a similar pace and ride type without a backend — the same share-code envelope as the friends' feed. `domain/social/RideBuddyProfileBuilder` derives your profile from the last 180 days of outdoor bike rides (≥ 3 rides, ≥ 5 km; virtual rides skipped): median speed on flat-ish rides (< 8 m/km), median climbing VAM from climb attempts (gain ≥ 30 m, 100–2.500 m/u), median distance, road/gravel/MTB types with ≥ 25 % share (from Strava `sport_type`), weekdays (≥ 15 %) and dayparts (≥ 20 %) in the device zone, and the most frequent start cell of a ~5 km grid (`RideBuddyProfile.snapToCell`, needs ≥ 2 starts). The user ticks which fields to share (area is opt-in, off by default); `domain/social/RideBuddyCode` encodes `CPR1:` + base64url(gzip(JSON)) with short keys, and the confirm dialog lists the *decoded* code so the user sees exactly what the receiver gets. The rider id is a random UUID separate from the friend-feed id (`ride_buddy_share_id` pref) so the two kinds of code can't be linked; the name is shared with the friend feed. Decoding is hostile-input safe: code and inflation size limits, version check, out-of-range fields dropped individually, and the area re-snapped to the grid so even a hand-crafted code can't store a precise location. `domain/social/RideBuddyMatcher` scores imported profiles 0–100 as a weighted mean of per-aspect similarities (pace 3, area 2, climbing 2, distance 1,5, type 1,5, schedule 1) over the aspects both sides shared, scaled by 0,6 + 0,4 × coverage, with a Dutch explanation ("vergelijkbaar tempo, 12 km verderop, rijdt ook gravel"). Your own profile is recomputed on demand, never stored; imported profiles are upserted per rider id (max 200). Screen "Ritmaatjes" (`ui/social/RideBuddyActivity`, also an `ACTION_SEND text/plain` target behind a confirmation dialog) in the "Ritten & analyse" menu group. Registered in the privacy dashboard (`RIDE_BUDDIES`) and backup. Phone-only; never part of the wire payload.
+
 **Torque values** (`torque_values.json`, `data/maintenance/TorqueValueRepository`, issue #237): the "Aanhaalmomenten" screen (overflow menu) shows a static reference table of typical tightening torques per part (`domain/maintenance/TorqueReference`, e.g. stuurpen stuurklem 4–6 Nm, zadelpenklem carbon 4–6 Nm, cassette-lockring 40 Nm) under a "fabrikant gaat voor" disclaimer, plus the rider's own values. The app has no bike entity, so each own value carries an optional free-text bike label (auto-completed from labels already used), a part name, one Nm value (0,1–200, one decimal; comma or dot) and an optional note. Tapping a reference row pre-fills the add dialog. Atomic writes with a static write lock, like `MaintenanceRepository`; a missing or corrupt file loads empty and out-of-range entries are dropped on load. Registered with the privacy dashboard (`PrivacyCategory.TORQUE`) and the local backup. Phone-only; never part of the wire payload.
 
 **Warranty** (issue #239) is an optional extra per component in the same `maintenance.json`: `warrantyPurchaseEpochSec` + `warrantyMonths` (0 = none); expiry = purchase + N calendar months (`domain/maintenance/WarrantyCalculator`, clamped to month end). A daily `service/WarrantyReminderWorker` (periodic, KEEP, scheduled on app start) posts one "Garantie verloopt bijna" notification (`WarrantyNotifier`, channel `warranty`) in the last 30 days before expiry; idempotent via `warrantyReminderSentForExpiryEpochSec` (keyed by expiry, so correcting the date/term re-arms it). Already expired warranties never notify. Shown as a line on the component card; edited in the component dialog.
@@ -993,6 +1084,8 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 **Sunscreen check** (issue #229, `ui/sunscreen/SunscreenActivity`, `domain/weather/SunscreenAdvisor`): the Open-Meteo forecast (`data/weather/OpenMeteoClient`, keyless) now also requests `uv_index`, which `HourlyForecast.uvIndex` holds (NaN when missing). The rider picks a start (now, or a time today or tomorrow, within the 2-day forecast) and a ride duration. The check uses the phone's freshest cached location fix, falling back to the radius-mode last location. `SunscreenAdvisor` (pure) takes the peak UV over the ride window and maps it to the WHO bands (below 3 none, moderate SPF 30, high SPF 50, very high/extreme SPF 50+), with re-apply moments every 2 h of ride time while the UV index at that moment is still 3 or more. Optional reminders are one-time WorkManager jobs (`service/SunscreenReminderWorker`, one tag, so a new check replaces the old schedule): 15 min before a future start and at each re-apply moment. They fire offline because the forecast was fetched at check time. Watch-side reminders are out of scope (they would need a payload setting). Phone-only; never part of the wire payload.
 
 **Best time to ride a climb** (issue #41, `domain/weather/ClimateNormals` + `BestTimeScorer`, `data/weather/ClimateCache`, shown on the climb screen): on tap, `OpenMeteoClient.fetchClimate` asks the keyless Open-Meteo archive API for the last 3 full calendar years of hourly `temperature_2m`, `wind_speed_10m`, `wind_direction_10m` and `precipitation` at the climb's foot (elevation-corrected to the climb's mean height, `timezone=auto` so hours are local). Hourly rather than daily data because the answer needs day-parts; the four variables gzip to a few hundred kB and the request runs once per location. `ClimateNormals` (pure) aggregates it to 12 months × 4 day-parts (ochtend 7–11, middag 11–15, namiddag 15–19, avond 19–22): mean temperature, mean wind speed, the share of those day-parts with ≥ 0.5 mm precipitation, and the mean "wind-from" vector, so the headwind along any climb bearing (foot → top) can be derived without refetching. That compact form (~2 kB) is cached as `climate/<lat>_<lon>.json` on a 0.05° grid, so nearby climbs share it and it works offline afterwards; opening the screen reads only the cache. `BestTimeScorer` (pure) gives every cell a 0–100 score: points off per °C outside 12–22 °C, per km/h wind above 12 km/h, for the rain chance and per km/h mean headwind; the best months are those within 8 points of the top month (ranges may wrap New Year), and the best day-part is the one with the highest mean score over those months. The cache is listed in the privacy dashboard (`PrivacyCategory.CLIMATE`) but left out of the backup zip (public, re-fetchable). Phone-only; never part of the wire payload.
+
+**Points of interest along the route** (issue #208, route detail → "Bezienswaardigheden", `ui/routes/RoutePoiActivity`, `domain/poi/*`, `data/poi/OverpassClient` + `RoutePoiCache`): `OverpassQueryBuilder` (pure) Douglas-Peucker simplifies the route, growing the tolerance (25 m → 1.6 km) until at most 250 vertices remain, and asks Overpass for `nwr` with `tourism=viewpoint|attraction|artwork` or `historic=monument|castle|memorial|ruins` `around:` that polyline, with the radius widened by the tolerance (300 m + ε) so nothing within 300 m of the real track is missed; `out tags center 1000` bounds the answer. One POST per fetch to `overpass-api.de` with an identifying `User-Agent`. `OverpassResponseParser` (pure, Jackson) takes node coordinates or way/relation centres, maps tags to `PoiType` (historic types win over the generic `tourism=attraction`) and drops unnamed features except viewpoints. `RoutePoiLocator` (pure) projects each POI on the full-resolution route (local equirectangular per segment) for distance-along and lateral offset, keeps those ≤ 300 m, shows a POI passed twice (out-and-back, loops) at its first pass, merges duplicates (same OSM ref; same type + name within 150 m, e.g. a castle mapped as node and area; unnamed same-type within 50 m) and sorts by kilometre. The result is cached as `route_pois/<routeId>.json`, stamped with a fingerprint of the route coordinates so a resync that changes the track refetches instead of showing wrong kilometres; `RouteRepository.deleteRoute` removes it. Listed in the privacy dashboard (`PrivacyCategory.ROUTE_POIS`) but left out of the backup zip (public, re-fetchable). Tapping a row fires a `geo:` intent. Phone-only; never part of the wire payload.
 
 **Temperature trend** (issue #153, route detail → "Temperatuurtrend tonen", `ui/routes/TemperatureTrendView`, `domain/weather/TemperatureTrend`, `domain/weather/TemperatureGrid`): the route is sampled with the rain-forecast sampler (`RouteSampler`, every 5 km, at most 25 points) and `OpenMeteoClient.temperatureUrl` fetches hourly `temperature_2m` for all samples in one request (3 forecast days, UTC). Each sample's elevation is interpolated from the route (`TemperatureTrend.elevationsAt`) and sent along so Open-Meteo corrects for height on climbs; when any elevation is unknown the parameter is left out entirely, because Open-Meteo reads `nan` as "no correction". The rider picks a start time (`TemperatureTrend.nextStart`: today, or tomorrow when already past). The ride duration is the passport's pacing-plan total, falling back to 25 km/h without a profile (`rideSeconds`), spread linearly over the distance. `TemperatureTrend.compute` (pure) reads each sample's own grid column at its arrival time, interpolating between hours; samples past the forecast are dropped and counted. `describe` gives start, finish, warmest and coldest point in Dutch; the view draws the line chart. On demand, not cached. Phone-only; never part of the wire payload.
 

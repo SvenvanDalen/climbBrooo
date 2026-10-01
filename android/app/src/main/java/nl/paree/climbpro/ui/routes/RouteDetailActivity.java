@@ -144,6 +144,13 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
             binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
         });
+        viewModel.borderCrossings().observe(this, lines -> {
+            boolean none = lines == null || lines.isEmpty();
+            binding.borderCrossingsSummary.setText(
+                    none ? "" : android.text.TextUtils.join("\n", lines));
+            binding.borderCrossingsTitle.setVisibility(none ? View.GONE : View.VISIBLE);
+            binding.borderCrossingsSummary.setVisibility(none ? View.GONE : View.VISIBLE);
+        });
 
         viewModel.error().observe(this, msg -> {
             binding.btnReverseRoute.setEnabled(true);
@@ -196,6 +203,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
+        binding.btnRoutePois.setOnClickListener(v ->
+                startActivity(RoutePoiActivity.intentFor(this, routeId)));
 
         viewModel.loadRoute(routeId);
     }
@@ -222,8 +231,11 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private void renderPassport(RoutePassport p) {
         if (p == null) { binding.passportSummary.setText(""); return; }
         StringBuilder sb = new StringBuilder();
+        nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
         sb.append(p.climbCount).append(" klimmen · ")
-          .append(p.totalElevationGain).append(" hm");
+          .append(units.preferences().imperial
+                  ? units.elevation(p.totalElevationGain) // issue #262
+                  : p.totalElevationGain + " hm");
         String cmp = ElevationComparisons.describe(p.totalElevationGain);
         if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
         if (p.hardestClimbName != null) {
@@ -464,7 +476,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             try {
                 TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
                 trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
-                text = trend.describe(zone) + "\n\nTempo: "
+                text = trend.describe(zone, new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load()) + "\n\nTempo: "
                         + (planned ? "geschatte tijd uit je profiel"
                                    : "25 km/u (vul je profiel in voor een eigen schatting)")
                         + "\nBron: Open-Meteo";

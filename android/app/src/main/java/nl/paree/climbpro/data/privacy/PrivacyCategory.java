@@ -75,9 +75,18 @@ public enum PrivacyCategory {
             "Ritten en mijlpalen die vrienden met een deelcode met je deelden, en de naam "
                     + "waaronder je zelf deelt.",
             "friend_feed.json"),
+    RIDE_BUDDIES("Ritmaatjes",
+            "Rijdersprofielen die anderen met een profielcode met je deelden: naam, tempo, "
+                    + "klimsnelheid, ritlengte, rittype, rijdagen en eventueel een grof gebied "
+                    + "(vak van ~5 km). Je eigen profiel wordt niet bewaard.",
+            "ride_buddies.json"),
     GOAL_EVENT("Doelevenement",
             "Naam, datum, afstand en hoogtemeters van je doelevenement.",
             "goal_event.json"),
+    EVENT_CALENDAR("Evenementenkalender",
+            "De agenda-links (iCal) die je toevoegde, de daaruit opgehaalde evenementen en je "
+                    + "zelf ingevoerde evenementen, met de zoekstraal.",
+            "event_calendar.json"),
     FAVORITE_START_POINTS("Favoriete startpunten",
             "Door jou opgeslagen startpunten (naam en coördinaten) voor de planning.",
             "favorite_start_points.json"),
@@ -86,6 +95,10 @@ public enum PrivacyCategory {
                     + "voor het beste moment om te rijden. Wordt opnieuw opgehaald als je het "
                     + "wist.",
             "climate/"),
+    ROUTE_POIS("Bezienswaardigheden bij routes",
+            "Uitzichtpunten, monumenten en andere bezienswaardigheden langs je routes, uit "
+                    + "OpenStreetMap. Wordt opnieuw opgehaald als je het wist.",
+            "route_pois/"),
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",

@@ -157,9 +157,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             binding.toolbar.setTitle(name != null ? name : "Climb " + (climbIndex + 1));
             String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
             String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(climb);
+            // Issue #262: length and gain in the rider's display units.
+            nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
             String statsText = String.format(
-                    "%d m total · %.1f%% avg gradient · %d m elevation gain · %s",
-                    climb.length, climb.avgGradient * 100, climb.elevationGain,
+                    "%s total · %.1f%% avg gradient · %s elevation gain · %s",
+                    units.climbLength(climb.length),
+                    climb.avgGradient * 100, units.elevation(climb.elevationGain),
                     nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb));
             if (!categoryLabel.isEmpty()) {
                 statsText += " · " + categoryLabel;
@@ -890,10 +893,12 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 HourlyForecast f = client.fetch(foot);
                 HourlyForecast t = client.fetch(top);
                 Instant now = Instant.now();
+                nl.paree.climbpro.domain.units.UnitPreferences units =
+                        new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load();
                 String nowText = SummitWeather.describe(
-                        f, t, now, foot.elevationM, top.elevationM);
+                        f, t, now, foot.elevationM, top.elevationM, units);
                 String laterText = SummitWeather.describe(
-                        f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM);
+                        f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM, units);
                 StringBuilder sb = new StringBuilder();
                 if (nowText != null) sb.append("NU\n").append(nowText);
                 if (laterText != null) {

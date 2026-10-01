@@ -67,6 +67,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Share-link import (issue #210): a Komoot/RideWithGPS link shared as text.
+                 The text is untrusted; only recognised links are fetched. -->
+            <intent-filter android:label="@string/share_link_share_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
@@ -93,6 +100,10 @@
             android:name=".ui.routes.RouteDetailActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity"/>
+        <activity
+            android:name=".ui.routes.RoutePoiActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteDetailActivity"/>
 
         <activity
             android:name=".ui.climbs.ClimbDetailActivity"
@@ -224,6 +235,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Ride-buddy matcher (issue #242). Exported only for text shares of a CPR1: profile
+             code; import always goes through a confirmation dialog and the decoder treats the
+             text as untrusted. -->
+        <activity
+            android:name=".ui.social.RideBuddyActivity"
+            android:exported="true"
+            android:label="Ritmaatjes"
+            android:parentActivityName=".ui.routes.RouteListActivity">
+            <intent-filter android:label="Ritmaatjes (ClimbPro)">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".ui.tire.TirePressureLogActivity"
             android:exported="false"
@@ -338,6 +364,10 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
         <activity
             android:name=".ui.goals.GoalEventActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.events.EventCalendarActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
