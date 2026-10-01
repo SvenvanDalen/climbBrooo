@@ -494,13 +494,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
             try {
                 TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
                 trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
-                text = trend.describe(zone, new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load()) + "
-
-"
+                text = trend.describe(zone, new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load()) + "\n\n"
                         + getString(planned ? R.string.route_detail_temperature_pace_planned
                                             : R.string.route_detail_temperature_pace_default)
-                        + "
-" + getString(R.string.route_detail_temperature_source);
+                        + "\n" + getString(R.string.route_detail_temperature_source);
             } catch (Exception e) {
                 text = getString(R.string.route_detail_temperature_failed, reason(e));
             }
