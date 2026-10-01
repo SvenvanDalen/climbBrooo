@@ -74,6 +74,9 @@
                 android:id="@+id/action_rides"
                 android:title="@string/menu_rides"/>
             <item
+                android:id="@+id/action_explore_map"
+                android:title="@string/menu_explore_map"/>
+            <item
                 android:id="@+id/action_records"
                 android:title="@string/menu_records"/>
             <item

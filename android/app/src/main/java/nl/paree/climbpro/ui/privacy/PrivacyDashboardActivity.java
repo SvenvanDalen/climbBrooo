@@ -91,7 +91,8 @@ public final class PrivacyDashboardActivity extends AppCompatActivity {
                 return "Alle klimtijden, notities en foto's bij pogingen worden gewist. Al "
                         + "gesynchroniseerde Strava-activiteiten worden niet opnieuw opgehaald.";
             case RIDES:
-                return "Het rittenarchief wordt gewist. Al opgehaalde Strava-ritten worden niet "
+                return "Het rittenarchief en de ontdek-de-regio-kaart worden gewist. Al "
+                        + "opgehaalde Strava-ritten worden niet "
                         + "opnieuw opgehaald; nieuwe ritten wel.";
             case PLANNING:
                 return "Alle geplande klimmen en hun herinneringen worden gewist. Afspraken in "

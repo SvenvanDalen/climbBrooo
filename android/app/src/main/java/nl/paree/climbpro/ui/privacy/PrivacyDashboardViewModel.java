@@ -310,6 +310,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 // Through the repository's write lock, like ATTEMPTS.
                 return (new RideRepository(app).deleteAll() ? 0 : 1)
                         + (new RideStreamStatsRepository(app).deleteAll() ? 0 : 1)
+                        + (new nl.paree.climbpro.data.explore.ExploreMapRepository(app)
+                                .deleteAll() ? 0 : 1)
                         + inventory.deleteFiles(c);
             case FRIENDS:
                 // Through the repository lock (an import may be writing). The random share id

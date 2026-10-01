@@ -387,4 +387,19 @@
     <string name="ftp_test_apply_confirm_message_new">Ta FTP devient %1$d W. Les estimations de temps, le pacing et les séances utiliseront ensuite cette valeur.</string>
     <string name="ftp_test_applied">FTP mise à jour à %1$d W</string>
     <string name="ftp_test_unknown_ride">Sortie</string>
+
+    <!-- Carte d'exploration de la région (issue #194) -->
+    <string name="menu_explore_map">Carte d\'exploration</string>
+    <string name="explore_map_title">Explorer la région</string>
+    <string name="explore_map_loading">Chargement de la carte…</string>
+    <string name="explore_map_summary">%1$d cases · ≈ %2$s km de routes explorées · %3$d sorties</string>
+    <string name="explore_map_empty">Aucune route parcourue sur la carte. Traite tes sorties Strava ci-dessous.</string>
+    <string name="explore_map_pending">%1$d sortie(s) extérieure(s) pas encore sur la carte</string>
+    <string name="explore_map_all_done">Toutes les sorties extérieures sont sur la carte</string>
+    <string name="explore_map_no_strava">Connecte d\'abord Strava pour récupérer les traces</string>
+    <string name="explore_map_process">Traiter les sorties</string>
+    <string name="explore_map_processing">Récupération des traces…</string>
+    <string name="explore_map_processed">%1$d sortie(s) traitée(s)</string>
+    <string name="explore_map_failed">Échec de la récupération : %1$s</string>
+    <string name="explore_map_hint">Chaque case colorée (~150 m) a été parcourue au moins une fois. Les sorties en intérieur ne comptent pas ; au plus 20 sorties par passage.</string>
 </resources>

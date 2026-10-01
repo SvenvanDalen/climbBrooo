@@ -272,6 +272,11 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
+            android:name=".ui.explore.ExploreMapActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
             android:name=".ui.recovery.RecoveryAdviceActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />

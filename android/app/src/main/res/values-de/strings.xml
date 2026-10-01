@@ -382,4 +382,19 @@
     <string name="ftp_test_apply_confirm_message_new">Deine FTP wird %1$d W. Zeitschätzungen, Pacing und Workouts verwenden danach diesen Wert.</string>
     <string name="ftp_test_applied">FTP auf %1$d W aktualisiert</string>
     <string name="ftp_test_unknown_ride">Fahrt</string>
+
+    <!-- Entdecke-die-Region-Karte (issue #194) -->
+    <string name="menu_explore_map">Entdecke-die-Region-Karte</string>
+    <string name="explore_map_title">Entdecke die Region</string>
+    <string name="explore_map_loading">Karte wird geladen…</string>
+    <string name="explore_map_summary">%1$d Felder · ≈ %2$s km Straßen erkundet · %3$d Fahrten</string>
+    <string name="explore_map_empty">Noch keine gefahrenen Straßen auf der Karte. Verarbeite unten deine Strava-Fahrten.</string>
+    <string name="explore_map_pending">%1$d Outdoor-Fahrt(en) noch nicht auf der Karte</string>
+    <string name="explore_map_all_done">Alle Outdoor-Fahrten sind auf der Karte</string>
+    <string name="explore_map_no_strava">Verbinde zuerst Strava, um Fahrtspuren abzurufen</string>
+    <string name="explore_map_process">Fahrten verarbeiten</string>
+    <string name="explore_map_processing">Spuren werden abgerufen…</string>
+    <string name="explore_map_processed">%1$d Fahrt(en) verarbeitet</string>
+    <string name="explore_map_failed">Abrufen fehlgeschlagen: %1$s</string>
+    <string name="explore_map_hint">Jedes farbige Feld (~150 m) bist du mindestens einmal gefahren. Indoor-Fahrten zählen nicht; pro Durchlauf werden höchstens 20 Fahrten abgerufen.</string>
 </resources>

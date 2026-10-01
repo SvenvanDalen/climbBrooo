@@ -496,4 +496,19 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="share_link_fetching">Route ophalen…</string>
     <string name="share_link_failed">Importeren mislukt: %1$s</string>
     <string name="share_link_share_label">Route importeren (ClimbPro)</string>
+
+    <!-- Ontdek-de-regio-kaart (issue #194) -->
+    <string name="menu_explore_map">Ontdek-de-regio-kaart</string>
+    <string name="explore_map_title">Ontdek de regio</string>
+    <string name="explore_map_loading">Kaart laden…</string>
+    <string name="explore_map_summary">%1$d vakken · ≈ %2$s km wegen verkend · %3$d ritten</string>
+    <string name="explore_map_empty">Nog geen gereden wegen op de kaart. Verwerk je Strava-ritten hieronder.</string>
+    <string name="explore_map_pending">%1$d buitenrit(ten) nog niet op de kaart</string>
+    <string name="explore_map_all_done">Alle buitenritten staan op de kaart</string>
+    <string name="explore_map_no_strava">Verbind eerst Strava om ritsporen op te halen</string>
+    <string name="explore_map_process">Ritten verwerken</string>
+    <string name="explore_map_processing">Sporen ophalen…</string>
+    <string name="explore_map_processed">%1$d rit(ten) verwerkt</string>
+    <string name="explore_map_failed">Ophalen mislukt: %1$s</string>
+    <string name="explore_map_hint">Elk gekleurd vak (~150 m) heb je minstens één keer gereden. Binnenritten tellen niet mee; per keer worden maximaal 20 ritten opgehaald.</string>
 </resources>

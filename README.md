@@ -260,6 +260,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
   route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
 
+- **Ontdek-de-regio-kaart (explore map)** — menu → Ritten & analyse → Ontdek-de-regio-kaart.
+  Every ~150 m cell you rode through outdoors is coloured on the map, with the number of
+  cells, an estimate of the road km explored and the number of rides. New rides arrive with
+  the regular sync; "Ritten verwerken" backfills older rides (max 20 Strava requests per
+  run). Only the cells are stored (`explore_tiles.json`), never full GPS tracks. Phone-only.
+
 - **Ritmaatjes (ride-buddy matcher)** — menu → Ritten & analyse → Ritmaatjes. "Deel mijn
   profiel" turns your last half year of rides into a short `CPR1:` profile code (flat-road
   pace, climbing VAM, typical distance, road/gravel/MTB, riding days and dayparts, and —
