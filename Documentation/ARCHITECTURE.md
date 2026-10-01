@@ -802,6 +802,19 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Heat-index warning (issue #227)
+
+Watch-only, no wire change. `garmin/source/HeatIndex.mc` holds pure helpers:
+`heatIndexC` (NWS Rothfusz regression with the low/high-humidity adjustments, Steadman's
+simple formula below ~27 °C; unknown humidity → air temperature) and `HeatAlarm` (fires
+once at the threshold, stays hot until 2 °C below it, reminder every 20 min).
+`ClimbProView.compute` runs `checkHeatIndex` once a minute **before** the payload gate, so
+it also works without a route. Input is `Weather.getCurrentConditions()` first (outdoor air
++ real humidity, cached from the phone) and `Sensor.getInfo().temperature` as fallback —
+the FR255M's internal sensor reads high from wrist heat and would false-alarm on its own.
+Threshold is the `heatIndexThreshold` app setting (0 = off, default 32 °C). The banner
+sits below off-route and battery in priority, above the descent felt temperature.
+
 ### FTP intensity-zone colors (issue #66)
 
 The fixed gradient → color mapping stays the default and the single source of

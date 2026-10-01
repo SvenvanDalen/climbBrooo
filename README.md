@@ -142,6 +142,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Heat-index warning** — the datafield checks the heat index (NWS, from Garmin Weather's
+  temperature + humidity; without weather data the watch temperature sensor) once a minute
+  and buzzes when it reaches the threshold set in the Connect IQ app settings (off / 27 /
+  32 / 39 °C, default 32). A dark-red `HITTE 41°C` strip stays up until it drops 2 °C
+  below the threshold, with a reminder buzz every 20 minutes. Watch-only, works without a route.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
