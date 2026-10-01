@@ -56,4 +56,15 @@
     <string name="share_link_fetching">Fetching route…</string>
     <string name="share_link_failed">Import failed: %1$s</string>
     <string name="share_link_share_label">Import route (ClimbPro)</string>
+    <string name="offline_pkg_action">Offline package</string>
+    <string name="offline_pkg_loading">Downloading offline package…</string>
+    <string name="offline_pkg_title">Offline package</string>
+    <string name="offline_pkg_intro">Download the weather along the route (next 2 days) and water, food, toilet and bike points within 300 m (OpenStreetMap) in advance. After that everything can be viewed without signal; the route and climbs are already on your phone.</string>
+    <string name="offline_pkg_download">Download</string>
+    <string name="offline_pkg_refresh">Refresh</string>
+    <string name="offline_pkg_delete">Delete</string>
+    <string name="offline_pkg_close">Close</string>
+    <string name="offline_pkg_deleted">Offline package deleted</string>
+    <string name="offline_pkg_failed">Download failed: %1$s</string>
+    <string name="offline_pkg_source">Weather: Open-Meteo · points © OpenStreetMap contributors</string>
 </resources>

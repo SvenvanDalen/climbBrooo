@@ -384,6 +384,27 @@ maps back to the original. Climb renames, notes, ride status, surface sections a
 segments do not carry over (they describe different climbs/stretches). Phone-only; the result
 is an ordinary route payload, no wire-format change.
 
+### Offline package for a route (issue #200)
+
+For mountain areas without signal, "Offline-pakket" on route detail stores the external data a
+ride needs next to the route and climbs that are already on the phone. The pure
+`domain/offline/OfflinePackageBuilder` takes injected sources (so it is JVM-tested): it samples
+the route with `RouteSampler` (≤ 20 km apart, max 8 points) and stores the **raw** Open-Meteo
+hourly JSON per point (`OpenMeteoClient.fetchRawForecast`) so it can be parsed again later with
+`HourlyForecast.parse`, and it projects POIs from `data/osm/OverpassPoiClient` onto the route
+line (along-route km + offset, ≤ 300 m, same type+name within 30 m deduplicated). The Overpass
+query thins the route to a point every 250 m and uses `around:300` with two filters (one regex
+over amenity/shop values for water, food, toilets and bike shops/repair stations, plus drinking
+water taps). Each source fails independently (`weatherError` / `poiError`), so a partial package
+is still saved; a package where both failed is not. `data/offline/OfflinePackageStore` writes
+`offline/<routeId>.json` atomically (corrupt = none). `OfflinePackageReport` renders it fully
+offline: age (stale after 24 h), per point the next 8 forecast hours (min–max °C, max wind, max
+rain chance — or "verlopen" once the forecast has passed) and POIs per type by km. Deleting a
+route deletes its package; the privacy dashboard lists `offline/` (category Offline-pakketten)
+and backups skip it like `climate/` (public, re-downloadable). Map tiles are deliberately not
+pre-downloaded: the OpenStreetMap tile policy forbids bulk downloads. Phone-only; no wire-format
+change.
+
 ### Shorten a route (issue #205)
 
 "Route inkorten" on route detail suggests shorter variants **within the existing geometry** —

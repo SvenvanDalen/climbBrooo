@@ -56,4 +56,15 @@
     <string name="share_link_fetching">Récupération de l\'itinéraire…</string>
     <string name="share_link_failed">Échec de l\'import : %1$s</string>
     <string name="share_link_share_label">Importer l\'itinéraire (ClimbPro)</string>
+    <string name="offline_pkg_action">Pack hors ligne</string>
+    <string name="offline_pkg_loading">Téléchargement du pack hors ligne…</string>
+    <string name="offline_pkg_title">Pack hors ligne</string>
+    <string name="offline_pkg_intro">Télécharge à l\'avance la météo le long de l\'itinéraire (2 prochains jours) et les points d\'eau, de restauration, de toilettes et vélo à moins de 300 m (OpenStreetMap). Ensuite tout est consultable sans réseau ; l\'itinéraire et les montées sont déjà sur ton téléphone.</string>
+    <string name="offline_pkg_download">Télécharger</string>
+    <string name="offline_pkg_refresh">Actualiser</string>
+    <string name="offline_pkg_delete">Supprimer</string>
+    <string name="offline_pkg_close">Fermer</string>
+    <string name="offline_pkg_deleted">Pack hors ligne supprimé</string>
+    <string name="offline_pkg_failed">Échec du téléchargement : %1$s</string>
+    <string name="offline_pkg_source">Météo : Open-Meteo · points © contributeurs OpenStreetMap</string>
 </resources>

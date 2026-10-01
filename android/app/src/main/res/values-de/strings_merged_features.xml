@@ -56,4 +56,15 @@
     <string name="share_link_fetching">Route wird abgerufen…</string>
     <string name="share_link_failed">Import fehlgeschlagen: %1$s</string>
     <string name="share_link_share_label">Route importieren (ClimbPro)</string>
+    <string name="offline_pkg_action">Offline-Paket</string>
+    <string name="offline_pkg_loading">Offline-Paket wird heruntergeladen…</string>
+    <string name="offline_pkg_title">Offline-Paket</string>
+    <string name="offline_pkg_intro">Lade vorab das Wetter entlang der Route (nächste 2 Tage) und Wasser-, Essens-, Toiletten- und Fahrradpunkte im Umkreis von 300 m (OpenStreetMap) herunter. Danach ist alles ohne Empfang abrufbar; Route und Anstiege sind schon auf deinem Handy.</string>
+    <string name="offline_pkg_download">Herunterladen</string>
+    <string name="offline_pkg_refresh">Aktualisieren</string>
+    <string name="offline_pkg_delete">Löschen</string>
+    <string name="offline_pkg_close">Schließen</string>
+    <string name="offline_pkg_deleted">Offline-Paket gelöscht</string>
+    <string name="offline_pkg_failed">Download fehlgeschlagen: %1$s</string>
+    <string name="offline_pkg_source">Wetter: Open-Meteo · Punkte © OpenStreetMap-Mitwirkende</string>
 </resources>

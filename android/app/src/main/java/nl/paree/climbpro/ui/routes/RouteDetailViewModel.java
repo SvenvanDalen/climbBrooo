@@ -9,6 +9,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
+import nl.paree.climbpro.data.offline.OfflinePackageStore;
+import nl.paree.climbpro.data.osm.OverpassPoiClient;
 import nl.paree.climbpro.data.border.BorderCrossingService;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
@@ -26,6 +28,9 @@ import nl.paree.climbpro.domain.climb.ClimbUsageClassifier;
 import nl.paree.climbpro.domain.climb.ClimbUsageType;
 import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
 import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
+import nl.paree.climbpro.data.weather.OpenMeteoClient;
+import nl.paree.climbpro.domain.offline.OfflinePackage;
+import nl.paree.climbpro.domain.offline.OfflinePackageBuilder;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
@@ -95,6 +100,60 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
     public void consumeReversedRoute() { reversedRoute.setValue(null); }
 
+    /** Offline route package (issue #200): one-shot result of a load or download. */
+    public static final class OfflineResult {
+        /** The package, or null when there is none yet. */
+        public final OfflinePackage pkg;
+        public final boolean downloaded;
+
+        OfflineResult(OfflinePackage pkg, boolean downloaded) {
+            this.pkg = pkg;
+            this.downloaded = downloaded;
+        }
+    }
+
+    private final MutableLiveData<OfflineResult> offlinePackage = new MutableLiveData<>();
+
+    public LiveData<OfflineResult> offlinePackage() { return offlinePackage; }
+
+    public void consumeOfflinePackage() { offlinePackage.setValue(null); }
+
+    private OfflinePackageStore offlineStore() {
+        return new OfflinePackageStore(getApplication().getFilesDir());
+    }
+
+    /** Reads the stored package from disk (works offline). */
+    public void loadOfflinePackage(String routeId) {
+        executor.execute(() ->
+                offlinePackage.postValue(new OfflineResult(offlineStore().load(routeId), false)));
+    }
+
+    /** Downloads weather + POIs for the route and stores them; a partial package is kept. */
+    public void downloadOfflinePackage(String routeId) {
+        executor.execute(() -> {
+            try {
+                StoredRoute r = routeRepo.loadRoute(routeId);
+                OpenMeteoClient weather = new OpenMeteoClient();
+                OverpassPoiClient pois = new OverpassPoiClient();
+                OfflinePackage pkg = new OfflinePackageBuilder(
+                        (lat, lon) -> weather.fetchRawForecast(lat, lon, Double.NaN),
+                        pois::fetch).build(r, System.currentTimeMillis());
+                if (pkg.weatherError != null && pkg.poiError != null) {
+                    error.postValue(getApplication().getString(
+                            nl.paree.climbpro.R.string.offline_pkg_failed, pkg.weatherError));
+                    offlinePackage.postValue(new OfflineResult(null, false));
+                    return;
+                }
+                offlineStore().save(pkg);
+                offlinePackage.postValue(new OfflineResult(pkg, true));
+            } catch (Exception e) {
+                error.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.offline_pkg_failed, e.getMessage()));
+                offlinePackage.postValue(new OfflineResult(null, false));
+            }
+        });
+    }
+
     public LiveData<RouteShortenService.Result> shortenedRoute() { return shortenedRoute; }
 
     public void consumeShortenedRoute() { shortenedRoute.setValue(null); }
@@ -110,6 +169,10 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                         nl.paree.climbpro.R.string.route_shorten_failed, e.getMessage()));
             }
         });
+    }
+
+    public void deleteOfflinePackage(String routeId) {
+        executor.execute(() -> offlineStore().delete(routeId));
     }
 
     /**

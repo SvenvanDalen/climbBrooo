@@ -41,6 +41,15 @@ public final class OpenMeteoClient {
         return fetch(p.lat, p.lon, p.elevationM);
     }
 
+    /**
+     * The raw hourly forecast JSON for a point, as {@link HourlyForecast#parse} reads it. Used by
+     * the offline route package (issue #200), which stores the response to parse it later
+     * without network.
+     */
+    public String fetchRawForecast(double lat, double lon, double elevationM) throws IOException {
+        return get(url(lat, lon, elevationM));
+    }
+
     /** Forecast for a plain location, e.g. the rider's position (sunscreen check, issue #229). */
     public HourlyForecast fetch(double lat, double lon, double elevationM) throws IOException {
         return HourlyForecast.parse(get(url(lat, lon, elevationM)));

@@ -99,6 +99,10 @@ public enum PrivacyCategory {
                     + "voor het beste moment om te rijden. Wordt opnieuw opgehaald als je het "
                     + "wist.",
             "climate/"),
+    OFFLINE_PACKAGES("Offline-pakketten",
+            "Vooraf gedownload weer en water-, eet-, toilet- en fietspunten langs routes, voor "
+                    + "gebieden zonder bereik. Openbare gegevens; opnieuw op te halen.",
+            "offline/"),
     ROUTE_POIS("Bezienswaardigheden bij routes",
             "Uitzichtpunten, monumenten en andere bezienswaardigheden langs je routes, uit "
                     + "OpenStreetMap. Wordt opnieuw opgehaald als je het wist.",

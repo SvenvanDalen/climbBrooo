@@ -121,6 +121,7 @@ public class PrivacyInventoryTest {
                 "event_calendar.json",
                 "favorite_start_points.json",
                 "climate/",
+                "offline/",
                 "route_pois/",
                 "recovery_checks.json",
                 "packing_lists.json"};

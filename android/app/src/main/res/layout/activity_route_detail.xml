@@ -101,6 +101,14 @@
                 android:visibility="gone" />
 
             <Button
+                android:id="@+id/btn_offline_package"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/offline_pkg_action" />
+
+            <Button
                 android:id="@+id/btn_route_pois"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

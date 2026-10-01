@@ -56,4 +56,15 @@
     <string name="share_link_fetching">Recupero del percorso…</string>
     <string name="share_link_failed">Importazione non riuscita: %1$s</string>
     <string name="share_link_share_label">Importa percorso (ClimbPro)</string>
+    <string name="offline_pkg_action">Pacchetto offline</string>
+    <string name="offline_pkg_loading">Download del pacchetto offline…</string>
+    <string name="offline_pkg_title">Pacchetto offline</string>
+    <string name="offline_pkg_intro">Scarica in anticipo il meteo lungo il percorso (prossimi 2 giorni) e i punti acqua, cibo, bagni e bici entro 300 m (OpenStreetMap). Dopo potrai consultare tutto senza campo; percorso e salite sono già sul tuo telefono.</string>
+    <string name="offline_pkg_download">Scarica</string>
+    <string name="offline_pkg_refresh">Aggiorna</string>
+    <string name="offline_pkg_delete">Elimina</string>
+    <string name="offline_pkg_close">Chiudi</string>
+    <string name="offline_pkg_deleted">Pacchetto offline eliminato</string>
+    <string name="offline_pkg_failed">Download non riuscito: %1$s</string>
+    <string name="offline_pkg_source">Meteo: Open-Meteo · punti © contributori OpenStreetMap</string>
 </resources>
