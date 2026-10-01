@@ -1,0 +1,76 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.1 084b4234",
+  "osm3s": {
+    "timestamp_osm_base": "2026-09-30T10:00:00Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 1,
+      "lat": 50.82,
+      "lon": 5.701,
+      "tags": { "tourism": "viewpoint", "name": "Uitzicht Sint-Pietersberg" }
+    },
+    {
+      "type": "node",
+      "id": 2,
+      "lat": 50.84,
+      "lon": 5.7005,
+      "tags": { "tourism": "viewpoint" }
+    },
+    {
+      "type": "node",
+      "id": 3,
+      "lat": 50.83,
+      "lon": 5.7001,
+      "tags": { "historic": "memorial", "memorial": "plaque" }
+    },
+    {
+      "type": "node",
+      "id": 4,
+      "lat": 50.83,
+      "lon": 5.72,
+      "tags": { "historic": "monument", "name": "Ver weg" }
+    },
+    {
+      "type": "node",
+      "id": 5,
+      "lat": 50.845,
+      "lon": 5.7,
+      "tags": { "tourism": "artwork", "artwork_type": "sculpture", "name": "Beeld" }
+    },
+    {
+      "type": "relation",
+      "id": 7,
+      "center": { "lat": 50.805, "lon": 5.703 },
+      "tags": { "historic": "ruins", "name": "Ruïne Lichtenberg" }
+    },
+    {
+      "type": "node",
+      "id": 8,
+      "lat": 50.81,
+      "lon": 5.7,
+      "tags": { "amenity": "bench" }
+    },
+    {
+      "type": "way",
+      "id": 9,
+      "tags": { "historic": "monument", "name": "Zonder coordinaten" }
+    },
+    {
+      "type": "way",
+      "id": 10,
+      "center": { "lat": 50.81, "lon": 5.6995 },
+      "tags": { "historic": "castle", "tourism": "attraction", "name": "Kasteel Neercanne" }
+    },
+    {
+      "type": "node",
+      "id": 11,
+      "lat": 50.8101,
+      "lon": 5.6994,
+      "tags": { "historic": "castle", "name": "kasteel neercanne" }
+    }
+  ]
+}

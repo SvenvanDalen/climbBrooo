@@ -107,6 +107,7 @@ public class PrivacyInventoryTest {
                 "planned_climbs.json", "rides.json", "wet_ride_checks.json",
                 "tire_pressure_log.json", "maintenance.json", "torque_values.json",
                 "friend_feed.json",
+                "ride_buddies.json",
                 "bike_costs.json",
                 "bike_passports.json", "bike_passport_photos/",
                 "battery_status.json",
@@ -119,6 +120,7 @@ public class PrivacyInventoryTest {
                 "event_calendar.json",
                 "favorite_start_points.json",
                 "climate/",
+                "route_pois/",
                 "recovery_checks.json",
                 "packing_lists.json"};
         java.util.Set<String> covered = new java.util.HashSet<>();

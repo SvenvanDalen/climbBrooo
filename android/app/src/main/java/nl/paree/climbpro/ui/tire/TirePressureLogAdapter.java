@@ -30,6 +30,8 @@ public final class TirePressureLogAdapter
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
     private final OnEntryLongClickListener listener;
+    /** Show psi first (issue #262 unit choice); bar first otherwise. */
+    private boolean psiFirst;
 
     public TirePressureLogAdapter(OnEntryLongClickListener listener) {
         this.listener = listener;
@@ -38,6 +40,13 @@ public final class TirePressureLogAdapter
     public void submit(List<TirePressureLogEntry> newEntries) {
         entries.clear();
         if (newEntries != null) entries.addAll(newEntries);
+        notifyDataSetChanged();
+    }
+
+    /** Applies the rider's pressure unit (issue #262) and redraws when it changed. */
+    public void setPsiFirst(boolean psiFirst) {
+        if (this.psiFirst == psiFirst) return;
+        this.psiFirst = psiFirst;
         notifyDataSetChanged();
     }
 
@@ -57,8 +66,8 @@ public final class TirePressureLogAdapter
     public void onBindViewHolder(@NonNull EntryVH holder, int position) {
         TirePressureLogEntry e = entries.get(position);
         holder.date.setText(formatDate(e.timestampEpochSec));
-        holder.pressures.setText("Voor " + TirePressureUnits.format(e.frontBar)
-                + "  •  Achter " + TirePressureUnits.format(e.rearBar));
+        holder.pressures.setText("Voor " + TirePressureUnits.format(e.frontBar, psiFirst)
+                + "  •  Achter " + TirePressureUnits.format(e.rearBar, psiFirst));
         boolean hasNote = e.note != null && !e.note.isEmpty();
         holder.note.setVisibility(hasNote ? View.VISIBLE : View.GONE);
         holder.note.setText(hasNote ? e.note : null);
