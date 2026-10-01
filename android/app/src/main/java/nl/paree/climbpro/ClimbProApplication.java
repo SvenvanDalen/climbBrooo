@@ -31,7 +31,8 @@ public final class ClimbProApplication extends Application {
         WatchRequestHandler watchRequests = new WatchRequestHandler(
                 routeRepo, ciqClient,
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(this),
-                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this));
+                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this),
+                new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this));
         watchRequests.setMedicalIdRepository(
                 new nl.paree.climbpro.data.medical.MedicalIdRepository(this));
         ciqClient.setWatchRequestHandler(watchRequests);

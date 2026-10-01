@@ -62,6 +62,8 @@ class PhoneMessageCallback {
         data.mode      = msg.get("mode");
         data.routeId   = msg.get("routeId");
         data.routeName = msg.get("name");
+        // Optional display units (issue #262); absent/invalid = metric, reset on every payload.
+        data.units     = Units.parseFlags(msg.get("un"));
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {

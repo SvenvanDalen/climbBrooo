@@ -181,6 +181,7 @@ public final class RouteRepository {
 
     public void deleteRoute(String routeId) throws IOException {
         routeFile(routeId).delete();
+        nl.paree.climbpro.data.poi.RoutePoiCache.delete(context.getFilesDir(), routeId);
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(routeId));
         saveCatalog(catalog);
