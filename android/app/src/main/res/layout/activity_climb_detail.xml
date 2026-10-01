@@ -132,6 +132,34 @@
                 android:layout_marginBottom="16dp"
                 android:visibility="gone"/>
 
+            <!-- Issue #212: facts about a well-known climb, from the bundled dataset. -->
+            <LinearLayout
+                android:id="@+id/climb_facts_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/climb_facts_title"
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/climb_facts_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="2dp"/>
+            </LinearLayout>
+
             <nl.paree.climbpro.ui.climbs.ClimbProfileView
                 android:id="@+id/climb_profile"
                 android:layout_width="match_parent"

@@ -357,6 +357,51 @@
 
             </LinearLayout>
 
+            <!-- Display units (issue #262). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Eenheden"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="Alleen de weergave verandert; alles wordt metrisch opgeslagen. Het horloge neemt de afstandseenheid over bij de volgende sync."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_units_imperial"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Mijlen en voet (mi · ft · mph)"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_units_psi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Bandenspanning in psi"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_units_fahrenheit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Temperatuur in °F"/>
+            </LinearLayout>
+
             <!-- Cleaning reminder after wet rides (issue #234). -->
             <LinearLayout
                 android:layout_width="match_parent"

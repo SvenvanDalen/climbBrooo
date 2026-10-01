@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
+import nl.paree.climbpro.data.border.BorderCrossingService;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -44,6 +45,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final ClimbAttemptRepository attemptRepo;
     private final OnboardPushService onboardPushService;
     private final HistoricClimbScoreCache historicClimbScoreCache;
+    private final BorderCrossingService borderCrossingService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<StoredRoute> route      = new MutableLiveData<>();
@@ -65,6 +67,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<RouteShortenService.Result> shortenedRoute = new MutableLiveData<>();
     private final MutableLiveData<RouteElevationProfile> elevationProfile =
             new MutableLiveData<>();
+    /** Start country + border crossings as display lines (issue #209); empty = no crossing. */
+    private final MutableLiveData<List<String>> borderCrossings = new MutableLiveData<>();
 
     public RouteDetailViewModel(@NonNull Application app) {
         super(app);
@@ -74,6 +78,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         onboardPushService = new OnboardPushService(
                 ((ClimbProApplication) app).connectIqClient());
         historicClimbScoreCache = ((ClimbProApplication) app).historicClimbScoreCache();
+        borderCrossingService = new BorderCrossingService(app);
     }
 
     public LiveData<StoredRoute>  route()      { return route; }
@@ -125,6 +130,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<List<RestSplitAdvisor.Suggestion>> restSuggestions() { return restSuggestions; }
     /** Whole-route elevation profile with climbs highlighted (issue #207). */
     public LiveData<RouteElevationProfile> elevationProfile() { return elevationProfile; }
+    /** Border crossings along the route (issue #209); see {@link BorderCrossingService}. */
+    public LiveData<List<String>> borderCrossings() { return borderCrossings; }
 
     public void loadRoute(String routeId) {
         executor.execute(() -> {
@@ -146,6 +153,7 @@ public final class RouteDetailViewModel extends AndroidViewModel {
                 surfaceSections.postValue(
                         r.surfaceSections != null ? r.surfaceSections : Collections.emptyList());
                 restSuggestions.postValue(computeRestSuggestions(r));
+                borderCrossings.postValue(borderCrossingService.describe(r));
             } catch (Exception e) {
                 error.postValue("Could not load route: " + e.getMessage());
             }

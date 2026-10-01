@@ -21,4 +21,12 @@
             <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.heatIndexThreshold" title="@Strings.SettingsHeatIndexTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.HeatIndexOff</listEntry>
+            <listEntry value="27">@Strings.HeatIndex27</listEntry>
+            <listEntry value="32">@Strings.HeatIndex32</listEntry>
+            <listEntry value="39">@Strings.HeatIndex39</listEntry>
+        </settingConfig>
+    </setting>
 </settings>
