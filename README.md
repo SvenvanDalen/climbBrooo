@@ -117,6 +117,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   untouched and tapping again reopens the existing reversed route.
 - **Whole-route elevation profile** — the route detail screen shows the elevation
   profile of the full route with every climb highlighted in its gradient colors. Phone-only.
+- **Border crossings** — the route detail screen lists every national border the route
+  crosses ("km 84,3 → België · Nederlands/Frans/Duits · 112"), computed fully offline from
+  bundled coarse European country boundaries. Phone-only, no wire change.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.

@@ -398,6 +398,26 @@ segments — clamped to the route and palette. `RouteDetailViewModel` builds it 
 the thin `RouteElevationProfileView` only scales and paints, coloring bands via
 `SegmentColorPalette`. Routes without usable elevation show "Geen hoogtegegevens" instead.
 
+### Border crossings (issue #209)
+
+The route detail screen lists the start country and every national border crossing along the
+route with the country's Dutch name, languages and emergency number ("km 84,3 → België ·
+Nederlands/Frans/Duits · 112"); the section is hidden for single-country routes. Phone-only,
+offline, no wire-format change and nothing persisted. Country lookup uses a bundled asset
+(`assets/borders/europe_countries.txt`, ~175 KB): Natural Earth 1:50m admin-0 boundaries
+(public domain) for Europe minus Russia, Douglas-Peucker simplified by
+`tools/gen_country_borders.py`. Polygons were chosen over `android.location.Geocoder` because
+Geocoder needs network, is rate-limited and slow (hundreds of calls per route), while the
+polygon lookup is instant, deterministic and unit-testable; the trade-off is ~1 km boundary
+accuracy and coastal points that may fall "in the sea" (treated as unknown). Pure, unit-tested
+`domain/border`: `CountryPolygons` (even-odd point-in-polygon, smallest country wins so
+enclaves beat neighbours), `BorderCrossingFinder` (samples every 250 m, bisects to 10 m,
+ignores unknown samples, drops back-and-forth excursions shorter than 1 km along border roads)
+and `CountryInfo` (static code → name/languages/emergency table; 112 fallback). The thin
+`data/border/BorderCrossingService` parses the asset once per process and formats the lines
+for `RouteDetailViewModel`. Follow-up (not done): a watch-side banner at the crossing would
+need a compact crossing marker in the wire payload.
+
 ### Joining two routes (issue #204)
 
 "Samenvoegen met…" on the route detail screen saves the current route (A) followed by a
