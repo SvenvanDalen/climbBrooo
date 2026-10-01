@@ -178,6 +178,14 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
   route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
 
+- **Ritmaatjes (ride-buddy matcher)** — menu → Ritten & analyse → Ritmaatjes. "Deel mijn
+  profiel" turns your last half year of rides into a short `CPR1:` profile code (flat-road
+  pace, climbing VAM, typical distance, road/gravel/MTB, riding days and dayparts, and —
+  opt-in only — a coarse ~5 km area, never your address); you tick which fields go in and see
+  exactly what the code contains before sharing. Paste codes from other riders (or share the
+  chat message to ClimbPro) and they are ranked by similarity with a score and a reason, e.g.
+  "vergelijkbaar tempo, 12 km verderop". No server; phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.

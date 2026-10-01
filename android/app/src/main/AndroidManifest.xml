@@ -224,6 +224,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Ride-buddy matcher (issue #242). Exported only for text shares of a CPR1: profile
+             code; import always goes through a confirmation dialog and the decoder treats the
+             text as untrusted. -->
+        <activity
+            android:name=".ui.social.RideBuddyActivity"
+            android:exported="true"
+            android:label="Ritmaatjes"
+            android:parentActivityName=".ui.routes.RouteListActivity">
+            <intent-filter android:label="Ritmaatjes (ClimbPro)">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".ui.tire.TirePressureLogActivity"
             android:exported="false"

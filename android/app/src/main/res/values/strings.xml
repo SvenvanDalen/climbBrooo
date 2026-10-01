@@ -45,6 +45,10 @@
     <string name="menu_group_bike">Fiets &amp; materiaal</string>
     <string name="menu_group_data">Data &amp; app</string>
     <!-- Klim van de week (issue #40) -->
+    <string name="ride_buddies_title">Ritmaatjes</string>
+    <string name="ride_buddies_share">Deel mijn profiel</string>
+    <string name="ride_buddies_import">Code plakken</string>
+    <string name="ride_buddies_empty">Nog geen rijders. Vraag iemand om in ClimbPro onder Ritmaatjes op Deel mijn profiel te tikken en plak de ontvangen code hier. Je ziet dan hoe goed jullie tempo, ritlengte, rittype, rijdagen en gebied bij elkaar passen. Tik op een rijder voor details, houd lang ingedrukt om te verwijderen.</string>
     <string name="menu_climb_of_the_week">Klim van de week</string>
     <string name="cotw_title">Klim van de week</string>
     <string name="cotw_week">Suggestie voor week %1$s</string>
