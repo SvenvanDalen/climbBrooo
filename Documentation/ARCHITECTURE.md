@@ -888,6 +888,18 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Heart-rate alarm (issue #228)
+
+Watch-only, no wire change. `garmin/source/HeartRateAlarm.mc` holds two pure detectors fed
+with `Activity.Info.currentHeartRate` and `System.getTimer()` every tick:
+`HrLimitAlarm` (above the `hrAlarmBpm` setting for ≥ 10 s → alert; a sensor dropout breaks
+the sustain window; re-arms 5 bpm below the limit; reminder every 5 min) and
+`HrIrregularDetector` (opt-in `hrIrregularAlarm`: ≥ 3 sample-to-sample jumps of ≥ 25 bpm,
+samples ≤ 3 s apart, within 60 s; 10-min cooldown). Both need a sustained or repeated
+signal because optical wrist HR spikes on its own. `ClimbProView.compute` runs
+`checkHeartRate` **before** the payload gate, so it works without a route. The purple
+banner sits right below off-route in priority — a safety signal outranks battery.
+
 ### Medical ID (issue #230)
 
 Phone-managed, shown on request. `data/medical/MedicalId` (+ `MedicalIdRepository`,

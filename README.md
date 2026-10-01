@@ -161,6 +161,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Heart-rate alarm** — set a limit in the Connect IQ app settings (`Hartslag-alarm`,
+  bpm, 0 = off): once your heart rate stays above it for 10 s the datafield buzzes and shows
+  a purple `HARTSLAG 185` strip until it drops 5 bpm below, with a reminder every 5 minutes.
+  Opt-in `Waarschuw bij onregelmatige hartslag` alerts on three ≥ 25 bpm jumps within a
+  minute (at most every 10 min). Watch-only, works without a route; not a medical device.
 - **Medical ID** — menu → "Medische ID": name, blood type, allergies, medication, emergency
   contact and notes. Optional silent, always-on lock-screen notification (public visibility)
   so first responders can read it without unlocking; re-posted after a reboot. The watch
