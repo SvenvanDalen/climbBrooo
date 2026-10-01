@@ -31,7 +31,9 @@ import java.util.zip.ZipOutputStream;
  * the <em>old</em> phone last sent to the watch — a restored copy would make the new phone
  * skip the first sync) and every Strava credential (the encrypted token is bound to the old
  * phone's keystore and cannot be decrypted elsewhere; the user signs in again), and the
- * {@code climate/} weather-history cache (issue #41: public data, re-fetched on demand).
+ * {@code climate/} weather-history cache (issue #41: public data, re-fetched on demand), and the
+ * {@code offline/} route packages (issue #200: public forecast/POI data, re-downloaded).
+ * {@code route_pois/} OpenStreetMap POI cache (issue #208, same reasoning).
  */
 public final class BackupArchive {
 
@@ -44,15 +46,18 @@ public final class BackupArchive {
             "tire_pressure_log.json", "maintenance.json", "wet_ride_checks.json",
             "torque_values.json",
             "friend_feed.json",
+            "ride_buddies.json",
             "bike_costs.json",
             "bike_passports.json", "bike_passport_photos/",
             "battery_status.json",
             "pain_log.json",
             "sweat_loss_log.json",
             "safe_home.json",
+            "medical_id.json",
             "comeback_plan.json",
             "ride_stream_stats.json",
             "goal_event.json",
+            "event_calendar.json",
             "favorite_start_points.json",
             "recovery_checks.json",
             "packing_lists.json"};

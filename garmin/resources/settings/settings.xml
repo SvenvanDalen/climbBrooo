@@ -21,4 +21,32 @@
             <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.lightsReminder" title="@Strings.SettingsLightsReminderTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.lightsLeadMin" title="@Strings.SettingsLightsLeadTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LightsLeadSunset</listEntry>
+            <listEntry value="15">@Strings.LightsLead15</listEntry>
+            <listEntry value="30">@Strings.LightsLead30</listEntry>
+            <listEntry value="60">@Strings.LightsLead60</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.easierAheadAlert" title="@Strings.SettingsEasierAheadAlertTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.hrAlarmBpm" title="@Strings.SettingsHrAlarmTitle" prompt="@Strings.SettingsHrAlarmPrompt">
+        <settingConfig type="numeric" min="0" max="230"/>
+    </setting>
+    <setting propertyKey="@Properties.hrIrregularAlarm" title="@Strings.SettingsHrIrregularTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.heatIndexThreshold" title="@Strings.SettingsHeatIndexTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.HeatIndexOff</listEntry>
+            <listEntry value="27">@Strings.HeatIndex27</listEntry>
+            <listEntry value="32">@Strings.HeatIndex32</listEntry>
+            <listEntry value="39">@Strings.HeatIndex39</listEntry>
+        </settingConfig>
+    </setting>
 </settings>

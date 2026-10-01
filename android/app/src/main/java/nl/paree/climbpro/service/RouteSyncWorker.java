@@ -81,8 +81,12 @@ public final class RouteSyncWorker extends Worker {
         // Issue #66: also send per-segment FTP intensity-zone colors when the profile allows,
         // and issue #180: FTP turns each climb's interval block (% FTP) into watts for 'ib'.
         // The profile is already part of wantHash, so an FTP change triggers a resync.
+        // Issue #262: the rider's display units ride along as 'un'; they are folded into
+        // wantHash too, so switching km <-> miles resyncs the active route.
+        nl.paree.climbpro.domain.units.UnitPreferences units =
+                new nl.paree.climbpro.data.settings.UnitPreferencesRepository(ctx).load();
         ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper)
-                .withIntensityZones(profile).withFtpWatts(profile.ftpWatts);
+                .withIntensityZones(profile).withFtpWatts(profile.ftpWatts).withUnits(units);
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -108,7 +112,7 @@ public final class RouteSyncWorker extends Worker {
         };
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo);
+                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo, units);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -180,7 +184,8 @@ public final class RouteSyncWorker extends Worker {
      * target-time override ({@link SegmentTargetOverrideMerger#signature}) — those overrides
      * only bump {@code StoredRoute#lastModifiedMs}, not {@code sourceHash}, so without this
      * a manual edit would never trigger a re-sync on its own (only an unrelated change that
-     * happens to move {@code sourceHash} or the profile would surface it).
+     * happens to move {@code sourceHash} or the profile would surface it). The display units
+     * (issue #262) are included because they change the payload's 'un' key.
      */
     /** OSM tunnels (issue #203) change the 'hz' markers, so a lookup triggers a resync. */
     static String tunnelSignature(StoredRoute route) {
@@ -193,12 +198,17 @@ public final class RouteSyncWorker extends Worker {
     }
 
     private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
-                                   nl.paree.climbpro.domain.power.GhostTarget ghost) {
-        return route.sourceHash + "|" + profile.signature()
+                                   nl.paree.climbpro.domain.power.GhostTarget ghost,
+                                   nl.paree.climbpro.domain.units.UnitPreferences units) {
+        String hash = route.sourceHash + "|" + profile.signature()
                 + "|" + SegmentTargetOverrideMerger.signature(route)
                 + "|" + ghost.signature()
                 + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route)
+                + "|" + nl.paree.climbpro.domain.climb.EverestingPlan.signature(route)
                 + "|" + tunnelSignature(route);
+        // Display units (issue #262) only extend the hash when not all-metric, so metric
+        // riders keep their existing hash and don't get a one-off resync from this change.
+        return units.toWireFlags() != 0 ? hash + "|" + units.signature() : hash;
     }
 
     /**
@@ -211,7 +221,8 @@ public final class RouteSyncWorker extends Worker {
             SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
             nl.paree.climbpro.domain.power.RiderProfile profile,
             nl.paree.climbpro.domain.power.GhostTarget ghost,
-            ClimbAttemptRepository attemptRepo) {
+            ClimbAttemptRepository attemptRepo,
+            nl.paree.climbpro.domain.units.UnitPreferences units) {
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
@@ -250,7 +261,7 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-                String wantHash = wantHash(route, profile, ghost);
+                String wantHash = wantHash(route, profile, ghost, units);
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -271,7 +282,7 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost));
+                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, units));
                 }
             }
         };

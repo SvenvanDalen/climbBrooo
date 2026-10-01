@@ -61,6 +61,13 @@ class PhoneMessageCallback {
         // Optional route-level hazard markers "hz" (issue #203): tunnels + technical descents.
         // Replaced (or cleared) on every payload; anything malformed is dropped entirely.
         data.hazards = parseHazards(msg.get("hz"));
+        // Optional display units (issue #262); absent/invalid = metric, reset on every payload.
+        data.units = Units.parseFlags(msg.get("un"));
+
+        // Everesting attempt (issue #217): cleared on every payload, set by the first climb
+        // that carries a valid "ev".
+        data.everest = null;
+        data.everestClimb = -1;
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {
@@ -213,6 +220,16 @@ class PhoneMessageCallback {
             data.blockHigh[idx]   = ib[2];
         }
 
+        // Optional Everesting attempt "ev" (issue #217): [targetM, repeats, startLatInt,
+        // startLonInt, topLatInt, topLonInt]. Only the first climb carrying one is used.
+        if (data.everest == null) {
+            var ev = parseEverest(climbDict.get("ev"));
+            if (ev != null) {
+                data.everest = ev;
+                data.everestClimb = idx;
+            }
+        }
+
         // Optional zc array (issue #66): FTP intensity-zone color index per segment, parallel
         // to segs. Replaced (or cleared to null) on every payload so a resync without zc
         // can't leave stale zones behind.
@@ -237,6 +254,22 @@ class PhoneMessageCallback {
             }
         }
         return out;
+    }
+
+    // "ev" -> [targetM, repeats, startLat, startLon, topLat, topLon] (degrees as Float), or
+    // null when absent or malformed (not 6 Numbers, target/repeats <= 0, or a (0,0) coordinate).
+    function parseEverest(ev) {
+        if (ev == null || !(ev instanceof Toybox.Lang.Array) || ev.size() < 6) {
+            return null;
+        }
+        for (var i = 0; i < 6; i++) {
+            if (!(ev[i] instanceof Toybox.Lang.Number)) { return null; }
+        }
+        if (ev[0] <= 0 || ev[1] <= 0) { return null; }
+        if ((ev[2] == 0 && ev[3] == 0) || (ev[4] == 0 && ev[5] == 0)) { return null; }
+        return [ev[0], ev[1],
+                ev[2].toFloat() / 100000.0f, ev[3].toFloat() / 100000.0f,
+                ev[4].toFloat() / 100000.0f, ev[5].toFloat() / 100000.0f];
     }
 
     hidden function getInt(dict, key, defaultVal) {

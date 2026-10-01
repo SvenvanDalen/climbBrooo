@@ -85,4 +85,11 @@ public final class StoredClimb {
      * {@code domain.power.IntervalBlock#fromStored}.
      */
     public StoredIntervalBlock intervalBlock;
+    /**
+     * Everesting target in metres for this climb (issue #217), e.g. 8848. Null = no
+     * Everesting attempt planned. At most one climb per route carries it (enforced by
+     * {@code RouteRepository#setClimbEverestTarget}); carried across resync. Sent to the
+     * watch as 'ev'; always read through {@code domain.climb.EverestingPlan}.
+     */
+    public Integer everestTargetM;
 }

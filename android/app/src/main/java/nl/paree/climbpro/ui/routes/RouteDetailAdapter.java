@@ -147,8 +147,13 @@ public final class RouteDetailAdapter
         bindClimb((ClimbViewHolder) holder, position);
     }
 
+    /** Display units (issue #262) for a row; storage stays metric. */
+    private static nl.paree.climbpro.domain.units.UnitFormatter units(View row) {
+        return nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(row.getContext());
+    }
+
     private void bindFlat(FlatViewHolder h, StoredFlatSegment flat) {
-        h.distanceView.setText(String.format("%.1f km vlak", flat.length / 1000.0));
+        h.distanceView.setText(units(h.itemView).distance(flat.length) + " vlak");
 
         String label = SurfaceType.label(flat.surfaceType);
         if (label != null) {
@@ -184,8 +189,10 @@ public final class RouteDetailAdapter
                 .score(c.elevationGain, c.avgGradient, distanceIntoRouteKm);
         String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(c);
         String categorySuffix = categoryLabel.isEmpty() ? "" : "  ·  " + categoryLabel;
-        String statsText = String.format("%d m · %.1f%% gem. · %d m hoogte · moeilijkheid %.0f%s",
-                c.length, c.avgGradient * 100, c.elevationGain, difficulty, categorySuffix);
+        nl.paree.climbpro.domain.units.UnitFormatter units = units(h.itemView);
+        String statsText = String.format("%s · %.1f%% gem. · %s hoogte · moeilijkheid %.0f%s",
+                units.climbLength(c.length), c.avgGradient * 100,
+                units.elevation(c.elevationGain), difficulty, categorySuffix);
         String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(c);
         if (!surfaceLabel.isEmpty()) {
             statsText += " · " + surfaceLabel;
@@ -260,8 +267,8 @@ public final class RouteDetailAdapter
 
     private void bindStarred(StarredViewHolder h, StoredStarredSegment s) {
         String name = s.userDisplayName != null ? s.userDisplayName : s.name;
-        h.nameView.setText(String.format("%s · %.1f km",
-                name != null ? name : "Ster-segment", s.length / 1000.0));
+        h.nameView.setText((name != null ? name : "Ster-segment") + " · "
+                + units(h.itemView).distance(s.length));
 
         String label = SurfaceType.label(s.surfaceType);
         if (label != null) {
@@ -290,8 +297,10 @@ public final class RouteDetailAdapter
 
     private void bindSurface(SurfaceViewHolder h, StoredSurfaceSection s) {
         String label = s.name != null ? s.name : "Ondergrond-stuk";
-        h.nameView.setText(String.format("%s · %.1f–%.1f km",
-                label, s.startDistance / 1000.0, s.endDistance / 1000.0));
+        nl.paree.climbpro.domain.units.UnitFormatter units = units(h.itemView);
+        h.nameView.setText(String.format("%s · %.1f–%.1f %s", label,
+                units.distanceValue(s.startDistance), units.distanceValue(s.endDistance),
+                units.distanceUnit()));
 
         String badge = SurfaceType.label(s.surfaceType);
         if (badge != null) {

@@ -37,6 +37,9 @@ class PhoneMessageCallback {
                 App.getApp().activeAck = msg;
             } else if (msgType.equals("HELLO")) {
                 handleHello();
+            } else if (msgType.equals("MEDICAL_ID")) {
+                // Issue #230: keep a copy for offline use; no fields = cleared on the phone.
+                storeMedicalId(medicalIdFromMessage(msg));
             } else {
                 Sys.println("CommListener: unknown type: " + msgType);
             }
@@ -59,6 +62,8 @@ class PhoneMessageCallback {
         data.mode      = msg.get("mode");
         data.routeId   = msg.get("routeId");
         data.routeName = msg.get("name");
+        // Optional display units (issue #262); absent/invalid = metric, reset on every payload.
+        data.units     = Units.parseFlags(msg.get("un"));
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {
@@ -100,8 +105,8 @@ class PhoneMessageCallback {
         }
 
         // Keys this widget doesn't render (tsec, refsec, vam, the interval block "ib" from
-        // issue #180, and the route-level hazard markers "hz" from issue #203) are
-        // deliberately ignored: only the datafield uses them.
+        // issue #180, the Everesting attempt "ev" from issue #217 and the route-level hazard
+        // markers "hz" from issue #203) are deliberately ignored: only the datafield uses them.
         data.climbStartDist[idx] = getInt(climbDict, "sd",  0);
         data.climbEndDist[idx]   = getInt(climbDict, "ed",  0);
         data.climbLength[idx]    = getInt(climbDict, "len", 0);

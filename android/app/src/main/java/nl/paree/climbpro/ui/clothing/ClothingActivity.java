@@ -159,6 +159,9 @@ public final class ClothingActivity extends AppCompatActivity {
 
     /** One line per ride hour: temperature, wind and rain chance. */
     private String hourlyText(HourlyForecast f, Instant start, long durationSec) {
+        // Issue #262: temperature and wind in the rider's display units.
+        nl.paree.climbpro.domain.units.UnitFormatter units =
+                nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
         StringBuilder sb = new StringBuilder();
         Instant end = start.plusSeconds(durationSec);
         for (int i = 0; i < f.times.length; i++) {
@@ -167,9 +170,11 @@ public final class ClothingActivity extends AppCompatActivity {
             if (Double.isNaN(f.temperature[i])) continue;
             if (sb.length() > 0) sb.append('\n');
             sb.append(hm.format(h.atZone(zone)))
-              .append(String.format(Locale.GERMANY, "  %3.0f °C", f.temperature[i]));
+              .append(String.format(Locale.GERMANY, "  %3.0f " + units.temperatureUnit(),
+                      units.temperatureValue(f.temperature[i])));
             if (!Double.isNaN(f.windKmh[i])) {
-                sb.append(String.format(Locale.GERMANY, "  wind %2.0f km/u", f.windKmh[i]));
+                sb.append(String.format(Locale.GERMANY, "  wind %2.0f " + units.speedUnit(),
+                        units.speedValue(f.windKmh[i])));
             }
             if (f.rainPct[i] != null) sb.append("  regen ").append(f.rainPct[i]).append('%');
         }
