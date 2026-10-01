@@ -834,6 +834,23 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Local event calendar (issue #241)
+
+Phone-only, no wire change. There is no free central API for tour rides and gran fondos,
+so the data source is the rider's own subscriptions: iCal feeds (organisers, clubs and
+cycling unions publish these) plus manual entries, stored in `event_calendar.json`
+(`data/events/EventCalendarRepository`; privacy dashboard + backup). A refresh downloads
+each feed (OkHttp, `webcal://` → `https://`, ≤ 2 MB, must contain `BEGIN:VCALENDAR`); a
+failing feed keeps its previous events and shows its error. `domain/events/IcsParser` reads
+VEVENTs (line folding, parameters, escapes, `GEO`); `EventTextStats` pulls route options
+("60/110/160 km") and elevation ("2.150 hm", "D+ 1600") from summary + description.
+Events without `GEO` are forward-geocoded from `LOCATION` with the platform `Geocoder`
+(cached per text). `EventFilter` keeps events from today up to a year ahead within the
+radius of `RadiusLocation` (events without coordinates, or no known position, are kept),
+de-duplicated by UID. `EventLevel` compares the options with the longest outdoor ride and
+most climbing in one ride over the last 90 days: fits (≤ 1.2×), challenge (≤ 1.5×) or a
+big step up. An event can be made the goal event (`GoalEventStore`, issue #221).
+
 ### Heat-index warning (issue #227)
 
 Watch-only, no wire change. `garmin/source/HeatIndex.mc` holds pure helpers:
