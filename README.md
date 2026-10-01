@@ -268,6 +268,15 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   chat message to ClimbPro) and they are ranked by similarity with a score and a reason, e.g.
   "vergelijkbaar tempo, 12 km verderop". No server; phone-only.
 
+- **Groepsrit plannen (group-ride planner)** — menu → Ritten & analyse → Groepsrit plannen.
+  Pick a saved route and the riders (yourself, imported Ritmaatjes profile codes, or riders
+  added by hand with just a name and average speed). ClimbPro estimates the group pace and
+  riding time — the slowest rider sets the flat pace (plus a small draft bonus), climbs cost
+  the slowest VAM because the group regroups at the top, plus a short stop per 2,5 h — warns
+  about a big level difference, proposes the three best dates in the next two weeks from
+  everyone's riding days and dayparts, and shares the whole proposal as text through any chat
+  app. No server, nothing stored; phone-only.
+
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
   planning. Phone-only.

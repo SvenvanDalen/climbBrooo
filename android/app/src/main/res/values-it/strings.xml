@@ -387,4 +387,12 @@
     <string name="ftp_test_apply_confirm_message_new">La tua FTP diventa %1$d W. Stime dei tempi, pacing e allenamenti useranno poi questo valore.</string>
     <string name="ftp_test_applied">FTP aggiornata a %1$d W</string>
     <string name="ftp_test_unknown_ride">Uscita</string>
+    <!-- Groepsrit-planner (issue #195) -->
+    <string name="group_ride_title">Pianifica uscita di gruppo</string>
+    <string name="group_ride_intro">Scegli un percorso salvato e i partecipanti. ClimbPro stima il ritmo del gruppo (il più lento detta il ritmo, in salita il gruppo si ricompatta in cima), propone date in base ai giorni di uscita di ognuno e crea una proposta da condividere. I partecipanti arrivano da Compagni di uscita o si aggiungono a mano.</string>
+    <string name="group_ride_pick_route">Scegli percorso</string>
+    <string name="group_ride_participants">Partecipanti</string>
+    <string name="group_ride_add_rider">Aggiungi ciclista</string>
+    <string name="group_ride_share">Condividi proposta</string>
+    <string name="group_ride_from_date">Dal %1$s</string>
 </resources>
