@@ -13,6 +13,7 @@ import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.RouteReverseService;
+import nl.paree.climbpro.data.route.RouteShortenService;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
@@ -60,6 +61,8 @@ public final class RouteDetailViewModel extends AndroidViewModel {
             new MutableLiveData<>();
     /** One-shot result of {@link #reverseRoute}; cleared via {@link #consumeReversedRoute}. */
     private final MutableLiveData<RouteReverseService.Result> reversedRoute = new MutableLiveData<>();
+    /** One-shot result of {@link #shortenRoute}; cleared via {@link #consumeShortenedRoute}. */
+    private final MutableLiveData<RouteShortenService.Result> shortenedRoute = new MutableLiveData<>();
     private final MutableLiveData<RouteElevationProfile> elevationProfile =
             new MutableLiveData<>();
 
@@ -86,6 +89,23 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<RouteReverseService.Result> reversedRoute() { return reversedRoute; }
 
     public void consumeReversedRoute() { reversedRoute.setValue(null); }
+
+    public LiveData<RouteShortenService.Result> shortenedRoute() { return shortenedRoute; }
+
+    public void consumeShortenedRoute() { shortenedRoute.setValue(null); }
+
+    /** Saves (or reuses) a shortened variant of the route (issue #205); original untouched. */
+    public void shortenRoute(String routeId, int fromIndex, int toIndex) {
+        executor.execute(() -> {
+            try {
+                shortenedRoute.postValue(
+                        new RouteShortenService(routeRepo).create(routeId, fromIndex, toIndex));
+            } catch (Exception e) {
+                error.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.route_shorten_failed, e.getMessage()));
+            }
+        });
+    }
 
     /**
      * Creates (or reuses) the opposite-direction variant of the route with climbs re-detected

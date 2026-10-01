@@ -8,6 +8,17 @@
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <!-- Route inkorten (issue #205) -->
+    <string name="route_shorten_action">Route inkorten</string>
+    <string name="route_shorten_title">Kortere variant (%1$.1f km nu)</string>
+    <string name="route_shorten_none">Geen kortere variant gevonden: de route komt nergens dicht genoeg bij zichzelf terug om af te snijden (er is geen wegrouter).</string>
+    <string name="route_shorten_item">%1$.1f km (−%2$.1f km, −%3$d hm)\nAfsnijden bij km %4$.1f → km %5$.1f (%6$d m hemelsbreed)</string>
+    <string name="route_shorten_skips">\nSlaat over: %1$s</string>
+    <string name="route_shorten_partial">\nKapt deels af: %1$s</string>
+    <string name="route_shorten_note">Afsnijpunten liggen waar de route zichzelf tot op 200 m nadert; controleer de verbinding op de kaart.</string>
+    <string name="route_shorten_created">Ingekorte route aangemaakt — klimmen gevonden: %1$d</string>
+    <string name="route_shorten_exists">Deze ingekorte route bestaat al — geopend</string>
+    <string name="route_shorten_failed">Inkorten mislukt: %1$s</string>
     <!-- Windgeoptimaliseerde rijrichting voor een rondje (issue #174) -->
     <string name="loop_wind_action">Beste rijrichting (wind)</string>
     <string name="loop_wind_loading">Windverwachting laden…</string>

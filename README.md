@@ -111,6 +111,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
   "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
   untouched and tapping again reopens the existing reversed route.
+- **Shorten a route** — "Route inkorten" on the route detail screen lists shorter variants
+  within the route's own geometry (no road router): wherever the route comes back within 200 m
+  of itself (figure-eight lobes, out-and-back, a loop past the start) it can be cut off. Each
+  option shows the new length, km/hm saved and which climbs are skipped; picking one saves it as
+  "<naam> (ingekort, N km)" with climbs re-detected, leaving the original untouched.
 - **Whole-route elevation profile** — the route detail screen shows the elevation
   profile of the full route with every climb highlighted in its gradient colors. Phone-only.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type

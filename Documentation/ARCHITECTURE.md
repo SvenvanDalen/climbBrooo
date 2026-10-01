@@ -372,6 +372,22 @@ maps back to the original. Climb renames, notes, ride status, surface sections a
 segments do not carry over (they describe different climbs/stretches). Phone-only; the result
 is an ordinary route payload, no wire-format change.
 
+### Shorten a route (issue #205)
+
+"Route inkorten" on route detail suggests shorter variants **within the existing geometry** —
+there is no road router, so a shortcut is only possible where the route passes close to itself.
+The pure `domain/route/RouteShortener` hashes all points into a grid of `JOIN_RADIUS_M` (200 m)
+cells and, for every point `i`, finds the farthest later point `j` within 200 m as the crow flies
+whose skip saves at least 1 km and leaves at least 2 km of route. Candidates are sorted by saving
+and deduplicated (leave and rejoin both within 1.5 km along the route = same shortcut); each
+reports the new length, saved distance and positive elevation gain, and which climbs fall fully
+or partly in the skipped stretch. This naturally covers figure-eight/clover lobes (skip a lobe
+and its climb), out-and-back routes (turn around earlier) and loops that pass the start. The
+chosen variant is saved by `data/route/RouteShortenService` like a reversed route: a **new**
+route with deterministic id `short_<id>_<from>_<to>`, name `"<name> (ingekort, N km)"`, points
+`0..from` + `to..end` with distances recomputed, and `ClimbDetector` re-run. Picking the same
+shortcut again reopens it. Phone-only; no wire-format change.
+
 ### Whole-route elevation profile (issue #207)
 
 The route detail screen shows the elevation profile of the entire route above the pacing
