@@ -12,7 +12,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="DEZE WEEK"
+        android:text="@string/widget_this_week"
         android:textColor="@color/color_text_tertiary"
         android:textSize="11sp"
         android:textStyle="bold" />
@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:maxLines="2"
         android:ellipsize="end"
-        android:text="Nog geen klimmen deze week"
+        android:text="@string/widget_no_climbs_this_week"
         android:textColor="@color/color_text_primary"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -32,7 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="VOLGENDE GEPLANDE KLIM"
+        android:text="@string/widget_next_planned"
         android:textColor="@color/color_text_tertiary"
         android:textSize="11sp"
         android:textStyle="bold" />
@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:maxLines="2"
         android:ellipsize="end"
-        android:text="Geen klim gepland"
+        android:text="@string/widget_no_climb_planned"
         android:textColor="@color/color_accent"
         android:textSize="14sp" />
 </LinearLayout>

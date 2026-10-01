@@ -60,11 +60,18 @@ public final class TirePressureAdviceDialog {
     }
 
     private static void showNow(Context ctx, TirePressureAdvice advice, String bikeLine) {
-        String body = String.format(Locale.US,
-                "%d–%d PSI (%.1f–%.1f bar)\n\n%s",
-                advice.minPsi, advice.maxPsi,
-                advice.minBar(), advice.maxBar(),
-                advice.rationale);
+        // Issue #262: the rider's pressure unit first, the other one in brackets.
+        boolean psi = new nl.paree.climbpro.data.settings.UnitPreferencesRepository(ctx)
+                .load().psi;
+        String body = psi
+                ? String.format(Locale.US, "%d–%d PSI (%.1f–%.1f bar)\n\n%s",
+                        advice.minPsi, advice.maxPsi,
+                        advice.minBar(), advice.maxBar(),
+                        advice.rationale)
+                : String.format(Locale.US, "%.1f–%.1f bar (%d–%d PSI)\n\n%s",
+                        advice.minBar(), advice.maxBar(),
+                        advice.minPsi, advice.maxPsi,
+                        advice.rationale);
         if (bikeLine != null) body += "\n\n" + bikeLine;
 
         new AlertDialog.Builder(ctx)

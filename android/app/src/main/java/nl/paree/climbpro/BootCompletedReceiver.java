@@ -20,6 +20,8 @@ public final class BootCompletedReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             RebindScheduler.triggerImmediateRebind(context);
+            // Notifications don't survive a reboot: re-post the lock-screen medical ID.
+            nl.paree.climbpro.service.MedicalIdNotifier.refresh(context);
         }
     }
 }

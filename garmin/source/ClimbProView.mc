@@ -6,6 +6,7 @@ using Toybox.System as Sys;
 using Toybox.Activity as Activity;
 using Toybox.Attention as Attention;
 using Toybox.Sensor as Sensor;
+using Toybox.Weather as Weather;
 
 /**
  * Main DataField view for ClimbPro.
@@ -78,6 +79,17 @@ class ClimbProView extends Ui.DataField {
 
     // "Vlakker stuk" notice during a climb (issue #213).
     hidden var easier = new EasierAheadTracker();
+    // Heart-rate alarm (issue #228). hrShownBpm = banner value while above the limit;
+    // hrIrregularUntilMs = show the "onregelmatig" banner until this System timer value.
+    hidden var hrLimit = new HrLimitAlarm();
+    hidden var hrIrregular = new HrIrregularDetector();
+    hidden var hrShownBpm = null;
+    hidden var hrIrregularUntilMs = -1;
+    // Heat-index warning (issue #227): checked once a minute; heatShownC = banner value
+    // while the alarm is latched hot, else null.
+    hidden var heatAlarm = new HeatAlarm();
+    hidden var heatNextCheckMs = 0;
+    hidden var heatShownC = null;
 
     function initialize() {
         DataField.initialize();
@@ -87,6 +99,10 @@ class ClimbProView extends Ui.DataField {
      * Called every GPS tick. Update route progress.
      */
     function compute(info) {
+        // Safety alarms run before the payload gate: they don't need a route.
+        checkHeartRate(info);
+        checkHeatIndex();
+
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
             return;
@@ -222,6 +238,97 @@ class ClimbProView extends Ui.DataField {
                 desc ? ambientTempC() : null, spd, feltShownC);
     }
 
+    // Heart-rate alarm (issue #228): limit alarm (sustained > hrAlarmBpm) and, opt-in,
+    // the irregular-jumps detector. Cheap per-tick work on one number.
+    hidden function checkHeartRate(info) {
+        var hr = (info != null && info has :currentHeartRate) ? info.currentHeartRate : null;
+        var now = Sys.getTimer();
+        if (hrLimit.update(hr, readNumberSetting("hrAlarmBpm"), now)) {
+            triggerHeartRateAlert();
+        }
+        hrShownBpm = (hrLimit.high && hr != null) ? hr : null;
+        if (readBoolSetting("hrIrregularAlarm")) {
+            if (hrIrregular.update(hr, now)) {
+                triggerHeartRateAlert();
+                hrIrregularUntilMs = now + 30000;
+            }
+        }
+        if (hrIrregularUntilMs >= 0 && now >= hrIrregularUntilMs) {
+            hrIrregularUntilMs = -1;
+        }
+    }
+
+    // App-setting reads, defensive like activeColors() reads "darkTheme":
+    // Properties.getValue can throw on a stale settings cache. Default 0 / false.
+    hidden function readNumberSetting(key) {
+        try {
+            var v = Properties.getValue(key);
+            if (v instanceof Number) { return v; }
+        } catch (e) {
+            return 0;
+        }
+        return 0;
+    }
+
+    // Heat-index warning (issue #227). Once a minute (the inputs change slowly): heat index
+    // from the air temperature + humidity, alarm latched with hysteresis in HeatAlarm.
+    hidden function checkHeatIndex() {
+        var now = Sys.getTimer();
+        if (now < heatNextCheckMs) { return; }
+        heatNextCheckMs = now + 60000;
+        var threshold = heatIndexThresholdC();
+        var hi = null;
+        if (threshold > 0) {
+            var r = heatReading();
+            if (r != null) { hi = heatIndexC(r[0], r[1]); }
+        }
+        if (heatAlarm.update(hi, threshold, now)) {
+            triggerHeatAlert();
+        }
+        heatShownC = heatAlarm.hot ? hi : null;
+    }
+
+    // [tempC, humidityPct] for the heat index, or null. Garmin Weather (the phone's
+    // current conditions, cached on the watch) comes first: it is outdoor air with a real
+    // humidity, whereas the watch's internal sensor reads several degrees high from wrist
+    // heat and would false-alarm on every warm day. Without weather data the Sensor
+    // temperature (a paired Tempe, else the wrist sensor) is used with humidity unknown.
+    hidden function heatReading() {
+        if (Toybox has :Weather) {
+            try {
+                var cc = Weather.getCurrentConditions();
+                if (cc != null && cc.temperature != null) {
+                    var rh = (cc has :relativeHumidity) ? cc.relativeHumidity : null;
+                    return [cc.temperature, rh];
+                }
+            } catch (e) {
+                // fall through to the sensor
+            }
+        }
+        var t = ambientTempC();
+        return (t == null) ? null : [t, null];
+    }
+
+    // "heatIndexThreshold" app setting in °C; 0 = off. Read defensively like "darkTheme".
+    hidden function heatIndexThresholdC() {
+        try {
+            var v = Properties.getValue("heatIndexThreshold");
+            if (v instanceof Number) { return v; }
+        } catch (e) {
+            return 0;
+        }
+        return 0;
+    }
+
+    hidden function readBoolSetting(key) {
+        try {
+            var v = Properties.getValue(key);
+            return v != null && v == true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Temperature from Sensor.Info: a paired Tempe sensor gives true ambient air; without
     // one the FR255M reports its internal (wrist-warmed) sensor, which reads high, so the
     // felt value is then an upper bound. null when no reading is available.
@@ -265,8 +372,14 @@ class ClimbProView extends Ui.DataField {
         // banners would otherwise fight for the same top strip of a very small screen.
         if (data.offRoute) {
             drawOffRouteBanner(dc);
+        } else if (hrShownBpm != null) {
+            drawHeartRateBanner(dc, hrHighLabel(hrShownBpm));
+        } else if (hrIrregularUntilMs >= 0) {
+            drawHeartRateBanner(dc, hrIrregularLabel());
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
+        } else if (heatShownC != null) {
+            drawHeatBanner(dc, heatShownC);
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
             drawEasierAheadBanner(dc, easier.shownLenM);
         } else if (feltShownC != null && data.activeClimbIndex < 0) {
@@ -291,6 +404,26 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Purple strip for the heart-rate alarm (issue #228), on and between climbs. Right
+    // below off-route in priority: it is a safety signal, battery/temperature can wait.
+    hidden function drawHeartRateBanner(dc, text) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_PURPLE, Gfx.COLOR_PURPLE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-orange strip while the heat-index alarm is latched hot (issue #227), on and
+    // between climbs. Below off-route and battery in priority.
+    hidden function drawHeatBanner(dc, hiC) {
+        var w = dc.getWidth();
+        dc.setColor(0xAA0000, 0xAA0000);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -394,7 +527,8 @@ class ClimbProView extends Ui.DataField {
         // large-text mode so distance and gradient can be drawn bigger without
         // crowding the small FR255M screen (issue #82).
         if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, statsY, sf, Units.formatElev(remElev, data.units) + "↑",
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
         dc.drawText(w - 32, statsY, sf,
             gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
@@ -674,7 +808,9 @@ class ClimbProView extends Ui.DataField {
         // Elevation gain is the "nice to have" middle stat -- dropped in large-text
         // mode, same rationale as the active-climb stat row (issue #82).
         if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, statsY, sf,
+                Units.isImperial(data.units) ? Units.formatElev(elev, data.units) : elev + "hm",
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
         var nGrad = grad / 10;
         var nGradF = grad % 10;
@@ -707,13 +843,10 @@ class ClimbProView extends Ui.DataField {
             "No climbs ahead", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
 
+    // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
     hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            var km = meters / 1000;
-            var hm = (meters % 1000) / 100;
-            return km + "." + hm + "km";
-        }
-        return meters + "m";
+        var data = App.getApp().climbData;
+        return Units.formatDist(meters, data != null ? data.units : 0);
     }
 
     // Formats a whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown,
@@ -830,6 +963,40 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
+    // Heart-rate alarm (issue #228): four quick buzzes + the high alert tone, a different
+    // rhythm from the climb-start, battery and block-done alerts.
+    hidden function triggerHeartRateAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
+        }
+    }
+
+    // Heat-index warning (issue #227): two long buzzes + the alert tone -- a different
+    // shape from the climb-start (long-gap-long, lap tone) and battery (3 short) alerts.
+    hidden function triggerHeatAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 800),
+                new Attention.VibeProfile(0, 300),
+                new Attention.VibeProfile(100, 800)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_LO);
+        }
+    }
+
     // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
     // Interval block done at the top (issue #180): one short buzz, no tone -- deliberately
     // lighter than the climb-start and battery alerts so it can't be mistaken for either.
@@ -886,7 +1053,8 @@ class ClimbProView extends Ui.DataField {
                 mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
 
         dc.drawText(w / 2, (h * 0.62).toNumber(), sf,
-                data.climbElevGain[ci] + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+                Units.formatElev(data.climbElevGain[ci], data.units) + "↑",
+                Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.hasTargets[ci]) {
             var d = summaryDeltaSec;

@@ -24,4 +24,18 @@
     <setting propertyKey="@Properties.easierAheadAlert" title="@Strings.SettingsEasierAheadAlertTitle">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.hrAlarmBpm" title="@Strings.SettingsHrAlarmTitle" prompt="@Strings.SettingsHrAlarmPrompt">
+        <settingConfig type="numeric" min="0" max="230"/>
+    </setting>
+    <setting propertyKey="@Properties.hrIrregularAlarm" title="@Strings.SettingsHrIrregularTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.heatIndexThreshold" title="@Strings.SettingsHeatIndexTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.HeatIndexOff</listEntry>
+            <listEntry value="27">@Strings.HeatIndex27</listEntry>
+            <listEntry value="32">@Strings.HeatIndex32</listEntry>
+            <listEntry value="39">@Strings.HeatIndex39</listEntry>
+        </settingConfig>
+    </setting>
 </settings>

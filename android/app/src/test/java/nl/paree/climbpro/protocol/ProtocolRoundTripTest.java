@@ -100,6 +100,19 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderPayloadsWithUnitsValidateAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER).withUnits(
+                new nl.paree.climbpro.domain.units.UnitPreferences(true, true, true));
+        JsonNode route = MAPPER.readTree(b.buildRoutePayload(routeFixture()));
+        assertTrue("route payload carries 'un'", route.has("un"));
+        assertValid(route, "route payload with un");
+        assertValid(MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs)),
+                "radius payload with un");
+        assertValid(MAPPER.readTree(b.buildSurfaceSectionPayload(routeFixture())),
+                "surface payload with un");
+    }
+
+    @Test
     public void builderRadiusPayloadValidatesAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
         JsonNode payload = MAPPER.readTree(b.buildRadiusPayload(routeFixture().climbs));

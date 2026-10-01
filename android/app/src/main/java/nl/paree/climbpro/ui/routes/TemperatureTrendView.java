@@ -38,6 +38,10 @@ public final class TemperatureTrendView extends View {
 
     private TemperatureTrend trend;
     private ZoneId zone = ZoneId.systemDefault();
+    /** Display units for the axis labels (issue #262); refreshed on every setTrend. */
+    private nl.paree.climbpro.domain.units.UnitFormatter units =
+            new nl.paree.climbpro.domain.units.UnitFormatter(
+                    nl.paree.climbpro.domain.units.UnitPreferences.METRIC);
 
     public TemperatureTrendView(Context context) {
         super(context);
@@ -67,6 +71,7 @@ public final class TemperatureTrendView extends View {
     }
 
     public void setTrend(@Nullable TemperatureTrend t, ZoneId zone) {
+        this.units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(getContext());
         this.trend = t;
         this.zone = zone;
         if (t == null || t.isEmpty()) {
@@ -133,17 +138,21 @@ public final class TemperatureTrendView extends View {
 
         textPaint.setTextSize(10f * density);
         textPaint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(Math.round(yMin + ySpan) + "°", left - 4 * density,
+        // Axis labels in the rider's temperature unit (issue #262); the plot stays in °C.
+        canvas.drawText(Math.round(units.temperatureValue(yMin + ySpan)) + "°", left - 4 * density,
                 top + textPaint.getTextSize(), textPaint);
-        canvas.drawText(Math.round(yMin) + "°", left - 4 * density, baseline, textPaint);
+        canvas.drawText(Math.round(units.temperatureValue(yMin)) + "°", left - 4 * density,
+                baseline, textPaint);
 
         float labelY = baseline + 16 * density;
         TemperatureTrend.Point first = pts.get(0);
         TemperatureTrend.Point last = pts.get(pts.size() - 1);
-        canvas.drawText(String.format(Locale.ROOT, "%.0f km · %s", last.distanceM / 1000.0,
+        canvas.drawText(String.format(Locale.ROOT, "%.0f %s · %s",
+                units.distanceValue(last.distanceM), units.distanceUnit(),
                 HOUR.format(last.eta.atZone(zone))), right, labelY, textPaint);
         textPaint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(String.format(Locale.ROOT, "%.0f km · %s", first.distanceM / 1000.0,
+        canvas.drawText(String.format(Locale.ROOT, "%.0f %s · %s",
+                units.distanceValue(first.distanceM), units.distanceUnit(),
                 HOUR.format(first.eta.atZone(zone))), left, labelY, textPaint);
     }
 }

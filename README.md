@@ -83,6 +83,10 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   status and Instellingen at the top level; every other screen lives in one of six
   submenus: Klimmen, Ritten & analyse, Training & doelen, Voor de rit, Fiets & materiaal
   and Data & app. "menu → X" elsewhere in this README means: open the matching group first.
+- **Choose your units** — Settings → "Eenheden": km or miles (also feet and mph), bar or
+  psi, °C or °F. Only the display changes; everything is stored metric. The climb
+  datafield, widget and surface datafield follow the distance choice after the next sync
+  (optional payload key `un`).
 - **Select a route to follow** — pick a synced route; it becomes active on the watch.
 - **Radius mode** — no fixed route; the watch alerts on any known climb within a
   configurable radius of your GPS position.
@@ -111,8 +115,27 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
   "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
   untouched and tapping again reopens the existing reversed route.
+- **Offline package for a route** — route detail → "Offline-pakket" downloads, while you still
+  have signal, the hourly forecast at up to 8 points along the route (next 2 days, Open-Meteo)
+  and water, food, toilet and bike points within 300 m of the route (OpenStreetMap). Opening it
+  later works without any network: per point the temperature range, wind and rain chance for
+  the coming 8 hours, and the points listed by km. Refresh or delete from the same dialog; it is
+  removed with the route and not included in backups (public data).
+- **Shorten a route** — "Route inkorten" on the route detail screen lists shorter variants
+  within the route's own geometry (no road router): wherever the route comes back within 200 m
+  of itself (figure-eight lobes, out-and-back, a loop past the start) it can be cut off. Each
+  option shows the new length, km/hm saved and which climbs are skipped; picking one saves it as
+  "<naam> (ingekort, N km)" with climbs re-detected, leaving the original untouched.
+- **Loop generator** — "Rondje-generator" in the planning menu: enter a distance and a start
+  point (current location or a favourite) and get up to five rides of about that length that
+  start and end there, built only from your saved routes (no road router): a saved loop
+  restarted at its nearest point, a shortened loop, two loops combined, or out-and-back along a
+  route. Tap one to save it as a new route "Rondje N km (…)" with climbs detected.
 - **Whole-route elevation profile** — the route detail screen shows the elevation
   profile of the full route with every climb highlighted in its gradient colors. Phone-only.
+- **Border crossings** — the route detail screen lists every national border the route
+  crosses ("km 84,3 → België · Nederlands/Frans/Duits · 112"), computed fully offline from
+  bundled coarse European country boundaries. Phone-only, no wire change.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
@@ -142,6 +165,32 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   3 %-points less steep than the current one, the datafield shows a green `300 m vlakker`
   strip ~150 m before it and buzzes twice lightly, once per stretch. Watch-only, uses the
   synced segment gradients; toggle "Melding vlakker stuk" in the Connect IQ app settings.
+- **Heart-rate alarm** — set a limit in the Connect IQ app settings (`Hartslag-alarm`,
+  bpm, 0 = off): once your heart rate stays above it for 10 s the datafield buzzes and shows
+  a purple `HARTSLAG 185` strip until it drops 5 bpm below, with a reminder every 5 minutes.
+  Opt-in `Waarschuw bij onregelmatige hartslag` alerts on three ≥ 25 bpm jumps within a
+  minute (at most every 10 min). Watch-only, works without a route; not a medical device.
+- **Medical ID** — menu → "Medische ID": name, blood type, allergies, medication, emergency
+  contact and notes. Optional silent, always-on lock-screen notification (public visibility)
+  so first responders can read it without unlocking; re-posted after a reboot. The watch
+  widget gets a copy (`MEDICAL_ID` message, re-sent with every route list) and shows it
+  offline as a red first row "+ Medische ID" in its route list.
+- **Climb history & facts** — the climb screen shows a "Weetjes" card for well-known climbs
+  (Alpe d'Huez, Ventoux, Galibier, Tourmalet, Stelvio, Mortirolo, Zoncolan, Angliru, the
+  Flemish and Limburg hills, …): Tour/Giro/Vuelta history, famous moments and the side you
+  ride. Recognised by the climb's foot and top, or by its name. Bundled dataset, works
+  offline; phone-only.
+- **Local event calendar** — menu → "Evenementen in de buurt": tour rides and gran fondos
+  within a chosen radius (25–250 km) of your last known location, for the coming year, with
+  date, route options (km) and elevation. Add the iCal links (`.ics` / `webcal://`) organisers
+  and clubs publish, or enter events by hand. Each event says whether it fits your level
+  (longest ride / most climbing in the last 90 days), and can be set as your goal event.
+  Phone-only.
+- **Heat-index warning** — the datafield checks the heat index (NWS, from Garmin Weather's
+  temperature + humidity; without weather data the watch temperature sensor) once a minute
+  and buzzes when it reaches the threshold set in the Connect IQ app settings (off / 27 /
+  32 / 39 °C, default 32). A dark-red `HITTE 41°C` strip stays up until it drops 2 °C
+  below the threshold, with a reminder buzz every 20 minutes. Watch-only, works without a route.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
@@ -150,6 +199,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   a small month table (temperature, wind, rain chance per month's best day-part), scored from
   3 years of Open-Meteo weather history at the climb (incl. headwind along the climb). Tap to
   load once; cached under `climate/`, so it works offline afterwards. Phone-only.
+- **Points of interest along the route** — route detail → "Bezienswaardigheden" lists
+  viewpoints, monuments, memorials, castles, ruins, artworks and attractions within 300 m of the
+  route from OpenStreetMap (Overpass API, keyless), with type, kilometre and distance beside the
+  route; tap one to open it in a map app. Fetched once per route and cached under `route_pois/`,
+  so it works offline afterwards ("Vernieuwen" refetches). Phone-only.
 
 - **Temperature trend over the ride** — route detail → "Temperatuurtrend tonen", pick a start
   time (today, or tomorrow if already past) and see a chart of the expected temperature at each
@@ -181,6 +235,14 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 
 - **Ride story** — tap a ride in Ritten → "Rit-verhaal delen": one shareable image with the
   route shape, stats, climbs and PRs, temperature and a photo from the ride. Phone-only.
+
+- **Ritmaatjes (ride-buddy matcher)** — menu → Ritten & analyse → Ritmaatjes. "Deel mijn
+  profiel" turns your last half year of rides into a short `CPR1:` profile code (flat-road
+  pace, climbing VAM, typical distance, road/gravel/MTB, riding days and dayparts, and —
+  opt-in only — a coarse ~5 km area, never your address); you tick which fields go in and see
+  exactly what the code contains before sharing. Paste codes from other riders (or share the
+  chat message to ClimbPro) and they are ranked by similarity with a score and a reason, e.g.
+  "vergelijkbaar tempo, 12 km verderop". No server; phone-only.
 
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer
@@ -215,6 +277,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
   3–10 min), cool-down. Phone-only.
 
+- **Import via share link (Komoot / RideWithGPS)** — "Route toevoegen" (or menu *Data & app*)
+  → "Route via deellink" takes a pasted Komoot tour or RideWithGPS route/trip link; sharing
+  the link from the Komoot/RideWithGPS app to "Route importeren (ClimbPro)" works too. The route
+  is fetched without API keys and runs through the normal GPX import. Private routes give a
+  clear error (use a Komoot link with `share_token` or make the route public). Phone-only.
 - **MyWhoosh import** — "Route toevoegen" → "MyWhoosh-rit importeren (FIT)" reads a ride
   exported from MyWhoosh (or Strava / Garmin Connect "export original"), runs the normal climb
   detection and files the route under the collection "MyWhoosh". Rides without GPS positions
@@ -272,6 +339,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 
 - **Monthly challenge** — pick a goal for the month (distinct climbs, hoogtemeters, km or
   rides) or let the app suggest one from your last three months, with progress and pace. Phone-only.
+
+- **Multilingual app** — Dutch (default), English, German, French and Italian. Settings → "Taal"
+  picks a language for ClimbPro only (or follows the system language); on Android 13+ it is
+  also available in the system's per-app language settings. The core screens (route list and
+  menu, route detail, climb detail, settings, Strava sign-in, widget) are translated; texts
+  computed in view models/domain code and some secondary screens still show Dutch. Phone-only.
 
 ---
 
@@ -375,6 +448,8 @@ With FTP and weights set, an optional parallel array `zc` (1 int/segment, issue 
 carries each segment's **FTP intensity-zone color** (Coggan zone → the same 0–5 color
 indices); the watch shows it instead of the gradient colors when its *Kleurmodus*
 setting is *FTP-zone*.
+An optional top-level `un` bitmask (issue #262: 1 = mi/ft, 2 = psi, 4 = °F; absent =
+metric) tells the watch which display units the rider chose; all wire values stay metric.
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

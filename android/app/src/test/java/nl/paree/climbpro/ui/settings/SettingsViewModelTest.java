@@ -365,8 +365,9 @@ public class SettingsViewModelTest {
                 Data.EMPTY, 0);
         vm.handleManualSyncUpdate(new ArrayList<>(Collections.singletonList(finished)));
 
-        drainUntil(() -> statuses.contains(SettingsViewModel.NO_LOCATION_MESSAGE));
-        assertTrue(statuses.contains(SettingsViewModel.NO_LOCATION_MESSAGE));
+        final String noLocation = app.getString(nl.paree.climbpro.R.string.settings_radius_no_location);
+        drainUntil(() -> statuses.contains(noLocation));
+        assertTrue(statuses.contains(noLocation));
     }
 
     private interface Condition { boolean isMet(); }
