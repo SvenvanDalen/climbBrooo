@@ -56,6 +56,7 @@ Per-climb numeric data is packed into compact integer arrays (the watch slices t
 
 `surfSec` (surface-datafield payload) is an **array of objects** `{s, e, t, n?, cp}`, ordered by start distance, where `cp` is a packed `[distanceFromRouteStart, latInt, lonInt, …]` checkpoint array (3 ints each). It is sent in a dedicated lean payload (with `"climbs": []`) to the surface datafield app, not in the climb datafield payload.
 
+- `un` (any mode, optional, issue #262): display-unit bitmask — `1` = imperial distance/elevation/speed (mi / ft / mph), `2` = tyre pressure in psi, `4` = temperature in °F. Absent or `0` = all metric, so old payloads and old watch builds are unaffected; `ClimbPayloadBuilder` only emits it when non-zero. It is **display-only**: every distance on the wire stays in metres and the watch converts when it renders. The datafield, widget and surface datafield currently use bit 1 only (no pressure/temperature is shown on the watch); the other bits ride along so a future watch view can use them without a wire change.
 - `rtl` (route mode, optional): total route length in whole metres. The watch derives distance-along-course = `rtl - Activity.Info.distanceToDestination` when the rider navigates the route as a Garmin course, giving a more accurate matching axis than the activity odometer (with a calibration-based trust check; falls back to the odometer otherwise).
 
 ## Byte budget
@@ -89,6 +90,7 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 3       | 2026-09-30 | Added optional top-level `un` display-unit bitmask (issue #262): 1 = mi/ft/mph, 2 = psi, 4 = °F. All payload kinds, emitted only when non-zero; absent = metric. ≤ 8 bytes; additive, no version bump. |
 | 3       | 2026-09-29 | Added optional `zc` (per-segment FTP intensity-zone colorIndex) packed int array on Climb, parallel to `segs` (issue #66). Both modes; omitted without a complete rider profile and dropped when over budget. Additive, no version bump. |
 | 3       | 2026-09-17 | Added optional `refsec` (per-segment PR reference time) packed int array on Climb, parallel to `segs`. Route-mode only, omitted when no stored attempt has a matching segment count. Distinct from `tsec`; additive, no version bump. |
 | 3       | 2026-09-17 | Added optional `vam` (`[avgVamMPerH, peakVamMPerH, …]`) packed int array on Climb — gradient-implied VAM per segment, parallel to `segments` (wire key `segs`). Both modes, omitted unless every segment has a computed value. ~26 ints per climb; additive, no version bump. |

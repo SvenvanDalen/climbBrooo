@@ -25,13 +25,16 @@ import org.osmdroid.views.overlay.Polyline;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
+import nl.paree.climbpro.data.route.RouteShortenService;
 import nl.paree.climbpro.data.route.RouteRideStatus;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
+import nl.paree.climbpro.domain.route.RouteShortener;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.LoopWindAdvice;
@@ -146,6 +149,13 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
             binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
         });
+        viewModel.borderCrossings().observe(this, lines -> {
+            boolean none = lines == null || lines.isEmpty();
+            binding.borderCrossingsSummary.setText(
+                    none ? "" : android.text.TextUtils.join("\n", lines));
+            binding.borderCrossingsTitle.setVisibility(none ? View.GONE : View.VISIBLE);
+            binding.borderCrossingsSummary.setVisibility(none ? View.GONE : View.VISIBLE);
+        });
 
         viewModel.error().observe(this, msg -> {
             binding.btnReverseRoute.setEnabled(true);
@@ -192,6 +202,16 @@ public final class RouteDetailActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
             startActivity(intentFor(this, result.routeId));
         });
+        binding.btnShortenRoute.setOnClickListener(v -> showShortenOptions());
+        viewModel.shortenedRoute().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeShortenedRoute();
+            Toast.makeText(this, result.created
+                            ? getString(R.string.route_shorten_created, result.climbCount)
+                            : getString(R.string.route_shorten_exists),
+                    Toast.LENGTH_LONG).show();
+            startActivity(intentFor(this, result.routeId));
+        });
         binding.btnTirePressure.setOnClickListener(v -> {
             StoredRoute r = viewModel.route().getValue();
             if (r != null) TirePressureAdviceDialog.show(this, r);
@@ -201,6 +221,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
+        binding.btnRoutePois.setOnClickListener(v ->
+                startActivity(RoutePoiActivity.intentFor(this, routeId)));
 
         viewModel.loadRoute(routeId);
     }
@@ -227,8 +249,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private void renderPassport(RoutePassport p) {
         if (p == null) { binding.passportSummary.setText(""); return; }
         StringBuilder sb = new StringBuilder();
+        nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
         sb.append(getString(R.string.route_detail_passport_climbs,
-                p.climbCount, p.totalElevationGain));
+                p.climbCount, units.elevation(p.totalElevationGain))); // issue #262
         String cmp = ElevationComparisons.describe(p.totalElevationGain);
         if (cmp != null) sb.append(getString(R.string.route_detail_passport_comparison, cmp));
         if (p.hardestClimbName != null) {
@@ -471,10 +494,13 @@ public final class RouteDetailActivity extends AppCompatActivity {
             try {
                 TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
                 trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
-                text = trend.describe(zone) + "\n\n"
+                text = trend.describe(zone, new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load()) + "
+
+"
                         + getString(planned ? R.string.route_detail_temperature_pace_planned
                                             : R.string.route_detail_temperature_pace_default)
-                        + "\n" + getString(R.string.route_detail_temperature_source);
+                        + "
+" + getString(R.string.route_detail_temperature_source);
             } catch (Exception e) {
                 text = getString(R.string.route_detail_temperature_failed, reason(e));
             }
@@ -582,6 +608,61 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private static String reason(Exception e) {
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
+    /**
+     * Lists shorter variants within the route's own geometry (issue #205); picking one saves it
+     * as a new route with re-detected climbs and opens it.
+     */
+    private void showShortenOptions() {
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null || r.distances == null || r.distances.length == 0) return;
+        List<RouteShortener.Variant> variants = RouteShortenService.suggest(r);
+        double totalKm = r.distances[r.distances.length - 1] / 1000.0;
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.route_shorten_title, totalKm));
+        if (variants.isEmpty()) {
+            dialog.setMessage(R.string.route_shorten_none)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+            return;
+        }
+        String[] labels = new String[variants.size()];
+        for (int i = 0; i < variants.size(); i++) {
+            RouteShortener.Variant v = variants.get(i);
+            StringBuilder sb = new StringBuilder(getString(R.string.route_shorten_item,
+                    v.newLengthM / 1000.0, v.savedM / 1000.0, (int) Math.round(v.savedGainM),
+                    v.fromDistanceM / 1000.0, v.toDistanceM / 1000.0,
+                    (int) Math.round(v.connectorM)));
+            if (!v.skippedClimbs.isEmpty()) {
+                sb.append(getString(R.string.route_shorten_skips, climbNames(r, v.skippedClimbs)));
+            }
+            if (!v.partialClimbs.isEmpty()) {
+                sb.append(getString(R.string.route_shorten_partial,
+                        climbNames(r, v.partialClimbs)));
+            }
+            labels[i] = sb.toString();
+        }
+        dialog.setItems(labels, (d, which) -> {
+                    RouteShortener.Variant v = variants.get(which);
+                    viewModel.shortenRoute(routeId, v.fromIndex, v.toIndex);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+        Toast.makeText(this, R.string.route_shorten_note, Toast.LENGTH_LONG).show();
+    }
+
+    private static String climbNames(StoredRoute r, List<Integer> indices) {
+        StringBuilder sb = new StringBuilder();
+        for (int idx : indices) {
+            if (r.climbs == null || idx >= r.climbs.size()) continue;
+            StoredClimb c = r.climbs.get(idx);
+            String name = c.userDisplayName != null ? c.userDisplayName
+                    : c.name != null ? c.name : "klim " + (idx + 1);
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(name);
+        }
+        return sb.toString();
     }
 
     /** Bucket-list status picker (issue #158); purely manual, never changed automatically. */

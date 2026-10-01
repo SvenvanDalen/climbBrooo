@@ -27,6 +27,8 @@ import nl.paree.climbpro.data.backup.BackupArchive;
 import nl.paree.climbpro.data.backup.BackupRetention;
 import nl.paree.climbpro.data.backup.LocalBackupService;
 import nl.paree.climbpro.data.health.HealthConnectGateway;
+import nl.paree.climbpro.data.settings.UnitPreferencesRepository;
+import nl.paree.climbpro.domain.units.UnitPreferences;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.databinding.ActivitySettingsBinding;
 import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
@@ -260,6 +262,8 @@ public final class SettingsActivity extends AppCompatActivity {
         });
         renderBackupStatus();
 
+        bindUnitSwitches();
+
         // Cleaning reminder after wet rides (issue #234).
         binding.switchWetRideReminder.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(WetRideReminderJob.PREF_ENABLED, false));
@@ -302,6 +306,22 @@ public final class SettingsActivity extends AppCompatActivity {
                 })
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
+    }
+
+    /** Display units (issue #262): three independent switches, all off = metric. */
+    private void bindUnitSwitches() {
+        UnitPreferencesRepository repo = new UnitPreferencesRepository(this);
+        UnitPreferences units = repo.load();
+        binding.switchUnitsImperial.setChecked(units.imperial);
+        binding.switchUnitsPsi.setChecked(units.psi);
+        binding.switchUnitsFahrenheit.setChecked(units.fahrenheit);
+        android.widget.CompoundButton.OnCheckedChangeListener save = (b, on) ->
+                repo.save(new UnitPreferences(binding.switchUnitsImperial.isChecked(),
+                        binding.switchUnitsPsi.isChecked(),
+                        binding.switchUnitsFahrenheit.isChecked()));
+        binding.switchUnitsImperial.setOnCheckedChangeListener(save);
+        binding.switchUnitsPsi.setOnCheckedChangeListener(save);
+        binding.switchUnitsFahrenheit.setOnCheckedChangeListener(save);
     }
 
     private void renderBackupStatus() {

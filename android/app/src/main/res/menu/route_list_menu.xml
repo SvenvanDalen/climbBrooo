@@ -92,6 +92,9 @@
                 android:id="@+id/action_friend_feed"
                 android:title="@string/menu_friend_feed"/>
             <item
+                android:id="@+id/action_ride_buddies"
+                android:title="@string/ride_buddies_title"/>
+            <item
                 android:id="@+id/action_wrapped"
                 android:title="@string/menu_year_review"/>
         </menu>
@@ -121,8 +124,14 @@
                 android:id="@+id/action_goal_event"
                 android:title="@string/menu_goal_event"/>
             <item
+                android:id="@+id/action_event_calendar"
+                android:title="Evenementen in de buurt"/>
+            <item
                 android:id="@+id/action_elevation_target"
                 android:title="@string/menu_elevation_goal"/>
+            <item
+                android:id="@+id/action_loop_generator"
+                android:title="@string/loop_gen_menu"/>
             <item
                 android:id="@+id/action_elevation_goal"
                 android:title="@string/menu_elevation_target"/>
@@ -158,6 +167,9 @@
             <item
                 android:id="@+id/action_safe_home"
                 android:title="@string/menu_safe_home"/>
+            <item
+                android:id="@+id/action_medical_id"
+                android:title="Medische ID"/>
             <item
                 android:id="@+id/action_pain_log"
                 android:title="@string/menu_pain_log"/>
@@ -207,6 +219,9 @@
             <item
                 android:id="@+id/action_strava"
                 android:title="@string/brand_strava"/>
+            <item
+                android:id="@+id/action_import_share_link"
+                android:title="@string/share_link_title"/>
             <item
                 android:id="@+id/action_batch_export"
                 android:title="@string/menu_export_season"/>

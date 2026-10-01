@@ -24,6 +24,7 @@ import nl.paree.climbpro.domain.activity.MyWhooshRouteReader;
 import nl.paree.climbpro.domain.route.GpxParseException;
 import nl.paree.climbpro.domain.route.GpxParser;
 import nl.paree.climbpro.domain.route.RoutePoint;
+import nl.paree.climbpro.domain.route.ShareLink;
 import nl.paree.climbpro.domain.route.CumulativeDistance;
 import nl.paree.climbpro.domain.route.ElevationSmoother;
 import nl.paree.climbpro.domain.route.RouteSimplifier;
@@ -37,6 +38,7 @@ import nl.paree.climbpro.data.ride.YearlyDistanceGoalRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.ShareLinkRouteFetcher;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
 import nl.paree.climbpro.ui.strava.StravaAuthActivity;
@@ -168,6 +170,10 @@ public final class RouteListActivity extends AppCompatActivity {
 
         viewModel.yearlyGoal().observe(this, this::renderYearlyGoal);
         binding.yearlyGoalCard.setOnClickListener(v -> showYearlyGoalDialog());
+
+        if (savedInstanceState == null) {
+            handleShareIntent(getIntent()); // a Komoot/RideWithGPS link shared to ClimbPro
+        }
 
         nl.paree.climbpro.service.SyncScheduler.manualSyncInfo(this).observe(this, infos -> {
             if (infos == null || infos.isEmpty()) return;
@@ -335,6 +341,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_strava) {
             startActivity(new Intent(this, StravaAuthActivity.class));
             return true;
+        } else if (id == R.id.action_import_share_link) {
+            showShareLinkDialog();
+            return true;
         } else if (id == R.id.action_logbook) {
             startActivity(new Intent(this,
                     nl.paree.climbpro.ui.climbs.ClimbLogbookActivity.class));
@@ -345,6 +354,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_elevation_target) {
             startActivity(nl.paree.climbpro.ui.planning.ElevationTargetActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_loop_generator) {
+            startActivity(nl.paree.climbpro.ui.planning.LoopGeneratorActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_climb_of_the_week) {
             startActivity(nl.paree.climbpro.ui.climbs.ClimbOfTheWeekActivity.intentFor(this));
@@ -367,6 +379,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_friend_feed) {
             startActivity(nl.paree.climbpro.ui.social.FriendFeedActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_ride_buddies) {
+            startActivity(nl.paree.climbpro.ui.social.RideBuddyActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_hr_drift) {
             startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
@@ -397,6 +412,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_safe_home) {
             startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_medical_id) {
+            startActivity(nl.paree.climbpro.ui.medical.MedicalIdActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_sunscreen) {
             startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
@@ -474,6 +492,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_goal_event) {
             startActivity(nl.paree.climbpro.ui.goals.GoalEventActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_event_calendar) {
+            startActivity(nl.paree.climbpro.ui.events.EventCalendarActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_packing_list) {
             startActivity(nl.paree.climbpro.ui.planning.PackingListActivity.intentFor(this));
             return true;
@@ -527,6 +548,12 @@ public final class RouteListActivity extends AppCompatActivity {
                         text != null ? android.view.View.VISIBLE : android.view.View.GONE);
             });
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleShareIntent(intent);
     }
 
     @Override
@@ -679,9 +706,12 @@ public final class RouteListActivity extends AppCompatActivity {
                 .setItems(new String[]{getString(R.string.route_list_import_gpx),
                         getString(R.string.route_list_import_strava),
                         getString(R.string.route_list_import_climb_code),
-                        getString(R.string.route_list_import_mywhoosh)}, (d, which) -> {
+                        getString(R.string.route_list_import_mywhoosh),
+                        getString(R.string.share_link_title)}, (d, which) -> {
                     if (which == 0) {
                         gpxPicker.launch(new String[]{"*/*"});
+                    } else if (which == 4) {
+                        showShareLinkDialog();
                     } else if (which == 3) {
                         showMyWhooshImportHelp();
                     } else if (which == 2) {
@@ -887,51 +917,140 @@ public final class RouteListActivity extends AppCompatActivity {
      */
     private void importRoute(android.net.Uri uri, boolean myWhoosh) {
         executor.execute(() -> {
+            byte[] bytes;
             try (InputStream in = getContentResolver().openInputStream(uri)) {
                 if (in == null) throw new IOException("Cannot open file");
-                byte[] bytes = readStream(in);
-
-                boolean virtual = false;
-                List<RoutePoint> raw;
-                if (myWhoosh) {
-                    MyWhooshRouteReader.Result read = MyWhooshRouteReader.read(bytes);
-                    raw = read.points;
-                    virtual = read.virtual;
-                } else {
-                    raw = GpxParser.parse(new java.io.ByteArrayInputStream(bytes));
-                }
-                List<RoutePoint> withDist  = CumulativeDistance.compute(raw);
-                List<RoutePoint> smoothed  = ElevationSmoother.smooth(withDist, 5);
-                List<RoutePoint> simple    = myWhoosh
-                        ? MyWhooshRouteReader.simplify(smoothed, virtual)
-                        : RouteSimplifier.simplify(smoothed, 5.0);
-                List<Climb>      climbs    = ClimbDetector.detect(simple);
-                int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
-                        .detectFromGpxBytes(bytes);
-                final boolean isVirtual = virtual;
-
-                RouteRepository repo = new RouteRepository(this);
-                List<DuplicateClimbMatcher.Match> duplicates = isVirtual
-                        ? new ArrayList<>()
-                        : DuplicateClimbMatcher.findDuplicates(climbs, repo.loadCatalog(),
-                                ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
-
-                if (duplicates.isEmpty()) {
-                    finishImport(uri, bytes, simple, climbs, detectedSurface, myWhoosh, isVirtual);
-                } else {
-                    runOnUiThread(() -> promptDuplicateResolution(duplicates,
-                            () -> executor.execute(() -> finishImport(uri, bytes, simple, climbs,
-                                    detectedSurface, myWhoosh, isVirtual))));
-                }
-            } catch (GpxParseException e) {
-                runOnUiThread(() -> Toast.makeText(this,
-                        getString(R.string.route_list_gpx_error, e.getMessage()),
-                        Toast.LENGTH_LONG).show());
+                bytes = readStream(in);
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
                         getString(R.string.route_list_import_failed, e.getMessage()),
                         Toast.LENGTH_LONG).show());
+                return;
             }
+            importBytes(bytes, myWhoosh ? fileTitle(uri) : uri.getLastPathSegment(), myWhoosh);
+        });
+    }
+
+    /**
+     * Runs the climb pipeline on an already-read GPX (or MyWhoosh FIT/GPX) document and saves
+     * it under {@code name}. Shared by file import and share-link import (issue #210).
+     * Must run on {@link #executor}.
+     */
+    private void importBytes(byte[] bytes, String name, boolean myWhoosh) {
+        try {
+            boolean virtual = false;
+            List<RoutePoint> raw;
+            if (myWhoosh) {
+                MyWhooshRouteReader.Result read = MyWhooshRouteReader.read(bytes);
+                raw = read.points;
+                virtual = read.virtual;
+            } else {
+                raw = GpxParser.parse(new java.io.ByteArrayInputStream(bytes));
+            }
+            List<RoutePoint> withDist  = CumulativeDistance.compute(raw);
+            List<RoutePoint> smoothed  = ElevationSmoother.smooth(withDist, 5);
+            List<RoutePoint> simple    = myWhoosh
+                    ? MyWhooshRouteReader.simplify(smoothed, virtual)
+                    : RouteSimplifier.simplify(smoothed, 5.0);
+            List<Climb>      climbs    = ClimbDetector.detect(simple);
+            int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
+                    .detectFromGpxBytes(bytes);
+            final boolean isVirtual = virtual;
+
+            RouteRepository repo = new RouteRepository(this);
+            List<DuplicateClimbMatcher.Match> duplicates = isVirtual
+                    ? new ArrayList<>()
+                    : DuplicateClimbMatcher.findDuplicates(climbs, repo.loadCatalog(),
+                            ClimbConstants.DUPLICATE_CLIMB_MATCH_RADIUS_M);
+
+            if (duplicates.isEmpty()) {
+                finishImport(name, bytes, simple, climbs, detectedSurface, myWhoosh, isVirtual);
+            } else {
+                runOnUiThread(() -> promptDuplicateResolution(duplicates,
+                        () -> executor.execute(() -> finishImport(name, bytes, simple, climbs,
+                                detectedSurface, myWhoosh, isVirtual))));
+            }
+        } catch (GpxParseException e) {
+            runOnUiThread(() -> Toast.makeText(this,
+                    getString(R.string.route_list_gpx_error, e.getMessage()),
+                    Toast.LENGTH_LONG).show());
+        } catch (Exception e) {
+            runOnUiThread(() -> Toast.makeText(this,
+                    getString(R.string.route_list_import_failed, e.getMessage()),
+                    Toast.LENGTH_LONG).show());
+        }
+    }
+
+    /**
+     * Share-link import (issue #210): asks for a Komoot or RideWithGPS link, prefilled with
+     * the clipboard when it holds one.
+     */
+    private void showShareLinkDialog() {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint(R.string.share_link_hint);
+        input.setSingleLine(true);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        String clip = clipboardText();
+        if (ShareLink.find(clip) != null) {
+            input.setText(clip.trim());
+        }
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        android.widget.FrameLayout box = new android.widget.FrameLayout(this);
+        box.setPadding(pad, pad / 2, pad, 0);
+        box.addView(input);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.share_link_title)
+                .setMessage(R.string.share_link_message)
+                .setView(box)
+                .setPositiveButton(R.string.share_link_import,
+                        (d, w) -> importShareLink(input.getText().toString()))
+                .setNegativeButton(R.string.share_link_cancel, null)
+                .show();
+    }
+
+    private String clipboardText() {
+        try {
+            android.content.ClipboardManager cm =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (cm == null || !cm.hasPrimaryClip()) return null;
+            android.content.ClipData clip = cm.getPrimaryClip();
+            if (clip == null || clip.getItemCount() == 0) return null;
+            CharSequence text = clip.getItemAt(0).getText();
+            return text != null ? text.toString() : null;
+        } catch (RuntimeException e) {
+            return null; // clipboard access can be refused while the app is not focused
+        }
+    }
+
+    /** Text shared to ClimbPro via ACTION_SEND text/plain (issue #210). */
+    private void handleShareIntent(Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return;
+        String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+        // Consume the intent so a rotation or recreation does not import twice.
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.removeExtra(Intent.EXTRA_TEXT);
+        importShareLink(text);
+    }
+
+    private void importShareLink(String text) {
+        ShareLink link = ShareLink.find(text);
+        if (link == null) {
+            Toast.makeText(this, R.string.share_link_not_recognised, Toast.LENGTH_LONG).show();
+            return;
+        }
+        Toast.makeText(this, R.string.share_link_fetching, Toast.LENGTH_SHORT).show();
+        executor.execute(() -> {
+            ShareLinkRouteFetcher.Result result;
+            try {
+                result = new ShareLinkRouteFetcher().fetch(link);
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        getString(R.string.share_link_failed, e.getMessage()),
+                        Toast.LENGTH_LONG).show());
+                return;
+            }
+            importBytes(result.gpx, result.name, false);
         });
     }
 
@@ -965,7 +1084,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void finishImport(android.net.Uri uri, byte[] bytes, List<RoutePoint> simple,
+    private void finishImport(String name, byte[] bytes, List<RoutePoint> simple,
                               List<Climb> climbs, int detectedSurface,
                               boolean myWhoosh, boolean virtual) {
         try {
@@ -973,12 +1092,12 @@ public final class RouteListActivity extends AppCompatActivity {
             String routeId = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
             RouteRepository repo = new RouteRepository(this);
             if (myWhoosh) {
-                new MyWhooshRouteStore(this).save(routeId, fileTitle(uri), sha256(bytes), virtual,
+                new MyWhooshRouteStore(this).save(routeId, name, sha256(bytes), virtual,
                         simple, climbs);
             } else {
                 StoredRoute stored = new StoredRoute();
                 stored.routeId      = routeId;
-                stored.name         = uri.getLastPathSegment();
+                stored.name         = name;
                 stored.importedAtMs = System.currentTimeMillis();
                 stored.sourceHash   = sha256(bytes);
                 repo.saveRoute(stored, simple, climbs);
