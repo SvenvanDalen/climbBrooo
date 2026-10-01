@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:title="Medische ID" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="13sp"
+                android:text="Gegevens voor hulpverleners na een ongeluk. Ze blijven op je telefoon; op het vergrendelscherm alleen als je dat aanzet, en op het horloge in de ClimbPro-widget (bovenaan de routelijst)." />
+
+            <EditText
+                android:id="@+id/input_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Naam"
+                android:importantForAutofill="no"
+                android:inputType="textPersonName|textCapWords" />
+
+            <EditText
+                android:id="@+id/input_blood_type"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Bloedgroep (bijv. A+)"
+                android:importantForAutofill="no"
+                android:inputType="textCapCharacters"
+                android:maxLength="6" />
+
+            <EditText
+                android:id="@+id/input_allergies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Allergieën"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences"
+                android:maxLength="60" />
+
+            <EditText
+                android:id="@+id/input_medication"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Medicatie en aandoeningen"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences"
+                android:maxLength="60" />
+
+            <EditText
+                android:id="@+id/input_contact_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Noodcontact (naam)"
+                android:importantForAutofill="no"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLength="24" />
+
+            <EditText
+                android:id="@+id/input_contact_phone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Telefoon noodcontact"
+                android:importantForAutofill="no"
+                android:inputType="phone"
+                android:maxLength="20" />
+
+            <EditText
+                android:id="@+id/input_notes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Overige info (bijv. donor, verzekering)"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLength="80" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_lockscreen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="12dp"
+                android:text="Toon op het vergrendelscherm" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/color_text_tertiary"
+                android:textSize="13sp"
+                android:text="Een vaste, stille melding die iedereen zonder ontgrendelen kan lezen. Toon je op het vergrendelscherm geen meldingen, dan zie je hem daar niet." />
+
+            <Button
+                android:id="@+id/btn_save"
+                style="@style/Widget.ClimbPro.Button.Accent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Opslaan en naar horloge sturen" />
+
+            <TextView
+                android:id="@+id/watch_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,5 +1,8 @@
 package nl.paree.climbpro.domain.weather;
 
+import nl.paree.climbpro.domain.units.UnitFormatter;
+import nl.paree.climbpro.domain.units.UnitPreferences;
+
 import java.time.Instant;
 import java.util.Locale;
 
@@ -12,15 +15,23 @@ public final class SummitWeather {
 
     public static String describe(HourlyForecast foot, HourlyForecast top, Instant when,
                                   double footEleM, double topEleM) {
+        return describe(foot, top, when, footEleM, topEleM, UnitPreferences.METRIC);
+    }
+
+    /** As above, rendered in the rider's display units (issue #262); thresholds stay metric. */
+    public static String describe(HourlyForecast foot, HourlyForecast top, Instant when,
+                                  double footEleM, double topEleM, UnitPreferences units) {
+        UnitFormatter fmt = new UnitFormatter(units, NL);
         int f = foot.indexAt(when);
         int t = top.indexAt(when);
         if (f < 0 || t < 0) return null;
         Integer rain = top.rainPct[t];
-        return label("Dal", footEleM) + celsius(foot.temperature[f]) + "\n"
-                + label("Top", topEleM) + celsius(top.temperature[t])
-                + ", voelt als " + celsius(top.apparent[t]) + "\n"
+        return label("Dal", footEleM, fmt) + temperature(foot.temperature[f], fmt) + "\n"
+                + label("Top", topEleM, fmt) + temperature(top.temperature[t], fmt)
+                + ", voelt als " + temperature(top.apparent[t], fmt) + "\n"
                 + "Wind op de top " + (Double.isNaN(top.windKmh[t]) ? "onbekend"
-                        : String.format(NL, "%.0f km/u", top.windKmh[t]))
+                        : String.format(NL, "%.0f %s", fmt.speedValue(top.windKmh[t]),
+                                fmt.speedUnit()))
                 + " · regenkans " + (rain != null ? rain + "%" : "onbekend") + "\n"
                 + "Tip: " + clothingTip(top.apparent[t], top.windKmh[t]);
     }
@@ -36,11 +47,14 @@ public final class SummitWeather {
     }
 
     /** Open-Meteo sends null for missing hours; show "onbekend" rather than "NaN °C". */
-    private static String celsius(double c) {
-        return Double.isNaN(c) ? "onbekend" : String.format(NL, "%.1f °C", c);
+    private static String temperature(double c, UnitFormatter fmt) {
+        return Double.isNaN(c) ? "onbekend"
+                : String.format(NL, "%.1f %s", fmt.temperatureValue(c), fmt.temperatureUnit());
     }
 
-    private static String label(String what, double eleM) {
-        return Double.isNaN(eleM) ? what + ": " : String.format(NL, "%s (%.0f m): ", what, eleM);
+    private static String label(String what, double eleM, UnitFormatter fmt) {
+        return Double.isNaN(eleM) ? what + ": "
+                : String.format(NL, "%s (%.0f %s): ", what, fmt.elevationValue(eleM),
+                        fmt.elevationUnit());
     }
 }
