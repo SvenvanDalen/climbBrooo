@@ -888,6 +888,24 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Lights reminder at dusk (issue #198)
+
+Watch-only, no wire change: the climb datafield (`garmin`) reminds the rider once per ride
+to switch on the bike lights. `garmin/source/LightsReminder.mc` holds pure helpers:
+`sunTimesForDay` (standard sunrise equation — mean anomaly, equation of centre, ecliptic
+longitude, declination, hour angle at −0.833° — giving sunrise/sunset epochs for a solar day,
+or polar night / midnight sun), `lightsNeeded` (dark = not inside `[sunrise, sunset − lead)`
+of the solar day around the moment or its neighbours, so it is timezone-independent and correct
+across UTC midnight) and the `LightsReminder` latch (fires exactly once when lights first
+become needed — at dusk, or at the first fix when a ride starts in the dark — shows the yellow
+`LICHT AAN` strip for 30 s, and runs the sun maths at most once a minute for battery).
+`ClimbProView.compute` calls it **before** the payload check with the GPS fix and
+`Time.now()`, so it works offline and without any route on the watch. The banner sits below
+off-route and battery in priority and above the felt-temperature strip, and is also drawn on
+the no-data screen. Settings `lightsReminder` (default on) and `lightsLeadMin` (0/15/30/60,
+default 15) live in the datafield's app settings. Alert: two 800 ms buzzes + `TONE_ALERT_LO`,
+distinct from the climb, battery and block-done alerts.
+
 ### Easier stretch ahead during a climb (issue #213)
 
 Watch-only, no wire change: the climb datafield (`garmin`) tells the rider an easier

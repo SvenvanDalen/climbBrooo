@@ -20,6 +20,10 @@
          1 = FTP-zone (the phone's per-segment intensity-zone colors "zc"; climbs without
          zc still use the gradient colors). -->
     <property id="colorMode" type="number">0</property>
+    <!-- Issue #198: once-per-ride lights reminder at dusk (sun times computed on the
+         watch from GPS + clock), and how many minutes before sunset it fires. -->
+    <property id="lightsReminder" type="boolean">true</property>
+    <property id="lightsLeadMin" type="number">15</property>
     <!-- Issue #213: "300 m vlakker" notice + short buzz during a climb when the upcoming
          segments are >= 3 %-points less steep than the current one. On by default. -->
     <property id="easierAheadAlert" type="boolean">true</property>

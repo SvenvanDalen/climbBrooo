@@ -6,6 +6,7 @@ using Toybox.System as Sys;
 using Toybox.Activity as Activity;
 using Toybox.Attention as Attention;
 using Toybox.Sensor as Sensor;
+using Toybox.Time as Time;
 using Toybox.Weather as Weather;
 
 /**
@@ -77,6 +78,8 @@ class ClimbProView extends Ui.DataField {
     hidden var descent = new DescentTracker();
     hidden var feltShownC = null;
 
+    // Lights reminder at dusk (issue #198): once per ride, computed on the watch.
+    hidden var lights = new LightsReminder();
     // "Vlakker stuk" notice during a climb (issue #213).
     hidden var easier = new EasierAheadTracker();
     // Heart-rate alarm (issue #228). hrShownBpm = banner value while above the limit;
@@ -99,6 +102,9 @@ class ClimbProView extends Ui.DataField {
      * Called every GPS tick. Update route progress.
      */
     function compute(info) {
+        // Lights reminder (issue #198) runs before the payload check: it needs only the GPS
+        // fix and the clock, so it also works without any route on the watch.
+        checkLightsReminder(info);
         // Safety alarms run before the payload gate: they don't need a route.
         checkHeartRate(info);
         checkHeatIndex();
@@ -238,6 +244,42 @@ class ClimbProView extends Ui.DataField {
                 desc ? ambientTempC() : null, spd, feltShownC);
     }
 
+    // Sun times come from the current GPS fix + clock (LightsReminder.mc); the sun maths
+    // runs at most once a minute and the alert fires once per ride.
+    hidden function checkLightsReminder(info) {
+        var lat = null;
+        var lon = null;
+        if (info != null && info has :currentLocation && info.currentLocation != null) {
+            var ll = info.currentLocation.toDegrees();
+            lat = ll[0];
+            lon = ll[1];
+        }
+        if (lights.update(Time.now().value(), lat, lon, lightsLeadMin(), lightsReminderEnabled())) {
+            triggerLightsAlert();
+        }
+    }
+
+    // Reads "lightsReminder" defensively like the other settings; default on.
+    hidden function lightsReminderEnabled() {
+        try {
+            var v = Properties.getValue("lightsReminder");
+            return v == null || v == true;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    // Minutes before sunset at which the reminder fires ("lightsLeadMin"); default 15.
+    hidden function lightsLeadMin() {
+        try {
+            var v = Properties.getValue("lightsLeadMin");
+            if (v != null && v instanceof Toybox.Lang.Number && v >= 0) { return v; }
+        } catch (e) {
+            return 15;
+        }
+        return 15;
+    }
+
     // Heart-rate alarm (issue #228): limit alarm (sustained > hrAlarmBpm) and, opt-in,
     // the irregular-jumps detector. Cheap per-tick work on one number.
     hidden function checkHeartRate(info) {
@@ -349,8 +391,10 @@ class ClimbProView extends Ui.DataField {
         dc.clear();
         
         var data = App.getApp().climbData;
+        var lightsBanner = lights.bannerVisible(Time.now().value());
         if (data == null || !data.payloadReceived) {
             drawNoData(dc);
+            if (lightsBanner) { drawLightsBanner(dc); }
             return;
         }
 
@@ -382,9 +426,20 @@ class ClimbProView extends Ui.DataField {
             drawHeatBanner(dc, heatShownC);
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
             drawEasierAheadBanner(dc, easier.shownLenM);
+        } else if (lightsBanner) {
+            drawLightsBanner(dc);
         } else if (feltShownC != null && data.activeClimbIndex < 0) {
             drawFeltTempBanner(dc, feltShownC);
         }
+    }
+
+    // Yellow strip for 30 s after the dusk reminder fired (issue #198).
+    hidden function drawLightsBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_YELLOW, Gfx.COLOR_YELLOW);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, lightsReminderLabel(), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Green strip in the header slot while an easier stretch is coming up (issue #213).
@@ -1003,6 +1058,21 @@ class ClimbProView extends Ui.DataField {
     hidden function triggerBlockDoneAlert() {
         if (Attention has :vibrate) {
             Attention.vibrate([new Attention.VibeProfile(100, 300)]);
+        }
+    }
+
+    // Dusk reminder (issue #198): two long buzzes + a low tone, distinct from the climb,
+    // battery and block-done alerts.
+    hidden function triggerLightsAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 800),
+                new Attention.VibeProfile(0, 300),
+                new Attention.VibeProfile(100, 800)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_LO);
         }
     }
 

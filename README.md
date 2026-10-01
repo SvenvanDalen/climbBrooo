@@ -161,6 +161,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Lights reminder at dusk** — the climb datafield buzzes once per ride (two long buzzes +
+  low tone) and shows a yellow `LICHT AAN` strip for 30 s when it gets dark: from 15 min
+  before sunset (configurable: at sunset / 15 / 30 / 60 min) or right at the first GPS fix
+  when you start before sunrise or after dusk. Sun times are computed on the watch from GPS +
+  clock, so it works offline and without a route. Toggle in the datafield settings.
 - **Easier stretch ahead** — on a climb, when the next segments (≥ 200 m) are at least
   3 %-points less steep than the current one, the datafield shows a green `300 m vlakker`
   strip ~150 m before it and buzzes twice lightly, once per stretch. Watch-only, uses the
