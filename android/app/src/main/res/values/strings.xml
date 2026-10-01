@@ -8,6 +8,18 @@
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <!-- Offline-pakket voor een route (issue #200) -->
+    <string name="offline_pkg_action">Offline-pakket</string>
+    <string name="offline_pkg_loading">Offline-pakket downloaden…</string>
+    <string name="offline_pkg_title">Offline-pakket</string>
+    <string name="offline_pkg_intro">Download vooraf het weer langs de route (komende 2 dagen) en water-, eet-, toilet- en fietspunten binnen 300 m (OpenStreetMap). Daarna is alles zonder bereik te bekijken; route en klimmen staan al op je telefoon.</string>
+    <string name="offline_pkg_download">Downloaden</string>
+    <string name="offline_pkg_refresh">Vernieuwen</string>
+    <string name="offline_pkg_delete">Verwijderen</string>
+    <string name="offline_pkg_close">Sluiten</string>
+    <string name="offline_pkg_deleted">Offline-pakket verwijderd</string>
+    <string name="offline_pkg_failed">Downloaden mislukt: %1$s</string>
+    <string name="offline_pkg_source">Weer: Open-Meteo · punten © OpenStreetMap-bijdragers</string>
     <!-- Windgeoptimaliseerde rijrichting voor een rondje (issue #174) -->
     <string name="loop_wind_action">Beste rijrichting (wind)</string>
     <string name="loop_wind_loading">Windverwachting laden…</string>

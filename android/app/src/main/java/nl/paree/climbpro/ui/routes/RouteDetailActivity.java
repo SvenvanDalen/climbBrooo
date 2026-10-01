@@ -32,6 +32,8 @@ import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
+import nl.paree.climbpro.domain.offline.OfflinePackage;
+import nl.paree.climbpro.domain.offline.OfflinePackageReport;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.LoopWindAdvice;
@@ -196,6 +198,14 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
+        binding.btnOfflinePackage.setOnClickListener(v -> viewModel.loadOfflinePackage(routeId));
+        viewModel.offlinePackage().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeOfflinePackage();
+            binding.btnOfflinePackage.setEnabled(true);
+            binding.btnOfflinePackage.setText(R.string.offline_pkg_action);
+            showOfflinePackage(result.pkg);
+        });
 
         viewModel.loadRoute(routeId);
     }
@@ -571,6 +581,36 @@ public final class RouteDetailActivity extends AppCompatActivity {
         return headwindKmh < 0
                 ? getString(R.string.loop_wind_tail, -headwindKmh)
                 : getString(R.string.loop_wind_head, headwindKmh);
+    }
+
+    /**
+     * Offline route package (issue #200): shows the stored package (readable without signal)
+     * with refresh/delete, or offers the first download.
+     */
+    private void showOfflinePackage(OfflinePackage pkg) {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.offline_pkg_title)
+                .setNegativeButton(R.string.offline_pkg_close, null);
+        if (pkg == null) {
+            dialog.setMessage(R.string.offline_pkg_intro)
+                    .setPositiveButton(R.string.offline_pkg_download, (d, w) -> downloadOffline());
+        } else {
+            dialog.setMessage(OfflinePackageReport.build(pkg, System.currentTimeMillis())
+                            + "\n\n" + getString(R.string.offline_pkg_source))
+                    .setPositiveButton(R.string.offline_pkg_refresh, (d, w) -> downloadOffline())
+                    .setNeutralButton(R.string.offline_pkg_delete, (d, w) -> {
+                        viewModel.deleteOfflinePackage(routeId);
+                        Toast.makeText(this, R.string.offline_pkg_deleted, Toast.LENGTH_SHORT)
+                                .show();
+                    });
+        }
+        dialog.show();
+    }
+
+    private void downloadOffline() {
+        binding.btnOfflinePackage.setEnabled(false); // one download at a time
+        binding.btnOfflinePackage.setText(R.string.offline_pkg_loading);
+        viewModel.downloadOfflinePackage(routeId);
     }
 
     private static String reason(Exception e) {

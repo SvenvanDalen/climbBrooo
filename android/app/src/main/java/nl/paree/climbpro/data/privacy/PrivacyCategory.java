@@ -86,6 +86,10 @@ public enum PrivacyCategory {
                     + "voor het beste moment om te rijden. Wordt opnieuw opgehaald als je het "
                     + "wist.",
             "climate/"),
+    OFFLINE_PACKAGES("Offline-pakketten",
+            "Vooraf gedownload weer en water-, eet-, toilet- en fietspunten langs routes, voor "
+                    + "gebieden zonder bereik. Openbare gegevens; opnieuw op te halen.",
+            "offline/"),
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",

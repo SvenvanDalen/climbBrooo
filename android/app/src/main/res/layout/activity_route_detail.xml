@@ -100,6 +100,14 @@
                 android:textSize="14sp"
                 android:visibility="gone" />
 
+            <Button
+                android:id="@+id/btn_offline_package"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/offline_pkg_action" />
+
             <TextView
                 android:id="@+id/route_profile_title"
                 style="@style/TextAppearance.ClimbPro.Label"

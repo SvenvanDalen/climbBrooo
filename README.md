@@ -111,6 +111,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Reverse a route** — "Omgekeerde richting" on the route detail screen creates
   "<naam> (omgekeerd)" with climbs re-detected for the other direction; the original stays
   untouched and tapping again reopens the existing reversed route.
+- **Offline package for a route** — route detail → "Offline-pakket" downloads, while you still
+  have signal, the hourly forecast at up to 8 points along the route (next 2 days, Open-Meteo)
+  and water, food, toilet and bike points within 300 m of the route (OpenStreetMap). Opening it
+  later works without any network: per point the temperature range, wind and rain chance for
+  the coming 8 hours, and the points listed by km. Refresh or delete from the same dialog; it is
+  removed with the route and not included in backups (public data).
 - **Whole-route elevation profile** — the route detail screen shows the elevation
   profile of the full route with every climb highlighted in its gradient colors. Phone-only.
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
