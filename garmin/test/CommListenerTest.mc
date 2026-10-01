@@ -27,9 +27,11 @@ function fullRoutePayload() {
                 "refsec" => [58, 59, 61, 63],
                 "vam"   => [504, 560, 504, 540, 504, 580, 504, 520],
                 "ib"    => [273, 266, 280],
+                "ev"    => [8848, 111, 5150000, 510000, 5152000, 511000],
                 "zc"    => [3, 3, 4, 3]
             }
-        ]
+        ],
+        "hz"      => [3400, 3650, 0, 5200, 6100, 1]
     };
 }
 
@@ -56,6 +58,10 @@ function parse_routeMode_decodesAllFields(logger) {
     Test.assertEqual(d.routeName, "Full demo climb");
     Test.assertEqual(d.routeTotalLen, 8000);
     Test.assertEqual(d.climbCount, 1);
+    // Route-level hazard markers (issue #203) are kept packed.
+    Test.assertEqual(d.hazards.size(), 6);
+    Test.assertEqual(d.hazards[3], 5200);
+    Test.assertEqual(d.hazards[5], 1);
 
     // Climb-level: anchors mirror sd/ed, scalars decoded.
     Test.assertEqual(d.climbStartDist0[0], 1000);

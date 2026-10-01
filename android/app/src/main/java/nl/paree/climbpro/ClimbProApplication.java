@@ -31,12 +31,15 @@ public final class ClimbProApplication extends Application {
 
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
-        WatchRequestHandler watchRequestHandler = new WatchRequestHandler(
+        WatchRequestHandler watchRequests = new WatchRequestHandler(
                 routeRepo, ciqClient,
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(this),
-                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this));
-        watchRequestHandler.setPaletteSource(nl.paree.climbpro.ui.climbs.SegmentColorPalette::active);
-        ciqClient.setWatchRequestHandler(watchRequestHandler);
+                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this),
+                new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this));
+        watchRequests.setMedicalIdRepository(
+                new nl.paree.climbpro.data.medical.MedicalIdRepository(this));
+        watchRequests.setPaletteSource(nl.paree.climbpro.ui.climbs.SegmentColorPalette::active);
+        ciqClient.setWatchRequestHandler(watchRequests);
         // Force a clean GCM rebind on startup so a phone-only app update can't leave
         // the watch talking to a dead process. See ConnectIqClient#forceRebind.
         ciqClient.forceRebind();

@@ -16,7 +16,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/color_bg"
             android:titleTextColor="@color/color_text_primary"
-            android:title="Instellingen"
+            android:title="@string/settings_title"
             app:popupTheme="@style/ThemeOverlay.Material3.Dark"/>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -32,6 +32,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- App language (issue #261). -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -44,7 +45,30 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Watch mode"
+                    android:text="@string/settings_language_label"
+                    android:layout_marginBottom="10dp"/>
+
+                <Button
+                    android:id="@+id/btn_language"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:text="Taal: Systeemtaal"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_watch_mode"
                     android:layout_marginBottom="10dp"/>
 
                 <RadioGroup
@@ -58,7 +82,7 @@
                         android:layout_height="wrap_content"
                         android:buttonTint="@color/color_accent"
                         android:textColor="@color/color_text_primary"
-                        android:text="Follow a selected route"/>
+                        android:text="@string/settings_mode_route"/>
 
                     <RadioButton
                         android:id="@+id/radio_radius"
@@ -66,7 +90,7 @@
                         android:layout_height="wrap_content"
                         android:buttonTint="@color/color_accent"
                         android:textColor="@color/color_text_primary"
-                        android:text="Radius — detect nearby climbs"/>
+                        android:text="@string/settings_mode_radius"/>
 
                 </RadioGroup>
 
@@ -112,7 +136,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Strava"
+                    android:text="@string/brand_strava"
                     android:layout_marginBottom="10dp"/>
 
                 <Button
@@ -120,7 +144,7 @@
                     style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Sign in to Strava"/>
+                    android:text="@string/settings_strava_sign_in"/>
 
                 <Button
                     android:id="@+id/btn_strava_title_template"
@@ -128,7 +152,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Titel-sjabloon"/>
+                    android:text="@string/settings_title_template"/>
 
                 <Button
                     android:id="@+id/btn_strava_history_backfill"
@@ -136,7 +160,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Volledige historie ophalen (10 jaar)"/>
+                    android:text="@string/settings_history_backfill"/>
 
                 <TextView
                     android:id="@+id/strava_history_backfill_status"
@@ -184,7 +208,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Rider profile"
+                    android:text="@string/settings_rider_profile"
                     android:layout_marginBottom="10dp"/>
 
                 <EditText
@@ -195,7 +219,7 @@
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_primary"
                     android:textColorHint="@color/color_text_tertiary"
-                    android:hint="FTP (watts)"
+                    android:hint="@string/settings_ftp_hint"
                     android:inputType="number"
                     android:layout_marginBottom="8dp"/>
 
@@ -219,7 +243,7 @@
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_primary"
                     android:textColorHint="@color/color_text_tertiary"
-                    android:hint="Rider weight (kg)"
+                    android:hint="@string/settings_rider_weight_hint"
                     android:inputType="numberDecimal"
                     android:layout_marginBottom="8dp"/>
 
@@ -231,7 +255,7 @@
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_primary"
                     android:textColorHint="@color/color_text_tertiary"
-                    android:hint="Bike weight (kg)"
+                    android:hint="@string/settings_bike_weight_hint"
                     android:inputType="numberDecimal"
                     android:layout_marginBottom="8dp"/>
 
@@ -243,7 +267,7 @@
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_primary"
                     android:textColorHint="@color/color_text_tertiary"
-                    android:hint="Rit-intensiteit (% FTP, 40-95)"
+                    android:hint="@string/settings_ride_intensity_hint"
                     android:inputType="number"
                     android:layout_marginBottom="12dp"/>
 
@@ -252,7 +276,7 @@
                     style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Save rider profile"/>
+                    android:text="@string/settings_save_profile"/>
             </LinearLayout>
 
             <!-- Virtual ghost for climbs without history (issue #31). -->
@@ -268,7 +292,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ghost voor nieuwe klimmen"
+                    android:text="@string/settings_ghost_title"
                     android:layout_marginBottom="6dp"/>
 
                 <TextView
@@ -276,7 +300,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_secondary"
-                    android:text="Zonder PR of eigen referentietijd rijd je tegen een virtuele renner op deze streefsnelheid en/of VAM. Vul beide in en de ghost rijdt het langzaamste van de twee. Leeg = uit."
+                    android:text="@string/settings_ghost_explanation"
                     android:layout_marginBottom="10dp"/>
 
                 <EditText
@@ -287,7 +311,7 @@
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_primary"
                     android:textColorHint="@color/color_text_tertiary"
-                    android:hint="Streefsnelheid (km/u)"
+                    android:hint="@string/settings_ghost_speed_hint"
                     android:inputType="numberDecimal"
                     android:layout_marginBottom="8dp"/>
 
@@ -299,7 +323,7 @@
                     android:fontFamily="@font/space_grotesk"
                     android:textColor="@color/color_text_primary"
                     android:textColorHint="@color/color_text_tertiary"
-                    android:hint="Streef-VAM (m/u)"
+                    android:hint="@string/settings_ghost_vam_hint"
                     android:inputType="number"
                     android:layout_marginBottom="12dp"/>
 
@@ -308,7 +332,7 @@
                     style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Ghost-doel opslaan"/>
+                    android:text="@string/settings_ghost_save"/>
             </LinearLayout>
 
             <!-- Home-climb privacy zone (issue #92). -->
@@ -324,7 +348,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Privacy"
+                    android:text="@string/settings_privacy"
                     android:layout_marginBottom="10dp"/>
 
                 <TextView
@@ -334,7 +358,7 @@
                     android:textColor="@color/color_text_secondary"
                     android:textSize="13sp"
                     android:layout_marginBottom="10dp"
-                    android:text="Zone rond het startpunt van een als &quot;thuisklim&quot; gemarkeerde klim die bij export/delen wordt gewazigd."/>
+                    android:text="@string/settings_privacy_explanation"/>
 
                 <TextView
                     android:id="@+id/privacy_radius_label"
@@ -388,6 +412,51 @@
                     android:text="Kleurenblind-vriendelijk palet"/>
             </LinearLayout>
 
+            <!-- Display units (issue #262). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Eenheden"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="Alleen de weergave verandert; alles wordt metrisch opgeslagen. Het horloge neemt de afstandseenheid over bij de volgende sync."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_units_imperial"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Mijlen en voet (mi · ft · mph)"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_units_psi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Bandenspanning in psi"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_units_fahrenheit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Temperatuur in °F"/>
+            </LinearLayout>
+
             <!-- Cleaning reminder after wet rides (issue #234). -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -401,7 +470,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Schoonmaakherinnering"
+                    android:text="@string/settings_wet_title"
                     android:layout_marginBottom="6dp"/>
 
                 <TextView
@@ -409,14 +478,14 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/color_text_secondary"
                     android:layout_marginBottom="10dp"
-                    android:text="Na een rit in de regen (of een gravel- of MTB-rit na regen) krijg je een melding om fiets en ketting schoon te maken. Het startpunt van je rit wordt hiervoor naar Open-Meteo gestuurd. Werkt voor Strava-ritten van de laatste 3 dagen, na elke sync."/>
+                    android:text="@string/settings_wet_explanation"/>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switch_wet_ride_reminder"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/color_text_primary"
-                    android:text="Herinner me na natte ritten"/>
+                    android:text="@string/settings_wet_switch"/>
             </LinearLayout>
 
             <!-- Health Connect (issue #255). -->
@@ -432,7 +501,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Health Connect"
+                    android:text="@string/brand_health_connect"
                     android:layout_marginBottom="6dp"/>
 
                 <TextView
@@ -448,7 +517,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Koppelen met Health Connect"/>
+                    android:text="@string/settings_health_connect"/>
 
                 <Button
                     android:id="@+id/btn_health_export"
@@ -456,7 +525,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Ritten nu naar Health Connect"/>
+                    android:text="@string/settings_health_export"/>
 
                 <Button
                     android:id="@+id/btn_health_weight"
@@ -464,14 +533,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Gewicht overnemen"/>
+                    android:text="@string/settings_health_weight"/>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switch_health_auto"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/color_text_primary"
-                    android:text="Nieuwe ritten automatisch na elke sync"/>
+                    android:text="@string/settings_health_auto"/>
             </LinearLayout>
 
             <!-- Back-up (issue #257): manual zip + daily automatic copy to a picked folder. -->
@@ -487,7 +556,7 @@
                     style="@style/TextAppearance.ClimbPro.Label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Back-up"
+                    android:text="@string/settings_backup"
                     android:layout_marginBottom="6dp"/>
 
                 <TextView
@@ -503,7 +572,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Back-up maken"/>
+                    android:text="@string/settings_backup_create"/>
 
                 <Button
                     android:id="@+id/btn_backup_restore"
@@ -511,14 +580,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Back-up terugzetten"/>
+                    android:text="@string/settings_backup_restore"/>
 
                 <Button
                     android:id="@+id/btn_backup_auto"
                     style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Automatische back-up aanzetten"/>
+                    android:text="@string/settings_backup_auto_on"/>
             </LinearLayout>
 
             <Button
@@ -526,7 +595,7 @@
                 style="@style/Widget.ClimbPro.Button.Accent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sync now"/>
+                android:text="@string/settings_sync_now"/>
 
         </LinearLayout>
     </ScrollView>

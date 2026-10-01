@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "climbs": [
+    {
+      "id": "alpe-dhuez",
+      "name": "Alpe d'Huez",
+      "aliases": ["alpe d huez", "alpe dhuez", "l alpe d huez"],
+      "top": [45.0915, 6.0700],
+      "sides": [
+        {"label": "Le Bourg-d'Oisans", "start": [45.0575, 6.0400]}
+      ],
+      "facts": [
+        "21 genummerde haarspeldbochten, elk vernoemd naar ritwinnaars op de Alpe.",
+        "In 1952 de eerste bergaankomst in de Tourgeschiedenis; Fausto Coppi won.",
+        "Bijnaam 'Hollandse berg' door de vele Nederlandse ritzeges in de jaren '70 en '80."
+      ]
+    },
+    {
+      "id": "mont-ventoux",
+      "name": "Mont Ventoux",
+      "aliases": ["ventoux"],
+      "top": [44.1737, 5.2787],
+      "sides": [
+        {"label": "Bédoin", "start": [44.1247, 5.1780]},
+        {"label": "Malaucène", "start": [44.1740, 5.1330]},
+        {"label": "Sault", "start": [44.0910, 5.4090]}
+      ],
+      "facts": [
+        "Bijnaam 'de Reus van de Provence'; de kale top lijkt op een maanlandschap.",
+        "Tom Simpson overleed op 13 juli 1967 vlak onder de top; er staat een gedenkteken.",
+        "In 2016 werd de rit door storm ingekort; Chris Froome rende na een val een stuk bergop."
+      ]
+    },
+    {
+      "id": "col-du-galibier",
+      "name": "Col du Galibier",
+      "aliases": ["galibier"],
+      "top": [45.0640, 6.4078],
+      "sides": [
+        {"label": "Valloire", "start": [45.1650, 6.4290]},
+        {"label": "Col du Lautaret", "start": [45.0350, 6.4040]}
+      ],
+      "facts": [
+        "Voor het eerst in de Tour in 1911.",
+        "Aan de zuidkant staat het monument voor Tourstichter Henri Desgrange.",
+        "In 1998 viel Marco Pantani hier aan in regen en kou en pakte hij de gele trui.",
+        "In 2011 won Andy Schleck de eerste aankomst op de top, 100 jaar na de Tourdebuut."
+      ]
+    },
+    {
+      "id": "col-du-telegraphe",
+      "name": "Col du Télégraphe",
+      "aliases": ["telegraphe"],
+      "top": [45.2027, 6.4447],
+      "sides": [
+        {"label": "Saint-Michel-de-Maurienne", "start": [45.2185, 6.4690]}
+      ],
+      "facts": [
+        "Wordt in de Tour bijna altijd gecombineerd met de Galibier: na een korte afdaling naar Valloire begint die meteen.",
+        "Vernoemd naar het optische telegraafstation dat er vroeger stond."
+      ]
+    },
+    {
+      "id": "col-du-tourmalet",
+      "name": "Col du Tourmalet",
+      "aliases": ["tourmalet"],
+      "top": [42.9086, 0.1453],
+      "sides": [
+        {"label": "Luz-Saint-Sauveur", "start": [42.8720, -0.0020]},
+        {"label": "Sainte-Marie-de-Campan", "start": [42.9850, 0.2240]}
+      ],
+      "facts": [
+        "De vaakst beklommen col in de Tourgeschiedenis; debuut in 1910, Octave Lapize kwam als eerste boven.",
+        "In 1913 brak Eugène Christophe zijn voorvork in de afdaling en smeedde hem zelf in Sainte-Marie-de-Campan.",
+        "In 2010 won Andy Schleck de bergrit met aankomst op de top, met Alberto Contador in zijn wiel."
+      ]
+    },
+    {
+      "id": "col-d-aubisque",
+      "name": "Col d'Aubisque",
+      "aliases": ["aubisque"],
+      "top": [42.9770, -0.3390],
+      "sides": [
+        {"label": "Laruns", "start": [42.9885, -0.4240]},
+        {"label": "Argelès-Gazost (via Soulor)", "start": [43.0030, -0.0990]}
+      ],
+      "facts": [
+        "In 1910 riep Octave Lapize hier naar de organisatoren: 'Vous êtes des assassins!'",
+        "In 1951 stortte gele trui Wim van Est in een ravijn; hij werd met aan elkaar geknoopte fietsbanden omhooggehaald."
+      ]
+    },
+    {
+      "id": "col-d-aspin",
+      "name": "Col d'Aspin",
+      "aliases": ["aspin"],
+      "top": [42.9432, 0.3276],
+      "sides": [
+        {"label": "Arreau", "start": [42.9060, 0.3570]},
+        {"label": "Sainte-Marie-de-Campan", "start": [42.9850, 0.2240]}
+      ],
+      "facts": [
+        "In 1950 werd Gino Bartali hier door toeschouwers belaagd; de Italiaanse ploegen verlieten daarna de Tour."
+      ]
+    },
+    {
+      "id": "col-de-peyresourde",
+      "name": "Col de Peyresourde",
+      "aliases": ["peyresourde"],
+      "top": [42.7964, 0.4464],
+      "sides": [
+        {"label": "Bagnères-de-Luchon", "start": [42.7900, 0.5930]},
+        {"label": "Arreau", "start": [42.9060, 0.3570]}
+      ],
+      "facts": [
+        "In 2016 viel Chris Froome vanaf de top aan in de afdaling naar Luchon, zittend op zijn bovenbuis, en won de rit."
+      ]
+    },
+    {
+      "id": "col-d-izoard",
+      "name": "Col d'Izoard",
+      "aliases": ["izoard"],
+      "top": [44.8200, 6.7350],
+      "sides": [
+        {"label": "Briançon", "start": [44.8990, 6.6440]},
+        {"label": "Guillestre", "start": [44.6600, 6.6500]}
+      ],
+      "facts": [
+        "Aan de zuidkant ligt de Casse Déserte, een kaal puinlandschap met een gedenkteken voor Fausto Coppi en Louison Bobet.",
+        "In 2017 de eerste Touraankomst op de top; Warren Barguil won."
+      ]
+    },
+    {
+      "id": "col-de-la-madeleine",
+      "name": "Col de la Madeleine",
+      "aliases": ["col de la madeleine"],
+      "top": [45.4340, 6.3735],
+      "sides": [
+        {"label": "La Chambre", "start": [45.3600, 6.3010]},
+        {"label": "Aigueblanche", "start": [45.5040, 6.4940]}
+      ],
+      "facts": [
+        "Een van de lange klassiekers van de Alpen: van beide kanten ongeveer 20 km klimmen naar bijna 2000 m."
+      ]
+    },
+    {
+      "id": "col-de-la-croix-de-fer",
+      "name": "Col de la Croix de Fer",
+      "aliases": ["croix de fer"],
+      "top": [45.2267, 6.2031],
+      "sides": [
+        {"label": "Saint-Jean-de-Maurienne", "start": [45.2760, 6.3450]},
+        {"label": "Rochetaillée", "start": [45.1130, 6.0080]}
+      ],
+      "facts": [
+        "Genoemd naar het ijzeren kruis dat op de top staat, op ruim 2000 m hoogte."
+      ]
+    },
+    {
+      "id": "passo-dello-stelvio",
+      "name": "Passo dello Stelvio",
+      "aliases": ["stelvio", "stilfser joch", "stelviopas"],
+      "top": [46.5286, 10.4531],
+      "sides": [
+        {"label": "Prato allo Stelvio", "start": [46.6190, 10.5910]},
+        {"label": "Bormio", "start": [46.4670, 10.3710]}
+      ],
+      "facts": [
+        "Vanuit Prato allo Stelvio telt de klim 48 genummerde haarspeldbochten.",
+        "Met 2758 m een van de hoogste verharde passen van de Alpen en vaak de Cima Coppi van de Giro.",
+        "Debuut in de Giro in 1953: Fausto Coppi viel hier aan en pakte de roze trui van Hugo Koblet."
+      ]
+    },
+    {
+      "id": "passo-di-gavia",
+      "name": "Passo di Gavia",
+      "aliases": ["gavia"],
+      "top": [46.3440, 10.4880],
+      "sides": [
+        {"label": "Ponte di Legno", "start": [46.2590, 10.5090]},
+        {"label": "Bormio", "start": [46.4670, 10.3710]}
+      ],
+      "facts": [
+        "In de Giro van 1988 werd de Gavia in een sneeuwstorm beklommen; Erik Breukink won de rit en Andrew Hampsten pakte de roze trui."
+      ]
+    },
+    {
+      "id": "passo-del-mortirolo",
+      "name": "Passo del Mortirolo",
+      "aliases": ["mortirolo", "passo della foppa"],
+      "top": [46.2490, 10.2990],
+      "sides": [
+        {"label": "Mazzo di Valtellina", "start": [46.2570, 10.2560]},
+        {"label": "Monno", "start": [46.2130, 10.3400]}
+      ],
+      "facts": [
+        "Ook bekend als Passo della Foppa; voor het eerst in de Giro in 1990.",
+        "In 1994 brak Marco Pantani hier door met een aanval die hem bekendheid gaf.",
+        "De kant vanuit Mazzo geldt als een van de zwaarste klimmen van Europa."
+      ]
+    },
+    {
+      "id": "monte-zoncolan",
+      "name": "Monte Zoncolan",
+      "aliases": ["zoncolan"],
+      "top": [46.4995, 12.9270],
+      "sides": [
+        {"label": "Ovaro", "start": [46.4830, 12.8650]},
+        {"label": "Sutrio", "start": [46.5120, 12.9930]}
+      ],
+      "facts": [
+        "Debuut in de Giro in 2003 via Sutrio; Gilberto Simoni won.",
+        "In 2007 voor het eerst via de steilere kant vanuit Ovaro, opnieuw gewonnen door Simoni."
+      ]
+    },
+    {
+      "id": "alto-de-l-angliru",
+      "name": "Alto de l'Angliru",
+      "aliases": ["angliru"],
+      "top": [43.2210, -5.9385],
+      "sides": [
+        {"label": "La Vega (Riosa)", "start": [43.2430, -5.8910]}
+      ],
+      "facts": [
+        "Debuut in de Vuelta in 1999; José María 'Chava' Jiménez won.",
+        "Bij de Cueña les Cabres loopt de helling op tot ruim 23 %."
+      ]
+    },
+    {
+      "id": "cauberg",
+      "name": "Cauberg",
+      "aliases": ["cauberg"],
+      "top": [50.8587, 5.8368],
+      "sides": [
+        {"label": "Valkenburg", "start": [50.8640, 5.8305]}
+      ],
+      "facts": [
+        "Beroemd als slotklim van de Amstel Gold Race.",
+        "Decor van meerdere WK's op de weg in Valkenburg; in 2012 won Philippe Gilbert hier de wereldtitel."
+      ]
+    },
+    {
+      "id": "keutenberg",
+      "name": "Keutenberg",
+      "aliases": ["keutenberg"],
+      "top": [50.8440, 5.8700],
+      "sides": [
+        {"label": "Geuldal", "start": [50.8520, 5.8720]}
+      ],
+      "facts": [
+        "Geldt als een van de steilste wegen van Nederland, met stukken van rond de 20 %.",
+        "Vaste helling in de Amstel Gold Race."
+      ]
+    },
+    {
+      "id": "koppenberg",
+      "name": "Koppenberg",
+      "aliases": ["koppenberg"],
+      "top": [50.8150, 3.5885],
+      "sides": [
+        {"label": "Melden", "start": [50.8190, 3.5860]}
+      ],
+      "facts": [
+        "Smalle kasseihelling in de Ronde van Vlaanderen met stukken boven 20 %.",
+        "In 1987 werd Jesper Skibby hier door een volgwagen overreden; de helling verdween daarna jarenlang uit de Ronde."
+      ]
+    },
+    {
+      "id": "oude-kwaremont",
+      "name": "Oude Kwaremont",
+      "aliases": ["oude kwaremont", "kwaremont"],
+      "top": [50.7745, 3.5330],
+      "sides": [
+        {"label": "Kluisbergen", "start": [50.7815, 3.5090]}
+      ],
+      "facts": [
+        "De langste kasseihelling van de Ronde van Vlaanderen, ruim 2 km.",
+        "Sinds 2012 samen met de Paterberg het slotcircuit van de Ronde."
+      ]
+    },
+    {
+      "id": "paterberg",
+      "name": "Paterberg",
+      "aliases": ["paterberg"],
+      "top": [50.7690, 3.5555],
+      "sides": [
+        {"label": "Kluisbergen", "start": [50.7730, 3.5540]}
+      ],
+      "facts": [
+        "Een boer legde in 1986 kasseien op zijn weg zodat de Ronde van Vlaanderen er zou passeren.",
+        "Sinds 2012 de laatste helling van de Ronde van Vlaanderen."
+      ]
+    },
+    {
+      "id": "muur-van-geraardsbergen",
+      "name": "Muur van Geraardsbergen",
+      "aliases": ["muur van geraardsbergen", "kapelmuur", "mur de grammont", "muur geraardsbergen"],
+      "top": [50.7669, 3.8735],
+      "sides": [
+        {"label": "Geraardsbergen", "start": [50.7730, 3.8820]}
+      ],
+      "facts": [
+        "Kasseiklim naar de kapel op de Oudenberg, ook bekend als de Kapelmuur.",
+        "Tot 2011 vaak beslissend in de finale van de Ronde van Vlaanderen, vóór de Bosberg; in 2017 keerde hij terug."
+      ]
+    },
+    {
+      "id": "mur-de-huy",
+      "name": "Mur de Huy",
+      "aliases": ["mur de huy", "muur van hoei"],
+      "top": [50.5115, 5.2300],
+      "sides": [
+        {"label": "Hoei", "start": [50.5170, 5.2380]}
+      ],
+      "facts": [
+        "Sinds 1983 de aankomst van de Waalse Pijl.",
+        "Alejandro Valverde won er vijf keer, meer dan wie ook."
+      ]
+    }
+  ]
+}

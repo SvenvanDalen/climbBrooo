@@ -146,6 +146,12 @@ public final class RouteRepository {
         route.flatSegments    = toStoredFlatSegments(flatDomain, pts, prevFlats, routeOffsetM);
         route.surfaceSections = new ArrayList<>(prevSections);
         route.starredSegments = mergePreviousStarredSegmentUserData(starredSegments, prevStarred);
+        // OSM tunnels (issue #203) are positions on the old geometry: keep them only while the
+        // source is unchanged, otherwise they must be looked up again.
+        if (route.tunnels == null && prev != null && prev.tunnels != null
+                && prev.sourceHash != null && prev.sourceHash.equals(route.sourceHash)) {
+            route.tunnels = prev.tunnels;
+        }
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -171,6 +177,14 @@ public final class RouteRepository {
                 ? catalogFile.lastModified() + ":" + catalogFile.length() : "none";
     }
 
+    /** Stores the OSM tunnels found along the route (issue #203); empty list = none found. */
+    public void setTunnels(String routeId, List<StoredTunnel> tunnels) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        route.tunnels = tunnels != null ? new ArrayList<>(tunnels) : new ArrayList<>();
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+    }
+
     public StoredRoute loadRoute(String routeId) throws IOException {
         File f = routeFile(routeId);
         if (!f.exists()) throw new IOException("Route not found: " + routeId);
@@ -181,6 +195,10 @@ public final class RouteRepository {
 
     public void deleteRoute(String routeId) throws IOException {
         routeFile(routeId).delete();
+        // Its offline package (issue #200) is useless without the route.
+        new nl.paree.climbpro.data.offline.OfflinePackageStore(context.getFilesDir())
+                .delete(routeId);
+        nl.paree.climbpro.data.poi.RoutePoiCache.delete(context.getFilesDir(), routeId);
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(routeId));
         saveCatalog(catalog);
@@ -443,6 +461,22 @@ public final class RouteRepository {
         }
     }
 
+    /**
+     * Plans (or, with null, cancels) an Everesting attempt on a climb (issue #217). A route
+     * carries at most one attempt, so every other climb's target is cleared. Out-of-range
+     * indices are silently ignored, like {@link #setClimbIntervalBlock}.
+     */
+    public void setClimbEverestTarget(String routeId, int climbIndex, Integer targetM)
+            throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
+            for (StoredClimb c : route.climbs) c.everestTargetM = null;
+            route.climbs.get(climbIndex).everestTargetM = targetM;
+            route.lastModifiedMs = System.currentTimeMillis();
+            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        }
+    }
+
     public void saveNotes(String routeId, String notes) throws IOException {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;
@@ -521,7 +555,7 @@ public final class RouteRepository {
 
     /**
      * Copies user-supplied climb data (display-name rename, shape-tag override, manual WR/pro
-     * reference time, interval block, per-segment surface type and per-segment manual target time) from a route's previous
+     * reference time, interval block, Everesting target, per-segment surface type and per-segment manual target time) from a route's previous
      * climbs onto the freshly detected ones. Which previous climb/segment feeds which fresh one
      * is decided by {@link SegmentRemapper} (issue #87): climbs are matched one-to-one by start
      * distance, start coordinate or distance-range overlap, and per-segment surface follows
@@ -554,6 +588,8 @@ public final class RouteRepository {
             }
             // Interval block (issue #180) is a training choice for the whole climb: carry it.
             if (p.intervalBlock != null) f.intervalBlock = p.intervalBlock;
+            // Everesting target (issue #217) is a plan for the whole climb: carry it.
+            if (p.everestTargetM != null) f.everestTargetM = p.everestTargetM;
             // Surface describes the road, so it is position-bound: carry by overlap.
             // Manual target times (issue #23) are grid-bound: segments are 8% of the climb, so a
             // lengthened/trimmed climb keeps 12-13 segments while every boundary moves.
