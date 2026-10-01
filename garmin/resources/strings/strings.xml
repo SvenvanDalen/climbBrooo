@@ -7,4 +7,10 @@
     <string id="SettingsColorModeTitle">Kleurmodus</string>
     <string id="ColorModeGradient">Helling</string>
     <string id="ColorModeFtpZone">FTP-zone</string>
+    <string id="SettingsLightsReminderTitle">Verlichtingsherinnering bij schemering</string>
+    <string id="SettingsLightsLeadTitle">Herinnering voor zonsondergang</string>
+    <string id="LightsLeadSunset">Bij zonsondergang</string>
+    <string id="LightsLead15">15 min ervoor</string>
+    <string id="LightsLead30">30 min ervoor</string>
+    <string id="LightsLead60">60 min ervoor</string>
 </strings>
