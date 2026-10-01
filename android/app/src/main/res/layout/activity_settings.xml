@@ -98,6 +98,14 @@
                         android:progress="30"/>
 
                 </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_watch_field_layout"
+                    style="@style/Widget.ClimbPro.Button.Outline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Horloge-velden"/>
             </LinearLayout>
 
             <LinearLayout
