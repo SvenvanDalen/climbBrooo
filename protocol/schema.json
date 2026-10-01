@@ -29,6 +29,12 @@
       "type": "string",
       "maxLength": 32
     },
+    "un": {
+      "description": "Optional display-unit bitmask (issue #262), any mode: bit 1 = imperial distance/elevation/speed (mi/ft/mph), bit 2 = tyre pressure in psi, bit 4 = temperature in F. Absent or 0 = all metric. Only emitted when non-zero; watch parsers ignore unknown bits and treat a non-integer as metric. Display only: every other distance on the wire stays in metres.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 7
+    },
     "rtl": {
       "description": "Route mode (optional): total route length in whole metres. The watch derives distance-along-course as (rtl - Activity.Info.distanceToDestination) when navigating.",
       "type": "integer",

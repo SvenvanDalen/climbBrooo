@@ -51,6 +51,7 @@ class ClimbData {
     var routeId = null;
     var routeName = null;
     var routeTotalLen = 0;    // route total length (m) from payload "rtl"; 0 = unknown
+    var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;

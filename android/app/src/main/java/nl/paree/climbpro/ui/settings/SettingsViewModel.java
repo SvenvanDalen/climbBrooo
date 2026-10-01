@@ -80,15 +80,13 @@ public final class SettingsViewModel extends AndroidViewModel {
         WorkInfo info = infos.get(infos.size() - 1);
         if (info.getState().isFinished() && pendingSyncRebuild.compareAndSet(true, false)) {
             if (info.getOutputData().getBoolean(RouteSyncWorker.KEY_NO_LOCATION, false)) {
-                syncStatus.postValue(NO_LOCATION_MESSAGE);
+                syncStatus.postValue(getApplication().getString(
+                        nl.paree.climbpro.R.string.settings_radius_no_location));
             }
             refreshSuggestedFtp(riderProfile.getValue(), true);
         }
     }
 
-    /** Shown when radius mode had no known position, so nothing went to the watch (#310). */
-    static final String NO_LOCATION_MESSAGE =
-            "Radiusmodus: geen locatie bekend. Zet locatie aan en sync opnieuw.";
 
     /**
      * Stores the freshest cached fix as the radius-mode centre (issue #310). Runs while the
@@ -251,7 +249,7 @@ public final class SettingsViewModel extends AndroidViewModel {
     }
 
     public void syncNow() {
-        syncStatus.postValue("Syncing…");
+        syncStatus.postValue(getApplication().getString(nl.paree.climbpro.R.string.settings_syncing));
         // Mark that the effort cache must be rebuilt once this sync actually finishes —
         // NOT now, since no new attempt data exists yet at the moment the button is
         // tapped. manualSyncObserver forces the rebuild when the triggered work reaches

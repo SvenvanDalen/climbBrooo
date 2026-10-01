@@ -108,7 +108,7 @@
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Alle"
+                    android:text="@string/surface_all"
                     android:checked="true"/>
 
                 <com.google.android.material.chip.Chip
@@ -116,35 +116,35 @@
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Asfalt"/>
+                    android:text="@string/surface_asphalt"/>
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_gravel"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Gravel"/>
+                    android:text="@string/surface_gravel"/>
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_dirt"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Onverhard"/>
+                    android:text="@string/surface_unpaved"/>
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_cobblestone"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Kasseien"/>
+                    android:text="@string/surface_cobbles"/>
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chip_mixed"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Mixed"/>
+                    android:text="@string/surface_mixed"/>
 
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
@@ -167,15 +167,15 @@
                 android:layout_marginEnd="8dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Rit nu starten"/>
+                android:text="@string/route_list_quick_start"/>
 
             <Button
                 android:id="@+id/btn_quick_start_change"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="Andere route kiezen voor snelle start"
-                android:text="Wijzig"/>
+                android:contentDescription="@string/route_list_quick_start_change_description"
+                android:text="@string/route_list_quick_start_change"/>
         </LinearLayout>
 
         <!-- Tire-pressure reminder banner (issue #155); shown only when a check is due. -->
@@ -212,7 +212,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:contentDescription="Add route"
+        android:contentDescription="@string/route_list_add_route"
         app:backgroundTint="@color/color_accent"
         app:tint="@color/color_accent_on"
         app:srcCompat="@android:drawable/ic_input_add"/>

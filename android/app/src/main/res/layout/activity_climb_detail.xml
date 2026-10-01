@@ -47,7 +47,7 @@
                 android:textColor="@color/color_text_secondary"
                 android:textSize="14sp"
                 android:layout_marginBottom="10dp"
-                android:text="Nog niet beoordeeld"/>
+                android:text="@string/climb_detail_not_rated"/>
 
             <TextView
                 android:id="@+id/climb_time_estimate"
@@ -142,6 +142,34 @@
                 android:layout_marginBottom="16dp"
                 android:visibility="gone"/>
 
+            <!-- Issue #212: facts about a well-known climb, from the bundled dataset. -->
+            <LinearLayout
+                android:id="@+id/climb_facts_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/climb_facts_title"
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/climb_facts_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="2dp"/>
+            </LinearLayout>
+
             <nl.paree.climbpro.ui.climbs.ClimbProfileView
                 android:id="@+id/climb_profile"
                 android:layout_width="match_parent"
@@ -162,7 +190,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Rename climb"/>
+                android:text="@string/climb_detail_rename"/>
 
             <Button
                 android:id="@+id/btn_manual_ref"
@@ -170,7 +198,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="WR/pro-referentietijd instellen"/>
+                android:text="@string/climb_detail_pro_reference"/>
 
             <Button
                 android:id="@+id/btn_interval_block"
@@ -178,7 +206,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Intervalblok koppelen"/>
+                android:text="@string/climb_detail_link_interval"/>
 
             <Button
                 android:id="@+id/btn_everesting"
@@ -194,7 +222,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Deel als afbeelding"/>
+                android:text="@string/climb_detail_share_image"/>
 
             <Button
                 android:id="@+id/btn_export_gpx"
@@ -202,7 +230,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Exporteer als GPX"/>
+                android:text="@string/climb_detail_export_gpx"/>
 
             <Button
                 android:id="@+id/btn_share_code"
@@ -210,7 +238,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Deel als code"/>
+                android:text="@string/climb_detail_share_code"/>
 
             <Button
                 android:id="@+id/btn_rate_climb"
@@ -218,7 +246,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Klim beoordelen"/>
+                android:text="@string/climb_detail_rate"/>
 
             <Button
                 android:id="@+id/btn_export_workout"
@@ -226,7 +254,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Exporteer als Zwift-/ERG-workout"/>
+                android:text="@string/climb_detail_export_workout"/>
 
             <Button
                 android:id="@+id/btn_toggle_home_climb"
@@ -234,7 +262,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Markeer als thuisklim"/>
+                android:text="@string/climb_detail_mark_home"/>
 
             <Button
                 android:id="@+id/btn_sunrise_ride"
@@ -242,7 +270,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Zonsopkomst-rit plannen"/>
+                android:text="@string/climb_detail_sunrise_ride"/>
 
             <Button
                 android:id="@+id/btn_summit_weather"
@@ -250,7 +278,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Weer op de top"/>
+                android:text="@string/climb_detail_summit_weather"/>
 
             <TextView
                 android:id="@+id/best_time"
@@ -263,7 +291,7 @@
                 android:paddingBottom="4dp"
                 android:background="?attr/selectableItemBackground"
                 android:layout_marginBottom="4dp"
-                android:text="Beste moment: tik om te laden"/>
+                android:text="@string/climb_detail_best_moment_tap"/>
 
             <TextView
                 android:id="@+id/best_time_table"
@@ -281,7 +309,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Vergelijk met andere klim"/>
+                android:text="@string/climb_detail_compare"/>
 
             <Button
                 android:id="@+id/btn_gear_calculator"
@@ -289,7 +317,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Versnellingen berekenen"/>
+                android:text="@string/climb_detail_gears"/>
 
             <Button
                 android:id="@+id/btn_re_segment"
@@ -297,7 +325,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="Herbereken segmenten"/>
+                android:text="@string/climb_detail_recompute_segments"/>
 
             <Button
                 android:id="@+id/btn_edit_shape"
@@ -305,7 +333,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:text="Vorm aanpassen"/>
+                android:text="@string/climb_detail_adjust_shape"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -326,14 +354,14 @@
                     style="@style/Widget.ClimbPro.Button.Outline"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Toepassen"/>
+                    android:text="@string/action_apply"/>
             </LinearLayout>
 
             <TextView
                 style="@style/TextAppearance.ClimbPro.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Segments"
+                android:text="@string/climb_detail_segments"
                 android:layout_marginBottom="8dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -348,7 +376,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="24dp"
-                android:text="Historie"
+                android:text="@string/climb_detail_history"
                 android:visibility="gone" />
 
             <LinearLayout

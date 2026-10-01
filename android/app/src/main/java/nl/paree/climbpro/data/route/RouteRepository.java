@@ -181,6 +181,10 @@ public final class RouteRepository {
 
     public void deleteRoute(String routeId) throws IOException {
         routeFile(routeId).delete();
+        // Its offline package (issue #200) is useless without the route.
+        new nl.paree.climbpro.data.offline.OfflinePackageStore(context.getFilesDir())
+                .delete(routeId);
+        nl.paree.climbpro.data.poi.RoutePoiCache.delete(context.getFilesDir(), routeId);
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(routeId));
         saveCatalog(catalog);

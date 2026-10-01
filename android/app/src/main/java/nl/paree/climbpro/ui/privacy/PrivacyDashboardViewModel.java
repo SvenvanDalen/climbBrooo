@@ -29,6 +29,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.social.FriendFeedRepository;
 import nl.paree.climbpro.data.social.FriendShareIdentity;
+import nl.paree.climbpro.data.social.RideBuddyRepository;
 import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.power.RiderProfile;
@@ -211,6 +212,15 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 appendCapped(sb, names);
                 break;
             }
+            case RIDE_BUDDIES: {
+                List<String> names = new ArrayList<>();
+                for (nl.paree.climbpro.domain.social.RideBuddyProfile p
+                        : new RideBuddyRepository(getApplication()).loadAll()) {
+                    names.add("• " + p.name);
+                }
+                appendCapped(sb, names);
+                break;
+            }
             case FAVORITE_START_POINTS: {
                 List<String> names = new ArrayList<>();
                 for (FavoriteStartPoint f : new FavoriteStartPointStore(new File(
@@ -306,6 +316,9 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 // stays: friends who already imported you would otherwise see a second "you".
                 prefs.edit().remove(FriendShareIdentity.PREF_NAME).apply();
                 return (new FriendFeedRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
+            case RIDE_BUDDIES:
+                // Through the repository lock (an import may be writing).
+                return (new RideBuddyRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
             case PHOTOS:
                 new ClimbAttemptRepository(app).clearPhotoReferences();
                 return inventory.deleteFiles(c);

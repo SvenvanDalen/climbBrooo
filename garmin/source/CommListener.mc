@@ -58,6 +58,8 @@ class PhoneMessageCallback {
         data.routeName = msg.get("name");
         var rtl = msg.get("rtl");
         data.routeTotalLen = (rtl != null && rtl instanceof Toybox.Lang.Number) ? rtl : 0;
+        // Optional display units (issue #262); absent/invalid = metric, reset on every payload.
+        data.units = Units.parseFlags(msg.get("un"));
 
         // Everesting attempt (issue #217): cleared on every payload, set by the first climb
         // that carries a valid "ev".
