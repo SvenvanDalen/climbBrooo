@@ -54,6 +54,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `ClimbProView.mc`, `ClimbProApp.mc`
 | 19 | **Hitte-index-waarschuwing** (issue #227: NWS-hitte-index uit Garmin Weather temp + luchtvochtigheid, alarm met hysterese en 20-min-herinnering) | `heatIndexC`, `HeatAlarm.update`, `heatLabel` (`HeatIndex.mc`); `checkHeatIndex`, `heatReading`, `drawHeatBanner` (`ClimbProView.mc`) | 🟢 | `HeatIndexTest.mc`: NWS-referentiewaarden (90 °F/70 %, 35 °C/50 %, 28 °C/90 %), lage-vochtcorrectie, simpele formule, onbekende vochtigheid → luchttemp., clamp; alarm één keer, hysterese −2 °C, herinnering na 20 min, uit/null wist zonder alarm; labelafronding. Weather/Sensor-read + banner: on-device |
 | 20 | **Verlichtingsherinnering bij schemering** (issue #198: zonsondergang/-opkomst op het horloge berekend uit GPS + klok, één melding per rit) | `sunTimesForDay`, `lightsNeeded`, `LightsReminder.update/bannerVisible` (`LightsReminder.mc`); `checkLightsReminder`, `drawLightsBanner`, `triggerLightsAlert` (`ClimbProView.mc`) | 🟢 | `LightsReminderTest.mc`: zontijden Amsterdam zomer/winter, San Francisco over UTC-middernacht, Sydney, Tromsø poolnacht/middernachtzon; voorlooptijd; vóór zonsopkomst; één keer per rit, start in het donker, uitgeschakeld, 60 s-throttle + reset. GPS/klok-read + tril/banner: on-device |
 | 21 | **Everesting-tracker** (issue #217: wire `ev`, herhalingen tellen bij de top, heraanmelden bij de start, totale stijging vs. doel) | `parseEverest` (`CommListener.mc`); `EverestTracker.setPlan/update`, `everestLabel` (`Everesting.mc`); `drawEverestBanner` (`ClimbProView.mc`) | 🟢 | `EverestingTest.mc`: `ev` geldig/misvormd (te kort, 0 herhalingen, geen Number, (0,0)-coördinaat), payload zonder `ev` wist oud plan; top telt, blijven hangen telt niet dubbel, pas na de start opnieuw; halverwege keren telt niet; doel één keer; null-invoer; zelfde plan behoudt teller, nieuw plan reset; labels. Banner + trilling: on-device |
+| 22 | **Tunnels en technische afdalingen** (issue #203: route-level `hz` van de telefoon, waarschuwing vanaf 400 m vooraf, één tril per markering) | `parseHazards`, `hazardAt`, `hazardLabel`, `hazardDisplayPos` (`RouteHazards.mc`); `hz`-parse (`CommListener.mc`); `drawHazardBanner`, `triggerHazardAlert` (`ClimbProView.mc`) | 🟢 | `RouteHazardsTest.mc`: geldige/ongeldige `hz` (vorm, type, bereik, cap 32), look-ahead/binnen/voorbij, labels, resync zonder `hz` wist markeringen; `CommListenerTest`: `hz` geparsed. Tril/banner: on-device |
 
 ---
 
@@ -105,7 +106,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 
 | Module | Functionaliteiten | 🟢 Strak | 🟡 Smoke | 🔴 On-device |
 |---|---|---|---|---|
-| `garmin` | 21 | 15 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill, hartslag-alarm, hitte-index, verlichting, everesting) | 6 (render + lifecycle + alert) | 0 |
+| `garmin` | 22 | 16 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill, hartslag-alarm, hitte-index, verlichting, everesting, hazards) | 6 (render + lifecycle + alert) | 0 |
 | `garmin-surface` | 8 | 4 (parser, voortgang, drift-correctie, GPS-verfijning) | 4 (render + lifecycle + alert) | 0 |
 | `garmin-widget` | 16 | 6 (parser, storage, index, starred, deel-logica, medische ID) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
 

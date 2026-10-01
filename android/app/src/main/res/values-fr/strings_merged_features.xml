@@ -67,4 +67,12 @@
     <string name="offline_pkg_deleted">Pack hors ligne supprimé</string>
     <string name="offline_pkg_failed">Échec du téléchargement : %1$s</string>
     <string name="offline_pkg_source">Météo : Open-Meteo · points © contributeurs OpenStreetMap</string>
+    <string name="hazards_action">Tunnels et descentes dangereuses</string>
+    <string name="hazards_loading">Recherche des tunnels dans OpenStreetMap…</string>
+    <string name="hazards_header">Tunnels : %1$d · descentes techniques : %2$d</string>
+    <string name="hazards_tunnel_row">Tunnel km %1$.1f–%2$.1f (%3$d m) — allume tes lumières</string>
+    <string name="hazards_descent_row">Descente technique km %1$.1f–%2$.1f (%3$.1f km)</string>
+    <string name="hazards_none">Aucun tunnel ni descente technique trouvé.</string>
+    <string name="hazards_lookup_failed">Impossible de récupérer les tunnels (%1$s) ; les tunnels trouvés auparavant sont conservés.</string>
+    <string name="hazards_note">Descentes : ≤ −8 % sur 300 m, ou ≤ −5 % avec beaucoup de virages. Tunnels © contributeurs OpenStreetMap. La montre prévient 400 m avant (après la prochaine synchronisation).</string>
 </resources>

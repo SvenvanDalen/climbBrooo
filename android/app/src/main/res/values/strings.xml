@@ -8,6 +8,15 @@
     <string name="route_reverse_created">Omgekeerde route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_reverse_exists">Omgekeerde route bestaat al — geopend</string>
     <string name="route_reverse_failed">Omdraaien mislukt: %1$s</string>
+    <!-- Tunnels en technische afdalingen (issue #203) -->
+    <string name="hazards_action">Tunnels en gevaarlijke afdalingen</string>
+    <string name="hazards_loading">Tunnels zoeken in OpenStreetMap…</string>
+    <string name="hazards_header">Tunnels: %1$d · technische afdalingen: %2$d</string>
+    <string name="hazards_tunnel_row">Tunnel km %1$.1f–%2$.1f (%3$d m) — licht aan</string>
+    <string name="hazards_descent_row">Technische afdaling km %1$.1f–%2$.1f (%3$.1f km)</string>
+    <string name="hazards_none">Geen tunnels of technische afdalingen gevonden.</string>
+    <string name="hazards_lookup_failed">Tunnels konden niet worden opgehaald (%1$s); eerder gevonden tunnels blijven staan.</string>
+    <string name="hazards_note">Afdalingen: ≤ −8 % over 300 m, of ≤ −5 % met veel bochten. Tunnels © OpenStreetMap-bijdragers. Het horloge waarschuwt 400 m vooraf (na de volgende sync).</string>
     <!-- Offline-pakket voor een route (issue #200) -->
     <string name="offline_pkg_action">Offline-pakket</string>
     <string name="offline_pkg_loading">Offline-pakket downloaden…</string>

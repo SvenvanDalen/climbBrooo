@@ -52,6 +52,12 @@
       "maxItems": 64,
       "items": { "$ref": "#/definitions/Climb" }
     },
+    "hz": {
+      "description": "Route mode (optional, issue #203): hazard markers packed as [startM, endM, type, ...], 3 ints per hazard, ordered by startM. type 0 = road tunnel (OpenStreetMap, 'licht aan'), 1 = technical descent (steep or bendy, detected from the route geometry). Distances in whole metres from the route start. At most 32 hazards; omitted when none, and dropped when the payload would exceed the byte budget.",
+      "type": "array",
+      "maxItems": 96,
+      "items": { "type": "integer", "minimum": 0 }
+    },
     "fss": {
       "description": "Specialized starred flat segments (route mode), shown as a separate list section in the widget. Only segments with an assigned surface (t 0-4) are sent. Omitted when none qualify.",
       "type": "array",

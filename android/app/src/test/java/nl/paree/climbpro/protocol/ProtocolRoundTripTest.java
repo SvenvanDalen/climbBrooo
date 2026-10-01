@@ -88,6 +88,19 @@ public class ProtocolRoundTripTest {
     }
 
     @Test
+    public void builderPayloadWithHazardsValidatesAgainstSchema() throws Exception {
+        ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
+        StoredRoute route = routeFixture();
+        route.tunnels = new java.util.ArrayList<>();
+        route.tunnels.add(new nl.paree.climbpro.data.route.StoredTunnel(1200, 1450));
+        JsonNode payload = MAPPER.readTree(b.buildRoutePayload(route));
+        assertTrue("hz emitted", payload.has("hz"));
+        assertValid(payload, "route payload with hz");
+        assertValid(MAPPER.readTree(b.buildSingleClimbPayload(route, 0)),
+                "single-climb payload with hz");
+    }
+
+    @Test
     public void builderPayloadsWithEverestingValidateAgainstSchema() throws Exception {
         ClimbPayloadBuilder b = new ClimbPayloadBuilder(MAPPER);
         StoredRoute route = routeFixture();

@@ -78,6 +78,9 @@ class ClimbProView extends Ui.DataField {
     hidden var descent = new DescentTracker();
     hidden var feltShownC = null;
 
+    // Tunnels / technical descents ahead (issue #203).
+    hidden var hazardIdx = -1;             // hazard the banner is about; -1 = none
+    hidden var hazardAlerted = 0;          // bitmask of hazards already alerted this route
     // Everesting attempt (issue #217); everestAscentM = last total ascent for the banner.
     hidden var everest = new EverestTracker();
     hidden var everestAscentM = null;
@@ -131,6 +134,8 @@ class ClimbProView extends Ui.DataField {
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
             data.climbStartTimerMs = -1;
+            hazardAlerted = 0;
+            hazardIdx = -1;
             easier.reset();
         }
 
@@ -170,6 +175,16 @@ class ClimbProView extends Ui.DataField {
         if (info != null && info has :currentLocation && info.currentLocation != null) {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
             data.updateRouteMatch(ll[0], ll[1]);
+        }
+
+        // Tunnels / technical descents (issue #203): banner from HAZARD_LOOKAHEAD_M ahead and
+        // while inside, one buzz per hazard (bitmask latch, survives GPS jitter around the
+        // look-ahead edge). Suppressed off-route, where the route axis is meaningless.
+        hazardIdx = (data.offRoute || data.mode == null || !data.mode.equals("route")) ? -1
+                : hazardAt(data.hazards, axis, HAZARD_LOOKAHEAD_M);
+        if (hazardIdx >= 0 && (hazardAlerted & (1 << hazardIdx)) == 0) {
+            hazardAlerted |= (1 << hazardIdx);
+            triggerHazardAlert();
         }
 
         // Detect leaving a climb (summary) BEFORE overwriting the climb-start timer.
@@ -445,6 +460,8 @@ class ClimbProView extends Ui.DataField {
             drawHeartRateBanner(dc, hrIrregularLabel());
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
+        } else if (hazardIdx >= 0 && data.hazards != null) {
+            drawHazardBanner(dc, data);
         } else if (heatShownC != null) {
             drawHeatBanner(dc, heatShownC);
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
@@ -456,6 +473,17 @@ class ClimbProView extends Ui.DataField {
         } else if (everest.active()) {
             drawEverestBanner(dc);
         }
+    }
+
+    // Purple strip for a tunnel / technical descent ahead or under the rider (issue #203).
+    hidden function drawHazardBanner(dc, data) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_PURPLE, Gfx.COLOR_PURPLE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY,
+                hazardLabel(data.hazards, hazardIdx, hazardDisplayPos(data.lastElapsedDistance)),
+                Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Yellow strip for 30 s after the dusk reminder fired (issue #198).
@@ -1054,6 +1082,22 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_START);
+        }
+    }
+
+    // Tunnel / technical descent ahead (issue #203): three short buzzes + a high tone.
+    hidden function triggerHazardAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 200),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 200),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 200)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
         }
     }
 

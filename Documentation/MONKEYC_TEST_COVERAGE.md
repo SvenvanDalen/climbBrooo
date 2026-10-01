@@ -48,6 +48,10 @@ asserted in `garmin/test/WindChillTest.mc` (windchill reference values + validit
 bounds, descent window/hysteresis, 1 °C display latch, show/hide gate); only the
 `Sensor.getInfo()` temperature read is on-device.
 
+Tunnels and technical descents (issue #203, `garmin/source/RouteHazards.mc`) are pure and
+asserted in `garmin/test/RouteHazardsTest.mc` (`hz` validation incl. shape/type/range/cap,
+look-ahead + inside lookup, banner labels, resync without `hz` clears markers);
+`CommListenerTest` checks the packed array is parsed. Only the buzz/banner are on-device.
 Lights reminder at dusk (issue #198, `garmin/source/LightsReminder.mc`) is pure and asserted
 in `garmin/test/LightsReminderTest.mc` (sun times for Amsterdam summer/winter, San Francisco
 across UTC midnight, Sydney, Tromsø polar night/midnight sun; lead time; before-sunrise;

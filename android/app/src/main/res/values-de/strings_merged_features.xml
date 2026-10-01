@@ -67,4 +67,12 @@
     <string name="offline_pkg_deleted">Offline-Paket gelöscht</string>
     <string name="offline_pkg_failed">Download fehlgeschlagen: %1$s</string>
     <string name="offline_pkg_source">Wetter: Open-Meteo · Punkte © OpenStreetMap-Mitwirkende</string>
+    <string name="hazards_action">Tunnel und gefährliche Abfahrten</string>
+    <string name="hazards_loading">Tunnel werden in OpenStreetMap gesucht…</string>
+    <string name="hazards_header">Tunnel: %1$d · technische Abfahrten: %2$d</string>
+    <string name="hazards_tunnel_row">Tunnel km %1$.1f–%2$.1f (%3$d m) — Licht an</string>
+    <string name="hazards_descent_row">Technische Abfahrt km %1$.1f–%2$.1f (%3$.1f km)</string>
+    <string name="hazards_none">Keine Tunnel oder technischen Abfahrten gefunden.</string>
+    <string name="hazards_lookup_failed">Tunnel konnten nicht abgerufen werden (%1$s); früher gefundene Tunnel bleiben erhalten.</string>
+    <string name="hazards_note">Abfahrten: ≤ −8 % auf 300 m oder ≤ −5 % mit vielen Kurven. Tunnel © OpenStreetMap-Mitwirkende. Die Uhr warnt 400 m vorher (nach der nächsten Synchronisierung).</string>
 </resources>

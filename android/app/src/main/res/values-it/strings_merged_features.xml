@@ -67,4 +67,12 @@
     <string name="offline_pkg_deleted">Pacchetto offline eliminato</string>
     <string name="offline_pkg_failed">Download non riuscito: %1$s</string>
     <string name="offline_pkg_source">Meteo: Open-Meteo · punti © contributori OpenStreetMap</string>
+    <string name="hazards_action">Gallerie e discese pericolose</string>
+    <string name="hazards_loading">Ricerca delle gallerie in OpenStreetMap…</string>
+    <string name="hazards_header">Gallerie: %1$d · discese tecniche: %2$d</string>
+    <string name="hazards_tunnel_row">Galleria km %1$.1f–%2$.1f (%3$d m) — luci accese</string>
+    <string name="hazards_descent_row">Discesa tecnica km %1$.1f–%2$.1f (%3$.1f km)</string>
+    <string name="hazards_none">Nessuna galleria o discesa tecnica trovata.</string>
+    <string name="hazards_lookup_failed">Impossibile recuperare le gallerie (%1$s); quelle trovate in precedenza restano.</string>
+    <string name="hazards_note">Discese: ≤ −8 % su 300 m, oppure ≤ −5 % con molte curve. Gallerie © contributori OpenStreetMap. L\'orologio avvisa 400 m prima (dopo la prossima sincronizzazione).</string>
 </resources>

@@ -17,7 +17,7 @@ import java.nio.file.Files;
 public class ProtocolLockstepGuardTest {
 
     /** Keys that must appear on every surface of the route-mode wire contract. */
-    private static final String[] LOCKSTEP_KEYS = { "rtl", "ib", "ev", "zc", "un" };
+    private static final String[] LOCKSTEP_KEYS = { "rtl", "ib", "ev", "zc", "un", "hz" };
 
     @Test
     public void wireKeysPresentOnAllSurfaces() throws Exception {
