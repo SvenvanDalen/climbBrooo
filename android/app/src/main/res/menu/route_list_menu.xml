@@ -92,6 +92,9 @@
                 android:id="@+id/action_friend_feed"
                 android:title="Vriendenfeed"/>
             <item
+                android:id="@+id/action_ride_buddies"
+                android:title="@string/ride_buddies_title"/>
+            <item
                 android:id="@+id/action_wrapped"
                 android:title="Jaaroverzicht"/>
         </menu>
@@ -120,6 +123,9 @@
             <item
                 android:id="@+id/action_goal_event"
                 android:title="Doelevenement"/>
+            <item
+                android:id="@+id/action_event_calendar"
+                android:title="Evenementen in de buurt"/>
             <item
                 android:id="@+id/action_elevation_target"
                 android:title="Hoogtemeter-doel"/>
@@ -210,6 +216,9 @@
             <item
                 android:id="@+id/action_strava"
                 android:title="Strava"/>
+            <item
+                android:id="@+id/action_import_share_link"
+                android:title="@string/share_link_title"/>
             <item
                 android:id="@+id/action_batch_export"
                 android:title="Exporteer seizoen (GPX)"/>

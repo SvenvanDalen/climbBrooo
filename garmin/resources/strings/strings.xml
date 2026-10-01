@@ -7,4 +7,9 @@
     <string id="SettingsColorModeTitle">Kleurmodus</string>
     <string id="ColorModeGradient">Helling</string>
     <string id="ColorModeFtpZone">FTP-zone</string>
+    <string id="SettingsHeatIndexTitle">Hitte-index-waarschuwing</string>
+    <string id="HeatIndexOff">Uit</string>
+    <string id="HeatIndex27">Vanaf 27 °C (voorzichtig)</string>
+    <string id="HeatIndex32">Vanaf 32 °C (extra voorzichtig)</string>
+    <string id="HeatIndex39">Vanaf 39 °C (gevaar)</string>
 </strings>

@@ -48,4 +48,38 @@ public final class TirePressureUnits {
     public static String format(double bar) {
         return String.format(Locale.getDefault(), "%.1f bar (%d psi)", bar, barToPsi(bar));
     }
+
+    /**
+     * Like {@link #format(double)} but with the rider's preferred unit first (issue #262):
+     * "94 psi (6,5 bar)" when {@code psiFirst}, otherwise "6,5 bar (94 psi)".
+     */
+    public static String format(double bar, boolean psiFirst) {
+        if (!psiFirst) return format(bar);
+        return String.format(Locale.getDefault(), "%d psi (%.1f bar)", barToPsi(bar), bar);
+    }
+
+    /**
+     * Parses user input in psi (issue #262) to bar rounded to one decimal — the log stays in
+     * bar — or null when empty, not a number, or outside the plausible bar range.
+     */
+    public static Double parsePsi(String input) {
+        if (input == null) return null;
+        String s = input.trim().replace(',', '.');
+        if (s.isEmpty()) return null;
+        double psi;
+        try {
+            psi = Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        if (Double.isNaN(psi)) return null;
+        double bar = roundOneDecimal(psi / PSI_PER_BAR);
+        if (bar < MIN_BAR || bar > MAX_BAR) return null;
+        return bar;
+    }
+
+    /** Parses input in the rider's pressure unit (issue #262) to bar. */
+    public static Double parse(String input, boolean psi) {
+        return psi ? parsePsi(input) : parseBar(input);
+    }
 }

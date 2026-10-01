@@ -38,6 +38,17 @@
     <string name="loop_gen_kind_combined">twee rondjes gecombineerd</string>
     <string name="loop_gen_kind_out_and_back">heen en terug</string>
     <string name="loop_gen_disclaimer">Er is geen wegrouter: voorstellen volgen alleen je opgeslagen routes. Het stukje van en naar het startpunt (max. 1,5 km) en eventuele afsnijdingen zijn hemelsbreed — controleer de route op de kaart voor je vertrekt.</string>
+    <!-- Bezienswaardigheden langs de route (issue #208) -->
+    <string name="route_pois_action">Bezienswaardigheden</string>
+    <string name="route_pois_title">Bezienswaardigheden</string>
+    <string name="route_pois_refresh">Vernieuwen</string>
+    <string name="route_pois_loading">Bezienswaardigheden zoeken…</string>
+    <string name="route_pois_summary">%1$d bezienswaardigheden binnen %2$d m van de route (opgehaald %3$s). Tik om op de kaart te openen.</string>
+    <string name="route_pois_none">Geen bezienswaardigheden binnen %1$d m van de route gevonden (opgehaald %2$s).</string>
+    <string name="route_pois_no_route">Deze route heeft geen coördinaten.</string>
+    <string name="route_pois_failed">Bezienswaardigheden ophalen mislukt: %1$s</string>
+    <string name="route_pois_no_map_app">Geen kaart-app gevonden</string>
+    <string name="route_pois_attribution">Bron: © OpenStreetMap-bijdragers (ODbL)</string>
     <!-- Windgeoptimaliseerde rijrichting voor een rondje (issue #174) -->
     <string name="loop_wind_action">Beste rijrichting (wind)</string>
     <string name="loop_wind_loading">Windverwachting laden…</string>
@@ -66,6 +77,7 @@
     </string-array>
     <string name="route_profile_title">Hoogteprofiel</string>
     <string name="route_profile_empty">Geen hoogtegegevens voor deze route</string>
+    <string name="border_crossings_title">Grensovergangen</string>
     <string name="route_profile_description">Hoogteprofiel van %1$.1f km, van %2$d tot %3$d m hoogte, met %4$d klimmen gemarkeerd</string>
     <!-- Overflow-menu groups (#351) -->
     <string name="menu_group_climbs">Klimmen</string>
@@ -75,6 +87,10 @@
     <string name="menu_group_bike">Fiets &amp; materiaal</string>
     <string name="menu_group_data">Data &amp; app</string>
     <!-- Klim van de week (issue #40) -->
+    <string name="ride_buddies_title">Ritmaatjes</string>
+    <string name="ride_buddies_share">Deel mijn profiel</string>
+    <string name="ride_buddies_import">Code plakken</string>
+    <string name="ride_buddies_empty">Nog geen rijders. Vraag iemand om in ClimbPro onder Ritmaatjes op Deel mijn profiel te tikken en plak de ontvangen code hier. Je ziet dan hoe goed jullie tempo, ritlengte, rittype, rijdagen en gebied bij elkaar passen. Tik op een rijder voor details, houd lang ingedrukt om te verwijderen.</string>
     <string name="menu_climb_of_the_week">Klim van de week</string>
     <string name="cotw_title">Klim van de week</string>
     <string name="cotw_week">Suggestie voor week %1$s</string>
@@ -444,4 +460,19 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="ftp_test_apply_confirm_message_new">Je FTP wordt %1$d W. Tijdschattingen, pacing en workouts gebruiken daarna deze waarde.</string>
     <string name="ftp_test_applied">FTP bijgewerkt naar %1$d W</string>
     <string name="ftp_test_unknown_ride">Rit</string>
+
+    <!-- Issue #212: climb history & facts -->
+    <string name="climb_facts_title">Weetjes · %1$s</string>
+    <string name="climb_facts_side">Via %1$s</string>
+    <string name="climb_facts_by_name">Herkend aan de naam van de klim</string>
+    <!-- Share-link import (issue #210) -->
+    <string name="share_link_title">Route via deellink (Komoot/RideWithGPS)</string>
+    <string name="share_link_message">Plak een openbare link naar een Komoot-tour of RideWithGPS-route.</string>
+    <string name="share_link_hint">https://www.komoot.com/tour/…</string>
+    <string name="share_link_import">Importeren</string>
+    <string name="share_link_cancel">Annuleren</string>
+    <string name="share_link_not_recognised">Geen Komoot- of RideWithGPS-link gevonden</string>
+    <string name="share_link_fetching">Route ophalen…</string>
+    <string name="share_link_failed">Importeren mislukt: %1$s</string>
+    <string name="share_link_share_label">Route importeren (ClimbPro)</string>
 </resources>
