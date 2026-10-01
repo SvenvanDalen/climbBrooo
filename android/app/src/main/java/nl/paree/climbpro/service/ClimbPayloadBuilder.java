@@ -10,6 +10,7 @@ import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.power.SegmentIntensityZones;
+import nl.paree.climbpro.domain.watch.WatchFieldLayout;
 import nl.paree.climbpro.domain.segment.GradientPalette;
 import nl.paree.climbpro.domain.route.RouteHazards;
 import nl.paree.climbpro.domain.units.UnitPreferences;
@@ -70,20 +71,24 @@ public final class ClimbPayloadBuilder {
     private final RiderProfile zoneProfile;
     /** Rider FTP used to turn a climb's interval block (% FTP) into watts; 0 = unknown. */
     private final int ftpWatts;
+    /** Optional top-level 'lay' (datafield slot layout); null = default layout, key omitted. */
+    private final int[] fieldLayout;
     /** Color palette ({@link GradientPalette}); the default palette emits no 'pal' key. */
     private final int palette;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
-        this(mapper, null, 0, GradientPalette.DEFAULT, 0);
+        this(mapper, null, 0, GradientPalette.DEFAULT, 0, null);
     }
 
     private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts,
-                                int palette, int unitFlags) {
+                                int palette, int unitFlags,
+                                int[] fieldLayout) {
         this.mapper = mapper;
         this.unitFlags = unitFlags;
         this.zoneProfile = zoneProfile;
         this.ftpWatts = ftpWatts;
         this.palette = GradientPalette.normalize(palette);
+        this.fieldLayout = fieldLayout;
     }
 
     /**
@@ -94,7 +99,7 @@ public final class ClimbPayloadBuilder {
      * nice-to-have and must never cost a sync (radius mode: never cost a climb).
      */
     public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
-        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, palette, unitFlags);
+        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, palette, unitFlags, fieldLayout);
     }
 
     /**
@@ -102,7 +107,16 @@ public final class ClimbPayloadBuilder {
      * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
      */
     public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), palette, unitFlags);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), palette, unitFlags, fieldLayout);
+    }
+
+    /**
+     * Sets the stat-slot layout the datafield uses on its active-climb page ('lay'). A null or
+     * default layout emits nothing, so riders who never customise send the same bytes as before.
+     */
+    public ClimbPayloadBuilder withFieldLayout(WatchFieldLayout layout) {
+        int[] lay = (layout == null || layout.isDefault()) ? null : layout.codes();
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, lay);
     }
 
     /**
@@ -112,7 +126,7 @@ public final class ClimbPayloadBuilder {
      * change on the watch: the colorIndex values in 'segs' and 'zc' are the same.
      */
     public ClimbPayloadBuilder withPalette(int palette) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout);
     }
 
     /** Adds {@code pal} when a non-default palette is selected. */
@@ -128,7 +142,7 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withUnits(UnitPreferences units) {
         int flags = units != null ? units.toWireFlags() : 0;
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, flags);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, flags, fieldLayout);
     }
 
     /** Adds 'un' when the units are not all-metric. */
@@ -178,6 +192,7 @@ public final class ClimbPayloadBuilder {
                 climbs.add(buildRouteClimb(route.climbs.get(i), tsec, refsec));
             }
         }
+        putFieldLayout(payload);
         payload.put("climbs", climbs);
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
@@ -195,6 +210,7 @@ public final class ClimbPayloadBuilder {
         if (climbs != null) {
             for (StoredClimb sc : climbs) out.add(buildRadiusClimb(sc));
         }
+        putFieldLayout(payload);
         payload.put("climbs", out);
         return writeWithinBudget(payload, out);
     }
@@ -229,6 +245,7 @@ public final class ClimbPayloadBuilder {
         int[] refsec = (refSeconds != null && climbIndex < refSeconds.length)
                 ? refSeconds[climbIndex] : null;
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
+        putFieldLayout(payload);
         payload.put("climbs", climbs);
         putHazards(payload, route);
         return writeWithinBudget(payload, climbs);
@@ -273,6 +290,13 @@ public final class ClimbPayloadBuilder {
     }
 
     /** Route-mode only: total route length (m), from the last cumulative distance. */
+    private void putFieldLayout(Map<String, Object> payload) {
+        if (fieldLayout == null) return;
+        List<Integer> lay = new ArrayList<>(fieldLayout.length);
+        for (int code : fieldLayout) lay.add(code);
+        payload.put("lay", lay);
+    }
+
     private static void putRouteTotalLength(Map<String, Object> payload, StoredRoute route) {
         if (route.distances != null && route.distances.length > 0) {
             payload.put("rtl", (int) Math.round(route.distances[route.distances.length - 1]));

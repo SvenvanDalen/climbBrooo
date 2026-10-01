@@ -139,6 +139,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
+- **Watch fields** — Settings → "Horloge-velden": choose per slot what the datafield's
+  active-climb page shows (remaining distance/elevation, gradient, VAM, ETA, PR/plan delta,
+  interval block, speed, heart rate, power, cadence, elapsed time, or empty).
 - **Kleurenblind-vriendelijk palet** (issue #258) — Settings → "Kleuren": swaps the
   yellow → red gradient colors for pale yellow → light blue → navy (blue–yellow axis,
   darker = steeper) and green/red status colors for blue/orange, in the app and — via the

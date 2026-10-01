@@ -71,6 +71,9 @@ class PhoneMessageCallback {
         // that carries a valid "ev".
         data.everest = null;
         data.everestClimb = -1;
+        // Every payload sets the layout: one without 'lay' (default chosen on the phone)
+        // must reset an earlier custom layout, not keep it.
+        data.layout = FieldLayout.parse(msg.get("lay"));
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {

@@ -11,6 +11,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.watch.WatchFieldLayoutStore;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
 import nl.paree.climbpro.service.CombinedRefTimePlanner;
@@ -39,6 +40,8 @@ public final class WatchRequestHandler {
     private nl.paree.climbpro.data.medical.MedicalIdRepository medicalIdRepo;
     /** Display units sent as 'un' (issue #262); null = metric (no key). */
     private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
+    /** Datafield slot layout sent as 'lay'; null = default layout (no key). */
+    private volatile WatchFieldLayoutStore layoutStore;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -73,6 +76,11 @@ public final class WatchRequestHandler {
         if (source != null) this.paletteSource = source;
     }
 
+    /** Enables the datafield slot layout ('lay') in watch-requested payloads. */
+    public void setFieldLayoutStore(WatchFieldLayoutStore store) {
+        this.layoutStore = store;
+    }
+
     /**
      * Enables the MEDICAL_ID message (issue #230): the widget receives phone messages only
      * while it is open, so the phone re-sends the ID every time the widget lists routes.
@@ -99,12 +107,14 @@ public final class WatchRequestHandler {
     /**
      * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
      * when a rider profile is available; without one the payload is unchanged. Also carries
-     * the rider's display units (issue #262) when a units repo is wired up.
+     * the rider's display units (issue #262) when a units repo is wired up, and the
+     * datafield slot layout ('lay') when a layout store is set.
      */
     private ClimbPayloadBuilder payloadBuilder() {
         ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper)
                 .withPalette(paletteSource.getAsInt());
         if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
+        builder = builder.withFieldLayout(layoutStore != null ? layoutStore.load() : null);
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 

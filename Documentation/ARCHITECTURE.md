@@ -236,6 +236,19 @@ continues to the next climb. `climbSkipped` resets on every payload (along with
 `climbEntered`, `calibIdx`, and `navTrust`). Radius mode is unaffected (`rtl` is
 route-mode only).
 
+### Datafield slot layout (2026-10-01)
+
+The rider picks, on the phone (Settings → "Horloge-velden"), which value each of the five
+stat slots on the datafield's active-climb page shows (left, middle, right, row 4, bottom
+line). The choice lives in `SharedPreferences` (`WatchFieldLayoutStore`) and rides along as
+the optional top-level key `lay` (5 metric codes) in every route, radius and single-climb
+payload; the default layout `[0,1,2,14,15]` — the pre-layout screen — sends nothing. The
+layout is part of `RouteSyncWorker`'s sync hash, so changing it triggers a resync. On the
+watch `FieldLayout.parse` reads the array (default per slot for a bad code, full default
+for a missing/malformed array, so a payload without `lay` resets an earlier layout) and
+`ClimbProView.drawSlot` renders each slot. Codes are shared by `WatchFieldLayout.java`,
+`FieldLayout.mc` and `protocol/schema.json`.
+
 ### Sync semantics
 
 - **Incremental**: only resync routes that changed (hash the source GPX/FIT, store on phone).
