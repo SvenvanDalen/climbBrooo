@@ -182,12 +182,23 @@ public final class RouteSyncWorker extends Worker {
      * a manual edit would never trigger a re-sync on its own (only an unrelated change that
      * happens to move {@code sourceHash} or the profile would surface it).
      */
+    /** OSM tunnels (issue #203) change the 'hz' markers, so a lookup triggers a resync. */
+    static String tunnelSignature(StoredRoute route) {
+        if (route.tunnels == null) return "t-";
+        StringBuilder sb = new StringBuilder("t");
+        for (nl.paree.climbpro.data.route.StoredTunnel t : route.tunnels) {
+            sb.append(t.startDistance).append('-').append(t.endDistance).append(',');
+        }
+        return sb.toString();
+    }
+
     private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
                                    nl.paree.climbpro.domain.power.GhostTarget ghost) {
         return route.sourceHash + "|" + profile.signature()
                 + "|" + SegmentTargetOverrideMerger.signature(route)
                 + "|" + ghost.signature()
-                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route);
+                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route)
+                + "|" + tunnelSignature(route);
     }
 
     /**

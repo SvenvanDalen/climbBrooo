@@ -7,8 +7,10 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.power.SegmentIntensityZones;
+import nl.paree.climbpro.domain.route.RouteHazards;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +33,8 @@ import java.util.Map;
  *      ib:[targetW, lowW, highW],                        // interval block (optional, issue #180; needs FTP)
  *      zc:[zoneColorIndex, ...]}                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
  *   ],
- *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
+ *   fss:[{s,e,t,n?}, ...],                              // specialized starred segments (optional, omitted when none qualify)
+ *   hz:[startM, endM, type, ...]}                       // tunnels (0) + technical descents (1) (optional, issue #203)
  *
  * latInt/lonInt = degrees × 100000 (integer).
  * gradient = fraction × 100 × 10 (fixed-point pct×10).
@@ -47,6 +50,8 @@ public final class ClimbPayloadBuilder {
 
     /** Wire key of the optional per-segment FTP intensity-zone color array (issue #66). */
     static final String KEY_ZONE_COLORS = "zc";
+    /** Route-level packed hazard markers (issue #203). */
+    static final String KEY_HAZARDS = "hz";
 
     private final ObjectMapper mapper;
     /** Rider profile for the optional 'zc' arrays; null = never emit them. */
@@ -126,6 +131,7 @@ public final class ClimbPayloadBuilder {
         payload.put("climbs", climbs);
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
+        putHazards(payload, route);
         return writeWithinBudget(payload, climbs);
     }
 
@@ -170,6 +176,7 @@ public final class ClimbPayloadBuilder {
                 ? refSeconds[climbIndex] : null;
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
         payload.put("climbs", climbs);
+        putHazards(payload, route);
         return writeWithinBudget(payload, climbs);
     }
 
@@ -186,7 +193,29 @@ public final class ClimbPayloadBuilder {
         for (Map<String, Object> c : climbs) {
             if (c.remove(KEY_ZONE_COLORS) != null) stripped = true;
         }
-        return stripped ? mapper.writeValueAsBytes(payload) : bytes;
+        if (stripped) {
+            bytes = mapper.writeValueAsBytes(payload);
+            if (bytes.length <= PayloadBudget.MAX_BYTES) return bytes;
+        }
+        // Hazard markers (issue #203) are a nice-to-have too: drop them before failing a sync.
+        return payload.remove(KEY_HAZARDS) != null ? mapper.writeValueAsBytes(payload) : bytes;
+    }
+
+    /**
+     * Route-level hazard markers 'hz' (issue #203): technical descents detected from the
+     * geometry plus stored OSM tunnels, packed as [startM, endM, type, ...]. Omitted when none.
+     */
+    private static void putHazards(Map<String, Object> payload, StoredRoute route) {
+        List<RouteHazards.Hazard> hazards = new ArrayList<>(RouteHazards.detectDescents(
+                route.lats, route.lons, route.elevations, route.distances));
+        if (route.tunnels != null) {
+            for (StoredTunnel t : route.tunnels) {
+                hazards.add(new RouteHazards.Hazard(t.startDistance, t.endDistance,
+                        RouteHazards.TYPE_TUNNEL));
+            }
+        }
+        int[] hz = RouteHazards.pack(hazards);
+        if (hz != null) payload.put(KEY_HAZARDS, hz);
     }
 
     /** Route-mode only: total route length (m), from the last cumulative distance. */

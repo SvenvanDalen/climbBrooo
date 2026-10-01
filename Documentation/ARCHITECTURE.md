@@ -802,6 +802,33 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Tunnels and technical descents (issue #203)
+
+Wire extension: optional route-level `hz` = `[startM, endM, type, …]` (3 ints per hazard,
+type 0 = tunnel, 1 = technical descent, max 32, ordered by start). The pure
+`domain/route/RouteHazards` does the phone-side work: `detectDescents` slides a 300 m window
+over the stored (smoothed, simplified) geometry and flags it when the average gradient is
+≤ −8 %, or ≤ −5 % with ≥ 150° of summed heading change (hairpins); flagged windows within
+150 m are merged. Tunnels come from OpenStreetMap: `data/osm/OverpassTunnelClient` sends one
+Overpass query with `around:40` filters along the route polyline (chunked per 400 points) for
+`highway` ways tagged `tunnel=yes|building_passage|avalanche_protector`, and
+`RouteHazards.matchTunnels` projects each way's nodes onto the route line (≤ 30 m) to get its
+along-route range. The lookup only runs when the user taps "Tunnels en gevaarlijke afdalingen"
+on route detail (offline-first: no network at import); results are stored as
+`StoredRoute.tunnels` (null = never looked up) and kept across a resync only while
+`sourceHash` is unchanged, since they are positions on the old geometry. Descents are computed
+at payload-build time, so they need no storage. `ClimbPayloadBuilder` adds `hz` to the route
+and single-climb payloads and drops it (after `zc`) when a payload would exceed the byte budget;
+`RouteSyncWorker.wantHash` includes the tunnels so a lookup triggers a resync.
+
+On the watch, `garmin/source/RouteHazards.mc` validates `hz` (`parseHazards`: Numbers, multiple
+of 3, `0 ≤ start < end`, known type; malformed or absent clears the markers) and
+`ClimbProView.compute` does one cheap ordered lookup per tick on the route axis
+(`hazardAt`, 400 m look-ahead or inside). It draws a purple header strip below off-route and
+battery and above felt temperature, with the distance rounded to 50 m so the text doesn't
+churn, and buzzes once per hazard (bitmask latch, reset on route change; suppressed off-route).
+The widget ignores `hz`.
+
 ### FTP intensity-zone colors (issue #66)
 
 The fixed gradient → color mapping stays the default and the single source of

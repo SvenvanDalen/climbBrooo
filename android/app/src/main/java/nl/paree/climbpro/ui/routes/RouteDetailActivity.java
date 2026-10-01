@@ -28,10 +28,12 @@ import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
 import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
+import nl.paree.climbpro.domain.route.RouteHazards;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.LoopWindAdvice;
@@ -196,6 +198,19 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
+        binding.btnHazards.setOnClickListener(v -> {
+            binding.btnHazards.setEnabled(false); // one lookup at a time
+            binding.btnHazards.setText(R.string.hazards_loading);
+            viewModel.lookupTunnels(routeId);
+        });
+        viewModel.tunnelLookup().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeTunnelLookup();
+            binding.btnHazards.setEnabled(true);
+            binding.btnHazards.setText(R.string.hazards_action);
+            binding.hazardsSummary.setText(describeHazards(result.route, result.error));
+            binding.hazardsSummary.setVisibility(View.VISIBLE);
+        });
 
         viewModel.loadRoute(routeId);
     }
@@ -571,6 +586,37 @@ public final class RouteDetailActivity extends AppCompatActivity {
         return headwindKmh < 0
                 ? getString(R.string.loop_wind_tail, -headwindKmh)
                 : getString(R.string.loop_wind_head, headwindKmh);
+    }
+
+    /** Tunnels (stored, from OSM) and technical descents (from the geometry), issue #203. */
+    private String describeHazards(StoredRoute r, String lookupError) {
+        List<RouteHazards.Hazard> all = new ArrayList<>();
+        if (r.tunnels != null) {
+            for (StoredTunnel t : r.tunnels) {
+                all.add(new RouteHazards.Hazard(t.startDistance, t.endDistance,
+                        RouteHazards.TYPE_TUNNEL));
+            }
+        }
+        int tunnels = all.size();
+        all.addAll(RouteHazards.detectDescents(r.lats, r.lons, r.elevations, r.distances));
+        all.sort((a, b) -> Integer.compare(a.startM, b.startM));
+        StringBuilder sb = new StringBuilder();
+        if (lookupError != null) {
+            sb.append(getString(R.string.hazards_lookup_failed, lookupError)).append("\n\n");
+        }
+        if (all.isEmpty()) {
+            sb.append(getString(R.string.hazards_none));
+        } else {
+            sb.append(getString(R.string.hazards_header, tunnels, all.size() - tunnels));
+            for (RouteHazards.Hazard h : all) {
+                sb.append('\n').append(h.type == RouteHazards.TYPE_TUNNEL
+                        ? getString(R.string.hazards_tunnel_row, h.startM / 1000.0,
+                                h.endM / 1000.0, h.endM - h.startM)
+                        : getString(R.string.hazards_descent_row, h.startM / 1000.0,
+                                h.endM / 1000.0, (h.endM - h.startM) / 1000.0));
+            }
+        }
+        return sb.append("\n\n").append(getString(R.string.hazards_note)).toString();
     }
 
     private static String reason(Exception e) {

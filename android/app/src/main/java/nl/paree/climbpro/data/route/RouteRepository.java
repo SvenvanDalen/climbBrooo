@@ -146,6 +146,12 @@ public final class RouteRepository {
         route.flatSegments    = toStoredFlatSegments(flatDomain, pts, prevFlats, routeOffsetM);
         route.surfaceSections = new ArrayList<>(prevSections);
         route.starredSegments = mergePreviousStarredSegmentUserData(starredSegments, prevStarred);
+        // OSM tunnels (issue #203) are positions on the old geometry: keep them only while the
+        // source is unchanged, otherwise they must be looked up again.
+        if (route.tunnels == null && prev != null && prev.tunnels != null
+                && prev.sourceHash != null && prev.sourceHash.equals(route.sourceHash)) {
+            route.tunnels = prev.tunnels;
+        }
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -169,6 +175,14 @@ public final class RouteRepository {
     public String dataVersion() {
         return catalogFile.exists()
                 ? catalogFile.lastModified() + ":" + catalogFile.length() : "none";
+    }
+
+    /** Stores the OSM tunnels found along the route (issue #203); empty list = none found. */
+    public void setTunnels(String routeId, List<StoredTunnel> tunnels) throws IOException {
+        StoredRoute route = loadRoute(routeId);
+        route.tunnels = tunnels != null ? new ArrayList<>(tunnels) : new ArrayList<>();
+        route.lastModifiedMs = System.currentTimeMillis();
+        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
     }
 
     public StoredRoute loadRoute(String routeId) throws IOException {

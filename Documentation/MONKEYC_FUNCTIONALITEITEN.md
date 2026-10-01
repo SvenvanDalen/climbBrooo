@@ -50,6 +50,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `ClimbProView.mc`, `ClimbProApp.mc`
 | 15 | **Klim-start-alert** (tril + toon, één keer/klim, off-route onderdrukt) | `triggerClimbAlert` (+ alert-gate in `compute`) | 🟡 | uitgevoerd via `compute`-pad; idempotentie/off-route-onderdrukking is smoke, niet exact geassert |
 | 16 | **App-lifecycle** (start, telefoonbericht, initiële view, stop) | `ClimbProApp.onStart/onPhoneMessage/getInitialView/onStop` | 🟡 | `app_lifecycle_startMessageStop` (assert `payloadReceived`/`climbCount`/view-lijst) |
 | 17 | **Gevoelstemperatuur in afdalingen** (issue #248: windchill uit temperatuur + rijsnelheid, alleen tussen klimmen tijdens een afdaling) | `windChillC`, `DescentTracker.update`, `latchFeltTemp`, `feltTempToShow`, `feltTempLabel` (`WindChill.mc`); `ambientTempC`, `drawFeltTempBanner` (`ClimbProView.mc`) | 🟢 | `WindChillTest.mc`: referentiewaarden Environment Canada (−10 °C/20 km/u, 0/30, 5/40), grenzen (>10 °C en <4,8 km/u → luchttemp., 10 °C inclusief, nooit warmer dan lucht, null), afdaling vereist ≥150 m venster, ≥25 km/u én ≤−3 %; hysterese (blijft aan tot <20 km/u of >−1 %), null-snelheid → uit, odometer-reset herankert; 1 °C-display-latch; verborgen op klim / zonder temperatuur. Sensor-read + banner: on-device |
+| 18 | **Tunnels en technische afdalingen** (issue #203: route-level `hz` van de telefoon, waarschuwing vanaf 400 m vooraf, één tril per markering) | `parseHazards`, `hazardAt`, `hazardLabel`, `hazardDisplayPos` (`RouteHazards.mc`); `hz`-parse (`CommListener.mc`); `drawHazardBanner`, `triggerHazardAlert` (`ClimbProView.mc`) | 🟢 | `RouteHazardsTest.mc`: geldige/ongeldige `hz` (vorm, type, bereik, cap 32), look-ahead/binnen/voorbij, labels, resync zonder `hz` wist markeringen; `CommListenerTest`: `hz` geparsed. Tril/banner: on-device |
 
 ---
 
@@ -100,7 +101,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 
 | Module | Functionaliteiten | 🟢 Strak | 🟡 Smoke | 🔴 On-device |
 |---|---|---|---|---|
-| `garmin` | 17 | 11 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill) | 6 (render + lifecycle + alert) | 0 |
+| `garmin` | 18 | 12 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill, hazards) | 6 (render + lifecycle + alert) | 0 |
 | `garmin-surface` | 8 | 4 (parser, voortgang, drift-correctie, GPS-verfijning) | 4 (render + lifecycle + alert) | 0 |
 | `garmin-widget` | 15 | 5 (parser, storage, index, starred, deel-logica) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
 

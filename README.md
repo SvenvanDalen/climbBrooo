@@ -138,6 +138,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Tunnels and technical descents** — route detail → "Tunnels en gevaarlijke afdalingen"
+  looks up road tunnels along the route in OpenStreetMap and lists them together with the
+  technical descents found in the route profile (≤ −8 % over 300 m, or ≤ −5 % with hairpins).
+  Both ride along to the climb datafield as compact markers: from 400 m ahead a purple strip
+  (`TUNNEL 300m - LICHT` / `TECHN. AFDALING 250m`) and one buzz per hazard.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.ClimbProApplication;
+import nl.paree.climbpro.data.osm.OverpassTunnelClient;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -20,11 +21,13 @@ import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.data.route.StoredStarredSegment;
 import nl.paree.climbpro.data.route.StoredSurfaceSection;
+import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.domain.climb.ClimbUsageClassifier;
 import nl.paree.climbpro.domain.climb.ClimbUsageType;
 import nl.paree.climbpro.domain.climb.HistoricClimbScoreCache;
 import nl.paree.climbpro.domain.climb.RestSplitAdvisor;
 import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.route.RouteHazards;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
@@ -86,6 +89,50 @@ public final class RouteDetailViewModel extends AndroidViewModel {
     public LiveData<RouteReverseService.Result> reversedRoute() { return reversedRoute; }
 
     public void consumeReversedRoute() { reversedRoute.setValue(null); }
+
+    /** Result of {@link #lookupTunnels}: null error = lookup succeeded. */
+    public static final class TunnelLookup {
+        public final StoredRoute route;
+        public final String error;
+
+        TunnelLookup(StoredRoute route, String error) {
+            this.route = route;
+            this.error = error;
+        }
+    }
+
+    private final MutableLiveData<TunnelLookup> tunnelLookup = new MutableLiveData<>();
+
+    public LiveData<TunnelLookup> tunnelLookup() { return tunnelLookup; }
+
+    public void consumeTunnelLookup() { tunnelLookup.setValue(null); }
+
+    /**
+     * Looks up road tunnels along the route in OpenStreetMap and stores them (issue #203); the
+     * watch gets them as 'hz' markers on the next sync. On failure the stored ones stay.
+     */
+    public void lookupTunnels(String routeId) {
+        executor.execute(() -> {
+            String err = null;
+            try {
+                StoredRoute r = routeRepo.loadRoute(routeId);
+                List<double[][]> ways = new OverpassTunnelClient().fetch(r.lats, r.lons);
+                List<StoredTunnel> tunnels = new ArrayList<>();
+                for (RouteHazards.Hazard h
+                        : RouteHazards.matchTunnels(r.lats, r.lons, r.distances, ways)) {
+                    tunnels.add(new StoredTunnel(h.startM, h.endM));
+                }
+                routeRepo.setTunnels(routeId, tunnels);
+            } catch (Exception e) {
+                err = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            }
+            try {
+                tunnelLookup.postValue(new TunnelLookup(routeRepo.loadRoute(routeId), err));
+            } catch (Exception e) {
+                error.postValue(e.getMessage());
+            }
+        });
+    }
 
     /**
      * Creates (or reuses) the opposite-direction variant of the route with climbs re-detected

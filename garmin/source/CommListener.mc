@@ -58,6 +58,9 @@ class PhoneMessageCallback {
         data.routeName = msg.get("name");
         var rtl = msg.get("rtl");
         data.routeTotalLen = (rtl != null && rtl instanceof Toybox.Lang.Number) ? rtl : 0;
+        // Optional route-level hazard markers "hz" (issue #203): tunnels + technical descents.
+        // Replaced (or cleared) on every payload; anything malformed is dropped entirely.
+        data.hazards = parseHazards(msg.get("hz"));
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {
