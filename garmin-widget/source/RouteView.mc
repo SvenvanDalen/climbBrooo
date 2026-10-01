@@ -83,8 +83,8 @@ class RouteListView extends Ui.View {
 
         // Phone-connection indicator: green dot = verbonden, rood = geen verbinding
         var phoneConnected = Sys.getDeviceSettings().phoneConnected;
-        dc.setColor(phoneConnected ? 0x00AA00 : Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-        dc.fillCircle(dc.getWidth() - 10, 10, 5);
+        WidgetPalette.drawConnectionDot(dc, dc.getWidth() - 10, 10, phoneConnected,
+            WidgetPalette.current());
 
         var w     = dc.getWidth();
         var h     = dc.getHeight();

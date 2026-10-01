@@ -19,6 +19,10 @@ class CommListener extends Comm.ConnectionListener {
 
 class PhoneMessageCallback {
 
+    // True while ClimbWidgetApp.processMessage replays a payload saved on the watch: that
+    // copy may carry an older "pal", so it must not overwrite the rider's current palette.
+    var replaying = false;
+
     function initialize() {
     }
 
@@ -64,6 +68,13 @@ class PhoneMessageCallback {
         data.routeName = msg.get("name");
         // Optional display units (issue #262); absent/invalid = metric, reset on every payload.
         data.units     = Units.parseFlags(msg.get("un"));
+
+        // Optional "pal" (issue #258): the rider's palette choice, remembered for every
+        // widget screen and the glance. Absent = default palette, so turning it off on the
+        // phone reverts the watch with the next live payload.
+        if (!replaying) {
+            WidgetPalette.remember(msg.get("pal"));
+        }
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {

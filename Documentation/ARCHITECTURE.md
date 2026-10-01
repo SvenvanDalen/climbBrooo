@@ -1052,6 +1052,33 @@ gradient color otherwise. `garmin-surface` carries no climbs, and
 both keep gradient colors only. The climb detail screen on the phone shows the
 zone per segment (a `Z1`–`Z7` badge in the watch's zone color).
 
+### Colorblind-friendly palette (issue #258)
+
+The wire carries color *indices*, never colors, so a second palette is purely a
+rendering choice and the gradient → index mapping (`GradientColor`, the bucket
+boundaries) stays single-sourced. `domain/segment/GradientPalette` holds both color
+tables (default yellow → red; colorblind: pale yellow + a light-to-dark blue ramp of
+MIP colors with strictly decreasing lightness) plus the good/bad status colors
+(green/red vs blue/orange). The phone setting *Kleurenblind-vriendelijk palet*
+(default off, `GradientPalette.PREF_COLORBLIND`) drives all phone renderers through
+`ui/climbs/SegmentColorPalette` (process-wide, loaded in `ClimbProApplication`) and is
+sent to the watch as the optional top-level wire key `pal` (`1`; absent = default, so
+old payloads and old watches are unaffected). `ClimbPayloadBuilder.withPalette` adds it
+to route, single-climb and radius payloads; `RouteSyncWorker` folds a non-default
+palette into the route sync hash (so toggling resyncs) and the settings switch triggers
+an immediate sync; `WatchRequestHandler` reads it through a palette source for
+watch-requested payloads.
+
+On the watch the palette is display state, not climb data: `garmin` parses `pal` into
+`ClimbData.palette` (reset on every payload; persisted with the active payload) and
+`ClimbProView` picks `CVD_COLORS` — which win over the dark theme — and blue/orange for
+the ghost delta, climb summary and interval-block line. `garmin-widget` remembers the
+last *live* `pal` in `Storage` (`WidgetPalette`, glance-safe) so the profile, the
+phone-connection dot (colorblind: blue dot vs orange ring, so shape also differs) and
+the save/delete/ack colors follow the rider's current choice; replayed saved routes
+don't overwrite it. `garmin-surface` draws no gradient colors, and `garmin-onboard`
+gets raw routes rather than climb payloads, so both keep their default colors. The
+watch copies of the table are checked against the phone table by `GradientPaletteTest`.
 ### Display units (issue #262)
 
 Storage, computation and the wire format stay **metric**; only rendering

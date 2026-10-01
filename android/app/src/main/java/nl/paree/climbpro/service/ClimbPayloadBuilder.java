@@ -10,6 +10,7 @@ import nl.paree.climbpro.data.route.StoredSurfaceSection;
 import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.domain.power.SegmentIntensityZones;
+import nl.paree.climbpro.domain.segment.GradientPalette;
 import nl.paree.climbpro.domain.route.RouteHazards;
 import nl.paree.climbpro.domain.units.UnitPreferences;
 
@@ -23,7 +24,7 @@ import java.util.Map;
  * Serialises a {@link StoredRoute} to the compact wire-format payload (version 3).
  *
  * Format:
- *   {v:3, mode:"route", routeId:"...", un:N?, climbs:[
+ *   {v:3, mode:"route", routeId:"...", pal:1?, un:N?, climbs:[      // pal: colorblind palette (optional, issue #258)
  *     {sd:N, ed:N, len:N, eg:N, ag:N, n:"...",
  *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
  *      calib:[dist,latInt,lonInt, ...],                 // 3 ints × calibCount (optional)
@@ -54,6 +55,8 @@ public final class ClimbPayloadBuilder {
 
     /** Wire key of the optional per-segment FTP intensity-zone color array (issue #66). */
     static final String KEY_ZONE_COLORS = "zc";
+    /** Wire key of the optional top-level color palette flag (issue #258). */
+    static final String KEY_PALETTE = "pal";
     /** Route-level packed hazard markers (issue #203). */
     static final String KEY_HAZARDS = "hz";
 
@@ -67,17 +70,20 @@ public final class ClimbPayloadBuilder {
     private final RiderProfile zoneProfile;
     /** Rider FTP used to turn a climb's interval block (% FTP) into watts; 0 = unknown. */
     private final int ftpWatts;
+    /** Color palette ({@link GradientPalette}); the default palette emits no 'pal' key. */
+    private final int palette;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
-        this(mapper, null, 0, 0);
+        this(mapper, null, 0, GradientPalette.DEFAULT, 0);
     }
 
     private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts,
-                                int unitFlags) {
+                                int palette, int unitFlags) {
         this.mapper = mapper;
         this.unitFlags = unitFlags;
         this.zoneProfile = zoneProfile;
         this.ftpWatts = ftpWatts;
+        this.palette = GradientPalette.normalize(palette);
     }
 
     /**
@@ -88,7 +94,7 @@ public final class ClimbPayloadBuilder {
      * nice-to-have and must never cost a sync (radius mode: never cost a climb).
      */
     public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
-        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, unitFlags);
+        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, palette, unitFlags);
     }
 
     /**
@@ -96,7 +102,23 @@ public final class ClimbPayloadBuilder {
      * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
      */
     public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), unitFlags);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), palette, unitFlags);
+    }
+
+    /**
+     * Sets the color palette the watch draws with (issue #258). The colorblind palette adds
+     * the top-level {@code "pal": 1} to route, single-climb and radius payloads; the default
+     * palette adds nothing, so those payloads stay byte-identical to before. Only the colors
+     * change on the watch: the colorIndex values in 'segs' and 'zc' are the same.
+     */
+    public ClimbPayloadBuilder withPalette(int palette) {
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags);
+    }
+
+    /** Adds {@code pal} when a non-default palette is selected. */
+    private void putPalette(Map<String, Object> payload) {
+        Integer pal = GradientPalette.wireValue(palette);
+        if (pal != null) payload.put(KEY_PALETTE, pal);
     }
 
     /**
@@ -106,7 +128,7 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withUnits(UnitPreferences units) {
         int flags = units != null ? units.toWireFlags() : 0;
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, flags);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, flags);
     }
 
     /** Adds 'un' when the units are not all-metric. */
@@ -142,6 +164,7 @@ public final class ClimbPayloadBuilder {
         payload.put("mode",    "route");
         putUnits(payload);
         payload.put("routeId", route.routeId);
+        putPalette(payload);
         putRouteTotalLength(payload, route);
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);
@@ -166,6 +189,7 @@ public final class ClimbPayloadBuilder {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",      SCHEMA_VERSION);
         payload.put("mode",   "radius");
+        putPalette(payload);
         putUnits(payload);
         List<Map<String, Object>> out = new ArrayList<>();
         if (climbs != null) {
@@ -195,6 +219,7 @@ public final class ClimbPayloadBuilder {
         payload.put("mode",    "route");
         putUnits(payload);
         payload.put("routeId", route.routeId);
+        putPalette(payload);
         putRouteTotalLength(payload, route);
         String name = route.userDisplayName != null ? route.userDisplayName : route.name;
         if (name != null && name.length() <= 32) payload.put("name", name);

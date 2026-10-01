@@ -28,6 +28,8 @@ Gradients are stored as integers representing `percent × 10`. So `7.2%` is `72`
 
 - Strings cost bytes — `"yellow"` is 8 chars vs `1`.
 - String mappings drift. A `colorIndex` ties phone and watch to one shared table (`colors.md`).
+
+The index also keeps the palette swappable: the optional top-level `pal` (issue #258) says *which colors* to draw the indices with — `1` = the colorblind-friendly palette, absent = default — without touching `segs` or `zc`. It is a rider setting on the phone, sent in route, single-climb and radius payloads (the lean surface payload doesn't carry it: the surface datafield draws no gradient colors). Watches treat any other value as the default palette, so a future palette value degrades gracefully on an old watch build.
 - The watch's rendering layer is free to pick a device-appropriate hex for each index without involving the protocol.
 
 ## Mode-dependent fields
@@ -81,6 +83,8 @@ An interval block adds a fixed `"ib":[273,266,280]` — about **+20 bytes per cl
 
 When the rider has a complete profile, the optional `zc` array adds ~1 small int per segment — roughly **+30–40 bytes per climb**. `ClimbPayloadBuilder` strips every `zc` again when a payload would exceed `PayloadBudget.MAX_BYTES`, so the zones can never cost a sync (route mode) or a climb (radius mode).
 
+`"pal":1` costs 8 bytes, only when the colorblind palette is on.
+
 If the budget ever feels tight, options in priority order:
 1. Drop optional `name` fields.
 2. Switch to a CBOR or MessagePack encoding (would require updating both decoders — not trivial).
@@ -94,6 +98,7 @@ The schema is loaded at test time by `com.networknt.json-schema-validator` again
 
 | Version | Date       | Change                                   |
 | ------- | ---------- | ---------------------------------------- |
+| 3       | 2026-09-30 | Added optional top-level `pal` (color palette, `1` = colorblind-friendly; issue #258). Route, single-climb and radius payloads; omitted for the default palette. Additive, no version bump. |
 | 3       | 2026-09-30 | Added optional `ev` (`[targetM, repeats, startLatInt, startLonInt, topLatInt, topLonInt]`) Everesting attempt on Climb (issue #217). Both modes, at most one climb. 6 ints; additive, no version bump. |
 | 3       | 2026-09-30 | Added optional top-level `un` display-unit bitmask (issue #262): 1 = mi/ft/mph, 2 = psi, 4 = °F. All payload kinds, emitted only when non-zero; absent = metric. ≤ 8 bytes; additive, no version bump. |
 | 3       | 2026-09-29 | Added optional `zc` (per-segment FTP intensity-zone colorIndex) packed int array on Climb, parallel to `segs` (issue #66). Both modes; omitted without a complete rider profile and dropped when over budget. Additive, no version bump. |

@@ -51,6 +51,7 @@ class ClimbData {
     var routeId = null;
     var routeName = null;
     var routeTotalLen = 0;    // route total length (m) from payload "rtl"; 0 = unknown
+    var palette = 0;          // color palette from payload "pal" (issue #258): 0 default, 1 colorblind
     var hazards = null;       // packed "hz" [startM, endM, type, ...] (issue #203); null = none
     var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
 

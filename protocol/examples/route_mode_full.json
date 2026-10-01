@@ -3,6 +3,7 @@
   "mode": "route",
   "routeId": "demo_route_full",
   "name": "Full demo climb",
+  "pal": 1,
   "rtl": 8000,
   "un": 1,
   "climbs": [

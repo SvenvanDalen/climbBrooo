@@ -381,6 +381,37 @@
 
             </LinearLayout>
 
+            <!-- Colorblind-friendly palette (issue #258). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kleuren"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="Hellingkleuren van lichtgeel via lichtblauw naar donkerblauw in plaats van geel naar rood, en statuskleuren blauw/oranje in plaats van groen/rood. Beter te onderscheiden bij kleurenblindheid; geldt voor de app en, na de volgende sync, voor het horloge."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_colorblind_palette"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Kleurenblind-vriendelijk palet"/>
+            </LinearLayout>
+
             <!-- Display units (issue #262). -->
             <LinearLayout
                 android:layout_width="match_parent"

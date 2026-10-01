@@ -31,9 +31,13 @@ class ClimbWidgetApp extends App.AppBase {
         }
     }
 
+    // Replays a payload saved on the watch (not a live phone message), so it keeps the
+    // current palette instead of the one stored with that payload (issue #258).
     function processMessage(msg) {
         if (msgCallback != null) {
+            msgCallback.replaying = true;
             msgCallback.onMessage(msg);
+            msgCallback.replaying = false;
             Ui.requestUpdate();
         }
     }

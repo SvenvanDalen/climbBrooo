@@ -128,7 +128,9 @@ class ClimbListView extends Ui.View {
                 if (routeSaved == null) { refreshRouteSaved(); }
                 var isSaved = routeSaved;
                 var label   = isSaved ? "Delete route" : "Save route";
-                var color   = isSaved ? Gfx.COLOR_RED : Gfx.COLOR_GREEN;
+                var pal     = WidgetPalette.current();
+                var color   = isSaved ? WidgetPalette.badColor(pal)
+                                      : WidgetPalette.okColor(pal, Gfx.COLOR_GREEN);
                 dc.setColor(i == selectedIndex ? Gfx.COLOR_WHITE : color, Gfx.COLOR_TRANSPARENT);
                 dc.drawText(w / 2, yPos + 14, Gfx.FONT_XTINY, label, Gfx.TEXT_JUSTIFY_CENTER);
             } else {

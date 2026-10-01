@@ -32,6 +32,9 @@ public final class WatchRequestHandler {
     private final ObjectMapper    mapper;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    /** Color palette for 'pal' (issue #258); default palette until the app sets a source. */
+    private volatile java.util.function.IntSupplier paletteSource =
+            () -> nl.paree.climbpro.domain.segment.GradientPalette.DEFAULT;
     /** Medical ID re-sent with every route list (issue #230); null = never sent. */
     private nl.paree.climbpro.data.medical.MedicalIdRepository medicalIdRepo;
     /** Display units sent as 'un' (issue #262); null = metric (no key). */
@@ -63,6 +66,14 @@ public final class WatchRequestHandler {
     }
 
     /**
+     * Where watch-requested payloads read the rider's palette choice from (issue #258), so a
+     * LOAD_ROUTE / SET_ACTIVE_ROUTE answer uses the same colors as the background sync.
+     */
+    public void setPaletteSource(java.util.function.IntSupplier source) {
+        if (source != null) this.paletteSource = source;
+    }
+
+    /**
      * Enables the MEDICAL_ID message (issue #230): the widget receives phone messages only
      * while it is open, so the phone re-sends the ID every time the widget lists routes.
      */
@@ -91,7 +102,8 @@ public final class WatchRequestHandler {
      * the rider's display units (issue #262) when a units repo is wired up.
      */
     private ClimbPayloadBuilder payloadBuilder() {
-        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper)
+                .withPalette(paletteSource.getAsInt());
         if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }

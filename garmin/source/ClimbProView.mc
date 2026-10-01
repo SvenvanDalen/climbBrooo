@@ -46,6 +46,23 @@ class ClimbProView extends Ui.DataField {
         0x440000,  // 5: muted deep red (10%+)
     ];
 
+    // Colorblind-friendly palette (issue #258, protocol/colors.md), selected by the phone
+    // via payload "pal" = 1: pale yellow, then a light-to-dark blue ramp. Blue-yellow axis
+    // only (kept by deutan/protan vision) with strictly decreasing lightness. Same band
+    // order as COLORS; values are MIP colors and must match GradientPalette.java verbatim.
+    hidden const CVD_COLORS = [
+        0xFFFFAA,  // 0: pale yellow (0-2%)
+        0x55FFFF,  // 1: light cyan (2-4%)
+        0x55AAFF,  // 2: sky blue (4-6%)
+        0x0055FF,  // 3: blue (6-8%)
+        0x0000FF,  // 4: pure blue (8-10%)
+        0x0000AA,  // 5: navy (10%+)
+    ];
+    const PALETTE_COLORBLIND = 1;
+    // Status colors in the colorblind palette: blue = good/ahead, orange = bad/behind.
+    const CVD_OK_COLOR = 0x00AAFF;
+    const CVD_BAD_COLOR = 0xFF5500;
+
     // "colorMode" setting value for FTP intensity-zone colors (issue #66); 0 = gradient.
     const COLOR_MODE_ZONES = 1;
 
@@ -686,13 +703,13 @@ class ClimbProView extends Ui.DataField {
             if (data.hasRefTargets[ci]) {
                 var ref = data.refSecondsAt();
                 if (ref >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR", large);
+                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR", large, data.palette);
                     ghostDrawn = true;
                 }
             } else if (data.hasTargets[ci]) {
                 var target = data.targetSecondsAt();
                 if (target >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan", large);
+                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan", large, data.palette);
                     ghostDrawn = true;
                 }
             }
@@ -710,7 +727,7 @@ class ClimbProView extends Ui.DataField {
     hidden function drawIntervalBlock(dc, data, ci, w, y) {
         var band = data.blockLow[ci] + "-" + data.blockHigh[ci];
         var zone = data.blockZone(ci, data.currentPower);
-        dc.setColor(intervalZoneColor(zone), Gfx.COLOR_TRANSPARENT);
+        dc.setColor(intervalZoneColorFor(zone, data.palette), Gfx.COLOR_TRANSPARENT);
         var text = (zone == data.ZONE_NONE)
             ? "Doel " + band + "W"
             : data.currentPower.toNumber() + "W " + band;
@@ -719,20 +736,32 @@ class ClimbProView extends Ui.DataField {
 
     // Colour per power zone; not hidden so tests can check it directly.
     function intervalZoneColor(zone) {
+        return intervalZoneColorFor(zone, 0);
+    }
+
+    // Colorblind palette (issue #258): under = navy, in band = sky blue, over = orange --
+    // apart in lightness and on the blue-orange axis instead of green/red.
+    function intervalZoneColorFor(zone, palette) {
+        if (palette == PALETTE_COLORBLIND) {
+            if (zone == -1) { return 0x0000AA; }
+            if (zone == 0) { return CVD_OK_COLOR; }
+            if (zone == 1) { return CVD_BAD_COLOR; }
+            return Gfx.COLOR_DK_GRAY;
+        }
         if (zone == -1) { return Gfx.COLOR_BLUE; }
         if (zone == 0) { return Gfx.COLOR_DK_GREEN; }
         if (zone == 1) { return Gfx.COLOR_RED; }
         return Gfx.COLOR_DK_GRAY;
     }
 
-    // + = behind (red), - or 0 = ahead/on pace (green).
-    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix, large) {
+    // + = behind (red; orange when colorblind), - or 0 = ahead/on pace (green; blue).
+    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix, large, pal) {
         var f = statFont(large);
         if (deltaSec > 0) {
-            dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+            dc.setColor(badColor(pal), Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, y, f, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         } else {
-            dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            dc.setColor(okColor(pal), Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, y, f, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -745,7 +774,7 @@ class ClimbProView extends Ui.DataField {
     // gradient-color palette. Wrapped in try/catch: Properties.getValue can throw if
     // the property isn't registered (e.g. a stale/older simulator settings cache),
     // and this must never crash a per-tick redraw -- fall back to the normal palette.
-    hidden function activeColors() {
+    hidden function activeColors(data) {
         var dark = false;
         try {
             var v = Properties.getValue("darkTheme");
@@ -753,7 +782,24 @@ class ClimbProView extends Ui.DataField {
         } catch (e) {
             dark = false;
         }
+        return paletteColors(data.palette, dark);
+    }
+
+    // Pure palette pick (testable): the colorblind palette (issue #258) wins over the dark
+    // theme, since telling the bands apart matters more than dimming them.
+    function paletteColors(palette, dark) {
+        if (palette == PALETTE_COLORBLIND) { return CVD_COLORS; }
         return dark ? DARK_COLORS : COLORS;
+    }
+
+    // Good/ahead status color: green, or blue in the colorblind palette (issue #258).
+    function okColor(palette) {
+        return palette == PALETTE_COLORBLIND ? CVD_OK_COLOR : Gfx.COLOR_GREEN;
+    }
+
+    // Bad/behind status color: red, or orange in the colorblind palette (issue #258).
+    function badColor(palette) {
+        return palette == PALETTE_COLORBLIND ? CVD_BAD_COLOR : Gfx.COLOR_RED;
     }
 
     // Reads the "largeTextMode" app setting (issue #82, resources/settings/) the same
@@ -822,7 +868,7 @@ class ClimbProView extends Ui.DataField {
 
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
 
-        var colors = activeColors();
+        var colors = activeColors(data);
         var useZones = zoneColorModeActive();
         var totalLen = data.climbLength[ci];
         if (totalLen <= 0) { return; }
@@ -1233,11 +1279,11 @@ class ClimbProView extends Ui.DataField {
         if (data.hasTargets[ci]) {
             var d = summaryDeltaSec;
             if (d > 0) {
-                dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+                dc.setColor(badColor(data.palette), Gfx.COLOR_TRANSPARENT);
                 dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         "+" + d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             } else {
-                dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+                dc.setColor(okColor(data.palette), Gfx.COLOR_TRANSPARENT);
                 dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             }

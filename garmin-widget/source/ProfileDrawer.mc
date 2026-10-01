@@ -3,9 +3,8 @@ using Toybox.Application.Properties as Properties;
 
 class ProfileDrawer {
 
-    hidden const COLORS = [
-        0x99FF99, 0xFFFF00, 0xFFAA00, 0xFF5500, 0xFF0000, 0xAA0000,
-    ];
+    // Gradient colors come from WidgetPalette: default yellow-red or, when the phone sent
+    // "pal" = 1, the colorblind-friendly blue ramp (issue #258).
     // "colorMode" setting value for FTP intensity-zone colors (issue #66); 0 = gradient.
     const COLOR_MODE_ZONES = 1;
 
@@ -22,6 +21,7 @@ class ProfileDrawer {
         if (segCount <= 0) { return; }
 
         var useZones = zoneColorModeActive();
+        var colors = WidgetPalette.gradientColors(WidgetPalette.current());
         var baseline = y + h - 3;
         var stepW = w.toFloat() / segCount.toFloat();
         var cumElev = 0;
@@ -37,7 +37,7 @@ class ProfileDrawer {
             var y1 = baseline - ((cumElev * h) / totalElev);
             var y2 = baseline - (((cumElev + segE) * h) / totalElev);
 
-            dc.setColor(COLORS[colorIdx], Gfx.COLOR_TRANSPARENT);
+            dc.setColor(colors[colorIdx], Gfx.COLOR_TRANSPARENT);
             var width = x2 - x1;
             for (var px = 0; px < width; px++) {
                 var interp = px.toFloat() / width.toFloat();
