@@ -409,6 +409,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_safe_home) {
             startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_medical_id) {
+            startActivity(nl.paree.climbpro.ui.medical.MedicalIdActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_sunscreen) {
             startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
             return true;

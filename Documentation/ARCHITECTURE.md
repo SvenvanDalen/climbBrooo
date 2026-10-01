@@ -867,6 +867,22 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Medical ID (issue #230)
+
+Phone-managed, shown on request. `data/medical/MedicalId` (+ `MedicalIdRepository`,
+`medical_id.json`, in the privacy dashboard and backup) holds name, blood type, allergies,
+medication, emergency contact and notes. **Lock screen:** Android offers no API to draw on
+the lock screen, so `service/MedicalIdNotifier` posts an ongoing, silent notification with
+`VISIBILITY_PUBLIC` (channel `medical_id`, low importance) when the rider opts in, and
+`BootCompletedReceiver` re-posts it after a reboot. **Watch:** a separate typed message
+`{type:"MEDICAL_ID", nm?, bt?, al?, md?, ec?, ep?, nt?}` (short keys, values capped on the
+phone at 6–80 chars; no fields = delete) goes to the widget — not the climb payload, so the
+v3 schema is untouched. A widget only receives messages while open, so
+`WatchRequestHandler` re-sends it after every `ROUTE_LIST` (the widget asks on every open)
+and the medical ID screen sends it on save. `garmin-widget/source/MedicalId.mc` stores it
+in `Application.Storage` (available offline) and `RouteListView` shows a red first row
+that opens a scrollable `MedicalIdView`.
+
 ### Local event calendar (issue #241)
 
 Phone-only, no wire change. There is no free central API for tour rides and gran fondos,

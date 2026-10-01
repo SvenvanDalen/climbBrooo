@@ -312,6 +312,10 @@
             android:name=".ui.safehome.SafeHomeActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.medical.MedicalIdActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
 
         <activity
             android:name=".ui.sunscreen.SunscreenActivity"

@@ -55,6 +55,10 @@ public enum PrivacyCategory {
             "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
                     + "gemeld zijn.",
             "safe_home.json"),
+    MEDICAL_ID("Medische ID",
+            "Je naam, bloedgroep, allergieën, medicatie, noodcontact en overige info, en of "
+                    + "ze op het vergrendelscherm staan. Ook als kopie in de horloge-widget.",
+            "medical_id.json"),
     COMEBACK_PLAN("Terugkomstplan",
             "Je actieve opbouwplan na een pauze of blessure (startdatum en of het om een "
                     + "blessure gaat).",

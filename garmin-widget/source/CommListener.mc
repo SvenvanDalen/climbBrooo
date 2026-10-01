@@ -37,6 +37,9 @@ class PhoneMessageCallback {
                 App.getApp().activeAck = msg;
             } else if (msgType.equals("HELLO")) {
                 handleHello();
+            } else if (msgType.equals("MEDICAL_ID")) {
+                // Issue #230: keep a copy for offline use; no fields = cleared on the phone.
+                storeMedicalId(medicalIdFromMessage(msg));
             } else {
                 Sys.println("CommListener: unknown type: " + msgType);
             }

@@ -52,6 +52,7 @@ public final class BackupArchive {
             "pain_log.json",
             "sweat_loss_log.json",
             "safe_home.json",
+            "medical_id.json",
             "comeback_plan.json",
             "ride_stream_stats.json",
             "goal_event.json",

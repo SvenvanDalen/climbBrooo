@@ -94,6 +94,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 | 13 | **Veilige (niet-navigerende) delegate-handlers** | `ClimbListDelegate`/`RouteListDelegate` `onNextPage/onPreviousPage/onSelect` (guard-pad) | 🟡 | `*_delegate_safeHandlers` (guard-pad geeft `true` terug zonder navigeren) |
 | 14 | **App-lifecycle** (glance, initiële view, bericht, stop) | `ClimbWidgetApp.onStart/getGlanceView/getInitialView/processMessage/onPhoneMessage/onStop` | 🟡 | `widgetApp_lifecycle_initGlanceMessageStop` (assert `payloadReceived`, 2 views) |
 | 15 | **Navigatie- & telefoon-glue** (view-wissels, timer, transmit) | Navigerende takken van `onBack/onMenu/onSelect/onNextPage/onPreviousPage`, `SyncView.onShow/onTimeout` (`Timer` + `switchToView`), `CommListener.handleHello` (`Comm.transmit`), `RouteListDelegate.openSavedClimb`/`splitOnLastUnderscore` | 🔴 | **Alleen on-device.** Empirisch bevestigd: een view pushen in een `(:test)` maakt `Ui.getCurrentView()` niet die view, dus view-afhankelijke takken en `Timer`/`Comm.transmit` draaien niet headless |
+| 16 | **Medische ID** (issue #230: `MEDICAL_ID`-bericht opslaan/wissen, eerste rij in de routelijst, scrollbaar scherm) | `medicalIdFromMessage`, `storeMedicalId`, `loadMedicalId`, `medicalIdLines`, `wrapText`, `MedicalIdView` (`MedicalId.mc`); `RouteListView.medicalOffset` | 🟢 | `MedicalIdTest.mc`: alleen gevulde String-velden, leeg bericht → null/wissen, opslaan + wissen via bericht, labels in volgorde, woordafbreking + lange woorden knippen, view render + scroll-grens, routelijst krijgt live een eerste rij met behoud van selectie |
 
 ---
 
@@ -103,7 +104,7 @@ Bronnen: `ClimbData.mc`, `CommListener.mc`, `PhoneRouteIndex.mc`, `StorageManage
 |---|---|---|---|---|
 | `garmin` | 18 | 12 (kernlogica: parser, matching, calib, pacing, skip, trust, windchill, hitte-index) | 6 (render + lifecycle + alert) | 0 |
 | `garmin-surface` | 8 | 4 (parser, voortgang, drift-correctie, GPS-verfijning) | 4 (render + lifecycle + alert) | 0 |
-| `garmin-widget` | 15 | 5 (parser, storage, index, starred, deel-logica) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
+| `garmin-widget` | 16 | 6 (parser, storage, index, starred, deel-logica, medische ID) | 9 (alle views + delegate-guards + lifecycle) | 1 (navigatie/timer/transmit-glue) |
 
 **Bedrijfslogica + wire-parser: ~100% strak geassert over alle drie modules.**
 De enige echte gap is de UI-navigatie/timer/transmit-glue in de widget, die
