@@ -116,6 +116,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Custom surface sections** — mark an arbitrary stretch of a route with a surface type
   and optional name; rendered on the Ondergrond datafield.
 - **Live data on the watch** — current/next climb, progress, surface section.
+- **Watch fields** — Settings → "Horloge-velden": choose per slot what the datafield's
+  active-climb page shows (remaining distance/elevation, gradient, VAM, ETA, PR/plan delta,
+  interval block, speed, heart rate, power, cadence, elapsed time, or empty).
 - **Start navigation** — hands the GPX to Garmin Connect, which pushes the course. Navigating the selected route as a Garmin course also improves on-watch distance accuracy: the datafield matches on course distance (`rtl − distanceToDestination`) with a calibration trust check, falling back to the activity odometer when you are not navigating.
 - **Import a single route/climb from a GPX file**.
 - **Join two routes** — "Samenvoegen met…" on a route saves it plus a second route as one
