@@ -1039,6 +1039,24 @@ the FR255M's internal sensor reads high from wrist heat and would false-alarm on
 Threshold is the `heatIndexThreshold` app setting (0 = off, default 32 °C). The banner
 sits below off-route and battery in priority, above the descent felt temperature.
 
+### Eat/drink reminder (issue #184)
+
+Watch-only, no wire change: the interval settings are Connect IQ app settings (edited on the
+phone in Garmin Connect Mobile), not payload keys, so they apply without a route sync and
+also with no route on the watch. `garmin/source/FuelReminder.mc` is a pure class:
+`FuelReminder.update(timerMs, totalAscent, tempC, fuelIntervalMin, fuelClimbM, fuelHotC)`
+fires when the activity timer (pauses excluded) has advanced `fuelIntervalMin` minutes or
+the total ascent has grown `fuelClimbM` metres since the last reminder — whichever first —
+and then moves both baselines to "now", so each trigger fires exactly once and altitude
+jitter can't re-fire it. `fuelHeatFactorPct` shortens both steps to 75 % from `fuelHotC`
+and to 50 % from `fuelHotC` + 8 °C; a shortened interval never goes below 10 min, and the
+ascent trigger also waits 10 min after the previous reminder. A timer that goes back (new
+activity) restarts the ride; with both triggers off the baselines track "now" so enabling it
+mid-ride starts fresh. `ClimbProView.checkFuelReminder` runs before the payload gate, reads
+the temperature once a minute via the heat-index source (Garmin Weather, else the sensor),
+vibrates like the climb-start alert with `TONE_TIME_ALERT`, and shows a green
+`ETEN & DRINKEN` strip for 30 s below the safety banners (also on the no-data screen).
+
 ### FTP intensity-zone colors (issue #66)
 
 The fixed gradient → color mapping stays the default and the single source of
