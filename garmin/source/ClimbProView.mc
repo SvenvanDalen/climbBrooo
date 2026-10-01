@@ -116,6 +116,10 @@ class ClimbProView extends Ui.DataField {
     hidden var heatAlarm = new HeatAlarm();
     hidden var heatNextCheckMs = 0;
     hidden var heatShownC = null;
+    // Cadence coach (issue #179): cadShownRpm = banner value while out of the target band
+    // after a nudge, else null.
+    hidden var cadenceCoach = new CadenceCoach();
+    hidden var cadShownRpm = null;
 
     function initialize() {
         DataField.initialize();
@@ -131,6 +135,7 @@ class ClimbProView extends Ui.DataField {
         // Safety alarms run before the payload gate: they don't need a route.
         checkHeartRate(info);
         checkHeatIndex();
+        checkCadence(info);
 
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
@@ -359,6 +364,19 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
+    // Cadence coach (issue #179): nudge when the cadence stays outside the target band
+    // ("cadenceLow".."cadenceHigh" rpm, master toggle "cadenceCoach"). Coasting (0) and a
+    // missing sensor are ignored inside CadenceCoach. Works without a route.
+    hidden function checkCadence(info) {
+        var cad = (info != null && info has :currentCadence) ? info.currentCadence : null;
+        var dir = cadenceCoach.update(cad, readNumberSetting("cadenceLow"),
+                readNumberSetting("cadenceHigh"), readBoolSetting("cadenceCoach"), Sys.getTimer());
+        if (dir != CADENCE_OK) {
+            triggerCadenceAlert(dir);
+        }
+        cadShownRpm = (cadenceCoach.shownDir != CADENCE_OK && cad != null) ? cad : null;
+    }
+
     // App-setting reads, defensive like activeColors() reads "darkTheme":
     // Properties.getValue can throw on a stale settings cache. Default 0 / false.
     hidden function readNumberSetting(key) {
@@ -485,6 +503,8 @@ class ClimbProView extends Ui.DataField {
             drawHazardBanner(dc, data);
         } else if (heatShownC != null) {
             drawHeatBanner(dc, heatShownC);
+        } else if (cadShownRpm != null) {
+            drawCadenceBanner(dc, cadenceLabel(cadenceCoach.shownDir, cadShownRpm));
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
             drawEasierAheadBanner(dc, easier.shownLenM);
         } else if (lightsBanner) {
@@ -567,6 +587,16 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-blue strip while the cadence is still outside the target band after a cadence-
+    // coach nudge (issue #179). A coaching hint: below the safety/heat banners in priority.
+    hidden function drawCadenceBanner(dc, text) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_BLUE, Gfx.COLOR_DK_BLUE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -1219,6 +1249,21 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_ALERT_HI);
+        }
+    }
+
+    // Cadence coach (issue #179): vibration only, no tone -- a coaching nudge, not a
+    // warning. Too low = one long buzz ("trap sneller"), too high = two short ones.
+    hidden function triggerCadenceAlert(dir) {
+        if (!(Attention has :vibrate)) { return; }
+        if (dir == CADENCE_HIGH) {
+            Attention.vibrate([
+                new Attention.VibeProfile(60, 150),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(60, 150)
+            ]);
+        } else {
+            Attention.vibrate([new Attention.VibeProfile(60, 600)]);
         }
     }
 

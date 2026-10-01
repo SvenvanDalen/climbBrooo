@@ -34,4 +34,9 @@
     <!-- Issue #227: heat-index warning threshold in °C (NWS heat index from Garmin Weather
          temperature + humidity). 0 = off. 32 = NWS "extreme caution" upper band. -->
     <property id="heatIndexThreshold" type="number">32</property>
+    <!-- Issue #179: cadence coach. Opt-in nudge when the cadence stays 30 s below
+         cadenceLow or above cadenceHigh (rpm; 0 = that side off). Coasting is ignored. -->
+    <property id="cadenceCoach" type="boolean">false</property>
+    <property id="cadenceLow" type="number">80</property>
+    <property id="cadenceHigh" type="number">100</property>
 </properties>

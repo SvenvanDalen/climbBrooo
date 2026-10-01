@@ -22,4 +22,9 @@
     <string id="HeatIndex27">Vanaf 27 °C (voorzichtig)</string>
     <string id="HeatIndex32">Vanaf 32 °C (extra voorzichtig)</string>
     <string id="HeatIndex39">Vanaf 39 °C (gevaar)</string>
+    <string id="SettingsCadenceCoachTitle">Cadans-coach</string>
+    <string id="SettingsCadenceLowTitle">Cadans ondergrens (rpm, 0 = uit)</string>
+    <string id="SettingsCadenceLowPrompt">Seintje als je cadans 30 s onder deze waarde blijft</string>
+    <string id="SettingsCadenceHighTitle">Cadans bovengrens (rpm, 0 = uit)</string>
+    <string id="SettingsCadenceHighPrompt">Seintje als je cadans 30 s boven deze waarde blijft</string>
 </strings>

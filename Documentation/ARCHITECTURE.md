@@ -993,6 +993,21 @@ signal because optical wrist HR spikes on its own. `ClimbProView.compute` runs
 `checkHeartRate` **before** the payload gate, so it works without a route. The purple
 banner sits right below off-route in priority — a safety signal outranks battery.
 
+### Cadence coach (issue #179)
+
+Watch-only, no wire change. The target band is a set of Connect IQ app settings
+(`cadenceCoach` toggle, default off; `cadenceLow`/`cadenceHigh` rpm, default 80/100, 0 = that
+side off), edited from the phone in Garmin Connect Mobile — the same route as the
+heart-rate alarm, so no payload key. `garmin/source/CadenceCoach.mc` is a pure class fed with
+`Activity.Info.currentCadence` and `System.getTimer()` every tick by
+`ClimbProView.checkCadence` (before the payload gate, so it works without a route). Anti-spam
+hysteresis: a nudge needs 30 s of *pedalling* time out of band; cadence 0 (coasting) or
+null (no sensor) pauses that count instead of resetting it, and never counts as too low. A
+nudge latches its direction until the cadence was ≥ 3 rpm inside the band for 20 s, and
+nudges are ≥ 2 min apart in either direction. Vibration only (one long = too low, two short
+= too high); a dark-blue `CADANS LAAG/HOOG <rpm>` banner shows while the rider stays out of
+band after a nudge, below the heat banner in priority (a coaching hint, not a warning).
+
 ### Medical ID (issue #230)
 
 Phone-managed, shown on request. `data/medical/MedicalId` (+ `MedicalIdRepository`,
