@@ -159,6 +159,18 @@ Garmin course ──► Connect IQ event ─────────────
                                                                           Garmin datafield cache
 ```
 
+**Share-link import (issue #210, phone-only).** A Komoot or RideWithGPS link — pasted in the
+"Route via deellink" dialog (FAB and *Data & app* menu) or shared as `text/plain` to
+`RouteListActivity` (`ACTION_SEND`) — is recognised by the pure `domain/route/ShareLink`
+(Komoot `/tour/<id>` on any `komoot.xx` host with optional `share_token`; RideWithGPS
+`/routes/<id>` and `/trips/<id>`). `data/route/ShareLinkRouteFetcher` (OkHttp, background
+executor) downloads it with keyless public endpoints: RideWithGPS
+`/<routes|trips>/<id>.gpx?sub_format=track`, Komoot `api.komoot.de/v007/tours/<id>/coordinates`
+(+ `/tours/<id>` for the name), converted to GPX by `domain/route/KomootTourConverter`. The
+GPX bytes then run through the same `importBytes` pipeline as a picked GPX file (duplicate-climb
+prompt, surface detection, `saveRoute`). Private routes (401/403) surface a Dutch message. No
+wire-format change.
+
 ### Activity-time (on watch, no phone needed)
 
 ```

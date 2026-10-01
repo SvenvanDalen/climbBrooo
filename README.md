@@ -228,6 +228,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   segment blocks N times with recovery at 50 % FTP in between (default half the climb time,
   3–10 min), cool-down. Phone-only.
 
+- **Import via share link (Komoot / RideWithGPS)** — "Route toevoegen" (or menu *Data & app*)
+  → "Route via deellink" takes a pasted Komoot tour or RideWithGPS route/trip link; sharing
+  the link from the Komoot/RideWithGPS app to "Route importeren (ClimbPro)" works too. The route
+  is fetched without API keys and runs through the normal GPX import. Private routes give a
+  clear error (use a Komoot link with `share_token` or make the route public). Phone-only.
 - **MyWhoosh import** — "Route toevoegen" → "MyWhoosh-rit importeren (FIT)" reads a ride
   exported from MyWhoosh (or Strava / Garmin Connect "export original"), runs the normal climb
   detection and files the route under the collection "MyWhoosh". Rides without GPS positions
