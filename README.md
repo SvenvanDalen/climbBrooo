@@ -120,6 +120,11 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   of itself (figure-eight lobes, out-and-back, a loop past the start) it can be cut off. Each
   option shows the new length, km/hm saved and which climbs are skipped; picking one saves it as
   "<naam> (ingekort, N km)" with climbs re-detected, leaving the original untouched.
+- **Loop generator** — "Rondje-generator" in the planning menu: enter a distance and a start
+  point (current location or a favourite) and get up to five rides of about that length that
+  start and end there, built only from your saved routes (no road router): a saved loop
+  restarted at its nearest point, a shortened loop, two loops combined, or out-and-back along a
+  route. Tap one to save it as a new route "Rondje N km (…)" with climbs detected.
 - **Whole-route elevation profile** — the route detail screen shows the elevation
   profile of the full route with every climb highlighted in its gradient colors. Phone-only.
 - **Border crossings** — the route detail screen lists every national border the route

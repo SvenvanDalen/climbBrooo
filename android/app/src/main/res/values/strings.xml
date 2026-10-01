@@ -19,6 +19,25 @@
     <string name="route_shorten_created">Ingekorte route aangemaakt — klimmen gevonden: %1$d</string>
     <string name="route_shorten_exists">Deze ingekorte route bestaat al — geopend</string>
     <string name="route_shorten_failed">Inkorten mislukt: %1$s</string>
+    <!-- Rondje-generator (issue #202) -->
+    <string name="loop_gen_menu">Rondje-generator</string>
+    <string name="loop_gen_title">Rondje-generator</string>
+    <string name="loop_gen_intro">Geef op hoeveel km je wilt rijden. De app stelt een rondje voor dat begint en eindigt bij je startpunt, opgebouwd uit je opgeslagen routes: een bekend rondje, een ingekorte of gecombineerde variant, of heen en terug langs een route.</string>
+    <string name="loop_gen_distance_hint">Afstand in km (bijv. 60)</string>
+    <string name="loop_gen_use_location">Huidige locatie</string>
+    <string name="loop_gen_start_none">Startpunt: nog niet gekozen</string>
+    <string name="loop_gen_start">Startpunt: %1$s</string>
+    <string name="loop_gen_suggest">Stel rondjes voor</string>
+    <string name="loop_gen_invalid_distance">Vul een afstand tussen 2 en 400 km in</string>
+    <string name="loop_gen_no_permission">Geen locatietoestemming — kies een favoriet startpunt.</string>
+    <string name="loop_gen_none">Geen passend rondje gevonden: geen opgeslagen route komt binnen 1,5 km van het startpunt met een lengte binnen 25 % van je doel. Importeer meer routes of kies een ander startpunt.</string>
+    <string name="loop_gen_tap_hint">Tik op een voorstel om het als nieuwe route op te slaan en te openen.</string>
+    <string name="loop_gen_row">%1$.1f km · %2$s\n%3$s\nvan/naar startpunt: %4$.1f km hemelsbreed</string>
+    <string name="loop_gen_kind_loop">rondje</string>
+    <string name="loop_gen_kind_shortened">ingekort rondje</string>
+    <string name="loop_gen_kind_combined">twee rondjes gecombineerd</string>
+    <string name="loop_gen_kind_out_and_back">heen en terug</string>
+    <string name="loop_gen_disclaimer">Er is geen wegrouter: voorstellen volgen alleen je opgeslagen routes. Het stukje van en naar het startpunt (max. 1,5 km) en eventuele afsnijdingen zijn hemelsbreed — controleer de route op de kaart voor je vertrekt.</string>
     <!-- Bezienswaardigheden langs de route (issue #208) -->
     <string name="route_pois_action">Bezienswaardigheden</string>
     <string name="route_pois_title">Bezienswaardigheden</string>
