@@ -193,7 +193,8 @@ public final class RouteSyncWorker extends Worker {
         String hash = route.sourceHash + "|" + profile.signature()
                 + "|" + SegmentTargetOverrideMerger.signature(route)
                 + "|" + ghost.signature()
-                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route);
+                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route)
+                + "|" + nl.paree.climbpro.domain.climb.EverestingPlan.signature(route);
         // Display units (issue #262) only extend the hash when not all-metric, so metric
         // riders keep their existing hash and don't get a one-off resync from this change.
         return units.toWireFlags() != 0 ? hash + "|" + units.signature() : hash;

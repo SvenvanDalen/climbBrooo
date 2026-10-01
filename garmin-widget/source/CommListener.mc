@@ -104,8 +104,9 @@ class PhoneMessageCallback {
             return;
         }
 
-        // Keys this widget doesn't render (tsec, refsec, vam, and the interval block "ib"
-        // from issue #180) are deliberately ignored: only the datafield uses them.
+        // Keys this widget doesn't render (tsec, refsec, vam, the interval block "ib" from
+        // issue #180 and the Everesting attempt "ev" from issue #217) are deliberately
+        // ignored: only the datafield uses them.
         data.climbStartDist[idx] = getInt(climbDict, "sd",  0);
         data.climbEndDist[idx]   = getInt(climbDict, "ed",  0);
         data.climbLength[idx]    = getInt(climbDict, "len", 0);

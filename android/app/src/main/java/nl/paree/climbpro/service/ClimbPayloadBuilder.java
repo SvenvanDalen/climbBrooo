@@ -30,6 +30,7 @@ import java.util.Map;
  *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
  *      vam:[avgVamMPerH,peakVamMPerH, ...],              // 2 ints × segCount (optional, omitted unless every segment has VAM)
  *      ib:[targetW, lowW, highW],                        // interval block (optional, issue #180; needs FTP)
+ *      ev:[targetM, reps, sLat, sLon, topLat, topLon],   // Everesting attempt (optional, issue #217)
  *      zc:[zoneColorIndex, ...]}                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
  *   ],
  *   fss:[{s,e,t,n?}, ...]}                              // specialized starred segments (optional, omitted when none qualify)
@@ -349,6 +350,8 @@ public final class ClimbPayloadBuilder {
                 nl.paree.climbpro.domain.power.IntervalBlock.fromStored(sc.intervalBlock);
         int[] ib = block != null ? block.wireWatts(ftpWatts) : null;
         if (ib != null) c.put("ib", ib);
+        int[] ev = nl.paree.climbpro.domain.climb.EverestingPlan.wire(sc);
+        if (ev != null) c.put("ev", ev);
         if (zoneProfile != null) {
             int[] zc = SegmentIntensityZones.colorIndices(sc.segments, zoneProfile);
             if (zc != null) c.put(KEY_ZONE_COLORS, zc);

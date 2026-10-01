@@ -888,6 +888,24 @@ The value is drawn as a blue top strip only between climbs (the climb view is
 untouched), below the off-route and battery banners in priority, and nothing is shown
 without a reading.
 
+### Everesting tracker (issue #217)
+
+The phone plans, the watch counts. `domain/climb/EverestingPlan` computes repeats
+(`ceil(target / eg)`), distance up and down and a riding-time estimate (climb estimate +
+descents at 40 km/h). The target lives on `StoredClimb.everestTargetM` (null = none), set by
+`RouteRepository#setClimbEverestTarget`, which clears every other climb of the route — one
+attempt per route — and carried across resync by `mergePreviousClimbUserData`; it is part
+of the sync `wantHash`. `ClimbPayloadBuilder` emits the optional per-climb wire field
+`ev = [targetM, repeats, startLatInt, startLonInt, topLatInt, topLonInt]` (top = last
+calibration point; omitted without calibration points). On the datafield `CommListener`
+clears `ClimbData.everest` on every payload and takes the first valid `ev`;
+`garmin/source/Everesting.mc` (`EverestTracker`) counts a repeat within 60 m of the top,
+re-arms within 100 m of the start (so loitering at the top or turning mid-climb never
+double-counts) and fires a done event once `Activity.Info.totalAscent` reaches the target.
+A resync of the same plan keeps the count; a changed plan resets it. The green progress
+strip has the lowest banner priority. The regular route view is unchanged, so after the
+first ascent the route-follow screens show no climb ahead — the strip is the Everesting UI.
+
 ### Lights reminder at dusk (issue #198)
 
 Watch-only, no wire change: the climb datafield (`garmin`) reminds the rider once per ride

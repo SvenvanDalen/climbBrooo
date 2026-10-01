@@ -161,6 +161,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and ≥ 25 km/h) the datafield shows a blue `VOELT -4°C` strip: windchill from the
   watch temperature and your riding speed. Watch-only; with a paired Tempe sensor it is
   true air temperature, without one the wrist sensor reads warm. Hidden without a reading.
+- **Everesting tracker** — climb detail → "Everesting plannen": pick a target (8848 m, or
+  1000–10000 m custom) and see the repeats (rounded up), distance and estimated riding time.
+  The datafield gets the plan in the payload (`ev`), counts a repeat each time you reach the
+  top (re-armed back at the start) and shows a green `EVEREST 3/12  2650/8848m` strip with the
+  activity's total ascent; two short buzzes per repeat, a long buzz + tone at the target.
+  One attempt per route, survives resync.
 - **Lights reminder at dusk** — the climb datafield buzzes once per ride (two long buzzes +
   low tone) and shows a yellow `LICHT AAN` strip for 30 s when it gets dark: from 15 min
   before sunset (configurable: at sunset / 15 / 30 / 60 min) or right at the first GPS fix

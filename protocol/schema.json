@@ -139,6 +139,13 @@
           "maxItems": 3,
           "items": { "type": "integer", "minimum": 1 }
         },
+        "ev": {
+          "description": "Optional Everesting attempt on this climb (issue #217): [targetM, repeats, startLatInt, startLonInt, topLatInt, topLonInt], coordinates = degrees x 100000. The phone plans the repeats (ceil(target / elevation gain)); the watch counts summit passes near the top coordinate (re-armed near the start) and compares the activity's total ascent with targetM. At most one climb per payload; omitted when no attempt is planned or the climb has no calibration points.",
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": { "type": "integer" }
+        },
         "zc": {
           "description": "Optional (issue #66): per-segment FTP intensity-zone color, one colorIndex (0-5, see colors.md 'FTP intensity zones') per segment, parallel to segs. A second, optional color source next to the gradient colorIndex in segs, which stays the default: the watch uses zc only when its 'Kleurmodus' setting is FTP-zone. Computed on the phone from the rider's FTP and weights (estimated segment power -> Coggan zone -> colorIndex). Both modes; omitted without a complete rider profile, and dropped from any payload that would otherwise exceed the 4 KB budget.",
           "type": "array",
