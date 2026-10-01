@@ -11,6 +11,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.watch.WatchFieldLayoutStore;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
 import nl.paree.climbpro.service.CombinedRefTimePlanner;
@@ -32,6 +33,7 @@ public final class WatchRequestHandler {
     private final ObjectMapper    mapper;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    private final WatchFieldLayoutStore layoutStore;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -44,11 +46,18 @@ public final class WatchRequestHandler {
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
                                RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo) {
+        this(routeRepo, connectIqClient, riderRepo, attemptRepo, null);
+    }
+
+    public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
+                               RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo,
+                               WatchFieldLayoutStore layoutStore) {
         this.routeRepo       = routeRepo;
         this.connectIqClient = connectIqClient;
         this.mapper          = new ObjectMapper();
         this.riderRepo       = riderRepo;
         this.attemptRepo     = attemptRepo;
+        this.layoutStore     = layoutStore;
     }
 
     /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
@@ -68,10 +77,12 @@ public final class WatchRequestHandler {
 
     /**
      * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
-     * when a rider profile is available; without one the payload is unchanged.
+     * when a rider profile is available; without one the payload is unchanged. Also carries the
+     * datafield slot layout ('lay') when a layout store is wired up.
      */
     private ClimbPayloadBuilder payloadBuilder() {
-        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper)
+                .withFieldLayout(layoutStore != null ? layoutStore.load() : null);
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 

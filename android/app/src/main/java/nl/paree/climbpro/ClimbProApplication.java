@@ -31,7 +31,8 @@ public final class ClimbProApplication extends Application {
         ciqClient.setWatchRequestHandler(new WatchRequestHandler(
                 routeRepo, ciqClient,
                 new nl.paree.climbpro.data.rider.RiderProfileRepository(this),
-                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this)));
+                new nl.paree.climbpro.data.route.ClimbAttemptRepository(this),
+                new nl.paree.climbpro.data.watch.WatchFieldLayoutStore(this)));
         // Force a clean GCM rebind on startup so a phone-only app update can't leave
         // the watch talking to a dead process. See ConnectIqClient#forceRebind.
         ciqClient.forceRebind();
