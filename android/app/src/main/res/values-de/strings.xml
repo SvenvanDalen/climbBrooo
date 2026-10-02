@@ -382,4 +382,12 @@
     <string name="ftp_test_apply_confirm_message_new">Deine FTP wird %1$d W. Zeitschätzungen, Pacing und Workouts verwenden danach diesen Wert.</string>
     <string name="ftp_test_applied">FTP auf %1$d W aktualisiert</string>
     <string name="ftp_test_unknown_ride">Fahrt</string>
+    <!-- Groepsrit-planner (issue #195) -->
+    <string name="group_ride_title">Gruppenfahrt planen</string>
+    <string name="group_ride_intro">Wähle eine gespeicherte Route und die Teilnehmer. ClimbPro schätzt das Gruppentempo (der langsamste Fahrer bestimmt das Tempo, an Anstiegen wartet die Gruppe oben), schlägt Termine anhand der Fahrtage aller vor und erstellt einen Vorschlag zum Teilen. Teilnehmer kommen aus Fahrpartner oder werden manuell hinzugefügt.</string>
+    <string name="group_ride_pick_route">Route wählen</string>
+    <string name="group_ride_participants">Teilnehmer</string>
+    <string name="group_ride_add_rider">Fahrer hinzufügen</string>
+    <string name="group_ride_share">Vorschlag teilen</string>
+    <string name="group_ride_from_date">Ab %1$s</string>
 </resources>

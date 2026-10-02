@@ -382,4 +382,12 @@
     <string name="ftp_test_apply_confirm_message_new">Your FTP becomes %1$d W. Time estimates, pacing and workouts will then use this value.</string>
     <string name="ftp_test_applied">FTP updated to %1$d W</string>
     <string name="ftp_test_unknown_ride">Ride</string>
+    <!-- Groepsrit-planner (issue #195) -->
+    <string name="group_ride_title">Plan a group ride</string>
+    <string name="group_ride_intro">Pick a saved route and the riders. ClimbPro estimates the group pace (the slowest rider sets the pace, the group regroups at the top of climbs), proposes dates from everyone\'s riding days and builds a proposal to share. Riders come from Ride buddies or can be added by hand.</string>
+    <string name="group_ride_pick_route">Choose route</string>
+    <string name="group_ride_participants">Riders</string>
+    <string name="group_ride_add_rider">Add rider</string>
+    <string name="group_ride_share">Share proposal</string>
+    <string name="group_ride_from_date">From %1$s</string>
 </resources>
