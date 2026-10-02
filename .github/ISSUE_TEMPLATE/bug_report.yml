@@ -1,0 +1,58 @@
+name: Bug report
+description: Something on the phone app or the watch doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Before filing, check [HANDLEIDING.md](https://github.com/SvenvanDalen/climbBrooo/blob/main/HANDLEIDING.md) — an empty route list on the watch is often a missing Bluetooth permission or a Connect IQ binding reset after reinstalling the phone app.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Android companion app
+        - Watch datafield (garmin)
+        - Watch browse widget (garmin-widget)
+        - Watch surface field (garmin-surface)
+        - Watch onboard app (garmin-onboard)
+        - Phone ⇄ watch sync
+        - Strava integration
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Import route …
+        2. Sync to watch …
+        3. Start ride …
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Phone app version, watch app version, Garmin Connect Mobile version, Android version
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Route-follow
+        - Radius mode
+        - Not applicable
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots or GPX
+      description: Attach logcat output, watch screenshots, or the GPX/FIT file that triggers the problem (remove anything private).
