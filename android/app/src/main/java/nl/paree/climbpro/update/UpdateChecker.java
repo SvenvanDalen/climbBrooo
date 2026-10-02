@@ -28,10 +28,10 @@ import java.util.regex.Pattern;
 
 /**
  * Polls GitHub Releases for a build newer than the one currently installed.
- * {@code build-android.yml} tags every release {@code v1.0.<run_number>} and sets that
- * same run number as this build's versionCode, so the tag's last component vs.
- * versionCode is a direct numeric comparison. Legacy {@code v<run_number>} tags
- * are still understood.
+ * {@code build-android.yml} tags every release {@code v1.<minor>.0} (the minor goes up
+ * by one per release) and sets that same version as this build's versionName, so the
+ * tag vs. versionName is a semver comparison. Older {@code v1.0.<run_number>} tags
+ * compare correctly against that; legacy {@code v<run_number>} tags read as 0.0.N.
  */
 public final class UpdateChecker {
 
@@ -42,7 +42,8 @@ public final class UpdateChecker {
     private static final String KEY_DOWNLOAD_ID = "pending_download_id";
     private static final String OWNER;
     private static final String REPO_NAME;
-    private static final Pattern TAG_VERSION = Pattern.compile("v?(?:\\d+\\.\\d+\\.)?(\\d+)");
+    private static final Pattern TAG_VERSION =
+            Pattern.compile("v?(?:(\\d+)\\.(\\d+)\\.)?(\\d+)(?:-[\\w.]+)?");
 
     static {
         int slash = REPO.indexOf('/');
@@ -81,14 +82,15 @@ public final class UpdateChecker {
                 }
 
                 GitHubReleaseDto release = resp.body();
-                int remoteVersion = parseVersion(release.tagName);
-                if (remoteVersion < 0) {
+                int[] remoteVersion = parseVersion(release.tagName);
+                if (remoteVersion == null) {
                     postFailure(callback, new IllegalStateException(
                             "Unrecognised release tag: " + release.tagName));
                     return;
                 }
 
-                if (remoteVersion <= BuildConfig.VERSION_CODE) {
+                int[] localVersion = parseVersion(BuildConfig.VERSION_NAME);
+                if (localVersion != null && compareVersions(remoteVersion, localVersion) <= 0) {
                     mainHandler.post(callback::onUpToDate);
                     return;
                 }
@@ -165,16 +167,29 @@ public final class UpdateChecker {
         return null;
     }
 
-    /** Parses "v1.0.42" / "v42" / "42" -> 42; returns -1 if the tag doesn't match the expected shape. */
-    static int parseVersion(String tagName) {
-        if (tagName == null) return -1;
+    /**
+     * Parses "v1.4.0" -> {1, 4, 0}, "1.0.0-dev" -> {1, 0, 0}, legacy "v42" -> {0, 0, 42};
+     * returns null if the tag doesn't match the expected shape.
+     */
+    static int[] parseVersion(String tagName) {
+        if (tagName == null) return null;
         Matcher m = TAG_VERSION.matcher(tagName.trim());
-        if (!m.matches()) return -1;
+        if (!m.matches()) return null;
         try {
-            return Integer.parseInt(m.group(1));
+            int major = m.group(1) != null ? Integer.parseInt(m.group(1)) : 0;
+            int minor = m.group(2) != null ? Integer.parseInt(m.group(2)) : 0;
+            return new int[] { major, minor, Integer.parseInt(m.group(3)) };
         } catch (NumberFormatException e) {
-            return -1;
+            return null;
         }
+    }
+
+    /** Orders two parsed versions by major, then minor, then patch. */
+    static int compareVersions(int[] a, int[] b) {
+        for (int i = 0; i < 3; i++) {
+            if (a[i] != b[i]) return Integer.compare(a[i], b[i]);
+        }
+        return 0;
     }
 
     private static Retrofit buildRetrofit() {
