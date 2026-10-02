@@ -42,6 +42,8 @@ public final class WatchRequestHandler {
     private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
     /** Datafield slot layout sent as 'lay'; null = default layout (no key). */
     private volatile WatchFieldLayoutStore layoutStore;
+    /** Best ride per route for 'gh' (issue #178); null = never sent. */
+    private volatile nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -74,6 +76,11 @@ public final class WatchRequestHandler {
      */
     public void setPaletteSource(java.util.function.IntSupplier source) {
         if (source != null) this.paletteSource = source;
+    }
+
+    /** Enables the virtual opponent ('gh', issue #178) in watch-requested route payloads. */
+    public void setRouteGhostRepository(nl.paree.climbpro.data.route.RouteGhostRepository repo) {
+        this.ghostRepo = repo;
     }
 
     /** Enables the datafield slot layout ('lay') in watch-requested payloads. */
@@ -132,6 +139,11 @@ public final class WatchRequestHandler {
         return CombinedRefTimePlanner.plan(route, attempts, ghost);
     }
 
+    /** Virtual opponent on this route (issue #178): 'gh', or null without a stored best ride. */
+    private int[] routeGhost(StoredRoute route) {
+        return ghostRepo != null ? ghostRepo.wireFor(route) : null;
+    }
+
     public void handleMessage(Map<String, Object> message) {
         if (message == null) return;
         String type = (String) message.get("type");
@@ -186,7 +198,8 @@ public final class WatchRequestHandler {
         try {
             StoredRoute route   = routeRepo.loadRoute(routeId);
             byte[]      payload = payloadBuilder().withFtpWatts(ftpWatts())
-                    .buildRoutePayload(route, pacingPlan(route), refPlan(route));
+                    .buildRoutePayload(route, pacingPlan(route), refPlan(route),
+                            routeGhost(route));
             connectIqClient.sendPayload(payload);
             Log.i(TAG, "Sent route payload for " + routeId + " (" + payload.length + " bytes)");
         } catch (IOException e) {
@@ -203,7 +216,8 @@ public final class WatchRequestHandler {
             StoredRoute route = routeRepo.loadRoute(routeId);
             ClimbPayloadBuilder builder = payloadBuilder().withFtpWatts(ftpWatts());
             boolean ok = connectIqClient.sendPayloadToDatafield(
-                    builder.buildRoutePayload(route, pacingPlan(route), refPlan(route)));
+                    builder.buildRoutePayload(route, pacingPlan(route), refPlan(route),
+                            routeGhost(route)));
             // Always push the surface payload — an empty surfSec clears stale sections.
             connectIqClient.sendPayloadToSurfaceField(builder.buildSurfaceSectionPayload(route));
             String name = route.userDisplayName != null ? route.userDisplayName : route.name;

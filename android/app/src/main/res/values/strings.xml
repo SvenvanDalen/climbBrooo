@@ -496,6 +496,14 @@ Slaap %5$.1f → %6$.1f/5 (%7$s)</string>
     <string name="share_link_fetching">Route ophalen…</string>
     <string name="share_link_failed">Importeren mislukt: %1$s</string>
     <string name="share_link_share_label">Route importeren (ClimbPro)</string>
+    <!-- Groepsrit-planner (issue #195) -->
+    <string name="group_ride_title">Groepsrit plannen</string>
+    <string name="group_ride_intro">Kies een opgeslagen route en de deelnemers. ClimbPro schat het groepstempo (de traagste rijder bepaalt het tempo, op klimmen wacht de groep boven op elkaar), stelt datums voor op basis van ieders rijdagen en maakt een voorstel om te delen. Deelnemers komen uit Ritmaatjes of voeg je met de hand toe.</string>
+    <string name="group_ride_pick_route">Route kiezen</string>
+    <string name="group_ride_participants">Deelnemers</string>
+    <string name="group_ride_add_rider">Rijder toevoegen</string>
+    <string name="group_ride_share">Voorstel delen</string>
+    <string name="group_ride_from_date">Vanaf %1$s</string>
 
     <!-- Ontdek-de-regio-kaart (issue #194) -->
     <string name="menu_explore_map">Ontdek-de-regio-kaart</string>

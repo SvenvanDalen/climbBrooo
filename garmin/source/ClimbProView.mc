@@ -116,6 +116,16 @@ class ClimbProView extends Ui.DataField {
     hidden var heatAlarm = new HeatAlarm();
     hidden var heatNextCheckMs = 0;
     hidden var heatShownC = null;
+    // Eat/drink reminder (issue #184): time/ascent triggers, shortened when it is hot.
+    // fuelTempC is refreshed once a minute; the banner shows until fuelBannerUntilMs.
+    hidden var fuel = new FuelReminder();
+    hidden var fuelTempC = null;
+    hidden var fuelNextTempMs = 0;
+    hidden var fuelBannerUntilMs = -1;
+    // Cadence coach (issue #179): cadShownRpm = banner value while out of the target band
+    // after a nudge, else null.
+    hidden var cadenceCoach = new CadenceCoach();
+    hidden var cadShownRpm = null;
 
     function initialize() {
         DataField.initialize();
@@ -131,6 +141,9 @@ class ClimbProView extends Ui.DataField {
         // Safety alarms run before the payload gate: they don't need a route.
         checkHeartRate(info);
         checkHeatIndex();
+        // Eat/drink reminder (issue #184): needs only the activity timer, so no route either.
+        checkFuelReminder(info);
+        checkCadence(info);
 
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
@@ -154,6 +167,7 @@ class ClimbProView extends Ui.DataField {
             hazardAlerted = 0;
             hazardIdx = -1;
             easier.reset();
+            data.resetRouteGhostAnchor();
         }
 
         var elapsed = 0;
@@ -197,6 +211,11 @@ class ClimbProView extends Ui.DataField {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
             data.updateRouteMatch(ll[0], ll[1]);
         }
+
+        // Virtual opponent on the route (issue #178): the best earlier ride, interpolated at
+        // the route progress. Computed every tick so it starts alongside the rider even
+        // while the page doesn't show it.
+        data.routeGhostDeltaSec = data.routeGhostDelta(timerMs, axis);
 
         // Tunnels / technical descents (issue #203): banner from HAZARD_LOOKAHEAD_M ahead and
         // while inside, one buzz per hazard (bitmask latch, survives GPS jitter around the
@@ -359,6 +378,19 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
+    // Cadence coach (issue #179): nudge when the cadence stays outside the target band
+    // ("cadenceLow".."cadenceHigh" rpm, master toggle "cadenceCoach"). Coasting (0) and a
+    // missing sensor are ignored inside CadenceCoach. Works without a route.
+    hidden function checkCadence(info) {
+        var cad = (info != null && info has :currentCadence) ? info.currentCadence : null;
+        var dir = cadenceCoach.update(cad, readNumberSetting("cadenceLow"),
+                readNumberSetting("cadenceHigh"), readBoolSetting("cadenceCoach"), Sys.getTimer());
+        if (dir != CADENCE_OK) {
+            triggerCadenceAlert(dir);
+        }
+        cadShownRpm = (cadenceCoach.shownDir != CADENCE_OK && cad != null) ? cad : null;
+    }
+
     // App-setting reads, defensive like activeColors() reads "darkTheme":
     // Properties.getValue can throw on a stale settings cache. Default 0 / false.
     hidden function readNumberSetting(key) {
@@ -387,6 +419,30 @@ class ClimbProView extends Ui.DataField {
             triggerHeatAlert();
         }
         heatShownC = heatAlarm.hot ? hi : null;
+    }
+
+    // Eat/drink reminder (issue #184). Cheap per-tick compare on the activity timer + total
+    // ascent; the temperature (for the hot-weather correction) is read once a minute.
+    hidden function checkFuelReminder(info) {
+        var now = Sys.getTimer();
+        var hotC = readNumberSetting("fuelHotC");
+        if (hotC <= 0) {
+            fuelTempC = null;
+        } else if (now >= fuelNextTempMs) {
+            fuelNextTempMs = now + 60000;
+            var r = heatReading();
+            fuelTempC = (r == null) ? null : r[0];
+        }
+        var timerMs = (info != null && info has :timerTime) ? info.timerTime : null;
+        var ascent = (info != null && info has :totalAscent) ? info.totalAscent : null;
+        if (fuel.update(timerMs, ascent, fuelTempC, readNumberSetting("fuelIntervalMin"),
+                readNumberSetting("fuelClimbM"), hotC)) {
+            triggerFuelAlert();
+            fuelBannerUntilMs = now + 30000;
+        }
+        if (fuelBannerUntilMs >= 0 && now >= fuelBannerUntilMs) {
+            fuelBannerUntilMs = -1;
+        }
     }
 
     // [tempC, humidityPct] for the heat index, or null. Garmin Weather (the phone's
@@ -453,7 +509,11 @@ class ClimbProView extends Ui.DataField {
         var lightsBanner = lights.bannerVisible(Time.now().value());
         if (data == null || !data.payloadReceived) {
             drawNoData(dc);
-            if (lightsBanner) { drawLightsBanner(dc); }
+            if (fuelBannerUntilMs >= 0) {
+                drawFuelBanner(dc);
+            } else if (lightsBanner) {
+                drawLightsBanner(dc);
+            }
             return;
         }
 
@@ -468,7 +528,7 @@ class ClimbProView extends Ui.DataField {
         } else if (data.nextClimbIndex >= 0) {
             drawNextClimbPreview(dc, data);
         } else {
-            drawNoClimbs(dc);
+            drawNoClimbs(dc, data);
         }
 
         // Off-route takes priority: it's the more urgent/actionable state and the two
@@ -485,6 +545,10 @@ class ClimbProView extends Ui.DataField {
             drawHazardBanner(dc, data);
         } else if (heatShownC != null) {
             drawHeatBanner(dc, heatShownC);
+        } else if (fuelBannerUntilMs >= 0) {
+            drawFuelBanner(dc);
+        } else if (cadShownRpm != null) {
+            drawCadenceBanner(dc, cadenceLabel(cadenceCoach.shownDir, cadShownRpm));
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
             drawEasierAheadBanner(dc, easier.shownLenM);
         } else if (lightsBanner) {
@@ -567,6 +631,26 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Green strip for 30 s after the eat/drink reminder fired (issue #184), on and between
+    // climbs. Below the safety banners (off-route, heart rate, battery, hazard, heat).
+    hidden function drawFuelBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, fuelReminderLabel(), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-blue strip while the cadence is still outside the target band after a cadence-
+    // coach nudge (issue #179). A coaching hint: below the safety/heat banners in priority.
+    hidden function drawCadenceBanner(dc, text) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_BLUE, Gfx.COLOR_DK_BLUE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -744,9 +828,10 @@ class ClimbProView extends Ui.DataField {
     // Live delta against the per-segment PR ("vs PR"), else the manual pacing plan
     // ("vs plan"); PR takes priority as the always-on repeat-climb signal. Returns false
     // (nothing drawn) before the climb timer started or without a reference.
+    // Without either, the route-level virtual opponent ("vs beste", issue #178) is shown.
     hidden function drawGhost(dc, data, ci, x, y, font, justify, wide) {
         if (data.climbStartTimerMs < 0) {
-            return false;
+            return drawRouteGhost(dc, data, x, y, font, justify, wide);
         }
         var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
         if (data.hasRefTargets[ci]) {
@@ -764,7 +849,18 @@ class ClimbProView extends Ui.DataField {
                 return true;
             }
         }
-        return false;
+        return drawRouteGhost(dc, data, x, y, font, justify, wide);
+    }
+
+    // Seconds ahead/behind the best earlier ride of this route (issue #178); false (nothing
+    // drawn) without a route ghost, off-route, in radius mode or before the timer runs.
+    hidden function drawRouteGhost(dc, data, x, y, font, justify, wide) {
+        var d = data.routeGhostDeltaSec;
+        if (d == null) {
+            return false;
+        }
+        drawGhostDelta(dc, x, y, font, justify, d, wide ? " vs beste" : "", data.palette);
+        return true;
     }
 
     // Interval-block line (issue #180): "Doel 266-280W" without a power meter, otherwise
@@ -1037,6 +1133,10 @@ class ClimbProView extends Ui.DataField {
             dc.drawText(w / 2, distY, sf,
                 "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
         }
+
+        // Virtual opponent (issue #178) in the otherwise empty row above "in X km".
+        drawRouteGhost(dc, data, w / 2, (h * 0.80).toNumber(), Gfx.FONT_XTINY,
+            Gfx.TEXT_JUSTIFY_CENTER, true);
     }
 
     // =========================================================================
@@ -1049,10 +1149,13 @@ class ClimbProView extends Ui.DataField {
             "No data", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
 
-    hidden function drawNoClimbs(dc) {
+    hidden function drawNoClimbs(dc, data) {
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() / 2, dc.getHeight() / 2, Gfx.FONT_SMALL,
             "No climbs ahead", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
+        // Virtual opponent (issue #178): the only live info between the last climb and home.
+        drawRouteGhost(dc, data, dc.getWidth() / 2, (dc.getHeight() * 0.66).toNumber(),
+            Gfx.FONT_SMALL, Gfx.TEXT_JUSTIFY_CENTER, true);
     }
 
     // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
@@ -1222,6 +1325,21 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
+    // Cadence coach (issue #179): vibration only, no tone -- a coaching nudge, not a
+    // warning. Too low = one long buzz ("trap sneller"), too high = two short ones.
+    hidden function triggerCadenceAlert(dir) {
+        if (!(Attention has :vibrate)) { return; }
+        if (dir == CADENCE_HIGH) {
+            Attention.vibrate([
+                new Attention.VibeProfile(60, 150),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(60, 150)
+            ]);
+        } else {
+            Attention.vibrate([new Attention.VibeProfile(60, 600)]);
+        }
+    }
+
     // Heat-index warning (issue #227): two long buzzes + the alert tone -- a different
     // shape from the climb-start (long-gap-long, lap tone) and battery (3 short) alerts.
     hidden function triggerHeatAlert() {
@@ -1234,6 +1352,22 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_ALERT_LO);
+        }
+    }
+
+    // Eat/drink reminder (issue #184): the climb-start vibration (long-gap-long) with the
+    // time-alert tone instead of the lap tone, so it is felt like the climb alert but heard
+    // as a different event.
+    hidden function triggerFuelAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 500),
+                new Attention.VibeProfile(0, 200),
+                new Attention.VibeProfile(100, 500)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_TIME_ALERT);
         }
     }
 

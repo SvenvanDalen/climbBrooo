@@ -928,6 +928,40 @@ battery and above felt temperature, with the distance rounded to 50 m so the tex
 churn, and buzzes once per hazard (bitmask latch, reset on route change; suppressed off-route).
 The widget ignores `hz`.
 
+### Virtual opponent on a route (issue #178)
+
+Extends the per-climb ghost (`refsec`/`tsec`, issues #31/#59) to the whole route. Wire
+extension: optional route-level `gh` = `[stepM, sec1, …, secN]`, the timer seconds the rider's
+fastest earlier complete ride spent on each step of `stepM` metres (step k covers
+`(k-1)*stepM … min(k*stepM, rtl)`). `stepM` is 250 m, or coarser (multiple of 50 m) so that
+N ≤ 100; per-step seconds instead of cumulative keep each value at 2–3 digits (~300–400 bytes
+for a typical route inside the 4 KB budget).
+
+Phone: the pure `domain/route/RouteGhostProfile` interpolates route checkpoints every step
+(`line`) and walks a ride's GPS track in order (`match`): each checkpoint must be passed within
+40 m after the previous one, the closest sample of each pass is used, and gaps > 20 s count as
+recorder pauses (zero seconds, like the watch's timer time). Up to 5 passes of the route start
+are tried, so a loop ridden twice keeps the faster lap. `StravaActivitiesRepository` runs it on
+the latlng/time track it already fetches for climb matching (no extra Strava request; new
+activities and the history backfill), against every stored route loaded once per run, and
+`data/route/RouteGhostRepository` (`route_ghosts.json`, backup + privacy dashboard under
+"Klimpogingen") keeps the fastest ride per route, replacing one made for a different route
+length. `ClimbPayloadBuilder.buildRoutePayload(…, routeGhost)` adds `gh` to full-route
+payloads only (not radius, not single-climb) and drops it after `zc` when over budget;
+`RouteGhostRepository.wireFor` only returns a profile whose length still matches the route
+(±50 m). `RouteSyncWorker` appends a `gh` signature to `wantHash` (empty without a profile, so
+existing sync states stay valid) and `WatchRequestHandler` sends it on LOAD_ROUTE /
+SET_ACTIVE_ROUTE.
+
+Watch: `ClimbData.setRouteGhost` validates `gh` (Numbers ≥ 0, step > 0, ≤ 100 steps;
+malformed or absent clears it) and stores cumulative seconds; `routeGhostSecAt` interpolates
+at the route axis (`chooseAxis`, the same distance the climbs use) with the last step ending at
+`rtl`. `routeGhostDelta` anchors the opponent at the first valid tick (timer running, route
+mode, on route), so joining the route late doesn't skew it, and returns
+`(timer − anchor) − (ref(axis) − ref(anchor))`; the anchor resets on a route change. The view
+shows it as `±Ns vs beste` in the empty row of the next-climb page, under "No climbs ahead",
+and in the ghost/auto-bottom slot of a climb without its own PR/plan reference.
+
 ### Everesting tracker (issue #217)
 
 The phone plans, the watch counts. `domain/climb/EverestingPlan` computes repeats
@@ -993,6 +1027,21 @@ signal because optical wrist HR spikes on its own. `ClimbProView.compute` runs
 `checkHeartRate` **before** the payload gate, so it works without a route. The purple
 banner sits right below off-route in priority — a safety signal outranks battery.
 
+### Cadence coach (issue #179)
+
+Watch-only, no wire change. The target band is a set of Connect IQ app settings
+(`cadenceCoach` toggle, default off; `cadenceLow`/`cadenceHigh` rpm, default 80/100, 0 = that
+side off), edited from the phone in Garmin Connect Mobile — the same route as the
+heart-rate alarm, so no payload key. `garmin/source/CadenceCoach.mc` is a pure class fed with
+`Activity.Info.currentCadence` and `System.getTimer()` every tick by
+`ClimbProView.checkCadence` (before the payload gate, so it works without a route). Anti-spam
+hysteresis: a nudge needs 30 s of *pedalling* time out of band; cadence 0 (coasting) or
+null (no sensor) pauses that count instead of resetting it, and never counts as too low. A
+nudge latches its direction until the cadence was ≥ 3 rpm inside the band for 20 s, and
+nudges are ≥ 2 min apart in either direction. Vibration only (one long = too low, two short
+= too high); a dark-blue `CADANS LAAG/HOOG <rpm>` banner shows while the rider stays out of
+band after a nudge, below the heat banner in priority (a coaching hint, not a warning).
+
 ### Medical ID (issue #230)
 
 Phone-managed, shown on request. `data/medical/MedicalId` (+ `MedicalIdRepository`,
@@ -1038,6 +1087,24 @@ it also works without a route. Input is `Weather.getCurrentConditions()` first (
 the FR255M's internal sensor reads high from wrist heat and would false-alarm on its own.
 Threshold is the `heatIndexThreshold` app setting (0 = off, default 32 °C). The banner
 sits below off-route and battery in priority, above the descent felt temperature.
+
+### Eat/drink reminder (issue #184)
+
+Watch-only, no wire change: the interval settings are Connect IQ app settings (edited on the
+phone in Garmin Connect Mobile), not payload keys, so they apply without a route sync and
+also with no route on the watch. `garmin/source/FuelReminder.mc` is a pure class:
+`FuelReminder.update(timerMs, totalAscent, tempC, fuelIntervalMin, fuelClimbM, fuelHotC)`
+fires when the activity timer (pauses excluded) has advanced `fuelIntervalMin` minutes or
+the total ascent has grown `fuelClimbM` metres since the last reminder — whichever first —
+and then moves both baselines to "now", so each trigger fires exactly once and altitude
+jitter can't re-fire it. `fuelHeatFactorPct` shortens both steps to 75 % from `fuelHotC`
+and to 50 % from `fuelHotC` + 8 °C; a shortened interval never goes below 10 min, and the
+ascent trigger also waits 10 min after the previous reminder. A timer that goes back (new
+activity) restarts the ride; with both triggers off the baselines track "now" so enabling it
+mid-ride starts fresh. `ClimbProView.checkFuelReminder` runs before the payload gate, reads
+the temperature once a minute via the heat-index source (Garmin Weather, else the sensor),
+vibrates like the climb-start alert with `TONE_TIME_ALERT`, and shows a green
+`ETEN & DRINKEN` strip for 30 s below the safety banners (also on the no-data screen).
 
 ### FTP intensity-zone colors (issue #66)
 
@@ -1289,6 +1356,8 @@ Matched attempts are stored in `climb_attempts.json` under `getFilesDir()`, foll
 **Friends' feed** (`friend_feed.json`, `data/social/FriendFeedRepository`, issue #240): social sharing without a backend. "Deel mijn ritten" builds a snapshot (`domain/social/OwnFeedBuilder`: rides from the ride archive and first ascents from climb attempts, last 30 days, max 15 + 5, never thuisklimmen) and encodes it as a text share code `CPF1:` + base64url(gzip(JSON)) (`domain/social/FriendShareCode`, max 20 entries, titles ≤ 60 chars; no coordinates, no Strava ids), sent through the Android share sheet. Friends paste the code in "Vriendenfeed" or share the chat message to ClimbPro (`ACTION_SEND text/plain`). Decoding treats the text as untrusted: size limits before and after inflating, version check (`CPF2:` / `"v":2` → "werk de app bij"), malformed entries skipped. `FriendFeedMerger` de-duplicates re-imports (ride = friend + start second, milestone = + title), updates a renamed friend and keeps ≤ 100 entries per friend. Sharer identity is a random UUID + chosen name in default prefs (`FriendShareIdentity`). Registered in the privacy dashboard and backup. Phone-only; never part of the wire payload.
 
 **Ride-buddy matcher** (`ride_buddies.json`, `data/social/RideBuddyRepository`, issue #242): find riders with a similar pace and ride type without a backend — the same share-code envelope as the friends' feed. `domain/social/RideBuddyProfileBuilder` derives your profile from the last 180 days of outdoor bike rides (≥ 3 rides, ≥ 5 km; virtual rides skipped): median speed on flat-ish rides (< 8 m/km), median climbing VAM from climb attempts (gain ≥ 30 m, 100–2.500 m/u), median distance, road/gravel/MTB types with ≥ 25 % share (from Strava `sport_type`), weekdays (≥ 15 %) and dayparts (≥ 20 %) in the device zone, and the most frequent start cell of a ~5 km grid (`RideBuddyProfile.snapToCell`, needs ≥ 2 starts). The user ticks which fields to share (area is opt-in, off by default); `domain/social/RideBuddyCode` encodes `CPR1:` + base64url(gzip(JSON)) with short keys, and the confirm dialog lists the *decoded* code so the user sees exactly what the receiver gets. The rider id is a random UUID separate from the friend-feed id (`ride_buddy_share_id` pref) so the two kinds of code can't be linked; the name is shared with the friend feed. Decoding is hostile-input safe: code and inflation size limits, version check, out-of-range fields dropped individually, and the area re-snapped to the grid so even a hand-crafted code can't store a precise location. `domain/social/RideBuddyMatcher` scores imported profiles 0–100 as a weighted mean of per-aspect similarities (pace 3, area 2, climbing 2, distance 1,5, type 1,5, schedule 1) over the aspects both sides shared, scaled by 0,6 + 0,4 × coverage, with a Dutch explanation ("vergelijkbaar tempo, 12 km verderop, rijdt ook gravel"). Your own profile is recomputed on demand, never stored; imported profiles are upserted per rider id (max 200). Screen "Ritmaatjes" (`ui/social/RideBuddyActivity`, also an `ACTION_SEND text/plain` target behind a confirmation dialog) in the "Ritten & analyse" menu group. Registered in the privacy dashboard (`RIDE_BUDDIES`) and backup. Phone-only; never part of the wire payload.
+
+**Group-ride planner** (no storage, issue #195): plan a group ride on a saved route without a backend, building on the ride-buddy profiles. `domain/social/GroupRideParticipant` holds a name plus optional flat speed (0,1 km/h), VAM, weekday and daypart bits (0 = unknown); it comes from your own derived profile (`ui/social/OwnRideBuddyProfile`, shared with the ride-buddy screen), an imported `CPR1:` profile, or a manual entry (name + average km/h). `domain/social/GroupRidePlanner` (pure) estimates the group pace: flat speed = slowest rider × 1,05 draft bonus, capped at the second-slowest rider; climbing adds `ascent × 0,7 / slowest VAM` (riders regroup at the top; the factor discounts the climbing distance already counted in the flat part); one 15-min stop per full 2,5 h of riding; unknown speeds default to 25 km/h / 700 m/u, and a "big spread" warning fires when the fastest rider solo would need < 80 % of the group time. Route ascent comes from the stored elevations with a 3 m hysteresis. Date options: for each day in the next 14 days (from a user-picked first day) the daypart with the most available riders wins; the 3 days with the most riders (earliest on ties) are proposed, listing who can't make it. `shareText` renders a Dutch proposal sent via `ACTION_SEND`. Screen "Groepsrit plannen" (`ui/social/GroupRidePlannerActivity` + `GroupRidePlannerViewModel`) in the "Ritten & analyse" menu group. Session-only state, nothing persisted; phone-only, never part of the wire payload.
 
 **Torque values** (`torque_values.json`, `data/maintenance/TorqueValueRepository`, issue #237): the "Aanhaalmomenten" screen (overflow menu) shows a static reference table of typical tightening torques per part (`domain/maintenance/TorqueReference`, e.g. stuurpen stuurklem 4–6 Nm, zadelpenklem carbon 4–6 Nm, cassette-lockring 40 Nm) under a "fabrikant gaat voor" disclaimer, plus the rider's own values. The app has no bike entity, so each own value carries an optional free-text bike label (auto-completed from labels already used), a part name, one Nm value (0,1–200, one decimal; comma or dot) and an optional note. Tapping a reference row pre-fills the add dialog. Atomic writes with a static write lock, like `MaintenanceRepository`; a missing or corrupt file loads empty and out-of-range entries are dropped on load. Registered with the privacy dashboard (`PrivacyCategory.TORQUE`) and the local backup. Phone-only; never part of the wire payload.
 

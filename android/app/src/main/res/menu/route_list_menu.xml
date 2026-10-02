@@ -98,6 +98,9 @@
                 android:id="@+id/action_ride_buddies"
                 android:title="@string/ride_buddies_title"/>
             <item
+                android:id="@+id/action_group_ride_planner"
+                android:title="@string/group_ride_title"/>
+            <item
                 android:id="@+id/action_wrapped"
                 android:title="@string/menu_year_review"/>
         </menu>

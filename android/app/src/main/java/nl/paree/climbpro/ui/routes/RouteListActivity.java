@@ -383,6 +383,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_ride_buddies) {
             startActivity(nl.paree.climbpro.ui.social.RideBuddyActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_group_ride_planner) {
+            startActivity(nl.paree.climbpro.ui.social.GroupRidePlannerActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_hr_drift) {
             startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
             return true;

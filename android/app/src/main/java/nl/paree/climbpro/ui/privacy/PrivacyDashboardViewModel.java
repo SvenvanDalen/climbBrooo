@@ -303,6 +303,7 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
                 // a Strava sync appending at the same moment (it rewrites the list it read).
                 int failed = new ClimbAttemptRepository(app).deleteAll() ? 0 : 1;
                 failed += new IncompleteClimbAttemptRepository(app).deleteAll() ? 0 : 1;
+                failed += new nl.paree.climbpro.data.route.RouteGhostRepository(app).deleteAll() ? 0 : 1;
                 // Photos only exist as part of an attempt, so they go with it.
                 return failed + inventory.deleteFiles(c) + inventory.deleteFiles(PrivacyCategory.PHOTOS);
             }

@@ -174,6 +174,14 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   technical descents found in the route profile (≤ −8 % over 300 m, or ≤ −5 % with hairpins).
   Both ride along to the climb datafield as compact markers: from 400 m ahead a purple strip
   (`TUNNEL 300m - LICHT` / `TECHN. AFDALING 250m`) and one buzz per hazard.
+- **Virtual opponent on a route** — ride against your own best earlier ride of the active
+  route. Every Strava ride the sync already fetches for climb matching is also checked against
+  your stored routes; a ride that covers a route from start to finish (checkpoints every 250 m,
+  coarser on long routes) becomes that route's reference when it is the fastest so far
+  (`route_ghosts.json`). It reaches the watch as a compact `gh` profile (seconds per step) and
+  the datafield shows `+12s vs beste` / `-8s vs beste` live: on the next-climb page, after the
+  last climb, and on a climb without its own PR/plan ghost. The opponent starts alongside you
+  where you join the route; nothing is shown off-route, in radius mode or without a ride.
 - **Everesting tracker** — climb detail → "Everesting plannen": pick a target (8848 m, or
   1000–10000 m custom) and see the repeats (rounded up), distance and estimated riding time.
   The datafield gets the plan in the payload (`ev`), counts a repeat each time you reach the
@@ -194,6 +202,13 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   a purple `HARTSLAG 185` strip until it drops 5 bpm below, with a reminder every 5 minutes.
   Opt-in `Waarschuw bij onregelmatige hartslag` alerts on three ≥ 25 bpm jumps within a
   minute (at most every 10 min). Watch-only, works without a route; not a medical device.
+- **Cadence coach** — opt-in `Cadans-coach` in the Connect IQ app settings (edited from the
+  phone in Garmin Connect) with a target band (`Cadans ondergrens`/`bovengrens`, default
+  80–100 rpm, 0 = that side off). When your cadence stays outside the band for 30 s of
+  pedalling the datafield buzzes (one long = too low, two short = too high) and shows a blue
+  `CADANS LAAG 68` strip while you stay out. Coasting doesn't count as too low; no repeat
+  until you were back in the band for 20 s, at most one nudge per 2 min. Watch-only,
+  works without a route; needs a cadence sensor.
 - **Medical ID** — menu → "Medische ID": name, blood type, allergies, medication, emergency
   contact and notes. Optional silent, always-on lock-screen notification (public visibility)
   so first responders can read it without unlocking; re-posted after a reboot. The watch
@@ -215,6 +230,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and buzzes when it reaches the threshold set in the Connect IQ app settings (off / 27 /
   32 / 39 °C, default 32). A dark-red `HITTE 41°C` strip stays up until it drops 2 °C
   below the threshold, with a reminder buzz every 20 minutes. Watch-only, works without a route.
+- **Eat/drink reminder** — the datafield buzzes (climb-start vibration + time-alert tone) and
+  shows a green `ETEN & DRINKEN` strip for 30 s every N minutes of activity time (off / 15 /
+  20 / 30 / 45 / 60, default 30) and/or every N metres of ascent (off / 250 / 500 / 750 /
+  1000), whichever comes first. When it is warm (from 20 / 25 / 30 °C, default 25) both are
+  shortened to 75 %, from 8 °C above that to 50 %; never more than once per 10 minutes. Set
+  in the Connect IQ app settings on the phone (Garmin Connect). Watch-only, works without a route.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of
@@ -273,6 +294,15 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   exactly what the code contains before sharing. Paste codes from other riders (or share the
   chat message to ClimbPro) and they are ranked by similarity with a score and a reason, e.g.
   "vergelijkbaar tempo, 12 km verderop". No server; phone-only.
+
+- **Groepsrit plannen (group-ride planner)** — menu → Ritten & analyse → Groepsrit plannen.
+  Pick a saved route and the riders (yourself, imported Ritmaatjes profile codes, or riders
+  added by hand with just a name and average speed). ClimbPro estimates the group pace and
+  riding time — the slowest rider sets the flat pace (plus a small draft bonus), climbs cost
+  the slowest VAM because the group regroups at the top, plus a short stop per 2,5 h — warns
+  about a big level difference, proposes the three best dates in the next two weeks from
+  everyone's riding days and dayparts, and shares the whole proposal as text through any chat
+  app. No server, nothing stored; phone-only.
 
 - **Favorite start points** — save home, work or a parking spot once (current location or
   typed coordinates) and pick it as start in the Hoogtemeter-doel and Meerdaagse toer

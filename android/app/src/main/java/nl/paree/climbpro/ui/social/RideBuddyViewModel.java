@@ -10,25 +10,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
-import nl.paree.climbpro.data.ride.RideRepository;
-import nl.paree.climbpro.data.route.ClimbAttemptRepository;
-import nl.paree.climbpro.data.route.RouteRepository;
-import nl.paree.climbpro.data.route.StoredClimb;
-import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.social.FriendShareIdentity;
 import nl.paree.climbpro.data.social.RideBuddyRepository;
-import nl.paree.climbpro.domain.climb.ClimbCatalogIndex;
 import nl.paree.climbpro.domain.social.RideBuddyCode;
 import nl.paree.climbpro.domain.social.RideBuddyMatcher;
 import nl.paree.climbpro.domain.social.RideBuddyProfile;
-import nl.paree.climbpro.domain.social.RideBuddyProfileBuilder;
 
-import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -155,21 +143,7 @@ public final class RideBuddyViewModel extends AndroidViewModel {
     }
 
     private RideBuddyProfile buildOwn() {
-        List<StoredClimbAttempt> attempts = new ClimbAttemptRepository(getApplication()).loadAll();
-        Set<String> ids = new HashSet<>();
-        for (StoredClimbAttempt a : attempts) if (a.climbId != null) ids.add(a.climbId);
-        Map<String, Integer> gains = new HashMap<>();
-        for (Map.Entry<String, List<StoredClimb>> en : ClimbCatalogIndex.resolveAllCopies(
-                new RouteRepository(getApplication()), ids).entrySet()) {
-            for (StoredClimb c : en.getValue()) {
-                if (c != null && c.elevationGain > 0) {
-                    gains.put(en.getKey(), c.elevationGain);
-                    break;
-                }
-            }
-        }
-        return RideBuddyProfileBuilder.build(new RideRepository(getApplication()).loadAll(),
-                attempts, gains, System.currentTimeMillis() / 1000L, ZoneId.systemDefault());
+        return OwnRideBuddyProfile.build(getApplication());
     }
 
     private SharedPreferences prefs() {
