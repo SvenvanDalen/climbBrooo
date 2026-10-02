@@ -395,4 +395,19 @@
     <string name="group_ride_add_rider">Aggiungi ciclista</string>
     <string name="group_ride_share">Condividi proposta</string>
     <string name="group_ride_from_date">Dal %1$s</string>
+
+    <!-- Mappa esplora la regione (issue #194) -->
+    <string name="menu_explore_map">Mappa esplora la regione</string>
+    <string name="explore_map_title">Esplora la regione</string>
+    <string name="explore_map_loading">Caricamento mappa…</string>
+    <string name="explore_map_summary">%1$d celle · ≈ %2$s km di strade esplorate · %3$d uscite</string>
+    <string name="explore_map_empty">Nessuna strada percorsa sulla mappa. Elabora le tue uscite Strava qui sotto.</string>
+    <string name="explore_map_pending">%1$d uscita/e all\'aperto non ancora sulla mappa</string>
+    <string name="explore_map_all_done">Tutte le uscite all\'aperto sono sulla mappa</string>
+    <string name="explore_map_no_strava">Collega prima Strava per scaricare le tracce</string>
+    <string name="explore_map_process">Elabora uscite</string>
+    <string name="explore_map_processing">Scaricamento tracce…</string>
+    <string name="explore_map_processed">%1$d uscita/e elaborata/e</string>
+    <string name="explore_map_failed">Download non riuscito: %1$s</string>
+    <string name="explore_map_hint">Ogni cella colorata (~150 m) è stata percorsa almeno una volta. Le uscite indoor non contano; al massimo 20 uscite per volta.</string>
 </resources>

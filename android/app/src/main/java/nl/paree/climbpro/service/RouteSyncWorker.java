@@ -158,6 +158,13 @@ public final class RouteSyncWorker extends Worker {
             } catch (Exception e) {
                 Log.w(TAG, "Ride stream analysis failed; sync continues", e);
             }
+            // Explore map (issue #194): a capped batch of older rides' tracks; new rides
+            // already arrived with the analysis above.
+            try {
+                rides.exploreRideTracks();
+            } catch (Exception e) {
+                Log.w(TAG, "Explore map backfill failed; sync continues", e);
+            }
             // MyWhoosh rides in the archive become routes with climbs (issue #344).
             try {
                 rides.importMyWhooshRides();

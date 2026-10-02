@@ -65,6 +65,7 @@ public class StravaActivitiesRepositoryTest {
         new File(app.getFilesDir(), "incomplete_climb_attempts.json").delete();
         new File(app.getFilesDir(), "rides.json").delete();
         new File(app.getFilesDir(), "ride_stream_stats.json").delete();
+        new File(app.getFilesDir(), "explore_tiles.json").delete();
         app.getSharedPreferences("strava_activities", Context.MODE_PRIVATE)
                 .edit().clear().commit();
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
@@ -853,12 +854,111 @@ public class StravaActivitiesRepositoryTest {
     private void stubStreams(long id, Response<StravaStreamsDto> response) throws Exception {
         Call<StravaStreamsDto> call = mock(Call.class);
         when(call.execute()).thenReturn(response);
-        when(api.getStreams(anyString(), eq(id), eq(StravaActivitiesRepository.RIDE_STREAM_KEYS)))
-                .thenReturn(call);
+        when(api.getStreams(anyString(), eq(id),
+                eq(StravaActivitiesRepository.RIDE_ANALYSIS_STREAM_KEYS))).thenReturn(call);
     }
 
     private static Response<StravaStreamsDto> httpError(int code) {
         return Response.error(code, okhttp3.ResponseBody.create("", null));
+    }
+
+    // ---- explore map (issue #194) ----
+
+    /** 2 km due north from (50, 5), one sample per ~100 m. */
+    private static StravaStreamsDto trackStreams() {
+        StravaStreamsDto s = new StravaStreamsDto();
+        s.latlng = new StravaStreamsDto.LatLngStream();
+        s.latlng.data = new ArrayList<>();
+        for (int i = 0; i <= 20; i++) {
+            s.latlng.data.add(Arrays.asList(50.0 + i * 0.0009, 5.0));
+        }
+        return s;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubTrack(long id, Response<StravaStreamsDto> response) throws Exception {
+        Call<StravaStreamsDto> call = mock(Call.class);
+        when(call.execute()).thenReturn(response);
+        when(api.getStreams(anyString(), eq(id),
+                eq(StravaActivitiesRepository.EXPLORE_STREAM_KEYS))).thenReturn(call);
+    }
+
+    @Test
+    public void exploreRideTracks_addsOutdoorRidesOnceAndSkipsIndoorRides() throws Exception {
+        StravaActivityDto outdoor = activity(1L, "Ride", 12_000f);
+        StravaActivityDto indoor = activity(2L, "VirtualRide", 30_000f);
+        stubActivityList(Arrays.asList(outdoor, indoor));
+        stubTrack(1L, Response.success(trackStreams()));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncRideArchive();
+
+        assertEquals(1, repo.pendingExploreRides());
+        assertEquals(1, repo.exploreRideTracks());
+        assertEquals(0, repo.pendingExploreRides());
+        assertEquals(0, repo.exploreRideTracks()); // already on the map: no second request
+
+        nl.paree.climbpro.domain.explore.ExploreMap map =
+                new nl.paree.climbpro.data.explore.ExploreMapRepository(app).load();
+        assertTrue(map.tileCount() >= 13);
+        verify(api, times(1)).getStreams(anyString(), eq(1L), anyString());
+        verify(api, org.mockito.Mockito.never()).getStreams(anyString(), eq(2L), anyString());
+    }
+
+    @Test
+    public void exploreRideTracks_marksMissingActivityAndStopsOnRateLimit() throws Exception {
+        StravaActivityDto older = activity(1L, "Ride", 12_000f);
+        older.startDate = "2026-02-01T08:00:00Z";
+        StravaActivityDto newer = activity(2L, "Ride", 12_000f);
+        newer.startDate = "2026-02-10T08:00:00Z";
+        StravaActivityDto newest = activity(3L, "Ride", 12_000f);
+        newest.startDate = "2026-02-20T08:00:00Z";
+        stubActivityList(Arrays.asList(older, newer, newest));
+        stubTrack(3L, httpError(404));
+        stubTrack(2L, httpError(429));
+        stubTrack(1L, Response.success(trackStreams()));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncRideArchive();
+
+        assertEquals(1, repo.exploreRideTracks());
+
+        nl.paree.climbpro.domain.explore.ExploreMap map =
+                new nl.paree.climbpro.data.explore.ExploreMapRepository(app).load();
+        assertTrue(map.containsRide(3L));
+        assertFalse(map.containsRide(2L));
+        assertFalse(map.containsRide(1L)); // never reached: the run paused at the 429
+        assertEquals(2, repo.pendingExploreRides());
+    }
+
+    @Test
+    public void analyzeRideStreams_alsoPutsTheTrackOnTheExploreMap() throws Exception {
+        stubActivityList(Collections.singletonList(activity(1L, "Ride", 12_000f)));
+        StravaStreamsDto s = steadyRideStreams();
+        s.latlng = trackStreams().latlng;
+        stubStreams(1L, Response.success(s));
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+        repo.syncRideArchive();
+
+        assertEquals(1, repo.analyzeRideStreams());
+
+        assertEquals(0, repo.pendingExploreRides()); // no separate track request needed
+        assertTrue(new nl.paree.climbpro.data.explore.ExploreMapRepository(app).load()
+                .tileCount() > 0);
+    }
+
+    @Test
+    public void isOutdoorRide_excludesVirtualRides() {
+        nl.paree.climbpro.data.ride.StoredRide r = new nl.paree.climbpro.data.ride.StoredRide();
+        r.type = "Ride";
+        r.sportType = "GravelRide";
+        assertTrue(StravaActivitiesRepository.isOutdoorRide(r));
+        r.sportType = "EVirtualRide";
+        assertFalse(StravaActivitiesRepository.isOutdoorRide(r));
+        r.type = "VirtualRide";
+        r.sportType = null;
+        assertFalse(StravaActivitiesRepository.isOutdoorRide(r));
     }
 
     @Test

@@ -390,4 +390,19 @@
     <string name="group_ride_add_rider">Add rider</string>
     <string name="group_ride_share">Share proposal</string>
     <string name="group_ride_from_date">From %1$s</string>
+
+    <!-- Explore-the-region map (issue #194) -->
+    <string name="menu_explore_map">Explore-the-region map</string>
+    <string name="explore_map_title">Explore the region</string>
+    <string name="explore_map_loading">Loading map…</string>
+    <string name="explore_map_summary">%1$d cells · ≈ %2$s km of roads explored · %3$d rides</string>
+    <string name="explore_map_empty">No ridden roads on the map yet. Process your Strava rides below.</string>
+    <string name="explore_map_pending">%1$d outdoor ride(s) not on the map yet</string>
+    <string name="explore_map_all_done">All outdoor rides are on the map</string>
+    <string name="explore_map_no_strava">Connect Strava first to fetch ride tracks</string>
+    <string name="explore_map_process">Process rides</string>
+    <string name="explore_map_processing">Fetching tracks…</string>
+    <string name="explore_map_processed">%1$d ride(s) processed</string>
+    <string name="explore_map_failed">Fetching failed: %1$s</string>
+    <string name="explore_map_hint">Every coloured cell (~150 m) is one you rode through at least once. Indoor rides don\'t count; up to 20 rides are fetched per run.</string>
 </resources>

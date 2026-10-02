@@ -486,6 +486,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_privacy) {
             startActivity(nl.paree.climbpro.ui.privacy.PrivacyDashboardActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_explore_map) {
+            startActivity(nl.paree.climbpro.ui.explore.ExploreMapActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_visited_regions) {
             startActivity(nl.paree.climbpro.ui.regions.VisitedRegionsActivity.intentFor(this));
             return true;

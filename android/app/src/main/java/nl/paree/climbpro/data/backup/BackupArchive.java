@@ -57,6 +57,7 @@ public final class BackupArchive {
             "comeback_plan.json",
             "ride_stream_stats.json",
             "route_ghosts.json",
+            "explore_tiles.json",
             "goal_event.json",
             "event_calendar.json",
             "favorite_start_points.json",
