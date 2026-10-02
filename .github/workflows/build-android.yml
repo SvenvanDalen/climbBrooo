@@ -4,6 +4,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Two releases computing the next version at the same time would pick the same tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -12,8 +17,35 @@ jobs:
         working-directory: android
     permissions:
       contents: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A PR from staging into main bumps the minor (v1.4.2 -> v1.5.0); anything else
+      # (a dev/fix branch merged straight into main, a direct push, a manual run)
+      # bumps the patch (v1.4.0 -> v1.4.1).
+      - name: Determine version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            source=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+              --jq '[.[] | select(.base.ref == "main")][0].head.ref // ""' || true)
+          fi
+          latest=$(git tag -l 'v1.*.*' --sort=-v:refname | head -n1)
+          minor=$(echo "${latest#v}" | cut -d. -f2)
+          patch=$(echo "${latest#v}" | cut -d. -f3)
+          if [ "$source" = "staging" ]; then
+            next="1.$(( ${minor:-0} + 1 )).0"
+          else
+            next="1.${minor:-0}.$(( ${patch:-0} + 1 ))"
+          fi
+          echo "Source branch: ${source:-none}; latest tag: ${latest:-none} -> v$next"
+          echo "name=$next" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -26,7 +58,7 @@ jobs:
       - name: Build release APK
         env:
           VERSION_CODE: ${{ github.run_number }}
-          VERSION_NAME: 1.0.${{ github.run_number }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
         run: ./gradlew assembleRelease --console=plain
@@ -46,6 +78,6 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: v1.0.${{ github.run_number }}
+          tag_name: v${{ steps.version.outputs.name }}
+          name: v${{ steps.version.outputs.name }}
           files: ${{ steps.sign.outputs.signedReleaseFile }}
