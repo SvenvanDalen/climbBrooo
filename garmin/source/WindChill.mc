@@ -97,7 +97,8 @@ function feltTempToShow(descending, onClimb, tempC, speedMps, shown) {
     return latchFeltTemp(shown, windChillC(tempC, speedMps.toFloat() * 3.6));
 }
 
-// Banner text for the felt temperature, e.g. "VOELT -4°C".
-function feltTempLabel(c) {
-    return "VOELT " + c + "°C";
+// Banner text for the felt temperature, e.g. "VOELT -4°C" / "VOELT 25°F" (units = payload
+// "un" bitmask).
+function feltTempLabel(c, units) {
+    return "VOELT " + Units.formatTemp(c, units);
 }

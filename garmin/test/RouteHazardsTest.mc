@@ -56,11 +56,38 @@ function hz_lookup_aheadInsideAndPast(logger) {
 (:test)
 function hz_labels(logger) {
     var hz = [3400, 3650, 0, 5200, 6100, 1];
-    Test.assertEqual(hazardLabel(hz, 0, 3100), "TUNNEL 300m - LICHT");
-    Test.assertEqual(hazardLabel(hz, 0, 3500), "TUNNEL - LICHT AAN");
-    Test.assertEqual(hazardLabel(hz, 1, 4850), "TECHN. AFDALING 350m");
-    Test.assertEqual(hazardLabel(hz, 1, 5300), "TECHN. AFDALING");
-    Test.assertEqual(hazardDisplayPos(3123), 3100);
+    Test.assertEqual(hazardLabel(hz, 0, 3100, 0), "TUNNEL 300m - LICHT");
+    Test.assertEqual(hazardLabel(hz, 0, 3123, 0), "TUNNEL 300m - LICHT");   // 277 m -> 300
+    Test.assertEqual(hazardLabel(hz, 0, 3500, 0), "TUNNEL - LICHT AAN");
+    Test.assertEqual(hazardLabel(hz, 1, 4850, 0), "TECHN. AFDALING 350m");
+    Test.assertEqual(hazardLabel(hz, 1, 5300, 0), "TECHN. AFDALING");
+    return true;
+}
+
+(:test)
+function hz_labels_insideFromRawPosition(logger) {
+    // Tunnel starts at 1030 m: 10 m inside it is "inside", not "30m ahead".
+    var hz = [1030, 1300, 0];
+    Test.assertEqual(hazardLabel(hz, 0, 1040, 0), "TUNNEL - LICHT AAN");
+    Test.assertEqual(hazardLabel(hz, 0, 1030, 0), "TUNNEL - LICHT AAN");
+    Test.assertEqual(hazardLabel(hz, 0, 1020, 0), "TUNNEL 50m - LICHT");
+    return true;
+}
+
+(:test)
+function hz_labels_imperial(logger) {
+    var hz = [3400, 3650, 0];
+    Test.assertEqual(hazardLabel(hz, 0, 3100, Units.FLAG_IMPERIAL), "TUNNEL 984ft - LICHT");
+    return true;
+}
+
+(:test)
+function hz_labels_staleIndexIsNull(logger) {
+    // A resync can shrink hz while the view still holds the old index.
+    var hz = [3400, 3650, 0];
+    Test.assert(hazardLabel(hz, 1, 3500, 0) == null);
+    Test.assert(hazardLabel(null, 0, 3500, 0) == null);
+    Test.assert(hazardLabel(hz, -1, 3500, 0) == null);
     return true;
 }
 

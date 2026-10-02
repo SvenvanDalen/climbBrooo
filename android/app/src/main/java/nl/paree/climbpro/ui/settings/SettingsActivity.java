@@ -326,17 +326,26 @@ public final class SettingsActivity extends AppCompatActivity {
                 .show();
     }
 
-    /** Display units (issue #262): three independent switches, all off = metric. */
+    /**
+     * Display units (issue #262): three independent switches, all off = metric. The watch
+     * gets the new 'un' bitmask with the next sync, which we kick off right away.
+     */
     private void bindUnitSwitches() {
         UnitPreferencesRepository repo = new UnitPreferencesRepository(this);
         UnitPreferences units = repo.load();
         binding.switchUnitsImperial.setChecked(units.imperial);
         binding.switchUnitsPsi.setChecked(units.psi);
         binding.switchUnitsFahrenheit.setChecked(units.fahrenheit);
-        android.widget.CompoundButton.OnCheckedChangeListener save = (b, on) ->
-                repo.save(new UnitPreferences(binding.switchUnitsImperial.isChecked(),
-                        binding.switchUnitsPsi.isChecked(),
-                        binding.switchUnitsFahrenheit.isChecked()));
+        android.widget.CompoundButton.OnCheckedChangeListener save = (b, on) -> {
+            repo.save(new UnitPreferences(binding.switchUnitsImperial.isChecked(),
+                    binding.switchUnitsPsi.isChecked(),
+                    binding.switchUnitsFahrenheit.isChecked()));
+            try {
+                SyncScheduler.triggerImmediateSync(this);
+            } catch (IllegalStateException e) {
+                // WorkManager not initialised (tests); the periodic sync picks it up later.
+            }
+        };
         binding.switchUnitsImperial.setOnCheckedChangeListener(save);
         binding.switchUnitsPsi.setOnCheckedChangeListener(save);
         binding.switchUnitsFahrenheit.setOnCheckedChangeListener(save);

@@ -24,6 +24,20 @@ function widgetUnits_parsed_andResetWhenAbsent(logger) {
 }
 
 (:test)
+function widgetUnits_replayKeepsCurrentUnits(logger) {
+    var d = wData();
+    var cb = new PhoneMessageCallback();
+    cb.onMessage(wUnitsPayload(1));           // rider switched to miles
+    cb.replaying = true;                      // saved route stored while metric
+    cb.onMessage(wUnitsPayload(null));
+    cb.replaying = false;
+    Test.assertEqual(d.units, 1);
+    cb.onMessage(wUnitsPayload(null));        // live metric payload resets the stored units
+    Test.assertEqual(d.units, 0);
+    return true;
+}
+
+(:test)
 function widgetUnits_formatDist(logger) {
     Test.assertEqual(Units.formatDist(1250, 0), "1.2km");
     Test.assertEqual(Units.formatDist(1250, 1), "0.7mi");

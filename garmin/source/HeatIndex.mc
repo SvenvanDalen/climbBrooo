@@ -81,7 +81,8 @@ class HeatAlarm {
     }
 }
 
-// Banner text, e.g. "HITTE 41°C" (heat index rounded to whole degrees).
-function heatLabel(hiC) {
-    return "HITTE " + Math.round(hiC.toFloat()).toNumber() + "°C";
+// Banner text, e.g. "HITTE 41°C" / "HITTE 106°F" (heat index rounded to whole degrees;
+// units = payload "un" bitmask).
+function heatLabel(hiC, units) {
+    return "HITTE " + Units.formatTemp(hiC, units);
 }

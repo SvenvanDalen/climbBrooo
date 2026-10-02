@@ -97,6 +97,7 @@ class ClimbProView extends Ui.DataField {
 
     // Tunnels / technical descents ahead (issue #203).
     hidden var hazardIdx = -1;             // hazard the banner is about; -1 = none
+    hidden var hazardPosM = 0;             // route axis (m) hazardIdx was looked up at
     hidden var hazardAlerted = 0;          // bitmask of hazards already alerted this route
     // Everesting attempt (issue #217); everestAscentM = last total ascent for the banner.
     hidden var everest = new EverestTracker();
@@ -222,6 +223,7 @@ class ClimbProView extends Ui.DataField {
         // look-ahead edge). Suppressed off-route, where the route axis is meaningless.
         hazardIdx = (data.offRoute || data.mode == null || !data.mode.equals("route")) ? -1
                 : hazardAt(data.hazards, axis, HAZARD_LOOKAHEAD_M);
+        hazardPosM = axis;
         if (hazardIdx >= 0 && (hazardAlerted & (1 << hazardIdx)) == 0) {
             hazardAlerted |= (1 << hazardIdx);
             triggerHazardAlert();
@@ -541,10 +543,11 @@ class ClimbProView extends Ui.DataField {
             drawHeartRateBanner(dc, hrIrregularLabel());
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
-        } else if (hazardIdx >= 0 && data.hazards != null) {
+        } else if (hazardIdx >= 0
+                && hazardLabel(data.hazards, hazardIdx, hazardPosM, data.units) != null) {
             drawHazardBanner(dc, data);
         } else if (heatShownC != null) {
-            drawHeatBanner(dc, heatShownC);
+            drawHeatBanner(dc, data, heatShownC);
         } else if (fuelBannerUntilMs >= 0) {
             drawFuelBanner(dc);
         } else if (cadShownRpm != null) {
@@ -554,7 +557,7 @@ class ClimbProView extends Ui.DataField {
         } else if (lightsBanner) {
             drawLightsBanner(dc);
         } else if (feltShownC != null && data.activeClimbIndex < 0) {
-            drawFeltTempBanner(dc, feltShownC);
+            drawFeltTempBanner(dc, data, feltShownC);
         } else if (everest.active()) {
             drawEverestBanner(dc);
         }
@@ -567,7 +570,7 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY,
-                hazardLabel(data.hazards, hazardIdx, hazardDisplayPos(data.lastElapsedDistance)),
+                hazardLabel(data.hazards, hazardIdx, hazardPosM, data.units),
                 Gfx.TEXT_JUSTIFY_CENTER);
     }
 
@@ -591,12 +594,12 @@ class ClimbProView extends Ui.DataField {
 
     // Blue strip in the header slot between climbs while descending (issue #248). The
     // value is latched to whole degrees (latchFeltTemp) so it only changes on a >= 1 °C move.
-    hidden function drawFeltTempBanner(dc, c) {
+    hidden function drawFeltTempBanner(dc, data, c) {
         var w = dc.getWidth();
         dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_BLUE);
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c), Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c, data.units), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Dark-green strip with the Everesting progress (issue #217): repeats done/planned and
@@ -625,12 +628,12 @@ class ClimbProView extends Ui.DataField {
 
     // Dark-orange strip while the heat-index alarm is latched hot (issue #227), on and
     // between climbs. Below off-route and battery in priority.
-    hidden function drawHeatBanner(dc, hiC) {
+    hidden function drawHeatBanner(dc, data, hiC) {
         var w = dc.getWidth();
         dc.setColor(0xAA0000, 0xAA0000);
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC), Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC, data.units), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Green strip for 30 s after the eat/drink reminder fired (issue #184), on and between
