@@ -167,6 +167,7 @@ class ClimbProView extends Ui.DataField {
             hazardAlerted = 0;
             hazardIdx = -1;
             easier.reset();
+            data.resetRouteGhostAnchor();
         }
 
         var elapsed = 0;
@@ -210,6 +211,11 @@ class ClimbProView extends Ui.DataField {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
             data.updateRouteMatch(ll[0], ll[1]);
         }
+
+        // Virtual opponent on the route (issue #178): the best earlier ride, interpolated at
+        // the route progress. Computed every tick so it starts alongside the rider even
+        // while the page doesn't show it.
+        data.routeGhostDeltaSec = data.routeGhostDelta(timerMs, axis);
 
         // Tunnels / technical descents (issue #203): banner from HAZARD_LOOKAHEAD_M ahead and
         // while inside, one buzz per hazard (bitmask latch, survives GPS jitter around the
@@ -522,7 +528,7 @@ class ClimbProView extends Ui.DataField {
         } else if (data.nextClimbIndex >= 0) {
             drawNextClimbPreview(dc, data);
         } else {
-            drawNoClimbs(dc);
+            drawNoClimbs(dc, data);
         }
 
         // Off-route takes priority: it's the more urgent/actionable state and the two
@@ -822,9 +828,10 @@ class ClimbProView extends Ui.DataField {
     // Live delta against the per-segment PR ("vs PR"), else the manual pacing plan
     // ("vs plan"); PR takes priority as the always-on repeat-climb signal. Returns false
     // (nothing drawn) before the climb timer started or without a reference.
+    // Without either, the route-level virtual opponent ("vs beste", issue #178) is shown.
     hidden function drawGhost(dc, data, ci, x, y, font, justify, wide) {
         if (data.climbStartTimerMs < 0) {
-            return false;
+            return drawRouteGhost(dc, data, x, y, font, justify, wide);
         }
         var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
         if (data.hasRefTargets[ci]) {
@@ -842,7 +849,18 @@ class ClimbProView extends Ui.DataField {
                 return true;
             }
         }
-        return false;
+        return drawRouteGhost(dc, data, x, y, font, justify, wide);
+    }
+
+    // Seconds ahead/behind the best earlier ride of this route (issue #178); false (nothing
+    // drawn) without a route ghost, off-route, in radius mode or before the timer runs.
+    hidden function drawRouteGhost(dc, data, x, y, font, justify, wide) {
+        var d = data.routeGhostDeltaSec;
+        if (d == null) {
+            return false;
+        }
+        drawGhostDelta(dc, x, y, font, justify, d, wide ? " vs beste" : "", data.palette);
+        return true;
     }
 
     // Interval-block line (issue #180): "Doel 266-280W" without a power meter, otherwise
@@ -1115,6 +1133,10 @@ class ClimbProView extends Ui.DataField {
             dc.drawText(w / 2, distY, sf,
                 "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
         }
+
+        // Virtual opponent (issue #178) in the otherwise empty row above "in X km".
+        drawRouteGhost(dc, data, w / 2, (h * 0.80).toNumber(), Gfx.FONT_XTINY,
+            Gfx.TEXT_JUSTIFY_CENTER, true);
     }
 
     // =========================================================================
@@ -1127,10 +1149,13 @@ class ClimbProView extends Ui.DataField {
             "No data", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
 
-    hidden function drawNoClimbs(dc) {
+    hidden function drawNoClimbs(dc, data) {
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() / 2, dc.getHeight() / 2, Gfx.FONT_SMALL,
             "No climbs ahead", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
+        // Virtual opponent (issue #178): the only live info between the last climb and home.
+        drawRouteGhost(dc, data, dc.getWidth() / 2, (dc.getHeight() * 0.66).toNumber(),
+            Gfx.FONT_SMALL, Gfx.TEXT_JUSTIFY_CENTER, true);
     }
 
     // Distance in the rider's chosen units (payload "un", issue #262); metric by default.

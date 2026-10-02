@@ -66,6 +66,9 @@ class PhoneMessageCallback {
         data.hazards = parseHazards(msg.get("hz"));
         // Optional display units (issue #262); absent/invalid = metric, reset on every payload.
         data.units = Units.parseFlags(msg.get("un"));
+        // Optional virtual opponent "gh" (issue #178): the best earlier ride of this route as
+        // [stepM, sec1, ...]. Replaced (or cleared) on every payload; malformed = none.
+        data.setRouteGhost(msg.get("gh"));
 
         // Everesting attempt (issue #217): cleared on every payload, set by the first climb
         // that carries a valid "ev".

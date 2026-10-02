@@ -928,6 +928,40 @@ battery and above felt temperature, with the distance rounded to 50 m so the tex
 churn, and buzzes once per hazard (bitmask latch, reset on route change; suppressed off-route).
 The widget ignores `hz`.
 
+### Virtual opponent on a route (issue #178)
+
+Extends the per-climb ghost (`refsec`/`tsec`, issues #31/#59) to the whole route. Wire
+extension: optional route-level `gh` = `[stepM, sec1, …, secN]`, the timer seconds the rider's
+fastest earlier complete ride spent on each step of `stepM` metres (step k covers
+`(k-1)*stepM … min(k*stepM, rtl)`). `stepM` is 250 m, or coarser (multiple of 50 m) so that
+N ≤ 100; per-step seconds instead of cumulative keep each value at 2–3 digits (~300–400 bytes
+for a typical route inside the 4 KB budget).
+
+Phone: the pure `domain/route/RouteGhostProfile` interpolates route checkpoints every step
+(`line`) and walks a ride's GPS track in order (`match`): each checkpoint must be passed within
+40 m after the previous one, the closest sample of each pass is used, and gaps > 20 s count as
+recorder pauses (zero seconds, like the watch's timer time). Up to 5 passes of the route start
+are tried, so a loop ridden twice keeps the faster lap. `StravaActivitiesRepository` runs it on
+the latlng/time track it already fetches for climb matching (no extra Strava request; new
+activities and the history backfill), against every stored route loaded once per run, and
+`data/route/RouteGhostRepository` (`route_ghosts.json`, backup + privacy dashboard under
+"Klimpogingen") keeps the fastest ride per route, replacing one made for a different route
+length. `ClimbPayloadBuilder.buildRoutePayload(…, routeGhost)` adds `gh` to full-route
+payloads only (not radius, not single-climb) and drops it after `zc` when over budget;
+`RouteGhostRepository.wireFor` only returns a profile whose length still matches the route
+(±50 m). `RouteSyncWorker` appends a `gh` signature to `wantHash` (empty without a profile, so
+existing sync states stay valid) and `WatchRequestHandler` sends it on LOAD_ROUTE /
+SET_ACTIVE_ROUTE.
+
+Watch: `ClimbData.setRouteGhost` validates `gh` (Numbers ≥ 0, step > 0, ≤ 100 steps;
+malformed or absent clears it) and stores cumulative seconds; `routeGhostSecAt` interpolates
+at the route axis (`chooseAxis`, the same distance the climbs use) with the last step ending at
+`rtl`. `routeGhostDelta` anchors the opponent at the first valid tick (timer running, route
+mode, on route), so joining the route late doesn't skew it, and returns
+`(timer − anchor) − (ref(axis) − ref(anchor))`; the anchor resets on a route change. The view
+shows it as `±Ns vs beste` in the empty row of the next-climb page, under "No climbs ahead",
+and in the ghost/auto-bottom slot of a climb without its own PR/plan reference.
+
 ### Everesting tracker (issue #217)
 
 The phone plans, the watch counts. `domain/climb/EverestingPlan` computes repeats

@@ -64,6 +64,13 @@
       "maxItems": 96,
       "items": { "type": "integer", "minimum": 0 }
     },
+    "gh": {
+      "description": "Route mode (optional, issue #178): virtual opponent, the rider's own fastest earlier complete ride of this route, packed as [stepM, sec1, sec2, ..., secN]. stepM = metres per step (>= 250, coarser for long routes so N <= 100); sec_k = timer seconds that ride spent from (k-1)*stepM to min(k*stepM, rtl), so the last step may be shorter. Computed on the phone from Strava GPS tracks; the watch sums the steps, interpolates at the live route progress and shows seconds ahead/behind. Omitted when no ride covered the whole route, in radius mode and single-climb payloads, and dropped (after zc) when the payload would exceed the byte budget.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 101,
+      "items": { "type": "integer", "minimum": 0 }
+    },
     "fss": {
       "description": "Specialized starred flat segments (route mode), shown as a separate list section in the widget. Only segments with an assigned surface (t 0-4) are sent. Omitted when none qualify.",
       "type": "array",

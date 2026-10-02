@@ -228,6 +228,14 @@ public final class RouteSyncWorker extends Worker {
         return units.toWireFlags() != 0 ? hash + "|" + units.signature() : hash;
     }
 
+    /**
+     * Virtual opponent (issue #178): a new best ride of the active route changes 'gh', so it
+     * must change the hash too. Empty without a profile, so existing sync states stay valid.
+     */
+    static String routeGhostSignature(int[] routeGhost) {
+        return routeGhost == null ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
+    }
+
     /** Palette chosen with the "Kleurenblind-vriendelijk palet" switch (issue #258). */
     static int paletteOf(SharedPreferences prefs) {
         return nl.paree.climbpro.domain.segment.GradientPalette.fromEnabled(prefs.getBoolean(
@@ -247,6 +255,8 @@ public final class RouteSyncWorker extends Worker {
             ClimbAttemptRepository attemptRepo, int palette,
             nl.paree.climbpro.domain.units.UnitPreferences units,
             WatchFieldLayout fieldLayout) {
+        nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo =
+                new nl.paree.climbpro.data.route.RouteGhostRepository(getApplicationContext());
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
@@ -285,7 +295,9 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-                String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout);
+                int[] routeGhost = ghostRepo.wireFor(route);
+                String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout)
+                        + routeGhostSignature(routeGhost);
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -295,7 +307,7 @@ public final class RouteSyncWorker extends Worker {
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
                         route, attemptRepo.loadAll(), ghost);
-                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan);
+                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return null;
@@ -306,7 +318,8 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout));
+                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout)
+                            + routeGhostSignature(ghostRepo.wireFor(route)));
                 }
             }
         };
