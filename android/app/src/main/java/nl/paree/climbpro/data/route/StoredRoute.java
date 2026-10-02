@@ -54,6 +54,13 @@ public final class StoredRoute {
      */
     public List<String> removedClimbIds;
 
+    /**
+     * Road tunnels on the route from OpenStreetMap (issue #203), fetched on request. Null =
+     * never looked up; empty = looked up, none found. Kept across a resync only while the
+     * geometry ({@link #sourceHash}) is unchanged.
+     */
+    public List<StoredTunnel> tunnels;
+
     public long importedAtMs;
     public long lastModifiedMs;
 }

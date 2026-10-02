@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- German translation of values/strings.xml (issue #261). -->
+<resources>
+    <string name="widget_week_label">ClimbPro-Woche</string>
+    <string name="widget_week_description">Anstiege dieser Woche und dein nächster geplanter Anstieg</string>
+    <string name="route_reverse_action">Umgekehrte Richtung</string>
+    <string name="route_reverse_created">Umgekehrte Route erstellt — gefundene Anstiege: %1$d</string>
+    <string name="route_reverse_exists">Umgekehrte Route existiert bereits — geöffnet</string>
+    <string name="route_reverse_failed">Umkehren fehlgeschlagen: %1$s</string>
+    <string name="loop_wind_action">Beste Fahrtrichtung (Wind)</string>
+    <string name="loop_wind_loading">Windvorhersage wird geladen…</string>
+    <string name="loop_wind_no_route">Diese Route hat zu wenige Punkte für eine Windempfehlung.</string>
+    <string name="loop_wind_not_a_loop">Keine Runde: Start und Ziel liegen %1$.1f km auseinander, die Fahrtrichtung steht also fest.</string>
+    <string name="loop_wind_no_wind">Keine Windvorhersage für diesen Ort verfügbar.</string>
+    <string name="loop_wind_failed">Windvorhersage konnte nicht abgerufen werden: %1$s</string>
+    <string name="loop_wind_header">Wind: %1$.0f km/h aus %2$s (Durchschnitt der nächsten %3$d Stunden)</string>
+    <string name="loop_wind_calm">Kaum Wind, die Fahrtrichtung spielt kaum eine Rolle.</string>
+    <string name="loop_wind_either">Beide Richtungen enden mit etwa gleichem Wind; wähle, was du möchtest.</string>
+    <string name="loop_wind_forward">Fahre die Route wie gezeichnet: auf dem letzten Stück nach Hause hast du dann %1$s statt %2$s.</string>
+    <string name="loop_wind_reverse">Fahre die Route andersherum: auf dem letzten Stück nach Hause hast du dann %1$s statt %2$s. Erstelle eine umgekehrte Kopie mit \"%3$s\".</string>
+    <string name="loop_wind_tail">%1$.0f km/h Rückenwind</string>
+    <string name="loop_wind_head">%1$.0f km/h Gegenwind</string>
+    <string name="loop_wind_cross">vor allem Seitenwind</string>
+    <string name="loop_wind_source">Quelle: Open-Meteo</string>
+    <string-array name="loop_wind_compass">
+        <item>Norden</item>
+        <item>Nordosten</item>
+        <item>Osten</item>
+        <item>Südosten</item>
+        <item>Süden</item>
+        <item>Südwesten</item>
+        <item>Westen</item>
+        <item>Nordwesten</item>
+    </string-array>
+    <string name="route_profile_title">Höhenprofil</string>
+    <string name="route_profile_empty">Keine Höhendaten für diese Route</string>
+    <string name="route_profile_description">Höhenprofil von %1$.1f km, von %2$d bis %3$d m Höhe, mit %4$d markierten Anstiegen</string>
+    <string name="menu_group_climbs">Anstiege</string>
+    <string name="menu_group_rides">Fahrten &amp; Analyse</string>
+    <string name="menu_group_training">Training &amp; Ziele</string>
+    <string name="menu_group_ride_prep">Vor der Fahrt</string>
+    <string name="menu_group_bike">Rad &amp; Material</string>
+    <string name="menu_group_data">Daten &amp; App</string>
+    <string name="menu_climb_of_the_week">Anstieg der Woche</string>
+    <string name="cotw_title">Anstieg der Woche</string>
+    <string name="cotw_week">Vorschlag für Woche %1$s</string>
+    <string name="cotw_empty">Noch keine Anstiege bekannt. Importiere Routen oder synchronisiere mit Strava, um einen Anstieg der Woche zu bekommen.</string>
+    <string name="cotw_why">Warum dieser Anstieg?</string>
+    <string name="cotw_stats">%1$.1f km · %2$d Hm · Ø %3$.1f%%</string>
+    <string name="cotw_never_ridden">Noch nie gefahren</string>
+    <string name="cotw_ridden_today">Heute gefahren</string>
+    <plurals name="cotw_days_since">
+        <item quantity="one">Seit %d Tag nicht gefahren</item>
+        <item quantity="other">Seit %d Tagen nicht gefahren</item>
+    </plurals>
+    <string name="cotw_completed">Diese Woche schon gefahren — gut gemacht!</string>
+    <string name="cotw_distance">%1$.1f km Luftlinie von deinem letzten bekannten Standort</string>
+    <string name="cotw_distance_unknown">Standort unbekannt — Entfernung nicht berücksichtigt</string>
+    <string name="cotw_weather_good">Gutes Radwetter erwartet, bester Tag %1$s — Zeit für einen harten Anstieg</string>
+    <string name="cotw_weather_mixed">Wechselhaftes Wetter, bester Tag %1$s — ein mittelschwerer Anstieg passt gut</string>
+    <string name="cotw_weather_poor">Mäßiges Wetter diese Woche, bester Tag %1$s — daher ein leichterer Anstieg</string>
+    <string name="cotw_weather_offline">Keine Wettervorhersage (offline) — Wetter nicht berücksichtigt</string>
+    <string name="cotw_day_detail">%1$s (%2$s%% Regenwahrscheinlichkeit, Wind %3$s km/h, max. %4$s °C)</string>
+    <string name="cotw_pinned">Dieser Vorschlag bleibt die ganze Woche bestehen</string>
+    <string name="cotw_open_climb">Anstieg öffnen</string>
+    <string name="cotw_open_route">Route öffnen</string>
+    <string name="cotw_use_location">Standort für Entfernung verwenden</string>
+    <string name="cotw_alternatives">Weitere Kandidaten</string>
+    <string name="top_climbs_title">Härteste Anstiege der Region</string>
+    <string name="top_climbs_intro">Die härtesten bekannten Anstiege in einem Umkreis um deinen Startpunkt, sortiert nach Schwierigkeitswert (Höhenmeter × durchschnittliche Steigung).</string>
+    <string name="top_climbs_radius_hint">Umkreis um den Startpunkt (km)</string>
+    <string name="top_climbs_start_none">Startpunkt: noch nicht gewählt</string>
+    <string name="top_climbs_start">Startpunkt: %1$s</string>
+    <string name="top_climbs_use_location">Aktueller Standort</string>
+    <string name="top_climbs_pick_route_start">Start einer Route</string>
+    <string name="top_climbs_search">Top 10 anzeigen</string>
+    <string name="top_climbs_radius_error">Gib einen Umkreis in km ein</string>
+    <string name="top_climbs_pick_start_first">Wähle zuerst einen Startpunkt.</string>
+    <string name="top_climbs_no_location">Kein aktueller Standort bekannt — wähle den Start einer Route.</string>
+    <string name="top_climbs_no_permission">Keine Standortberechtigung — wähle den Start einer Route.</string>
+    <string name="top_climbs_no_routes">Keine Routen gefunden, die als Start dienen können</string>
+    <string name="top_climbs_pick_route_title">Start welcher Route?</string>
+    <string name="top_climbs_empty">Keine bekannten Anstiege in diesem Umkreis. Vergrößere den Umkreis oder importiere weitere Routen.</string>
+    <string name="top_climbs_summary">Top %1$d im Umkreis von %2$d km</string>
+    <string name="top_climbs_row">%1$d. %2$s\n    Wert %3$.0f · %4$d Hm · %5$.1f km · Ø %6$.1f%% · %7$.1f km Luftlinie</string>
+    <string name="top_climbs_route_start">Start von %1$s</string>
+    <string name="menu_top_climbs">Härteste Anstiege der Region</string>
+    <string name="route_join_button">Zusammenführen mit…</string>
+    <string name="route_join_pick_title">An diese Route anhängen</string>
+    <string name="route_join_no_other_routes">Keine anderen Routen zum Zusammenführen</string>
+    <string name="route_join_gap_title">Routen schließen nicht aneinander an</string>
+    <string name="route_join_gap_message">Das Ende dieser Route und der Anfang der gewählten Route liegen %1$s km auseinander. Sie werden mit einer geraden Linie verbunden. Trotzdem zusammenführen?</string>
+    <string name="route_join_confirm">Zusammenführen</string>
+    <string name="route_join_cancel">Abbrechen</string>
+    <plurals name="route_join_done">
+        <item quantity="one">Zusammengeführt: %1$s (%2$d Anstieg)</item>
+        <item quantity="other">Zusammengeführt: %1$s (%2$d Anstiege)</item>
+    </plurals>
+    <string name="route_join_failed">Zusammenführen fehlgeschlagen: %1$s</string>
+    <string name="fav_start_title">Lieblings-Startpunkte</string>
+    <string name="fav_start_intro">Speichere feste Startpunkte wie Zuhause, Arbeit oder einen Parkplatz. Du wählst sie schnell als Start beim Höhenmeterziel und bei der Mehrtagestour.</string>
+    <string name="fav_start_empty">Noch keine Lieblings-Startpunkte.</string>
+    <string name="fav_start_add_location">Aktuellen Standort hinzufügen</string>
+    <string name="fav_start_add_coordinates">Koordinaten eingeben</string>
+    <string name="fav_start_name_hint">Name (z. B. Zuhause)</string>
+    <string name="fav_start_coordinates_hint">Breite, Länge (z. B. 50.8512, 5.6904)</string>
+    <string name="fav_start_name_required">Gib einen Namen ein</string>
+    <string name="fav_start_coordinates_invalid">Ungültige Koordinaten</string>
+    <string name="fav_start_new_title">Neuer Startpunkt</string>
+    <string name="fav_start_no_location">Kein aktueller Standort bekannt. Gib die Koordinaten ein.</string>
+    <string name="fav_start_no_permission">Keine Standortberechtigung. Gib die Koordinaten ein.</string>
+    <string name="fav_start_saved">Startpunkt \"%1$s\" gespeichert</string>
+    <string name="fav_start_save_failed">Speichern fehlgeschlagen: %1$s</string>
+    <string name="fav_start_rename">Umbenennen</string>
+    <string name="fav_start_delete">Löschen</string>
+    <string name="fav_start_delete_confirm">Startpunkt \"%1$s\" löschen?</string>
+    <string name="fav_start_save">Speichern</string>
+    <string name="fav_start_cancel">Abbrechen</string>
+    <string name="fav_start_pick_button">Favorit</string>
+    <string name="fav_start_pick_title">Wähle einen Lieblings-Startpunkt</string>
+    <string name="fav_start_manage">Verwalten</string>
+    <string name="fav_start_none_yet">Noch keine Lieblings-Startpunkte. Möchtest du einen hinzufügen?</string>
+    <string name="fav_start_spinner_item">Start ab %1$s</string>
+    <string name="recovery_check_title">Erholungs-Check</string>
+    <string name="recovery_check_rpe_label">Wie hart fühlte sich die Fahrt an? %1$d/10 (%2$s)</string>
+    <string name="recovery_check_sleep_label">Wie hast du in der Nacht davor geschlafen? %1$d/5 (%2$s)</string>
+    <string-array name="recovery_rpe_words">
+        <item>sehr leicht</item>
+        <item>leicht</item>
+        <item>leicht</item>
+        <item>mäßig</item>
+        <item>mäßig</item>
+        <item>hart</item>
+        <item>hart</item>
+        <item>sehr hart</item>
+        <item>sehr hart</item>
+        <item>maximal</item>
+    </string-array>
+    <string-array name="recovery_sleep_words">
+        <item>schlecht</item>
+        <item>mäßig</item>
+        <item>ordentlich</item>
+        <item>gut</item>
+        <item>ausgezeichnet</item>
+    </string-array>
+    <string name="recovery_check_hours_hint">Stunden geschlafen (optional, z. B. 7,5)</string>
+    <string name="recovery_check_note_hint">Notiz (optional, z. B. schwere Beine)</string>
+    <string name="recovery_check_save">Speichern</string>
+    <string name="recovery_check_cancel">Abbrechen</string>
+    <string name="recovery_check_delete">Löschen</string>
+    <string name="recovery_check_saved">Erholungs-Check gespeichert</string>
+    <string name="recovery_check_deleted">Erholungs-Check gelöscht</string>
+    <string name="recovery_check_save_failed">Speichern fehlgeschlagen: %1$s</string>
+    <string name="recovery_row_logged">Erholung: RPE %1$d/10 · Schlaf %2$d/5</string>
+    <string name="recovery_row_logged_hours">Erholung: RPE %1$d/10 · Schlaf %2$d/5 (%3$.1f h)</string>
+    <string name="recovery_row_empty">Tippe für einen Erholungs-Check</string>
+    <string name="ride_archive_recovery_trend">Erholung</string>
+    <string name="recovery_trend_title">Erholungstrend</string>
+    <string name="recovery_trend_empty">Noch keine Erholungs-Checks. Tippe unter Fahrten auf eine Fahrt, um einzutragen, wie hart sie sich anfühlte und wie du geschlafen hast.</string>
+    <string name="recovery_trend_summary_few">%1$d Fahrt(en) erfasst · Ø RPE %2$.1f/10 · Ø Schlaf %3$.1f/5. Ab 4 Checks siehst du einen Trend.</string>
+    <string name="recovery_trend_summary">Letzte %1$d Fahrten im Vergleich zu den %1$d davor:\nRPE %2$.1f → %3$.1f (%4$s)\nSchlaf %5$.1f → %6$.1f/5 (%7$s)</string>
+    <string name="recovery_direction_up">höher</string>
+    <string name="recovery_direction_down">niedriger</string>
+    <string name="recovery_direction_stable">gleich</string>
+    <string name="recovery_trend_warning">Deine Fahrten fühlen sich härter an, während du schlechter schläfst. Plane etwas mehr Ruhe ein.</string>
+    <string name="recovery_trend_legend">Gelb: RPE (1–10) · Blau: Schlaf (1–5, ×2 skaliert). Letzte %1$d Checks.</string>
+    <string name="recovery_trend_chart_description">Verlauf von RPE und Schlaf über die letzten %1$d erfassten Fahrten</string>
+    <string name="recovery_point_stats">%1$.1f km · %2$s · %3$.1f km/h · %4$d Hm</string>
+    <string name="recovery_point_check">RPE %1$d/10 · Schlaf %2$d/5 · Belastung %3$d</string>
+    <string name="recovery_point_hours"> · %1$.1f h geschlafen</string>
+    <string name="recovery_ride_default_name">Fahrt</string>
+    <string name="recovery_unknown_date">unbekanntes Datum</string>
+    <string name="wind_impact_loading">Windkorrektur: Wetter wird abgerufen…</string>
+    <string name="wind_impact_unavailable">Ohne Windkorrektur — keine Winddaten (offline oder keine Vorhersage)</string>
+    <string name="wind_impact_headwind">Mit Wind: %1$s (+%2$s, Gegenwind · %3$d km/h aus %4$s)</string>
+    <string name="wind_impact_tailwind">Mit Wind: %1$s (−%2$s, Rückenwind · %3$d km/h aus %4$s)</string>
+    <string name="wind_impact_negligible">Wind (%1$d km/h aus %2$s) hat kaum Einfluss auf deine Zeit</string>
+    <string-array name="wind_compass_points">
+        <item>Norden</item>
+        <item>Nordosten</item>
+        <item>Osten</item>
+        <item>Südosten</item>
+        <item>Süden</item>
+        <item>Südwesten</item>
+        <item>Westen</item>
+        <item>Nordwesten</item>
+    </string-array>
+    <string name="training_advice_header">Trainingstipps (Versuch vom %1$s)</string>
+    <string name="training_advice_faded">Fahre die ersten %1$d m ruhiger an: im letzten Drittel ist deine Leistung um %2$d%% gegenüber dem Anfang eingebrochen.</string>
+    <string name="training_advice_held_back">Du hast %1$d%% stärker aufgehört als begonnen: die ersten %2$d m dürfen nächstes Mal ruhig etwas härter sein.</string>
+    <string name="training_advice_even">Schön gleichmäßig dosiert: Anfang und Ende liegen nur %1$d%% auseinander. Halte dieses Tempo.</string>
+    <string name="training_advice_weakest">Bei %1$.1f–%2$.1f km (%3$.0f%%) bist du %4$d%% unter deinen Durchschnitt gefallen: schalte dort früher zurück und halte deine Trittfrequenz.</string>
+    <string name="training_advice_lost_vs_pr">Größter Zeitverlust gegenüber deinen besten Splits: %1$.1f–%2$.1f km (+%3$d s). Dort ist am meisten zu holen.</string>
+    <string name="pr_chance_title">PR-Chance heute: %1$s</string>
+    <string name="pr_chance_good">gute Chance</string>
+    <string name="pr_chance_moderate">mäßig</string>
+    <string name="pr_chance_unlikely">unwahrscheinlich</string>
+    <string name="pr_chance_first_title">PR-Chance heute</string>
+    <string name="pr_chance_first_attempt">Noch kein Versuch an diesem Anstieg: deine erste Auffahrt ist gleich dein PR.</string>
+    <plurals name="pr_chance_pr_line">
+        <item quantity="one">Zu schlagen: %1$s (aus %2$d Versuch)</item>
+        <item quantity="other">Zu schlagen: %1$s (aus %2$d Versuchen)</item>
+    </plurals>
+    <string name="pr_chance_reason_recent_pr">PR erst vor %1$d Tagen aufgestellt: du bist an diesem Anstieg in Form</string>
+    <string name="pr_chance_reason_close_to_pr">Deine jüngste Bestzeit liegt nur %1$.1f%% über deinem PR</string>
+    <string name="pr_chance_reason_far_from_pr">Deine jüngste Bestzeit liegt %1$.0f%% über deinem PR</string>
+    <string name="pr_chance_reason_no_recent">Letzter Versuch vor %1$d Tagen: kein aktueller Vergleich</string>
+    <string name="pr_chance_reason_no_recent_undated">Kein aktueller Versuch zum Vergleichen</string>
+    <plurals name="pr_chance_reason_few_attempts">
+        <item quantity="one">Erst %1$d Versuch: dein PR hat wahrscheinlich noch Luft</item>
+        <item quantity="other">Erst %1$d Versuche: dein PR hat wahrscheinlich noch Luft</item>
+    </plurals>
+    <string name="pr_chance_reason_fitter">Deine Fitness liegt %1$.0f%% höher als am Tag deines PR</string>
+    <string name="pr_chance_reason_less_fit">Deine Fitness liegt %1$.0f%% niedriger als am Tag deines PR</string>
+    <string name="pr_chance_reason_fresh">Du bist ausgeruht (Form %1$+.0f)</string>
+    <string name="pr_chance_reason_neutral_form">Deine Form ist neutral (%1$+.0f)</string>
+    <string name="pr_chance_reason_tired">Du hast Ermüdung vom jüngsten Training (Form %1$+.0f)</string>
+    <string name="pr_chance_reason_very_tired">Du bist ziemlich ermüdet (Form %1$+.0f)</string>
+    <string name="pr_chance_reason_weather_ideal">Bestes Kletterwetter oben (gefühlt %1$.0f °C, wenig Wind)</string>
+    <string name="pr_chance_reason_weather_rain">%1$.0f%% Regenwahrscheinlichkeit oben</string>
+    <string name="pr_chance_reason_weather_wind">Starker Wind oben (%1$.0f km/h)</string>
+    <string name="pr_chance_reason_weather_cold">Kalt oben (gefühlt %1$.0f °C)</string>
+    <string name="pr_chance_reason_weather_hot">Heiß oben (gefühlt %1$.0f °C)</string>
+    <string name="pr_chance_weather_unknown">Wetter unbekannt (offline): nicht berücksichtigt</string>
+    <string name="menu_periodization">Trainingsblock</string>
+    <string name="periodization_title">Trainingsblock</string>
+    <string name="periodization_intro">Ein Vierwochenblock auf Basis von Anstiegen, die du schon kennst: drei Aufbauwochen, in denen Höhenmeter und Schwierigkeit der Anstiege Schritt für Schritt zunehmen, gefolgt von einer Erholungswoche.</string>
+    <string name="periodization_start_history">Startbelastung: %1$d Hm pro Woche (dein Anstiegsdurchschnitt der letzten vier Wochen). Aufbau: +10%% pro Woche.</string>
+    <string name="periodization_start_default">Startbelastung: %1$d Hm pro Woche (Standardwert; noch keine aktuelle Anstiegshistorie). Aufbau: +10%% pro Woche.</string>
+    <string name="periodization_not_ridden">Du bist noch keinen bekannten Anstieg gefahren; der Plan nutzt die Anstiege aus deinen Routen.</string>
+    <string name="periodization_week_build">Woche %1$d — Aufbau</string>
+    <string name="periodization_week_recovery">Woche %1$d — Erholung</string>
+    <string name="periodization_week_load">Geplant %1$d Hm · Ziel %2$d Hm</string>
+    <string name="periodization_session">%1$d× %2$s (%3$s km, %4$s%%) · %5$d Hm</string>
+    <string name="periodization_unnamed_climb">Unbenannter Anstieg</string>
+    <string name="periodization_empty">Noch keine Anstiege bekannt. Importiere oder synchronisiere zuerst Routen mit Anstiegen.</string>
+    <string name="load_calendar_menu">Trainingskalender</string>
+    <string name="load_calendar_title">Trainingskalender</string>
+    <string name="load_calendar_empty">Noch keine Fahrten oder Anstiegsversuche im Archiv. Öffne Fahrten und tippe auf Abrufen; deine Trainingsbelastung pro Tag erscheint dann hier.</string>
+    <string name="load_calendar_summary">Letzte %1$d Wochen: %2$d aktive Tage, Gesamtbelastung %3$.0f.</string>
+    <string name="load_calendar_streak">Längste Serie aufeinanderfolgender Radtage: %1$d.</string>
+    <string name="load_calendar_busiest_week">Härteste Woche: ab %1$s, Belastung %2$.0f.</string>
+    <string name="load_calendar_no_ftp">Trage deine FTP in den Einstellungen ein: dann zählt die Leistung mit und die Belastung pro Fahrt stimmt besser.</string>
+    <string name="load_calendar_tap_hint">Tippe auf einen Tag für Details.</string>
+    <string name="load_calendar_day_rest">%1$s: Ruhetag.</string>
+    <string name="load_calendar_day_detail">%1$s: Belastung %2$.0f (%3$s) · %4$d Fahrt(en) · %5$d Anstieg(e) · %6$.0f Hm</string>
+    <string name="load_calendar_legend_less">Weniger</string>
+    <string name="load_calendar_legend_more">Mehr</string>
+    <string name="load_calendar_level_light">leicht</string>
+    <string name="load_calendar_level_moderate">mittel</string>
+    <string name="load_calendar_level_hard">hart</string>
+    <string name="load_calendar_level_very_hard">sehr hart</string>
+    <string name="load_calendar_explanation">Jedes Kästchen ist ein Tag, jede Spalte eine Woche (Montag oben). Belastung pro Fahrt: Stunden × Intensität² × 100, wobei eine Stunde an deiner FTP 100 ist (gleiche Berechnung wie Fitness &amp; Form). Anstiegsversuche aus Fahrten, die nicht im Archiv sind, zählen als Zeit am Anstieg mit 85% deiner FTP. Farben: unter 50 leicht, unter 100 mittel, unter 200 hart, 200 oder mehr sehr hart.</string>
+    <string name="sweat_title">Schweißverlust</string>
+    <string name="sweat_intro">Wiege dich kurz vor und nach der Fahrt, ohne Kleidung und nach dem Toilettengang, und notiere, wie viel du unterwegs getrunken hast. So schätzt die App deinen Schweißverlust und du bekommst Trinkempfehlungen für kommende Fahrten.</string>
+    <string name="sweat_add">Messung hinzufügen</string>
+    <string name="sweat_empty">Noch keine Messungen.</string>
+    <string name="sweat_summary_none">Füge eine Messung für persönliche Trinkempfehlungen hinzu.</string>
+    <plurals name="sweat_summary_average">
+        <item quantity="one">Schweißverlust: %1$.2f L pro Stunde (%2$d Messung)</item>
+        <item quantity="other">Durchschnittlicher Schweißverlust: %1$.2f L pro Stunde über %2$d Messungen (%3$.2f–%4$.2f L pro Stunde)</item>
+    </plurals>
+    <string name="sweat_advice">Trinkempfehlung für kommende Fahrten: etwa %1$d ml pro Stunde, ungefähr %2$s Flasche(n) à %3$d ml pro Stunde.</string>
+    <string name="sweat_advice_capped">Du schwitzt mehr, als dein Körper pro Stunde aufnehmen kann. Starte gut hydriert, trinke auch vor der Fahrt und nimm an warmen Tagen extra Salz mit.</string>
+    <string name="sweat_row">%1$s · %2$.2f L pro Stunde\n%3$.1f → %4$.1f kg, %5$d ml getrunken, %6$s\n%7$s</string>
+    <string name="sweat_duration_format">%1$d:%2$02d Std.</string>
+    <string name="sweat_status_gained">Zugenommen: mehr getrunken als nötig</string>
+    <string name="sweat_status_good">Gut versorgt (%1$.1f%% Gewichtsverlust)</string>
+    <string name="sweat_status_moderate">Leichtes Flüssigkeitsdefizit (%1$.1f%% Gewichtsverlust)</string>
+    <string name="sweat_status_high">Deutliches Flüssigkeitsdefizit (%1$.1f%% Gewichtsverlust), trinke nächstes Mal mehr</string>
+    <string name="sweat_dialog_title">Messung hinzufügen</string>
+    <string name="sweat_no_ride">Keine Fahrt aus dem Archiv</string>
+    <string name="sweat_ride_item">%1$s · %2$s · %3$.0f km</string>
+    <string name="sweat_ride_default">Fahrt</string>
+    <string name="sweat_date">Datum: %1$s</string>
+    <string name="sweat_weight_before_hint">Gewicht vor der Fahrt (kg)</string>
+    <string name="sweat_weight_after_hint">Gewicht nach der Fahrt (kg)</string>
+    <string name="sweat_drunk_hint">Unterwegs getrunken (ml)</string>
+    <string name="sweat_duration_hint">Dauer der Fahrt (Minuten)</string>
+    <string name="sweat_note_hint">Notiz, z. B. Temperatur (optional)</string>
+    <string name="sweat_save">Speichern</string>
+    <string name="sweat_cancel">Abbrechen</string>
+    <string name="sweat_delete">Löschen</string>
+    <string name="sweat_delete_confirm">Messung vom %1$s löschen?</string>
+    <string name="sweat_invalid_weight">Gib beide Gewichte ein, zwischen 30 und 250 kg.</string>
+    <string name="sweat_invalid_duration">Die Dauer muss zwischen 15 Minuten und 24 Stunden liegen.</string>
+    <string name="sweat_invalid_fluid">Die getrunkene Menge muss zwischen 0 und 20.000 ml liegen.</string>
+    <string name="sweat_invalid_change">Der Gewichtsunterschied ist unwahrscheinlich. Prüfe die Eingabe.</string>
+    <string name="sweat_saved">Messung gespeichert: %1$.2f L Schweiß pro Stunde</string>
+    <string name="sweat_save_failed">Speichern fehlgeschlagen: %1$s</string>
+    <string name="sweat_delete_failed">Löschen fehlgeschlagen: %1$s</string>
+    <string name="fuel_action">Verpflegungsplaner</string>
+    <string name="fuel_title">Verpflegungsplaner</string>
+    <string name="fuel_intro">Wie viele Gels, Riegel und Flaschen brauchst du? Basierend auf der geschätzten Fahrzeit, den Höhenmetern und der Temperatur.</string>
+    <string name="fuel_loading">Route wird geladen…</string>
+    <string name="fuel_summary">%1$.1f km · %2$d Hm · geschätzte Fahrzeit %3$s</string>
+    <string name="fuel_summary_model">Fahrzeit geschätzt mit deiner FTP und deinem Gewicht (Einstellungen).</string>
+    <string name="fuel_summary_fallback">Fahrzeit geschätzt mit 25 km/h plus einer Stunde pro 1000 Hm — fülle dein Profil aus (Einstellungen) für eine bessere Schätzung.</string>
+    <string name="fuel_temperature_hint">Temperatur (°C)</string>
+    <string name="fuel_fetch_temperature">Temperatur abrufen (Wettervorhersage)</string>
+    <string name="fuel_fetching_temperature">Wettervorhersage wird abgerufen…</string>
+    <string name="fuel_temperature_fetched">Erwartete Durchschnittstemperatur bei Abfahrt jetzt: %1$.0f °C</string>
+    <string name="fuel_temperature_unavailable">Keine Temperatur in der Vorhersage — trage sie selbst ein.</string>
+    <string name="fuel_temperature_failed">Wettervorhersage konnte nicht abgerufen werden — trage die Temperatur selbst ein.</string>
+    <string name="fuel_bottle_size">Flasche: %1$d ml</string>
+    <string name="fuel_calculate">Berechnen</string>
+    <string name="fuel_result_kcal">Verbrauch: ca. %1$d kcal</string>
+    <string name="fuel_result_carbs">Kohlenhydrate: %1$d g pro Stunde, %2$d g insgesamt</string>
+    <string name="fuel_result_food">Mitnehmen: %1$d Riegel (%2$d g) und %3$d Gels (%4$d g)</string>
+    <string name="fuel_result_no_food">Für eine Fahrt unter 75 Minuten ist Essen unterwegs nicht nötig.</string>
+    <string name="fuel_result_fluid">Trinken: %1$d ml pro Stunde, %2$.1f Liter insgesamt</string>
+    <string name="fuel_result_bottles">%1$d Flaschen à %2$d ml</string>
+    <string name="fuel_result_refills">Du hast %1$d Flaschenhalter: plane %2$d-mal Nachfüllen ein.</string>
+    <string name="fuel_result_electrolytes">Nimm Elektrolyte (Salz) in deinen Flaschen mit.</string>
+    <string name="fuel_result_temp_assumed">Keine Temperatur eingetragen — ausgegangen von %1$.0f °C.</string>
+    <string name="fuel_result_temp">Temperatur: %1$.0f °C</string>
+    <string name="fuel_route_error">Route konnte nicht geladen werden: %1$s</string>
+    <string name="intervals_settings_button">intervals.icu verbinden</string>
+    <string name="intervals_explanation">Sende Anstiegs-Workouts als geplantes Training an deinen intervals.icu-Kalender; von dort gehen sie weiter an Zwift oder Garmin, wenn du das in intervals.icu eingerichtet hast. Deinen API-Schlüssel findest du in intervals.icu unter Settings → Developer Settings. Lass die Athleten-ID für dein eigenes Konto auf 0. Der Schlüssel wird verschlüsselt auf diesem Telefon gespeichert und nicht in Backups übernommen.</string>
+    <string name="intervals_api_key_label">API-Schlüssel</string>
+    <string name="intervals_api_key_hint">Füge deinen API-Schlüssel ein</string>
+    <string name="intervals_api_key_hint_saved">Gespeichert — leer lassen zum Behalten</string>
+    <string name="intervals_athlete_id_label">Athleten-ID</string>
+    <string name="intervals_athlete_id_hint">0 oder z. B. i12345</string>
+    <string name="intervals_save">Speichern</string>
+    <string name="intervals_test">Verbindung testen</string>
+    <string name="intervals_clear">Verbindung entfernen</string>
+    <string name="intervals_clear_confirm">Der API-Schlüssel wird von diesem Telefon gelöscht. Workouts in deinem intervals.icu-Kalender bleiben bestehen.</string>
+    <string name="intervals_cancel">Abbrechen</string>
+    <string name="intervals_status_saved">Gespeichert.</string>
+    <string name="intervals_status_cleared">Verbindung entfernt.</string>
+    <string name="intervals_status_testing">Verbindung wird getestet…</string>
+    <string name="intervals_status_ok">Verbunden als %1$s.</string>
+    <string name="intervals_status_failed">Fehlgeschlagen: %1$s</string>
+    <string name="intervals_status_key_invalid">Gib einen gültigen API-Schlüssel ein.</string>
+    <string name="intervals_status_athlete_invalid">Ungültige Athleten-ID: verwende 0 oder etwas wie i12345.</string>
+    <string name="intervals_format_single">An intervals.icu (geplantes Workout)</string>
+    <string name="intervals_format_repeat">Wiederholungs-Anstieg an intervals.icu</string>
+    <string name="intervals_not_configured">Verbinde zuerst intervals.icu mit deinem API-Schlüssel in den Einstellungen.</string>
+    <string name="intervals_open_settings">Zu den Einstellungen</string>
+    <string name="intervals_pick_date">Auf Datum planen</string>
+    <string name="intervals_pick_type">Wo fährst du ihn?</string>
+    <string name="intervals_type_indoor">Indoor auf dem Trainer (VirtualRide)</string>
+    <string name="intervals_type_outdoor">Draußen (Ride)</string>
+    <string name="intervals_send">Senden</string>
+    <string name="intervals_push_ok">Workout auf intervals.icu für %1$s geplant.</string>
+    <string name="intervals_push_failed">Senden an intervals.icu fehlgeschlagen: %1$s</string>
+    <string name="ftp_test_action">FTP-Test</string>
+    <string name="ftp_test_title">FTP-Test</string>
+    <string name="ftp_test_intro">Ein 20-Minuten-Test auf deinem Trainer: deine FTP ist 95 % deiner Durchschnittsleistung über die 20 Minuten. Exportiere den Test als Workout für MyWhoosh oder Zwift, fahre ihn, und nach der Strava-Synchronisierung liest ClimbPro das Ergebnis hier aus. Sorge dafür, dass du ausgeruht bist, und fahre die 20 Minuten so gleichmäßig wie möglich.</string>
+    <string name="ftp_test_current_ftp">Aktuelle FTP: %1$d W. Richtwert für die 20 Minuten: %2$d W.</string>
+    <string name="ftp_test_no_ftp">Noch keine FTP in deinem Profil. Die Blöcke sind in Prozent angegeben; beginne die 20 Minuten ruhig und steigere dann.</string>
+    <string name="ftp_test_total">Insgesamt %1$d Minuten</string>
+    <string name="ftp_test_phase_warmup">Aufwärmen</string>
+    <string name="ftp_test_phase_blow_out">Blow-out</string>
+    <string name="ftp_test_phase_recovery">Erholung</string>
+    <string name="ftp_test_phase_test">FTP-Test</string>
+    <string name="ftp_test_phase_cooldown">Ausfahren</string>
+    <string name="ftp_test_detail_warmup">Ruhig vom Grundlagentempo zum Tempobereich steigern; Beine und Puls in Gang bringen.</string>
+    <string name="ftp_test_detail_blow_out">5 Minuten hart, knapp über deiner FTP. Das leert deine schnelle Reserve, damit der Test danach deine Dauerleistung misst.</string>
+    <string name="ftp_test_detail_recovery">Locker weitertreten und vor dem Test erholen.</string>
+    <string name="ftp_test_detail_test">So hart, wie du 20 Minuten durchhältst. Beginne etwas unter dem Richtwert, fahre gleichmäßig und gib in den letzten Minuten alles. Schalte ERG aus.</string>
+    <string name="ftp_test_detail_cooldown">Locker ausfahren.</string>
+    <string name="ftp_test_export">Als Workout exportieren (.zwo)</string>
+    <string name="ftp_test_export_failed">Export fehlgeschlagen: %1$s</string>
+    <string name="ftp_test_export_dialog_title">FTP-Test auf deinen Trainer</string>
+    <string name="ftp_test_export_dialog_message">Zwift: lege die Datei in Dokumente/Zwift/Workouts. MyWhoosh: lege die Datei an einen Ort, den du auf deinem Trainer-PC oder Tablet öffnen kannst (z. B. Drive oder Mail), melde dich auf der MyWhoosh-Website an und wähle unter Workouts Hochladen. Fahre den Test innerhalb von %1$d Tagen; nenne die Fahrt in Strava am besten \"FTP-Test\".</string>
+    <string name="ftp_test_share">Teilen</string>
+    <string name="ftp_test_share_chooser">FTP-Test teilen</string>
+    <string name="ftp_test_cancel">Abbrechen</string>
+    <string name="ftp_test_exported_at">Zuletzt exportiert: %1$s</string>
+    <string name="ftp_test_result_header">Ergebnis</string>
+    <string name="ftp_test_result_none">Noch kein FTP-Test gefunden. Nach dem Fahren: synchronisiere deine Strava-Fahrten (Fahrten → Abrufen). Eine Fahrt zählt als Test, wenn sie \"FTP\" im Namen hat oder innerhalb von %1$d Tagen nach dem Export gefahren wurde und eine echte Maximalanstrengung war.</string>
+    <string name="ftp_test_result_pending">Noch %1$d Fahrt(en) zu analysieren; das passiert schrittweise bei jeder Synchronisierung.</string>
+    <string name="ftp_test_result_found">%1$s, %2$s\nBeste 20 Minuten: %3$d W → FTP %4$d W</string>
+    <string name="ftp_test_result_delta">%1$+d W gegenüber deiner aktuellen FTP (%2$d W).</string>
+    <string name="ftp_test_result_same">Gleich deiner aktuellen FTP.</string>
+    <string name="ftp_test_apply">FTP auf %1$d W aktualisieren</string>
+    <string name="ftp_test_dismiss">Ignorieren</string>
+    <string name="ftp_test_apply_confirm_title">FTP aktualisieren?</string>
+    <string name="ftp_test_apply_confirm_message">Deine FTP geht von %1$d W auf %2$d W. Zeitschätzungen, Pacing und Workouts verwenden danach den neuen Wert.</string>
+    <string name="ftp_test_apply_confirm_message_new">Deine FTP wird %1$d W. Zeitschätzungen, Pacing und Workouts verwenden danach diesen Wert.</string>
+    <string name="ftp_test_applied">FTP auf %1$d W aktualisiert</string>
+    <string name="ftp_test_unknown_ride">Fahrt</string>
+    <!-- Groepsrit-planner (issue #195) -->
+    <string name="group_ride_title">Gruppenfahrt planen</string>
+    <string name="group_ride_intro">Wähle eine gespeicherte Route und die Teilnehmer. ClimbPro schätzt das Gruppentempo (der langsamste Fahrer bestimmt das Tempo, an Anstiegen wartet die Gruppe oben), schlägt Termine anhand der Fahrtage aller vor und erstellt einen Vorschlag zum Teilen. Teilnehmer kommen aus Fahrpartner oder werden manuell hinzugefügt.</string>
+    <string name="group_ride_pick_route">Route wählen</string>
+    <string name="group_ride_participants">Teilnehmer</string>
+    <string name="group_ride_add_rider">Fahrer hinzufügen</string>
+    <string name="group_ride_share">Vorschlag teilen</string>
+    <string name="group_ride_from_date">Ab %1$s</string>
+
+    <!-- Entdecke-die-Region-Karte (issue #194) -->
+    <string name="menu_explore_map">Entdecke-die-Region-Karte</string>
+    <string name="explore_map_title">Entdecke die Region</string>
+    <string name="explore_map_loading">Karte wird geladen…</string>
+    <string name="explore_map_summary">%1$d Felder · ≈ %2$s km Straßen erkundet · %3$d Fahrten</string>
+    <string name="explore_map_empty">Noch keine gefahrenen Straßen auf der Karte. Verarbeite unten deine Strava-Fahrten.</string>
+    <string name="explore_map_pending">%1$d Outdoor-Fahrt(en) noch nicht auf der Karte</string>
+    <string name="explore_map_all_done">Alle Outdoor-Fahrten sind auf der Karte</string>
+    <string name="explore_map_no_strava">Verbinde zuerst Strava, um Fahrtspuren abzurufen</string>
+    <string name="explore_map_process">Fahrten verarbeiten</string>
+    <string name="explore_map_processing">Spuren werden abgerufen…</string>
+    <string name="explore_map_processed">%1$d Fahrt(en) verarbeitet</string>
+    <string name="explore_map_failed">Abrufen fehlgeschlagen: %1$s</string>
+    <string name="explore_map_hint">Jedes farbige Feld (~150 m) bist du mindestens einmal gefahren. Indoor-Fahrten zählen nicht; pro Durchlauf werden höchstens 20 Fahrten abgerufen.</string>
+</resources>

@@ -20,4 +20,30 @@
          1 = FTP-zone (the phone's per-segment intensity-zone colors "zc"; climbs without
          zc still use the gradient colors). -->
     <property id="colorMode" type="number">0</property>
+    <!-- Issue #198: once-per-ride lights reminder at dusk (sun times computed on the
+         watch from GPS + clock), and how many minutes before sunset it fires. -->
+    <property id="lightsReminder" type="boolean">true</property>
+    <property id="lightsLeadMin" type="number">15</property>
+    <!-- Issue #213: "300 m vlakker" notice + short buzz during a climb when the upcoming
+         segments are >= 3 %-points less steep than the current one. On by default. -->
+    <property id="easierAheadAlert" type="boolean">true</property>
+    <!-- Issue #228: heart-rate alarm. hrAlarmBpm = alert when the heart rate stays above
+         this for 10 s (0 = off); hrIrregularAlarm = alert on repeated sudden jumps. -->
+    <property id="hrAlarmBpm" type="number">0</property>
+    <property id="hrIrregularAlarm" type="boolean">false</property>
+    <!-- Issue #227: heat-index warning threshold in °C (NWS heat index from Garmin Weather
+         temperature + humidity). 0 = off. 32 = NWS "extreme caution" upper band. -->
+    <property id="heatIndexThreshold" type="number">32</property>
+    <!-- Issue #184: eat/drink reminder. fuelIntervalMin = every N minutes of activity time
+         (0 = off); fuelClimbM = every N metres of ascent (0 = off); whichever comes first.
+         fuelHotC = from this air temperature (°C) both are shortened to 75 %, from 8 °C
+         above it to 50 % (0 = no correction). -->
+    <property id="fuelIntervalMin" type="number">30</property>
+    <property id="fuelClimbM" type="number">0</property>
+    <property id="fuelHotC" type="number">25</property>
+    <!-- Issue #179: cadence coach. Opt-in nudge when the cadence stays 30 s below
+         cadenceLow or above cadenceHigh (rpm; 0 = that side off). Coasting is ignored. -->
+    <property id="cadenceCoach" type="boolean">false</property>
+    <property id="cadenceLow" type="number">80</property>
+    <property id="cadenceHigh" type="number">100</property>
 </properties>

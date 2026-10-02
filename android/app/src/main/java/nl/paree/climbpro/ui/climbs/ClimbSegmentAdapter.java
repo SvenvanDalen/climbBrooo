@@ -30,8 +30,6 @@ public final class ClimbSegmentAdapter
         void onSegmentClick(int position, StoredSegment segment);
     }
 
-    private static final int[] SEGMENT_COLORS = SegmentColorPalette.COLORS;
-
     // Surface badge background colors (match SurfaceType constants)
     private static final int[] SURFACE_BG = {
         0xFF404040, // ASPHALT — dark grey
@@ -83,7 +81,8 @@ public final class ClimbSegmentAdapter
     public void onBindViewHolder(@NonNull ViewHolder h, int position) {
         StoredSegment s = items.get(position);
         h.gradientView.setText(String.format("%.1f%%", s.gradient * 100));
-        h.distView.setText(s.distance + " m");
+        h.distView.setText(nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(h.itemView.getContext())
+                .shortDistance(s.distance)); // issue #262
         if (s.manualTargetSec != null) {
             h.timeView.setVisibility(View.VISIBLE);
             h.timeView.setText(DurationFormat.format(s.manualTargetSec) + " ✎");
@@ -104,14 +103,14 @@ public final class ClimbSegmentAdapter
             }
         });
         int ci = Math.max(0, Math.min(5, s.colorIndex));
-        h.colorBar.setBackgroundColor(SEGMENT_COLORS[ci]);
+        h.colorBar.setBackgroundColor(SegmentColorPalette.toColor(ci));
 
         // FTP intensity zone badge, colored the way the watch paints it in FTP-zone mode.
         if (segmentZones != null && position < segmentZones.length) {
             int zone = segmentZones[position];
             h.zoneBadge.setVisibility(View.VISIBLE);
             h.zoneBadge.setText(SegmentIntensityZones.label(zone));
-            h.zoneBadge.setBackgroundColor(SEGMENT_COLORS[GradientColor.forPowerZone(zone)]);
+            h.zoneBadge.setBackgroundColor(SegmentColorPalette.toColor(GradientColor.forPowerZone(zone)));
             h.zoneBadge.setContentDescription("Intensiteitszone "
                     + SegmentIntensityZones.label(zone));
         } else {

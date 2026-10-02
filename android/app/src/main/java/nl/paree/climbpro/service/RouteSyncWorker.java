@@ -22,6 +22,8 @@ import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.data.strava.StravaRoutesRepository;
 import nl.paree.climbpro.data.sync.SyncState;
 import nl.paree.climbpro.data.sync.SyncStateRepository;
+import nl.paree.climbpro.data.watch.WatchFieldLayoutStore;
+import nl.paree.climbpro.domain.watch.WatchFieldLayout;
 import nl.paree.climbpro.widget.WeekWidgetProvider;
 
 import java.io.IOException;
@@ -81,8 +83,19 @@ public final class RouteSyncWorker extends Worker {
         // Issue #66: also send per-segment FTP intensity-zone colors when the profile allows,
         // and issue #180: FTP turns each climb's interval block (% FTP) into watts for 'ib'.
         // The profile is already part of wantHash, so an FTP change triggers a resync.
+        // The datafield's slot layout ('lay') rides along in every climb payload; it is part
+        // of wantHash, so changing it on the "Horloge-velden" screen triggers a resync.
+        WatchFieldLayout fieldLayout = new WatchFieldLayoutStore(ctx).load();
+        // Issue #258: the colorblind-palette setting ships as 'pal' (also part of wantHash).
+        int palette = paletteOf(prefs);
+        // Issue #262: the rider's display units ride along as 'un'; they are folded into
+        // wantHash too, so switching km <-> miles resyncs the active route.
+        nl.paree.climbpro.domain.units.UnitPreferences units =
+                new nl.paree.climbpro.data.settings.UnitPreferencesRepository(ctx).load();
         ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper)
-                .withIntensityZones(profile).withFtpWatts(profile.ftpWatts);
+                .withIntensityZones(profile).withFtpWatts(profile.ftpWatts)
+                .withPalette(palette).withUnits(units)
+                .withFieldLayout(fieldLayout);
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -108,7 +121,8 @@ public final class RouteSyncWorker extends Worker {
         };
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo);
+                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo,
+                palette, units, fieldLayout);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -143,6 +157,13 @@ public final class RouteSyncWorker extends Worker {
                 rides.analyzeRideStreams();
             } catch (Exception e) {
                 Log.w(TAG, "Ride stream analysis failed; sync continues", e);
+            }
+            // Explore map (issue #194): a capped batch of older rides' tracks; new rides
+            // already arrived with the analysis above.
+            try {
+                rides.exploreRideTracks();
+            } catch (Exception e) {
+                Log.w(TAG, "Explore map backfill failed; sync continues", e);
             }
             // MyWhoosh rides in the archive become routes with climbs (issue #344).
             try {
@@ -180,14 +201,52 @@ public final class RouteSyncWorker extends Worker {
      * target-time override ({@link SegmentTargetOverrideMerger#signature}) — those overrides
      * only bump {@code StoredRoute#lastModifiedMs}, not {@code sourceHash}, so without this
      * a manual edit would never trigger a re-sync on its own (only an unrelated change that
-     * happens to move {@code sourceHash} or the profile would surface it).
+     * happens to move {@code sourceHash} or the profile would surface it). The display units
+     * (issue #262) are included because they change the payload's 'un' key, and the
+     * datafield slot layout because it only lives in preferences.
      */
-    private static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
-                                   nl.paree.climbpro.domain.power.GhostTarget ghost) {
-        return route.sourceHash + "|" + profile.signature()
+    /** OSM tunnels (issue #203) change the 'hz' markers, so a lookup triggers a resync. */
+    static String tunnelSignature(StoredRoute route) {
+        if (route.tunnels == null) return "t-";
+        StringBuilder sb = new StringBuilder("t");
+        for (nl.paree.climbpro.data.route.StoredTunnel t : route.tunnels) {
+            sb.append(t.startDistance).append('-').append(t.endDistance).append(',');
+        }
+        return sb.toString();
+    }
+
+    static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
+                           nl.paree.climbpro.domain.power.GhostTarget ghost, int palette,
+                           nl.paree.climbpro.domain.units.UnitPreferences units,
+                           WatchFieldLayout fieldLayout) {
+        String hash = route.sourceHash + "|" + profile.signature()
                 + "|" + SegmentTargetOverrideMerger.signature(route)
                 + "|" + ghost.signature()
-                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route);
+                + "|" + nl.paree.climbpro.domain.power.IntervalBlock.signature(route)
+                + "|" + nl.paree.climbpro.domain.climb.EverestingPlan.signature(route)
+                + "|" + tunnelSignature(route)
+                + "|" + fieldLayout.serialize();
+        // Default palette adds nothing, so existing sync states stay valid (issue #258).
+        if (palette != nl.paree.climbpro.domain.segment.GradientPalette.DEFAULT) {
+            hash += "|pal" + palette;
+        }
+        // Display units (issue #262) only extend the hash when not all-metric, so metric
+        // riders keep their existing hash and don't get a one-off resync from this change.
+        return units.toWireFlags() != 0 ? hash + "|" + units.signature() : hash;
+    }
+
+    /**
+     * Virtual opponent (issue #178): a new best ride of the active route changes 'gh', so it
+     * must change the hash too. Empty without a profile, so existing sync states stay valid.
+     */
+    static String routeGhostSignature(int[] routeGhost) {
+        return routeGhost == null ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
+    }
+
+    /** Palette chosen with the "Kleurenblind-vriendelijk palet" switch (issue #258). */
+    static int paletteOf(SharedPreferences prefs) {
+        return nl.paree.climbpro.domain.segment.GradientPalette.fromEnabled(prefs.getBoolean(
+                nl.paree.climbpro.domain.segment.GradientPalette.PREF_COLORBLIND, false));
     }
 
     /**
@@ -200,7 +259,11 @@ public final class RouteSyncWorker extends Worker {
             SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
             nl.paree.climbpro.domain.power.RiderProfile profile,
             nl.paree.climbpro.domain.power.GhostTarget ghost,
-            ClimbAttemptRepository attemptRepo) {
+            ClimbAttemptRepository attemptRepo, int palette,
+            nl.paree.climbpro.domain.units.UnitPreferences units,
+            WatchFieldLayout fieldLayout) {
+        nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo =
+                new nl.paree.climbpro.data.route.RouteGhostRepository(getApplicationContext());
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
@@ -239,7 +302,9 @@ public final class RouteSyncWorker extends Worker {
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
-                String wantHash = wantHash(route, profile, ghost);
+                int[] routeGhost = ghostRepo.wireFor(route);
+                String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout)
+                        + routeGhostSignature(routeGhost);
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -249,7 +314,7 @@ public final class RouteSyncWorker extends Worker {
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
                         route, attemptRepo.loadAll(), ghost);
-                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan);
+                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return null;
@@ -260,7 +325,8 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId != null) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost));
+                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout)
+                            + routeGhostSignature(ghostRepo.wireFor(route)));
                 }
             }
         };

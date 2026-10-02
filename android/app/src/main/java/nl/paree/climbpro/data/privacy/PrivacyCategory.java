@@ -14,17 +14,19 @@ public enum PrivacyCategory {
             "routes/", "catalog.json", "sync_state.json"),
     ATTEMPTS("Klimpogingen",
             "Tijden per klim uit je Strava-activiteiten, met notities en de namen van wie er "
-                    + "meereed.",
-            "climb_attempts.json", "incomplete_climb_attempts.json"),
+                    + "meereed, en je snelste rit per route (de virtuele tegenstander).",
+            "climb_attempts.json", "incomplete_climb_attempts.json", "route_ghosts.json"),
     RIDES("Rittenarchief",
             "Samenvatting per Strava-fietsrit: afstand, tijd, hoogtemeters, snelheid, "
                     + "gemiddeld vermogen en start- en eindpunt, de gemeten regen voor de "
                     + "schoonmaakherinnering en je snelste 10, 40 en 100 km, je beste sprint, "
                     + "gemiddelde hartslag, hartslag-drift, vermogenscurve en tijd per "
                     + "hartslag- en vermogensniveau per rit, en je herstel-check na de rit "
-                    + "(hoe zwaar de rit voelde, je slaap en notities).",
+                    + "(hoe zwaar de rit voelde, je slaap en notities), en voor de "
+                    + "ontdek-de-regio-kaart welke vakken van ~150 m je buiten hebt gereden "
+                    + "(geen volledige GPS-sporen).",
             "rides.json", "wet_ride_checks.json", "ride_stream_stats.json",
-            "recovery_checks.json"),
+            "recovery_checks.json", "explore_tiles.json"),
     TIRE_PRESSURE("Bandenspanning-logboek",
             "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",
             "tire_pressure_log.json"),
@@ -55,6 +57,10 @@ public enum PrivacyCategory {
             "Het telefoonnummer en de naam van je contact, je berichttekst en welke ritten al "
                     + "gemeld zijn.",
             "safe_home.json"),
+    MEDICAL_ID("Medische ID",
+            "Je naam, bloedgroep, allergieën, medicatie, noodcontact en overige info, en of "
+                    + "ze op het vergrendelscherm staan. Ook als kopie in de horloge-widget.",
+            "medical_id.json"),
     COMEBACK_PLAN("Terugkomstplan",
             "Je actieve opbouwplan na een pauze of blessure (startdatum en of het om een "
                     + "blessure gaat).",
@@ -75,9 +81,18 @@ public enum PrivacyCategory {
             "Ritten en mijlpalen die vrienden met een deelcode met je deelden, en de naam "
                     + "waaronder je zelf deelt.",
             "friend_feed.json"),
+    RIDE_BUDDIES("Ritmaatjes",
+            "Rijdersprofielen die anderen met een profielcode met je deelden: naam, tempo, "
+                    + "klimsnelheid, ritlengte, rittype, rijdagen en eventueel een grof gebied "
+                    + "(vak van ~5 km). Je eigen profiel wordt niet bewaard.",
+            "ride_buddies.json"),
     GOAL_EVENT("Doelevenement",
             "Naam, datum, afstand en hoogtemeters van je doelevenement.",
             "goal_event.json"),
+    EVENT_CALENDAR("Evenementenkalender",
+            "De agenda-links (iCal) die je toevoegde, de daaruit opgehaalde evenementen en je "
+                    + "zelf ingevoerde evenementen, met de zoekstraal.",
+            "event_calendar.json"),
     FAVORITE_START_POINTS("Favoriete startpunten",
             "Door jou opgeslagen startpunten (naam en coördinaten) voor de planning.",
             "favorite_start_points.json"),
@@ -86,6 +101,14 @@ public enum PrivacyCategory {
                     + "voor het beste moment om te rijden. Wordt opnieuw opgehaald als je het "
                     + "wist.",
             "climate/"),
+    OFFLINE_PACKAGES("Offline-pakketten",
+            "Vooraf gedownload weer en water-, eet-, toilet- en fietspunten langs routes, voor "
+                    + "gebieden zonder bereik. Openbare gegevens; opnieuw op te halen.",
+            "offline/"),
+    ROUTE_POIS("Bezienswaardigheden bij routes",
+            "Uitzichtpunten, monumenten en andere bezienswaardigheden langs je routes, uit "
+                    + "OpenStreetMap. Wordt opnieuw opgehaald als je het wist.",
+            "route_pois/"),
     LOCATION("Laatst bekende locatie",
             "Gebruikt voor de radius-modus om klimmen in de buurt te kiezen."),
     RIDER_PROFILE("Rijdersprofiel",

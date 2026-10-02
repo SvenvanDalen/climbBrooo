@@ -25,13 +25,20 @@ import org.osmdroid.views.overlay.Polyline;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.route.SurfaceSectionGeometry;
+import nl.paree.climbpro.data.route.RouteShortenService;
 import nl.paree.climbpro.data.route.RouteRideStatus;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredFlatSegment;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.route.StoredTunnel;
 import nl.paree.climbpro.data.weather.OpenMeteoClient;
 import nl.paree.climbpro.data.weather.RainViewerClient;
 import nl.paree.climbpro.databinding.ActivityRouteDetailBinding;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
+import nl.paree.climbpro.domain.route.RouteHazards;
+import nl.paree.climbpro.domain.offline.OfflinePackage;
+import nl.paree.climbpro.domain.offline.OfflinePackageReport;
+import nl.paree.climbpro.domain.route.RouteShortener;
 import nl.paree.climbpro.domain.segment.SurfaceType;
 import nl.paree.climbpro.domain.weather.HourlyForecast;
 import nl.paree.climbpro.domain.weather.LoopWindAdvice;
@@ -57,9 +64,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private static final String EXTRA_ROUTE_ID = "route_id";
 
-    /** Dutch surface labels, index = SurfaceType constant (0..5). */
-    private static final String[] SURFACE_LABELS_NL =
-            {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed", "Onbekend"};
+    /** Localized surface labels, index = SurfaceType constant (0..5). */
+    private String[] surfaceLabels() {
+        return getResources().getStringArray(R.array.surface_labels);
+    }
 
     private ActivityRouteDetailBinding binding;
     private RouteDetailViewModel        viewModel;
@@ -132,7 +140,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnShareToGarmin.setEnabled(p != null);
         });
         viewModel.rideStatus().observe(this, status ->
-                binding.btnRideStatus.setText("Status: " + RouteRideStatus.label(status)));
+                binding.btnRideStatus.setText(
+                        getString(R.string.route_detail_status, RouteRideStatus.label(status))));
         viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
         viewModel.climbUsageTypes().observe(this, types -> adapter.setClimbUsageTypes(types));
         viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
@@ -144,13 +153,22 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
             binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
         });
+        viewModel.borderCrossings().observe(this, lines -> {
+            boolean none = lines == null || lines.isEmpty();
+            binding.borderCrossingsSummary.setText(
+                    none ? "" : android.text.TextUtils.join("\n", lines));
+            binding.borderCrossingsTitle.setVisibility(none ? View.GONE : View.VISIBLE);
+            binding.borderCrossingsSummary.setVisibility(none ? View.GONE : View.VISIBLE);
+        });
 
         viewModel.error().observe(this, msg -> {
             binding.btnReverseRoute.setEnabled(true);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         });
         viewModel.saved().observe(this, ok -> {
-            if (Boolean.TRUE.equals(ok)) Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+            if (Boolean.TRUE.equals(ok)) {
+                Toast.makeText(this, R.string.route_detail_saved, Toast.LENGTH_SHORT).show();
+            }
         });
         viewModel.onboardPushMessage().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
@@ -162,7 +180,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnSelectRoute.setOnClickListener(v ->
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(), () -> {
                     viewModel.setActiveRoute(routeId);
-                    Toast.makeText(this, "Route selected for watch", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.route_detail_selected_for_watch,
+                            Toast.LENGTH_SHORT).show();
                 }));
         binding.btnSendToOnboard.setOnClickListener(v -> viewModel.sendToOnboard(routeId));
         binding.btnShareToGarmin.setOnClickListener(v ->
@@ -187,6 +206,16 @@ public final class RouteDetailActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
             startActivity(intentFor(this, result.routeId));
         });
+        binding.btnShortenRoute.setOnClickListener(v -> showShortenOptions());
+        viewModel.shortenedRoute().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeShortenedRoute();
+            Toast.makeText(this, result.created
+                            ? getString(R.string.route_shorten_created, result.climbCount)
+                            : getString(R.string.route_shorten_exists),
+                    Toast.LENGTH_LONG).show();
+            startActivity(intentFor(this, result.routeId));
+        });
         binding.btnTirePressure.setOnClickListener(v -> {
             StoredRoute r = viewModel.route().getValue();
             if (r != null) TirePressureAdviceDialog.show(this, r);
@@ -196,6 +225,29 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
         binding.btnTemperatureTrend.setOnClickListener(v -> toggleTemperatureTrend());
         binding.btnLoopWind.setOnClickListener(v -> showLoopWindAdvice());
+        binding.btnHazards.setOnClickListener(v -> {
+            binding.btnHazards.setEnabled(false); // one lookup at a time
+            binding.btnHazards.setText(R.string.hazards_loading);
+            viewModel.lookupTunnels(routeId);
+        });
+        viewModel.tunnelLookup().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeTunnelLookup();
+            binding.btnHazards.setEnabled(true);
+            binding.btnHazards.setText(R.string.hazards_action);
+            binding.hazardsSummary.setText(describeHazards(result.route, result.error));
+            binding.hazardsSummary.setVisibility(View.VISIBLE);
+        });
+        binding.btnOfflinePackage.setOnClickListener(v -> viewModel.loadOfflinePackage(routeId));
+        viewModel.offlinePackage().observe(this, result -> {
+            if (result == null) return;
+            viewModel.consumeOfflinePackage();
+            binding.btnOfflinePackage.setEnabled(true);
+            binding.btnOfflinePackage.setText(R.string.offline_pkg_action);
+            showOfflinePackage(result.pkg);
+        });
+        binding.btnRoutePois.setOnClickListener(v ->
+                startActivity(RoutePoiActivity.intentFor(this, routeId)));
 
         viewModel.loadRoute(routeId);
     }
@@ -222,19 +274,21 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private void renderPassport(RoutePassport p) {
         if (p == null) { binding.passportSummary.setText(""); return; }
         StringBuilder sb = new StringBuilder();
-        sb.append(p.climbCount).append(" klimmen · ")
-          .append(p.totalElevationGain).append(" hm");
+        nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
+        sb.append(getString(R.string.route_detail_passport_climbs,
+                p.climbCount, units.elevation(p.totalElevationGain))); // issue #262
         String cmp = ElevationComparisons.describe(p.totalElevationGain);
-        if (cmp != null) sb.append(" (≈ ").append(cmp).append(")");
+        if (cmp != null) sb.append(getString(R.string.route_detail_passport_comparison, cmp));
         if (p.hardestClimbName != null) {
-            sb.append("\nZwaarste: ").append(p.hardestClimbName)
-              .append(String.format(java.util.Locale.US, " (%.1f%%)", p.hardestClimbGradient * 100));
+            sb.append('\n').append(getString(R.string.route_detail_passport_hardest,
+                    p.hardestClimbName, p.hardestClimbGradient * 100));
         }
+        sb.append('\n');
         if (p.totalEstimatedSeconds >= 0) {
-            sb.append("\nGeschatte tijd: ")
-              .append(nl.paree.climbpro.domain.power.DurationFormat.format(p.totalEstimatedSeconds));
+            sb.append(getString(R.string.route_detail_passport_time,
+                    nl.paree.climbpro.domain.power.DurationFormat.format(p.totalEstimatedSeconds)));
         } else {
-            sb.append("\nGeschatte tijd: vul je profiel in (Instellingen)");
+            sb.append(getString(R.string.route_detail_passport_time_unknown));
         }
         binding.passportSummary.setText(sb.toString());
     }
@@ -281,8 +335,8 @@ public final class RouteDetailActivity extends AppCompatActivity {
             overlay.setWidth(12f);
             overlay.setPoints(geo);
 
-            final String label = (s.name != null ? s.name : "(naamloos)")
-                    + " · " + SURFACE_LABELS_NL[SurfaceType.fromInt(s.surfaceType)];
+            final String label = (s.name != null ? s.name : getString(R.string.route_detail_unnamed))
+                    + " · " + surfaceLabels()[SurfaceType.fromInt(s.surfaceType)];
             overlay.setOnClickListener((polyline, mapView, eventPos) -> {
                 Toast.makeText(this, label, Toast.LENGTH_SHORT).show();
                 return true;
@@ -302,17 +356,17 @@ public final class RouteDetailActivity extends AppCompatActivity {
             rainOverlay = null;
             rainShown = false;
             binding.rainSummary.setVisibility(View.GONE);
-            binding.btnRainRadar.setText("Regenradar tonen");
+            binding.btnRainRadar.setText(R.string.route_detail_rain_show);
             binding.mapView.invalidate();
             return;
         }
         StoredRoute r = viewModel.route().getValue();
         if (r == null || r.lats == null || r.lons == null || r.lats.length == 0) {
-            Toast.makeText(this, "Route heeft geen coördinaten", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.route_detail_no_coordinates, Toast.LENGTH_SHORT).show();
             return;
         }
         binding.btnRainRadar.setEnabled(false); // one request at a time
-        binding.btnRainRadar.setText("Regenradar laden…");
+        binding.btnRainRadar.setText(R.string.route_detail_rain_loading);
         final List<RadarTiles.Tile> tiles = RadarTiles.forRoute(r.lats, r.lons);
         final List<RouteSampler.Sample> samples =
                 RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
@@ -335,7 +389,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 RainViewerClient rv = new RainViewerClient();
                 RainRadarFrame frame = rv.fetchLatestFrame();
                 if (frame == null) {
-                    radarLine = "Geen radarbeeld beschikbaar";
+                    radarLine = getString(R.string.route_detail_radar_none);
                 } else {
                     List<RadarTiles.Tile> got = new ArrayList<>();
                     List<Bitmap> bitmaps = new ArrayList<>();
@@ -360,15 +414,16 @@ public final class RouteDetailActivity extends AppCompatActivity {
                         }
                     }
                     if (got.isEmpty()) {
-                        radarLine = "Radar ophalen mislukt: geen tegels ontvangen";
+                        radarLine = getString(R.string.route_detail_radar_no_tiles);
                     } else {
                         overlay = new RainRadarOverlay(got, bitmaps);
-                        radarLine = "Radarbeeld van " + DateTimeFormatter.ofPattern("HH:mm")
-                                .withZone(ZoneId.systemDefault()).format(frame.time);
+                        radarLine = getString(R.string.route_detail_radar_time,
+                                DateTimeFormatter.ofPattern("HH:mm")
+                                        .withZone(ZoneId.systemDefault()).format(frame.time));
                     }
                 }
             } catch (Exception e) {
-                radarLine = "Radar ophalen mislukt: " + reason(e);
+                radarLine = getString(R.string.route_detail_radar_failed, reason(e));
             }
             radarLineRef.set(radarLine);
             overlayRef.set(overlay);
@@ -382,7 +437,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 forecast = RouteRainSummary.describe(samples, g, Instant.now(),
                         RAIN_FORECAST_HOURS, ZoneId.systemDefault());
             } catch (Exception e) {
-                forecast = "Verwachting ophalen mislukt: " + reason(e);
+                forecast = getString(R.string.route_detail_forecast_failed, reason(e));
             }
             forecastRef.set(forecast);
         }, "rain-radar-forecast");
@@ -397,12 +452,12 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 Thread.currentThread().interrupt();
             }
             final String text = radarLineRef.get() + "\n\n" + forecastRef.get()
-                    + "\n\nBron: RainViewer (radar), Open-Meteo (verwachting)";
+                    + "\n\n" + getString(R.string.route_detail_rain_source);
             final RainRadarOverlay result = overlayRef.get();
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 binding.btnRainRadar.setEnabled(true);
-                binding.btnRainRadar.setText("Regenradar verbergen");
+                binding.btnRainRadar.setText(R.string.route_detail_rain_hide);
                 rainShown = true;
                 rainOverlay = result;
                 if (result != null) {
@@ -424,12 +479,12 @@ public final class RouteDetailActivity extends AppCompatActivity {
             temperatureShown = false;
             binding.temperatureTrend.setVisibility(View.GONE);
             binding.temperatureSummary.setVisibility(View.GONE);
-            binding.btnTemperatureTrend.setText("Temperatuurtrend tonen");
+            binding.btnTemperatureTrend.setText(R.string.route_detail_temperature_show);
             return;
         }
         StoredRoute r = viewModel.route().getValue();
         if (r == null || r.lats == null || r.lons == null || r.lats.length == 0) {
-            Toast.makeText(this, "Route heeft geen coördinaten", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.route_detail_no_coordinates, Toast.LENGTH_SHORT).show();
             return;
         }
         java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
@@ -446,7 +501,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         final List<RouteSampler.Sample> samples =
                 RouteSampler.sample(r, RAIN_SAMPLE_STEP_M, RAIN_MAX_SAMPLES);
         if (samples.isEmpty()) {
-            Toast.makeText(this, "Route heeft geen afstanden", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.route_detail_no_distances, Toast.LENGTH_SHORT).show();
             return;
         }
         final double[] elevations = TemperatureTrend.elevationsAt(r, samples);
@@ -457,26 +512,26 @@ public final class RouteDetailActivity extends AppCompatActivity {
         final boolean planned = p != null && p.totalEstimatedSeconds > 0;
 
         binding.btnTemperatureTrend.setEnabled(false); // one request at a time
-        binding.btnTemperatureTrend.setText("Temperatuurtrend laden…");
+        binding.btnTemperatureTrend.setText(R.string.route_detail_temperature_loading);
         new Thread(() -> {
             TemperatureTrend trend = null;
             String text;
             try {
                 TemperatureGrid g = new OpenMeteoClient().fetchTemperatures(samples, elevations);
                 trend = TemperatureTrend.compute(samples, g, start, rideSeconds);
-                text = trend.describe(zone) + "\n\nTempo: "
-                        + (planned ? "geschatte tijd uit je profiel"
-                                   : "25 km/u (vul je profiel in voor een eigen schatting)")
-                        + "\nBron: Open-Meteo";
+                text = trend.describe(zone, new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load()) + "\n\n"
+                        + getString(planned ? R.string.route_detail_temperature_pace_planned
+                                            : R.string.route_detail_temperature_pace_default)
+                        + "\n" + getString(R.string.route_detail_temperature_source);
             } catch (Exception e) {
-                text = "Temperatuurverwachting ophalen mislukt: " + reason(e);
+                text = getString(R.string.route_detail_temperature_failed, reason(e));
             }
             final TemperatureTrend result = trend;
             final String summary = text;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 binding.btnTemperatureTrend.setEnabled(true);
-                binding.btnTemperatureTrend.setText("Temperatuurtrend verbergen");
+                binding.btnTemperatureTrend.setText(R.string.route_detail_temperature_hide);
                 temperatureShown = true;
                 binding.temperatureTrend.setTrend(result, zone);
                 binding.temperatureTrend.setVisibility(
@@ -573,8 +628,124 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 : getString(R.string.loop_wind_head, headwindKmh);
     }
 
+    /** Tunnels (stored, from OSM) and technical descents (from the geometry), issue #203. */
+    private String describeHazards(StoredRoute r, String lookupError) {
+        List<RouteHazards.Hazard> all = new ArrayList<>();
+        if (r.tunnels != null) {
+            for (StoredTunnel t : r.tunnels) {
+                all.add(new RouteHazards.Hazard(t.startDistance, t.endDistance,
+                        RouteHazards.TYPE_TUNNEL));
+            }
+        }
+        int tunnels = all.size();
+        all.addAll(RouteHazards.detectDescents(r.lats, r.lons, r.elevations, r.distances));
+        all.sort((a, b) -> Integer.compare(a.startM, b.startM));
+        StringBuilder sb = new StringBuilder();
+        if (lookupError != null) {
+            sb.append(getString(R.string.hazards_lookup_failed, lookupError)).append("\n\n");
+        }
+        if (all.isEmpty()) {
+            sb.append(getString(R.string.hazards_none));
+        } else {
+            sb.append(getString(R.string.hazards_header, tunnels, all.size() - tunnels));
+            for (RouteHazards.Hazard h : all) {
+                sb.append('\n').append(h.type == RouteHazards.TYPE_TUNNEL
+                        ? getString(R.string.hazards_tunnel_row, h.startM / 1000.0,
+                                h.endM / 1000.0, h.endM - h.startM)
+                        : getString(R.string.hazards_descent_row, h.startM / 1000.0,
+                                h.endM / 1000.0, (h.endM - h.startM) / 1000.0));
+            }
+        }
+        return sb.append("\n\n").append(getString(R.string.hazards_note)).toString();
+    }
+
+    /**
+     * Offline route package (issue #200): shows the stored package (readable without signal)
+     * with refresh/delete, or offers the first download.
+     */
+    private void showOfflinePackage(OfflinePackage pkg) {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.offline_pkg_title)
+                .setNegativeButton(R.string.offline_pkg_close, null);
+        if (pkg == null) {
+            dialog.setMessage(R.string.offline_pkg_intro)
+                    .setPositiveButton(R.string.offline_pkg_download, (d, w) -> downloadOffline());
+        } else {
+            dialog.setMessage(OfflinePackageReport.build(pkg, System.currentTimeMillis())
+                            + "\n\n" + getString(R.string.offline_pkg_source))
+                    .setPositiveButton(R.string.offline_pkg_refresh, (d, w) -> downloadOffline())
+                    .setNeutralButton(R.string.offline_pkg_delete, (d, w) -> {
+                        viewModel.deleteOfflinePackage(routeId);
+                        Toast.makeText(this, R.string.offline_pkg_deleted, Toast.LENGTH_SHORT)
+                                .show();
+                    });
+        }
+        dialog.show();
+    }
+
+    private void downloadOffline() {
+        binding.btnOfflinePackage.setEnabled(false); // one download at a time
+        binding.btnOfflinePackage.setText(R.string.offline_pkg_loading);
+        viewModel.downloadOfflinePackage(routeId);
+    }
+
     private static String reason(Exception e) {
         return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
+    /**
+     * Lists shorter variants within the route's own geometry (issue #205); picking one saves it
+     * as a new route with re-detected climbs and opens it.
+     */
+    private void showShortenOptions() {
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null || r.distances == null || r.distances.length == 0) return;
+        List<RouteShortener.Variant> variants = RouteShortenService.suggest(r);
+        double totalKm = r.distances[r.distances.length - 1] / 1000.0;
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.route_shorten_title, totalKm));
+        if (variants.isEmpty()) {
+            dialog.setMessage(R.string.route_shorten_none)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+            return;
+        }
+        String[] labels = new String[variants.size()];
+        for (int i = 0; i < variants.size(); i++) {
+            RouteShortener.Variant v = variants.get(i);
+            StringBuilder sb = new StringBuilder(getString(R.string.route_shorten_item,
+                    v.newLengthM / 1000.0, v.savedM / 1000.0, (int) Math.round(v.savedGainM),
+                    v.fromDistanceM / 1000.0, v.toDistanceM / 1000.0,
+                    (int) Math.round(v.connectorM)));
+            if (!v.skippedClimbs.isEmpty()) {
+                sb.append(getString(R.string.route_shorten_skips, climbNames(r, v.skippedClimbs)));
+            }
+            if (!v.partialClimbs.isEmpty()) {
+                sb.append(getString(R.string.route_shorten_partial,
+                        climbNames(r, v.partialClimbs)));
+            }
+            labels[i] = sb.toString();
+        }
+        dialog.setItems(labels, (d, which) -> {
+                    RouteShortener.Variant v = variants.get(which);
+                    viewModel.shortenRoute(routeId, v.fromIndex, v.toIndex);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+        Toast.makeText(this, R.string.route_shorten_note, Toast.LENGTH_LONG).show();
+    }
+
+    private static String climbNames(StoredRoute r, List<Integer> indices) {
+        StringBuilder sb = new StringBuilder();
+        for (int idx : indices) {
+            if (r.climbs == null || idx >= r.climbs.size()) continue;
+            StoredClimb c = r.climbs.get(idx);
+            String name = c.userDisplayName != null ? c.userDisplayName
+                    : c.name != null ? c.name : "klim " + (idx + 1);
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(name);
+        }
+        return sb.toString();
     }
 
     /** Bucket-list status picker (issue #158); purely manual, never changed automatically. */
@@ -588,25 +759,25 @@ public final class RouteDetailActivity extends AppCompatActivity {
             if (java.util.Objects.equals(values[i], current)) checked = i;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Route-status")
+                .setTitle(R.string.route_detail_status_title)
                 .setSingleChoiceItems(labels, checked, (d, which) -> {
                     viewModel.setRideStatus(routeId, values[which]);
                     d.dismiss();
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
     private void showRenameDialog() {
         EditText input = new EditText(this);
-        input.setHint("New route name");
+        input.setHint(R.string.route_detail_rename_hint);
         input.setText(binding.toolbar.getTitle());
         new AlertDialog.Builder(this)
-                .setTitle("Rename route")
+                .setTitle(R.string.route_detail_rename_title)
                 .setView(input)
-                .setPositiveButton("Save", (d, w) ->
+                .setPositiveButton(R.string.action_save, (d, w) ->
                         viewModel.renameRoute(routeId, input.getText().toString().trim()))
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -626,27 +797,27 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.setPadding(pad, pad, pad, pad);
 
         final EditText nameInput = new EditText(this);
-        nameInput.setHint("Naam (optioneel)");
+        nameInput.setHint(R.string.route_detail_name_optional);
         nameInput.setSingleLine(true);
         if (flat.name != null) nameInput.setText(flat.name);
         layout.addView(nameInput);
 
         final android.widget.Spinner surface = new android.widget.Spinner(this);
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, SURFACE_LABELS_NL);
+                this, android.R.layout.simple_spinner_item, surfaceLabels());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         surface.setAdapter(adapter);
         surface.setSelection(SurfaceType.fromInt(flat.surfaceType));
         layout.addView(surface);
 
         new AlertDialog.Builder(this)
-                .setTitle("Vlak segment")
+                .setTitle(R.string.route_detail_flat_title)
                 .setView(layout)
-                .setPositiveButton("Opslaan", (dialog, which) ->
+                .setPositiveButton(R.string.action_save, (dialog, which) ->
                         viewModel.updateFlatSegment(routeId, flat.startDistance,
                                 surface.getSelectedItemPosition(),
                                 nameInput.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -656,7 +827,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
 
         final android.widget.EditText nameInput = new android.widget.EditText(this);
-        nameInput.setHint("Naam");
+        nameInput.setHint(R.string.route_detail_name);
         nameInput.setSingleLine(true);
         if (seg.userDisplayName != null) nameInput.setText(seg.userDisplayName);
         else if (seg.name != null)       nameInput.setText(seg.name);
@@ -664,20 +835,20 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         final android.widget.Spinner surface = new android.widget.Spinner(this);
         android.widget.ArrayAdapter<String> a = new android.widget.ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, SURFACE_LABELS_NL);
+                this, android.R.layout.simple_spinner_item, surfaceLabels());
         a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         surface.setAdapter(a);
         surface.setSelection(SurfaceType.fromInt(seg.surfaceType));
         layout.addView(surface);
 
         new AlertDialog.Builder(this)
-                .setTitle("Ster-segment")
+                .setTitle(R.string.route_detail_starred_title)
                 .setView(layout)
-                .setPositiveButton("Opslaan", (dialog, which) ->
+                .setPositiveButton(R.string.action_save, (dialog, which) ->
                         viewModel.updateStarredSegment(routeId, seg.stravaId,
                                 surface.getSelectedItemPosition(),
                                 nameInput.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -702,28 +873,28 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.setPadding(pad, pad, pad, pad);
 
         final EditText nameInput = new EditText(this);
-        nameInput.setHint("Naam (optioneel)");
+        nameInput.setHint(R.string.route_detail_name_optional);
         nameInput.setSingleLine(true);
         if (section.name != null) nameInput.setText(section.name);
         layout.addView(nameInput);
 
         final android.widget.Spinner surface = new android.widget.Spinner(this);
         android.widget.ArrayAdapter<String> a = new android.widget.ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, SURFACE_LABELS_NL);
+                this, android.R.layout.simple_spinner_item, surfaceLabels());
         a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         surface.setAdapter(a);
         surface.setSelection(SurfaceType.fromInt(section.surfaceType));
         layout.addView(surface);
 
         new AlertDialog.Builder(this)
-                .setTitle("Ondergrond-stuk")
+                .setTitle(R.string.route_detail_section_title)
                 .setView(layout)
-                .setPositiveButton("Opslaan", (d, w) ->
+                .setPositiveButton(R.string.action_save, (d, w) ->
                         viewModel.updateSurfaceSection(routeId, index,
                                 surface.getSelectedItemPosition(),
                                 nameInput.getText().toString()))
-                .setNeutralButton("Verwijder", (d, w) -> confirmDeleteSection(index))
-                .setNegativeButton("Annuleer", null)
+                .setNeutralButton(R.string.action_delete, (d, w) -> confirmDeleteSection(index))
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -735,31 +906,32 @@ public final class RouteDetailActivity extends AppCompatActivity {
         final java.util.List<nl.paree.climbpro.data.route.StoredSurfaceSection> current = sections;
         String[] rows;
         if (current.isEmpty()) {
-            rows = new String[]{"(nog geen stukken)"};
+            rows = new String[]{getString(R.string.route_detail_sections_empty)};
         } else {
             rows = new String[current.size()];
             for (int i = 0; i < current.size(); i++) {
                 nl.paree.climbpro.data.route.StoredSurfaceSection s = current.get(i);
                 String label = String.format("%.1f–%.1f km · %s",
                         s.startDistance / 1000.0, s.endDistance / 1000.0,
-                        SURFACE_LABELS_NL[SurfaceType.fromInt(s.surfaceType)]);
+                        surfaceLabels()[SurfaceType.fromInt(s.surfaceType)]);
                 rows[i] = (s.name != null ? s.name + " — " : "") + label;
             }
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Ondergrond-stukken")
+                .setTitle(R.string.route_detail_surface_sections)
                 .setItems(rows, (dialog, which) -> {
                     if (!current.isEmpty()) showSectionActions(which, current.get(which).name);
                 })
-                .setPositiveButton("Toevoegen", (d, w) -> showAddSurfaceSectionDialog())
-                .setNegativeButton("Sluiten", null)
+                .setPositiveButton(R.string.action_add, (d, w) -> showAddSurfaceSectionDialog())
+                .setNegativeButton(R.string.action_close, null)
                 .show();
     }
 
     private void showSectionActions(int index, String currentName) {
         new AlertDialog.Builder(this)
-                .setItems(new String[]{"Hernoemen", "Verwijderen"}, (d, which) -> {
+                .setItems(new String[]{getString(R.string.action_rename),
+                        getString(R.string.action_delete)}, (d, which) -> {
                     if (which == 0) showRenameSectionDialog(index, currentName);
                     else confirmDeleteSection(index);
                 })
@@ -768,25 +940,25 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private void showRenameSectionDialog(int index, String currentName) {
         final EditText input = new EditText(this);
-        input.setHint("Naam");
+        input.setHint(R.string.route_detail_name);
         input.setSingleLine(true);
         if (currentName != null) input.setText(currentName);
         new AlertDialog.Builder(this)
-                .setTitle("Hernoem stuk")
+                .setTitle(R.string.route_detail_section_rename_title)
                 .setView(input)
-                .setPositiveButton("Opslaan", (d, w) ->
+                .setPositiveButton(R.string.action_save, (d, w) ->
                         viewModel.setSurfaceSectionName(routeId, index,
                                 input.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
     private void confirmDeleteSection(int index) {
         new AlertDialog.Builder(this)
-                .setTitle("Stuk verwijderen?")
-                .setPositiveButton("Verwijder", (d, w) ->
+                .setTitle(R.string.route_detail_section_delete_title)
+                .setPositiveButton(R.string.action_delete, (d, w) ->
                         viewModel.deleteSurfaceSection(routeId, index))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -797,25 +969,25 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.setPadding(pad, pad, pad, pad);
 
         final android.widget.EditText nameInput = new android.widget.EditText(this);
-        nameInput.setHint("Naam (optioneel)");
+        nameInput.setHint(R.string.route_detail_name_optional);
         nameInput.setSingleLine(true);
         layout.addView(nameInput);
 
         final android.widget.EditText startKm = new android.widget.EditText(this);
-        startKm.setHint("Start (km)");
+        startKm.setHint(R.string.route_detail_section_start_hint);
         startKm.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
                 | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         layout.addView(startKm);
 
         final android.widget.EditText endKm = new android.widget.EditText(this);
-        endKm.setHint("Eind (km)");
+        endKm.setHint(R.string.route_detail_section_end_hint);
         endKm.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
                 | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         layout.addView(endKm);
 
         // Surface picker excludes "Onbekend" (index 0..4 only).
         final android.widget.Spinner surface = new android.widget.Spinner(this);
-        String[] choices = {"Asfalt", "Gravel", "Onverhard", "Kasseien", "Mixed"};
+        String[] choices = java.util.Arrays.copyOf(surfaceLabels(), SurfaceType.MIXED + 1);
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, choices);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -823,20 +995,21 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.addView(surface);
 
         new AlertDialog.Builder(this)
-                .setTitle("Nieuw ondergrond-stuk")
+                .setTitle(R.string.route_detail_section_new_title)
                 .setView(layout)
-                .setPositiveButton("Toevoegen", (dialog, which) -> {
+                .setPositiveButton(R.string.action_add, (dialog, which) -> {
                     Integer startM = parseKmToMeters(startKm.getText().toString());
                     Integer endM   = parseKmToMeters(endKm.getText().toString());
                     if (startM == null || endM == null) {
-                        Toast.makeText(this, "Vul start en eind in km in", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, R.string.route_detail_section_range_required,
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                     viewModel.addSurfaceSection(routeId, startM, endM,
                             surface.getSelectedItemPosition(),
                             nameInput.getText().toString());
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
@@ -854,19 +1027,20 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private void showBikeComputerExport() {
         StoredRoute route = viewModel.route().getValue();
         if (route == null || route.lats == null || route.lats.length == 0) {
-            Toast.makeText(this, "Route heeft nog geen geometrie om te exporteren",
+            Toast.makeText(this, R.string.route_detail_no_geometry_export,
                     Toast.LENGTH_SHORT).show();
             return;
         }
         BikeComputerExport.Target[] targets = BikeComputerExport.Target.values();
         String[] labels = new String[targets.length + 1];
         for (int i = 0; i < targets.length; i++) {
-            labels[i] = targets[i].label + (BikeComputerExport.isInstalled(this, targets[i])
-                    ? "" : " (app niet gevonden)");
+            labels[i] = BikeComputerExport.isInstalled(this, targets[i])
+                    ? targets[i].label
+                    : getString(R.string.route_detail_app_not_found_suffix, targets[i].label);
         }
-        labels[targets.length] = "Ander apparaat of bestand";
+        labels[targets.length] = getString(R.string.route_detail_other_device);
         new AlertDialog.Builder(this)
-                .setTitle("Exporteer route met klimmen")
+                .setTitle(R.string.route_detail_export_title)
                 .setItems(labels, (d, which) ->
                         exportToBikeComputer(route, which < targets.length ? targets[which] : null))
                 .show();
@@ -879,21 +1053,22 @@ public final class RouteDetailActivity extends AppCompatActivity {
                     this, getPackageName() + ".fileprovider", gpx);
             Intent share = BikeComputerExport.buildShareIntent(this, uri, target);
             if (target != null && share.getPackage() == null) {
-                Toast.makeText(this, target.label + "-app niet gevonden; kies zelf een app",
+                Toast.makeText(this, getString(R.string.route_detail_export_app_missing, target.label),
                         Toast.LENGTH_LONG).show();
             }
             startActivity(share.getPackage() != null ? share
-                    : Intent.createChooser(share, "Exporteer route"));
+                    : Intent.createChooser(share, getString(R.string.route_detail_export_chooser)));
         } catch (Exception e) {
             String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            Toast.makeText(this, "Exporteren mislukt: " + reason, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.route_detail_export_failed, reason),
+                    Toast.LENGTH_LONG).show();
         }
     }
 
     private void shareToGarminConnect() {
         StoredRoute route = viewModel.route().getValue();
         if (route == null || route.lats == null || route.lats.length == 0) {
-            Toast.makeText(this, "Route heeft nog geen geometrie om te delen",
+            Toast.makeText(this, R.string.route_detail_no_geometry_share,
                     Toast.LENGTH_SHORT).show();
             return;
         }
@@ -902,9 +1077,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
             android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
                     this, getPackageName() + ".fileprovider", gpx);
             Intent share = GarminHandoff.buildShareIntent(this, uri);
-            startActivity(Intent.createChooser(share, "Open in Garmin Connect"));
+            startActivity(Intent.createChooser(share, getString(R.string.route_detail_open_garmin)));
         } catch (java.io.IOException e) {
-            Toast.makeText(this, "Kon GPX niet aanmaken", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.route_detail_gpx_failed, Toast.LENGTH_SHORT).show();
         }
     }
 }

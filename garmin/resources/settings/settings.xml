@@ -21,4 +21,68 @@
             <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.lightsReminder" title="@Strings.SettingsLightsReminderTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.lightsLeadMin" title="@Strings.SettingsLightsLeadTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.LightsLeadSunset</listEntry>
+            <listEntry value="15">@Strings.LightsLead15</listEntry>
+            <listEntry value="30">@Strings.LightsLead30</listEntry>
+            <listEntry value="60">@Strings.LightsLead60</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.easierAheadAlert" title="@Strings.SettingsEasierAheadAlertTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.hrAlarmBpm" title="@Strings.SettingsHrAlarmTitle" prompt="@Strings.SettingsHrAlarmPrompt">
+        <settingConfig type="numeric" min="0" max="230"/>
+    </setting>
+    <setting propertyKey="@Properties.hrIrregularAlarm" title="@Strings.SettingsHrIrregularTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.heatIndexThreshold" title="@Strings.SettingsHeatIndexTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.HeatIndexOff</listEntry>
+            <listEntry value="27">@Strings.HeatIndex27</listEntry>
+            <listEntry value="32">@Strings.HeatIndex32</listEntry>
+            <listEntry value="39">@Strings.HeatIndex39</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.fuelIntervalMin" title="@Strings.SettingsFuelIntervalTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelOff</listEntry>
+            <listEntry value="15">@Strings.FuelInterval15</listEntry>
+            <listEntry value="20">@Strings.FuelInterval20</listEntry>
+            <listEntry value="30">@Strings.FuelInterval30</listEntry>
+            <listEntry value="45">@Strings.FuelInterval45</listEntry>
+            <listEntry value="60">@Strings.FuelInterval60</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.fuelClimbM" title="@Strings.SettingsFuelClimbTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelOff</listEntry>
+            <listEntry value="250">@Strings.FuelClimb250</listEntry>
+            <listEntry value="500">@Strings.FuelClimb500</listEntry>
+            <listEntry value="750">@Strings.FuelClimb750</listEntry>
+            <listEntry value="1000">@Strings.FuelClimb1000</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.fuelHotC" title="@Strings.SettingsFuelHotTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelHotOff</listEntry>
+            <listEntry value="20">@Strings.FuelHot20</listEntry>
+            <listEntry value="25">@Strings.FuelHot25</listEntry>
+            <listEntry value="30">@Strings.FuelHot30</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.cadenceCoach" title="@Strings.SettingsCadenceCoachTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.cadenceLow" title="@Strings.SettingsCadenceLowTitle" prompt="@Strings.SettingsCadenceLowPrompt">
+        <settingConfig type="numeric" min="0" max="200"/>
+    </setting>
+    <setting propertyKey="@Properties.cadenceHigh" title="@Strings.SettingsCadenceHighTitle" prompt="@Strings.SettingsCadenceHighPrompt">
+        <settingConfig type="numeric" min="0" max="200"/>
+    </setting>
 </settings>

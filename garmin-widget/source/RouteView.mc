@@ -9,6 +9,7 @@ class RouteListView extends Ui.View {
     var phoneCount;
     var savedRouteIds;
     var savedClimbKeys;
+    var medicalOffset = 0;   // 1 when a medical ID is stored: it is the first row (issue #230)
     hidden var savedRouteNames;
     hidden var savedRouteClimbCounts;
 
@@ -30,6 +31,7 @@ class RouteListView extends Ui.View {
         phoneCount     = (phoneIndex != null && phoneIndex.received) ? phoneIndex.getCount() : 0;
         savedRouteIds  = StorageManager.getSavedRouteIds();
         savedClimbKeys = StorageManager.getSavedClimbKeys();
+        medicalOffset  = (loadMedicalId() != null) ? 1 : 0;
 
         var meta = StorageManager.getSavedRouteMeta();
         savedRouteNames       = new [savedRouteIds.size()];
@@ -57,7 +59,7 @@ class RouteListView extends Ui.View {
     }
 
     function getTotalCount() {
-        return phoneCount + savedRouteIds.size() + savedClimbKeys.size();
+        return medicalOffset + phoneCount + savedRouteIds.size() + savedClimbKeys.size();
     }
 
     function onUpdate(dc) {
@@ -67,14 +69,22 @@ class RouteListView extends Ui.View {
         if (_liveIndex != null && _liveIndex.received) {
             phoneCount = _liveIndex.getCount();
         }
+        // A MEDICAL_ID message can land while the list is open (the phone sends it right
+        // after the route list): add/remove the row and keep the same item selected.
+        var med = (loadMedicalId() != null) ? 1 : 0;
+        if (med != medicalOffset) {
+            selectedIndex += med - medicalOffset;
+            if (selectedIndex < 0) { selectedIndex = 0; }
+            medicalOffset = med;
+        }
 
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_BLACK);
         dc.clear();
 
         // Phone-connection indicator: green dot = verbonden, rood = geen verbinding
         var phoneConnected = Sys.getDeviceSettings().phoneConnected;
-        dc.setColor(phoneConnected ? 0x00AA00 : Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-        dc.fillCircle(dc.getWidth() - 10, 10, 5);
+        WidgetPalette.drawConnectionDot(dc, dc.getWidth() - 10, 10, phoneConnected,
+            WidgetPalette.current());
 
         var w     = dc.getWidth();
         var h     = dc.getHeight();
@@ -110,8 +120,18 @@ class RouteListView extends Ui.View {
         var phoneIndex = app.phoneRouteIndex;
         var savedRouteCount = savedRouteIds.size();
 
-        for (var i = startIdx; i < total && i < startIdx + visibleCount; i++) {
-            var yPos = listTop + (i - startIdx) * itemH;
+        for (var row = startIdx; row < total && row < startIdx + visibleCount; row++) {
+            var yPos = listTop + (row - startIdx) * itemH;
+
+            // Medical ID row (issue #230): always first, red, so it is one tap away.
+            if (row < medicalOffset) {
+                dc.setColor(row == selectedIndex ? Gfx.COLOR_RED : Gfx.COLOR_DK_RED, Gfx.COLOR_TRANSPARENT);
+                dc.fillRectangle(8, yPos, w - 16, itemH - 4);
+                dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(w / 2, yPos + 10, Gfx.FONT_XTINY, "+ Medische ID", Gfx.TEXT_JUSTIFY_CENTER);
+                continue;
+            }
+            var i = row - medicalOffset;
 
             // Draw divider between phone and saved sections
             if (i == phoneCount && phoneCount > 0 && (savedRouteCount + savedClimbKeys.size()) > 0) {
@@ -137,7 +157,7 @@ class RouteListView extends Ui.View {
                 }
             }
 
-            if (i == selectedIndex) {
+            if (row == selectedIndex) {
                 dc.setColor(0x003366, Gfx.COLOR_TRANSPARENT);
                 dc.fillRectangle(8, yPos, w - 16, itemH - 4);
                 dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
@@ -146,7 +166,7 @@ class RouteListView extends Ui.View {
             }
 
             dc.drawText(w / 2, yPos + 4,  Gfx.FONT_XTINY, name,     Gfx.TEXT_JUSTIFY_CENTER);
-            dc.setColor(i == selectedIndex ? 0xAAAAAA : Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
+            dc.setColor(row == selectedIndex ? 0xAAAAAA : Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, yPos + 22, Gfx.FONT_XTINY, subtitle, Gfx.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -181,7 +201,11 @@ class RouteListDelegate extends Ui.BehaviorDelegate {
         var view = Ui.getCurrentView()[0];
         if (!(view instanceof RouteListView)) { return true; }
 
-        var i               = view.selectedIndex;
+        if (view.selectedIndex < view.medicalOffset) {
+            Ui.pushView(new MedicalIdView(), new MedicalIdDelegate(), Ui.SLIDE_LEFT);
+            return true;
+        }
+        var i               = view.selectedIndex - view.medicalOffset;
         var phoneCount      = view.phoneCount;
         var savedRouteIds   = view.savedRouteIds;
         var savedClimbKeys  = view.savedClimbKeys;

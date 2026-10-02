@@ -5,6 +5,9 @@ using Toybox.Application.Properties as Properties;
 using Toybox.System as Sys;
 using Toybox.Activity as Activity;
 using Toybox.Attention as Attention;
+using Toybox.Sensor as Sensor;
+using Toybox.Time as Time;
+using Toybox.Weather as Weather;
 
 /**
  * Main DataField view for ClimbPro.
@@ -43,6 +46,23 @@ class ClimbProView extends Ui.DataField {
         0x440000,  // 5: muted deep red (10%+)
     ];
 
+    // Colorblind-friendly palette (issue #258, protocol/colors.md), selected by the phone
+    // via payload "pal" = 1: pale yellow, then a light-to-dark blue ramp. Blue-yellow axis
+    // only (kept by deutan/protan vision) with strictly decreasing lightness. Same band
+    // order as COLORS; values are MIP colors and must match GradientPalette.java verbatim.
+    hidden const CVD_COLORS = [
+        0xFFFFAA,  // 0: pale yellow (0-2%)
+        0x55FFFF,  // 1: light cyan (2-4%)
+        0x55AAFF,  // 2: sky blue (4-6%)
+        0x0055FF,  // 3: blue (6-8%)
+        0x0000FF,  // 4: pure blue (8-10%)
+        0x0000AA,  // 5: navy (10%+)
+    ];
+    const PALETTE_COLORBLIND = 1;
+    // Status colors in the colorblind palette: blue = good/ahead, orange = bad/behind.
+    const CVD_OK_COLOR = 0x00AAFF;
+    const CVD_BAD_COLOR = 0xFF5500;
+
     // "colorMode" setting value for FTP intensity-zone colors (issue #66); 0 = gradient.
     const COLOR_MODE_ZONES = 1;
 
@@ -71,6 +91,43 @@ class ClimbProView extends Ui.DataField {
     hidden var summaryDeltaSec = 0;
     hidden var lastRouteId = null;         // detect a new payload (route change) to reset ghost state
 
+    // Felt temperature on descents (issue #248); null = nothing shown.
+    hidden var descent = new DescentTracker();
+    hidden var feltShownC = null;
+
+    // Tunnels / technical descents ahead (issue #203).
+    hidden var hazardIdx = -1;             // hazard the banner is about; -1 = none
+    hidden var hazardPosM = 0;             // route axis (m) hazardIdx was looked up at
+    hidden var hazardAlerted = 0;          // bitmask of hazards already alerted this route
+    // Everesting attempt (issue #217); everestAscentM = last total ascent for the banner.
+    hidden var everest = new EverestTracker();
+    hidden var everestAscentM = null;
+    // Lights reminder at dusk (issue #198): once per ride, computed on the watch.
+    hidden var lights = new LightsReminder();
+    // "Vlakker stuk" notice during a climb (issue #213).
+    hidden var easier = new EasierAheadTracker();
+    // Heart-rate alarm (issue #228). hrShownBpm = banner value while above the limit;
+    // hrIrregularUntilMs = show the "onregelmatig" banner until this System timer value.
+    hidden var hrLimit = new HrLimitAlarm();
+    hidden var hrIrregular = new HrIrregularDetector();
+    hidden var hrShownBpm = null;
+    hidden var hrIrregularUntilMs = -1;
+    // Heat-index warning (issue #227): checked once a minute; heatShownC = banner value
+    // while the alarm is latched hot, else null.
+    hidden var heatAlarm = new HeatAlarm();
+    hidden var heatNextCheckMs = 0;
+    hidden var heatShownC = null;
+    // Eat/drink reminder (issue #184): time/ascent triggers, shortened when it is hot.
+    // fuelTempC is refreshed once a minute; the banner shows until fuelBannerUntilMs.
+    hidden var fuel = new FuelReminder();
+    hidden var fuelTempC = null;
+    hidden var fuelNextTempMs = 0;
+    hidden var fuelBannerUntilMs = -1;
+    // Cadence coach (issue #179): cadShownRpm = banner value while out of the target band
+    // after a nudge, else null.
+    hidden var cadenceCoach = new CadenceCoach();
+    hidden var cadShownRpm = null;
+
     function initialize() {
         DataField.initialize();
     }
@@ -79,6 +136,16 @@ class ClimbProView extends Ui.DataField {
      * Called every GPS tick. Update route progress.
      */
     function compute(info) {
+        // Lights reminder (issue #198) runs before the payload check: it needs only the GPS
+        // fix and the clock, so it also works without any route on the watch.
+        checkLightsReminder(info);
+        // Safety alarms run before the payload gate: they don't need a route.
+        checkHeartRate(info);
+        checkHeatIndex();
+        // Eat/drink reminder (issue #184): needs only the activity timer, so no route either.
+        checkFuelReminder(info);
+        checkCadence(info);
+
         var data = App.getApp().climbData;
         if (data == null || !data.payloadReceived) {
             return;
@@ -98,6 +165,10 @@ class ClimbProView extends Ui.DataField {
             summaryUntilMs = -1;
             summaryClimbIndex = -1;
             data.climbStartTimerMs = -1;
+            hazardAlerted = 0;
+            hazardIdx = -1;
+            easier.reset();
+            data.resetRouteGhostAnchor();
         }
 
         var elapsed = 0;
@@ -115,6 +186,10 @@ class ClimbProView extends Ui.DataField {
         // Current power for the interval-block band (issue #180); null without a power meter.
         data.currentPower = (info != null && info has :currentPower && info.currentPower != null)
                 ? info.currentPower : null;
+        data.currentHeartRate = (info != null && info has :currentHeartRate && info.currentHeartRate != null)
+                ? info.currentHeartRate : null;
+        data.currentCadence = (info != null && info has :currentCadence && info.currentCadence != null)
+                ? info.currentCadence : null;
 
         // Navigation-anchored distance: when the route is loaded as a Garmin course,
         // distance-along-course (rtl - distanceToDestination) is a more accurate axis
@@ -136,6 +211,22 @@ class ClimbProView extends Ui.DataField {
         if (info != null && info has :currentLocation && info.currentLocation != null) {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
             data.updateRouteMatch(ll[0], ll[1]);
+        }
+
+        // Virtual opponent on the route (issue #178): the best earlier ride, interpolated at
+        // the route progress. Computed every tick so it starts alongside the rider even
+        // while the page doesn't show it.
+        data.routeGhostDeltaSec = data.routeGhostDelta(timerMs, axis);
+
+        // Tunnels / technical descents (issue #203): banner from HAZARD_LOOKAHEAD_M ahead and
+        // while inside, one buzz per hazard (bitmask latch, survives GPS jitter around the
+        // look-ahead edge). Suppressed off-route, where the route axis is meaningless.
+        hazardIdx = (data.offRoute || data.mode == null || !data.mode.equals("route")) ? -1
+                : hazardAt(data.hazards, axis, HAZARD_LOOKAHEAD_M);
+        hazardPosM = axis;
+        if (hazardIdx >= 0 && (hazardAlerted & (1 << hazardIdx)) == 0) {
+            hazardAlerted |= (1 << hazardIdx);
+            triggerHazardAlert();
         }
 
         // Detect leaving a climb (summary) BEFORE overwriting the climb-start timer.
@@ -192,6 +283,223 @@ class ClimbProView extends Ui.DataField {
                 batteryWarnedClimbIndex = ci2;
             }
         }
+
+        // Everesting (issue #217): count summit passes and watch the total ascent. The plan
+        // comes from the payload; the same plan on a resync keeps the count.
+        everest.setPlan(data.everest);
+        if (everest.active()) {
+            everestAscentM = (info != null && info has :totalAscent) ? info.totalAscent : null;
+            var eLat = null;
+            var eLon = null;
+            if (info != null && info has :currentLocation && info.currentLocation != null) {
+                var ell = info.currentLocation.toDegrees();
+                eLat = ell[0];
+                eLon = ell[1];
+            }
+            var ev = everest.update(eLat, eLon, everestAscentM);
+            if (ev == EVEREST_DONE) {
+                triggerEverestDoneAlert();
+            } else if (ev == EVEREST_REPEAT) {
+                triggerEverestRepeatAlert();
+            }
+        }
+
+        // Easier stretch ahead (issue #213): banner + one short double buzz, latched per
+        // stretch. Candidate is only recomputed when the active segment changes.
+        var eci = data.activeClimbIndex;
+        if (easier.update(eci, data.activeSegmentIndex, data.progressInClimb,
+                eci >= 0 ? data.segDist[eci] : null, eci >= 0 ? data.segGradient[eci] : null,
+                eci >= 0 ? data.segCount[eci] : 0, data.offRoute, easierAheadEnabled())) {
+            triggerEasierAheadAlert();
+        }
+
+        // Felt temperature on descents (issue #248): grade over >= 150 m from odometer +
+        // altitude, riding speed as wind speed. Watch-only; nothing is shown on a climb or
+        // without a temperature reading.
+        var rawDist = (info != null && info has :elapsedDistance) ? info.elapsedDistance : null;
+        var alt = (info != null && info has :altitude) ? info.altitude : null;
+        var spd = (info != null && info has :currentSpeed) ? info.currentSpeed : null;
+        var desc = descent.update(rawDist, alt, spd);
+        feltShownC = feltTempToShow(desc, data.activeClimbIndex >= 0,
+                desc ? ambientTempC() : null, spd, feltShownC);
+    }
+
+    // Sun times come from the current GPS fix + clock (LightsReminder.mc); the sun maths
+    // runs at most once a minute and the alert fires once per ride.
+    hidden function checkLightsReminder(info) {
+        var lat = null;
+        var lon = null;
+        if (info != null && info has :currentLocation && info.currentLocation != null) {
+            var ll = info.currentLocation.toDegrees();
+            lat = ll[0];
+            lon = ll[1];
+        }
+        if (lights.update(Time.now().value(), lat, lon, lightsLeadMin(), lightsReminderEnabled())) {
+            triggerLightsAlert();
+        }
+    }
+
+    // Reads "lightsReminder" defensively like the other settings; default on.
+    hidden function lightsReminderEnabled() {
+        try {
+            var v = Properties.getValue("lightsReminder");
+            return v == null || v == true;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    // Minutes before sunset at which the reminder fires ("lightsLeadMin"); default 15.
+    hidden function lightsLeadMin() {
+        try {
+            var v = Properties.getValue("lightsLeadMin");
+            if (v != null && v instanceof Toybox.Lang.Number && v >= 0) { return v; }
+        } catch (e) {
+            return 15;
+        }
+        return 15;
+    }
+
+    // Heart-rate alarm (issue #228): limit alarm (sustained > hrAlarmBpm) and, opt-in,
+    // the irregular-jumps detector. Cheap per-tick work on one number.
+    hidden function checkHeartRate(info) {
+        var hr = (info != null && info has :currentHeartRate) ? info.currentHeartRate : null;
+        var now = Sys.getTimer();
+        if (hrLimit.update(hr, readNumberSetting("hrAlarmBpm"), now)) {
+            triggerHeartRateAlert();
+        }
+        hrShownBpm = (hrLimit.high && hr != null) ? hr : null;
+        if (readBoolSetting("hrIrregularAlarm")) {
+            if (hrIrregular.update(hr, now)) {
+                triggerHeartRateAlert();
+                hrIrregularUntilMs = now + 30000;
+            }
+        }
+        if (hrIrregularUntilMs >= 0 && now >= hrIrregularUntilMs) {
+            hrIrregularUntilMs = -1;
+        }
+    }
+
+    // Cadence coach (issue #179): nudge when the cadence stays outside the target band
+    // ("cadenceLow".."cadenceHigh" rpm, master toggle "cadenceCoach"). Coasting (0) and a
+    // missing sensor are ignored inside CadenceCoach. Works without a route.
+    hidden function checkCadence(info) {
+        var cad = (info != null && info has :currentCadence) ? info.currentCadence : null;
+        var dir = cadenceCoach.update(cad, readNumberSetting("cadenceLow"),
+                readNumberSetting("cadenceHigh"), readBoolSetting("cadenceCoach"), Sys.getTimer());
+        if (dir != CADENCE_OK) {
+            triggerCadenceAlert(dir);
+        }
+        cadShownRpm = (cadenceCoach.shownDir != CADENCE_OK && cad != null) ? cad : null;
+    }
+
+    // App-setting reads, defensive like activeColors() reads "darkTheme":
+    // Properties.getValue can throw on a stale settings cache. Default 0 / false.
+    hidden function readNumberSetting(key) {
+        try {
+            var v = Properties.getValue(key);
+            if (v instanceof Number) { return v; }
+        } catch (e) {
+            return 0;
+        }
+        return 0;
+    }
+
+    // Heat-index warning (issue #227). Once a minute (the inputs change slowly): heat index
+    // from the air temperature + humidity, alarm latched with hysteresis in HeatAlarm.
+    hidden function checkHeatIndex() {
+        var now = Sys.getTimer();
+        if (now < heatNextCheckMs) { return; }
+        heatNextCheckMs = now + 60000;
+        var threshold = heatIndexThresholdC();
+        var hi = null;
+        if (threshold > 0) {
+            var r = heatReading();
+            if (r != null) { hi = heatIndexC(r[0], r[1]); }
+        }
+        if (heatAlarm.update(hi, threshold, now)) {
+            triggerHeatAlert();
+        }
+        heatShownC = heatAlarm.hot ? hi : null;
+    }
+
+    // Eat/drink reminder (issue #184). Cheap per-tick compare on the activity timer + total
+    // ascent; the temperature (for the hot-weather correction) is read once a minute.
+    hidden function checkFuelReminder(info) {
+        var now = Sys.getTimer();
+        var hotC = readNumberSetting("fuelHotC");
+        if (hotC <= 0) {
+            fuelTempC = null;
+        } else if (now >= fuelNextTempMs) {
+            fuelNextTempMs = now + 60000;
+            var r = heatReading();
+            fuelTempC = (r == null) ? null : r[0];
+        }
+        var timerMs = (info != null && info has :timerTime) ? info.timerTime : null;
+        var ascent = (info != null && info has :totalAscent) ? info.totalAscent : null;
+        if (fuel.update(timerMs, ascent, fuelTempC, readNumberSetting("fuelIntervalMin"),
+                readNumberSetting("fuelClimbM"), hotC)) {
+            triggerFuelAlert();
+            fuelBannerUntilMs = now + 30000;
+        }
+        if (fuelBannerUntilMs >= 0 && now >= fuelBannerUntilMs) {
+            fuelBannerUntilMs = -1;
+        }
+    }
+
+    // [tempC, humidityPct] for the heat index, or null. Garmin Weather (the phone's
+    // current conditions, cached on the watch) comes first: it is outdoor air with a real
+    // humidity, whereas the watch's internal sensor reads several degrees high from wrist
+    // heat and would false-alarm on every warm day. Without weather data the Sensor
+    // temperature (a paired Tempe, else the wrist sensor) is used with humidity unknown.
+    hidden function heatReading() {
+        if (Toybox has :Weather) {
+            try {
+                var cc = Weather.getCurrentConditions();
+                if (cc != null && cc.temperature != null) {
+                    var rh = (cc has :relativeHumidity) ? cc.relativeHumidity : null;
+                    return [cc.temperature, rh];
+                }
+            } catch (e) {
+                // fall through to the sensor
+            }
+        }
+        var t = ambientTempC();
+        return (t == null) ? null : [t, null];
+    }
+
+    // "heatIndexThreshold" app setting in °C; 0 = off. Read defensively like "darkTheme".
+    hidden function heatIndexThresholdC() {
+        try {
+            var v = Properties.getValue("heatIndexThreshold");
+            if (v instanceof Number) { return v; }
+        } catch (e) {
+            return 0;
+        }
+        return 0;
+    }
+
+    hidden function readBoolSetting(key) {
+        try {
+            var v = Properties.getValue(key);
+            return v != null && v == true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Temperature from Sensor.Info: a paired Tempe sensor gives true ambient air; without
+    // one the FR255M reports its internal (wrist-warmed) sensor, which reads high, so the
+    // felt value is then an upper bound. null when no reading is available.
+    hidden function ambientTempC() {
+        if (!(Toybox has :Sensor)) { return null; }
+        try {
+            var si = Sensor.getInfo();
+            if (si != null && si has :temperature) { return si.temperature; }
+        } catch (e) {
+            return null;
+        }
+        return null;
     }
 
     function onUpdate(dc) {
@@ -200,8 +508,14 @@ class ClimbProView extends Ui.DataField {
         dc.clear();
         
         var data = App.getApp().climbData;
+        var lightsBanner = lights.bannerVisible(Time.now().value());
         if (data == null || !data.payloadReceived) {
             drawNoData(dc);
+            if (fuelBannerUntilMs >= 0) {
+                drawFuelBanner(dc);
+            } else if (lightsBanner) {
+                drawLightsBanner(dc);
+            }
             return;
         }
 
@@ -216,16 +530,130 @@ class ClimbProView extends Ui.DataField {
         } else if (data.nextClimbIndex >= 0) {
             drawNextClimbPreview(dc, data);
         } else {
-            drawNoClimbs(dc);
+            drawNoClimbs(dc, data);
         }
 
         // Off-route takes priority: it's the more urgent/actionable state and the two
         // banners would otherwise fight for the same top strip of a very small screen.
         if (data.offRoute) {
             drawOffRouteBanner(dc);
+        } else if (hrShownBpm != null) {
+            drawHeartRateBanner(dc, hrHighLabel(hrShownBpm));
+        } else if (hrIrregularUntilMs >= 0) {
+            drawHeartRateBanner(dc, hrIrregularLabel());
         } else if (data.batteryWarningActive) {
             drawBatteryWarningBanner(dc);
+        } else if (hazardIdx >= 0
+                && hazardLabel(data.hazards, hazardIdx, hazardPosM, data.units) != null) {
+            drawHazardBanner(dc, data);
+        } else if (heatShownC != null) {
+            drawHeatBanner(dc, data, heatShownC);
+        } else if (fuelBannerUntilMs >= 0) {
+            drawFuelBanner(dc);
+        } else if (cadShownRpm != null) {
+            drawCadenceBanner(dc, cadenceLabel(cadenceCoach.shownDir, cadShownRpm));
+        } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
+            drawEasierAheadBanner(dc, easier.shownLenM);
+        } else if (lightsBanner) {
+            drawLightsBanner(dc);
+        } else if (feltShownC != null && data.activeClimbIndex < 0) {
+            drawFeltTempBanner(dc, data, feltShownC);
+        } else if (everest.active()) {
+            drawEverestBanner(dc);
         }
+    }
+
+    // Purple strip for a tunnel / technical descent ahead or under the rider (issue #203).
+    hidden function drawHazardBanner(dc, data) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_PURPLE, Gfx.COLOR_PURPLE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY,
+                hazardLabel(data.hazards, hazardIdx, hazardPosM, data.units),
+                Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Yellow strip for 30 s after the dusk reminder fired (issue #198).
+    hidden function drawLightsBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_YELLOW, Gfx.COLOR_YELLOW);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, lightsReminderLabel(), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Green strip in the header slot while an easier stretch is coming up (issue #213).
+    hidden function drawEasierAheadBanner(dc, lenM) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_GREEN, Gfx.COLOR_DK_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, easierAheadLabel(lenM), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Blue strip in the header slot between climbs while descending (issue #248). The
+    // value is latched to whole degrees (latchFeltTemp) so it only changes on a >= 1 °C move.
+    hidden function drawFeltTempBanner(dc, data, c) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_BLUE, Gfx.COLOR_BLUE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, feltTempLabel(c, data.units), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-green strip with the Everesting progress (issue #217): repeats done/planned and
+    // total ascent/target. Lowest priority -- it is always on during an attempt, so every
+    // warning banner may cover it.
+    hidden function drawEverestBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_GREEN, Gfx.COLOR_DK_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY,
+                everestLabel(everest.repeats, everest.plannedRepeats(), everestAscentM,
+                        everest.targetM()),
+                Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Purple strip for the heart-rate alarm (issue #228), on and between climbs. Right
+    // below off-route in priority: it is a safety signal, battery/temperature can wait.
+    hidden function drawHeartRateBanner(dc, text) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_PURPLE, Gfx.COLOR_PURPLE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-orange strip while the heat-index alarm is latched hot (issue #227), on and
+    // between climbs. Below off-route and battery in priority.
+    hidden function drawHeatBanner(dc, data, hiC) {
+        var w = dc.getWidth();
+        dc.setColor(0xAA0000, 0xAA0000);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC, data.units), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Green strip for 30 s after the eat/drink reminder fired (issue #184), on and between
+    // climbs. Below the safety banners (off-route, heart rate, battery, hazard, heat).
+    hidden function drawFuelBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, fuelReminderLabel(), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Dark-blue strip while the cadence is still outside the target band after a cadence-
+    // coach nudge (issue #179). A coaching hint: below the safety/heat banners in priority.
+    hidden function drawCadenceBanner(dc, text) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_DK_BLUE, Gfx.COLOR_DK_BLUE);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Red banner across the top when the rider has diverged from the route near a climb.
@@ -318,101 +746,166 @@ class ClimbProView extends Ui.DataField {
         if (data.activeSegmentIndex >= 0 && data.activeSegmentIndex < data.segCount[ci]) {
             curGrad = data.segGradient[ci][data.activeSegmentIndex];
         }
-        var gradWhole = curGrad / 10;
-        var gradFrac = curGrad % 10;
-        if (gradFrac < 0) { gradFrac = -gradFrac; }
-
-        var sf = statFont(large);
-        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(32, statsY, sf, formatDist(remaining), Gfx.TEXT_JUSTIFY_LEFT);
-        // Remaining elevation is the "nice to have" middle stat -- dropped in
-        // large-text mode so distance and gradient can be drawn bigger without
-        // crowding the small FR255M screen (issue #82).
-        if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, remElev + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
-        }
-        dc.drawText(w - 32, statsY, sf,
-            gradWhole + "." + gradFrac + "%", Gfx.TEXT_JUSTIFY_RIGHT);
-
-        // Current segment's gradient-implied VAM (vertical ascent m/h), complementary to the
-        // gradient stat above. Data-plumbing only: no new computation happens on the watch, this
-        // just renders the avg/peak pair CommListener already parsed into segVamAvg/segVamPeak.
-        // Secondary stat: skipped in large-text mode (issue #82).
-        // An interval block (issue #180) takes this slot instead: it's the rider's chosen
-        // training target, so it stays visible in large-text mode too.
-        if (data.hasBlock[ci]) {
-            drawIntervalBlock(dc, data, ci, w, (h * 0.80).toNumber());
-        } else if (showSecondaryStat(large) && data.hasVam[ci] && data.activeSegmentIndex >= 0
+        // Values every slot may need, gathered once per redraw for FieldLayout.metricText.
+        var vals = {
+            :remaining => remaining, :remElev => remElev, :curGrad => curGrad,
+            :avgGrad => data.climbAvgGrad[ci],
+            :etaSec => data.etaSeconds(remaining, data.currentSpeedMps),
+            :hasVam => false, :vamAvg => 0, :vamPeak => 0,
+            :speedMps => data.currentSpeedMps, :hr => data.currentHeartRate,
+            :power => data.currentPower, :cadence => data.currentCadence,
+            :timerMs => lastGhostTimerMs, :units => data.units
+        };
+        if (data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
-            var vamAvg = data.segVamAvg[ci][data.activeSegmentIndex];
-            var vamPeak = data.segVamPeak[ci][data.activeSegmentIndex];
-            var vamY = (h * 0.80).toNumber();
-            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, vamY, Gfx.FONT_XTINY,
-                "VAM " + vamAvg + "/" + vamPeak, Gfx.TEXT_JUSTIFY_CENTER);
+            vals[:hasVam] = true;
+            vals[:vamAvg] = data.segVamAvg[ci][data.activeSegmentIndex];
+            vals[:vamPeak] = data.segVamPeak[ci][data.activeSegmentIndex];
         }
 
-        // Bottom line (where the preview shows "in X km"): live ghost delta when the climb
-        // carries a pacing reference, otherwise the ETA to the summit at current speed.
-        // Among ghost deltas, the per-segment PR delta ("vs PR") takes priority over the
-        // manual pacing-plan delta ("vs plan") — it's the more actionable, always-on signal
-        // (repeat-climb comparison). Screen space is too tight on the FR255M to show more
-        // than one of these three at once.
-        var ghostY = (h * 0.88).toNumber();
-        var ghostDrawn = false;
-        if (data.climbStartTimerMs >= 0) {
-            var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
-            if (data.hasRefTargets[ci]) {
-                var ref = data.refSecondsAt();
-                if (ref >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - ref).toNumber(), "vs PR", large);
-                    ghostDrawn = true;
-                }
-            } else if (data.hasTargets[ci]) {
-                var target = data.targetSecondsAt();
-                if (target >= 0) {
-                    drawGhostDelta(dc, w, ghostY, (actual - target).toNumber(), "vs plan", large);
-                    ghostDrawn = true;
-                }
+        // Five phone-chosen slots ('lay'); the default layout is the pre-layout screen.
+        // Large-text mode (#82) drops the middle slot and row 4 so the rest can be bigger,
+        // except an interval block in row 4: that is the rider's training target (#180).
+        var lay = data.layout;
+        var sf = statFont(large);
+        drawSlot(dc, data, ci, lay[0], 32, statsY, sf, Gfx.TEXT_JUSTIFY_LEFT, false,
+            Gfx.COLOR_BLACK, vals);
+        if (showSecondaryStat(large)) {
+            drawSlot(dc, data, ci, lay[1], w / 2, statsY, sf, Gfx.TEXT_JUSTIFY_CENTER, true,
+                Gfx.COLOR_BLACK, vals);
+        }
+        drawSlot(dc, data, ci, lay[2], w - 32, statsY, sf, Gfx.TEXT_JUSTIFY_RIGHT, false,
+            Gfx.COLOR_BLACK, vals);
+        if (showSecondaryStat(large) || slotShowsBlock(lay[3], data.hasBlock[ci])) {
+            drawSlot(dc, data, ci, lay[3], w / 2, (h * 0.80).toNumber(), Gfx.FONT_XTINY,
+                Gfx.TEXT_JUSTIFY_CENTER, true, Gfx.COLOR_DK_GRAY, vals);
+        }
+        drawSlot(dc, data, ci, lay[4], w / 2, (h * 0.88).toNumber(), sf,
+            Gfx.TEXT_JUSTIFY_CENTER, true, Gfx.COLOR_DK_GRAY, vals);
+    }
+
+    // True when this slot code ends up drawing the interval block for a climb with/without one.
+    function slotShowsBlock(code, hasBlock) {
+        return code == FieldLayout.BLOCK || (code == FieldLayout.AUTO_ROW4 && hasBlock);
+    }
+
+    // Draws one stat slot. AUTO_ROW4 / AUTO_BOTTOM resolve to their pre-layout fallbacks;
+    // GHOST and BLOCK keep their own colours and show "--" when the climb has neither.
+    hidden function drawSlot(dc, data, ci, code, x, y, font, justify, wide, color, vals) {
+        if (code == FieldLayout.AUTO_ROW4) {
+            if (data.hasBlock[ci]) {
+                code = FieldLayout.BLOCK;
+            } else if (vals[:hasVam]) {
+                code = FieldLayout.VAM;
+            } else {
+                return;
+            }
+        } else if (code == FieldLayout.AUTO_BOTTOM) {
+            if (drawGhost(dc, data, ci, x, y, font, justify, wide)) {
+                return;
+            }
+            code = FieldLayout.ETA;
+        }
+
+        var text = null;
+        if (code == FieldLayout.GHOST) {
+            if (drawGhost(dc, data, ci, x, y, font, justify, wide)) {
+                return;
+            }
+            text = "--";
+        } else if (code == FieldLayout.BLOCK) {
+            if (data.hasBlock[ci]) {
+                drawIntervalBlock(dc, data, ci, x, y, font, justify);
+                return;
+            }
+            text = "--";
+        } else {
+            text = FieldLayout.metricText(code, vals, wide);
+        }
+        if (text != null && text.length() > 0) {
+            dc.setColor(color, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(x, y, font, text, justify);
+        }
+    }
+
+    // Live delta against the per-segment PR ("vs PR"), else the manual pacing plan
+    // ("vs plan"); PR takes priority as the always-on repeat-climb signal. Returns false
+    // (nothing drawn) before the climb timer started or without a reference.
+    // Without either, the route-level virtual opponent ("vs beste", issue #178) is shown.
+    hidden function drawGhost(dc, data, ci, x, y, font, justify, wide) {
+        if (data.climbStartTimerMs < 0) {
+            return drawRouteGhost(dc, data, x, y, font, justify, wide);
+        }
+        var actual = (lastGhostTimerMs - data.climbStartTimerMs) / 1000.0;
+        if (data.hasRefTargets[ci]) {
+            var ref = data.refSecondsAt();
+            if (ref >= 0) {
+                drawGhostDelta(dc, x, y, font, justify, (actual - ref).toNumber(),
+                    wide ? " vs PR" : "", data.palette);
+                return true;
+            }
+        } else if (data.hasTargets[ci]) {
+            var target = data.targetSecondsAt();
+            if (target >= 0) {
+                drawGhostDelta(dc, x, y, font, justify, (actual - target).toNumber(),
+                    wide ? " vs plan" : "", data.palette);
+                return true;
             }
         }
-        if (!ghostDrawn) {
-            var etaSec = data.etaSeconds(remaining, data.currentSpeedMps);
-            dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, ghostY, statFont(large),
-                "ETA " + formatEta(etaSec), Gfx.TEXT_JUSTIFY_CENTER);
+        return drawRouteGhost(dc, data, x, y, font, justify, wide);
+    }
+
+    // Seconds ahead/behind the best earlier ride of this route (issue #178); false (nothing
+    // drawn) without a route ghost, off-route, in radius mode or before the timer runs.
+    hidden function drawRouteGhost(dc, data, x, y, font, justify, wide) {
+        var d = data.routeGhostDeltaSec;
+        if (d == null) {
+            return false;
         }
+        drawGhostDelta(dc, x, y, font, justify, d, wide ? " vs beste" : "", data.palette);
+        return true;
     }
 
     // Interval-block line (issue #180): "Doel 266-280W" without a power meter, otherwise
     // "252W 266-280" coloured blue (under), green (in band) or red (over).
-    hidden function drawIntervalBlock(dc, data, ci, w, y) {
+    hidden function drawIntervalBlock(dc, data, ci, x, y, font, justify) {
         var band = data.blockLow[ci] + "-" + data.blockHigh[ci];
         var zone = data.blockZone(ci, data.currentPower);
-        dc.setColor(intervalZoneColor(zone), Gfx.COLOR_TRANSPARENT);
+        dc.setColor(intervalZoneColorFor(zone, data.palette), Gfx.COLOR_TRANSPARENT);
         var text = (zone == data.ZONE_NONE)
             ? "Doel " + band + "W"
             : data.currentPower.toNumber() + "W " + band;
-        dc.drawText(w / 2, y, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x, y, font, text, justify);
     }
 
     // Colour per power zone; not hidden so tests can check it directly.
     function intervalZoneColor(zone) {
+        return intervalZoneColorFor(zone, 0);
+    }
+
+    // Colorblind palette (issue #258): under = navy, in band = sky blue, over = orange --
+    // apart in lightness and on the blue-orange axis instead of green/red.
+    function intervalZoneColorFor(zone, palette) {
+        if (palette == PALETTE_COLORBLIND) {
+            if (zone == -1) { return 0x0000AA; }
+            if (zone == 0) { return CVD_OK_COLOR; }
+            if (zone == 1) { return CVD_BAD_COLOR; }
+            return Gfx.COLOR_DK_GRAY;
+        }
         if (zone == -1) { return Gfx.COLOR_BLUE; }
         if (zone == 0) { return Gfx.COLOR_DK_GREEN; }
         if (zone == 1) { return Gfx.COLOR_RED; }
         return Gfx.COLOR_DK_GRAY;
     }
 
-    // + = behind (red), - or 0 = ahead/on pace (green).
-    hidden function drawGhostDelta(dc, w, y, deltaSec, suffix, large) {
-        var f = statFont(large);
+    // + = behind (red; orange when colorblind), - or 0 = ahead/on pace (green; blue).
+    hidden function drawGhostDelta(dc, x, y, font, justify, deltaSec, suffix, pal) {
         if (deltaSec > 0) {
-            dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, f, "+" + deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.setColor(badColor(pal), Gfx.COLOR_TRANSPARENT);
+            dc.drawText(x, y, font, "+" + deltaSec + "s" + suffix, justify);
         } else {
-            dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, y, f, deltaSec + "s " + suffix, Gfx.TEXT_JUSTIFY_CENTER);
+            dc.setColor(okColor(pal), Gfx.COLOR_TRANSPARENT);
+            dc.drawText(x, y, font, deltaSec + "s" + suffix, justify);
         }
     }
 
@@ -424,7 +917,7 @@ class ClimbProView extends Ui.DataField {
     // gradient-color palette. Wrapped in try/catch: Properties.getValue can throw if
     // the property isn't registered (e.g. a stale/older simulator settings cache),
     // and this must never crash a per-tick redraw -- fall back to the normal palette.
-    hidden function activeColors() {
+    hidden function activeColors(data) {
         var dark = false;
         try {
             var v = Properties.getValue("darkTheme");
@@ -432,7 +925,24 @@ class ClimbProView extends Ui.DataField {
         } catch (e) {
             dark = false;
         }
+        return paletteColors(data.palette, dark);
+    }
+
+    // Pure palette pick (testable): the colorblind palette (issue #258) wins over the dark
+    // theme, since telling the bands apart matters more than dimming them.
+    function paletteColors(palette, dark) {
+        if (palette == PALETTE_COLORBLIND) { return CVD_COLORS; }
         return dark ? DARK_COLORS : COLORS;
+    }
+
+    // Good/ahead status color: green, or blue in the colorblind palette (issue #258).
+    function okColor(palette) {
+        return palette == PALETTE_COLORBLIND ? CVD_OK_COLOR : Gfx.COLOR_GREEN;
+    }
+
+    // Bad/behind status color: red, or orange in the colorblind palette (issue #258).
+    function badColor(palette) {
+        return palette == PALETTE_COLORBLIND ? CVD_BAD_COLOR : Gfx.COLOR_RED;
     }
 
     // Reads the "largeTextMode" app setting (issue #82, resources/settings/) the same
@@ -501,7 +1011,7 @@ class ClimbProView extends Ui.DataField {
 
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
 
-        var colors = activeColors();
+        var colors = activeColors(data);
         var useZones = zoneColorModeActive();
         var totalLen = data.climbLength[ci];
         if (totalLen <= 0) { return; }
@@ -609,7 +1119,9 @@ class ClimbProView extends Ui.DataField {
         // Elevation gain is the "nice to have" middle stat -- dropped in large-text
         // mode, same rationale as the active-climb stat row (issue #82).
         if (showSecondaryStat(large)) {
-            dc.drawText(w / 2, statsY, sf, elev + "hm", Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(w / 2, statsY, sf,
+                Units.isImperial(data.units) ? Units.formatElev(elev, data.units) : elev + "hm",
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
         var nGrad = grad / 10;
         var nGradF = grad % 10;
@@ -624,6 +1136,10 @@ class ClimbProView extends Ui.DataField {
             dc.drawText(w / 2, distY, sf,
                 "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
         }
+
+        // Virtual opponent (issue #178) in the otherwise empty row above "in X km".
+        drawRouteGhost(dc, data, w / 2, (h * 0.80).toNumber(), Gfx.FONT_XTINY,
+            Gfx.TEXT_JUSTIFY_CENTER, true);
     }
 
     // =========================================================================
@@ -636,28 +1152,19 @@ class ClimbProView extends Ui.DataField {
             "No data", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
 
-    hidden function drawNoClimbs(dc) {
+    hidden function drawNoClimbs(dc, data) {
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() / 2, dc.getHeight() / 2, Gfx.FONT_SMALL,
             "No climbs ahead", Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
+        // Virtual opponent (issue #178): the only live info between the last climb and home.
+        drawRouteGhost(dc, data, dc.getWidth() / 2, (dc.getHeight() * 0.66).toNumber(),
+            Gfx.FONT_SMALL, Gfx.TEXT_JUSTIFY_CENTER, true);
     }
 
+    // Distance in the rider's chosen units (payload "un", issue #262); metric by default.
     hidden function formatDist(meters) {
-        if (meters >= 1000) {
-            var km = meters / 1000;
-            var hm = (meters % 1000) / 100;
-            return km + "." + hm + "km";
-        }
-        return meters + "m";
-    }
-
-    // Formats a whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown,
-    // see ClimbData.etaSeconds) renders as a placeholder rather than a bogus duration.
-    hidden function formatEta(seconds) {
-        if (seconds < 0) { return "--:--"; }
-        var m = seconds / 60;
-        var s = seconds % 60;
-        return m + ":" + (s < 10 ? "0" + s : "" + s);
+        var data = App.getApp().climbData;
+        return Units.formatDist(meters, data != null ? data.units : 0);
     }
 
     // Reads the "climbAlertDistinctTone" app setting (resources/settings/, issue #83)
@@ -673,6 +1180,29 @@ class ClimbProView extends Ui.DataField {
             distinct = false;
         }
         return distinct;
+    }
+
+    // Reads the "easierAheadAlert" app setting (issue #213, default on). Same defensive read
+    // as the other settings: a missing/stale property falls back to on.
+    hidden function easierAheadEnabled() {
+        try {
+            var v = Properties.getValue("easierAheadAlert");
+            return v == null || v != false;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    // Easier stretch ahead (issue #213): two short light buzzes, no tone -- lighter than
+    // the climb-start and battery alerts so it can't be mistaken for either.
+    hidden function triggerEasierAheadAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(50, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(50, 150)
+            ]);
+        }
     }
 
     hidden function triggerClimbAlert() {
@@ -742,12 +1272,129 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
+    // Tunnel / technical descent ahead (issue #203): three short buzzes + a high tone.
+    hidden function triggerHazardAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 200),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 200),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 200)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
+        }
+    }
+
+    // Everesting repeat done (issue #217): two short buzzes, no tone.
+    hidden function triggerEverestRepeatAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 200),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(100, 200)
+            ]);
+        }
+    }
+
+    // Everesting target reached (issue #217): long buzz + success tone, once.
+    hidden function triggerEverestDoneAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([new Attention.VibeProfile(100, 1500)]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_SUCCESS);
+        }
+    }
+
+    // Heart-rate alarm (issue #228): four quick buzzes + the high alert tone, a different
+    // rhythm from the climb-start, battery and block-done alerts.
+    hidden function triggerHeartRateAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_HI);
+        }
+    }
+
+    // Cadence coach (issue #179): vibration only, no tone -- a coaching nudge, not a
+    // warning. Too low = one long buzz ("trap sneller"), too high = two short ones.
+    hidden function triggerCadenceAlert(dir) {
+        if (!(Attention has :vibrate)) { return; }
+        if (dir == CADENCE_HIGH) {
+            Attention.vibrate([
+                new Attention.VibeProfile(60, 150),
+                new Attention.VibeProfile(0, 150),
+                new Attention.VibeProfile(60, 150)
+            ]);
+        } else {
+            Attention.vibrate([new Attention.VibeProfile(60, 600)]);
+        }
+    }
+
+    // Heat-index warning (issue #227): two long buzzes + the alert tone -- a different
+    // shape from the climb-start (long-gap-long, lap tone) and battery (3 short) alerts.
+    hidden function triggerHeatAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 800),
+                new Attention.VibeProfile(0, 300),
+                new Attention.VibeProfile(100, 800)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_LO);
+        }
+    }
+
+    // Eat/drink reminder (issue #184): the climb-start vibration (long-gap-long) with the
+    // time-alert tone instead of the lap tone, so it is felt like the climb alert but heard
+    // as a different event.
+    hidden function triggerFuelAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 500),
+                new Attention.VibeProfile(0, 200),
+                new Attention.VibeProfile(100, 500)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_TIME_ALERT);
+        }
+    }
+
     // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
     // Interval block done at the top (issue #180): one short buzz, no tone -- deliberately
     // lighter than the climb-start and battery alerts so it can't be mistaken for either.
     hidden function triggerBlockDoneAlert() {
         if (Attention has :vibrate) {
             Attention.vibrate([new Attention.VibeProfile(100, 300)]);
+        }
+    }
+
+    // Dusk reminder (issue #198): two long buzzes + a low tone, distinct from the climb,
+    // battery and block-done alerts.
+    hidden function triggerLightsAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 800),
+                new Attention.VibeProfile(0, 300),
+                new Attention.VibeProfile(100, 800)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_ALERT_LO);
         }
     }
 
@@ -798,16 +1445,17 @@ class ClimbProView extends Ui.DataField {
                 mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
 
         dc.drawText(w / 2, (h * 0.62).toNumber(), sf,
-                data.climbElevGain[ci] + "m↑", Gfx.TEXT_JUSTIFY_CENTER);
+                Units.formatElev(data.climbElevGain[ci], data.units) + "↑",
+                Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.hasTargets[ci]) {
             var d = summaryDeltaSec;
             if (d > 0) {
-                dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+                dc.setColor(badColor(data.palette), Gfx.COLOR_TRANSPARENT);
                 dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         "+" + d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             } else {
-                dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+                dc.setColor(okColor(data.palette), Gfx.COLOR_TRANSPARENT);
                 dc.drawText(w / 2, (h * 0.78).toNumber(), sf,
                         d + "s vs plan", Gfx.TEXT_JUSTIFY_CENTER);
             }

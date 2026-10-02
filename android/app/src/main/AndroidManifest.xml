@@ -58,6 +58,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.ClimbPro">
 
         <activity
@@ -66,6 +67,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Share-link import (issue #210): a Komoot/RideWithGPS link shared as text.
+                 The text is untrusted; only recognised links are fetched. -->
+            <intent-filter android:label="@string/share_link_share_label">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"
@@ -93,6 +101,10 @@
             android:name=".ui.routes.RouteDetailActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity"/>
+        <activity
+            android:name=".ui.routes.RoutePoiActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteDetailActivity"/>
 
         <activity
             android:name=".ui.climbs.ClimbDetailActivity"
@@ -135,6 +147,11 @@
 
         <activity
             android:name=".ui.planning.ElevationTargetActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.planning.LoopGeneratorActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
@@ -224,6 +241,28 @@
             </intent-filter>
         </activity>
 
+        <!-- Ride-buddy matcher (issue #242). Exported only for text shares of a CPR1: profile
+             code; import always goes through a confirmation dialog and the decoder treats the
+             text as untrusted. -->
+        <activity
+            android:name=".ui.social.RideBuddyActivity"
+            android:exported="true"
+            android:label="Ritmaatjes"
+            android:parentActivityName=".ui.routes.RouteListActivity">
+            <intent-filter android:label="Ritmaatjes (ClimbPro)">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Group-ride planner (issue #195). Phone-only; shares its proposal as plain text. -->
+        <activity
+            android:name=".ui.social.GroupRidePlannerActivity"
+            android:exported="false"
+            android:label="@string/group_ride_title"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
         <activity
             android:name=".ui.tire.TirePressureLogActivity"
             android:exported="false"
@@ -236,6 +275,11 @@
 
         <activity
             android:name=".ui.regions.VisitedRegionsActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+
+        <activity
+            android:name=".ui.explore.ExploreMapActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
@@ -279,6 +323,10 @@
 
         <activity
             android:name=".ui.safehome.SafeHomeActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.medical.MedicalIdActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
@@ -338,6 +386,10 @@
             android:parentActivityName=".ui.routes.RouteListActivity" />
         <activity
             android:name=".ui.goals.GoalEventActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.events.EventCalendarActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
 
@@ -446,6 +498,11 @@
             android:parentActivityName=".ui.settings.SettingsActivity"/>
 
         <activity
+            android:name=".ui.settings.WatchFieldLayoutActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.settings.SettingsActivity"/>
+
+        <activity
             android:name=".ui.strava.StravaAuthActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity"/>
@@ -521,6 +578,17 @@
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
+
+        <!-- Per-app language (issue #261): lets AppCompatDelegate.setApplicationLocales persist
+             the chosen language on Android 12 and lower (API 33+ stores it in the system). -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
 
     </application>
 

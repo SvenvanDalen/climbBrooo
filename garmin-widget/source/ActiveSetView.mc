@@ -31,7 +31,8 @@ class ActiveSetView extends Ui.View {
         }
 
         if (ack.get("ok") == true) {
-            dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_TRANSPARENT);
+            dc.setColor(WidgetPalette.okColor(WidgetPalette.current(), Gfx.COLOR_GREEN),
+                Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, h / 2 - 14, Gfx.FONT_SMALL, "Actief gezet",
                 Gfx.TEXT_JUSTIFY_CENTER);
             var name = ack.get("name");
@@ -41,7 +42,7 @@ class ActiveSetView extends Ui.View {
                     Gfx.TEXT_JUSTIFY_CENTER);
             }
         } else {
-            dc.setColor(Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
+            dc.setColor(WidgetPalette.badColor(WidgetPalette.current()), Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, h / 2, Gfx.FONT_SMALL, "Mislukt",
                 Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
         }

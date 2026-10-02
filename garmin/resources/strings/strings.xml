@@ -7,4 +7,41 @@
     <string id="SettingsColorModeTitle">Kleurmodus</string>
     <string id="ColorModeGradient">Helling</string>
     <string id="ColorModeFtpZone">FTP-zone</string>
+    <string id="SettingsLightsReminderTitle">Verlichtingsherinnering bij schemering</string>
+    <string id="SettingsLightsLeadTitle">Herinnering voor zonsondergang</string>
+    <string id="LightsLeadSunset">Bij zonsondergang</string>
+    <string id="LightsLead15">15 min ervoor</string>
+    <string id="LightsLead30">30 min ervoor</string>
+    <string id="LightsLead60">60 min ervoor</string>
+    <string id="SettingsEasierAheadAlertTitle">Melding vlakker stuk</string>
+    <string id="SettingsHrAlarmTitle">Hartslag-alarm (bpm, 0 = uit)</string>
+    <string id="SettingsHrAlarmPrompt">Waarschuw als je hartslag 10 s boven deze grens blijft</string>
+    <string id="SettingsHrIrregularTitle">Waarschuw bij onregelmatige hartslag</string>
+    <string id="SettingsHeatIndexTitle">Hitte-index-waarschuwing</string>
+    <string id="HeatIndexOff">Uit</string>
+    <string id="HeatIndex27">Vanaf 27 °C (voorzichtig)</string>
+    <string id="HeatIndex32">Vanaf 32 °C (extra voorzichtig)</string>
+    <string id="HeatIndex39">Vanaf 39 °C (gevaar)</string>
+    <string id="SettingsFuelIntervalTitle">Eet- en drinkherinnering (tijd)</string>
+    <string id="SettingsFuelClimbTitle">Eet- en drinkherinnering (hoogtemeters)</string>
+    <string id="SettingsFuelHotTitle">Vaker bij warmte</string>
+    <string id="FuelOff">Uit</string>
+    <string id="FuelInterval15">Elke 15 min</string>
+    <string id="FuelInterval20">Elke 20 min</string>
+    <string id="FuelInterval30">Elke 30 min</string>
+    <string id="FuelInterval45">Elke 45 min</string>
+    <string id="FuelInterval60">Elk uur</string>
+    <string id="FuelClimb250">Elke 250 hm</string>
+    <string id="FuelClimb500">Elke 500 hm</string>
+    <string id="FuelClimb750">Elke 750 hm</string>
+    <string id="FuelClimb1000">Elke 1000 hm</string>
+    <string id="FuelHotOff">Nooit</string>
+    <string id="FuelHot20">Vanaf 20 °C</string>
+    <string id="FuelHot25">Vanaf 25 °C</string>
+    <string id="FuelHot30">Vanaf 30 °C</string>
+    <string id="SettingsCadenceCoachTitle">Cadans-coach</string>
+    <string id="SettingsCadenceLowTitle">Cadans ondergrens (rpm, 0 = uit)</string>
+    <string id="SettingsCadenceLowPrompt">Seintje als je cadans 30 s onder deze waarde blijft</string>
+    <string id="SettingsCadenceHighTitle">Cadans bovengrens (rpm, 0 = uit)</string>
+    <string id="SettingsCadenceHighPrompt">Seintje als je cadans 30 s boven deze waarde blijft</string>
 </strings>

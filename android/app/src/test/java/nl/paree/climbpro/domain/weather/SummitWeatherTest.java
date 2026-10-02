@@ -24,6 +24,18 @@ public class SummitWeatherTest {
                 + "Tip: Arm- en beenstukken plus een windjack", text);
     }
 
+    @Test public void imperialUnits() throws IOException {
+        String text = SummitWeather.describe(HourlyForecast.parse(FOOT),
+                HourlyForecast.parse(HourlyForecastTest.JSON),
+                Instant.parse("2026-09-24T10:15:00Z"), 125, 250,
+                new nl.paree.climbpro.domain.units.UnitPreferences(true, false, true));
+        org.junit.Assert.assertTrue(text, text.startsWith("Dal (410 ft): 57,6 °F\n"
+                + "Top (820 ft): 54,3 °F, voelt als 49,6 °F\n"));
+        org.junit.Assert.assertTrue(text, text.contains(" mph · regenkans 10%"));
+        // Clothing thresholds stay on the metric value.
+        org.junit.Assert.assertTrue(text, text.endsWith("Tip: Arm- en beenstukken plus een windjack"));
+    }
+
     @Test public void unknownRainAndElevation() throws IOException {
         String text = SummitWeather.describe(HourlyForecast.parse(FOOT),
                 HourlyForecast.parse(HourlyForecastTest.JSON),

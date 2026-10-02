@@ -11,6 +11,7 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.data.watch.WatchFieldLayoutStore;
 import nl.paree.climbpro.domain.power.RiderProfile;
 import nl.paree.climbpro.service.ClimbPayloadBuilder;
 import nl.paree.climbpro.service.CombinedRefTimePlanner;
@@ -32,6 +33,17 @@ public final class WatchRequestHandler {
     private final ObjectMapper    mapper;
     private final RiderProfileRepository riderRepo;
     private final ClimbAttemptRepository attemptRepo;
+    /** Color palette for 'pal' (issue #258); default palette until the app sets a source. */
+    private volatile java.util.function.IntSupplier paletteSource =
+            () -> nl.paree.climbpro.domain.segment.GradientPalette.DEFAULT;
+    /** Medical ID re-sent with every route list (issue #230); null = never sent. */
+    private nl.paree.climbpro.data.medical.MedicalIdRepository medicalIdRepo;
+    /** Display units sent as 'un' (issue #262); null = metric (no key). */
+    private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
+    /** Datafield slot layout sent as 'lay'; null = default layout (no key). */
+    private volatile WatchFieldLayoutStore layoutStore;
+    /** Best ride per route for 'gh' (issue #178); null = never sent. */
+    private volatile nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -44,11 +56,44 @@ public final class WatchRequestHandler {
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
                                RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo) {
+        this(routeRepo, connectIqClient, riderRepo, attemptRepo, null);
+    }
+
+    public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient,
+                               RiderProfileRepository riderRepo, ClimbAttemptRepository attemptRepo,
+                               nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo) {
+        this.unitsRepo       = unitsRepo;
         this.routeRepo       = routeRepo;
         this.connectIqClient = connectIqClient;
         this.mapper          = new ObjectMapper();
         this.riderRepo       = riderRepo;
         this.attemptRepo     = attemptRepo;
+    }
+
+    /**
+     * Where watch-requested payloads read the rider's palette choice from (issue #258), so a
+     * LOAD_ROUTE / SET_ACTIVE_ROUTE answer uses the same colors as the background sync.
+     */
+    public void setPaletteSource(java.util.function.IntSupplier source) {
+        if (source != null) this.paletteSource = source;
+    }
+
+    /** Enables the virtual opponent ('gh', issue #178) in watch-requested route payloads. */
+    public void setRouteGhostRepository(nl.paree.climbpro.data.route.RouteGhostRepository repo) {
+        this.ghostRepo = repo;
+    }
+
+    /** Enables the datafield slot layout ('lay') in watch-requested payloads. */
+    public void setFieldLayoutStore(WatchFieldLayoutStore store) {
+        this.layoutStore = store;
+    }
+
+    /**
+     * Enables the MEDICAL_ID message (issue #230): the widget receives phone messages only
+     * while it is open, so the phone re-sends the ID every time the widget lists routes.
+     */
+    public void setMedicalIdRepository(nl.paree.climbpro.data.medical.MedicalIdRepository repo) {
+        this.medicalIdRepo = repo;
     }
 
     /** Per-climb target seconds for the route, or null when no profile repo / incomplete profile. */
@@ -68,10 +113,15 @@ public final class WatchRequestHandler {
 
     /**
      * Payload builder that also sends the per-segment FTP intensity-zone colors (issue #66)
-     * when a rider profile is available; without one the payload is unchanged.
+     * when a rider profile is available; without one the payload is unchanged. Also carries
+     * the rider's display units (issue #262) when a units repo is wired up, and the
+     * datafield slot layout ('lay') when a layout store is set.
      */
     private ClimbPayloadBuilder payloadBuilder() {
-        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper)
+                .withPalette(paletteSource.getAsInt());
+        if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
+        builder = builder.withFieldLayout(layoutStore != null ? layoutStore.load() : null);
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 
@@ -87,6 +137,11 @@ public final class WatchRequestHandler {
         nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo != null
                 ? riderRepo.loadGhostTarget() : null;
         return CombinedRefTimePlanner.plan(route, attempts, ghost);
+    }
+
+    /** Virtual opponent on this route (issue #178): 'gh', or null without a stored best ride. */
+    private int[] routeGhost(StoredRoute route) {
+        return ghostRepo != null ? ghostRepo.wireFor(route) : null;
     }
 
     public void handleMessage(Map<String, Object> message) {
@@ -122,6 +177,17 @@ public final class WatchRequestHandler {
         response.put("routes", routes);
         boolean ok = connectIqClient.sendMessage(response);
         Log.i(TAG, "ROUTE_LIST with " + routes.size() + " routes — sent=" + ok);
+        sendMedicalId();
+    }
+
+    /**
+     * Sends the stored medical ID to the widget (issue #230). An empty ID is sent too: it
+     * tells the watch to delete a copy the rider has since cleared on the phone.
+     */
+    private void sendMedicalId() {
+        if (medicalIdRepo == null) return;
+        boolean ok = connectIqClient.sendMessage(medicalIdRepo.load().toWatchMessage());
+        Log.i(TAG, "MEDICAL_ID sent=" + ok);
     }
 
     private void handleLoadRoute(String routeId) {
@@ -132,7 +198,8 @@ public final class WatchRequestHandler {
         try {
             StoredRoute route   = routeRepo.loadRoute(routeId);
             byte[]      payload = payloadBuilder().withFtpWatts(ftpWatts())
-                    .buildRoutePayload(route, pacingPlan(route), refPlan(route));
+                    .buildRoutePayload(route, pacingPlan(route), refPlan(route),
+                            routeGhost(route));
             connectIqClient.sendPayload(payload);
             Log.i(TAG, "Sent route payload for " + routeId + " (" + payload.length + " bytes)");
         } catch (IOException e) {
@@ -149,7 +216,8 @@ public final class WatchRequestHandler {
             StoredRoute route = routeRepo.loadRoute(routeId);
             ClimbPayloadBuilder builder = payloadBuilder().withFtpWatts(ftpWatts());
             boolean ok = connectIqClient.sendPayloadToDatafield(
-                    builder.buildRoutePayload(route, pacingPlan(route), refPlan(route)));
+                    builder.buildRoutePayload(route, pacingPlan(route), refPlan(route),
+                            routeGhost(route)));
             // Always push the surface payload — an empty surfSec clears stale sections.
             connectIqClient.sendPayloadToSurfaceField(builder.buildSurfaceSectionPayload(route));
             String name = route.userDisplayName != null ? route.userDisplayName : route.name;

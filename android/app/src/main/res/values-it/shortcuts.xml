@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_start_ride_short">Avvia uscita</string>
+    <string name="shortcut_start_ride_long">Avvia la mia uscita sull\'orologio</string>
+    <string name="shortcut_next_climb_short">Prossima salita</string>
+    <string name="shortcut_next_climb_long">Quanto manca alla prossima salita?</string>
+
+    <string-array name="shortcut_start_ride_synonyms">
+        <item>avvia uscita</item>
+        <item>avvia la mia uscita</item>
+        <item>uscita</item>
+    </string-array>
+    <string-array name="shortcut_next_climb_synonyms">
+        <item>prossima salita</item>
+        <item>quanto manca alla prossima salita</item>
+        <item>salita</item>
+    </string-array>
+</resources>

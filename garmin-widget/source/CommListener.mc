@@ -1,5 +1,6 @@
 using Toybox.Communications as Comm;
 using Toybox.Application as App;
+using Toybox.Application.Storage as Storage;
 using Toybox.System as Sys;
 
 class CommListener extends Comm.ConnectionListener {
@@ -19,6 +20,14 @@ class CommListener extends Comm.ConnectionListener {
 
 class PhoneMessageCallback {
 
+    // True while ClimbWidgetApp.processMessage replays a payload saved on the watch: that
+    // copy may carry an older "pal"/"un", so it must not overwrite the rider's current
+    // palette or units.
+    var replaying = false;
+
+    // Storage key for the units of the last live payload (issue #262).
+    const UNITS_STORAGE_KEY = "un";
+
     function initialize() {
     }
 
@@ -37,6 +46,9 @@ class PhoneMessageCallback {
                 App.getApp().activeAck = msg;
             } else if (msgType.equals("HELLO")) {
                 handleHello();
+            } else if (msgType.equals("MEDICAL_ID")) {
+                // Issue #230: keep a copy for offline use; no fields = cleared on the phone.
+                storeMedicalId(medicalIdFromMessage(msg));
             } else {
                 Sys.println("CommListener: unknown type: " + msgType);
             }
@@ -59,6 +71,23 @@ class PhoneMessageCallback {
         data.mode      = msg.get("mode");
         data.routeId   = msg.get("routeId");
         data.routeName = msg.get("name");
+        // Optional display units (issue #262); absent/invalid = metric, reset on every live
+        // payload and remembered, so a replayed saved route uses the rider's current units.
+        var units = Units.parseFlags(msg.get("un"));
+        if (replaying) {
+            var stored = storedUnits();
+            if (stored != null) { units = stored; }
+        } else {
+            rememberUnits(units);
+        }
+        data.units     = units;
+
+        // Optional "pal" (issue #258): the rider's palette choice, remembered for every
+        // widget screen and the glance. Absent = default palette, so turning it off on the
+        // phone reverts the watch with the next live payload.
+        if (!replaying) {
+            WidgetPalette.remember(msg.get("pal"));
+        }
 
         var climbs = msg.get("climbs");
         if (climbs != null && climbs instanceof Toybox.Lang.Array) {
@@ -99,8 +128,9 @@ class PhoneMessageCallback {
             return;
         }
 
-        // Keys this widget doesn't render (tsec, refsec, vam, and the interval block "ib"
-        // from issue #180) are deliberately ignored: only the datafield uses them.
+        // Keys this widget doesn't render (tsec, refsec, vam, the interval block "ib" from
+        // issue #180, the Everesting attempt "ev" from issue #217 and the route-level hazard
+        // markers "hz" from issue #203) are deliberately ignored: only the datafield uses them.
         data.climbStartDist[idx] = getInt(climbDict, "sd",  0);
         data.climbEndDist[idx]   = getInt(climbDict, "ed",  0);
         data.climbLength[idx]    = getInt(climbDict, "len", 0);
@@ -182,6 +212,24 @@ class PhoneMessageCallback {
             }
         }
         return out;
+    }
+
+    // Units of the last live payload, or null when none is stored / Storage is unavailable.
+    hidden function storedUnits() {
+        try {
+            var v = Storage.getValue(UNITS_STORAGE_KEY);
+            return (v != null && v instanceof Toybox.Lang.Number) ? Units.parseFlags(v) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    hidden function rememberUnits(units) {
+        try {
+            Storage.setValue(UNITS_STORAGE_KEY, units);
+        } catch (e) {
+            // Storage full/unavailable: replays fall back to the saved payload's units.
+        }
     }
 
     hidden function getInt(dict, key, defaultVal) {

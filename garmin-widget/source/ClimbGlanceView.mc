@@ -19,10 +19,10 @@ class ClimbGlanceView extends Ui.GlanceView {
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(0, h / 4, Gfx.FONT_XTINY, "ClimbPro", Gfx.TEXT_JUSTIFY_LEFT);
 
-        // Connection dot: green = phone reachable, red = no connection
+        // Connection dot: green = phone reachable, red = no connection. Colorblind palette
+        // (issue #258): blue filled dot vs orange ring, so shape also tells them apart.
         var connected = Sys.getDeviceSettings().phoneConnected;
-        dc.setColor(connected ? 0x00AA00 : Gfx.COLOR_RED, Gfx.COLOR_TRANSPARENT);
-        dc.fillCircle(w - 8, h / 4, 5);
+        WidgetPalette.drawConnectionDot(dc, w - 8, h / 4, connected, WidgetPalette.current());
 
         var routeCount = StorageManager.getSavedRouteIds().size();
         var climbCount = StorageManager.getSavedClimbKeys().size();

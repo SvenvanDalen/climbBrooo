@@ -89,6 +89,8 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         super.onResume();
         // Reload on resume so "days since" and km (after a ride-archive sync) stay current.
         viewModel.load();
+        adapter.setPsiFirst(new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this)
+                .load().psi);
     }
 
     private static String statusText(Status s) {
@@ -113,13 +115,25 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         EditText front = view.findViewById(R.id.input_front);
         EditText rear = view.findViewById(R.id.input_rear);
         EditText note = view.findViewById(R.id.input_note);
+        // Issue #262: enter pressures in the rider's unit; the log itself stays in bar.
+        final boolean psi = new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this)
+                .load().psi;
+        if (psi) {
+            front.setHint("Voorband (psi)");
+            rear.setHint("Achterband (psi)");
+        }
 
         // Pre-fill with the latest check: riders usually pump to the same pressures.
         TirePressureLogEntry latest = viewModel.current() != null
                 ? TirePressureReminderCalculator.latest(viewModel.current().log.entries) : null;
         if (latest != null) {
-            front.setText(String.format(Locale.ROOT, "%.1f", latest.frontBar));
-            rear.setText(String.format(Locale.ROOT, "%.1f", latest.rearBar));
+            if (psi) {
+                front.setText(String.valueOf(TirePressureUnits.barToPsi(latest.frontBar)));
+                rear.setText(String.valueOf(TirePressureUnits.barToPsi(latest.rearBar)));
+            } else {
+                front.setText(String.format(Locale.ROOT, "%.1f", latest.frontBar));
+                rear.setText(String.format(Locale.ROOT, "%.1f", latest.rearBar));
+            }
         }
 
         // null = "now"; otherwise the picked day at noon (local time).
@@ -154,12 +168,16 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         // Validate before dismissing so a typo doesn't lose the other fields.
         dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
-                    Double f = TirePressureUnits.parseBar(front.getText().toString());
-                    Double r = TirePressureUnits.parseBar(rear.getText().toString());
+                    Double f = TirePressureUnits.parse(front.getText().toString(), psi);
+                    Double r = TirePressureUnits.parse(rear.getText().toString(), psi);
                     if (f == null || r == null) {
-                        Toast.makeText(this, String.format(Locale.getDefault(),
-                                "Vul voor en achter een druk in tussen %.1f en %.1f bar",
-                                TirePressureUnits.MIN_BAR, TirePressureUnits.MAX_BAR),
+                        String range = psi
+                                ? String.format(Locale.getDefault(), "%d en %d psi",
+                                        TirePressureUnits.barToPsi(TirePressureUnits.MIN_BAR),
+                                        TirePressureUnits.barToPsi(TirePressureUnits.MAX_BAR))
+                                : String.format(Locale.getDefault(), "%.1f en %.1f bar",
+                                        TirePressureUnits.MIN_BAR, TirePressureUnits.MAX_BAR);
+                        Toast.makeText(this, "Vul voor en achter een druk in tussen " + range,
                                 Toast.LENGTH_SHORT).show();
                         return;
                     }

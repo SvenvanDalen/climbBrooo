@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
+import nl.paree.climbpro.data.explore.ExploreMapRepository;
 import nl.paree.climbpro.data.ride.RideRepository;
 import nl.paree.climbpro.data.ride.RideStreamStatsRepository;
 import nl.paree.climbpro.data.ride.StoredRide;
@@ -14,7 +15,10 @@ import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.KnownClimbCatalog;
 import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
+import nl.paree.climbpro.data.route.RouteGhostRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.StoredRouteGhost;
+import nl.paree.climbpro.domain.route.RouteGhostProfile;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
@@ -26,6 +30,7 @@ import nl.paree.climbpro.domain.climb.KnownClimb;
 import nl.paree.climbpro.domain.climb.KnownClimbs;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 import nl.paree.climbpro.domain.climb.VamCalculator;
+import nl.paree.climbpro.domain.explore.ExploreMap;
 import nl.paree.climbpro.domain.matching.ActivityClimbMatcher;
 import nl.paree.climbpro.domain.matching.ClimbAttemptMatcher.TrackSample;
 import nl.paree.climbpro.domain.strava.StravaTitleTemplateRenderer;
@@ -48,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,6 +98,15 @@ public final class StravaActivitiesRepository {
      * ride doesn't have, such as watts without a power meter.
      */
     static final String RIDE_STREAM_KEYS = "time,distance,watts,altitude,heartrate";
+    /**
+     * What {@link #analyzeRideStreams()} requests: the analysis streams plus the GPS track, so
+     * a new ride lands on the explore map (issue #194) without a second request.
+     */
+    static final String RIDE_ANALYSIS_STREAM_KEYS = RIDE_STREAM_KEYS + ",latlng";
+    /** Explore-map backfill (issue #194): only the GPS track. */
+    static final String EXPLORE_STREAM_KEYS = "latlng";
+    /** Track requests per {@link #exploreRideTracks()} run; shares the 100-per-15-min budget. */
+    static final int MAX_EXPLORE_TRACKS_PER_RUN = 20;
     /**
      * Stream requests per {@link #analyzeRideStreams()} run. Strava allows 100 reads per 15
      * minutes, shared with climb matching; a year of rides fills in over a few syncs instead.
@@ -143,6 +158,13 @@ public final class StravaActivitiesRepository {
     private final IncompleteClimbAttemptRepository incompleteAttemptRepo;
     private final RideRepository         rideRepo;
     private final RideStreamStatsRepository streamStatsRepo;
+    private final RouteGhostRepository   ghostRepo;
+    /**
+     * Checkpoints of every stored route for the virtual opponent (issue #178), loaded lazily
+     * once per sync / backfill run; null = not loaded yet.
+     */
+    private List<GhostRoute> ghostRoutes;
+    private final ExploreMapRepository   exploreRepo;
     private final StravaApiClient        api;
     private final android.content.SharedPreferences prefs;
 
@@ -175,6 +197,8 @@ public final class StravaActivitiesRepository {
         this.incompleteAttemptRepo = new IncompleteClimbAttemptRepository(context);
         this.rideRepo = new RideRepository(context);
         this.streamStatsRepo = new RideStreamStatsRepository(context);
+        this.ghostRepo = new RouteGhostRepository(context);
+        this.exploreRepo = new ExploreMapRepository(context);
         this.api = api;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -188,6 +212,7 @@ public final class StravaActivitiesRepository {
     public int syncActivities() throws IOException {
         String token = "Bearer " + auth.getAccessToken();
         titleUpdateAuthExpired = false;
+        ghostRoutes = null; // routes may have changed since the previous run
 
         // The ride archive is a side feature: it must never block or fail climb matching.
         try {
@@ -420,6 +445,7 @@ public final class StravaActivitiesRepository {
         }
 
         String token = "Bearer " + auth.getAccessToken();
+        ghostRoutes = null;
         List<KnownClimb> climbs = enumerateKnownClimbs();
         Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
         known.addAll(incompleteAttemptRepo.knownActivityIds());
@@ -604,11 +630,71 @@ public final class StravaActivitiesRepository {
 
             out.addAll(ActivityClimbMatcher.match(track, trackTemps, climbs, act.id,
                     parseStartDate(act.startDate), incompleteOut));
+            offerRouteGhosts(act, track);
             return new MatchResult(StreamOutcome.OK, out, headers);
         } catch (IOException e) {
             Log.w(TAG, "Stream fetch failed for activity " + act.id, e);
             return new MatchResult(StreamOutcome.TRANSIENT_FAILURE, out, null);
         }
+    }
+
+    /** One stored route's checkpoints for the virtual opponent (issue #178). */
+    static final class GhostRoute {
+        final String routeId;
+        final RouteGhostProfile.Line line;
+
+        GhostRoute(String routeId, RouteGhostProfile.Line line) {
+            this.routeId = routeId;
+            this.line = line;
+        }
+    }
+
+    /**
+     * Virtual opponent (issue #178): checks whether this ride covered any stored route from
+     * start to finish and keeps it as that route's reference profile when it is the fastest
+     * so far. Reuses the GPS track fetched for climb matching, so it costs no extra Strava
+     * request. Never throws: a failure here must not undo the climb matches.
+     */
+    private void offerRouteGhosts(StravaActivityDto act, List<TrackSample> track) {
+        try {
+            List<StoredRouteGhost> found = routeGhostsFor(loadGhostRoutes(), track, act.id,
+                    parseStartDate(act.startDate));
+            if (!found.isEmpty()) ghostRepo.offer(found);
+        } catch (Exception e) {
+            Log.w(TAG, "Route ghost matching failed for activity " + act.id, e);
+        }
+    }
+
+    /** Every route in {@code routes} that {@code track} rode in full, as a candidate profile. */
+    static List<StoredRouteGhost> routeGhostsFor(List<GhostRoute> routes, List<TrackSample> track,
+                                                 long activityId, long startEpochSec) {
+        List<StoredRouteGhost> out = new ArrayList<>();
+        if (routes == null) return out;
+        for (GhostRoute r : routes) {
+            int[] secs = RouteGhostProfile.match(r.line, track);
+            if (secs != null) {
+                out.add(new StoredRouteGhost(r.routeId, activityId, startEpochSec,
+                        r.line.lengthM, r.line.stepM, secs));
+            }
+        }
+        return out;
+    }
+
+    private List<GhostRoute> loadGhostRoutes() {
+        if (ghostRoutes != null) return ghostRoutes;
+        List<GhostRoute> out = new ArrayList<>();
+        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
+            try {
+                StoredRoute route = routeRepo.loadRoute(entry.routeId);
+                RouteGhostProfile.Line line =
+                        RouteGhostProfile.line(route.lats, route.lons, route.distances);
+                if (line != null) out.add(new GhostRoute(entry.routeId, line));
+            } catch (IOException e) {
+                Log.w(TAG, "Skipping route " + entry.routeId + " for the route ghost", e);
+            }
+        }
+        ghostRoutes = out;
+        return out;
     }
 
     private List<KnownClimb> enumerateKnownClimbs() {
@@ -724,14 +810,18 @@ public final class StravaActivitiesRepository {
         todo.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
 
         List<StoredRideStreamStats> out = new ArrayList<>();
+        // The same request carries the GPS track: outdoor rides go onto the explore map too.
+        ExploreMap explored = exploreRepo.load();
+        Map<Long, RideTrack> tracks = new LinkedHashMap<>();
         try {
             for (StoredRide r : todo) {
                 if (out.size() >= MAX_STREAM_ANALYSES_PER_RUN) break;
                 Response<StravaStreamsDto> resp =
-                        api.getStreams(token, r.activityId, RIDE_STREAM_KEYS).execute();
+                        api.getStreams(token, r.activityId, RIDE_ANALYSIS_STREAM_KEYS).execute();
                 if (resp.code() == 404) {
                     // Deleted on Strava or a manual entry: nothing to analyze, don't ask again.
                     out.add(RideStreamAnalyzer.analyze(r.activityId, null));
+                    if (isOutdoorRide(r)) tracks.put(r.activityId, null);
                     continue;
                 }
                 if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
@@ -740,12 +830,77 @@ public final class StravaActivitiesRepository {
                 }
                 if (!resp.isSuccessful()) continue; // transient; retried next run
                 out.add(RideStreamAnalyzer.analyze(r.activityId, toRideStreams(resp.body())));
+                if (isOutdoorRide(r) && !explored.containsRide(r.activityId)) {
+                    tracks.put(r.activityId, toRideTrack(resp.body()));
+                }
             }
         } catch (IOException e) {
             Log.w(TAG, "Ride stream fetch failed; keeping " + out.size() + " analyzed ride(s)", e);
         }
         streamStatsRepo.upsertAll(out);
+        try {
+            exploreRepo.addRides(tracks);
+        } catch (IOException e) {
+            Log.w(TAG, "Explore map update failed; the backfill picks these rides up later", e);
+        }
         return out.size();
+    }
+
+    /** Outdoor rides in the archive whose GPS track is not on the explore map yet (issue #194). */
+    public int pendingExploreRides() {
+        return exploreTodo(exploreRepo.load()).size();
+    }
+
+    /**
+     * Explore-map backfill (issue #194): fetches only the GPS track of archived outdoor rides
+     * that are not on the map yet, newest first, at most {@link #MAX_EXPLORE_TRACKS_PER_RUN}
+     * per run, and folds them into the map. Stops early on rate limiting, an auth error or a
+     * network failure, keeping everything fetched so far. Indoor rides never count: their
+     * coordinates are virtual.
+     *
+     * @return number of rides processed in this run
+     */
+    public int exploreRideTracks() throws IOException {
+        String token = "Bearer " + auth.getAccessToken();
+        List<StoredRide> todo = exploreTodo(exploreRepo.load());
+        Map<Long, RideTrack> tracks = new LinkedHashMap<>();
+        try {
+            for (StoredRide r : todo) {
+                if (tracks.size() >= MAX_EXPLORE_TRACKS_PER_RUN) break;
+                Response<StravaStreamsDto> resp =
+                        api.getStreams(token, r.activityId, EXPLORE_STREAM_KEYS).execute();
+                if (resp.code() == 404) {
+                    tracks.put(r.activityId, null); // deleted or manual entry: don't ask again
+                    continue;
+                }
+                if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
+                    Log.w(TAG, "Explore track fetch paused (HTTP " + resp.code() + ")");
+                    break;
+                }
+                if (!resp.isSuccessful()) continue; // transient; retried next run
+                tracks.put(r.activityId, toRideTrack(resp.body()));
+            }
+        } catch (IOException e) {
+            Log.w(TAG, "Explore track fetch failed; keeping " + tracks.size() + " ride(s)", e);
+        }
+        exploreRepo.addRides(tracks);
+        return tracks.size();
+    }
+
+    private List<StoredRide> exploreTodo(ExploreMap explored) {
+        List<StoredRide> todo = new ArrayList<>();
+        for (StoredRide r : rideRepo.loadAll()) {
+            if (isOutdoorRide(r) && !explored.containsRide(r.activityId)) todo.add(r);
+        }
+        todo.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
+        return todo;
+    }
+
+    /** Indoor rides (VirtualRide, EVirtualRide) have virtual coordinates and never count. */
+    static boolean isOutdoorRide(StoredRide r) {
+        if (r == null) return false;
+        if (r.type != null && r.type.contains("Virtual")) return false;
+        return r.sportType == null || !r.sportType.contains("Virtual");
     }
 
     /**

@@ -29,6 +29,18 @@
       "type": "string",
       "maxLength": 32
     },
+    "pal": {
+      "description": "Optional color palette (issue #258): 1 = colorblind-friendly palette (pale yellow + light-to-dark blue ramp for the six colorIndex values, blue/orange status colors instead of green/red); absent = default yellow-to-red palette. Only the rendered colors change: colorIndex values in segs/zc and their gradient buckets are identical in both palettes. A phone setting; route, single-climb and radius payloads. Consumers treat any other value as the default palette.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "un": {
+      "description": "Optional display-unit bitmask (issue #262), any mode: bit 1 = imperial distance/elevation/speed (mi/ft/mph), bit 2 = tyre pressure in psi, bit 4 = temperature in F. Absent or 0 = all metric. Only emitted when non-zero; watch parsers ignore unknown bits and treat a non-integer as metric. Display only: every other distance on the wire stays in metres.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 7
+    },
     "rtl": {
       "description": "Route mode (optional): total route length in whole metres. The watch derives distance-along-course as (rtl - Activity.Info.distanceToDestination) when navigating.",
       "type": "integer",
@@ -46,11 +58,31 @@
       "maxItems": 64,
       "items": { "$ref": "#/definitions/Climb" }
     },
+    "hz": {
+      "description": "Route mode (optional, issue #203): hazard markers packed as [startM, endM, type, ...], 3 ints per hazard, ordered by startM. type 0 = road tunnel (OpenStreetMap, 'licht aan'), 1 = technical descent (steep or bendy, detected from the route geometry). Distances in whole metres from the route start. At most 32 hazards; omitted when none, and dropped when the payload would exceed the byte budget.",
+      "type": "array",
+      "maxItems": 96,
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "gh": {
+      "description": "Route mode (optional, issue #178): virtual opponent, the rider's own fastest earlier complete ride of this route, packed as [stepM, sec1, sec2, ..., secN]. stepM = metres per step (>= 250, coarser for long routes so N <= 100); sec_k = timer seconds that ride spent from (k-1)*stepM to min(k*stepM, rtl), so the last step may be shorter. Computed on the phone from Strava GPS tracks; the watch sums the steps, interpolates at the live route progress and shows seconds ahead/behind. Omitted when no ride covered the whole route, in radius mode and single-climb payloads, and dropped (after zc) when the payload would exceed the byte budget.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 101,
+      "items": { "type": "integer", "minimum": 0 }
+    },
     "fss": {
       "description": "Specialized starred flat segments (route mode), shown as a separate list section in the widget. Only segments with an assigned surface (t 0-4) are sent. Omitted when none qualify.",
       "type": "array",
       "maxItems": 32,
       "items": { "$ref": "#/definitions/FlatStarredSection" }
+    },
+    "lay": {
+      "description": "Optional datafield stat-slot layout chosen in the phone app: 5 metric codes for [left, middle, right, row 4, bottom line] of the active-climb page. 0 remaining distance, 1 remaining elevation, 2 current-segment gradient, 3 climb average gradient, 4 VAM, 5 ETA, 6 ghost delta (vs PR/plan), 7 interval block, 8 speed, 9 heart rate, 10 power, 11 cadence, 12 elapsed time, 13 empty, 14 auto row 4 (block else VAM), 15 auto bottom (ghost else ETA). Omitted = default [0,1,2,14,15]. Both modes. The watch falls back to the default per slot for an unknown code and to the full default for a malformed array. Codes mirror domain/watch/WatchFieldLayout.java and garmin/source/FieldLayout.mc.",
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "type": "integer", "minimum": 0, "maximum": 15 }
     }
   },
   "definitions": {
@@ -132,6 +164,13 @@
           "minItems": 3,
           "maxItems": 3,
           "items": { "type": "integer", "minimum": 1 }
+        },
+        "ev": {
+          "description": "Optional Everesting attempt on this climb (issue #217): [targetM, repeats, startLatInt, startLonInt, topLatInt, topLonInt], coordinates = degrees x 100000. The phone plans the repeats (ceil(target / elevation gain)); the watch counts summit passes near the top coordinate (re-armed near the start) and compares the activity's total ascent with targetM. At most one climb per payload; omitted when no attempt is planned or the climb has no calibration points.",
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": { "type": "integer" }
         },
         "zc": {
           "description": "Optional (issue #66): per-segment FTP intensity-zone color, one colorIndex (0-5, see colors.md 'FTP intensity zones') per segment, parallel to segs. A second, optional color source next to the gradient colorIndex in segs, which stays the default: the watch uses zc only when its 'Kleurmodus' setting is FTP-zone. Computed on the phone from the rider's FTP and weights (estimated segment power -> Coggan zone -> colorIndex). Both modes; omitted without a complete rider profile, and dropped from any payload that would otherwise exceed the 4 KB budget.",

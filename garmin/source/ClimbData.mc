@@ -51,6 +51,17 @@ class ClimbData {
     var routeId = null;
     var routeName = null;
     var routeTotalLen = 0;    // route total length (m) from payload "rtl"; 0 = unknown
+    var palette = 0;          // color palette from payload "pal" (issue #258): 0 default, 1 colorblind
+    var hazards = null;       // packed "hz" [startM, endM, type, ...] (issue #203); null = none
+    var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
+
+    // Virtual opponent on the route (issue #178, wire "gh" = [stepM, sec1, ..., secN]).
+    const MAX_GHOST_STEPS = 100;
+    var ghostStep = 0;            // metres per step; 0 = no route ghost
+    var ghostCum = null;          // cumulative seconds at each step boundary, [0] = 0; null = none
+    var ghostAnchorMs = -1;       // timerTime (ms) when the opponent started alongside the rider
+    var ghostAnchorRef = 0.0;     // reference seconds at the anchor's route position
+    var routeGhostDeltaSec = null; // latest delta (s, + = behind); null = nothing to show
 
     // Climb-level arrays (indexed by climb)
     var climbCount = 0;
@@ -98,6 +109,11 @@ class ClimbData {
     var blockLow;         // lower band edge (W)
     var blockHigh;        // upper band edge (W)
 
+    // Everesting attempt (issue #217, wire "ev"): [targetM, repeats, startLat, startLon,
+    // topLat, topLon] or null; everestClimb = index of the climb that carried it (-1 = none).
+    var everest = null;
+    var everestClimb = -1;
+
     // Power-zone results for powerZone()/blockZone()
     const ZONE_NONE  = -2;   // no block or no power reading
     const ZONE_UNDER = -1;
@@ -122,11 +138,15 @@ class ClimbData {
     var climbSkipped;             // bool per climb: rider bypassed it; progression skips over it
     var currentSpeedMps = 0.0;    // most recent Activity.Info.currentSpeed; set by view.compute()
     var currentPower = null;      // most recent Activity.Info.currentPower (W); null = no power meter
+    var currentHeartRate = null;  // most recent Activity.Info.currentHeartRate (bpm); null = no sensor
+    var currentCadence = null;    // most recent Activity.Info.currentCadence (rpm); null = no sensor
+    var layout;                   // stat-slot metric codes for the active-climb page ('lay')
     var batteryWarningActive = false; // true once the low-battery-vs-climb-time warning has
                                        // fired for the current climb; cleared when the climb ends
                                        // or the route changes. Drives the view's persistent banner.
 
     function initialize() {
+        layout = FieldLayout.defaults();
         climbStartDist = new [MAX_CLIMBS];
         climbEndDist = new [MAX_CLIMBS];
         climbStartDist0 = new [MAX_CLIMBS];
@@ -464,6 +484,73 @@ class ClimbData {
             }
         }
         activeSegmentIndex = segCount[ci] - 1;
+    }
+
+    // Parses wire "gh" (issue #178): [stepM, sec1, ..., secN] -> ghostStep + cumulative
+    // ghostCum. Anything malformed (not an Array of non-negative Numbers, step <= 0, no step)
+    // clears the route ghost. More than MAX_GHOST_STEPS steps are cut off.
+    function setRouteGhost(gh) {
+        ghostStep = 0;
+        ghostCum = null;
+        routeGhostDeltaSec = null;
+        if (gh == null || !(gh instanceof Toybox.Lang.Array) || gh.size() < 2) { return; }
+        for (var i = 0; i < gh.size(); i++) {
+            if (!(gh[i] instanceof Toybox.Lang.Number) || gh[i] < 0) { return; }
+        }
+        if (gh[0] <= 0) { return; }
+        var n = gh.size() - 1;
+        if (n > MAX_GHOST_STEPS) { n = MAX_GHOST_STEPS; }
+        var cum = new [n + 1];
+        cum[0] = 0;
+        for (var k = 1; k <= n; k++) { cum[k] = cum[k - 1] + gh[k]; }
+        ghostStep = gh[0];
+        ghostCum = cum;
+    }
+
+    // Forgets where the opponent started (new route / new ride).
+    function resetRouteGhostAnchor() {
+        ghostAnchorMs = -1;
+        ghostAnchorRef = 0.0;
+        routeGhostDeltaSec = null;
+    }
+
+    // Reference seconds of the best ride at route distance dist (m), linearly interpolated
+    // within a step; -1 without a route ghost. The last step ends at the route length ("rtl")
+    // when that falls inside it, so a shorter final step is timed correctly.
+    function routeGhostSecAt(dist) {
+        if (ghostCum == null || ghostStep <= 0) { return -1; }
+        var n = ghostCum.size() - 1;
+        if (dist <= 0) { return 0.0; }
+        var k = (dist / ghostStep).toNumber();
+        var start = k * ghostStep;
+        var end = start + ghostStep;
+        if (k >= n - 1) {
+            k = n - 1;
+            start = k * ghostStep;
+            end = n * ghostStep;
+            if (routeTotalLen > start && routeTotalLen < end) { end = routeTotalLen; }
+            if (dist >= end) { return ghostCum[n].toFloat(); }
+        }
+        var frac = (dist - start).toFloat() / (end - start).toFloat();
+        return ghostCum[k] + (ghostCum[k + 1] - ghostCum[k]) * frac;
+    }
+
+    // Seconds behind (+) or ahead (-) of the best ride at route distance dist, or null when
+    // there is nothing to compare: no route ghost, radius mode, off-route, or the timer not
+    // running. The opponent starts alongside the rider at the first valid tick (anchor), so
+    // joining the route late or starting the recording early does not skew the delta.
+    function routeGhostDelta(timerMs, dist) {
+        if (ghostCum == null || mode == null || !mode.equals("route")) { return null; }
+        if (offRoute || timerMs == null || timerMs <= 0) { return null; }
+        var ref = routeGhostSecAt(dist);
+        if (ref < 0) { return null; }
+        if (ghostAnchorMs < 0) {
+            ghostAnchorMs = timerMs;
+            ghostAnchorRef = ref;
+            return 0;
+        }
+        var actual = (timerMs - ghostAnchorMs) / 1000.0;
+        return (actual - (ref - ghostAnchorRef)).toNumber();
     }
 
     // Cumulative target seconds at the current progressInClimb for the active climb,
