@@ -10,7 +10,7 @@ import java.util.List;
 public final class GitHubReleaseDto {
 
     @JsonProperty("tag_name")
-    public String tagName;       // e.g. "v42" — build-android.yml tags releases v<run_number>
+    public String tagName;       // e.g. "v1.4.0" — build-android.yml tags releases v1.<minor>.0
 
     @JsonProperty("html_url")
     public String htmlUrl;
