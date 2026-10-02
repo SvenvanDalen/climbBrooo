@@ -17,20 +17,34 @@ jobs:
         working-directory: android
     permissions:
       contents: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Every release (= staging merged into main) bumps the minor: v1.4.0 -> v1.5.0.
-      # The patch stays 0; legacy v1.0.<run_number> tags count as minor 0.
+      # A PR from staging into main bumps the minor (v1.4.2 -> v1.5.0); anything else
+      # (a dev/fix branch merged straight into main, a direct push, a manual run)
+      # bumps the patch (v1.4.0 -> v1.4.1).
       - name: Determine version
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          source=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            source=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+              --jq '[.[] | select(.base.ref == "main")][0].head.ref // ""' || true)
+          fi
           latest=$(git tag -l 'v1.*.*' --sort=-v:refname | head -n1)
           minor=$(echo "${latest#v}" | cut -d. -f2)
-          next="1.$(( ${minor:-0} + 1 )).0"
-          echo "Latest tag: ${latest:-none} -> v$next"
+          patch=$(echo "${latest#v}" | cut -d. -f3)
+          if [ "$source" = "staging" ]; then
+            next="1.$(( ${minor:-0} + 1 )).0"
+          else
+            next="1.${minor:-0}.$(( ${patch:-0} + 1 ))"
+          fi
+          echo "Source branch: ${source:-none}; latest tag: ${latest:-none} -> v$next"
           echo "name=$next" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
