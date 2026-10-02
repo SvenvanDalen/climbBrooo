@@ -41,6 +41,14 @@ public class UpdateCheckerTest {
         assertTrue(compare("v2.0.0", "1.9.0") > 0);
     }
 
+    /** A dev/fix branch merged straight into main bumps only the patch. */
+    @Test
+    public void compareVersions_patchBumpIsNewer() {
+        assertTrue(compare("v1.1.1", "1.1.0") > 0);
+        assertTrue(compare("v1.0.133", "1.0.132") > 0);
+        assertTrue(compare("v1.2.0", "1.1.7") > 0);
+    }
+
     @Test
     public void compareVersions_sameOrOlderIsNotNewer() {
         assertEquals(0, compare("v1.3.0", "1.3.0"));

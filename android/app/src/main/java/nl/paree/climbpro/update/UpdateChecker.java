@@ -28,8 +28,8 @@ import java.util.regex.Pattern;
 
 /**
  * Polls GitHub Releases for a build newer than the one currently installed.
- * {@code build-android.yml} tags every release {@code v1.<minor>.0} (the minor goes up
- * by one per release) and sets that same version as this build's versionName, so the
+ * {@code build-android.yml} tags every release {@code v1.<minor>.<patch>} (minor +1 for a
+ * staging PR, patch +1 otherwise) and sets that same version as this build's versionName, so the
  * tag vs. versionName is a semver comparison. Older {@code v1.0.<run_number>} tags
  * compare correctly against that; legacy {@code v<run_number>} tags read as 0.0.N.
  */
