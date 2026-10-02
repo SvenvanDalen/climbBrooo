@@ -80,8 +80,10 @@ public final class ShareLinkRouteFetcher {
             if (!resp.isSuccessful() || resp.body() == null) {
                 throw new FetchException(errorMessage(link.provider, resp.code()));
             }
+            // Content-Length is -1 for chunked responses, so also cap what is actually read:
+            // request() buffers at most MAX_BYTES + 1 bytes and says whether there were more.
             long length = resp.body().contentLength();
-            if (length > MAX_BYTES) {
+            if (length > MAX_BYTES || resp.body().source().request(MAX_BYTES + 1)) {
                 throw new FetchException("Route is te groot om te importeren");
             }
             return resp.body().string();

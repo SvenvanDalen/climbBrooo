@@ -85,8 +85,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and Data & app. "menu → X" elsewhere in this README means: open the matching group first.
 - **Choose your units** — Settings → "Eenheden": km or miles (also feet and mph), bar or
   psi, °C or °F. Only the display changes; everything is stored metric. The climb
-  datafield, widget and surface datafield follow the distance choice after the next sync
-  (optional payload key `un`).
+  datafield, widget and surface datafield follow the distance choice (and the datafield's
+  heat/felt-temperature banners the °C/°F choice) after the sync that a switch change
+  starts right away (optional payload key `un`).
 - **Select a route to follow** — pick a synced route; it becomes active on the watch.
 - **Radius mode** — no fixed route; the watch alerts on any known climb within a
   configurable radius of your GPS position.

@@ -112,7 +112,8 @@ function heatAlarm_offOrNoReading_clearsWithoutAlert(logger) {
 
 (:test)
 function heatLabel_roundsToWholeDegrees(logger) {
-    Test.assert(heatLabel(41.07).equals("HITTE 41°C"));
-    Test.assert(heatLabel(39.6).equals("HITTE 40°C"));
+    Test.assert(heatLabel(41.07, 0).equals("HITTE 41°C"));
+    Test.assert(heatLabel(39.6, 0).equals("HITTE 40°C"));
+    Test.assert(heatLabel(41.07, Units.FLAG_FAHRENHEIT).equals("HITTE 106°F"));
     return true;
 }

@@ -1182,9 +1182,12 @@ choice for every on-demand load. `garmin`, `garmin-widget` and
 `garmin-surface` parse `un` into their data object (reset on every payload)
 and render distances/elevations through a small shared `Units` module
 (`source/Units.mc`, identical copy per app: `1.2km`/`850m` or `0.7mi`/`520ft`,
-feet below ~0.2 mi). No watch view shows pressure or temperature yet; the
-other bits ride along for later. `garmin-onboard` uses the raw-route protocol
-and stays metric.
+feet below ~0.2 mi). The datafield's heat and felt-temperature banners follow
+bit `4` (`Units.formatTemp`, thresholds stay in °C); no watch view shows
+pressure, so bit `2` rides along for later. The widget remembers the units of
+the last live payload, so a saved route replayed from storage shows the
+rider's current units. Changing a unit switch triggers an immediate sync.
+`garmin-onboard` uses the raw-route protocol and stays metric.
 
 ---
 

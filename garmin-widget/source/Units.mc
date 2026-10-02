@@ -5,6 +5,7 @@
 module Units {
 
     const FLAG_IMPERIAL = 1;
+    const FLAG_FAHRENHEIT = 4;
     // Below this many metres (~0.2 mi) imperial distances render in feet, not miles.
     const MILES_FROM_M = 322;
 
@@ -44,5 +45,18 @@ module Units {
     function formatElev(meters, flags) {
         if (isImperial(flags)) { return toFeet(meters) + "ft"; }
         return meters + "m";
+    }
+
+    // Temperature label from degrees Celsius (Number or Float), rounded to whole degrees:
+    // "41°C" / "106°F". Only the label converts; thresholds stay in Celsius.
+    function formatTemp(celsius, flags) {
+        var v = celsius.toFloat();
+        var unit = "°C";
+        if (flags != null && flags instanceof Toybox.Lang.Number
+                && (flags & FLAG_FAHRENHEIT) != 0) {
+            v = v * 9.0 / 5.0 + 32.0;
+            unit = "°F";
+        }
+        return (v + ((v < 0) ? -0.5 : 0.5)).toNumber() + unit;
     }
 }

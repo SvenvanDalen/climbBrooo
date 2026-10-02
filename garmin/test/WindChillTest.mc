@@ -226,6 +226,7 @@ function gate_warmDayShowsAirTemp(logger) {
 
 (:test)
 function label_format(logger) {
-    Test.assertEqual(feltTempLabel(-4), "VOELT -4°C");
+    Test.assertEqual(feltTempLabel(-4, 0), "VOELT -4°C");
+    Test.assertEqual(feltTempLabel(-4, Units.FLAG_FAHRENHEIT), "VOELT 25°F");
     return true;
 }

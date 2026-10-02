@@ -51,18 +51,18 @@ function hazardAt(hz, posM, lookaheadM) {
     return -1;
 }
 
-// Banner text: "TUNNEL 320m - LICHT" ahead, "TUNNEL - LICHT AAN" inside; same for descents.
-function hazardLabel(hz, i, posM) {
+// Banner text: "TUNNEL 350m - LICHT" ahead, "TUNNEL - LICHT AAN" inside; same for descents.
+// "Inside" is decided from the raw position; only the distance shown ahead is rounded up to
+// 50 m steps, so the text changes every 50 m instead of every tick. units = payload "un"
+// bitmask (ft/mi when imperial). Returns null when i is not a hazard in hz -- a resync can
+// replace hz between compute() and onUpdate().
+function hazardLabel(hz, i, posM, units) {
+    if (hz == null || i < 0 || i * 3 + 2 >= hz.size()) { return null; }
     var t = hz[i * 3 + 2];
     var dist = hz[i * 3] - posM;
+    var ahead = (dist > 0) ? Units.formatDist(((dist + 49) / 50) * 50, units) : null;
     if (t == HAZARD_TUNNEL) {
-        return (dist > 0) ? "TUNNEL " + dist + "m - LICHT" : "TUNNEL - LICHT AAN";
+        return (ahead != null) ? "TUNNEL " + ahead + " - LICHT" : "TUNNEL - LICHT AAN";
     }
-    return (dist > 0) ? "TECHN. AFDALING " + dist + "m" : "TECHN. AFDALING";
-}
-
-// Banner distance rounded down to 50 m steps, so the text (and the redraw) only changes
-// every 50 m instead of every tick.
-function hazardDisplayPos(posM) {
-    return posM - posM % 50;
+    return (ahead != null) ? "TECHN. AFDALING " + ahead : "TECHN. AFDALING";
 }
