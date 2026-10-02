@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you like it to work? Say whether it lives on the phone, the watch, or both.
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: Works on the Forerunner 255 Music (no touchscreen, MIP display, tight memory)
+        - label: Works offline during a ride (no phone/network needed)
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

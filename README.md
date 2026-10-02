@@ -518,3 +518,10 @@ metric) tells the watch which display units the rider chose; all wire values sta
 validates both the examples and the live builder output against the schema. When you
 change the wire format, update `schema.json`, `protocol/examples/`, `ClimbPayloadBuilder`,
 **and** the Monkey C parsers together.
+
+---
+
+## Contributing & license
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) (branch off `staging`, PR into
+`staging`) and the [Code of Conduct](CODE_OF_CONDUCT.md). Released under the [MIT License](LICENSE).
