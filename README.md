@@ -194,6 +194,13 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   a purple `HARTSLAG 185` strip until it drops 5 bpm below, with a reminder every 5 minutes.
   Opt-in `Waarschuw bij onregelmatige hartslag` alerts on three ≥ 25 bpm jumps within a
   minute (at most every 10 min). Watch-only, works without a route; not a medical device.
+- **Cadence coach** — opt-in `Cadans-coach` in the Connect IQ app settings (edited from the
+  phone in Garmin Connect) with a target band (`Cadans ondergrens`/`bovengrens`, default
+  80–100 rpm, 0 = that side off). When your cadence stays outside the band for 30 s of
+  pedalling the datafield buzzes (one long = too low, two short = too high) and shows a blue
+  `CADANS LAAG 68` strip while you stay out. Coasting doesn't count as too low; no repeat
+  until you were back in the band for 20 s, at most one nudge per 2 min. Watch-only,
+  works without a route; needs a cadence sensor.
 - **Medical ID** — menu → "Medische ID": name, blood type, allergies, medication, emergency
   contact and notes. Optional silent, always-on lock-screen notification (public visibility)
   so first responders can read it without unlocking; re-posted after a reboot. The watch

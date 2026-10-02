@@ -39,4 +39,9 @@
     <string id="FuelHot20">Vanaf 20 °C</string>
     <string id="FuelHot25">Vanaf 25 °C</string>
     <string id="FuelHot30">Vanaf 30 °C</string>
+    <string id="SettingsCadenceCoachTitle">Cadans-coach</string>
+    <string id="SettingsCadenceLowTitle">Cadans ondergrens (rpm, 0 = uit)</string>
+    <string id="SettingsCadenceLowPrompt">Seintje als je cadans 30 s onder deze waarde blijft</string>
+    <string id="SettingsCadenceHighTitle">Cadans bovengrens (rpm, 0 = uit)</string>
+    <string id="SettingsCadenceHighPrompt">Seintje als je cadans 30 s boven deze waarde blijft</string>
 </strings>

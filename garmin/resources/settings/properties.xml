@@ -41,4 +41,9 @@
     <property id="fuelIntervalMin" type="number">30</property>
     <property id="fuelClimbM" type="number">0</property>
     <property id="fuelHotC" type="number">25</property>
+    <!-- Issue #179: cadence coach. Opt-in nudge when the cadence stays 30 s below
+         cadenceLow or above cadenceHigh (rpm; 0 = that side off). Coasting is ignored. -->
+    <property id="cadenceCoach" type="boolean">false</property>
+    <property id="cadenceLow" type="number">80</property>
+    <property id="cadenceHigh" type="number">100</property>
 </properties>

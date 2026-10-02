@@ -76,4 +76,13 @@
             <listEntry value="30">@Strings.FuelHot30</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.cadenceCoach" title="@Strings.SettingsCadenceCoachTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.cadenceLow" title="@Strings.SettingsCadenceLowTitle" prompt="@Strings.SettingsCadenceLowPrompt">
+        <settingConfig type="numeric" min="0" max="200"/>
+    </setting>
+    <setting propertyKey="@Properties.cadenceHigh" title="@Strings.SettingsCadenceHighTitle" prompt="@Strings.SettingsCadenceHighPrompt">
+        <settingConfig type="numeric" min="0" max="200"/>
+    </setting>
 </settings>
