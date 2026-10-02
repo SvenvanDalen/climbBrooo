@@ -222,6 +222,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   and buzzes when it reaches the threshold set in the Connect IQ app settings (off / 27 /
   32 / 39 °C, default 32). A dark-red `HITTE 41°C` strip stays up until it drops 2 °C
   below the threshold, with a reminder buzz every 20 minutes. Watch-only, works without a route.
+- **Eat/drink reminder** — the datafield buzzes (climb-start vibration + time-alert tone) and
+  shows a green `ETEN & DRINKEN` strip for 30 s every N minutes of activity time (off / 15 /
+  20 / 30 / 45 / 60, default 30) and/or every N metres of ascent (off / 250 / 500 / 750 /
+  1000), whichever comes first. When it is warm (from 20 / 25 / 30 °C, default 25) both are
+  shortened to 75 %, from 8 °C above that to 50 %; never more than once per 10 minutes. Set
+  in the Connect IQ app settings on the phone (Garmin Connect). Watch-only, works without a route.
 - **Climb Logbook** — per-climb attempt history + PRs from your Strava rides. Phone-only.
 - **Rain radar on the route** — route detail → "Regenradar tonen" lays the latest RainViewer
   radar image over the map and lists, per hour for the next 6 hours, at which kilometres of

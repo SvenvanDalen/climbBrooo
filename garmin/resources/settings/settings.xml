@@ -49,6 +49,33 @@
             <listEntry value="39">@Strings.HeatIndex39</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.fuelIntervalMin" title="@Strings.SettingsFuelIntervalTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelOff</listEntry>
+            <listEntry value="15">@Strings.FuelInterval15</listEntry>
+            <listEntry value="20">@Strings.FuelInterval20</listEntry>
+            <listEntry value="30">@Strings.FuelInterval30</listEntry>
+            <listEntry value="45">@Strings.FuelInterval45</listEntry>
+            <listEntry value="60">@Strings.FuelInterval60</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.fuelClimbM" title="@Strings.SettingsFuelClimbTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelOff</listEntry>
+            <listEntry value="250">@Strings.FuelClimb250</listEntry>
+            <listEntry value="500">@Strings.FuelClimb500</listEntry>
+            <listEntry value="750">@Strings.FuelClimb750</listEntry>
+            <listEntry value="1000">@Strings.FuelClimb1000</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.fuelHotC" title="@Strings.SettingsFuelHotTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelHotOff</listEntry>
+            <listEntry value="20">@Strings.FuelHot20</listEntry>
+            <listEntry value="25">@Strings.FuelHot25</listEntry>
+            <listEntry value="30">@Strings.FuelHot30</listEntry>
+        </settingConfig>
+    </setting>
     <setting propertyKey="@Properties.cadenceCoach" title="@Strings.SettingsCadenceCoachTitle">
         <settingConfig type="boolean"/>
     </setting>

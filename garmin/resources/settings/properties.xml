@@ -34,6 +34,13 @@
     <!-- Issue #227: heat-index warning threshold in °C (NWS heat index from Garmin Weather
          temperature + humidity). 0 = off. 32 = NWS "extreme caution" upper band. -->
     <property id="heatIndexThreshold" type="number">32</property>
+    <!-- Issue #184: eat/drink reminder. fuelIntervalMin = every N minutes of activity time
+         (0 = off); fuelClimbM = every N metres of ascent (0 = off); whichever comes first.
+         fuelHotC = from this air temperature (°C) both are shortened to 75 %, from 8 °C
+         above it to 50 % (0 = no correction). -->
+    <property id="fuelIntervalMin" type="number">30</property>
+    <property id="fuelClimbM" type="number">0</property>
+    <property id="fuelHotC" type="number">25</property>
     <!-- Issue #179: cadence coach. Opt-in nudge when the cadence stays 30 s below
          cadenceLow or above cadenceHigh (rpm; 0 = that side off). Coasting is ignored. -->
     <property id="cadenceCoach" type="boolean">false</property>

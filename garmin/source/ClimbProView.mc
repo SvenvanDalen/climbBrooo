@@ -116,6 +116,12 @@ class ClimbProView extends Ui.DataField {
     hidden var heatAlarm = new HeatAlarm();
     hidden var heatNextCheckMs = 0;
     hidden var heatShownC = null;
+    // Eat/drink reminder (issue #184): time/ascent triggers, shortened when it is hot.
+    // fuelTempC is refreshed once a minute; the banner shows until fuelBannerUntilMs.
+    hidden var fuel = new FuelReminder();
+    hidden var fuelTempC = null;
+    hidden var fuelNextTempMs = 0;
+    hidden var fuelBannerUntilMs = -1;
     // Cadence coach (issue #179): cadShownRpm = banner value while out of the target band
     // after a nudge, else null.
     hidden var cadenceCoach = new CadenceCoach();
@@ -135,6 +141,8 @@ class ClimbProView extends Ui.DataField {
         // Safety alarms run before the payload gate: they don't need a route.
         checkHeartRate(info);
         checkHeatIndex();
+        // Eat/drink reminder (issue #184): needs only the activity timer, so no route either.
+        checkFuelReminder(info);
         checkCadence(info);
 
         var data = App.getApp().climbData;
@@ -407,6 +415,30 @@ class ClimbProView extends Ui.DataField {
         heatShownC = heatAlarm.hot ? hi : null;
     }
 
+    // Eat/drink reminder (issue #184). Cheap per-tick compare on the activity timer + total
+    // ascent; the temperature (for the hot-weather correction) is read once a minute.
+    hidden function checkFuelReminder(info) {
+        var now = Sys.getTimer();
+        var hotC = readNumberSetting("fuelHotC");
+        if (hotC <= 0) {
+            fuelTempC = null;
+        } else if (now >= fuelNextTempMs) {
+            fuelNextTempMs = now + 60000;
+            var r = heatReading();
+            fuelTempC = (r == null) ? null : r[0];
+        }
+        var timerMs = (info != null && info has :timerTime) ? info.timerTime : null;
+        var ascent = (info != null && info has :totalAscent) ? info.totalAscent : null;
+        if (fuel.update(timerMs, ascent, fuelTempC, readNumberSetting("fuelIntervalMin"),
+                readNumberSetting("fuelClimbM"), hotC)) {
+            triggerFuelAlert();
+            fuelBannerUntilMs = now + 30000;
+        }
+        if (fuelBannerUntilMs >= 0 && now >= fuelBannerUntilMs) {
+            fuelBannerUntilMs = -1;
+        }
+    }
+
     // [tempC, humidityPct] for the heat index, or null. Garmin Weather (the phone's
     // current conditions, cached on the watch) comes first: it is outdoor air with a real
     // humidity, whereas the watch's internal sensor reads several degrees high from wrist
@@ -471,7 +503,11 @@ class ClimbProView extends Ui.DataField {
         var lightsBanner = lights.bannerVisible(Time.now().value());
         if (data == null || !data.payloadReceived) {
             drawNoData(dc);
-            if (lightsBanner) { drawLightsBanner(dc); }
+            if (fuelBannerUntilMs >= 0) {
+                drawFuelBanner(dc);
+            } else if (lightsBanner) {
+                drawLightsBanner(dc);
+            }
             return;
         }
 
@@ -503,6 +539,8 @@ class ClimbProView extends Ui.DataField {
             drawHazardBanner(dc, data);
         } else if (heatShownC != null) {
             drawHeatBanner(dc, heatShownC);
+        } else if (fuelBannerUntilMs >= 0) {
+            drawFuelBanner(dc);
         } else if (cadShownRpm != null) {
             drawCadenceBanner(dc, cadenceLabel(cadenceCoach.shownDir, cadShownRpm));
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
@@ -587,6 +625,16 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, heatLabel(hiC), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Green strip for 30 s after the eat/drink reminder fired (issue #184), on and between
+    // climbs. Below the safety banners (off-route, heart rate, battery, hazard, heat).
+    hidden function drawFuelBanner(dc) {
+        var w = dc.getWidth();
+        dc.setColor(Gfx.COLOR_GREEN, Gfx.COLOR_GREEN);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, fuelReminderLabel(), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Dark-blue strip while the cadence is still outside the target band after a cadence-
@@ -1279,6 +1327,22 @@ class ClimbProView extends Ui.DataField {
         }
         if (Attention has :playTone) {
             Attention.playTone(Attention.TONE_ALERT_LO);
+        }
+    }
+
+    // Eat/drink reminder (issue #184): the climb-start vibration (long-gap-long) with the
+    // time-alert tone instead of the lap tone, so it is felt like the climb alert but heard
+    // as a different event.
+    hidden function triggerFuelAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 500),
+                new Attention.VibeProfile(0, 200),
+                new Attention.VibeProfile(100, 500)
+            ]);
+        }
+        if (Attention has :playTone) {
+            Attention.playTone(Attention.TONE_TIME_ALERT);
         }
     }
 
