@@ -542,13 +542,6 @@
             </intent-filter>
         </activity>
 
-        <provider
-            android:name="androidx.work.impl.WorkManagerInitializer"
-            android:authorities="${applicationId}.workmanager-init"
-            android:exported="false"
-            tools:node="remove"
-            xmlns:tools="http://schemas.android.com/tools"/>
-
         <!-- Shares the route GPX to Garmin Connect (navigation-handoff). -->
         <provider
             android:name="androidx.core.content.FileProvider"
