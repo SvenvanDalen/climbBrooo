@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.strava;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -20,6 +21,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.IncompleteClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -143,8 +145,39 @@ public class StravaActivitiesRepositoryTest {
 
         assertEquals(1, repo.syncActivities());
 
-        verify(api, times(1)).getStreams(anyString(), eq(555L), eq("latlng,time,temp"));
+        verify(api, times(1)).getStreams(anyString(), eq(555L), eq(StravaActivitiesRepository.STREAM_KEYS));
         assertEquals(32.0, attemptRepo.loadAll().get(0).avgTempC, 1e-9);
+    }
+
+    @Test
+    public void sync_storesAveragePowerHeartRateAndCadencePerAttempt() throws Exception {
+        StravaStreamsDto streams = stubActivityWithFullClimbTrack();
+        streams.watts = new StravaStreamsDto.NumberStream();
+        streams.watts.data = Arrays.asList(200.0, 0.0, 250.0);
+        streams.heartrate = new StravaStreamsDto.NumberStream();
+        streams.heartrate.data = Arrays.asList(150.0, 160.0, null);
+        streams.cadence = new StravaStreamsDto.NumberStream();
+        streams.cadence.data = Arrays.asList(80.0, 0.0, 90.0);
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        assertEquals(1, repo.syncActivities());
+
+        StoredClimbAttempt a = attemptRepo.loadAll().get(0);
+        assertEquals(Integer.valueOf(150), a.avgWatts);    // zeros count for power
+        assertEquals(Integer.valueOf(155), a.avgHeartrate); // missing sample skipped
+        assertEquals(Integer.valueOf(85), a.avgCadence);    // coasting skipped
+    }
+
+    @Test
+    public void sync_withoutPowerStream_leavesAttemptPowerNull() throws Exception {
+        stubActivityWithFullClimbTrack();
+        StravaActivitiesRepository repo =
+                new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
+
+        assertEquals(1, repo.syncActivities());
+        assertNull(attemptRepo.loadAll().get(0).avgWatts);
+        assertNull(attemptRepo.loadAll().get(0).avgCadence);
     }
 
     @Test

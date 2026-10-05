@@ -62,7 +62,8 @@ public final class BackupArchive {
             "event_calendar.json",
             "favorite_start_points.json",
             "recovery_checks.json",
-            "packing_lists.json"};
+            "packing_lists.json",
+            "weight_log.json"};
 
     static final String MANIFEST = "manifest.json";
     static final String PREFS = "prefs.json";

@@ -13,7 +13,8 @@ public enum PrivacyCategory {
             "Geïmporteerde routes met hun klimmen, namen, notities en ondergrond.",
             "routes/", "catalog.json", "sync_state.json"),
     ATTEMPTS("Klimpogingen",
-            "Tijden per klim uit je Strava-activiteiten, met notities en de namen van wie er "
+            "Tijden per klim uit je Strava-activiteiten, met gemiddeld vermogen, hartslag en "
+                    + "cadans per poging, notities en de namen van wie er "
                     + "meereed, en je snelste rit per route (de virtuele tegenstander).",
             "climb_attempts.json", "incomplete_climb_attempts.json", "route_ghosts.json"),
     RIDES("Rittenarchief",
@@ -21,12 +22,17 @@ public enum PrivacyCategory {
                     + "gemiddeld vermogen en start- en eindpunt, de gemeten regen voor de "
                     + "schoonmaakherinnering en je snelste 10, 40 en 100 km, je beste sprint, "
                     + "gemiddelde hartslag, hartslag-drift, vermogenscurve en tijd per "
-                    + "hartslag- en vermogensniveau per rit, en je herstel-check na de rit "
+                    + "hartslag- en vermogensniveau per rit, genormaliseerd vermogen, cadans per "
+                    + "hellingsklasse en hartslagherstel na intervallen, en je herstel-check na de rit "
                     + "(hoe zwaar de rit voelde, je slaap en notities), en voor de "
                     + "ontdek-de-regio-kaart welke vakken van ~150 m je buiten hebt gereden "
                     + "(geen volledige GPS-sporen).",
             "rides.json", "wet_ride_checks.json", "ride_stream_stats.json",
             "recovery_checks.json", "explore_tiles.json"),
+    WEIGHT_LOG("Gewichtslog",
+            "Je gewicht per dag, handmatig ingevuld of uit Health Connect, voor de juiste W/kg "
+                    + "van oudere klimpogingen.",
+            "weight_log.json"),
     TIRE_PRESSURE("Bandenspanning-logboek",
             "Je gemeten bandenspanning per datum, met notities en de herinneringsinstellingen.",
             "tire_pressure_log.json"),

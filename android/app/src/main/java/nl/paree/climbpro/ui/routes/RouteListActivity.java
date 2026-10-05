@@ -389,6 +389,9 @@ public final class RouteListActivity extends AppCompatActivity {
         } else if (id == R.id.action_hr_drift) {
             startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
             return true;
+        } else if (id == R.id.action_mywhoosh) {
+            startActivity(nl.paree.climbpro.ui.mywhoosh.MyWhooshActivity.intentFor(this));
+            return true;
         } else if (id == R.id.action_power_curve) {
             startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));
             return true;

@@ -249,6 +249,14 @@
                 android:text="@string/climb_detail_rate"/>
 
             <Button
+                android:id="@+id/btn_climb_indoor"
+                style="@style/Widget.ClimbPro.Button.Outline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/climb_detail_indoor"/>
+
+            <Button
                 android:id="@+id/btn_export_workout"
                 style="@style/Widget.ClimbPro.Button.Outline"
                 android:layout_width="match_parent"

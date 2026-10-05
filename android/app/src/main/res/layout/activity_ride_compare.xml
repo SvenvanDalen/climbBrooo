@@ -19,6 +19,14 @@
         android:textSize="15sp"
         android:text="Streams ophalen bij Strava…" />
 
+    <nl.paree.climbpro.ui.mywhoosh.SimpleLineChartView
+        android:id="@+id/delta_chart"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -31,8 +39,10 @@
 
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="0.6" android:text="km" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1.2" android:text="tijd A / B" />
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1.2" android:text="km/u A / B" />
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1" android:text="HS A / B" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1.1" android:text="km/u A / B" />
+        <TextView android:id="@+id/header_watts" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="1" android:text="W A / B" />
+        <TextView android:id="@+id/header_cadence" android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="0.9" android:text="rpm A / B" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="0.9" android:text="HS A / B" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/color_accent" android:layout_weight="0.9" android:gravity="end" android:text="verschil" />
     </LinearLayout>
 

@@ -1,6 +1,8 @@
 package nl.paree.climbpro.domain.ride;
 
 import nl.paree.climbpro.data.ride.StoredRide;
+import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
+import nl.paree.climbpro.domain.mywhoosh.MyWhooshRouteCatalog;
 import nl.paree.climbpro.domain.route.CumulativeDistance;
 
 import java.util.ArrayList;
@@ -40,9 +42,21 @@ public final class RideComparison {
         public final double hrB;
         /** Running moving-time difference at the end of this kilometre: B minus A (s). */
         public final int cumulativeDeltaSec;
+        /** Average watts (zeros included) and cadence (pedalling only), NaN without data. */
+        public final double wattsA;
+        public final double wattsB;
+        public final double cadenceA;
+        public final double cadenceB;
 
         Km(int km, double lengthM, int secA, int secB, double hrA, double hrB,
            int cumulativeDeltaSec) {
+            this(km, lengthM, secA, secB, hrA, hrB, cumulativeDeltaSec,
+                    Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+        }
+
+        Km(int km, double lengthM, int secA, int secB, double hrA, double hrB,
+           int cumulativeDeltaSec, double wattsA, double wattsB, double cadenceA,
+           double cadenceB) {
             this.km = km;
             this.lengthM = lengthM;
             this.secA = secA;
@@ -52,6 +66,10 @@ public final class RideComparison {
             this.hrA = hrA;
             this.hrB = hrB;
             this.cumulativeDeltaSec = cumulativeDeltaSec;
+            this.wattsA = wattsA;
+            this.wattsB = wattsB;
+            this.cadenceA = cadenceA;
+            this.cadenceB = cadenceB;
         }
     }
 
@@ -80,7 +98,9 @@ public final class RideComparison {
             int secB = (int) Math.round(tB - prevB);
             out.add(new Km(k + 1, to - from, secA, secB,
                     meanHr(a, from, to), meanHr(b, from, to),
-                    (int) Math.round(tB - tA)));
+                    (int) Math.round(tB - tA),
+                    mean(a, a.watts, from, to, true), mean(b, b.watts, from, to, true),
+                    mean(a, a.cadence, from, to, false), mean(b, b.cadence, from, to, false)));
             prevA = tA;
             prevB = tB;
         }
@@ -93,7 +113,9 @@ public final class RideComparison {
      */
     public static List<StoredRide> sameRouteCandidates(StoredRide base, List<StoredRide> all) {
         List<StoredRide> out = new ArrayList<>();
-        if (base == null || all == null || base.distanceM <= 0) return out;
+        if (base == null || all == null) return out;
+        if (IndoorRides.isMyWhoosh(base)) return sameMyWhooshRoute(base, all);
+        if (base.distanceM <= 0) return out;
         for (StoredRide r : all) {
             if (r == null || r.activityId == base.activityId) continue;
             if (Math.abs(r.distanceM - base.distanceM)
@@ -101,6 +123,22 @@ public final class RideComparison {
             if (!near(base.startLat, base.startLon, r.startLat, r.startLon)) continue;
             if (!near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
             out.add(r);
+        }
+        out.sort((x, y) -> Long.compare(y.startEpochSec, x.startEpochSec));
+        return out;
+    }
+
+    /**
+     * Repeated MyWhoosh route (issue #405): the other MyWhoosh rides with the same route name.
+     * Virtual rides share made-up coordinates, so the name is the reliable marker; a shorter
+     * ride on the route (stopped early) is still offered and compared over the common part.
+     */
+    static List<StoredRide> sameMyWhooshRoute(StoredRide base, List<StoredRide> all) {
+        List<StoredRide> out = new ArrayList<>();
+        String key = MyWhooshRouteCatalog.key(IndoorRides.routeTitle(base));
+        for (StoredRide r : all) {
+            if (r == null || r.activityId == base.activityId || !IndoorRides.isMyWhoosh(r)) continue;
+            if (key.equals(MyWhooshRouteCatalog.key(IndoorRides.routeTitle(r)))) out.add(r);
         }
         out.sort((x, y) -> Long.compare(y.startEpochSec, x.startEpochSec));
         return out;
@@ -138,6 +176,22 @@ public final class RideComparison {
         double span = distance[hi] - distance[lo];
         if (span <= 0) return values[hi];
         return values[lo] + (values[hi] - values[lo]) * (d - distance[lo]) / span;
+    }
+
+    /** Mean of a stream over a distance range; NaN without data. */
+    private static double mean(RideStreams s, double[] values, double from, double to,
+                               boolean includeZero) {
+        if (values == null) return Double.NaN;
+        double sum = 0;
+        int n = 0;
+        for (int i = 0; i < s.distance.length; i++) {
+            if (s.distance[i] < from || s.distance[i] > to) continue;
+            double v = values[i];
+            if (Double.isNaN(v) || v < 0 || (v == 0 && !includeZero)) continue;
+            sum += v;
+            n++;
+        }
+        return n > 0 ? sum / n : Double.NaN;
     }
 
     private static double meanHr(RideStreams s, double from, double to) {

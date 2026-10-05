@@ -152,6 +152,29 @@ public final class HealthConnectGateway {
         return list.isEmpty() ? null : list.get(0).getWeight().getKilograms();
     }
 
+    /**
+     * Every weight of the last {@code days} days for the weight log (issue #408), one per
+     * local day (the last measurement of that day); empty without the read permission.
+     */
+    public java.util.Map<java.time.LocalDate, Double> weightsByDay(int days)
+            throws InterruptedException {
+        java.util.Map<java.time.LocalDate, Double> out = new java.util.TreeMap<>();
+        if (!grantedPermissions().contains(HealthPermission.READ_WEIGHT)) return out;
+        Instant now = Instant.now();
+        ReadRecordsRequest<WeightRecord> req = new ReadRecordsRequest<>(
+                JvmClassMappingKt.getKotlinClass(WeightRecord.class),
+                TimeRangeFilter.between(now.minus(days, ChronoUnit.DAYS), now),
+                Collections.emptySet(), true, 5000, null);
+        ReadRecordsResponse<WeightRecord> resp = BuildersKt.<ReadRecordsResponse<WeightRecord>>runBlocking(
+                EmptyCoroutineContext.INSTANCE, (scope, cont) -> client().readRecords(req, cont));
+        java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+        for (WeightRecord r : resp.getRecords()) {
+            // Ascending order: a later measurement on the same day replaces an earlier one.
+            out.put(r.getTime().atZone(zone).toLocalDate(), r.getWeight().getKilograms());
+        }
+        return out;
+    }
+
     /** Runs {@link #exportRides} if the user enabled automatic export and it is possible. */
     public void exportIfEnabled() {
         if (!prefs.getBoolean(PREF_AUTO, false)) return;

@@ -214,6 +214,18 @@
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />
         <activity
+            android:name=".ui.mywhoosh.MyWhooshActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.routes.RouteListActivity" />
+        <activity
+            android:name=".ui.mywhoosh.WeightLogActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.mywhoosh.MyWhooshActivity" />
+        <activity
+            android:name=".ui.mywhoosh.ClimbIndoorActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.climbs.ClimbDetailActivity" />
+        <activity
             android:name=".ui.records.PowerCurveActivity"
             android:exported="false"
             android:parentActivityName=".ui.routes.RouteListActivity" />

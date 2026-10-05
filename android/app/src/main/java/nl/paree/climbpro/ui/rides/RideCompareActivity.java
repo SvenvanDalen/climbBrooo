@@ -49,6 +49,7 @@ public final class RideCompareActivity extends AppCompatActivity {
         TextView summary = findViewById(R.id.summary);
         View header = findViewById(R.id.header);
         RecyclerView list = findViewById(R.id.list);
+        nl.paree.climbpro.ui.mywhoosh.SimpleLineChartView chart = findViewById(R.id.delta_chart);
         list.setLayoutManager(new LinearLayoutManager(this));
         RideCompareAdapter adapter = new RideCompareAdapter();
         list.setAdapter(adapter);
@@ -58,9 +59,36 @@ public final class RideCompareActivity extends AppCompatActivity {
             summary.setText(summaryText(r));
             header.setVisibility(r.rows.isEmpty() ? View.GONE : View.VISIBLE);
             adapter.submit(r.rows);
+            showDeltaChart(chart, r.rows);
         });
         vm.error().observe(this, summary::setText);
         vm.load(getIntent().getLongExtra(EXTRA_A, -1L), getIntent().getLongExtra(EXTRA_B, -1L));
+    }
+
+    /**
+     * Running time difference per kilometre (issue #405): above zero B is behind A. Hidden for
+     * a comparison shorter than two kilometres.
+     */
+    private void showDeltaChart(nl.paree.climbpro.ui.mywhoosh.SimpleLineChartView chart,
+                                List<RideComparison.Km> rows) {
+        if (rows.size() < 2) {
+            chart.setVisibility(View.GONE);
+            return;
+        }
+        List<Double> deltas = new java.util.ArrayList<>();
+        deltas.add(0.0);
+        for (RideComparison.Km k : rows) deltas.add((double) k.cumulativeDeltaSec);
+        java.util.List<nl.paree.climbpro.ui.mywhoosh.SimpleLineChartView.Series> series =
+                new java.util.ArrayList<>();
+        series.add(new nl.paree.climbpro.ui.mywhoosh.SimpleLineChartView.Series(deltas,
+                androidx.core.content.ContextCompat.getColor(this, R.color.color_accent),
+                "verschil B − A", false, null, RideCompareActivity::signedSeconds));
+        chart.setSeries(series, true);
+        chart.setVisibility(View.VISIBLE);
+    }
+
+    private static String signedSeconds(double sec) {
+        return RideCompareAdapter.signedDuration((int) Math.round(sec));
     }
 
     private static String summaryText(RideCompareViewModel.Result r) {

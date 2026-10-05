@@ -4,8 +4,9 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 
 /**
  * Derives per-ride efforts from Strava streams: fastest distances (issue #225), sprints
- * (issue #224), heart-rate drift (issue #222), the power curve (issue #219) and time per
- * heart rate and power level (issue #218). Runs once per ride on the phone during the
+ * (issue #224), heart-rate drift (issue #222), the power curve (issue #219), time per
+ * heart rate and power level (issue #218), normalized power (issue #391), cadence per
+ * gradient class (issue #403) and heart-rate recovery after intervals (issue #402). Runs once per ride on the phone during the
  * ride-archive sync; only the result is stored.
  */
 public final class RideStreamAnalyzer {
@@ -13,7 +14,7 @@ public final class RideStreamAnalyzer {
     private RideStreamAnalyzer() {}
 
     /** Bump when the analysis changes, so stored stats from an older version are redone. */
-    public static final int VERSION = 5;
+    public static final int VERSION = 6;
 
     /** Sprint windows (issue #224): peak power over 5 and 15 s, peak speed over 10 s. */
     public static final int SPRINT_POWER_SHORT_SEC = 5;
@@ -61,6 +62,13 @@ public final class RideStreamAnalyzer {
         st.powerCurve = PowerCurveAnalyzer.bestPowers(streams);
         st.hrSecondsPerBpm = ZoneHistogramAnalyzer.heartRateSeconds(streams);
         st.powerSecondsPer10W = ZoneHistogramAnalyzer.powerSeconds(streams);
+        st.normalizedPower = NormalizedPowerAnalyzer.normalizedPower(streams);
+        CadenceByGradeAnalyzer.Result cadence = CadenceByGradeAnalyzer.analyze(streams);
+        if (cadence != null) {
+            st.cadenceGradeSec = cadence.seconds;
+            st.cadenceGradeRevs = cadence.revolutions;
+        }
+        st.hrRecoveryDrops = HeartRateRecoveryAnalyzer.drops(streams);
         return st;
     }
 

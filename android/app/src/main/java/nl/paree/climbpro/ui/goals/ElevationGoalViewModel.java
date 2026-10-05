@@ -20,6 +20,8 @@ import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Period;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Progress;
+import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
+import nl.paree.climbpro.domain.mywhoosh.VirtualElevation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +50,8 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
 
     private final MutableLiveData<Progress> weekProgress = new MutableLiveData<>();
     private final MutableLiveData<Progress> monthProgress = new MutableLiveData<>();
+    /** Virtual hm this month and whether they count (issue #393); null without indoor hm. */
+    private final MutableLiveData<String> virtualNote = new MutableLiveData<>();
 
     public ElevationGoalViewModel(@NonNull Application app) {
         super(app);
@@ -58,6 +62,7 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
 
     public LiveData<Progress> weekProgress()  { return weekProgress; }
     public LiveData<Progress> monthProgress() { return monthProgress; }
+    public LiveData<String> virtualNote() { return virtualNote; }
 
     /** @param metres 0 clears the goal ("not set"). Reloads progress afterwards. */
     public void setWeeklyGoalM(int metres) {
@@ -75,18 +80,28 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
 
             int weekGained;
             int monthGained;
-            List<StoredRide> rides = rideRepo.loadAll();
-            if (!rides.isEmpty()) {
+            List<StoredRide> allRides = rideRepo.loadAll();
+            // Issue #393: MyWhoosh / indoor hm count unless the rider switched them off.
+            boolean countVirtual = PreferenceManager.getDefaultSharedPreferences(getApplication())
+                    .getBoolean(VirtualElevation.PREF_COUNT_VIRTUAL, true);
+            List<StoredRide> rides = VirtualElevation.countedRides(allRides, countVirtual);
+            java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+            java.time.LocalDate today = java.time.LocalDate.now(zone);
+            int virtualMonth = ElevationGoalCalculator.cumulativeRideGainM(
+                    VirtualElevation.virtualRides(allRides), Period.MONTH, zone, today);
+            virtualNote.postValue(virtualMonth <= 0 ? null : countVirtual
+                    ? "Waarvan " + virtualMonth + " m virtueel (MyWhoosh/indoor) deze maand"
+                    : virtualMonth + " m virtueel (MyWhoosh/indoor) niet meegeteld deze maand");
+            if (!allRides.isEmpty()) {
                 // The ride archive (#160) has each ride's total hm, not just its climbs.
-                java.time.ZoneId zone = java.time.ZoneId.systemDefault();
-                java.time.LocalDate today = java.time.LocalDate.now(zone);
                 weekGained = ElevationGoalCalculator.cumulativeRideGainM(
                         rides, Period.WEEK, zone, today);
                 monthGained = ElevationGoalCalculator.cumulativeRideGainM(
                         rides, Period.MONTH, zone, today);
             } else {
                 // No archive yet (no Strava link, or only file imports): climb hm only.
-                List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+                List<StoredClimbAttempt> attempts = VirtualElevation.countedAttempts(
+                        attemptRepo.loadAll(), IndoorRides.indoorIds(allRides), countVirtual);
                 Map<String, Integer> elevationByClimbId = resolveElevationGains();
                 weekGained = ElevationGoalCalculator.cumulativeGainM(
                         attempts, elevationByClimbId, Period.WEEK);

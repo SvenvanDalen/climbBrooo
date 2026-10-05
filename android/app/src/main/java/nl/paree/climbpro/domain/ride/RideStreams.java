@@ -16,6 +16,8 @@ public final class RideStreams {
     public final double[] altitude;
     /** Heart rate in bpm, NaN where not recorded; null for rides without a heart-rate stream. */
     public final double[] heartrate;
+    /** Cadence in rpm, NaN where not recorded; null for rides without a cadence stream. */
+    public final double[] cadence;
 
     public RideStreams(int[] time, double[] distance) {
         this(time, distance, null, null);
@@ -27,6 +29,11 @@ public final class RideStreams {
 
     public RideStreams(int[] time, double[] distance, double[] watts, double[] altitude,
                        double[] heartrate) {
+        this(time, distance, watts, altitude, heartrate, null);
+    }
+
+    public RideStreams(int[] time, double[] distance, double[] watts, double[] altitude,
+                       double[] heartrate, double[] cadence) {
         this.time = time;
         this.distance = distance;
         this.watts = watts != null && time != null && watts.length == time.length ? watts : null;
@@ -34,6 +41,8 @@ public final class RideStreams {
                 ? altitude : null;
         this.heartrate = heartrate != null && time != null && heartrate.length == time.length
                 ? heartrate : null;
+        this.cadence = cadence != null && time != null && cadence.length == time.length
+                ? cadence : null;
     }
 
     /** True when time and distance are present, equally long and have at least two samples. */

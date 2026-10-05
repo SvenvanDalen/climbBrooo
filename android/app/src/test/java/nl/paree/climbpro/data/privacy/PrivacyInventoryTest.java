@@ -126,7 +126,8 @@ public class PrivacyInventoryTest {
                 "offline/",
                 "route_pois/",
                 "recovery_checks.json",
-                "packing_lists.json"};
+                "packing_lists.json",
+                "weight_log.json"};
         java.util.Set<String> covered = new java.util.HashSet<>();
         for (PrivacyCategory c : PrivacyCategory.values()) {
             covered.addAll(java.util.Arrays.asList(c.paths()));
