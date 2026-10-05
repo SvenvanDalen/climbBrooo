@@ -53,9 +53,17 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         public final List<SummitGroupPhotos.Moment> groupPhotos;
         /** Post-ride recovery check (issue #183); null when not logged yet. */
         public final RecoveryCheck recovery;
+        /** NP / IF / TSS of a MyWhoosh ride (issue #391); null otherwise or without power. */
+        public final nl.paree.climbpro.domain.mywhoosh.RideIntensity intensity;
 
         Row(StoredRide ride, RideCategory category, List<SummitGroupPhotos.Moment> groupPhotos,
             RecoveryCheck recovery) {
+            this(ride, category, groupPhotos, recovery, null);
+        }
+
+        Row(StoredRide ride, RideCategory category, List<SummitGroupPhotos.Moment> groupPhotos,
+            RecoveryCheck recovery, nl.paree.climbpro.domain.mywhoosh.RideIntensity intensity) {
+            this.intensity = intensity;
             this.ride = ride;
             this.category = category;
             this.groupPhotos = groupPhotos != null
@@ -167,9 +175,18 @@ public final class RideArchiveViewModel extends AndroidViewModel {
         List<Row> out = new ArrayList<>(rides.size());
         Map<Long, List<SummitGroupPhotos.Moment>> groupPhotos = loadGroupPhotos();
         Map<Long, RecoveryCheck> recovery = recoveryRepo.byRide();
+        Map<Long, nl.paree.climbpro.data.ride.StoredRideStreamStats> stats =
+                new nl.paree.climbpro.data.ride.RideStreamStatsRepository(getApplication()).loadById();
+        int ftp = new nl.paree.climbpro.data.rider.RiderProfileRepository(getApplication())
+                .load().ftpWatts;
         for (StoredRide r : rides) {
+            nl.paree.climbpro.domain.mywhoosh.RideIntensity intensity =
+                    nl.paree.climbpro.domain.mywhoosh.IndoorRides.isMyWhoosh(r)
+                            ? nl.paree.climbpro.domain.mywhoosh.RideIntensity.of(
+                                    r, stats.get(r.activityId), ftp)
+                            : null;
             out.add(new Row(r, categories.get(r.activityId), groupPhotos.get(r.activityId),
-                    recovery.get(r.activityId)));
+                    recovery.get(r.activityId), intensity));
         }
         out.sort((a, b) -> Long.compare(b.ride.startEpochSec, a.ride.startEpochSec));
         allRows = out;

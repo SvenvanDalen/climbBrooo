@@ -93,21 +93,19 @@ public final class ClimbOfTheWeekViewModel extends AndroidViewModel {
         });
     }
 
+    /** Coordinate when there is no location fix; the forecast is then skipped. */
+    private static final double NO_POSITION = Double.NaN;
+
     private State compute() {
         LocalDate today = LocalDate.now();
         String week = ClimbOfTheWeek.weekKey(today);
         List<ClimbOfTheWeek.Candidate> candidates = loadCandidates();
 
         boolean permission = hasLocationPermission();
-        double lat = Double.NaN;
-        double lon = Double.NaN;
-        if (permission) {
-            Location fix = LastKnownLocation.freshest(getApplication());
-            if (fix != null) {
-                lat = fix.getLatitude();
-                lon = fix.getLongitude();
-            }
-        }
+        Location fix = permission ? LastKnownLocation.freshest(getApplication()) : null;
+        // NaN = no position; kept out of the Location getters so lint's range check holds.
+        double lat = fix != null ? fix.getLatitude() : NO_POSITION;
+        double lon = fix != null ? fix.getLongitude() : NO_POSITION;
 
         List<DailyForecast.Day> forecast = fetchForecast(lat, lon, candidates);
 

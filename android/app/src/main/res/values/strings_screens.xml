@@ -134,6 +134,7 @@
     <string name="menu_power_curve">Vermogenscurve</string>
     <string name="menu_zone_time">Zonetijd</string>
     <string name="menu_hr_drift">Hartslag-drift</string>
+    <string name="menu_mywhoosh">MyWhoosh-analyse</string>
     <string name="menu_friend_feed">Vriendenfeed</string>
     <string name="menu_year_review">Jaaroverzicht</string>
     <string name="menu_fitness">Fitheid &amp; vorm</string>
@@ -309,6 +310,7 @@
     <string name="climb_detail_export_gpx">Exporteer als GPX</string>
     <string name="climb_detail_share_code">Deel als code</string>
     <string name="climb_detail_rate">Klim beoordelen</string>
+    <string name="climb_detail_indoor">Indoor en progressie</string>
     <string name="climb_detail_export_workout">Exporteer als Zwift-/ERG-workout</string>
     <string name="climb_detail_mark_home">Markeer als thuisklim</string>
     <string name="climb_detail_sunrise_ride">Zonsopkomst-rit plannen</string>

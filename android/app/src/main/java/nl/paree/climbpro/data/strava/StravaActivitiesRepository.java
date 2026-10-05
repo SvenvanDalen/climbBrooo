@@ -39,6 +39,7 @@ import nl.paree.climbpro.domain.matching.ClimbEntryOnlyDetector;
 import nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 import nl.paree.climbpro.domain.ride.RideStreams;
+import nl.paree.climbpro.domain.matching.TrackSensors;
 import nl.paree.climbpro.domain.ride.RideTrack;
 
 import okhttp3.OkHttpClient;
@@ -92,12 +93,17 @@ public final class StravaActivitiesRepository {
      * overlap catches late uploads; {@code RideRepository#upsertAll} makes the overlap harmless.
      */
     private static final long   RIDE_CURSOR_OVERLAP_SEC = 3L * 24 * 60 * 60;
-    private static final String STREAM_KEYS  = "latlng,time,temp"; // temp: optional, same request
+    /**
+     * Climb matching. temp, watts, heartrate and cadence are optional and come in the same
+     * request; they give each attempt its temperature (issue #80) and its average power, heart
+     * rate and cadence (issues #387, #388).
+     */
+    static final String STREAM_KEYS  = "latlng,time,temp,watts,heartrate,cadence";
     /**
      * Streams the ride-archive analysis needs (issues #225, #224, #222); Strava omits keys a
      * ride doesn't have, such as watts without a power meter.
      */
-    static final String RIDE_STREAM_KEYS = "time,distance,watts,altitude,heartrate";
+    static final String RIDE_STREAM_KEYS = "time,distance,watts,altitude,heartrate,cadence";
     /**
      * What {@link #analyzeRideStreams()} requests: the analysis streams plus the GPS track, so
      * a new ride lands on the explore map (issue #194) without a second request.
@@ -312,7 +318,11 @@ public final class StravaActivitiesRepository {
             page++;
         }
 
-        if (!created.isEmpty()) attemptRepo.append(created);
+        if (!created.isEmpty()) {
+            List<StoredClimbAttempt> previous = attemptRepo.loadAll();
+            attemptRepo.append(created);
+            notifyMyWhooshPrs(created, previous);
+        }
         if (!incompleteCreated.isEmpty()) incompleteAttemptRepo.append(incompleteCreated);
         if (paginationComplete) {
             prefs.edit().putLong(PREF_LAST, nowSec).apply();
@@ -625,10 +635,12 @@ public final class StravaActivitiesRepository {
             }
 
             List<Double> trackTemps = new ArrayList<>();
-            List<TrackSample> track = toTrack(s, trackTemps);
+            TrackSensors sensors = new TrackSensors(hasData(s.watts), hasData(s.heartrate),
+                    hasData(s.cadence));
+            List<TrackSample> track = toTrack(s, trackTemps, sensors);
             if (track.size() < 2) return new MatchResult(StreamOutcome.SKIPPED, out, headers);
 
-            out.addAll(ActivityClimbMatcher.match(track, trackTemps, climbs, act.id,
+            out.addAll(ActivityClimbMatcher.match(track, trackTemps, sensors, climbs, act.id,
                     parseStartDate(act.startDate), incompleteOut));
             offerRouteGhosts(act, track);
             return new MatchResult(StreamOutcome.OK, out, headers);
@@ -707,6 +719,38 @@ public final class StravaActivitiesRepository {
      * the {@code {climb}}/{@code {vam}} placeholders. Only built when a title template is
      * actually configured.
      */
+    /**
+     * PR notification after a MyWhoosh ride (issue #388). Never throws: the attempts are
+     * already stored and a notification problem must not fail the sync.
+     */
+    private void notifyMyWhooshPrs(List<StoredClimbAttempt> created,
+                                   List<StoredClimbAttempt> previous) {
+        try {
+            java.util.Set<Long> myWhooshIds =
+                    nl.paree.climbpro.domain.mywhoosh.IndoorRides.myWhooshIds(rideRepo.loadAll());
+            if (myWhooshIds.isEmpty()) return;
+            nl.paree.climbpro.domain.rider.WeightHistory weights =
+                    nl.paree.climbpro.data.rider.WeightLogStore.of(context).history(
+                            new nl.paree.climbpro.data.rider.RiderProfileRepository(context)
+                                    .load().riderWeightKg,
+                            java.time.ZoneId.systemDefault());
+            List<nl.paree.climbpro.domain.mywhoosh.MyWhooshPrDetector.Pr> prs =
+                    nl.paree.climbpro.domain.mywhoosh.MyWhooshPrDetector.detect(
+                            created, previous, myWhooshIds, weights,
+                            clock.getAsLong()
+                                    - nl.paree.climbpro.domain.mywhoosh.MyWhooshPrDetector.RECENT_SEC);
+            if (prs.isEmpty()) return;
+            Map<String, String> names = new HashMap<>();
+            for (Map.Entry<String, StoredClimb> e : enumerateStoredClimbsById().entrySet()) {
+                StoredClimb c = e.getValue();
+                names.put(e.getKey(), c.userDisplayName != null ? c.userDisplayName : c.name);
+            }
+            nl.paree.climbpro.service.MyWhooshPrNotifier.notify(context, prs, names);
+        } catch (Exception e) {
+            Log.w(TAG, "MyWhoosh PR notification failed", e);
+        }
+    }
+
     private Map<String, StoredClimb> enumerateStoredClimbsById() {
         Map<String, StoredClimb> byId = new HashMap<>();
         for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
@@ -733,6 +777,15 @@ public final class StravaActivitiesRepository {
      *                 latlng samples can never shift temperatures onto the wrong track index.
      */
     static List<TrackSample> toTrack(StravaStreamsDto s, List<Double> tempsOut) {
+        return toTrack(s, tempsOut, null);
+    }
+
+    /**
+     * As {@link #toTrack(StravaStreamsDto, List)}, also filling {@code sensorsOut} (when not
+     * null) index-aligned with the track from the watts, heartrate and cadence streams.
+     */
+    static List<TrackSample> toTrack(StravaStreamsDto s, List<Double> tempsOut,
+                                     TrackSensors sensorsOut) {
         int n = Math.min(s.latlng.data.size(), s.time.data.size());
         List<Double> rawTemps = s.temp != null ? s.temp.data : null;
         List<TrackSample> track = new ArrayList<>(n);
@@ -741,8 +794,20 @@ public final class StravaActivitiesRepository {
             if (ll == null || ll.size() < 2) continue;
             track.add(new TrackSample(ll.get(0), ll.get(1), s.time.data.get(i)));
             tempsOut.add(rawTemps != null && i < rawTemps.size() ? rawTemps.get(i) : null);
+            if (sensorsOut != null) {
+                sensorsOut.add(valueAt(s.watts, i), valueAt(s.heartrate, i),
+                        valueAt(s.cadence, i));
+            }
         }
         return track;
+    }
+
+    private static Double valueAt(StravaStreamsDto.NumberStream s, int i) {
+        return s != null && s.data != null && i < s.data.size() ? s.data.get(i) : null;
+    }
+
+    private static boolean hasData(StravaStreamsDto.NumberStream s) {
+        return s != null && s.data != null && !s.data.isEmpty();
     }
 
     /**
@@ -1098,7 +1163,8 @@ public final class StravaActivitiesRepository {
             d[i] = last;
         }
         return new RideStreams(t, d, toNaNGaps(s.watts, t.length),
-                toAltitude(s.altitude, t.length), toNaNGaps(s.heartrate, t.length));
+                toAltitude(s.altitude, t.length), toNaNGaps(s.heartrate, t.length),
+                toNaNGaps(s.cadence, t.length));
     }
 
     private static double[] toNaNGaps(StravaStreamsDto.NumberStream s, int n) {

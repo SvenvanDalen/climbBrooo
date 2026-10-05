@@ -74,5 +74,5 @@
     <string name="hazards_descent_row">Technical descent km %1$.1f–%2$.1f (%3$.1f km)</string>
     <string name="hazards_none">No tunnels or technical descents found.</string>
     <string name="hazards_lookup_failed">Tunnels could not be fetched (%1$s); tunnels found earlier are kept.</string>
-    <string name="hazards_note">Descents: ≤ −8 % over 300 m, or ≤ −5 % with many bends. Tunnels © OpenStreetMap contributors. The watch warns 400 m ahead (after the next sync).</string>
+    <string name="hazards_note" formatted="false">Descents: ≤ −8 % over 300 m, or ≤ −5 % with many bends. Tunnels © OpenStreetMap contributors. The watch warns 400 m ahead (after the next sync).</string>
 </resources>

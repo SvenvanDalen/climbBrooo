@@ -74,5 +74,5 @@
     <string name="hazards_descent_row">Technische Abfahrt km %1$.1f–%2$.1f (%3$.1f km)</string>
     <string name="hazards_none">Keine Tunnel oder technischen Abfahrten gefunden.</string>
     <string name="hazards_lookup_failed">Tunnel konnten nicht abgerufen werden (%1$s); früher gefundene Tunnel bleiben erhalten.</string>
-    <string name="hazards_note">Abfahrten: ≤ −8 % auf 300 m oder ≤ −5 % mit vielen Kurven. Tunnel © OpenStreetMap-Mitwirkende. Die Uhr warnt 400 m vorher (nach der nächsten Synchronisierung).</string>
+    <string name="hazards_note" formatted="false">Abfahrten: ≤ −8 % auf 300 m oder ≤ −5 % mit vielen Kurven. Tunnel © OpenStreetMap-Mitwirkende. Die Uhr warnt 400 m vorher (nach der nächsten Synchronisierung).</string>
 </resources>

@@ -115,6 +115,7 @@
     <string name="menu_power_curve">Leistungskurve</string>
     <string name="menu_zone_time">Zeit in Zonen</string>
     <string name="menu_hr_drift">Herzfrequenz-Drift</string>
+    <string name="menu_mywhoosh">MyWhoosh-Analyse</string>
     <string name="menu_friend_feed">Freunde-Feed</string>
     <string name="menu_year_review">Jahresrückblick</string>
     <string name="menu_fitness">Fitness &amp; Form</string>
@@ -288,6 +289,7 @@
     <string name="climb_detail_export_gpx">Als GPX exportieren</string>
     <string name="climb_detail_share_code">Als Code teilen</string>
     <string name="climb_detail_rate">Anstieg bewerten</string>
+    <string name="climb_detail_indoor">Indoor und Fortschritt</string>
     <string name="climb_detail_export_workout">Als Zwift-/ERG-Workout exportieren</string>
     <string name="climb_detail_mark_home">Als Hausberg markieren</string>
     <string name="climb_detail_sunrise_ride">Sonnenaufgangsfahrt planen</string>

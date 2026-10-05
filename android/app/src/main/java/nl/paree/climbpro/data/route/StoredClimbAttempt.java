@@ -74,4 +74,14 @@ public final class StoredClimbAttempt {
      * {@link nl.paree.climbpro.domain.climb.AttemptTemperature}. Phone-only.
      */
     public Double avgTempC;
+
+    /**
+     * Average power (W, zeros included), heart rate (bpm) and cadence (rpm, while pedalling)
+     * over this pass, from the Strava streams at match time (issues #387, #388). Null when the
+     * ride had no such stream, or for attempts matched before these fields existed (no
+     * backfill). Phone-only.
+     */
+    public Integer avgWatts;
+    public Integer avgHeartrate;
+    public Integer avgCadence;
 }

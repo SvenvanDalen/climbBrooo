@@ -76,6 +76,11 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
         holder.stats.setText(String.format(Locale.getDefault(),
                 "%s  •  %.1f km  •  %d hm  •  %.1f km/u",
                 date, r.distanceM / 1000f, Math.round(r.elevationGainM), r.avgSpeedMps * 3.6f));
+        if (row.intensity != null) {
+            holder.stats.append(String.format(Locale.getDefault(),
+                    "\nNP %d W  •  IF %.2f  •  %.0f TSS", row.intensity.normalizedPower,
+                    row.intensity.intensityFactor, row.intensity.tss));
+        }
 
         bindRecovery(holder, row.recovery);
         holder.itemView.setOnClickListener(v -> {

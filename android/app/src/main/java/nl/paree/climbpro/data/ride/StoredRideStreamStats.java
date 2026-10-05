@@ -49,4 +49,17 @@ public final class StoredRideStreamStats {
     public int[]   hrSecondsPerBpm;
     /** Seconds per 10 W power bin from 0 W (issue #218); null without power. */
     public int[]   powerSecondsPer10W;
+    /** Normalized power in watts (issue #391); null without (10 min of) power. */
+    public Integer normalizedPower;
+    /**
+     * Pedalling seconds and pedal revolutions per gradient class 0-5, the segment color classes
+     * (issue #403); null without cadence or altitude. Average rpm = revs × 60 / seconds.
+     */
+    public int[]   cadenceGradeSec;
+    public int[]   cadenceGradeRevs;
+    /**
+     * Heart-rate drop (bpm) 60 s after each interval, in ride order (issue #402); null without
+     * power and heart rate, empty when the ride had no interval.
+     */
+    public int[]   hrRecoveryDrops;
 }

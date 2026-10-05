@@ -43,6 +43,8 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
         h.time.setText(duration(k.secA) + " / " + duration(k.secB));
         h.speed.setText(String.format(Locale.getDefault(), "%.1f / %.1f", k.speedA, k.speedB));
         h.hr.setText(bpm(k.hrA) + " / " + bpm(k.hrB));
+        h.watts.setText(bpm(k.wattsA) + " / " + bpm(k.wattsB));
+        h.cadence.setText(bpm(k.cadenceA) + " / " + bpm(k.cadenceB));
         h.delta.setText(signedDuration(k.cumulativeDeltaSec));
         // Ahead/behind use the palette's status colors (blue/orange when colorblind, #258).
         h.delta.setTextColor(k.cumulativeDeltaSec < 0
@@ -74,6 +76,8 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
         final TextView time;
         final TextView speed;
         final TextView hr;
+        final TextView watts;
+        final TextView cadence;
         final TextView delta;
 
         KmVH(@NonNull View v) {
@@ -82,6 +86,8 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
             time = v.findViewById(R.id.time);
             speed = v.findViewById(R.id.speed);
             hr = v.findViewById(R.id.hr);
+            watts = v.findViewById(R.id.watts);
+            cadence = v.findViewById(R.id.cadence);
             delta = v.findViewById(R.id.delta);
         }
     }

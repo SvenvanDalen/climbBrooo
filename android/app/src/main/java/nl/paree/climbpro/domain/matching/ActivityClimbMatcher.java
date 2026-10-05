@@ -39,6 +39,19 @@ public final class ActivityClimbMatcher {
                                                  List<KnownClimb> climbs,
                                                  long activityId, long dateSec,
                                                  List<StoredIncompleteClimbAttempt> incompleteOut) {
+        return match(track, temps, null, climbs, activityId, dateSec, incompleteOut);
+    }
+
+    /**
+     * As {@link #match(List, List, List, long, long, List)}, plus each pass's average power,
+     * heart rate and cadence (issues #387, #388) when {@code sensors} is given, index-aligned
+     * with {@code track}.
+     */
+    public static List<StoredClimbAttempt> match(List<TrackSample> track, List<Double> temps,
+                                                 TrackSensors sensors,
+                                                 List<KnownClimb> climbs,
+                                                 long activityId, long dateSec,
+                                                 List<StoredIncompleteClimbAttempt> incompleteOut) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         if (track == null || track.size() < 2) return out;
         for (KnownClimb k : climbs) {
@@ -64,6 +77,11 @@ public final class ActivityClimbMatcher {
                 a.routeDeviation = ClimbRouteDeviationDetector.isDeviated(
                         track, p.entryIdx, p.exitIdx, k.calibLats, k.calibLons);
                 a.avgTempC = AttemptTemperature.averageOverPass(temps, p.entryIdx, p.exitIdx);
+                if (sensors != null) {
+                    a.avgWatts = sensors.avgWatts(p.entryIdx, p.exitIdx);
+                    a.avgHeartrate = sensors.avgHeartrate(p.entryIdx, p.exitIdx);
+                    a.avgCadence = sensors.avgCadence(p.entryIdx, p.exitIdx);
+                }
                 out.add(a);
             }
 

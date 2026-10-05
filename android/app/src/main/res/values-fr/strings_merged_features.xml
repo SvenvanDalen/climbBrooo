@@ -74,5 +74,5 @@
     <string name="hazards_descent_row">Descente technique km %1$.1f–%2$.1f (%3$.1f km)</string>
     <string name="hazards_none">Aucun tunnel ni descente technique trouvé.</string>
     <string name="hazards_lookup_failed">Impossible de récupérer les tunnels (%1$s) ; les tunnels trouvés auparavant sont conservés.</string>
-    <string name="hazards_note">Descentes : ≤ −8 % sur 300 m, ou ≤ −5 % avec beaucoup de virages. Tunnels © contributeurs OpenStreetMap. La montre prévient 400 m avant (après la prochaine synchronisation).</string>
+    <string name="hazards_note" formatted="false">Descentes : ≤ −8 % sur 300 m, ou ≤ −5 % avec beaucoup de virages. Tunnels © contributeurs OpenStreetMap. La montre prévient 400 m avant (après la prochaine synchronisation).</string>
 </resources>
