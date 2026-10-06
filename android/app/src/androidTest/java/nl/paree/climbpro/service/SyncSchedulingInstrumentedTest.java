@@ -70,14 +70,9 @@ public class SyncSchedulingInstrumentedTest {
         UUID a = SyncScheduler.triggerImmediateSync(app);
         UUID b = SyncScheduler.triggerImmediateSync(app);
         assertNotEquals(a, b);
-        boolean cancelledA = false;
-        boolean liveB = false;
-        for (WorkInfo i : unique(SyncScheduler.UNIQUE_MANUAL_SYNC)) {
-            if (i.getId().equals(a)) cancelledA = i.getState() == WorkInfo.State.CANCELLED;
-            if (i.getId().equals(b)) liveB = !i.getState().isFinished();
-        }
-        assertTrue(cancelledA);
-        assertTrue(liveB);
+        WorkManager wm = WorkManager.getInstance(app);
+        assertEquals(WorkInfo.State.CANCELLED, wm.getWorkInfoById(a).get().getState());
+        assertTrue(!wm.getWorkInfoById(b).get().getState().isFinished());
     }
 
     @Test

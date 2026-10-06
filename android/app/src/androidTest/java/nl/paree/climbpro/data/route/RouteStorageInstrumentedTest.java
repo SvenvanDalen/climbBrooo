@@ -67,16 +67,14 @@ public class RouteStorageInstrumentedTest {
     }
 
     @Test
-    public void renamesAndNotesSurviveResync() throws Exception {
-        repo.renameRoute(UiTestData.ROUTE_ID, "Mijn rondje");
+    public void climbRenameSurvivesResync() throws Exception {
         repo.renameClimb(UiTestData.ROUTE_ID, 0, "Côte de test");
-        repo.saveNotes(UiTestData.ROUTE_ID, "Bidon bijvullen in Spa");
 
-        // Re-import the same route (as a Strava resync does) with fresh detector output.
+        // Re-import the same route with fresh detector output, as a resync does. (Route-level
+        // name and notes are carried over by the Strava sync itself; see the JVM tests.)
         UiTestData.seed(app);
 
         StoredRoute r = new RouteRepository(app).loadRoute(UiTestData.ROUTE_ID);
-        assertEquals("Mijn rondje", r.userDisplayName);
         assertEquals("Côte de test", r.climbs.get(0).userDisplayName);
     }
 
