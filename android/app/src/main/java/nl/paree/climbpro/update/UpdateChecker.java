@@ -12,6 +12,8 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
+
 import nl.paree.climbpro.BuildConfig;
 
 import okhttp3.OkHttpClient;
@@ -52,6 +54,7 @@ public final class UpdateChecker {
     }
 
     private final Context           appContext;
+    private final String            baseUrl;
     private final ExecutorService   executor = Executors.newSingleThreadExecutor();
     private final Handler           mainHandler = new Handler(Looper.getMainLooper());
 
@@ -65,13 +68,20 @@ public final class UpdateChecker {
     }
 
     public UpdateChecker(Context context) {
+        this(context, GitHubApiClient.BASE_URL);
+    }
+
+    /** Test seam: points the release lookup at another host (e.g. a MockWebServer). */
+    @VisibleForTesting
+    UpdateChecker(Context context, String baseUrl) {
         this.appContext = context.getApplicationContext();
+        this.baseUrl = baseUrl;
     }
 
     public void checkForUpdate(Callback callback) {
         executor.execute(() -> {
             try {
-                Retrofit retrofit = buildRetrofit();
+                Retrofit retrofit = buildRetrofit(baseUrl);
                 GitHubApiClient api = retrofit.create(GitHubApiClient.class);
                 Response<GitHubReleaseDto> resp = api.latestRelease(OWNER, REPO_NAME).execute();
 
@@ -192,14 +202,14 @@ public final class UpdateChecker {
         return 0;
     }
 
-    private static Retrofit buildRetrofit() {
+    private static Retrofit buildRetrofit(String baseUrl) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(logging)
                 .build();
         return new Retrofit.Builder()
-                .baseUrl(GitHubApiClient.BASE_URL)
+                .baseUrl(baseUrl)
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create())
                 .build();
