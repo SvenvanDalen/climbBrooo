@@ -51,9 +51,9 @@ public class RouteSyncWorkerRunTest {
         UiTestData.seed(app);
         PreferenceManager.getDefaultSharedPreferences(app).edit()
                 .putString(RouteSyncWorker.PREF_MODE, RouteSyncWorker.MODE_RADIUS)
-                .putFloat(RouteSyncWorker.PREF_LAST_LAT, 50.42f)
-                .putFloat(RouteSyncWorker.PREF_LAST_LON, 5.80f)
                 .commit();
+        // Stored the way RadiusLocation writes it (double bits as long), not as floats.
+        RadiusLocation.remember(PreferenceManager.getDefaultSharedPreferences(app), 50.42, 5.80);
         ListenableWorker.Result r = run();
         assertNotNull(r);
         assertFalse(r.getOutputData().getBoolean(RouteSyncWorker.KEY_WATCH_SENT, false));
