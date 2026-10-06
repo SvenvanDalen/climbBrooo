@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.health.connect.client.HealthConnectClient;
 import androidx.health.connect.client.PermissionController;
 import androidx.health.connect.client.permission.HealthPermission;
@@ -71,10 +72,18 @@ public final class HealthConnectGateway {
 
     private final Context ctx;
     private final SharedPreferences prefs;
+    /** Test seam; null means the platform client. */
+    private final HealthConnectClient client;
 
     public HealthConnectGateway(Context context) {
+        this(context, null);
+    }
+
+    @VisibleForTesting
+    HealthConnectGateway(Context context, HealthConnectClient client) {
         this.ctx = context.getApplicationContext();
         this.prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        this.client = client;
     }
 
     public Availability availability() {
@@ -164,10 +173,11 @@ public final class HealthConnectGateway {
     }
 
     private HealthConnectClient client() {
-        return HealthConnectClient.getOrCreate(ctx);
+        return client != null ? client : HealthConnectClient.getOrCreate(ctx);
     }
 
-    private static List<Record> toRecords(RideHealthEntry e, Set<String> granted, long version) {
+    @VisibleForTesting
+    static List<Record> toRecords(RideHealthEntry e, Set<String> granted, long version) {
         List<Record> out = new ArrayList<>();
         out.add(new ExerciseSessionRecord(e.start, e.offset, e.end, e.offset,
                 e.stationary ? ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY
