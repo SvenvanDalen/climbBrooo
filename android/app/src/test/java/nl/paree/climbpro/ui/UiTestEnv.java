@@ -75,6 +75,23 @@ public final class UiTestEnv {
         return condition.getAsBoolean();
     }
 
+    /**
+     * Observes {@code data} until a non-null value matches {@code p} (or 3 s pass) and returns
+     * it, else null. The observer is removed afterwards so later posts don't re-run {@code p}.
+     */
+    public static <T> T awaitValue(androidx.lifecycle.LiveData<T> data,
+                                   java.util.function.Predicate<T> p) {
+        java.util.concurrent.atomic.AtomicReference<T> box =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        androidx.lifecycle.Observer<T> o = v -> {
+            if (v != null && box.get() == null && p.test(v)) box.set(v);
+        };
+        data.observeForever(o);
+        waitFor(() -> box.get() != null);
+        data.removeObserver(o);
+        return box.get();
+    }
+
     public static String latestToast() {
         CharSequence t = ShadowToast.getTextOfLatestToast();
         return t != null ? t.toString() : null;
