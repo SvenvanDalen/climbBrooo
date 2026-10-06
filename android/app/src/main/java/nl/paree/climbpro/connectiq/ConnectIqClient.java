@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -74,8 +75,15 @@ public final class ConnectIqClient {
     private volatile WatchRequestHandler requestHandler;
 
     public ConnectIqClient(Context context) {
+        this(context, ConnectIQ.getInstance(context.getApplicationContext(),
+                ConnectIQ.IQConnectType.WIRELESS));
+    }
+
+    /** Test seam: runs the client against a fake SDK. */
+    @VisibleForTesting
+    ConnectIqClient(Context context, ConnectIQ connectIQ) {
         this.context = context.getApplicationContext();
-        this.connectIQ = ConnectIQ.getInstance(this.context, ConnectIQ.IQConnectType.WIRELESS);
+        this.connectIQ = connectIQ;
     }
 
     public LiveData<ConnectIqState> state() { return stateLd; }
