@@ -29,6 +29,12 @@ public final class UiTestEnv {
 
     private UiTestEnv() {}
 
+    /** The application context with the app theme, for inflating item layouts. */
+    public static Context themed() {
+        return new android.view.ContextThemeWrapper(ApplicationProvider.getApplicationContext(),
+                nl.paree.climbpro.R.style.Theme_ClimbPro);
+    }
+
     /** Test WorkManager whose executor never runs work (sync/CIQ workers would block). */
     public static void initWorkManager() {
         Context app = ApplicationProvider.getApplicationContext();
