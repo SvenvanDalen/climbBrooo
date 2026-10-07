@@ -168,14 +168,46 @@ public class RouteFlowsEspressoTest {
         }
     }
 
+    /** Waits until the route has loaded into the screen and its onResume reload has landed. */
+    private void awaitRouteLoaded(ActivityScenario<RouteDetailActivity> s) throws Exception {
+        assertTrue(DeviceState.waitFor(() -> "Testroute met twee klimmen".equals(notesText(s)), 10_000));
+        // onCreate and onResume both load the route; let the second emission land too.
+        Thread.sleep(1_500);
+    }
+
+    private static String notesText(ActivityScenario<RouteDetailActivity> s) {
+        String[] text = new String[1];
+        s.onActivity(a -> text[0] = ((EditText) a.findViewById(R.id.notes_edit)).getText().toString());
+        return text[0];
+    }
+
     @Test
     public void notesAreSavedAsRouteMetadata() throws Exception {
         try (ActivityScenario<RouteDetailActivity> s = openRoute()) {
+            awaitRouteLoaded(s);
             onView(withId(R.id.notes_edit)).perform(EspressoActions.scrollIntoView(),
                     replaceText("Koffiestop in Stavelot #ardennen"), closeSoftKeyboard());
             onView(withId(R.id.btn_save_notes)).perform(EspressoActions.scrollIntoView(), click());
-            assertTrue(DeviceState.waitFor(() -> "Koffiestop in Stavelot #ardennen"
-                    .equals(route(UiTestData.ROUTE_ID).notes), 5_000));
+            DeviceState.waitFor(() -> "Koffiestop in Stavelot #ardennen"
+                    .equals(route(UiTestData.ROUTE_ID).notes), 5_000);
+            assertEquals("Koffiestop in Stavelot #ardennen", route(UiTestData.ROUTE_ID).notes);
+        }
+    }
+
+    @Test
+    @org.junit.Ignore("BUG: RouteDetailActivity's route observer always does notesEdit.setText(route.notes); "
+            + "the route reloads on onResume and after rename/status/surface actions, so typed but "
+            + "unsaved notes are silently wiped")
+    public void unsavedNotesSurviveARouteReload() throws Exception {
+        try (ActivityScenario<RouteDetailActivity> s = openRoute()) {
+            awaitRouteLoaded(s);
+            onView(withId(R.id.notes_edit)).perform(EspressoActions.scrollIntoView(),
+                    replaceText("Nog niet opgeslagen"), closeSoftKeyboard());
+            // Leave and come back (e.g. a phone call or switching apps): onResume reloads.
+            s.moveToState(androidx.lifecycle.Lifecycle.State.CREATED);
+            s.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);
+            Thread.sleep(1_500);
+            assertEquals("Nog niet opgeslagen", notesText(s));
         }
     }
 
