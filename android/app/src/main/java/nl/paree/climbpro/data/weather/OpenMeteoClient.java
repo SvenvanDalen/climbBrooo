@@ -25,8 +25,17 @@ import okhttp3.Response;
  */
 public final class OpenMeteoClient {
 
-    private final OkHttpClient http = new OkHttpClient.Builder()
-            .callTimeout(15, TimeUnit.SECONDS).build();
+    private final OkHttpClient http;
+
+    public OpenMeteoClient() {
+        this(new OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build());
+    }
+
+    /** Test seam: inject a client (e.g. one that redirects to a MockWebServer). */
+    @androidx.annotation.VisibleForTesting
+    OpenMeteoClient(OkHttpClient http) {
+        this.http = http;
+    }
 
     public static String url(double lat, double lon, double elevationM) {
         String base = String.format(Locale.US,

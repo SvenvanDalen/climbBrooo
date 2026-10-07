@@ -40,8 +40,17 @@ public final class ShareLinkRouteFetcher {
     /** Refuse absurd downloads; a very long route GPX is a few MB. */
     private static final long MAX_BYTES = 20L * 1024 * 1024;
 
-    private final OkHttpClient http = new OkHttpClient.Builder()
-            .callTimeout(30, TimeUnit.SECONDS).build();
+    private final OkHttpClient http;
+
+    public ShareLinkRouteFetcher() {
+        this(new OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build());
+    }
+
+    /** Test seam: inject a client (e.g. one that redirects to a MockWebServer). */
+    @androidx.annotation.VisibleForTesting
+    ShareLinkRouteFetcher(OkHttpClient http) {
+        this.http = http;
+    }
 
     public Result fetch(ShareLink link) throws IOException {
         return link.provider == ShareLink.Provider.KOMOOT ? fetchKomoot(link) : fetchRwgps(link);

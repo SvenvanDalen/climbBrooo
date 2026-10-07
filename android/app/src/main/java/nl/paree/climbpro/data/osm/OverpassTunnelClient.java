@@ -29,8 +29,17 @@ public final class OverpassTunnelClient {
     /** Route coordinates per {@code around} filter, keeping each statement modest. */
     static final int CHUNK_POINTS = 400;
 
-    private final OkHttpClient http = new OkHttpClient.Builder()
-            .callTimeout(60, TimeUnit.SECONDS).build();
+    private final OkHttpClient http;
+
+    public OverpassTunnelClient() {
+        this(new OkHttpClient.Builder().callTimeout(60, TimeUnit.SECONDS).build());
+    }
+
+    /** Test seam: inject a client (e.g. one that redirects to a MockWebServer). */
+    @androidx.annotation.VisibleForTesting
+    OverpassTunnelClient(OkHttpClient http) {
+        this.http = http;
+    }
     private final ObjectMapper mapper = new ObjectMapper();
 
     /** Tunnel ways as {@code [lat, lon]} polylines. */
