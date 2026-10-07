@@ -60,7 +60,9 @@ public class BluetoothPermissionInstrumentedTest {
     /**
      * Revoking a runtime permission kills the app process — and with it this instrumentation —
      * so the "not granted" tests only run when the grant was removed beforehand:
-     * {@code adb shell pm revoke nl.paree.climbpro android.permission.BLUETOOTH_CONNECT}.
+     * {@code adb shell pm revoke nl.paree.climbpro android.permission.BLUETOOTH_CONNECT} (and
+     * BLUETOOTH_SCAN), plus {@code pm clear-permission-flags … user-set user-fixed} so Android
+     * asks again, then run the class with {@code adb shell am instrument}.
      */
     private void requireNotGranted() {
         assumeTrue("BLUETOOTH_CONNECT already granted; revoke it via adb to run this test",
@@ -94,7 +96,13 @@ public class BluetoothPermissionInstrumentedTest {
             allow.click();
             // Android may ask for the second permission of the group separately.
             UiObject2 again = device.wait(Until.findObject(By.pkg(PERMISSION_UI).text(ALLOW)), 2_000);
-            if (again != null) again.click();
+            if (again != null) {
+                try {
+                    again.click();
+                } catch (androidx.test.uiautomator.StaleObjectException ignored) {
+                    // the dialog closed on its own: both permissions were granted together
+                }
+            }
             DeviceState.waitFor(() -> granted() == PackageManager.PERMISSION_GRANTED, 5_000);
             assertEquals(PackageManager.PERMISSION_GRANTED, granted());
         }
