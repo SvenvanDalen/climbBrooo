@@ -40,6 +40,10 @@ public class BluetoothPermissionInstrumentedTest {
     private static final Pattern ALLOW = Pattern.compile("(?i)(^allow$|toestaan)");
     private static final String PERMISSION_UI = "com.google.android.permissioncontroller";
 
+    @org.junit.Rule
+    public nl.paree.climbpro.testsupport.GarminPromptDismisser garminPrompt =
+            new nl.paree.climbpro.testsupport.GarminPromptDismisser();
+
     private Context app;
     private UiDevice device;
     private UiAutomation automation;

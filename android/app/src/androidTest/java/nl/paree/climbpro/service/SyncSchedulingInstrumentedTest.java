@@ -71,7 +71,9 @@ public class SyncSchedulingInstrumentedTest {
         UUID b = SyncScheduler.triggerImmediateSync(app);
         assertNotEquals(a, b);
         WorkManager wm = WorkManager.getInstance(app);
-        assertEquals(WorkInfo.State.CANCELLED, wm.getWorkInfoById(a).get().getState());
+        // REPLACE cancels the old run; WorkManager may also prune it from its database.
+        WorkInfo old = wm.getWorkInfoById(a).get();
+        assertTrue(old == null || old.getState() == WorkInfo.State.CANCELLED);
         assertTrue(!wm.getWorkInfoById(b).get().getState().isFinished());
     }
 

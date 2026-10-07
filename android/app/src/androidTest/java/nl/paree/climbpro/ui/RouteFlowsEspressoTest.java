@@ -9,6 +9,7 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.hasDescendant;
@@ -45,6 +46,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.testsupport.DeviceState;
 import nl.paree.climbpro.testsupport.EspressoActions;
+import nl.paree.climbpro.testsupport.GarminPromptDismisser;
 import nl.paree.climbpro.testsupport.UiTestData;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 import nl.paree.climbpro.ui.routes.GarminHandoff;
@@ -73,6 +75,9 @@ public class RouteFlowsEspressoTest {
             Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN,
             Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION);
 
+    @Rule
+    public GarminPromptDismisser garminPrompt = new GarminPromptDismisser();
+
     private Context app;
 
     @Before
@@ -80,6 +85,10 @@ public class RouteFlowsEspressoTest {
         DeviceState.seed();
         app = DeviceState.app();
         Intents.init();
+        // Without Garmin Connect Mobile the Connect IQ SDK keeps launching its install prompt
+        // (a separate activity); stub it so it never covers the screen under test.
+        intending(hasComponent("com.garmin.android.connectiq.AutoUIDialogHostActivity"))
+                .respondWith(new Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null));
     }
 
     @After
