@@ -14,7 +14,6 @@ import nl.paree.climbpro.domain.segment.GradientColor;
 import nl.paree.climbpro.domain.segment.Segment;
 import nl.paree.climbpro.domain.segment.Segmenter;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -118,8 +117,6 @@ public class ClimbRulesBoundaryTest {
         assertEquals(72, climbs.get(0).elevationGain);
     }
 
-    @Ignore("BUG: Segmenter interpolates through NaN elevations, so the segment(s) around a"
-            + " missing sample get a NaN gradient and the red colour band")
     @Test
     public void singleMissingSample_doesNotPoisonSegmentGradients() {
         List<RoutePoint> pts = ramp(1_200, 0.065, 50);
@@ -230,8 +227,6 @@ public class ClimbRulesBoundaryTest {
         assertEquals(-65, new Segment(100, -6, -0.0649, 0).gradientFixedPoint());
     }
 
-    @Ignore("BUG: Segmenter colours the raw double gradient, so an exact 6.0 % segment computed as"
-            + " 5.999..% gets colour 2 while its wire fixed point says 60 (colour 3)")
     @Test
     public void segmentColour_agreesWithItsWireFixedPointGradient() {
         for (Segment s : Segmenter.segment(ramp(1_000, 0.06, 10))) {
@@ -274,16 +269,30 @@ public class ClimbRulesBoundaryTest {
         assertFalse(ClimbDetector.detect(out).isEmpty());
     }
 
-    @Ignore("BUG: recursive Douglas-Peucker recurses once per point when every point deviates"
-            + " equally (ties pick start+1), so a long jittery track overflows the stack")
+    /**
+     * Every point deviates equally, so Douglas-Peucker splits at {@code start + 1} each time.
+     * A recursive implementation then needs one frame per point; running on a 64 KB stack makes
+     * that overflow at a few thousand points, without the quadratic 50k-point run timing out.
+     */
     @Test(timeout = 20_000)
-    public void longRouteWhosePointsAllDeviateEqually_doesNotOverflowTheStack() {
+    public void longRouteWhosePointsAllDeviateEqually_doesNotOverflowTheStack() throws Exception {
         List<RoutePoint> pts = new ArrayList<>();
-        for (int i = 0; i < 50_000; i++) {
+        for (int i = 0; i < 5_000; i++) {
             double lon = 5.0 + (i % 2 == 0 ? 0.001 : -0.001);
             pts.add(new RoutePoint(51.0 + i * 0.0001, lon, 0, i * 11.0));
         }
-        List<RoutePoint> out = RouteSimplifier.simplify(pts, 5.0);
-        assertEquals(10_000, out.size());
+        List<List<RoutePoint>> out = new ArrayList<>();
+        Throwable[] failure = new Throwable[1];
+        Thread t = new Thread(null, () -> {
+            try {
+                out.add(RouteSimplifier.simplify(pts, 5.0));
+            } catch (Throwable e) {
+                failure[0] = e;
+            }
+        }, "small-stack-dp", 64 * 1024);
+        t.start();
+        t.join();
+        if (failure[0] != null) throw new AssertionError(failure[0]);
+        assertEquals(5_000, out.get(0).size()); // every zig-zag point is ~70 m off: all kept
     }
 }

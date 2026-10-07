@@ -193,8 +193,16 @@ public final class RouteRepository {
         }
     }
 
+    /** True when the route document for {@code routeId} is on disk (cheap, no parse). */
+    public boolean hasRoute(String routeId) {
+        return routeId != null && routeFile(routeId).exists();
+    }
+
     public void deleteRoute(String routeId) throws IOException {
         routeFile(routeId).delete();
+        // A deleted route can no longer be the active one: leaving the pref behind would make
+        // every RouteSyncWorker round fail on it (issue: retry() forever, nothing syncs again).
+        clearActiveRouteIfMatches(routeId);
         // Its offline package (issue #200) is useless without the route.
         new nl.paree.climbpro.data.offline.OfflinePackageStore(context.getFilesDir())
                 .delete(routeId);
@@ -202,6 +210,16 @@ public final class RouteRepository {
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(routeId));
         saveCatalog(catalog);
+    }
+
+    private void clearActiveRouteIfMatches(String routeId) {
+        android.content.SharedPreferences prefs =
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        String active = prefs.getString(
+                nl.paree.climbpro.service.RouteSyncWorker.PREF_ROUTE_ID, null);
+        if (routeId != null && routeId.equals(active)) {
+            prefs.edit().remove(nl.paree.climbpro.service.RouteSyncWorker.PREF_ROUTE_ID).apply();
+        }
     }
 
     public void renameRoute(String routeId, String displayName) throws IOException {

@@ -34,7 +34,7 @@ public final class Segmenter {
         List<Segment> segments = new ArrayList<>();
 
         double segStart = first.distance;
-        double segStartEle = first.elevation;
+        double segStartEle = interpolateElevation(climbPoints, 1, first.distance);
         int ptIdx = 1;
 
         while (segStart < last.distance - 0.5) {
@@ -51,7 +51,7 @@ public final class Segmenter {
             double dist   = segEnd - segStart;
             double eleGain = endEle - segStartEle;
             double gradient = dist > 0 ? eleGain / dist : 0;
-            int colorIndex = GradientColor.forGradient(gradient);
+            int colorIndex = colorFor(gradient);
             int avgVam = VamCalculator.averageVam(gradient);
             int peakVam = VamCalculator.peakVam(climbPoints, segStart, segEnd, gradient);
 
@@ -86,7 +86,7 @@ public final class Segmenter {
         List<Segment> segments = new ArrayList<>(segmentCount);
 
         double segStart    = first.distance;
-        double segStartEle = first.elevation;
+        double segStartEle = interpolateElevation(climbPoints, 1, first.distance);
         int ptIdx = 1;
 
         while (segStart < last.distance - 0.5) {
@@ -101,7 +101,7 @@ public final class Segmenter {
             double dist    = segEnd - segStart;
             double eleGain = endEle - segStartEle;
             double grad    = dist > 0 ? eleGain / dist : 0;
-            int color      = GradientColor.forGradient(grad);
+            int color      = colorFor(grad);
             int avgVam     = VamCalculator.averageVam(grad);
             int peakVam    = VamCalculator.peakVam(climbPoints, segStart, segEnd, grad);
 
@@ -115,13 +115,39 @@ public final class Segmenter {
         return segments;
     }
 
+    /**
+     * Colour band of a segment, taken from the gradient exactly as it travels on the wire
+     * (percent x 10, rounded like {@link Segment#gradientFixedPoint()} and the payload
+     * builder), so the colorIndex always agrees with the gradient the watch receives and
+     * shows (e.g. a 5.9999 % segment is sent as 60, "6.0 %", and is therefore orange).
+     */
+    private static int colorFor(double gradient) {
+        return GradientColor.forFixedPoint(
+                new Segment(0, 0, gradient, 0).gradientFixedPoint());
+    }
+
+    /**
+     * Elevation at {@code targetDist}, interpolated between the nearest points with a known
+     * (non-NaN) elevation on either side of it: {@code idx - 1} and below, {@code idx} and
+     * above. A missing sample (kept as NaN by the smoother) is thus bridged instead of
+     * turning the surrounding segments' gradients into NaN. With a known elevation on one
+     * side only, that one is used; with none at all, NaN is returned.
+     */
     private static double interpolateElevation(
             List<RoutePoint> pts, int idx, double targetDist) {
-        if (idx <= 0) return pts.get(0).elevation;
-        if (idx >= pts.size()) return pts.get(pts.size() - 1).elevation;
+        idx = Math.max(1, Math.min(pts.size() - 1, idx));
 
-        RoutePoint a = pts.get(idx - 1);
-        RoutePoint b = pts.get(idx);
+        RoutePoint a = null;
+        for (int i = idx - 1; i >= 0; i--) {
+            if (!Double.isNaN(pts.get(i).elevation)) { a = pts.get(i); break; }
+        }
+        RoutePoint b = null;
+        for (int i = idx; i < pts.size(); i++) {
+            if (!Double.isNaN(pts.get(i).elevation)) { b = pts.get(i); break; }
+        }
+        if (a == null) return b == null ? Double.NaN : b.elevation;
+        if (b == null) return a.elevation;
+
         double span = b.distance - a.distance;
         if (span <= 0) return a.elevation;
         double t = (targetDist - a.distance) / span;

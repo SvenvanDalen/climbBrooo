@@ -17,7 +17,13 @@ runtime change): `HealthConnectGateway`, `IntervalsIcuRepository`, `ConnectIqCli
 `UpdateChecker`, `ShareLinkRouteFetcher`, `OpenMeteoClient`, `RainViewerClient`,
 `OverpassPoiClient`, `OverpassTunnelClient`, `poi/OverpassClient`.
 
-## Bugs found (not fixed — each has an `@Ignore("BUG: …")` test that fails without the `@Ignore`)
+## Bugs found — all 9 fixed on `fix/test-status-bugs` (2026-10-07), their `@Ignore`s removed
+
+Notes on the fixes:
+- **Bug 5:** after the Garmin Connect prompt is dismissed once, the app retries silently with backoff (5 s doubling to 5 min). It does not prompt again until the app restarts.
+- **Bug 7:** segments just below a band edge (e.g. 5.95–5.999 %) move up one colour band once a route is re-imported. The climb-level colours in the list, detail and profile still use the raw average gradient.
+- **Bug 8:** the iterative Douglas-Peucker gives identical output but stays quadratic in the all-ties worst case. Its test uses a 64 KB stack instead of 50k points, so it no longer depends on timing.
+- **Bug 9:** if the notes save fails on disk, a later reload can still overwrite the typed text (fixing that needs a ViewModel change).
 
 1. **EventCalendarRepository.download** — Request built outside the try: an unparsable feed URL (`https://[x`, passes the dialog regex) aborts `refresh()` for *all* feeds. Fix: build the request inside the try. `EventCalendarRepositoryTest#invalidUrlBecomesFeedError`
 2. **ConnectIqClient.connect()** — the "never initialise twice" guard reads `stateLd.getValue()`, but CONNECTING is set with `postValue` (async); two calls in one main-loop turn both initialise the SDK. Fix: synchronous `AtomicBoolean` guard. `ConnectIqClientTest#connectTwiceInSameTurnInitialisesOnce`
@@ -33,7 +39,7 @@ Also fixed (test-only): `RouteSyncWorkerRunTest` stored the last position with `
 
 ## Still to do
 
-1. **Fix the 9 bugs above** (after review), then drop their `@Ignore`s.
+1. ~~**Fix the 9 bugs above.**~~ Done. Full JVM suite: 3708 tests, the only failure was the bug-8 test's timeout, since rewritten and rerun green.
 2. **Run the full JVM suite + coverage** (`./gradlew :app:jacocoUnitTestReport`) and raise the gate in `build.gradle` (`jacocoCoverageVerification`, now 0.80) to the level reached.
 3. **UI Activities still only covered by `ScreenSmokeTest`:**
    - **Main list and detail screens:**

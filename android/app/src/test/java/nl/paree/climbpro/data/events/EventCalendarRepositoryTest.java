@@ -11,7 +11,6 @@ import androidx.test.core.app.ApplicationProvider;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -173,9 +172,6 @@ public class EventCalendarRepositoryTest {
     }
 
     @Test
-    @Ignore("BUG: download() builds the Request outside its try block, so an unparsable feed URL "
-            + "(e.g. https://[ongeldig, which passes the dialog's regex) throws "
-            + "IllegalArgumentException out of refresh() and no feed gets refreshed")
     public void invalidUrlBecomesFeedError() throws Exception {
         EventCalendar c = new EventCalendar();
         EventCalendar.Feed f = new EventCalendar.Feed();

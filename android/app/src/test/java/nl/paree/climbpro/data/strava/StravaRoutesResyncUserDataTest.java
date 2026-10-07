@@ -1,6 +1,8 @@
 package nl.paree.climbpro.data.strava;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -12,11 +14,12 @@ import android.content.Context;
 
 import androidx.test.core.app.ApplicationProvider;
 
+import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
+import nl.paree.climbpro.data.route.RouteRideStatus;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -96,13 +99,41 @@ public class StravaRoutesResyncUserDataTest {
     }
 
     @Test
-    @Ignore("BUG: StravaRoutesRepository copies existing.notes only inside "
-            + "`if (existing.userDisplayName != null)`, so notes on a route the user never "
-            + "renamed are wiped by the next changed-route resync")
     public void notesSurviveResyncWithoutRename() throws Exception {
         firstSync();
         routeRepo.saveNotes(ROUTE_ID, "Waterpunt bij km 40");
         changedResync();
         assertEquals("Waterpunt bij km 40", routeRepo.loadRoute(ROUTE_ID).notes);
+        assertNull(routeRepo.loadRoute(ROUTE_ID).userDisplayName);
+    }
+
+    @Test
+    public void renameSurvivesResyncWithoutNotes() throws Exception {
+        firstSync();
+        routeRepo.renameRoute(ROUTE_ID, "Mijn naam");
+        changedResync();
+        assertEquals("Mijn naam", routeRepo.loadRoute(ROUTE_ID).userDisplayName);
+        assertNull(routeRepo.loadRoute(ROUTE_ID).notes);
+    }
+
+    @Test
+    public void rideStatusSurvivesResyncWithoutRename() throws Exception {
+        firstSync();
+        routeRepo.setRideStatus(ROUTE_ID, RouteRideStatus.RIDDEN);
+        changedResync();
+        assertEquals(RouteRideStatus.RIDDEN, routeRepo.loadRoute(ROUTE_ID).rideStatus);
+    }
+
+    @Test
+    public void catalogKeepsNotesAfterResyncWithoutRename() throws Exception {
+        firstSync();
+        routeRepo.saveNotes(ROUTE_ID, "Waterpunt bij km 40");
+        changedResync();
+        RouteCatalogEntry entry = null;
+        for (RouteCatalogEntry e : routeRepo.loadCatalog()) {
+            if (ROUTE_ID.equals(e.routeId)) entry = e;
+        }
+        assertNotNull(entry);
+        assertEquals("Waterpunt bij km 40", entry.notes);
     }
 }

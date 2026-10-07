@@ -195,9 +195,6 @@ public class RouteFlowsEspressoTest {
     }
 
     @Test
-    @org.junit.Ignore("BUG: RouteDetailActivity's route observer always does notesEdit.setText(route.notes); "
-            + "the route reloads on onResume and after rename/status/surface actions, so typed but "
-            + "unsaved notes are silently wiped")
     public void unsavedNotesSurviveARouteReload() throws Exception {
         try (ActivityScenario<RouteDetailActivity> s = openRoute()) {
             awaitRouteLoaded(s);

@@ -276,6 +276,61 @@ public class RouteDetailActivityTest {
         assertTrue(activity.isFinishing());
     }
 
+    /** Pauses and resumes the screen (onResume reloads the route) and waits for the reload. */
+    private void reloadRoute() {
+        androidx.lifecycle.LiveData<StoredRoute> route =
+                new androidx.lifecycle.ViewModelProvider(activity)
+                        .get(RouteDetailViewModel.class).route();
+        StoredRoute before = route.getValue();
+        controller.pause().resume();
+        assertTrue("route did not reload", UiTestEnv.waitFor(() -> route.getValue() != before));
+        UiTestEnv.settle();
+    }
+
+    private void writeStoredNotes(String notes) throws Exception {
+        StoredRoute r = stored();
+        r.notes = notes;
+        new com.fasterxml.jackson.databind.ObjectMapper().writeValue(new java.io.File(
+                new java.io.File(app.getFilesDir(), "routes"), UiTestData.ROUTE_ID + ".json"), r);
+    }
+
+    @Test
+    public void unsavedNotes_surviveARouteReload() {
+        EditText notes = activity.findViewById(R.id.notes_edit);
+        notes.setText("Nog niet opgeslagen");
+        reloadRoute();
+        assertEquals("Nog niet opgeslagen", notes.getText().toString());
+    }
+
+    @Test
+    public void savedNotes_followStoredNotesOnReload() throws Exception {
+        EditText notes = activity.findViewById(R.id.notes_edit);
+        notes.setText("Eerste versie");
+        click(R.id.btn_save_notes);
+        assertTrue(UiTestEnv.waitFor(() -> {
+            try {
+                return "Eerste versie".equals(stored().notes);
+            } catch (Exception e) {
+                return false;
+            }
+        }));
+        // Saved, so not dirty any more: a changed stored value is shown after a reload.
+        writeStoredNotes("Elders gewijzigd");
+        reloadRoute();
+        assertEquals("Elders gewijzigd", notes.getText().toString());
+    }
+
+    @Test
+    public void unsavedNotes_surviveRecreation() {
+        ((EditText) activity.findViewById(R.id.notes_edit)).setText("Getypt voor rotatie");
+        controller.recreate();
+        activity = controller.get();
+        UiTestEnv.settle();
+        reloadRoute();
+        assertEquals("Getypt voor rotatie",
+                ((EditText) activity.findViewById(R.id.notes_edit)).getText().toString());
+    }
+
     @Test
     public void routeWithoutGeometry_exportsAreRefused() throws Exception {
         StoredRoute r = stored();

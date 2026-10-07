@@ -39,7 +39,6 @@ import nl.paree.climbpro.testsupport.UiTestData;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -236,16 +235,23 @@ public class RouteSyncWorkerSyncTest {
         verify(ciq, never()).sendPayloadBlocking(any(), anyLong());
     }
 
-    @Ignore("BUG: a deleted active route makes every sync return retry() forever; "
-            + "RouteSyncWorker route job treats 'route not found' as a build failure")
     @Test
     public void deletedActiveRouteDoesNotRetryForever() throws Exception {
         routeMode(UiTestData.ROUTE_ID);
         new RouteRepository(app).deleteRoute(UiTestData.ROUTE_ID);
+        // Re-point the pref at the deleted route: a stale pref can still exist (written before
+        // the delete path started clearing it, or the route file vanished some other way), and
+        // the worker must cope with it on its own.
+        routeMode(UiTestData.ROUTE_ID);
         ListenableWorker.Result r = run();
         verify(ciq, never()).sendPayloadBlocking(any(), anyLong());
         assertTrue("a route that no longer exists can never be sent; retrying is pointless",
                 r instanceof ListenableWorker.Result.Success);
+        assertFalse("the stale active-route pref is cleared",
+                prefs.contains(RouteSyncWorker.PREF_ROUTE_ID));
+        // The next round is a plain no-op as well.
+        assertTrue(run() instanceof ListenableWorker.Result.Success);
+        verify(ciq, never()).sendPayloadBlocking(any(), anyLong());
     }
 
     @Test

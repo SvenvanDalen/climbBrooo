@@ -28,7 +28,6 @@ import com.garmin.android.connectiq.exception.InvalidStateException;
 import com.garmin.android.connectiq.exception.ServiceUnavailableException;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -244,14 +243,28 @@ public class ConnectIqClientTest {
     }
 
     @Test
-    @Ignore("BUG: with Garmin Connect Mobile missing, every 5 s retry calls initialize(autoUI=true) "
-            + "again, so the SDK's 'Additional App Required' dialog reappears endlessly even after "
-            + "the user dismissed it (seen on an emulator: 131 init errors in 40 s)")
     public void missingGarminConnectDoesNotRepromptEveryRetry() {
         connect().onInitializeError(ConnectIQ.IQSdkErrorStatus.GCM_NOT_INSTALLED);
         idle();
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(60));
         // The first attempt may prompt; retries may happen, but never with the prompt again.
+        verify(sdk, times(1)).initialize(any(), eq(true), any());
+    }
+
+    @Test
+    public void missingGarminConnectRetriesSilentlyWithBackoff() {
+        connect().onInitializeError(ConnectIQ.IQSdkErrorStatus.GCM_UPGRADE_NEEDED);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5));
+        ArgumentCaptor<ConnectIQ.ConnectIQListener> silent =
+                ArgumentCaptor.forClass(ConnectIQ.ConnectIQListener.class);
+        verify(sdk, times(1)).initialize(any(), eq(false), silent.capture());
+
+        // Second failure doubles the delay: nothing after 5 s, a retry after 10 s.
+        silent.getValue().onInitializeError(ConnectIQ.IQSdkErrorStatus.GCM_UPGRADE_NEEDED);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5));
+        verify(sdk, times(1)).initialize(any(), eq(false), any());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5));
+        verify(sdk, times(2)).initialize(any(), eq(false), any());
         verify(sdk, times(1)).initialize(any(), eq(true), any());
     }
 
@@ -282,9 +295,6 @@ public class ConnectIqClientTest {
     }
 
     @Test
-    @Ignore("BUG: connect() guards on stateLd.getValue() == CONNECTING, but the state is set with "
-            + "postValue (async), so two connect() calls in the same main-loop turn both "
-            + "initialise the SDK despite the 'never initialized twice' contract")
     public void connectTwiceInSameTurnInitialisesOnce() {
         client.connect();
         client.connect();
