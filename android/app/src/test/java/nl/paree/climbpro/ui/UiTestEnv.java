@@ -35,6 +35,22 @@ public final class UiTestEnv {
                 nl.paree.climbpro.R.style.Theme_ClimbPro);
     }
 
+    /**
+     * AndroidViewModelFactory keeps a process-wide singleton bound to the first Application it
+     * saw; Robolectric makes a new Application per test, so an activity's AndroidViewModel
+     * would otherwise get a previous test's Application (and its files dir). Call in @Before.
+     */
+    public static void resetViewModelFactory() {
+        try {
+            java.lang.reflect.Field f = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
+                    .class.getDeclaredField("_instance");
+            f.setAccessible(true);
+            f.set(null, null);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("cannot reset AndroidViewModelFactory", e);
+        }
+    }
+
     /** Test WorkManager whose executor never runs work (sync/CIQ workers would block). */
     public static void initWorkManager() {
         Context app = ApplicationProvider.getApplicationContext();
