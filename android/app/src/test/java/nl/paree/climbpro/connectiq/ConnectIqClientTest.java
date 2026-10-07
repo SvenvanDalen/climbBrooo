@@ -236,11 +236,23 @@ public class ConnectIqClientTest {
 
     @Test
     public void initializeErrorRetries() {
-        connect().onInitializeError(ConnectIQ.IQSdkErrorStatus.GCM_NOT_INSTALLED);
+        connect().onInitializeError(ConnectIQ.IQSdkErrorStatus.SERVICE_ERROR);
         idle();
         assertEquals(ConnectIqState.ERROR, client.state().getValue());
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5));
         verify(sdk, times(2)).initialize(any(), anyBoolean(), any());
+    }
+
+    @Test
+    @Ignore("BUG: with Garmin Connect Mobile missing, every 5 s retry calls initialize(autoUI=true) "
+            + "again, so the SDK's 'Additional App Required' dialog reappears endlessly even after "
+            + "the user dismissed it (seen on an emulator: 131 init errors in 40 s)")
+    public void missingGarminConnectDoesNotRepromptEveryRetry() {
+        connect().onInitializeError(ConnectIQ.IQSdkErrorStatus.GCM_NOT_INSTALLED);
+        idle();
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(60));
+        // The first attempt may prompt; retries may happen, but never with the prompt again.
+        verify(sdk, times(1)).initialize(any(), eq(true), any());
     }
 
     @Test
