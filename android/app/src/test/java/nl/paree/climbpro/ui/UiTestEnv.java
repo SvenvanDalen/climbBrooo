@@ -83,7 +83,12 @@ public final class UiTestEnv {
 
     /** Idles the main looper until {@code condition} holds or 3 s pass. */
     public static boolean waitFor(BooleanSupplier condition) {
-        long deadline = System.currentTimeMillis() + 3000;
+        return waitFor(condition, 3000);
+    }
+
+    /** Idles the main looper until {@code condition} holds or {@code timeoutMs} pass. */
+    public static boolean waitFor(BooleanSupplier condition, long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
         while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle();
             try {

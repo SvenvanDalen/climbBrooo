@@ -76,9 +76,17 @@ public final class ActivityTestSupport {
         }
     }
 
-    /** Next started activity, unwrapping a chooser to its target intent. */
+    /**
+     * Next started activity, unwrapping a chooser to its target intent. The Connect IQ SDK's
+     * "install Garmin Connect" dialog activity (started by the app's watch client when no
+     * Garmin Connect is installed) is skipped.
+     */
     public static Intent nextStarted(Activity a) {
         Intent i = shadowOf(a).getNextStartedActivity();
+        while (i != null && i.getComponent() != null
+                && i.getComponent().getClassName().startsWith("com.garmin.")) {
+            i = shadowOf(a).getNextStartedActivity();
+        }
         if (i != null && Intent.ACTION_CHOOSER.equals(i.getAction())) {
             Intent inner = i.getParcelableExtra(Intent.EXTRA_INTENT);
             if (inner != null) return inner;
