@@ -231,7 +231,9 @@ public class RouteDetailActivityTest {
         AlertDialog d = dialog();
         assertEquals(app.getString(R.string.offline_pkg_intro), UiTestEnv.messageOf(d));
         d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-        UiTestEnv.settle();
+        // AlertDialog posts the click; run only that task. A full settle() could also run the
+        // (fast, offline) download result, which re-enables the button before this check.
+        shadowOf(android.os.Looper.getMainLooper()).runOneTask();
         assertFalse(activity.findViewById(R.id.btn_offline_package).isEnabled());
         String failed = app.getString(R.string.offline_pkg_failed, "").trim();
         assertTrue(UiTestEnv.waitFor(() -> UiTestEnv.latestToast() != null

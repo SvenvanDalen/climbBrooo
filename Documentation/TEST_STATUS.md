@@ -48,12 +48,7 @@ Also fixed (test-only): `RouteSyncWorkerRunTest` stored the last position with `
    - **Climbs:** ClimbCompare, GearCalculator, ClimbBulkRename, ClimbLogbook, ClimbOfTheWeek, ClimbTimeline, RideFatigue.
    - **Other:** RoutePoi, FuelPlanner, HealthConnectRationale, StravaTitleTemplate, WatchFieldLayout, IntervalsIcuSettings.
    - **EventCalendarActivity:** the flow for adding a manual event. The test was dropped while it still failed, before the cause was known.
-4. **ViewModels without their own tests:**
-   - **Bike and maintenance:** battery, maintenance, torque, tyre-pressure log, and BikeGarage (only partly covered).
-   - **Goals and badges:** badges, monthly challenge, goal event.
-   - **Training and analysis:** climb wrapped, periodization, fitness, training-load calendar, ride records, HR drift, power curve, zone distribution, recovery trend.
-   - **Climbs:** climb compare, gear calculator, ride fatigue, climb of the week, bulk rename.
-   - **Other:** explore map, collection list.
+4. ~~**ViewModels without their own tests.**~~ Done 2026-10-07: 286 tests for 29 ViewModels, all pass, no new bugs. Still untested: the Strava-connected paths of RideArchive, RideCompare, RideStory, ExploreMap and StravaAuth (they need a keystore, see below). Minor inconsistency, not marked as a bug: ClimbWrapped shows a whitespace-only climb name as blank, while ClimbPeriodization falls back to the detected name.
 5. **Adapters only exercised via ScreenSmokeTest:** ClimbSegment, Timeline, Maintenance, BikeCost, BikeGarage, TirePressureLog, Battery, RouteList, Logbook, PlannedClimb, Collection, RideFatiguePoint.
 6. **Monkey C:** run `tools/run-monkeyc-tests.ps1` (paused at the user's request) and fill gaps from `Documentation/MONKEYC_TEST_COVERAGE.md`.
 7. **Docs:** update the test commands and counts in `CLAUDE.md` (androidTest + the new workflow).
@@ -74,4 +69,5 @@ Also fixed (test-only): `RouteSyncWorkerRunTest` stored the last position with `
   2. `pm clear-permission-flags … user-set user-fixed`.
   3. Run the class with `adb shell am instrument`.
 - **"There were failing tests" while every test passed.** The user's global `~/.gradle/gradle.properties` sets `javax.net.ssl.trustStore`, which breaks the test runner's local TLS. Read `app/build/outputs/androidTest-results/connected/debug/*/test-result.textproto` for the real result. CI is unaffected.
+- **AlertDialog button clicks are posted.** `performClick()` on a dialog button only queues the click. Use `shadowOf(mainLooper).runOneTask()` to check the state right after it; `settle()` may also run a fast background result.
 - **Windows file locks and Gradle cache.** Don't poll files that a ViewModel is writing; the atomic rename fails. Gradle can replay cached test results; pass `--rerun` to force a fresh run.
