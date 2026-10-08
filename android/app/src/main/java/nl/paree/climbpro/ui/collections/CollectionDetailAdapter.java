@@ -17,9 +17,11 @@ final class CollectionDetailAdapter
         extends RecyclerView.Adapter<CollectionDetailAdapter.ViewHolder> {
 
     interface OnMemberLongClickListener { void onMemberLongClick(CollectionMember member); }
+    interface OnMemberClickListener { void onMemberClick(CollectionMember member); }
 
     private List<CollectionMember> items = new ArrayList<>();
     private OnMemberLongClickListener listener;
+    private OnMemberClickListener clickListener;
 
     void setItems(List<CollectionMember> list) {
         items = list != null ? list : new ArrayList<>();
@@ -27,6 +29,8 @@ final class CollectionDetailAdapter
     }
 
     void setListener(OnMemberLongClickListener l) { listener = l; }
+
+    void setClickListener(OnMemberClickListener l) { clickListener = l; }
 
     @NonNull
     @Override
@@ -41,6 +45,9 @@ final class CollectionDetailAdapter
         CollectionMember m = items.get(position);
         h.labelView.setText(m.label);
         h.typeView.setText(m.isClimb() ? "Klim" : "Route");
+        h.itemView.setOnClickListener(v -> {
+            if (clickListener != null) clickListener.onMemberClick(m);
+        });
         h.itemView.setOnLongClickListener(v -> {
             if (listener != null) listener.onMemberLongClick(m);
             return true;

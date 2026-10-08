@@ -55,6 +55,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         adapter = new CollectionDetailAdapter();
         list.setAdapter(adapter);
         adapter.setListener(this::confirmRemoveMember);
+        adapter.setClickListener(this::openMember);
 
         viewModel = new ViewModelProvider(this).get(CollectionDetailViewModel.class);
         viewModel.collection().observe(this, c -> {
@@ -134,7 +135,23 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                 .show();
     }
 
+    /** Opens the route or climb behind a row (issue #357). */
+    private void openMember(CollectionMember member) {
+        if (member.isClimb()) {
+            startActivity(nl.paree.climbpro.ui.climbs.ClimbDetailActivity.intentFor(
+                    this, member.routeId, member.climbIndex));
+        } else {
+            startActivity(nl.paree.climbpro.ui.routes.RouteDetailActivity.intentFor(
+                    this, member.routeId));
+        }
+    }
+
     private void confirmRemoveMember(CollectionMember member) {
+        if (member.viaRoute) {
+            Toast.makeText(this, "Deze klim hoort bij een route in de collectie; "
+                    + "verwijder de route om hem weg te halen.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle("\"" + member.label + "\" verwijderen uit collectie?")
                 .setPositiveButton("Verwijder", (d, w) -> {
