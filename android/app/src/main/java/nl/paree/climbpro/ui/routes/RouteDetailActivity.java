@@ -74,6 +74,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
     private RouteDetailAdapter          adapter;
     private String                      routeId;
 
+    private static final String STATE_NOTES_BASELINE = "notes_baseline";
+    /** Notes as last loaded or saved; null until the first load. Bug 9: dirty-field guard. */
+    private String                      notesBaseline;
+
     /** Issue #245: forecast samples every 5 km, at most 25 (one Open-Meteo request). */
     private static final double RAIN_SAMPLE_STEP_M = 5_000;
     private static final int    RAIN_MAX_SAMPLES   = 25;
@@ -105,6 +109,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
         binding.mapView.getController().setZoom(13.0);
 
         routeId   = getIntent().getStringExtra(EXTRA_ROUTE_ID);
+        if (savedInstanceState != null) {
+            notesBaseline = savedInstanceState.getString(STATE_NOTES_BASELINE);
+        }
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
         adapter   = new RouteDetailAdapter();
 
@@ -125,7 +132,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             if (route == null) return;
             String name = route.userDisplayName != null ? route.userDisplayName : route.name;
             binding.toolbar.setTitle(name != null ? name : route.routeId);
-            binding.notesEdit.setText(route.notes != null ? route.notes : "");
+            applyStoredNotes(route.notes != null ? route.notes : "");
             drawRoute(route);
         });
 
@@ -175,8 +182,11 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
         binding.btnRename.setOnClickListener(v -> showRenameDialog());
         binding.btnRideStatus.setOnClickListener(v -> showRideStatusDialog());
-        binding.btnSaveNotes.setOnClickListener(v ->
-                viewModel.saveNotes(routeId, binding.notesEdit.getText().toString()));
+        binding.btnSaveNotes.setOnClickListener(v -> {
+            String typed = binding.notesEdit.getText().toString();
+            notesBaseline = typed; // saved, so the field is clean again
+            viewModel.saveNotes(routeId, typed);
+        });
         binding.btnSelectRoute.setOnClickListener(v ->
                 PreRideCheckDialog.show(this, viewModel.passport().getValue(), () -> {
                     viewModel.setActiveRoute(routeId);
@@ -250,6 +260,26 @@ public final class RouteDetailActivity extends AppCompatActivity {
                 startActivity(RoutePoiActivity.intentFor(this, routeId)));
 
         viewModel.loadRoute(routeId);
+    }
+
+    /**
+     * Shows the stored notes unless the user has unsaved edits. The field is dirty when its text
+     * differs from {@link #notesBaseline} (the last loaded or saved notes); the route reloads on
+     * every onResume and after rename/status/surface actions, and must not wipe typed text.
+     */
+    private void applyStoredNotes(String stored) {
+        String current = binding.notesEdit.getText().toString();
+        boolean dirty = notesBaseline != null && !current.equals(notesBaseline);
+        if (!dirty && !current.equals(stored)) binding.notesEdit.setText(stored);
+        notesBaseline = stored;
+    }
+
+    @Override
+    protected void onSaveInstanceState(@androidx.annotation.NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // The EditText restores its own text; keep the baseline so a restored, unsaved edit is
+        // still seen as dirty when the route (re)loads after recreation or process death.
+        outState.putString(STATE_NOTES_BASELINE, notesBaseline);
     }
 
     @Override

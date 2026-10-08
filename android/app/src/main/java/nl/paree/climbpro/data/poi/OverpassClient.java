@@ -26,10 +26,20 @@ public final class OverpassClient {
     static final String USER_AGENT = "ClimbPro/" + BuildConfig.VERSION_NAME
             + " (Android; route points of interest)";
 
-    private final OkHttpClient http = new OkHttpClient.Builder()
-            // A little above the server-side [timeout:] so Overpass can answer with its own error.
-            .callTimeout(OverpassQueryBuilder.TIMEOUT_S + 15, TimeUnit.SECONDS)
-            .build();
+    private final OkHttpClient http;
+
+    public OverpassClient() {
+        this(new OkHttpClient.Builder()
+                // A little above the server-side [timeout:] so Overpass can answer with its own error.
+                .callTimeout(OverpassQueryBuilder.TIMEOUT_S + 15, TimeUnit.SECONDS)
+                .build());
+    }
+
+    /** Test seam: inject a client (e.g. one that redirects to a MockWebServer). */
+    @androidx.annotation.VisibleForTesting
+    OverpassClient(OkHttpClient http) {
+        this.http = http;
+    }
 
     /** POIs matching the given Overpass QL query. */
     public List<PoiCandidate> fetch(String query) throws IOException {

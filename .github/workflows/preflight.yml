@@ -16,3 +16,7 @@ jobs:
           java-version: '17'
       - name: Run JVM tests (unit + protocol round-trip + lockstep + Monkey C source guard)
         run: ./gradlew test --console=plain
+        env:
+          # AppAuth rejects an empty client id; the Strava auth tests only need a non-empty
+          # one, so a placeholder keeps them off the real secret.
+          STRAVA_CLIENT_ID: ci-placeholder

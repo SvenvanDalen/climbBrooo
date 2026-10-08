@@ -146,8 +146,10 @@ public final class EventCalendarRepository {
     }
 
     private String download(String url) throws IOException {
-        Request req = new Request.Builder().url(normalise(url)).get().build();
-        try (Response resp = http.newCall(req).execute()) {
+        // Build the request inside the try: an unparsable URL throws IllegalArgumentException,
+        // which must become this feed's error instead of aborting refresh() for all feeds.
+        try (Response resp = http.newCall(
+                new Request.Builder().url(normalise(url)).get().build()).execute()) {
             if (!resp.isSuccessful()) throw new IOException("HTTP " + resp.code());
             ResponseBody body = resp.body();
             if (body == null) throw new IOException("lege reactie");

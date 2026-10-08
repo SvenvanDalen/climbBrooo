@@ -33,6 +33,7 @@ android/app/build/generated/
 .claude/settings.local.json
 .claude/cache/
 .claude/projects/
+.claude/worktrees/
 
 # ============================================================================
 # Garmin Connect IQ
@@ -86,3 +87,7 @@ strava-client-secret*
 .replit
 replit.nix
 attached_assets/
+
+# local PR review dumps
+/pr*.diff
+/pr*.diff.txt

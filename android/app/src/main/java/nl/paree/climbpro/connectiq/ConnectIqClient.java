@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -39,6 +41,13 @@ public final class ConnectIqClient {
 
     /** Delay before a self-healing reconnect after a recoverable connect failure. */
     private static final long RECONNECT_DELAY_MS = 5_000;
+
+    /**
+     * Upper bound of the back-off used while Garmin Connect Mobile is missing or
+     * outdated. Those errors aren't transient, so retrying every 5 s only burns
+     * battery; the back-off doubles from {@link #RECONNECT_DELAY_MS} up to this.
+     */
+    private static final long GCM_MISSING_MAX_DELAY_MS = 5 * 60_000;
 
     /** Control message the phone sends to the widget right after (re)connecting. */
     static final String MSG_TYPE_HELLO = "HELLO";
@@ -73,9 +82,35 @@ public final class ConnectIqClient {
     private volatile boolean helloSent;
     private volatile WatchRequestHandler requestHandler;
 
+    /**
+     * Synchronous "an initialize() is in flight" guard. The CONNECTING state is
+     * published with postValue (async), so it can't stop two connect() calls in
+     * the same main-loop turn from both initialising the SDK. Set by connect(),
+     * cleared by every SDK callback and by shutdown paths so the retry/reconnect
+     * paths can initialise again.
+     */
+    private final AtomicBoolean initInFlight = new AtomicBoolean(false);
+
+    /**
+     * Whether the next initialize() may show the SDK's own "Additional App
+     * Required" dialog. Cleared after the first GCM_NOT_INSTALLED /
+     * GCM_UPGRADE_NEEDED so retries never re-prompt a user who tapped Cancel.
+     */
+    private volatile boolean allowSdkPrompt = true;
+
+    /** Consecutive GCM-missing failures, drives the back-off. Reset on success. */
+    private volatile int gcmMissingFailures;
+
     public ConnectIqClient(Context context) {
+        this(context, ConnectIQ.getInstance(context.getApplicationContext(),
+                ConnectIQ.IQConnectType.WIRELESS));
+    }
+
+    /** Test seam: runs the client against a fake SDK. */
+    @VisibleForTesting
+    ConnectIqClient(Context context, ConnectIQ connectIQ) {
         this.context = context.getApplicationContext();
-        this.connectIQ = ConnectIQ.getInstance(this.context, ConnectIQ.IQConnectType.WIRELESS);
+        this.connectIQ = connectIQ;
     }
 
     public LiveData<ConnectIqState> state() { return stateLd; }
@@ -89,33 +124,58 @@ public final class ConnectIqClient {
     /**
      * Discover the paired Forerunner 255 Music and connect. Safe to call more
      * than once: a second call while already connecting/connected is a no-op,
-     * so the SDK is never initialized twice.
+     * so the SDK is never initialized twice (guarded synchronously by
+     * {@link #initInFlight}, not by the async-posted CONNECTING state).
      */
     public void connect() {
-        if (connected || stateLd.getValue() == ConnectIqState.CONNECTING) {
+        if (connected || !initInFlight.compareAndSet(false, true)) {
             return;
         }
         stateLd.postValue(ConnectIqState.CONNECTING);
         helloSent = false;
-        connectIQ.initialize(context, /* autoUI= */ true, new ConnectIQ.ConnectIQListener() {
-            @Override public void onSdkReady() { handleSdkReady(); }
+        final boolean autoUi = allowSdkPrompt;
+        try {
+            connectIQ.initialize(context, autoUi, new ConnectIQ.ConnectIQListener() {
+                @Override public void onSdkReady() {
+                    initInFlight.set(false);
+                    gcmMissingFailures = 0;
+                    handleSdkReady();
+                }
 
-            @Override public void onInitializeError(ConnectIQ.IQSdkErrorStatus status) {
-                Log.e(TAG, "CIQ initialize error: " + status);
-                connected = false;
-                stateLd.postValue(ConnectIqState.ERROR);
-                scheduleReconnect();
-            }
+                @Override public void onInitializeError(ConnectIQ.IQSdkErrorStatus status) {
+                    Log.e(TAG, "CIQ initialize error: " + status);
+                    initInFlight.set(false);
+                    connected = false;
+                    stateLd.postValue(ConnectIqState.ERROR);
+                    if (status == ConnectIQ.IQSdkErrorStatus.GCM_NOT_INSTALLED
+                            || status == ConnectIQ.IQSdkErrorStatus.GCM_UPGRADE_NEEDED) {
+                        // Not transient: the user has seen the SDK prompt once (if
+                        // autoUI was on). Never show it again from a retry, and back
+                        // off so we don't spin every 5 s until GCM is installed.
+                        allowSdkPrompt = false;
+                        int n = Math.min(gcmMissingFailures++, 6);
+                        scheduleReconnect(Math.min(RECONNECT_DELAY_MS << n,
+                                GCM_MISSING_MAX_DELAY_MS));
+                    } else {
+                        scheduleReconnect();
+                    }
+                }
 
-            @Override public void onSdkShutDown() {
-                Log.w(TAG, "CIQ SDK shut down — scheduling reconnect");
-                connected = false;
-                device = null;
-                stateLd.postValue(ConnectIqState.DISCONNECTED);
-                new Handler(Looper.getMainLooper()).postDelayed(
-                        ConnectIqClient.this::connect, RECONNECT_DELAY_MS);
-            }
-        });
+                @Override public void onSdkShutDown() {
+                    Log.w(TAG, "CIQ SDK shut down — scheduling reconnect");
+                    initInFlight.set(false);
+                    connected = false;
+                    device = null;
+                    stateLd.postValue(ConnectIqState.DISCONNECTED);
+                    new Handler(Looper.getMainLooper()).postDelayed(
+                            ConnectIqClient.this::connect, RECONNECT_DELAY_MS);
+                }
+            });
+        } catch (RuntimeException e) {
+            // Never leave the guard latched: that would block every future connect().
+            initInFlight.set(false);
+            throw e;
+        }
     }
 
     private void handleSdkReady() {
@@ -201,7 +261,11 @@ public final class ConnectIqClient {
      * few overlapping schedules can't double-initialise the SDK.
      */
     private void scheduleReconnect() {
-        new Handler(Looper.getMainLooper()).postDelayed(this::connect, RECONNECT_DELAY_MS);
+        scheduleReconnect(RECONNECT_DELAY_MS);
+    }
+
+    private void scheduleReconnect(long delayMs) {
+        new Handler(Looper.getMainLooper()).postDelayed(this::connect, delayMs);
     }
 
     /** Send the HELLO control message once per connection, when first connected. */
@@ -352,6 +416,8 @@ public final class ConnectIqClient {
         connected = false;
         device = null;
         helloSent = false;
+        // The shutdown aborts any in-flight initialize(); let the delayed connect run.
+        initInFlight.set(false);
         stateLd.postValue(ConnectIqState.DISCONNECTED);
         new Handler(Looper.getMainLooper()).postDelayed(this::connect, 1_000);
     }
@@ -362,6 +428,7 @@ public final class ConnectIqClient {
         } catch (Exception e) {
             Log.w(TAG, "shutdown failed", e);
         }
+        initInFlight.set(false);
         connected = false;
         device = null;
         stateLd.postValue(ConnectIqState.DISCONNECTED);

@@ -55,4 +55,14 @@ public class WatchFieldLayoutStoreTest {
                 .putString(WatchFieldLayoutStore.PREF_KEY, "a,b").commit();
         assertTrue(new WatchFieldLayoutStore(app).load().isDefault());
     }
+
+    @Test
+    public void savingNull_removesKey() {
+        WatchFieldLayoutStore store = new WatchFieldLayoutStore(app);
+        store.save(WatchFieldLayout.of(new int[]{8, 9, 10, 6, 5}));
+        store.save(null);
+        assertFalse(PreferenceManager.getDefaultSharedPreferences(app)
+                .contains(WatchFieldLayoutStore.PREF_KEY));
+        assertTrue(store.load().isDefault());
+    }
 }

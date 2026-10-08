@@ -300,6 +300,13 @@ public final class RouteSyncWorker extends Worker {
                     Log.i(TAG, "No active route selected — nothing to send");
                     return null;
                 }
+                if (!routeRepo.hasRoute(routeId)) {
+                    // The active route was deleted. That is permanent, not a transient
+                    // failure: retrying would fail forever and block every later sync.
+                    Log.w(TAG, "Active route " + routeId + " no longer exists — clearing it");
+                    prefs.edit().remove(PREF_ROUTE_ID).apply();
+                    return null;
+                }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
                 int[] routeGhost = ghostRepo.wireFor(route);
@@ -323,7 +330,8 @@ public final class RouteSyncWorker extends Worker {
             }
             @Override public void onSent() throws IOException {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
-                if (routeId != null) {
+                // Deleted between build() and the send: nothing left to mark synced.
+                if (routeRepo.hasRoute(routeId)) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
                     syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout)
                             + routeGhostSignature(ghostRepo.wireFor(route)));
