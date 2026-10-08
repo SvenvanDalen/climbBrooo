@@ -33,9 +33,10 @@ public class CsvExportHandoffTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
+        nl.paree.climbpro.ui.UiTestEnv.resetFileProvider();
     }
 
-    /** Runs the export; on Windows FileProvider can't resolve the cache root (env quirk). */
+    /** Runs the export; on Windows FileProvider can't match the cache root (it assumes '/'). */
     private Intent exportTolerantly() throws Exception {
         try {
             return CsvExportHandoff.export(app);

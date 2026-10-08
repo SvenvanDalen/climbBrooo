@@ -68,6 +68,7 @@ public class RouteDetailActivityTest {
         app = ApplicationProvider.getApplicationContext();
         UiTestEnv.initWorkManager();
         UiTestEnv.resetViewModelFactory();
+        UiTestEnv.resetFileProvider();
         UiTestData.seed(app);
         controller = Robolectric.buildActivity(RouteDetailActivity.class,
                 RouteDetailActivity.intentFor(app, UiTestData.ROUTE_ID)).setup();

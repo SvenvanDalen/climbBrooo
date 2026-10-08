@@ -62,6 +62,7 @@ public class ClimbDetailActivityTest {
         app = ApplicationProvider.getApplicationContext();
         UiTestEnv.initWorkManager();
         UiTestEnv.resetViewModelFactory();
+        UiTestEnv.resetFileProvider();
         UiTestData.seed(app);
         controller = Robolectric.buildActivity(ClimbDetailActivity.class,
                 ClimbDetailActivity.intentFor(app, UiTestData.ROUTE_ID, 0)).setup();

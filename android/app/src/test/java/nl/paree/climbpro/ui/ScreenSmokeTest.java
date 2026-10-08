@@ -122,6 +122,7 @@ public class ScreenSmokeTest {
     @Before
     public void seed() throws Exception {
         Context app = ApplicationProvider.getApplicationContext();
+        UiTestEnv.resetFileProvider();
         // Work the screens schedule is accepted but never run: a synchronous executor would run
         // the sync / CIQ workers on the main thread, each waiting seconds for a watch. The
         // workers have their own tests.
@@ -249,10 +250,10 @@ public class ScreenSmokeTest {
         }
 
         /**
-         * Robolectric on Windows: FileProvider compares the canonical cache path with the one
-         * it was configured with, and the temp-dir spellings differ, so sharing a file throws
-         * "Failed to find configured root" even though res/xml/file_paths.xml covers it. On
-         * Linux (CI) this does not happen; only this exact case is tolerated.
+         * Robolectric on Windows: FileProvider matches a file against its roots with a
+         * hard-coded '/' separator, so with '\' paths sharing a file throws "Failed to find
+         * configured root" even though res/xml/file_paths.xml covers it. On Linux (CI) this
+         * does not happen; only this exact case is tolerated.
          */
         static boolean isWindowsFileProviderQuirk(Throwable t) {
             if (!System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT)

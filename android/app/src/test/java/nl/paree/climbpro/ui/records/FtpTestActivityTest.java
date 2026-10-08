@@ -41,6 +41,7 @@ public class FtpTestActivityTest {
     public void setUp() throws Exception {
         app = ApplicationProvider.getApplicationContext();
         UiTestEnv.resetViewModelFactory();
+        UiTestEnv.resetFileProvider();
         UiTestData.seed(app);
     }
 

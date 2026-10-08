@@ -51,6 +51,24 @@ public final class UiTestEnv {
         }
     }
 
+    /**
+     * FileProvider caches each authority's roots in a static map, resolved against the first
+     * Application's cache/files dir; Robolectric gives every test a new temp dir, so a later
+     * test's share throws "Failed to find configured root". Call in @Before.
+     */
+    public static void resetFileProvider() {
+        try {
+            java.lang.reflect.Field f = androidx.core.content.FileProvider.class
+                    .getDeclaredField("sCache");
+            f.setAccessible(true);
+            synchronized (f.get(null)) {
+                ((java.util.Map<?, ?>) f.get(null)).clear();
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("cannot reset FileProvider cache", e);
+        }
+    }
+
     /** Test WorkManager whose executor never runs work (sync/CIQ workers would block). */
     public static void initWorkManager() {
         Context app = ApplicationProvider.getApplicationContext();
