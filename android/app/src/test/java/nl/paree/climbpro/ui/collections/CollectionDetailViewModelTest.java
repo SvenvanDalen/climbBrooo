@@ -91,6 +91,30 @@ public class CollectionDetailViewModelTest {
         assertTrue("expected climb member resolved by name", sawClimb);
     }
 
+    /** Issue #357: the MyWhoosh collection holds only routes; their climbs must show too. */
+    @Test
+    public void routeMemberListsItsClimbs() throws Exception {
+        Application app = ApplicationProvider.getApplicationContext();
+        RouteRepository routeRepo = new RouteRepository(app);
+        seedRoute(routeRepo, "r1", "MyWhoosh – Hautacam", "Hautacam");
+
+        RouteCollectionRepository collectionRepo = new RouteCollectionRepository(app);
+        RouteCollection c = collectionRepo.create("MyWhoosh");
+        collectionRepo.addRoute(c.id, "r1");
+
+        CollectionDetailViewModel vm = new CollectionDetailViewModel(app);
+        List<CollectionMember> members = awaitValue(vm.members(), () -> vm.load(c.id));
+
+        assertEquals(2, members.size());
+        assertTrue(!members.get(0).isClimb());
+        CollectionMember climb = members.get(1);
+        assertTrue(climb.isClimb());
+        assertTrue(climb.viaRoute);
+        assertEquals("r1", climb.routeId);
+        assertEquals(0, climb.climbIndex);
+        assertTrue(climb.label.contains("Hautacam"));
+    }
+
     @Test
     public void memberOfDeletedRouteFallsBackToPlaceholderLabel() throws InterruptedException {
         Application app = ApplicationProvider.getApplicationContext();
