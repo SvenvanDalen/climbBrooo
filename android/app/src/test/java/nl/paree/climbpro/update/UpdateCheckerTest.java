@@ -35,6 +35,17 @@ public class UpdateCheckerTest {
 
     /** The first minor-bump release must beat every old v1.0.<run_number> build. */
     @Test
+    public void isDevBuild_localBuildWithoutCiVersion() {
+        assertTrue(UpdateChecker.isDevBuild("1.0.0-dev"));
+    }
+
+    @Test
+    public void isDevBuild_releaseVersionIsNot() {
+        assertFalse(UpdateChecker.isDevBuild("1.2.0"));
+        assertFalse(UpdateChecker.isDevBuild(null));
+    }
+
+    @Test
     public void compareVersions_minorBumpBeatsOldRunNumber() {
         assertTrue(compare("v1.1.0", "1.0.132") > 0);
         assertTrue(compare("v1.2.0", "1.1.0") > 0);

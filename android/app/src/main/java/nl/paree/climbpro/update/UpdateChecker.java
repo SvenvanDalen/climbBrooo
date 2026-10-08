@@ -194,6 +194,15 @@ public final class UpdateChecker {
         }
     }
 
+    /**
+     * True for a build made outside the release workflow ({@code build.gradle} falls back to
+     * versionName "1.0.0-dev"). Such a build is debug-signed, so a release APK can't be installed
+     * over it and offering one on every start is noise.
+     */
+    public static boolean isDevBuild(String versionName) {
+        return versionName != null && versionName.endsWith("-dev");
+    }
+
     /** Orders two parsed versions by major, then minor, then patch. */
     static int compareVersions(int[] a, int[] b) {
         for (int i = 0; i < 3; i++) {

@@ -223,7 +223,11 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         ensureBluetoothPermission();
-        checkForAppUpdate(false);
+        // A local/dev build can't install a release APK over itself; only the menu item checks.
+        if (!nl.paree.climbpro.update.UpdateChecker.isDevBuild(
+                nl.paree.climbpro.BuildConfig.VERSION_NAME)) {
+            checkForAppUpdate(false);
+        }
     }
 
     /**
