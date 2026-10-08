@@ -122,6 +122,7 @@ public class ScreenSmokeTest {
     @Before
     public void seed() throws Exception {
         Context app = ApplicationProvider.getApplicationContext();
+        UiTestEnv.resetViewModelFactory();
         UiTestEnv.resetFileProvider();
         // Work the screens schedule is accepted but never run: a synchronous executor would run
         // the sync / CIQ workers on the main thread, each waiting seconds for a watch. The
