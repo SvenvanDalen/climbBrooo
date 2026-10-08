@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -42,7 +43,8 @@ public final class WeightLogActivity extends AppCompatActivity {
     /** Health Connect import reaches back this far. */
     private static final int IMPORT_DAYS = 3 * 365;
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    @VisibleForTesting
+    final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final DateTimeFormatter dateFormat =
             DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
     private WeightLogStore store;
@@ -73,9 +75,26 @@ public final class WeightLogActivity extends AppCompatActivity {
     }
 
     private void reload() {
-        executor.execute(() -> {
-            List<WeightEntry> entries = store.loadAll();
-            runOnUiThread(() -> render(entries));
+        submit(this::loadAndRender);
+    }
+
+    /**
+     * Queues work on the executor unless the screen is gone. Only called on the main thread,
+     * the same thread as onDestroy's shutdown, so the check can't race it.
+     */
+    private void submit(Runnable task) {
+        if (!executor.isShutdown()) executor.execute(task);
+    }
+
+    /**
+     * Worker-thread tail of every task: reads the log and shows it. Runs inline rather than
+     * re-queueing, because a task still running after onDestroy would otherwise hit the shut-down
+     * executor and crash the app with a RejectedExecutionException.
+     */
+    private void loadAndRender() {
+        List<WeightEntry> entries = store.loadAll();
+        runOnUiThread(() -> {
+            if (!isDestroyed()) render(entries);
         });
     }
 
@@ -147,14 +166,14 @@ public final class WeightLogActivity extends AppCompatActivity {
                         return;
                     }
                     double value = kg;
-                    executor.execute(() -> {
+                    submit(() -> {
                         try {
                             store.put(date, value, WeightEntry.SOURCE_MANUAL);
                         } catch (Exception ex) {
                             runOnUiThread(() -> Toast.makeText(this, "Opslaan mislukt",
                                     Toast.LENGTH_LONG).show());
                         }
-                        reload();
+                        loadAndRender();
                     });
                 })
                 .setNegativeButton(android.R.string.cancel, null)
@@ -164,20 +183,20 @@ public final class WeightLogActivity extends AppCompatActivity {
     private void confirmDelete(WeightEntry e) {
         new AlertDialog.Builder(this)
                 .setMessage("Meting van " + LocalDate.parse(e.date).format(dateFormat) + " verwijderen?")
-                .setPositiveButton("Verwijderen", (d, w) -> executor.execute(() -> {
+                .setPositiveButton("Verwijderen", (d, w) -> submit(() -> {
                     try {
                         store.delete(e.date);
                     } catch (Exception ignored) {
                         // Reload shows whatever is stored.
                     }
-                    reload();
+                    loadAndRender();
                 }))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
     private void importFromHealthConnect() {
-        executor.execute(() -> {
+        submit(() -> {
             String message;
             try {
                 HealthConnectGateway gateway = new HealthConnectGateway(this);
@@ -198,7 +217,7 @@ public final class WeightLogActivity extends AppCompatActivity {
             }
             String shown = message;
             runOnUiThread(() -> Toast.makeText(this, shown, Toast.LENGTH_LONG).show());
-            reload();
+            loadAndRender();
         });
     }
 }
