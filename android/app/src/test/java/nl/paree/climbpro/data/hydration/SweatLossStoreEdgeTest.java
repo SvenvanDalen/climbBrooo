@@ -14,7 +14,6 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /** Failed write of the sweat-loss log. */
@@ -32,9 +31,6 @@ public class SweatLossStoreEdgeTest {
         return new File(app.getFilesDir(), name);
     }
 
-    private void writeRaw(String name, String content) throws IOException {
-        Files.write(file(name).toPath(), content.getBytes(StandardCharsets.UTF_8));
-    }
 
     /** Turns {@code name} into a non-empty directory so replacing it must fail. */
     private void block(String name) throws IOException {
@@ -42,17 +38,7 @@ public class SweatLossStoreEdgeTest {
         Files.write(new File(file(name), "child").toPath(), new byte[]{1});
     }
 
-    private interface Write { void run() throws IOException; }
 
-    private void assertWriteFails(String name, Write write) throws IOException {
-        block(name);
-        try {
-            write.run();
-            fail("expected IOException");
-        } catch (IOException expected) {
-        }
-        assertFalse("temp file cleaned up", file(name + ".tmp").exists());
-    }
 
     @Test
     public void add_failedWrite_throws() throws Exception {

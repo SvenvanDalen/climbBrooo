@@ -14,7 +14,6 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import java.util.Collections;
@@ -34,9 +33,6 @@ public class PainLogRepositoryEdgeTest {
         return new File(app.getFilesDir(), name);
     }
 
-    private void writeRaw(String name, String content) throws IOException {
-        Files.write(file(name).toPath(), content.getBytes(StandardCharsets.UTF_8));
-    }
 
     /** Turns {@code name} into a non-empty directory so replacing it must fail. */
     private void block(String name) throws IOException {

@@ -3,7 +3,6 @@ package nl.paree.climbpro.domain.segment;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.VamCalculator;
 import nl.paree.climbpro.domain.route.RoutePoint;
-import nl.paree.climbpro.domain.segment.CalibrationPoint;
 
 import java.util.ArrayList;
 import java.util.List;

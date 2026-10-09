@@ -38,7 +38,6 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
     private PlannedClimbAdapter adapter;
     private TextView empty;
 
-    private CheckBox pendingCalendarCheckbox;
     private PlannedClimbListViewModel.Pickable pendingTarget;
 
     private static final String STATE_PENDING_ROUTE_ID    = "pendingRouteId";
@@ -173,7 +172,6 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
         CheckBox checkbox = new CheckBox(this);
         checkbox.setText("Ook toevoegen aan agenda");
         checkbox.setPadding(48, 32, 48, 32);
-        pendingCalendarCheckbox = checkbox;
 
         new AlertDialog.Builder(this)
                 .setTitle("Klim inplannen")
