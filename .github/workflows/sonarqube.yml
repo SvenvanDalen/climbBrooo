@@ -1,7 +1,8 @@
 name: sonarqube
 # Static analysis + unit-test coverage against a SonarQube server running locally in Docker.
 # GitHub-hosted runners cannot reach localhost, so this job needs a self-hosted runner on the
-# same machine, plus repo secrets SONAR_TOKEN and SONAR_HOST_URL (http://localhost:9000).
+# same machine, plus repo secrets SONAR_TOKEN and SONAR_HOST_URL (http://localhost:9000)
+# and repo variable ANDROID_HOME (the runner's Android SDK path).
 # Community Build keeps a single branch, so every scan overwrites the previous result; the
 # quality gate still fails the check when it turns red.
 on:
@@ -31,5 +32,8 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          # The checkout has no local.properties; repo variable ANDROID_HOME holds the
+          # runner machine's SDK path.
+          ANDROID_HOME: ${{ vars.ANDROID_HOME }}
           # AppAuth rejects an empty client id; see preflight.yml.
           STRAVA_CLIENT_ID: ci-placeholder
