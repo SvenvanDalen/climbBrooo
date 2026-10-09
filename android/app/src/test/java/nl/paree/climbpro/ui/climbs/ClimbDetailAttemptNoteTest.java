@@ -31,7 +31,6 @@ import org.robolectric.Shadows;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Covers the reorder/rollback fix for issue #46's photo write (bug #1 in PR #127's review):

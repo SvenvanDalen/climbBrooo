@@ -1,8 +1,5 @@
 package nl.paree.climbpro.data.medical;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -46,17 +43,7 @@ public class MedicalIdRepositoryEdgeTest {
         Files.write(new File(file(name), "child").toPath(), new byte[]{1});
     }
 
-    private interface Write { void run() throws IOException; }
 
-    private void assertWriteFails(String name, Write write) throws IOException {
-        block(name);
-        try {
-            write.run();
-            fail("expected IOException");
-        } catch (IOException expected) {
-        }
-        assertFalse("temp file cleaned up", file(name + ".tmp").exists());
-    }
 
     @Test
     public void load_corruptOrNull_givesEmptyId() throws Exception {

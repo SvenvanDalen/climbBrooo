@@ -33,9 +33,6 @@ public class ClimbDetectorTest {
             double segLen = endD - startD;
             for (int i = 1; i <= pts_in_seg; i++) {
                 double d = startD + (double) i / pts_in_seg * segLen;
-                double dEle = ((double) i / pts_in_seg * segLen) * grad;
-                double newEle = pts.get(pts.size() - 1).elevation
-                        + dEle - ((double)(i - 1) / pts_in_seg * segLen) * grad;
                 ele = pts.get(pts.size() - 1).elevation + segLen / pts_in_seg * grad;
                 pts.add(new RoutePoint(51.0 + d * 0.00001, 5.0, ele, d));
             }

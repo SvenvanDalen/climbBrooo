@@ -63,7 +63,7 @@ public class VoiceShortcutActivityTest {
         return controller.get();
     }
 
-    private String awaitAnswer(VoiceShortcutActivity a) {
+    private String awaitAnswer() {
         assertTrue(UiTestEnv.waitFor(() -> ActivityTestSupport.showingDialog() != null));
         return UiTestEnv.messageOf((AlertDialog) ActivityTestSupport.showingDialog());
     }
@@ -89,21 +89,21 @@ public class VoiceShortcutActivityTest {
     @Test
     public void nextClimb_withoutActiveRoute_saysSo() {
         VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
-        assertEquals("Je hebt nog geen actieve route. Kies er een in ClimbPro.", awaitAnswer(a));
+        assertEquals("Je hebt nog geen actieve route. Kies er een in ClimbPro.", awaitAnswer());
     }
 
     @Test
     public void nextClimb_activeRouteMissing_saysItCannotOpen() {
         activate("deleted");
         VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
-        assertEquals("Ik kan je actieve route niet openen.", awaitAnswer(a));
+        assertEquals("Ik kan je actieve route niet openen.", awaitAnswer());
     }
 
     @Test
     public void nextClimb_withoutLocation_namesFirstClimb() {
         activate(UiTestData.ROUTE_ID);
         VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
-        String answer = awaitAnswer(a);
+        String answer = awaitAnswer();
         assertTrue(answer, answer.startsWith("Ik weet niet waar je bent op de route."));
         // OK closes the shortcut.
         ((AlertDialog) ActivityTestSupport.showingDialog())
@@ -126,7 +126,7 @@ public class VoiceShortcutActivityTest {
         shadowOf(lm).setLastKnownLocation(LocationManager.GPS_PROVIDER, l);
 
         VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
-        String answer = awaitAnswer(a);
+        String answer = awaitAnswer();
         assertTrue(answer, answer.startsWith("De volgende klim is "));
     }
 
@@ -142,14 +142,14 @@ public class VoiceShortcutActivityTest {
         shadowOf(lm).setLastKnownLocation(LocationManager.NETWORK_PROVIDER, l);
 
         VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
-        assertTrue(awaitAnswer(a).startsWith("Ik weet niet waar je bent"));
+        assertTrue(awaitAnswer().startsWith("Ik weet niet waar je bent"));
     }
 
     @Test
     public void startRide_activeRoute_startsSyncAndConfirms() throws Exception {
         activate(UiTestData.ROUTE_ID);
         VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_START_RIDE));
-        assertEquals("Rit gestart. Ardennen rondje wordt naar je horloge gestuurd.", awaitAnswer(a));
+        assertEquals("Rit gestart. Ardennen rondje wordt naar je horloge gestuurd.", awaitAnswer());
         assertEquals(RouteSyncWorker.MODE_ROUTE, PreferenceManager.getDefaultSharedPreferences(app)
                 .getString(RouteSyncWorker.PREF_MODE, null));
         assertEquals(1, androidx.work.WorkManager.getInstance(app).getWorkInfosForUniqueWork(
@@ -166,7 +166,7 @@ public class VoiceShortcutActivityTest {
         Intent i = new Intent(Intent.ACTION_VIEW,
                 Uri.parse("climbpro://open?feature=volgende%20klim"));
         VoiceShortcutActivity a = open(i);
-        assertEquals("Je hebt nog geen actieve route. Kies er een in ClimbPro.", awaitAnswer(a));
+        assertEquals("Je hebt nog geen actieve route. Kies er een in ClimbPro.", awaitAnswer());
     }
 
     @Test

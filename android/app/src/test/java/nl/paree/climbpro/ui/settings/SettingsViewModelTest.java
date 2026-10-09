@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Looper;
 
-import androidx.preference.PreferenceManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.work.Configuration;
 import androidx.work.Data;
@@ -21,7 +20,6 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.Shadows;
 
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
-import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;

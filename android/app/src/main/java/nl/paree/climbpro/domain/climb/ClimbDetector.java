@@ -1,7 +1,6 @@
 package nl.paree.climbpro.domain.climb;
 
 import nl.paree.climbpro.domain.route.RoutePoint;
-import nl.paree.climbpro.domain.segment.GradientColor;
 import nl.paree.climbpro.domain.segment.Segment;
 import nl.paree.climbpro.domain.segment.Segmenter;
 

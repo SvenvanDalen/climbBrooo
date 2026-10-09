@@ -19,7 +19,6 @@ import nl.paree.climbpro.domain.climb.WrappedCalculator.ClimbInfo;
 import nl.paree.climbpro.domain.climb.WrappedCalculator.Summary;
 
 import java.time.ZoneOffset;
-import java.time.Year;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;

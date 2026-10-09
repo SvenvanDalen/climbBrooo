@@ -12,7 +12,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
-import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Direction;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Point;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Trend;
