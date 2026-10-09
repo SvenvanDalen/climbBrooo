@@ -1,0 +1,39 @@
+name: sonarqube
+# Static analysis + unit-test coverage against a SonarQube server running locally in Docker.
+# GitHub-hosted runners cannot reach localhost, so this job needs a self-hosted runner on the
+# same machine, plus repo secrets SONAR_TOKEN and SONAR_HOST_URL (http://localhost:9000)
+# and repo variable ANDROID_HOME (the runner's Android SDK path).
+# Community Build keeps a single branch, so every scan overwrites the previous result; the
+# quality gate still fails the check when it turns red.
+on:
+  push:
+    branches: [staging, main]
+  pull_request:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  sonar:
+    # Fork PRs must never execute on the self-hosted machine.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so SonarQube can blame lines and detect new code.
+          fetch-depth: 0
+      - name: Unit tests + coverage + SonarQube scan
+        # Windows PowerShell 5.1 ships with Windows; pwsh (7) is not installed on the runner.
+        shell: powershell
+        run: .\gradlew.bat jacocoUnitTestReport sonar --console=plain "-Dsonar.qualitygate.wait=true"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          # The checkout has no local.properties; repo variable ANDROID_HOME holds the
+          # runner machine's SDK path.
+          ANDROID_HOME: ${{ vars.ANDROID_HOME }}
+          # AppAuth rejects an empty client id; see preflight.yml.
+          STRAVA_CLIENT_ID: ci-placeholder

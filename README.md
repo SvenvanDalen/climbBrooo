@@ -461,6 +461,8 @@ cd android
 .\gradlew.bat assembleDebug          # build debug APK
 .\gradlew.bat test                   # run JVM unit tests
 .\gradlew.bat :app:installDebug      # install on a connected phone
+.\gradlew.bat jacocoUnitTestReport sonar "-Dsonar.host.url=http://localhost:9000" "-Dsonar.token=<token>"
+                                     # SonarQube scan (local Docker server; CI: .github/workflows/sonarqube.yml)
 
 # Watch apps (Connect IQ SDK + a developer key)
 monkeyc -o garmin\ClimbPro.prg        -f garmin\monkey.jungle        -y <key> -d fr255m

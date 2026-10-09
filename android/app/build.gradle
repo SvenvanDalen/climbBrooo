@@ -10,6 +10,7 @@ import com.sun.codemodel.JCodeModel
 plugins {
     id 'com.android.application'
     id 'jacoco'
+    id 'org.sonarqube' version '6.0.1.5171'
 }
 
 jacoco {
@@ -289,5 +290,18 @@ tasks.register('jacocoCoverageVerification', JacocoCoverageVerification) {
                 minimum = 0.80
             }
         }
+    }
+}
+
+// ./gradlew jacocoUnitTestReport sonar uploads analysis + coverage to SonarQube. Host and
+// token come from SONAR_HOST_URL/SONAR_TOKEN (or -Dsonar.host.url/-Dsonar.token); CI runs
+// it via .github/workflows/sonarqube.yml on a self-hosted runner next to a local server.
+sonar {
+    properties {
+        property 'sonar.projectKey', 'climbpro'
+        property 'sonar.projectName', 'ClimbPro'
+        property 'sonar.androidVariant', 'debug'
+        property 'sonar.coverage.jacoco.xmlReportPaths',
+                "${buildDir}/reports/jacoco/jacocoUnitTestReport/jacocoUnitTestReport.xml"
     }
 }
