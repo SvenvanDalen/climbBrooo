@@ -92,6 +92,9 @@
                 android:id="@+id/action_hr_drift"
                 android:title="@string/menu_hr_drift"/>
             <item
+                android:id="@+id/action_mywhoosh"
+                android:title="@string/menu_mywhoosh"/>
+            <item
                 android:id="@+id/action_friend_feed"
                 android:title="@string/menu_friend_feed"/>
             <item

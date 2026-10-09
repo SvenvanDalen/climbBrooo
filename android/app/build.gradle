@@ -9,6 +9,11 @@ import com.sun.codemodel.JCodeModel
 
 plugins {
     id 'com.android.application'
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = '0.8.11'
 }
 
 android {
@@ -61,6 +66,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Unit-test coverage for ./gradlew jacocoUnitTestReport (see below).
+            enableUnitTestCoverage true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -68,6 +77,7 @@ android {
     }
 
     testOptions {
+        animationsDisabled true
         unitTests {
             includeAndroidResources = true
             // Allow android.util.Log (and other Android stubs) to return
@@ -83,6 +93,11 @@ android {
     sourceSets {
         test {
             resources.srcDirs += "${rootDir}/../protocol"
+            // Fixtures shared with the instrumented tests (testsupport/UiTestData).
+            java.srcDirs += 'src/sharedTest/java'
+        }
+        androidTest {
+            java.srcDirs += 'src/sharedTest/java'
         }
     }
 }
@@ -204,6 +219,75 @@ dependencies {
     testImplementation 'com.networknt:json-schema-validator:1.5.1'
     testImplementation 'androidx.test:core:1.6.1'
     testImplementation 'org.robolectric:robolectric:4.13'
+    testImplementation 'androidx.work:work-testing:2.9.1'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-intents:3.6.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-contrib:3.6.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+    androidTestImplementation 'androidx.work:work-testing:2.9.1'
+}
+
+// --- Unit-test coverage -------------------------------------------------------------------
+// ./gradlew jacocoUnitTestReport runs the JVM unit tests and writes
+// build/reports/jacoco/jacocoUnitTestReport/{html,jacocoUnitTestReport.xml}. Generated code
+// (view binding, the jsonschema2pojo protocol POJOs, R/BuildConfig) is excluded: it has no
+// hand-written logic to test.
+tasks.withType(Test).configureEach {
+    // Robolectric's ParcelFileDescriptor (ContentResolver.openOutputStream on a file Uri)
+    // reflects into FileDescriptor, which JDK 17 only allows with this flag.
+    jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+    jacoco {
+        // Robolectric loads app classes through its own class loader; without this their
+        // coverage is dropped.
+        includeNoLocationClasses = true
+        excludes = ['jdk.internal.*']
+    }
+}
+
+def coverageExcludes = [
+        '**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*',
+        '**/databinding/**', '**/DataBinderMapperImpl*', '**/DataBindingTriggerClass*',
+        'nl/paree/climbpro/protocol/**',
+]
+
+tasks.register('jacocoUnitTestReport', JacocoReport) {
+    dependsOn 'testDebugUnitTest'
+    group = 'verification'
+    description = 'Unit-test coverage report without generated code.'
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    classDirectories.setFrom(fileTree("${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes") {
+        exclude coverageExcludes
+    })
+    sourceDirectories.setFrom(files('src/main/java'))
+    executionData.setFrom(fileTree(buildDir) {
+        include 'outputs/unit_test_code_coverage/debugUnitTest/*.exec', 'jacoco/testDebugUnitTest.exec'
+    })
+}
+
+// ./gradlew jacocoCoverageVerification fails when line coverage drops below 80 %.
+tasks.register('jacocoCoverageVerification', JacocoCoverageVerification) {
+    dependsOn 'jacocoUnitTestReport'
+    group = 'verification'
+    description = 'Fails below 80 % line coverage (generated code excluded).'
+    classDirectories.setFrom(tasks.named('jacocoUnitTestReport').get().classDirectories)
+    sourceDirectories.setFrom(tasks.named('jacocoUnitTestReport').get().sourceDirectories)
+    executionData.setFrom(tasks.named('jacocoUnitTestReport').get().executionData)
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
 }

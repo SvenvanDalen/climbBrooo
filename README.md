@@ -356,6 +356,17 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   writes a `.zwo` that MyWhoosh's web workout builder accepts (plain steps, whole-percent FTP
   power, short name, gradients in the description). MyWhoosh can't import custom routes, so
   the climb goes in as a workout; a dialog explains the upload. Phone-only.
+- **MyWhoosh analysis** (menu → "MyWhoosh-analyse"): indoor season Oct–Mar vs the previous
+  one (hours, TSS, best 5/20 min, climbs, virtual hm), a catalog of every MyWhoosh route ridden
+  (count, last date, best time and power; tap opens the route, long-press compares two rides
+  with power, heart rate, cadence and a time-difference chart), NP/IF/TSS per ride (also in
+  the ride archive), cadence per gradient class, heart-rate recovery 60 s after intervals, a
+  weight log (manual or Health Connect) so old W/kg uses that day's weight, and switches for
+  the PR notification after a MyWhoosh ride and for counting virtual hm in the elevation goal
+  and climbing year overview. Climb detail → "Indoor en progressie": time and W/kg chart over
+  all attempts with PRs marked, the linked real/MyWhoosh climb side by side, and the outdoor
+  time predicted from recent indoor power. Climb attempts now store average power, heart rate
+  and cadence. Phone-only.
 - **intervals.icu** — Settings → "intervals.icu koppelen": paste your personal API key
   (intervals.icu → Settings → Developer Settings) and athlete id (0 = your own), with a
   connection test. Climb detail → "Exporteer als indoor-workout" → "Naar intervals.icu" (or

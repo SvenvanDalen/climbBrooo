@@ -328,6 +328,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnReSegment.setOnClickListener(v -> showReSegmentDialog());
         binding.btnEditShape.setOnClickListener(v -> showShapeOverrideDialog());
         binding.btnRateClimb.setOnClickListener(v -> showRatingDialog());
+        // Issues #387, #395, #396: progression, MyWhoosh/real counterpart, indoor prediction.
+        binding.btnClimbIndoor.setOnClickListener(v -> startActivity(
+                nl.paree.climbpro.ui.mywhoosh.ClimbIndoorActivity.intentFor(
+                        this, routeId, climbIndex)));
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
         binding.btnExportWorkout.setOnClickListener(v -> pickWorkoutFormat());

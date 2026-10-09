@@ -74,5 +74,5 @@
     <string name="hazards_descent_row">Discesa tecnica km %1$.1f–%2$.1f (%3$.1f km)</string>
     <string name="hazards_none">Nessuna galleria o discesa tecnica trovata.</string>
     <string name="hazards_lookup_failed">Impossibile recuperare le gallerie (%1$s); quelle trovate in precedenza restano.</string>
-    <string name="hazards_note">Discese: ≤ −8 % su 300 m, oppure ≤ −5 % con molte curve. Gallerie © contributori OpenStreetMap. L\'orologio avvisa 400 m prima (dopo la prossima sincronizzazione).</string>
+    <string name="hazards_note" formatted="false">Discese: ≤ −8 % su 300 m, oppure ≤ −5 % con molte curve. Gallerie © contributori OpenStreetMap. L\'orologio avvisa 400 m prima (dopo la prossima sincronizzazione).</string>
 </resources>

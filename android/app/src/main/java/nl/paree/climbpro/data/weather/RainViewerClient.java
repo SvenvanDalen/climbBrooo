@@ -15,8 +15,17 @@ public final class RainViewerClient {
     public static final String WEATHER_MAPS_URL =
             "https://api.rainviewer.com/public/weather-maps.json";
 
-    private final OkHttpClient http = new OkHttpClient.Builder()
-            .callTimeout(15, TimeUnit.SECONDS).build();
+    private final OkHttpClient http;
+
+    public RainViewerClient() {
+        this(new OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build());
+    }
+
+    /** Test seam: inject a client (e.g. one that redirects to a MockWebServer). */
+    @androidx.annotation.VisibleForTesting
+    RainViewerClient(OkHttpClient http) {
+        this.http = http;
+    }
 
     public RainRadarFrame fetchLatestFrame() throws IOException {
         try (Response resp = http.newCall(new Request.Builder().url(WEATHER_MAPS_URL).build())

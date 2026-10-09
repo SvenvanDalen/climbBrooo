@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
 
@@ -31,9 +32,19 @@ public final class IntervalsIcuRepository {
     private static final String KEY_ATHLETE_ID = "athlete_id";
 
     private final Context context;
+    /** Test seams; null means encrypted prefs / the real API. */
+    private final SharedPreferences prefsOverride;
+    private final IntervalsIcuApiClient apiOverride;
 
     public IntervalsIcuRepository(Context context) {
+        this(context, null, null);
+    }
+
+    @VisibleForTesting
+    IntervalsIcuRepository(Context context, SharedPreferences prefs, IntervalsIcuApiClient api) {
         this.context = context.getApplicationContext();
+        this.prefsOverride = prefs;
+        this.apiOverride = api;
     }
 
     public boolean isConfigured() {
@@ -104,6 +115,7 @@ public final class IntervalsIcuRepository {
     // -------------------------------------------------------------------------
 
     private SharedPreferences prefs() throws java.security.GeneralSecurityException, IOException {
+        if (prefsOverride != null) return prefsOverride;
         MasterKey masterKey = new MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                 .build();
@@ -113,7 +125,8 @@ public final class IntervalsIcuRepository {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM);
     }
 
-    private static IntervalsIcuApiClient api() {
+    private IntervalsIcuApiClient api() {
+        if (apiOverride != null) return apiOverride;
         // BASIC logs only the request line — never the Authorization header.
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BASIC);

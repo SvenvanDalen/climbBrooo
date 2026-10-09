@@ -38,6 +38,10 @@ public final class StravaStreamsDto {
     @JsonProperty("heartrate")
     public NumberStream heartrate;
 
+    /** Cadence (rpm) per sample, for cadence per gradient and per climb (issues #403, #387). */
+    @JsonProperty("cadence")
+    public NumberStream cadence;
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class LatLngStream {
         @JsonProperty("data")

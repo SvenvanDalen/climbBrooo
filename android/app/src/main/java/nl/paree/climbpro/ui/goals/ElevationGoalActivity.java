@@ -30,6 +30,8 @@ public final class ElevationGoalActivity extends AppCompatActivity {
     private ElevationGoalViewModel viewModel;
     private TextView weekProgressText;
     private TextView monthProgressText;
+    /** Issue #393: the month's virtual hm, shown under the month progress. */
+    private String virtualNote;
     private LinearProgressIndicator weekProgressBar;
     private LinearProgressIndicator monthProgressBar;
     private TextView noGoalText;
@@ -60,6 +62,11 @@ public final class ElevationGoalActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(ElevationGoalViewModel.class);
         viewModel.weekProgress().observe(this, this::renderWeek);
         viewModel.monthProgress().observe(this, this::renderMonth);
+        viewModel.virtualNote().observe(this, note -> {
+            virtualNote = note;
+            Progress p = viewModel.monthProgress().getValue();
+            if (p != null) renderMonth(p);
+        });
         viewModel.load();
     }
 
@@ -69,6 +76,7 @@ public final class ElevationGoalActivity extends AppCompatActivity {
 
     private void renderMonth(Progress p) {
         render(p, monthProgressText, monthProgressBar);
+        if (virtualNote != null) monthProgressText.append("\n" + virtualNote);
         noGoalText.setVisibility(p.goalM <= 0 ? View.VISIBLE : View.GONE);
     }
 

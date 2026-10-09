@@ -12,16 +12,19 @@ import org.robolectric.RobolectricTestRunner;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(RobolectricTestRunner.class)
 public class SyncStateRepositoryTest {
 
     private SyncStateRepository repo;
+    private Application app;
 
     @Before
     public void setUp() {
-        Application app = ApplicationProvider.getApplicationContext();
+        app = ApplicationProvider.getApplicationContext();
         repo = new SyncStateRepository(app);
     }
 
@@ -83,5 +86,56 @@ public class SyncStateRepositoryTest {
         repo.markPending("r2");
         List<SyncState> all = repo.getAll();
         assertEquals(2, all.size());
+    }
+
+    @Test
+    public void corruptFileReadsAsEmptyAndIsReplacedOnNextWrite() throws Exception {
+        java.io.File f = new java.io.File(app.getFilesDir(), "sync_state.json");
+        java.nio.file.Files.write(f.toPath(), "{not json".getBytes("UTF-8"));
+        assertEquals(SyncState.Status.PENDING, repo.get("r1").status);
+        assertEquals(0, repo.getAll().size());
+        repo.markSynced("r1", "h");
+        assertEquals("h", new SyncStateRepository(app).get("r1").lastSyncedHash);
+    }
+
+    @Test
+    public void unknownFieldsFromNewerVersionsAreIgnored() throws Exception {
+        java.io.File f = new java.io.File(app.getFilesDir(), "sync_state.json");
+        java.nio.file.Files.write(f.toPath(), ("[{\"routeId\":\"r1\",\"status\":\"SYNCED\","
+                + "\"lastSyncedHash\":\"x\",\"futureField\":1}]").getBytes("UTF-8"));
+        assertEquals("x", repo.get("r1").lastSyncedHash);
+    }
+
+    @Test
+    public void unwritableStateFileLeavesNoTempFileBehind() throws Exception {
+        // A directory in place of the state file: reads degrade to empty, writes fail quietly.
+        java.io.File f = new java.io.File(app.getFilesDir(), "sync_state.json");
+        assertTrue(f.mkdirs());
+        assertTrue(new java.io.File(f, "blocker").createNewFile());
+        repo.markSynced("r1", "h");
+        assertEquals(SyncState.Status.PENDING, repo.get("r1").status);
+        assertFalse(new java.io.File(app.getFilesDir(), "sync_state.json.tmp").exists());
+    }
+
+    @Test
+    public void successfulSyncAfterFailuresResetsRetryCount() {
+        repo.markFailed("r1");
+        repo.markFailed("r1");
+        repo.markPending("r1");
+        assertEquals(SyncState.Status.PENDING, repo.get("r1").status);
+        assertEquals(2, repo.get("r1").retryCount);
+        repo.markSynced("r1", "h");
+        assertEquals(0, repo.get("r1").retryCount);
+        assertTrue(repo.get("r1").lastSyncedAtMs > 0);
+    }
+
+    @Test
+    public void upsertKeepsExplicitState() {
+        SyncState s = new SyncState();
+        s.routeId = "r9";
+        s.status = SyncState.Status.FAILED;
+        s.retryCount = 7;
+        repo.upsert(s);
+        assertEquals(7, new SyncStateRepository(app).get("r9").retryCount);
     }
 }

@@ -54,6 +54,16 @@ public final class ClimbWrappedViewModel extends AndroidViewModel {
     public void load(int year) {
         executor.execute(() -> {
             java.util.List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+            // Issue #393: leave MyWhoosh / indoor climbs out when the rider chose so.
+            boolean countVirtual = androidx.preference.PreferenceManager
+                    .getDefaultSharedPreferences(getApplication())
+                    .getBoolean(nl.paree.climbpro.domain.mywhoosh.VirtualElevation.PREF_COUNT_VIRTUAL, true);
+            if (!countVirtual) {
+                attempts = nl.paree.climbpro.domain.mywhoosh.VirtualElevation.countedAttempts(
+                        attempts, nl.paree.climbpro.domain.mywhoosh.IndoorRides.indoorIds(
+                                new nl.paree.climbpro.data.ride.RideRepository(getApplication())
+                                        .loadAll()), false);
+            }
             Map<String, ClimbInfo> climbInfo = cachedClimbInfo;
             if (climbInfo == null) {
                 climbInfo = resolveClimbInfo();

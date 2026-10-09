@@ -16,7 +16,7 @@
     <string name="hazards_descent_row">Technische afdaling km %1$.1f–%2$.1f (%3$.1f km)</string>
     <string name="hazards_none">Geen tunnels of technische afdalingen gevonden.</string>
     <string name="hazards_lookup_failed">Tunnels konden niet worden opgehaald (%1$s); eerder gevonden tunnels blijven staan.</string>
-    <string name="hazards_note">Afdalingen: ≤ −8 % over 300 m, of ≤ −5 % met veel bochten. Tunnels © OpenStreetMap-bijdragers. Het horloge waarschuwt 400 m vooraf (na de volgende sync).</string>
+    <string name="hazards_note" formatted="false">Afdalingen: ≤ −8 % over 300 m, of ≤ −5 % met veel bochten. Tunnels © OpenStreetMap-bijdragers. Het horloge waarschuwt 400 m vooraf (na de volgende sync).</string>
     <!-- Offline-pakket voor een route (issue #200) -->
     <string name="offline_pkg_action">Offline-pakket</string>
     <string name="offline_pkg_loading">Offline-pakket downloaden…</string>

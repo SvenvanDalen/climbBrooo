@@ -223,7 +223,11 @@ public final class RouteListActivity extends AppCompatActivity {
         });
 
         ensureBluetoothPermission();
-        checkForAppUpdate(false);
+        // A local/dev build can't install a release APK over itself; only the menu item checks.
+        if (!nl.paree.climbpro.update.UpdateChecker.isDevBuild(
+                nl.paree.climbpro.BuildConfig.VERSION_NAME)) {
+            checkForAppUpdate(false);
+        }
     }
 
     /**
@@ -388,6 +392,9 @@ public final class RouteListActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.action_hr_drift) {
             startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
+            return true;
+        } else if (id == R.id.action_mywhoosh) {
+            startActivity(nl.paree.climbpro.ui.mywhoosh.MyWhooshActivity.intentFor(this));
             return true;
         } else if (id == R.id.action_power_curve) {
             startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));

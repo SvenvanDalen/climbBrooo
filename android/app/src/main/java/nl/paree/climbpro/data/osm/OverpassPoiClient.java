@@ -42,8 +42,17 @@ public final class OverpassPoiClient {
             "[\"man_made\"=\"water_tap\"][\"drinking_water\"=\"yes\"]",
     };
 
-    private final OkHttpClient http = new OkHttpClient.Builder()
-            .callTimeout(90, TimeUnit.SECONDS).build();
+    private final OkHttpClient http;
+
+    public OverpassPoiClient() {
+        this(new OkHttpClient.Builder().callTimeout(90, TimeUnit.SECONDS).build());
+    }
+
+    /** Test seam: inject a client (e.g. one that redirects to a MockWebServer). */
+    @androidx.annotation.VisibleForTesting
+    OverpassPoiClient(OkHttpClient http) {
+        this.http = http;
+    }
     private final ObjectMapper mapper = new ObjectMapper();
 
     /** POIs within {@link #AROUND_M} of the route line (not yet projected onto the route). */

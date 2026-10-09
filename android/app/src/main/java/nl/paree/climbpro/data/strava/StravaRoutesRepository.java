@@ -198,8 +198,11 @@ public final class StravaRoutesRepository {
             stored.importedAtMs = System.currentTimeMillis();
             stored.stravaSegmentsExplored = explored.complete;
 
-            // Preserve user display name across re-imports
-            if (existing != null && existing.userDisplayName != null) {
+            // Preserve user-owned route fields across re-imports. Each field is copied on its
+            // own: notes on a never-renamed route must survive too. rideStatus, surface
+            // sections, removed-climb tombstones and per-climb/segment edits are carried
+            // forward by RouteRepository.saveRoute itself.
+            if (existing != null) {
                 stored.userDisplayName = existing.userDisplayName;
                 stored.notes           = existing.notes;
             }
