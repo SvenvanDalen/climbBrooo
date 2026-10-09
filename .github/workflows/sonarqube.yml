@@ -25,8 +25,9 @@ jobs:
           # Full history so SonarQube can blame lines and detect new code.
           fetch-depth: 0
       - name: Unit tests + coverage + SonarQube scan
-        shell: pwsh
-        run: ./gradlew jacocoUnitTestReport sonar --console=plain "-Dsonar.qualitygate.wait=true"
+        # Windows PowerShell 5.1 ships with Windows; pwsh (7) is not installed on the runner.
+        shell: powershell
+        run: .\gradlew.bat jacocoUnitTestReport sonar --console=plain "-Dsonar.qualitygate.wait=true"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
