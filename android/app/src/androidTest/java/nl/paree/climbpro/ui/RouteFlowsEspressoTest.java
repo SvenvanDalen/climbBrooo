@@ -79,21 +79,27 @@ public class RouteFlowsEspressoTest {
     public GarminPromptDismisser garminPrompt = new GarminPromptDismisser();
 
     private Context app;
+    private boolean intentsInitialized;
 
     @Before
     public void setUp() throws Exception {
         DeviceState.seed();
         app = DeviceState.app();
         Intents.init();
+        intentsInitialized = true;
         // Without Garmin Connect Mobile the Connect IQ SDK keeps launching its install prompt
         // (a separate activity); stub it so it never covers the screen under test.
         intending(hasComponent("com.garmin.android.connectiq.AutoUIDialogHostActivity"))
                 .respondWith(new Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null));
     }
 
+    /**
+     * Releases only what setUp initialised: if setUp failed before Intents.init(), an unguarded
+     * release() throws "init() must be called" and that is all the report shows of the failure.
+     */
     @After
     public void tearDown() {
-        Intents.release();
+        if (intentsInitialized) Intents.release();
     }
 
     private String s(int id) {
