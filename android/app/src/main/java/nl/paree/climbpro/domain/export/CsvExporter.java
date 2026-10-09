@@ -4,6 +4,7 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.rider.WeightHistory;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -58,6 +59,18 @@ public final class CsvExporter {
      */
     public static String attemptsCsv(List<StoredClimbAttempt> attempts,
                                      List<StoredRoute> routes, ZoneId zone) {
+        return attemptsCsv(attempts, routes, zone, null);
+    }
+
+    /**
+     * Like {@link #attemptsCsv(List, List, ZoneId)}, with power, W/kg, heart rate and cadence
+     * per attempt (issue #410). W/kg uses the rider's weight on the attempt's date from
+     * {@code weights}; it is empty when {@code weights} is null or power/weight is unknown.
+     * Power, heart rate and cadence are empty when the ride had no such stream.
+     */
+    public static String attemptsCsv(List<StoredClimbAttempt> attempts,
+                                     List<StoredRoute> routes, ZoneId zone,
+                                     WeightHistory weights) {
         Map<String, ClimbInfo> climbs = indexClimbs(routes);
         List<StoredClimbAttempt> sorted = new ArrayList<>(attempts);
         sorted.sort(Comparator.comparingLong((StoredClimbAttempt a) -> a.dateEpochSec)
@@ -66,7 +79,8 @@ public final class CsvExporter {
         StringBuilder sb = new StringBuilder();
         row(sb, "datum", "klim", "route", "klim_id", "tijd_sec", "tijd", "lengte_m",
                 "hoogtemeters", "gem_snelheid_kmh", "vam_m_per_uur", "doorgang",
-                "afwijkend_gereden", "activiteit_id", "notitie", "meegereden_met");
+                "afwijkend_gereden", "activiteit_id", "notitie", "meegereden_met",
+                "gem_vermogen_w", "w_per_kg", "gem_hartslag_bpm", "gem_cadans_rpm");
         for (StoredClimbAttempt a : sorted) {
             ClimbInfo c = climbs.get(a.climbId);
             boolean timed = a.elapsedSec > 0;
@@ -85,9 +99,19 @@ public final class CsvExporter {
                     a.routeDeviation ? "ja" : "nee",
                     String.valueOf(a.activityId),
                     a.note,
-                    a.companions);
+                    a.companions,
+                    a.avgWatts != null ? String.valueOf(a.avgWatts) : "",
+                    wattsPerKg(a, weights),
+                    a.avgHeartrate != null ? String.valueOf(a.avgHeartrate) : "",
+                    a.avgCadence != null ? String.valueOf(a.avgCadence) : "");
         }
         return sb.toString();
+    }
+
+    private static String wattsPerKg(StoredClimbAttempt a, WeightHistory weights) {
+        if (weights == null || a.dateEpochSec <= 0) return "";
+        Double wkg = weights.wattsPerKg(a.avgWatts, a.dateEpochSec);
+        return wkg != null ? String.format(Locale.US, "%.2f", wkg) : "";
     }
 
     /** Quotes a field when it contains a separator, quote or line break; null becomes empty. */
