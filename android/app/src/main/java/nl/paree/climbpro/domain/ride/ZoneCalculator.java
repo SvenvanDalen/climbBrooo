@@ -148,6 +148,14 @@ public final class ZoneCalculator {
         return zoneOf(fractionOfFtp, POWER_ZONE_UPPER);
     }
 
+    /**
+     * Heart-rate zone for a heart rate given as a fraction of max heart rate: 0 = Z1 up to
+     * 4 = Z5, per {@link #HR_ZONE_UPPER}. Shared with the per-gradient zones (issue #24).
+     */
+    public static int heartRateZoneIndex(double fractionOfMax) {
+        return zoneOf(fractionOfMax, HR_ZONE_UPPER);
+    }
+
     public static int total(int[] zones) {
         int sum = 0;
         if (zones != null) for (int z : zones) sum += z;

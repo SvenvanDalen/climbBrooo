@@ -53,11 +53,13 @@ public class WatchFieldLayoutTest {
         WatchFieldLayout l = WatchFieldLayout.defaults().withCode(4, WatchFieldLayout.ELAPSED);
         assertArrayEquals(new int[]{0, 1, 2, 14, 12}, l.codes());
         assertEquals(15, l.withCode(4, 42).code(4));
+        assertEquals(WatchFieldLayout.RIDE_REM_ELEV,
+                l.withCode(4, WatchFieldLayout.RIDE_REM_ELEV).code(4));
     }
 
     @Test
     public void labels_coverEverySlotAndCode() {
-        assertEquals(16, WatchFieldLayout.metricCount());
+        assertEquals(17, WatchFieldLayout.metricCount());
         for (int c = 0; c < WatchFieldLayout.metricCount(); c++) {
             assertNotNull(WatchFieldLayout.metricLabel(c));
         }

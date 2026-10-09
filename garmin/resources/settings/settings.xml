@@ -19,6 +19,7 @@
         <settingConfig type="list">
             <listEntry value="0">@Strings.ColorModeGradient</listEntry>
             <listEntry value="1">@Strings.ColorModeFtpZone</listEntry>
+            <listEntry value="2">@Strings.ColorModeHrZone</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.lightsReminder" title="@Strings.SettingsLightsReminderTitle">
@@ -84,5 +85,35 @@
     </setting>
     <setting propertyKey="@Properties.cadenceHigh" title="@Strings.SettingsCadenceHighTitle" prompt="@Strings.SettingsCadenceHighPrompt">
         <settingConfig type="numeric" min="0" max="200"/>
+    </setting>
+    <setting propertyKey="@Properties.pacingAlert" title="@Strings.SettingsPacingAlertTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.summitAlert" title="@Strings.SettingsSummitAlertTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.vibeShortSteep" title="@Strings.SettingsVibeShortSteepTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.VibeDefault</listEntry>
+            <listEntry value="1">@Strings.VibeShortDouble</listEntry>
+            <listEntry value="2">@Strings.VibeLongSingle</listEntry>
+            <listEntry value="3">@Strings.VibeTriple</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.vibeLong" title="@Strings.SettingsVibeLongTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.VibeDefault</listEntry>
+            <listEntry value="1">@Strings.VibeShortDouble</listEntry>
+            <listEntry value="2">@Strings.VibeLongSingle</listEntry>
+            <listEntry value="3">@Strings.VibeTriple</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.vibeRegular" title="@Strings.SettingsVibeRegularTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.VibeDefault</listEntry>
+            <listEntry value="1">@Strings.VibeShortDouble</listEntry>
+            <listEntry value="2">@Strings.VibeLongSingle</listEntry>
+            <listEntry value="3">@Strings.VibeTriple</listEntry>
+        </settingConfig>
     </setting>
 </settings>

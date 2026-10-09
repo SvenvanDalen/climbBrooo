@@ -54,6 +54,11 @@ class ClimbData {
     var palette = 0;          // color palette from payload "pal" (issue #258): 0 default, 1 colorblind
     var hazards = null;       // packed "hz" [startM, endM, type, ...] (issue #203); null = none
     var units = 0;            // display-unit bitmask from payload "un" (issue #262); 0 = metric
+    var ordered = false;      // radius payload with "ord": 1 = day trip in this order (issue #9)
+    // Per gradient class (segment color 0-5): the rider's usual cadence in rpm ("cg", issue
+    // #18) and usual heart-rate zone 1-5 ("hg", issue #24); 0 = unknown. null = not sent.
+    var cadenceByGrade = null;
+    var hrZoneByGrade = null;
 
     // Virtual opponent on the route (issue #178, wire "gh" = [stepM, sec1, ..., secN]).
     const MAX_GHOST_STEPS = 100;
@@ -75,6 +80,8 @@ class ClimbData {
     var climbName;        // display name (String or null)
     var climbStartLat;    // radius mode: start latitude
     var climbStartLon;    // radius mode: start longitude
+    var climbNew;         // bool per climb: never ridden before ("nw", issue #27)
+    var radiusDist;       // radius mode: straight-line metres to each start, -1 = unknown (issue #7)
 
     // Calibration point arrays — populated by CommListener when it parses the "calib" key
     // from the v3 payload. checkCalibration() is a no-op until CommListener wires these up.
@@ -157,6 +164,8 @@ class ClimbData {
         climbName = new [MAX_CLIMBS];
         climbStartLat = new [MAX_CLIMBS];
         climbStartLon = new [MAX_CLIMBS];
+        climbNew = new [MAX_CLIMBS];
+        radiusDist = new [MAX_CLIMBS];
         segCount = new [MAX_CLIMBS];
 
         segDist = new [MAX_CLIMBS];
@@ -192,6 +201,8 @@ class ClimbData {
             climbName[i] = null;
             climbStartLat[i] = 0.0;
             climbStartLon[i] = 0.0;
+            climbNew[i] = false;
+            radiusDist[i] = -1;
             segCount[i] = 0;
 
             segDist[i] = new [MAX_SEGMENTS];
@@ -256,6 +267,78 @@ class ClimbData {
         if (c < 0) { c = 0; }
         if (c > 5) { c = 5; }
         return c;
+    }
+
+    // Color index for the "colorMode" setting value: 1 = FTP zones (colorIndexAt with zones),
+    // 2 = heart-rate zones per gradient class (issue #24), anything else = gradient colors.
+    // A climb or class without zone data keeps its gradient color.
+    function colorIndexForMode(ci, s, colorMode) {
+        if (colorMode == 2) {
+            var c = hrZoneColorIndex(colorIndexAt(ci, s, false));
+            return c != null ? c : colorIndexAt(ci, s, false);
+        }
+        return colorIndexAt(ci, s, colorMode == 1);
+    }
+
+    // Heart-rate zone colors (issue #24, "colorMode" 2): the color for the zone the rider
+    // usually rides at on this gradient class. Zone 1-5 -> palette index (z1 light yellow,
+    // z2 yellow, z3 orange, z4 dark orange, z5 red); null when this class has no zone (then
+    // the caller keeps the gradient color).
+    function hrZoneColorIndex(colorClass) {
+        var hg = hrZoneByGrade;
+        if (hg == null || colorClass < 0 || colorClass >= hg.size()) { return null; }
+        var z = hg[colorClass];
+        if (z < 1 || z > 5) { return null; }
+        return z == 5 ? 5 : (z == 4 ? 4 : (z == 3 ? 3 : (z == 2 ? 1 : 0)));
+    }
+
+    // The rider's usual cadence on segment s of climb ci (issue #18), or null when unknown.
+    function cadenceTargetAt(ci, s) {
+        var cg = cadenceByGrade;
+        if (cg == null || ci < 0 || s < 0 || s >= segCount[ci]) { return null; }
+        var c = segColor[ci][s];
+        if (c < 0 || c >= cg.size() || cg[c] <= 0) { return null; }
+        return cg[c];
+    }
+
+    // Ascent (m) still to come on the whole ride (issue #25): what is left of the active climb
+    // plus every later climb that was not skipped. Route mode only; 0 otherwise.
+    function rideRemainingElev() {
+        if (!payloadReceived || mode == null || !mode.equals("route")) { return 0; }
+        var total = 0;
+        var from = nextClimbIndex;
+        var ci = activeClimbIndex;
+        if (ci >= 0) {
+            var cumDist = 0;
+            for (var s = 0; s < segCount[ci]; s++) {
+                cumDist += segDist[ci][s];
+                if (cumDist > progressInClimb) { total += segElevGain[ci][s]; }
+            }
+            from = ci + 1;
+        }
+        if (from < 0) { return total; }
+        for (var i = from; i < climbCount; i++) {
+            if (!climbSkipped[i]) { total += climbElevGain[i]; }
+        }
+        return total;
+    }
+
+    /**
+     * Radius mode / day trip (issues #7, #9): each GPS tick, measure the straight-line distance
+     * to every climb start, mark reached climbs (climbEntered doubles as "reached" here) and
+     * pick the climb to count down to. Sets nextClimbIndex / distToNextClimb; route mode is
+     * left to updateProgress().
+     */
+    function updateRadius(lat, lon) {
+        if (!payloadReceived || mode == null || !mode.equals("radius")) { return; }
+        for (var i = 0; i < climbCount; i++) {
+            radiusDist[i] = (climbStartLat[i] == 0.0 && climbStartLon[i] == 0.0)
+                    ? -1 : distM(lat, lon, climbStartLat[i], climbStartLon[i]).toNumber();
+        }
+        radiusMarkVisited(radiusDist, climbEntered, climbCount, ordered);
+        nextClimbIndex = radiusPickTarget(radiusDist, climbEntered, climbCount, ordered,
+                nextClimbIndex);
+        distToNextClimb = nextClimbIndex >= 0 ? radiusDist[nextClimbIndex] : -1;
     }
 
     function resetNavTrust() {

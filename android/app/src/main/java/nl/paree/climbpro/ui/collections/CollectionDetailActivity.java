@@ -67,6 +67,8 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         });
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
+        viewModel.message().observe(this,
+                msg -> Toast.makeText(this, msg, Toast.LENGTH_LONG).show());
 
         viewModel.load(collectionId);
     }
@@ -98,6 +100,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == android.R.id.home) { finish(); return true; }
         if (id == R.id.action_rename_collection) { showRenameDialog(); return true; }
+        if (id == R.id.action_ride_day_trip) { viewModel.startDayTrip(collectionId); return true; }
         if (id == R.id.action_delete_collection) { confirmDeleteCollection(); return true; }
         if (id == R.id.action_share_collection_code) {
             RouteCollection current = viewModel.collection().getValue();

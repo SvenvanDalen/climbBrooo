@@ -23,7 +23,8 @@ module FieldLayout {
     const EMPTY = 13;
     const AUTO_ROW4 = 14;     // interval block, else VAM (the pre-layout row 4)
     const AUTO_BOTTOM = 15;   // vs PR / vs plan, else ETA (the pre-layout bottom line)
-    const MAX_CODE = 15;
+    const RIDE_REM_ELEV = 16; // ascent still to come on the whole ride (issue #25)
+    const MAX_CODE = 16;
 
     // [left, middle, right, row 4, bottom line] -- the screen as it was before 'lay'.
     function defaults() {
@@ -67,10 +68,22 @@ module FieldLayout {
         }
         if (code == HEART_RATE) { return v[:hr] == null ? "--" : v[:hr] + "bpm"; }
         if (code == POWER) { return v[:power] == null ? "--" : v[:power].toNumber() + "W"; }
-        if (code == CADENCE) { return v[:cadence] == null ? "--" : v[:cadence] + "rpm"; }
+        if (code == CADENCE) { return cadenceText(v[:cadence], v[:cadTarget], wide); }
+        if (code == RIDE_REM_ELEV) {
+            var e = Units.formatElev(v[:rideRemElev], v[:units]) + "↑";
+            return wide ? "rit " + e : e;
+        }
         if (code == ELAPSED) { return formatElapsed(v[:timerMs]); }
         if (code == EMPTY) { return ""; }
         return null;
+    }
+
+    // Cadence slot: "86rpm", or with the rider's usual cadence for this gradient (issue #18)
+    // "86/90rpm" ("86/90" in a narrow slot). Without a sensor the target still shows: "--/90".
+    function cadenceText(cad, target, wide) {
+        var cur = cad == null ? "--" : "" + cad;
+        if (target == null) { return cad == null ? "--" : cur + "rpm"; }
+        return wide ? cur + "/" + target + "rpm" : cur + "/" + target;
     }
 
     // Whole-seconds ETA as "m:ss"; a negative value (speed too low/unknown, see
