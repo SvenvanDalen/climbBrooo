@@ -14,7 +14,6 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 import nl.paree.climbpro.data.route.StoredCalibrationPoint;

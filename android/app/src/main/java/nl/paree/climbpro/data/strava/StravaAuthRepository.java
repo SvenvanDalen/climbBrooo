@@ -13,7 +13,6 @@ import net.openid.appauth.AuthorizationServiceConfiguration;
 import net.openid.appauth.ClientSecretPost;
 import net.openid.appauth.ResponseTypeValues;
 
-import org.json.JSONException;
 
 import java.io.IOException;
 

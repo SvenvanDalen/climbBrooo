@@ -2,7 +2,6 @@ package nl.paree.climbpro.data.strava;
 
 import android.util.Log;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
