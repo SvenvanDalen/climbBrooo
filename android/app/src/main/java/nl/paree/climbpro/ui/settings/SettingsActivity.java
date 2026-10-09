@@ -35,6 +35,7 @@ import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.segment.GradientPalette;
 import nl.paree.climbpro.service.AutoBackupWorker;
 import nl.paree.climbpro.service.StravaHistoryBackfillWorker;
+import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 import nl.paree.climbpro.service.WetRideReminderJob;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
@@ -113,7 +114,9 @@ public final class SettingsActivity extends AppCompatActivity {
 
         viewModel.syncMode().observe(this, mode -> {
             boolean isRadius = "radius".equals(mode);
-            binding.radioRoute.setChecked(!isRadius);
+            // A day trip (issue #9, chosen on a collection) is neither: leave both unchecked.
+            binding.radioRoute.setChecked(!isRadius
+                    && !nl.paree.climbpro.service.RouteSyncWorker.MODE_DAYTRIP.equals(mode));
             binding.radioRadius.setChecked(isRadius);
             binding.radiusContainer.setVisibility(isRadius ? android.view.View.VISIBLE : android.view.View.GONE);
         });
@@ -274,6 +277,19 @@ public final class SettingsActivity extends AppCompatActivity {
             PreferenceManager.getDefaultSharedPreferences(this).edit()
                     .putBoolean(GradientPalette.PREF_COLORBLIND, on).apply();
             SegmentColorPalette.setActive(GradientPalette.fromEnabled(on));
+            try {
+                SyncScheduler.triggerImmediateSync(this);
+            } catch (IllegalStateException e) {
+                // WorkManager not initialised (tests); the periodic sync picks it up later.
+            }
+        });
+        // Radius mode weather filter (issue #12): needs a connection at sync time; without one
+        // the full set is sent. Applied from the next sync, so kick one off.
+        binding.switchRadiusDryOnly.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(RouteSyncWorker.PREF_RADIUS_DRY_ONLY, false));
+        binding.switchRadiusDryOnly.setOnCheckedChangeListener((b, on) -> {
+            PreferenceManager.getDefaultSharedPreferences(this).edit()
+                    .putBoolean(RouteSyncWorker.PREF_RADIUS_DRY_ONLY, on).apply();
             try {
                 SyncScheduler.triggerImmediateSync(this);
             } catch (IllegalStateException e) {

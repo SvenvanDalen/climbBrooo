@@ -121,6 +121,15 @@
                         android:max="100"
                         android:progress="30"/>
 
+                    <!-- Issue #12: leave out climbs where it rains (Open-Meteo); offline = no filter. -->
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_radius_dry_only"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textColor="@color/color_text_primary"
+                        android:text="Alleen klimmen waar het nu droog is"/>
+
                 </LinearLayout>
 
                 <Button

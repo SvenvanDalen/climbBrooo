@@ -127,6 +127,12 @@ class ClimbProView extends Ui.DataField {
     // after a nudge, else null.
     hidden var cadenceCoach = new CadenceCoach();
     hidden var cadShownRpm = null;
+    // Pacing alert (issue #6): too fast against the plan/PR for the distance covered.
+    hidden var pacing = new PacingAlert();
+    // Post-summit buzz (issue #8): progress on the active climb as of the previous tick.
+    hidden var lastProgressInClimb = 0;
+    // "Nieuwe klim!" banner (issue #27) until this timer value (ms); -1 = none.
+    hidden var newClimbUntilMs = -1;
 
     function initialize() {
         DataField.initialize();
@@ -168,6 +174,9 @@ class ClimbProView extends Ui.DataField {
             hazardAlerted = 0;
             hazardIdx = -1;
             easier.reset();
+            pacing.reset();
+            newClimbUntilMs = -1;
+            lastProgressInClimb = 0;
             data.resetRouteGhostAnchor();
         }
 
@@ -211,6 +220,8 @@ class ClimbProView extends Ui.DataField {
         if (info != null && info has :currentLocation && info.currentLocation != null) {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
             data.updateRouteMatch(ll[0], ll[1]);
+            // Radius mode / day trip (issues #7, #9): count down to the next climb start.
+            data.updateRadius(ll[0], ll[1]);
         }
 
         // Virtual opponent on the route (issue #178): the best earlier ride, interpolated at
@@ -237,6 +248,12 @@ class ClimbProView extends Ui.DataField {
             var totalTarget = climbTotalTarget(data, lastActiveClimb);
             summaryDeltaSec = (totalTarget >= 0) ? (summaryActualSec - totalTarget) : 0;
             summaryUntilMs = timerMs + 12000;   // show for 12 s
+            // Issue #8: one short buzz when the climb was really topped out (not abandoned).
+            // Fires on this one transition only, so it can't repeat for the same climb.
+            if (!data.offRoute && summitReached(lastProgressInClimb, data.climbLength[lastActiveClimb])
+                    && readBoolSettingDefault("summitAlert", true)) {
+                triggerSummitAlert();
+            }
         }
 
         // Interval block done (issue #180): short vibration once the rider tops out a climb
@@ -254,15 +271,36 @@ class ClimbProView extends Ui.DataField {
             data.climbStartTimerMs = timerMs;
         }
         lastActiveClimb = data.activeClimbIndex;
+        lastProgressInClimb = data.activeClimbIndex >= 0 ? data.progressInClimb : 0;
 
         // Climb-start alert: vibrate when entering a new climb within 50m.
         // Suppressed while off-route so a wrong-turn odometer reading can't fire it.
         if (data.activeClimbIndex >= 0 && data.activeClimbIndex != alertedClimbIndex
                 && !data.offRoute) {
             if (data.progressInClimb <= 50) {
-                triggerClimbAlert();
+                triggerClimbAlert(data, data.activeClimbIndex);
                 alertedClimbIndex = data.activeClimbIndex;
+                // Issue #27: a climb the rider never rode before gets a short banner.
+                newClimbUntilMs = data.climbNew[data.activeClimbIndex] ? timerMs + 10000 : -1;
             }
+        }
+        if (newClimbUntilMs >= 0 && (timerMs >= newClimbUntilMs || data.activeClimbIndex < 0)) {
+            newClimbUntilMs = -1;
+        }
+
+        // Pacing alert (issue #6): plan ("tsec") first, else the PR ("refsec"). Needs a
+        // running timer since the climb start; suppressed off-route.
+        var pci = data.activeClimbIndex;
+        var pRef = -1;
+        var pActual = 0;
+        if (pci >= 0 && !data.offRoute && data.climbStartTimerMs >= 0
+                && timerMs > data.climbStartTimerMs) {
+            pActual = (timerMs - data.climbStartTimerMs) / 1000.0;
+            pRef = data.hasTargets[pci] ? data.targetSecondsAt() : data.refSecondsAt();
+        }
+        if (pacing.update(pci, pActual, pRef, data.progressInClimb,
+                readBoolSettingDefault("pacingAlert", true), timerMs)) {
+            triggerPacingAlert();
         }
 
         // Battery-vs-remaining-climb-time warning (issue #49): once per climb, mirroring
@@ -552,6 +590,10 @@ class ClimbProView extends Ui.DataField {
             drawFuelBanner(dc);
         } else if (cadShownRpm != null) {
             drawCadenceBanner(dc, cadenceLabel(cadenceCoach.shownDir, cadShownRpm));
+        } else if (pacing.shownAheadSec != null && data.activeClimbIndex >= 0) {
+            drawTopBanner(dc, Gfx.COLOR_ORANGE, pacingAlertLabel(pacing.shownAheadSec));
+        } else if (newClimbUntilMs >= 0 && data.activeClimbIndex >= 0) {
+            drawTopBanner(dc, Gfx.COLOR_BLUE, "Nieuwe klim!");
         } else if (easier.shownLenM != null && data.activeClimbIndex >= 0) {
             drawEasierAheadBanner(dc, easier.shownLenM);
         } else if (lightsBanner) {
@@ -581,6 +623,15 @@ class ClimbProView extends Ui.DataField {
         dc.fillRectangle(0, 0, w, 16);
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_TRANSPARENT);
         dc.drawText(w / 2, 1, Gfx.FONT_XTINY, lightsReminderLabel(), Gfx.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Plain coloured strip across the top with white text (pacing #6, new climb #27).
+    hidden function drawTopBanner(dc, color, text) {
+        var w = dc.getWidth();
+        dc.setColor(color, color);
+        dc.fillRectangle(0, 0, w, 16);
+        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, 1, Gfx.FONT_XTINY, text, Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     // Green strip in the header slot while an easier stretch is coming up (issue #213).
@@ -754,7 +805,9 @@ class ClimbProView extends Ui.DataField {
             :hasVam => false, :vamAvg => 0, :vamPeak => 0,
             :speedMps => data.currentSpeedMps, :hr => data.currentHeartRate,
             :power => data.currentPower, :cadence => data.currentCadence,
-            :timerMs => lastGhostTimerMs, :units => data.units
+            :timerMs => lastGhostTimerMs, :units => data.units,
+            :rideRemElev => data.rideRemainingElev(),
+            :cadTarget => data.cadenceTargetAt(ci, data.activeSegmentIndex)
         };
         if (data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
@@ -973,6 +1026,11 @@ class ClimbProView extends Ui.DataField {
         return zoneColorsSelected(v);
     }
 
+    // "colorMode" as a Number (0 when missing or invalid); 2 = heart-rate zones (issue #24).
+    hidden function colorModeSetting() {
+        return readNumberSetting("colorMode");
+    }
+
     // Pure decision for zoneColorModeActive() (no Properties access, so tests can call it):
     // only the exact FTP-zone value selects zone colors; anything else is gradient mode.
     function zoneColorsSelected(settingValue) {
@@ -1012,7 +1070,7 @@ class ClimbProView extends Ui.DataField {
     hidden function drawProfile(dc, data, ci, x, y, w, h) {
 
         var colors = activeColors(data);
-        var useZones = zoneColorModeActive();
+        var colorMode = zoneColorModeActive() ? COLOR_MODE_ZONES : colorModeSetting();
         var totalLen = data.climbLength[ci];
         if (totalLen <= 0) { return; }
 
@@ -1034,7 +1092,7 @@ class ClimbProView extends Ui.DataField {
         for (var s = 0; s < segCount; s++) {
 
             var segE = data.segElevGain[ci][s];
-            var colorIdx = data.colorIndexAt(ci, s, useZones);
+            var colorIdx = data.colorIndexForMode(ci, s, colorMode);
 
             var x1 = x + (s * stepW);
             var x2 = x + ((s + 1) * stepW);
@@ -1092,7 +1150,7 @@ class ClimbProView extends Ui.DataField {
         var large = largeTextModeActive();
 
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, 4, Gfx.FONT_XTINY, "NEXT CLIMB", Gfx.TEXT_JUSTIFY_CENTER);
+        dc.drawText(w / 2, 4, Gfx.FONT_XTINY, previewHeader(data), Gfx.TEXT_JUSTIFY_CENTER);
 
         // Climb name
         var name = data.climbName[ni];
@@ -1134,12 +1192,28 @@ class ClimbProView extends Ui.DataField {
             var distY = (h * 0.88).toNumber();
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, distY, sf,
-                "in " + formatDist(data.distToNextClimb), Gfx.TEXT_JUSTIFY_CENTER);
+                distToNextLabel(data.mode, data.distToNextClimb, data.units), Gfx.TEXT_JUSTIFY_CENTER);
         }
 
         // Virtual opponent (issue #178) in the otherwise empty row above "in X km".
         drawRouteGhost(dc, data, w / 2, (h * 0.80).toNumber(), Gfx.FONT_XTINY,
             Gfx.TEXT_JUSTIFY_CENTER, true);
+    }
+
+    // Header of the next-climb page: a day trip (issue #9) shows "DAGTOCHT 2/5" (the
+    // climb about to come, of the total), everything else "NEXT CLIMB".
+    hidden function previewHeader(data) {
+        if (data.ordered && data.mode != null && data.mode.equals("radius")) {
+            return "DAGTOCHT " + (data.nextClimbIndex + 1) + "/" + data.climbCount;
+        }
+        return "NEXT CLIMB";
+    }
+
+    // "in 2.3 km" along the route; in radius mode (issue #7) the distance is straight-line
+    // to the climb start, so it gets a "~".
+    function distToNextLabel(mode, distM, units) {
+        var prefix = (mode != null && mode.equals("radius")) ? "in ~" : "in ";
+        return prefix + Units.formatDist(distM, units);
     }
 
     // =========================================================================
@@ -1205,7 +1279,29 @@ class ClimbProView extends Ui.DataField {
         }
     }
 
-    hidden function triggerClimbAlert() {
+    // Climb-start alert. Issue #26: the "vibeShortSteep" / "vibeLong" / "vibeRegular" setting
+    // for this climb's type picks the vibration; "standaard" keeps the alert below.
+    hidden function triggerClimbAlert(data, ci) {
+        var settingKey = ["vibeRegular", "vibeShortSteep", "vibeLong"]
+                [climbTypeOf(data.climbLength[ci], data.climbAvgGrad[ci])];
+        var pattern = climbVibePattern(readNumberSetting(settingKey));
+        if (pattern != null) {
+            if (Attention has :vibrate) {
+                var profiles = new [pattern.size() / 2];
+                for (var i = 0; i < profiles.size(); i++) {
+                    profiles[i] = new Attention.VibeProfile(pattern[i * 2], pattern[i * 2 + 1]);
+                }
+                Attention.vibrate(profiles);
+            }
+            if (Attention has :playTone) {
+                Attention.playTone(useDistinctClimbAlertTone() ? Attention.TONE_START : Attention.TONE_LAP);
+            }
+            return;
+        }
+        triggerDefaultClimbAlert();
+    }
+
+    hidden function triggerDefaultClimbAlert() {
         if (useDistinctClimbAlertTone()) {
             triggerClimbAlertDistinctTone();
             return;
@@ -1377,6 +1473,35 @@ class ClimbProView extends Ui.DataField {
     // Distinct pattern/tone from triggerClimbAlert() so the rider can tell a battery
     // Interval block done at the top (issue #180): one short buzz, no tone -- deliberately
     // lighter than the climb-start and battery alerts so it can't be mistaken for either.
+    // Top of a climb reached (issue #8): one medium buzz, softer than the start alert.
+    hidden function triggerSummitAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([new Attention.VibeProfile(70, 400)]);
+        }
+    }
+
+    // Too fast for the plan/PR (issue #6): two long pulses, distinct from the other alerts.
+    hidden function triggerPacingAlert() {
+        if (Attention has :vibrate) {
+            Attention.vibrate([
+                new Attention.VibeProfile(100, 400),
+                new Attention.VibeProfile(0, 200),
+                new Attention.VibeProfile(100, 400)
+            ]);
+        }
+    }
+
+    // Like readBoolSetting(), but a missing/unreadable property yields `def`.
+    hidden function readBoolSettingDefault(key, def) {
+        try {
+            var v = Properties.getValue(key);
+            if (v instanceof Boolean) { return v; }
+        } catch (e) {
+            return def;
+        }
+        return def;
+    }
+
     hidden function triggerBlockDoneAlert() {
         if (Attention has :vibrate) {
             Attention.vibrate([new Attention.VibeProfile(100, 300)]);
@@ -1444,8 +1569,10 @@ class ClimbProView extends Ui.DataField {
         dc.drawText(w / 2, (h * 0.40).toNumber(), Gfx.FONT_NUMBER_MEDIUM,
                 mins + ":" + (secs < 10 ? "0" + secs : "" + secs), Gfx.TEXT_JUSTIFY_CENTER);
 
+        // Issue #8: ascent and average gradient of the climb just finished.
         dc.drawText(w / 2, (h * 0.62).toNumber(), sf,
-                Units.formatElev(data.climbElevGain[ci], data.units) + "↑",
+                Units.formatElev(data.climbElevGain[ci], data.units) + "↑  "
+                    + FieldLayout.formatGrad(data.climbAvgGrad[ci]),
                 Gfx.TEXT_JUSTIFY_CENTER);
 
         if (data.hasTargets[ci]) {

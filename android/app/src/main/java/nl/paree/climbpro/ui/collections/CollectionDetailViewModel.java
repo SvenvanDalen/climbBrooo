@@ -32,6 +32,7 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<RouteCollection>      collection = new MutableLiveData<>();
     private final MutableLiveData<List<CollectionMember>> members  = new MutableLiveData<>();
     private final MutableLiveData<String>               error      = new MutableLiveData<>();
+    private final MutableLiveData<String>               message    = new MutableLiveData<>();
 
     public CollectionDetailViewModel(@NonNull Application app) {
         super(app);
@@ -42,6 +43,39 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
     public LiveData<RouteCollection>        collection() { return collection; }
     public LiveData<List<CollectionMember>> members()    { return members; }
     public LiveData<String>                 error()      { return error; }
+    public LiveData<String>                 message()    { return message; }
+
+    /**
+     * Rides this collection as a day trip (issue #9): switches the watch sync to the ordered
+     * day-trip payload and syncs right away. The current position is saved with it, so the
+     * riding order (nearest-neighbour from here) stays the same on later resyncs.
+     */
+    public void startDayTrip(String collectionId) {
+        executor.execute(() -> {
+            RouteCollection c = collectionRepo.get(collectionId);
+            if (c == null) {
+                error.postValue("Collectie niet gevonden");
+                return;
+            }
+            android.content.SharedPreferences prefs =
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(getApplication());
+            double[] here = nl.paree.climbpro.service.RadiusLocation.current(getApplication(), prefs);
+            android.content.SharedPreferences.Editor e = prefs.edit()
+                    .putString(nl.paree.climbpro.service.RouteSyncWorker.PREF_MODE,
+                            nl.paree.climbpro.service.RouteSyncWorker.MODE_DAYTRIP)
+                    .putString(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_ID, collectionId);
+            if (here != null) {
+                e.putFloat(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LAT, (float) here[0])
+                 .putFloat(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LON, (float) here[1]);
+            } else {
+                e.remove(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LAT)
+                 .remove(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LON);
+            }
+            e.apply();
+            nl.paree.climbpro.service.SyncScheduler.triggerImmediateSync(getApplication());
+            message.postValue("Dagtocht '" + c.name + "' wordt naar het horloge gestuurd");
+        });
+    }
 
     public void load(String collectionId) {
         executor.execute(() -> {

@@ -30,7 +30,9 @@ public final class WatchFieldLayout {
     public static final int AUTO_ROW4   = 14;
     /** "vs PR"/"vs plan" when there is a reference, otherwise ETA (the pre-layout bottom line). */
     public static final int AUTO_BOTTOM = 15;
-    public static final int MAX_CODE    = AUTO_BOTTOM;
+    /** Ascent still to come on the whole ride: rest of this climb + all later climbs (issue #25). */
+    public static final int RIDE_REM_ELEV = 16;
+    public static final int MAX_CODE    = RIDE_REM_ELEV;
 
     private static final int[] DEFAULT_CODES = {REM_DIST, REM_ELEV, CUR_GRAD, AUTO_ROW4, AUTO_BOTTOM};
 
@@ -53,7 +55,8 @@ public final class WatchFieldLayout {
             "Verstreken tijd",
             "Leeg",
             "Automatisch: intervalblok, anders VAM",
-            "Automatisch: PR/plan, anders ETA"};
+            "Automatisch: PR/plan, anders ETA",
+            "Rest-hoogtemeters hele rit"};
 
     private final int[] codes;
 

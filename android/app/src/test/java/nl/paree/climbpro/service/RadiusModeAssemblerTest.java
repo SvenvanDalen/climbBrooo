@@ -105,4 +105,62 @@ public class RadiusModeAssemblerTest {
         assertEquals(0, climbsOf(payload).size());
         assertFalse(assembler.wasTruncated());
     }
+
+    // ---- issue #12: weather filter -------------------------------------------------------
+
+    @Test
+    public void dryCheckLeavesOutWetClimbs() throws Exception {
+        seedRouteWithClimb("a_closest", 51.0, 5.000);
+        seedRouteWithClimb("b_further", 51.0, 5.010);
+
+        RadiusModeAssembler assembler =
+                new RadiusModeAssembler(repo, new ClimbPayloadBuilder(new ObjectMapper()))
+                        .withDryCheck(starts -> new boolean[]{false, true});
+        List<Map<String, Object>> climbs = climbsOf(assembler.assemble(51.0, 5.0, 5000));
+
+        assertEquals(1, climbs.size());
+        assertEquals(501000, ((Number) climbs.get(0).get("slon")).intValue());
+        assertEquals(1, assembler.wetDropped());
+    }
+
+    @Test
+    public void failingDryCheckSendsEverything() throws Exception {
+        seedRouteWithClimb("a_closest", 51.0, 5.000);
+        seedRouteWithClimb("b_further", 51.0, 5.010);
+
+        RadiusModeAssembler assembler =
+                new RadiusModeAssembler(repo, new ClimbPayloadBuilder(new ObjectMapper()))
+                        .withDryCheck(starts -> { throw new java.io.IOException("offline"); });
+        assertEquals(2, climbsOf(assembler.assemble(51.0, 5.0, 5000)).size());
+        assertEquals(0, assembler.wetDropped());
+    }
+
+    // ---- issue #9: day trip --------------------------------------------------------------
+
+    @Test
+    public void dayTripSendsCollectionClimbsInRidingOrder() throws Exception {
+        seedRouteWithClimb("x_far", 51.0, 5.100);
+        seedRouteWithClimb("y_near", 51.0, 5.010);
+        nl.paree.climbpro.data.route.RouteCollection trip = new nl.paree.climbpro.data.route.RouteCollection();
+        trip.routeIds = new ArrayList<>(Arrays.asList("x_far", "y_near", "missing"));
+
+        DayTripAssembler assembler =
+                new DayTripAssembler(repo, new ClimbPayloadBuilder(new ObjectMapper()));
+        byte[] payload = assembler.assemble(trip, new double[]{51.0, 5.0});
+
+        Map<?, ?> root = new ObjectMapper().readValue(payload, Map.class);
+        assertEquals(1, ((Number) root.get("ord")).intValue());
+        List<Map<String, Object>> climbs = climbsOf(payload);
+        assertEquals(2, climbs.size());
+        assertEquals(501000, ((Number) climbs.get(0).get("slon")).intValue());
+        assertFalse(assembler.wasTruncated());
+    }
+
+    @Test
+    public void dayTripWithoutClimbsSendsNothing() throws Exception {
+        DayTripAssembler assembler =
+                new DayTripAssembler(repo, new ClimbPayloadBuilder(new ObjectMapper()));
+        assertEquals(null, assembler.assemble(new nl.paree.climbpro.data.route.RouteCollection(), null));
+        assertEquals(null, assembler.assemble(null, null));
+    }
 }

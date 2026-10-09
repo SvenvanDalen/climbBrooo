@@ -210,6 +210,30 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   `CADANS LAAG 68` strip while you stay out. Coasting doesn't count as too low; no repeat
   until you were back in the band for 20 s, at most one nudge per 2 min. Watch-only,
   works without a route; needs a cadence sensor.
+- **Pacing alert** (issue #6) — on a climb with a pacing plan (or, without one, a
+  per-segment PR) the datafield buzzes twice and shows an orange `Rustig: 20s te snel` strip
+  when you are ahead by ≥ 15 s (or 10 % of the reference). Quiet in the first 100 m; one buzz
+  until you are back within 5 s, at most one per 2 min. Toggle `Waarschuw bij te snel starten`.
+- **Summit buzz + summary** (issue #8) — topping out a climb gives one soft buzz; the 12 s
+  `KLIM KLAAR` screen now shows ascent and average gradient next to your time.
+- **Next-climb countdown in radius mode** (issue #7) — without a route the datafield counts
+  down to the nearest climb start you haven't reached yet (`in ~2.3km`, straight-line).
+- **Day trip** (issue #9) — collection menu → "Rijd als dagtocht": the collection's climbs
+  are put in riding order (nearest-neighbour from where you are) and sent as an ordered set;
+  the datafield shows `DAGTOCHT 2/5` and counts down to the next climb in that order.
+- **Dry climbs only in radius mode** (issue #12) — Settings → radius → `Alleen klimmen waar
+  het nu droog is`: climbs with ≥ 0.3 mm/h rain now or in the next 2 h (Open-Meteo) are left
+  out. Offline the full set is sent; the filter never blocks a sync.
+- **Cadence target per segment** (issue #18) — the cadence slot shows `86/90rpm`: your usual
+  cadence for the current segment's gradient class, from your Strava rides.
+- **Heart-rate zone colors** (issue #24) — `Kleurmodus` → `Hartslagzone` colors the segment
+  bar by the heart-rate zone you usually ride at on that gradient (needs a max heart rate).
+- **Ascent left on the whole ride** (issue #25) — new datafield slot `Rest-hoogtemeters hele
+  rit` (rest of this climb + all later climbs).
+- **Vibration per climb type** (issue #26) — separate climb-start vibration for short steep
+  climbs (< 2.5 km, ≥ 7 %), long climbs (≥ 5 km) and the rest, in the Connect IQ settings.
+- **New-climb badge** (issue #27) — a blue `Nieuwe klim!` strip at the start of a climb you
+  have never ridden (no matched Strava attempt).
 - **Medical ID** — menu → "Medische ID": name, blood type, allergies, medication, emergency
   contact and notes. Optional silent, always-on lock-screen notification (public visibility)
   so first responders can read it without unlocking; re-posted after a reboot. The watch
@@ -524,6 +548,9 @@ An optional top-level `"pal": 1` (issue #258) tells the watch to draw those same
 indices with the colorblind-friendly palette; absent = default palette.
 An optional top-level `un` bitmask (issue #262: 1 = mi/ft, 2 = psi, 4 = °F; absent =
 metric) tells the watch which display units the rider chose; all wire values stay metric.
+Optional rider-history keys: per climb `"nw": 1` = never ridden (issue #27), top-level
+`cg` / `hg` = usual cadence / heart-rate zone per gradient class (6 ints, issues #18 / #24).
+A radius payload with `"ord": 1` is an ordered day trip (issue #9).
 `protocol/schema.json` is canonical; Java POJOs are **generated** from it
 (`generateProtocolPojos`), Monkey C parsers are hand-written, and `ProtocolRoundTripTest`
 validates both the examples and the live builder output against the schema. When you

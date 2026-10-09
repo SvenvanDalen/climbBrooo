@@ -7,6 +7,8 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 
+import nl.paree.climbpro.domain.weather.DryClimbFilter;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,6 +18,10 @@ import java.util.List;
  * Assembles a radius-mode climb list: finds all climbs within {@code radiusM} of the
  * given location, sorts closest first, and truncates to fit within the payload budget.
  * Emits a truncation warning when climbs are dropped.
+ *
+ * <p>Optionally (issue #12) only dry climbs are kept: a {@link DryCheck} looks up the closest
+ * {@link DryClimbFilter#MAX_LOCATIONS} starts. Offline-first: when the check fails (no network,
+ * rate limit, bad answer) the set is sent unfiltered, never blocked.
  */
 public final class RadiusModeAssembler {
 
@@ -24,6 +30,13 @@ public final class RadiusModeAssembler {
     private final RouteRepository     routeRepo;
     private final ClimbPayloadBuilder builder;
     private boolean truncated;
+    private DryCheck dryCheck;
+    private int wetDropped;
+
+    /** Dry-or-unknown flag per climb start {lat, lon}, in the given order (issue #12). */
+    public interface DryCheck {
+        boolean[] dry(List<double[]> starts) throws IOException;
+    }
 
     public RadiusModeAssembler(RouteRepository routeRepo, ClimbPayloadBuilder builder) {
         this.routeRepo = routeRepo;
@@ -31,6 +44,15 @@ public final class RadiusModeAssembler {
     }
 
     public boolean wasTruncated() { return truncated; }
+
+    /** Climbs left out because it rains there (issue #12); 0 without a check or offline. */
+    public int wetDropped() { return wetDropped; }
+
+    /** Keep only dry climbs (issue #12); null = no weather filter. */
+    public RadiusModeAssembler withDryCheck(DryCheck check) {
+        this.dryCheck = check;
+        return this;
+    }
 
     /**
      * @param lat     current latitude
@@ -65,6 +87,7 @@ public final class RadiusModeAssembler {
         }
 
         candidates.sort(Comparator.comparingDouble(cwd -> cwd.distance));
+        candidates = keepDry(candidates);
 
         // Accumulate climbs until over budget; cache last fitting payload to avoid a rebuild.
         List<StoredClimb> accepted = new ArrayList<>();
@@ -84,6 +107,35 @@ public final class RadiusModeAssembler {
         Log.i(TAG, "Radius mode: " + accepted.size() + " climbs"
                 + (truncated ? " (truncated)" : ""));
         return lastFitting;
+    }
+
+    /** Drops the checked climbs that are wet; any failure of the check keeps them all. */
+    private List<ClimbWithDist> keepDry(List<ClimbWithDist> candidates) {
+        wetDropped = 0;
+        if (dryCheck == null || candidates.isEmpty()) return candidates;
+        int n = Math.min(candidates.size(), DryClimbFilter.MAX_LOCATIONS);
+        List<double[]> starts = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            StoredClimb c = candidates.get(i).climb;
+            starts.add(new double[] {c.startLat, c.startLon});
+        }
+        boolean[] dry;
+        try {
+            dry = dryCheck.dry(starts);
+        } catch (IOException | RuntimeException e) {
+            Log.w(TAG, "Weather check failed — radius set sent without weather filter", e);
+            return candidates;
+        }
+        if (dry == null || dry.length != n) return candidates;
+        List<ClimbWithDist> out = new ArrayList<>(candidates.size());
+        for (int i = 0; i < candidates.size(); i++) {
+            if (i < n && !dry[i]) {
+                wetDropped++;
+            } else {
+                out.add(candidates.get(i));
+            }
+        }
+        return out;
     }
 
     private static double haversine(double lat1, double lon1, double lat2, double lon2) {

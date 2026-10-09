@@ -58,6 +58,12 @@ public final class StoredRideStreamStats {
     public int[]   cadenceGradeSec;
     public int[]   cadenceGradeRevs;
     /**
+     * Moving seconds and heartbeats per gradient class 0-5 (issue #24); null without heart
+     * rate or altitude. Average bpm = beats × 60 / seconds.
+     */
+    public int[]   hrGradeSec;
+    public int[]   hrGradeBeats;
+    /**
      * Heart-rate drop (bpm) 60 s after each interval, in ride order (issue #402); null without
      * power and heart rate, empty when the ride had no interval.
      */
