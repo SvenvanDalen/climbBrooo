@@ -303,10 +303,6 @@ sonar {
         property 'sonar.projectKey', 'SvenvanDalen_climbBrooo'
         property 'sonar.projectName', 'ClimbPro'
         property 'sonar.androidVariant', 'debug'
-        // Run on the build's own JDK 17. The provisioned-JRE download is a .tar.gz on Linux and
-        // unpacking it clashes with the older commons-compress on the buildscript classpath
-        // (NoSuchMethodError TarArchiveInputStream.getNextEntry).
-        property 'sonar.scanner.skipJreProvisioning', 'true'
         property 'sonar.coverage.jacoco.xmlReportPaths',
                 "${buildDir}/reports/jacoco/jacocoUnitTestReport/jacocoUnitTestReport.xml"
     }

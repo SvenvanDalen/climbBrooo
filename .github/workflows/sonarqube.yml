@@ -26,10 +26,18 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          # The build runs on 17 (last listed = JAVA_HOME); the scanner needs 21. Pointing it at
+          # an installed JDK also skips the provisioned-JRE .tar.gz, whose unpacking clashes with
+          # the older commons-compress on the buildscript classpath.
+          java-version: |
+            21
+            17
           cache: gradle
       - name: Unit tests + coverage + SonarQube Cloud scan
-        run: ./gradlew jacocoUnitTestReport sonar --console=plain "-Dsonar.qualitygate.wait=true"
+        run: >-
+          ./gradlew jacocoUnitTestReport sonar --console=plain
+          "-Dsonar.qualitygate.wait=true"
+          "-Dsonar.scanner.javaExePath=$JAVA_HOME_21_X64/bin/java"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           # AppAuth rejects an empty client id; see preflight.yml.
