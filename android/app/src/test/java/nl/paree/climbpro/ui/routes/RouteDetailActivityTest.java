@@ -109,7 +109,7 @@ public class RouteDetailActivityTest {
         androidx.appcompat.widget.Toolbar tb = activity.findViewById(R.id.toolbar);
         assertEquals("Ardennen rondje", String.valueOf(tb.getTitle()));
         assertEquals(View.VISIBLE, activity.findViewById(R.id.route_profile).getVisibility());
-        assertTrue(((TextView) activity.findViewById(R.id.passport_summary)).getText().length() > 0);
+        assertFalse(((TextView) activity.findViewById(R.id.passport_summary)).getText().toString().isEmpty());
         assertTrue(activity.findViewById(R.id.btn_share_to_garmin).isEnabled());
     }
 
@@ -248,7 +248,7 @@ public class RouteDetailActivityTest {
         TextView summary = activity.findViewById(R.id.hazards_summary);
         assertTrue(UiTestEnv.waitFor(() -> summary.getVisibility() == View.VISIBLE));
         assertTrue(activity.findViewById(R.id.btn_hazards).isEnabled());
-        assertTrue(summary.getText().length() > 0);
+        assertFalse(summary.getText().toString().isEmpty());
     }
 
     @Test

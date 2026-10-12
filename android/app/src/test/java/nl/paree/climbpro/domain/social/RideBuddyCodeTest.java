@@ -70,10 +70,8 @@ public class RideBuddyCodeTest {
         assertEquals(in.rideTypes, out.rideTypes);
         assertEquals(in.weekdays, out.weekdays);
         assertEquals(in.dayparts, out.dayparts);
-        double expectedLat = in.areaLat;
-        double expectedLon = in.areaLon;
-        assertEquals(expectedLat, out.areaLat, 1e-9);
-        assertEquals(expectedLon, out.areaLon, 1e-9);
+        assertEquals(0.0, out.areaLat - in.areaLat, 1e-9);
+        assertEquals(0.0, out.areaLon - in.areaLon, 1e-9);
     }
 
     @Test

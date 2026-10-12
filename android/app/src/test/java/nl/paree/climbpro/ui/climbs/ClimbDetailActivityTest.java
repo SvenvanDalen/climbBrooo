@@ -68,7 +68,7 @@ public class ClimbDetailActivityTest {
                 ClimbDetailActivity.intentFor(app, UiTestData.ROUTE_ID, 0)).setup();
         activity = controller.get();
         UiTestEnv.waitFor(() -> activity.findViewById(R.id.climb_stats) != null
-                && ((TextView) activity.findViewById(R.id.climb_stats)).getText().length() > 0);
+                && !((TextView) activity.findViewById(R.id.climb_stats)).getText().toString().isEmpty());
         ShadowToast.reset();
     }
 
