@@ -719,6 +719,7 @@ public final class RouteRepository {
                 case "lon":  arr[i] = p.lon;       break;
                 case "ele":  arr[i] = p.elevation; break;
                 case "dist": arr[i] = p.distance;  break;
+                default:     break;
             }
         }
         return arr;

@@ -87,7 +87,7 @@ public class PrivacyDashboardViewModelTest {
         vm.message().observeForever(o);
         box[0] = null;
         vm.delete(c);
-        UiTestEnv.waitFor(() -> box[0] != null && box[0].length() > 0);
+        UiTestEnv.waitFor(() -> box[0] != null && !box[0].isEmpty());
         UiTestEnv.settle();
         vm.message().removeObserver(o);
         return box[0];

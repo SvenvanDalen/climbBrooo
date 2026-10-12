@@ -226,7 +226,7 @@ public final class ClimbOfTheWeek {
 
     static double freshness(Integer daysSince) {
         if (daysSince == null) return 1.0;
-        return 0.9 * Math.min(Math.max(daysSince, 0), FRESH_DAYS) / (double) FRESH_DAYS;
+        return 0.9 * Math.min(Math.max(daysSince, 0), FRESH_DAYS) / FRESH_DAYS;
     }
 
     static double weatherFit(Outlook outlook, double normDifficulty) {

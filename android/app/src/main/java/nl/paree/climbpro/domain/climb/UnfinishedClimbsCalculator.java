@@ -5,7 +5,6 @@ import nl.paree.climbpro.data.route.StoredIncompleteClimbAttempt;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;

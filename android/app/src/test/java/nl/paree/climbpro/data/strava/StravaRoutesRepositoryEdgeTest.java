@@ -111,19 +111,19 @@ public class StravaRoutesRepositoryEdgeTest {
         @Override public okio.Timeout timeout() { return okio.Timeout.NONE; }
     }
 
-    private void stubRoutes(StravaRouteDto... routes) throws IOException {
+    private void stubRoutes(StravaRouteDto... routes) {
         when(api.listRoutes(anyString(), eq(1), anyInt()))
                 .thenReturn(call(Response.success(Arrays.asList(routes))));
         when(api.listRoutes(anyString(), eq(2), anyInt()))
                 .thenReturn(call(Response.success(Collections.<StravaRouteDto>emptyList())));
     }
 
-    private void stubGpx(String body) throws IOException {
+    private void stubGpx(String body) {
         when(api.exportGpx(anyString(), anyLong())).thenAnswer(inv -> call(Response.success(
                 ResponseBody.create(body, MediaType.parse("application/gpx+xml")))));
     }
 
-    private void stubStarred(StravaSegmentDto... segments) throws IOException {
+    private void stubStarred(StravaSegmentDto... segments) {
         when(api.listStarredSegments(anyString(), eq(1), anyInt()))
                 .thenReturn(call(Response.success(Arrays.asList(segments))));
         when(api.listStarredSegments(anyString(), eq(2), anyInt()))

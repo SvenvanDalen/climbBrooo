@@ -51,7 +51,7 @@ public class RecoveryAdvisorTest {
         assertTrue(advice.suggestRest);
         assertEquals(2000, advice.recentGainM);
         assertEquals(1025.0, advice.baselineWeeklyAvgGainM, 0.001); // (21*100 + 2000) / 4
-        assertTrue(advice.rationale.length() > 0);
+        assertTrue(!advice.rationale.isEmpty());
     }
 
     @Test
