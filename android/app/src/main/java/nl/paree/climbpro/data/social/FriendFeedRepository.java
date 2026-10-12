@@ -26,14 +26,14 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class FriendFeedRepository {
 
     private static final String TAG = "FriendFeedRepository";
-    public static final String FILE = "friend_feed.json";
+    public static final String FILE_NAME = "friend_feed.json";
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
     private final File file;
     private final ObjectMapper mapper;
 
     public FriendFeedRepository(Context context) {
-        this.file = new File(context.getApplicationContext().getFilesDir(), FILE);
+        this.file = new File(context.getApplicationContext().getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

@@ -37,9 +37,10 @@ import nl.paree.climbpro.service.PlannedClimbWorkScheduler;
 import nl.paree.climbpro.service.RouteSyncWorker;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -360,7 +361,7 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
 
     private SharedPreferences stravaPrefs() {
         return getApplication().getSharedPreferences(
-                StravaActivitiesRepository.PREFS, Context.MODE_PRIVATE);
+                StravaActivitiesRepository.PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     private static String[] riderKeys() {
@@ -391,7 +392,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     }
 
     private static String date(long epochSec) {
-        return new SimpleDateFormat("d MMM yyyy", new Locale("nl")).format(new Date(epochSec * 1000L));
+        return DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"))
+                .format(Instant.ofEpochSecond(epochSec).atZone(ZoneId.systemDefault()));
     }
 
     private static String kg(double v) {

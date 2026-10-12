@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class WetRideCheckRepository {
 
     private static final String TAG = "WetRideCheckRepository";
-    public  static final String FILE = "wet_ride_checks.json";
+    public  static final String FILE_NAME = "wet_ride_checks.json";
 
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
@@ -35,7 +35,7 @@ public final class WetRideCheckRepository {
     private final ObjectMapper mapper;
 
     public WetRideCheckRepository(Context context) {
-        this.file   = new File(context.getApplicationContext().getFilesDir(), FILE);
+        this.file   = new File(context.getApplicationContext().getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

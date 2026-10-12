@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class TirePressureLogRepository {
 
     private static final String TAG  = "TirePressureLogRepo";
-    static final String FILE = "tire_pressure_log.json";
+    static final String FILE_NAME = "tire_pressure_log.json";
 
     /** Static: the log screen and the main-screen banner each create their own instance. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -33,7 +33,7 @@ public final class TirePressureLogRepository {
 
     public TirePressureLogRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

@@ -64,7 +64,7 @@ public class ExploreMapRepositoryEdgeTest {
     @Test
     public void addRides_failedWrite_throwsAndCleansTmp() throws Exception {
         RideTrack t = new RideTrack(new double[]{50.0, 50.01}, new double[]{5.0, 5.0}, null);
-        assertWriteFails(ExploreMapRepository.FILE, () -> new ExploreMapRepository(app)
+        assertWriteFails(ExploreMapRepository.FILE_NAME, () -> new ExploreMapRepository(app)
                 .addRides(Collections.singletonMap(1L, t)));
     }
 }

@@ -168,7 +168,9 @@ public class ClimbGpxWriterTest {
         javax.xml.parsers.DocumentBuilderFactory factory =
                 javax.xml.parsers.DocumentBuilderFactory.newInstance();
         javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
-        builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+        org.w3c.dom.Document doc =
+                builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+        assertEquals("gpx", doc.getDocumentElement().getNodeName());
     }
 
     @Test
@@ -344,7 +346,9 @@ public class ClimbGpxWriterTest {
         javax.xml.parsers.DocumentBuilderFactory factory =
                 javax.xml.parsers.DocumentBuilderFactory.newInstance();
         javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
-        builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+        org.w3c.dom.Document doc =
+                builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+        assertEquals("gpx", doc.getDocumentElement().getNodeName());
     }
 
     @Test

@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RideStreamStatsRepository {
 
     private static final String TAG = "RideStreamStatsRepo";
-    public static final String FILE = "ride_stream_stats.json";
+    public static final String FILE_NAME = "ride_stream_stats.json";
 
     /** Process-wide, like {@code RideRepository}: the sync worker and UI each create instances. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -34,7 +34,7 @@ public final class RideStreamStatsRepository {
 
     public RideStreamStatsRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

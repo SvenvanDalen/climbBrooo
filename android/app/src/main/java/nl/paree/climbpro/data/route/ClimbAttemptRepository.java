@@ -25,12 +25,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class ClimbAttemptRepository {
 
     private static final String TAG  = "ClimbAttemptRepo";
-    private static final String FILE = "climb_attempts.json";
+    private static final String FILE_NAME = "climb_attempts.json";
 
     /**
      * Guards the read-modify-write critical sections of {@link #append}, {@link #update},
      * {@link #overwriteAll}, and {@link #remapClimbId} — all of which touch the same
-     * {@link #FILE} but can be invoked from different executors (background Strava sync, a
+     * {@link #FILE_NAME} but can be invoked from different executors (background Strava sync, a
      * user-confirmed climb merge, or a note/photo edit). Without a shared lock these
      * read-modify-write cycles can interleave and one write silently clobbers another. Static
      * (not per-instance) since multiple {@code ClimbAttemptRepository} instances are constructed
@@ -46,7 +46,7 @@ public final class ClimbAttemptRepository {
 
     public ClimbAttemptRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

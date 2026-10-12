@@ -65,8 +65,8 @@ public class RideStoresEdgeTest {
     @Test
     public void corruptFiles_loadEmpty() throws Exception {
         corrupt("rides.json");
-        corrupt(RideStreamStatsRepository.FILE);
-        corrupt(WetRideCheckRepository.FILE);
+        corrupt(RideStreamStatsRepository.FILE_NAME);
+        corrupt(WetRideCheckRepository.FILE_NAME);
         assertTrue(new RideRepository(app).loadAll().isEmpty());
         assertTrue(new RideStreamStatsRepository(app).loadAll().isEmpty());
         assertTrue(new RideStreamStatsRepository(app).loadById().isEmpty());
@@ -85,7 +85,7 @@ public class RideStoresEdgeTest {
     public void streamStats_failedWrite_throwsAndCleansTmp() throws Exception {
         StoredRideStreamStats s = new StoredRideStreamStats();
         s.activityId = 1L;
-        assertWriteFails(RideStreamStatsRepository.FILE,
+        assertWriteFails(RideStreamStatsRepository.FILE_NAME,
                 () -> new RideStreamStatsRepository(app).upsertAll(Collections.singletonList(s)));
     }
 
@@ -93,7 +93,7 @@ public class RideStoresEdgeTest {
     public void wetChecks_failedWrite_throwsAndCleansTmp() throws Exception {
         WetRideCheck c = new WetRideCheck();
         c.activityId = 1L;
-        assertWriteFails(WetRideCheckRepository.FILE,
+        assertWriteFails(WetRideCheckRepository.FILE_NAME,
                 () -> new WetRideCheckRepository(app).addAll(Collections.singletonList(c)));
     }
 

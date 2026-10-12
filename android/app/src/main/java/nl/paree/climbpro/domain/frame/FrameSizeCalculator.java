@@ -49,11 +49,11 @@ public final class FrameSizeCalculator {
     public static FrameSizeResult calculate(String heightInput, String inseamInput) {
         Double height = parseCm(heightInput);
         if (height == null) {
-            return FrameSizeResult.error("Lengte: vul een getal in centimeters in, bijv. 180.");
+            return FrameSizeResult.failure("Lengte: vul een getal in centimeters in, bijv. 180.");
         }
         Double inseam = parseCm(inseamInput);
         if (inseam == null) {
-            return FrameSizeResult.error(
+            return FrameSizeResult.failure(
                     "Binnenbeenlengte: vul een getal in centimeters in, bijv. 84.");
         }
         return calculate(height, inseam);
@@ -65,14 +65,14 @@ public final class FrameSizeCalculator {
      */
     static FrameSizeResult calculate(double heightCm, double inseamCm) {
         if (inseamCm >= heightCm) {
-            return FrameSizeResult.error("De binnenbeenlengte moet kleiner zijn dan je lengte."
+            return FrameSizeResult.failure("De binnenbeenlengte moet kleiner zijn dan je lengte."
                     + " Staan de velden misschien omgedraaid?");
         }
         if (heightCm < MIN_HEIGHT_CM || heightCm > MAX_HEIGHT_CM) {
-            return FrameSizeResult.error("Lengte moet tussen 140 en 210 cm liggen.");
+            return FrameSizeResult.failure("Lengte moet tussen 140 en 210 cm liggen.");
         }
         if (inseamCm < MIN_INSEAM_CM || inseamCm > MAX_INSEAM_CM) {
-            return FrameSizeResult.error("Binnenbeenlengte moet tussen 60 en 110 cm liggen.");
+            return FrameSizeResult.failure("Binnenbeenlengte moet tussen 60 en 110 cm liggen.");
         }
         int road = (int) Math.round(inseamCm * ROAD_FACTOR);
         double mtbCm = inseamCm * MTB_FACTOR;

@@ -25,14 +25,14 @@ import java.util.List;
 public final class PlannedClimbRepository {
 
     private static final String TAG  = "PlannedClimbRepo";
-    private static final String FILE = "planned_climbs.json";
+    private static final String FILE_NAME = "planned_climbs.json";
 
     private final File file;
     private final ObjectMapper mapper;
 
     public PlannedClimbRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

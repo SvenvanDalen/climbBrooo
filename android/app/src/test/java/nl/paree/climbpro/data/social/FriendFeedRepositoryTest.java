@@ -64,7 +64,7 @@ public class FriendFeedRepositoryTest {
     }
 
     @Test public void corruptFileLoadsEmptyAndIsReplacedByNextImport() throws Exception {
-        File f = new File(app.getFilesDir(), FriendFeedRepository.FILE);
+        File f = new File(app.getFilesDir(), FriendFeedRepository.FILE_NAME);
         try (FileOutputStream out = new FileOutputStream(f)) {
             out.write("{kapot".getBytes(StandardCharsets.UTF_8));
         }

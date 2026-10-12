@@ -26,7 +26,7 @@ public class ComebackPlanStoreTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), ComebackPlanStore.FILE);
+        file = new File(app.getFilesDir(), ComebackPlanStore.FILE_NAME);
         file.delete();
     }
 

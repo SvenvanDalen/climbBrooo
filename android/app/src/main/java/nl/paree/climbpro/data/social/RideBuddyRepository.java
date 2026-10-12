@@ -29,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RideBuddyRepository {
 
     private static final String TAG = "RideBuddyRepository";
-    public static final String FILE = "ride_buddies.json";
+    public static final String FILE_NAME = "ride_buddies.json";
     /** Random id in your own profile codes; separate from the friend-feed id so the two kinds
      *  of code can't be linked to each other. */
     public static final String PREF_ID = "ride_buddy_share_id";
@@ -40,7 +40,7 @@ public final class RideBuddyRepository {
     private final ObjectMapper mapper;
 
     public RideBuddyRepository(Context context) {
-        this.file = new File(context.getApplicationContext().getFilesDir(), FILE);
+        this.file = new File(context.getApplicationContext().getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

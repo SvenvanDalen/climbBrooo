@@ -15,13 +15,13 @@ import java.io.IOException;
  */
 public final class OfflinePackageStore {
 
-    public static final String DIR = "offline/";
+    public static final String DIR_NAME = "offline/";
 
     private final File dir;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public OfflinePackageStore(File filesDir) {
-        this.dir = new File(filesDir, DIR);
+        this.dir = new File(filesDir, DIR_NAME);
     }
 
     public void save(OfflinePackage pkg) throws IOException {

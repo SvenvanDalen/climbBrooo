@@ -142,7 +142,9 @@ public class BatchClimbGpxWriterTest {
         javax.xml.parsers.DocumentBuilderFactory factory =
                 javax.xml.parsers.DocumentBuilderFactory.newInstance();
         javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
-        builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+        org.w3c.dom.Document doc =
+                builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(gpx)));
+        assertEquals("gpx", doc.getDocumentElement().getNodeName());
     }
 
     @Test
@@ -185,8 +187,8 @@ public class BatchClimbGpxWriterTest {
     @Test
     public void nullOrEmptyEntriesThrows() {
         assertThrows(IllegalArgumentException.class, () -> BatchClimbGpxWriter.toGpx(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> BatchClimbGpxWriter.toGpx(Collections.emptyList()));
+        List<BatchClimbGpxWriter.Entry> none = Collections.emptyList();
+        assertThrows(IllegalArgumentException.class, () -> BatchClimbGpxWriter.toGpx(none));
     }
 
     @Test

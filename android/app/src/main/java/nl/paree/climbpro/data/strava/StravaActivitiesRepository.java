@@ -69,7 +69,7 @@ import java.util.TimeZone;
 public final class StravaActivitiesRepository {
 
     private static final String TAG       = "StravaActivitiesRepo";
-    public  static final String PREFS     = "strava_activities";
+    public  static final String PREFS_NAME = "strava_activities";
     private static final String PREF_LAST = "last_sync_epoch_sec";
     /**
      * The set of {@link KnownClimb#climbId}s that were known the last time we let
@@ -206,7 +206,7 @@ public final class StravaActivitiesRepository {
         this.ghostRepo = new RouteGhostRepository(context);
         this.exploreRepo = new ExploreMapRepository(context);
         this.api = api;
-        this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        this.prefs = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     /** @see #titleUpdateAuthExpired */

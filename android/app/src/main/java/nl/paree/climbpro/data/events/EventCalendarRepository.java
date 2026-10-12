@@ -36,7 +36,7 @@ import okhttp3.ResponseBody;
 public final class EventCalendarRepository {
 
     private static final String TAG = "EventCalendarRepo";
-    public static final String FILE = "event_calendar.json";
+    public static final String FILE_NAME = "event_calendar.json";
     /** Feeds are small text files; anything bigger is not a calendar. */
     static final long MAX_FEED_BYTES = 2_000_000;
 
@@ -52,7 +52,7 @@ public final class EventCalendarRepository {
 
     public EventCalendarRepository(Context context) {
         this.app = context.getApplicationContext();
-        this.file = new File(app.getFilesDir(), FILE);
+        this.file = new File(app.getFilesDir(), FILE_NAME);
     }
 
     public EventCalendar load() {
