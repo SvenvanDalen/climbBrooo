@@ -55,8 +55,8 @@ public final class ClimbShareExtractor {
                 || d.length != route.elevations.length) {
             return null;
         }
-        double from = c.startDistance - MARGIN_M;
-        double to = c.endDistance + MARGIN_M;
+        double from = (double) c.startDistance - MARGIN_M;
+        double to = (double) c.endDistance + MARGIN_M;
         int first = -1;
         int last = -1;
         for (int i = 0; i < d.length; i++) {

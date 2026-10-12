@@ -99,8 +99,7 @@ public final class PrivacyInventory {
             if (children != null) {
                 for (File c : children) failed += deleteRecursively(c);
             }
-            f.delete();
-            return failed;
+            return f.delete() ? failed : failed + 1;
         }
         return f.delete() ? 0 : 1;
     }

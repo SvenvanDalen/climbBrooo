@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for the pain log (issue #232). Layout:
@@ -121,7 +122,7 @@ public final class PainLogRepository {
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

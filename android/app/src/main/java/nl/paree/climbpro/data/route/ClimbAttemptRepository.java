@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for matched climb attempts.
@@ -234,7 +235,7 @@ public final class ClimbAttemptRepository {
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

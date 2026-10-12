@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for {@link PackingList}s (issue #189). Takes the target file directly
@@ -197,7 +198,7 @@ public final class PackingListStore {
                 Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

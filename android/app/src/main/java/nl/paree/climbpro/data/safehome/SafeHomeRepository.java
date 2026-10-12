@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for the "veilig thuis" message (issue #231). Layout:
@@ -116,7 +117,7 @@ public final class SafeHomeRepository {
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

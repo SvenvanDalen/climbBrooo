@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public final class WatchRequestHandler {
 
@@ -76,7 +77,7 @@ public final class WatchRequestHandler {
      * LOAD_ROUTE / SET_ACTIVE_ROUTE answer uses the same colors as the background sync.
      */
     public void setPaletteSource(java.util.function.IntSupplier source) {
-        if (source != null) this.paletteSource = source;
+        this.paletteSource = Objects.requireNonNull(source, "source");
     }
 
     /** Enables the virtual opponent ('gh', issue #178) in watch-requested route payloads. */

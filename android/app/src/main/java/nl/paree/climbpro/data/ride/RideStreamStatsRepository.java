@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Persists {@link StoredRideStreamStats} as {@code ride_stream_stats.json} in
@@ -99,7 +100,7 @@ public final class RideStreamStatsRepository {
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

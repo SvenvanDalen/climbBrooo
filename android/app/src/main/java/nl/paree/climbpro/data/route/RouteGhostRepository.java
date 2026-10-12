@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Persists the best ride per route ({@link StoredRouteGhost}, issue #178) as
@@ -141,7 +142,7 @@ public final class RouteGhostRepository {
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

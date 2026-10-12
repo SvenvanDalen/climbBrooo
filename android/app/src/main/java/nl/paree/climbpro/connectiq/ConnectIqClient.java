@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +48,7 @@ public final class ConnectIqClient {
      * outdated. Those errors aren't transient, so retrying every 5 s only burns
      * battery; the back-off doubles from {@link #RECONNECT_DELAY_MS} up to this.
      */
-    private static final long GCM_MISSING_MAX_DELAY_MS = 5 * 60_000;
+    private static final long GCM_MISSING_MAX_DELAY_MS = 5 * 60_000L;
 
     /** Control message the phone sends to the widget right after (re)connecting. */
     static final String MSG_TYPE_HELLO = "HELLO";
@@ -110,7 +111,7 @@ public final class ConnectIqClient {
     @VisibleForTesting
     ConnectIqClient(Context context, ConnectIQ connectIQ) {
         this.context = context.getApplicationContext();
-        this.connectIQ = connectIQ;
+        this.connectIQ = Objects.requireNonNull(connectIQ, "connectIQ");
     }
 
     public LiveData<ConnectIqState> state() { return stateLd; }

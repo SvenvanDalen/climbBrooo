@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for user-defined route/climb collections, mirroring the
@@ -237,7 +238,7 @@ public final class RouteCollectionRepository {
             }
         } catch (IOException e) {
             Log.e(TAG, "Failed to save collections", e);
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
         }
     }
 }

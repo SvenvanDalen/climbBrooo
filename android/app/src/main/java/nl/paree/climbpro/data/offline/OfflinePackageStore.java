@@ -7,6 +7,7 @@ import nl.paree.climbpro.domain.offline.OfflinePackage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Offline route packages (issue #200), one {@code offline/<routeId>.json} per route under
@@ -32,7 +33,7 @@ public final class OfflinePackageStore {
             out.write(mapper.writeValueAsBytes(pkg));
         }
         if (!tmp.renameTo(target)) {
-            target.delete();
+            FileCleanup.deleteQuietly(target);
             if (!tmp.renameTo(target)) throw new IOException("Kan " + target + " niet opslaan");
         }
     }

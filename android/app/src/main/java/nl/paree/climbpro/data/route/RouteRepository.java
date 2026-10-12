@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for routes.
@@ -199,7 +200,8 @@ public final class RouteRepository {
     }
 
     public void deleteRoute(String routeId) throws IOException {
-        routeFile(routeId).delete();
+        File doc = routeFile(routeId);
+        if (!FileCleanup.deleteQuietly(doc)) throw new IOException("Could not delete " + doc);
         // A deleted route can no longer be the active one: leaving the pref behind would make
         // every RouteSyncWorker round fail on it (issue: retry() forever, nothing syncs again).
         clearActiveRouteIfMatches(routeId);
@@ -725,7 +727,7 @@ public final class RouteRepository {
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete(); // best-effort cleanup so a failed write leaves no orphan .tmp
+            FileCleanup.deleteQuietly(tmp); // best-effort cleanup so a failed write leaves no orphan .tmp
             throw moveFailed;
         }
     }
@@ -1277,9 +1279,9 @@ public final class RouteRepository {
 
         File[] files = routesDir.listFiles();
         if (files != null) {
-            for (File f : files) f.delete();
+            for (File f : files) FileCleanup.deleteQuietly(f);
         }
-        if (catalogFile.exists()) catalogFile.delete();
+        if (catalogFile.exists()) FileCleanup.deleteQuietly(catalogFile);
 
         prefs.edit()
              .putInt(PREF_SEGMENT_VERSION, ClimbConstants.SEGMENT_VERSION)

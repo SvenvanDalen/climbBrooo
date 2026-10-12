@@ -910,7 +910,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 String nowText = SummitWeather.describe(
                         f, t, now, foot.elevationM, top.elevationM, units);
                 String laterText = SummitWeather.describe(
-                        f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM, units);
+                        f, t, now.plusSeconds(3 * 3600L), foot.elevationM, top.elevationM, units);
                 StringBuilder sb = new StringBuilder();
                 if (nowText != null) {
                     sb.append(getString(R.string.climb_detail_weather_now)).append('\n').append(nowText);

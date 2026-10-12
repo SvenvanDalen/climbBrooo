@@ -418,7 +418,7 @@ public final class ClimbWorkoutWriter {
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", "");
+                .replaceAll("(?:^_+)|(?:_+$)", "");
         if (base.isEmpty()) base = "klim";
         return base + "." + extension;
     }

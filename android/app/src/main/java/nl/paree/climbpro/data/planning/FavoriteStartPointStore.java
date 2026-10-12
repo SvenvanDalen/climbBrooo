@@ -11,6 +11,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for {@link FavoriteStartPoint}s (issue #206). Takes the target file
@@ -124,7 +125,7 @@ public final class FavoriteStartPointStore {
                 Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

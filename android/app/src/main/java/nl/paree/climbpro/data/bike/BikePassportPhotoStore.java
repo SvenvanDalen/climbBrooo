@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Persists bike-passport photos (issue #190) under {@code getFilesDir()/bike_passport_photos/},
@@ -51,7 +52,7 @@ public final class BikePassportPhotoStore {
 
     public static void delete(Context ctx, String filename) {
         if (filename == null || filename.isEmpty()) return;
-        fileFor(ctx, filename).delete();
+        FileCleanup.deleteQuietly(fileFor(ctx, filename));
     }
 
     /** Deletes files no passport references (e.g. left behind by an aborted save). */
@@ -61,7 +62,7 @@ public final class BikePassportPhotoStore {
         Set<String> referenced = new HashSet<>();
         for (BikePassport p : passports) referenced.addAll(p.allFileNames());
         for (File f : files) {
-            if (!referenced.contains(f.getName())) f.delete();
+            if (!referenced.contains(f.getName())) FileCleanup.deleteQuietly(f);
         }
     }
 

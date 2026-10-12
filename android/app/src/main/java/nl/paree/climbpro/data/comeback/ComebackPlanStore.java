@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * The active comeback plan (issue #226) in getFilesDir()/comeback_plan.json. Only the inputs
@@ -63,7 +64,7 @@ public final class ComebackPlanStore {
             java.nio.file.Files.move(tmp.toPath(), file.toPath(),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException moveFailed) {
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
             throw moveFailed;
         }
     }

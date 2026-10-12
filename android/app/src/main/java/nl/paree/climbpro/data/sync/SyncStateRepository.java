@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Persists per-route sync state to {@code getFilesDir()/sync_state.json}.
@@ -109,7 +110,7 @@ public final class SyncStateRepository {
             }
         } catch (IOException e) {
             Log.e(TAG, "Failed to save sync state", e);
-            tmp.delete();
+            FileCleanup.deleteQuietly(tmp);
         }
     }
 
