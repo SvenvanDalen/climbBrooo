@@ -109,16 +109,11 @@ public final class RouteRepository {
         // Load existing stored data once to preserve user customisation (renames, surface types).
         // A single read avoids the TOCTOU race that three separate reads created.
         StoredRoute prev = loadPreviousRoute(route.routeId);
-        List<StoredClimb>          prevClimbs   = prev != null && prev.climbs != null
-                ? prev.climbs : Collections.emptyList();
-        List<StoredFlatSegment>    prevFlats    = prev != null && prev.flatSegments != null
-                ? prev.flatSegments : Collections.emptyList();
-        List<StoredSurfaceSection> prevSections = prev != null && prev.surfaceSections != null
-                ? prev.surfaceSections : Collections.emptyList();
-        List<StoredStarredSegment> prevStarred  = prev != null && prev.starredSegments != null
-                ? prev.starredSegments : Collections.emptyList();
-        List<String> prevRemovedClimbIds = prev != null && prev.removedClimbIds != null
-                ? prev.removedClimbIds : Collections.emptyList();
+        List<StoredClimb>          prevClimbs   = prevList(prev, r -> r.climbs);
+        List<StoredFlatSegment>    prevFlats    = prevList(prev, r -> r.flatSegments);
+        List<StoredSurfaceSection> prevSections = prevList(prev, r -> r.surfaceSections);
+        List<StoredStarredSegment> prevStarred  = prevList(prev, r -> r.starredSegments);
+        List<String> prevRemovedClimbIds = prevList(prev, r -> r.removedClimbIds);
         // Carry the tombstone list forward across resync so a user-confirmed merge/removal
         // (recorded by removeClimb) stays removed even after fresh re-detection below.
         route.removedClimbIds = new ArrayList<>(prevRemovedClimbIds);
@@ -149,10 +144,7 @@ public final class RouteRepository {
         route.starredSegments = mergePreviousStarredSegmentUserData(starredSegments, prevStarred);
         // OSM tunnels (issue #203) are positions on the old geometry: keep them only while the
         // source is unchanged, otherwise they must be looked up again.
-        if (route.tunnels == null && prev != null && prev.tunnels != null
-                && prev.sourceHash != null && prev.sourceHash.equals(route.sourceHash)) {
-            route.tunnels = prev.tunnels;
-        }
+        if (route.tunnels == null && sameSource(prev, route)) route.tunnels = prev.tunnels;
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
@@ -165,6 +157,19 @@ public final class RouteRepository {
         // catalog's climbCount/climbStartCoords (the latter drives radius-mode matching).
         catalog.add(toCatalogEntry(route, points));
         saveCatalog(catalog);
+    }
+
+    /** A list field of the previously stored route, or an empty list when either is absent. */
+    private static <T> List<T> prevList(StoredRoute prev,
+                                        java.util.function.Function<StoredRoute, List<T>> field) {
+        List<T> list = prev != null ? field.apply(prev) : null;
+        return list != null ? list : Collections.<T>emptyList();
+    }
+
+    /** True when {@code prev} has tunnels that were looked up on the same source geometry. */
+    private static boolean sameSource(StoredRoute prev, StoredRoute route) {
+        return prev != null && prev.tunnels != null
+                && prev.sourceHash != null && prev.sourceHash.equals(route.sourceHash);
     }
 
     /**
@@ -326,22 +331,28 @@ public final class RouteRepository {
         for (RouteCatalogEntry entry : loadCatalog()) {
             if (entry.routeId == null || entry.routeId.equals(routeId)) continue;
             try {
-                StoredRoute other = loadRoute(entry.routeId);
-                if (other.climbs == null) continue;
-                boolean changed = false;
-                for (StoredClimb c : other.climbs) {
-                    if (identity.equals(ClimbIdentity.of(c))) {
-                        ClimbRating.copy(target, c);
-                        changed = true;
-                    }
-                }
-                if (changed) {
-                    other.lastModifiedMs = System.currentTimeMillis();
-                    AtomicFiles.write(routeFile(entry.routeId), mapper.writeValueAsBytes(other));
-                }
+                propagateRating(entry.routeId, identity, target);
             } catch (IOException e) {
                 Log.w(TAG, "Rating not propagated to route " + entry.routeId, e);
             }
+        }
+    }
+
+    /** Copies {@code source}'s rating onto every climb with {@code identity} in another route. */
+    private void propagateRating(String otherRouteId, String identity, StoredClimb source)
+            throws IOException {
+        StoredRoute other = loadRoute(otherRouteId);
+        if (other.climbs == null) return;
+        boolean changed = false;
+        for (StoredClimb c : other.climbs) {
+            if (identity.equals(ClimbIdentity.of(c))) {
+                ClimbRating.copy(source, c);
+                changed = true;
+            }
+        }
+        if (changed) {
+            other.lastModifiedMs = System.currentTimeMillis();
+            AtomicFiles.write(routeFile(otherRouteId), mapper.writeValueAsBytes(other));
         }
     }
 
@@ -594,39 +605,50 @@ public final class RouteRepository {
         for (SegmentRemapper.ClimbMatch m : matches) {
             StoredClimb f = fresh.get(m.freshIndex);
             StoredClimb p = previous.get(m.previousIndex);
-            if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
-            if (p.shapeOverride != null) f.shapeOverride = p.shapeOverride;
-            if (f.name == null && p.name != null) f.name = p.name;
-            f.isHome = p.isHome;
-            f.privacyCentreLat = p.privacyCentreLat;
-            f.privacyCentreLon = p.privacyCentreLon;
-            // Rating (issue #244) is user data about the physical climb: always carry it.
-            ClimbRating.copy(p, f);
-            if (p.manualRefSec != null) {
-                f.manualRefSec = p.manualRefSec;
-                f.manualRefLabel = p.manualRefLabel;
-            }
-            // Interval block (issue #180) is a training choice for the whole climb: carry it.
-            if (p.intervalBlock != null) f.intervalBlock = p.intervalBlock;
-            // Everesting target (issue #217) is a plan for the whole climb: carry it.
-            if (p.everestTargetM != null) f.everestTargetM = p.everestTargetM;
-            // Surface describes the road, so it is position-bound: carry by overlap.
-            // Manual target times (issue #23) are grid-bound: segments are 8% of the climb, so a
-            // lengthened/trimmed climb keeps 12-13 segments while every boundary moves.
-            int[] segMap = SegmentRemapper.mapSegments(f, p, m.offsetM);
-            boolean sameGrid = SegmentRemapper.isSameGrid(f, p, m.offsetM);
-            for (int i = 0; i < segMap.length; i++) {
-                if (sameGrid && p.segments.get(i).manualTargetSec != null) {
-                    f.segments.get(i).manualTargetSec = p.segments.get(i).manualTargetSec;
-                }
-                if (segMap[i] < 0) continue;
-                int prevSurface = p.segments.get(segMap[i]).surfaceType;
-                if (prevSurface != SurfaceType.UNKNOWN) {
-                    f.segments.get(i).surfaceType = prevSurface;
-                }
-            }
+            copyClimbUserData(p, f);
+            copySegmentUserData(p, f, m.offsetM);
         }
         return SegmentRemapper.routeOffset(matches);
+    }
+
+    /** Whole-climb user data from a matched previous climb {@code p} onto fresh {@code f}. */
+    private static void copyClimbUserData(StoredClimb p, StoredClimb f) {
+        if (p.userDisplayName != null) f.userDisplayName = p.userDisplayName;
+        if (p.shapeOverride != null) f.shapeOverride = p.shapeOverride;
+        if (f.name == null && p.name != null) f.name = p.name;
+        f.isHome = p.isHome;
+        f.privacyCentreLat = p.privacyCentreLat;
+        f.privacyCentreLon = p.privacyCentreLon;
+        // Rating (issue #244) is user data about the physical climb: always carry it.
+        ClimbRating.copy(p, f);
+        if (p.manualRefSec != null) {
+            f.manualRefSec = p.manualRefSec;
+            f.manualRefLabel = p.manualRefLabel;
+        }
+        // Interval block (issue #180) is a training choice for the whole climb: carry it.
+        if (p.intervalBlock != null) f.intervalBlock = p.intervalBlock;
+        // Everesting target (issue #217) is a plan for the whole climb: carry it.
+        if (p.everestTargetM != null) f.everestTargetM = p.everestTargetM;
+    }
+
+    /**
+     * Surface describes the road, so it is position-bound: carry by overlap.
+     * Manual target times (issue #23) are grid-bound: segments are 8% of the climb, so a
+     * lengthened/trimmed climb keeps 12-13 segments while every boundary moves.
+     */
+    private static void copySegmentUserData(StoredClimb p, StoredClimb f, int offsetM) {
+        int[] segMap = SegmentRemapper.mapSegments(f, p, offsetM);
+        boolean sameGrid = SegmentRemapper.isSameGrid(f, p, offsetM);
+        for (int i = 0; i < segMap.length; i++) {
+            if (sameGrid && p.segments.get(i).manualTargetSec != null) {
+                f.segments.get(i).manualTargetSec = p.segments.get(i).manualTargetSec;
+            }
+            if (segMap[i] < 0) continue;
+            int prevSurface = p.segments.get(segMap[i]).surfaceType;
+            if (prevSurface != SurfaceType.UNKNOWN) {
+                f.segments.get(i).surfaceType = prevSurface;
+            }
+        }
     }
 
     /**
@@ -647,26 +669,29 @@ public final class RouteRepository {
             String identity = ClimbIdentity.of(c);
             for (RouteCatalogEntry entry : catalog) {
                 if (entry.routeId == null || entry.routeId.equals(route.routeId)) continue;
-                StoredRoute other;
-                try {
-                    other = loadRoute(entry.routeId);
-                } catch (IOException e) {
-                    Log.w(TAG, "Rating inheritance skipped for route " + entry.routeId, e);
-                    continue;
-                }
-                if (other.climbs == null) continue;
-                boolean found = false;
-                for (StoredClimb oc : other.climbs) {
-                    if (identity.equals(ClimbIdentity.of(oc))
-                            && (ClimbRating.isRated(oc) || oc.ratingNote != null)) {
-                        ClimbRating.copy(oc, c);
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) break;
+                if (inheritRatingFrom(entry.routeId, identity, c)) break;
             }
         }
+    }
+
+    /** Copies the first rated/noted climb with {@code identity} in another route onto {@code c}. */
+    private boolean inheritRatingFrom(String otherRouteId, String identity, StoredClimb c) {
+        StoredRoute other;
+        try {
+            other = loadRoute(otherRouteId);
+        } catch (IOException e) {
+            Log.w(TAG, "Rating inheritance skipped for route " + otherRouteId, e);
+            return false;
+        }
+        if (other.climbs == null) return false;
+        for (StoredClimb oc : other.climbs) {
+            if (identity.equals(ClimbIdentity.of(oc))
+                    && (ClimbRating.isRated(oc) || oc.ratingNote != null)) {
+                ClimbRating.copy(oc, c);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -817,31 +842,34 @@ public final class RouteRepository {
         e.importedAtMs    = route.importedAtMs;
         e.lastModifiedMs  = route.lastModifiedMs;
 
-        if (points != null && !points.isEmpty()) {
-            double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
-            double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
-            for (RoutePoint p : points) {
-                if (p.lat < minLat) minLat = p.lat;
-                if (p.lat > maxLat) maxLat = p.lat;
-                if (p.lon < minLon) minLon = p.lon;
-                if (p.lon > maxLon) maxLon = p.lon;
-            }
-            e.bboxMinLat = minLat; e.bboxMaxLat = maxLat;
-            e.bboxMinLon = minLon; e.bboxMaxLon = maxLon;
-        }
-
-        if (climbs != null) {
-            double[] coords = new double[climbs.size() * 2];
-            for (int i = 0; i < climbs.size(); i++) {
-                coords[i * 2]     = climbs.get(i).startLat;
-                coords[i * 2 + 1] = climbs.get(i).startLon;
-            }
-            e.climbStartCoords = coords;
-        }
+        if (points != null && !points.isEmpty()) fillBoundingBox(e, points);
+        if (climbs != null) e.climbStartCoords = climbStartCoords(climbs);
 
         e.surfaceTypes = computeSurfaceTypes(route);
 
         return e;
+    }
+
+    private static void fillBoundingBox(RouteCatalogEntry e, List<RoutePoint> points) {
+        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
+        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        for (RoutePoint p : points) {
+            if (p.lat < minLat) minLat = p.lat;
+            if (p.lat > maxLat) maxLat = p.lat;
+            if (p.lon < minLon) minLon = p.lon;
+            if (p.lon > maxLon) maxLon = p.lon;
+        }
+        e.bboxMinLat = minLat; e.bboxMaxLat = maxLat;
+        e.bboxMinLon = minLon; e.bboxMaxLon = maxLon;
+    }
+
+    private static double[] climbStartCoords(List<StoredClimb> climbs) {
+        double[] coords = new double[climbs.size() * 2];
+        for (int i = 0; i < climbs.size(); i++) {
+            coords[i * 2]     = climbs.get(i).startLat;
+            coords[i * 2 + 1] = climbs.get(i).startLon;
+        }
+        return coords;
     }
 
     // -------------------------------------------------------------------------
@@ -1176,36 +1204,24 @@ public final class RouteRepository {
         java.util.TreeSet<Integer> surfaceSet = new java.util.TreeSet<>();
         if (route.climbs != null) {
             for (StoredClimb sc : route.climbs) {
-                if (sc.segments != null) {
-                    for (StoredSegment ss : sc.segments) {
-                        if (ss.surfaceType != SurfaceType.UNKNOWN) {
-                            surfaceSet.add(ss.surfaceType);
-                        }
-                    }
-                }
+                addKnownSurfaces(surfaceSet, sc.segments, ss -> ss.surfaceType);
             }
         }
-        if (route.flatSegments != null) {
-            for (StoredFlatSegment sf : route.flatSegments) {
-                if (sf.surfaceType != SurfaceType.UNKNOWN) {
-                    surfaceSet.add(sf.surfaceType);
-                }
-            }
-        }
-        if (route.surfaceSections != null) {
-            for (StoredSurfaceSection ss : route.surfaceSections) {
-                if (ss.surfaceType != SurfaceType.UNKNOWN) {
-                    surfaceSet.add(ss.surfaceType);
-                }
-            }
-        }
-        if (route.starredSegments != null) {
-            for (StoredStarredSegment s : route.starredSegments) {
-                if (s.surfaceType != SurfaceType.UNKNOWN) surfaceSet.add(s.surfaceType);
-            }
-        }
+        addKnownSurfaces(surfaceSet, route.flatSegments, sf -> sf.surfaceType);
+        addKnownSurfaces(surfaceSet, route.surfaceSections, ss -> ss.surfaceType);
+        addKnownSurfaces(surfaceSet, route.starredSegments, s -> s.surfaceType);
         return surfaceSet.isEmpty() ? null
                 : surfaceSet.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    /** Adds every non-UNKNOWN surface of {@code items} (null-safe) to {@code out}. */
+    private static <T> void addKnownSurfaces(java.util.Set<Integer> out, List<T> items,
+                                             java.util.function.ToIntFunction<T> surface) {
+        if (items == null) return;
+        for (T item : items) {
+            int type = surface.applyAsInt(item);
+            if (type != SurfaceType.UNKNOWN) out.add(type);
+        }
     }
 
     private static double haversine(double lat1, double lon1, double lat2, double lon2) {

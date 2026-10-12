@@ -291,35 +291,43 @@ public final class BikeCostRepository {
         log.bikes.removeIf(b -> b == null);
         int bikeIndex = 0;
         for (Bike b : log.bikes) {
-            // Deterministic fallback ids so an edit on a later load still finds the item.
-            if (b.id == null || b.id.isEmpty()) b.id = "bike-" + bikeIndex;
-            b.name = cleanName(b.name);
-            if (b.sinceEpochSec < 0) b.sinceEpochSec = 0;
-            if (b.retiredEpochSec < 0) b.retiredEpochSec = 0;
-            b.extraKm = clampKm(b.extraKm);
-            if (b.costs == null) b.costs = new ArrayList<>();
-            b.costs.removeIf(c -> c == null || c.amountCents <= 0
-                    || c.amountCents > EuroAmount.MAX_CENTS);
-            int costIndex = 0;
-            for (BikeCostEntry c : b.costs) {
-                if (c.id == null || c.id.isEmpty()) c.id = b.id + "-cost-" + costIndex;
-                c.kind = BikeCostEntry.cleanKind(c.kind);
-                c.description = cleanDescription(c.description, c.kind);
-                if (c.epochSec < 0) c.epochSec = 0;
-                costIndex++;
-            }
-            // A missing type on a pre-garage file is guessed by the migration instead.
-            if (log.version >= BikeCostLog.GARAGE_VERSION) b.type = BikeGarage.cleanType(b.type);
-            b.weightKg     = cleanWeight(b.weightKg);
-            b.tyreWidthMm  = cleanTyreWidth(b.tyreWidthMm);
-            b.chainrings   = cleanText(b.chainrings);
-            b.cassette     = cleanText(b.cassette);
-            b.stravaGearId = cleanText(b.stravaGearId);
+            sanitizeBike(b, bikeIndex, log.version);
             bikeIndex++;
         }
         if (BikeGarage.find(log, log.activeBikeId) == null) log.activeBikeId = null;
         if (BikeGarage.find(log, log.indoorBikeId) == null) log.indoorBikeId = null;
         return log;
+    }
+
+    private static void sanitizeBike(Bike b, int bikeIndex, int logVersion) {
+        // Deterministic fallback ids so an edit on a later load still finds the item.
+        if (b.id == null || b.id.isEmpty()) b.id = "bike-" + bikeIndex;
+        b.name = cleanName(b.name);
+        if (b.sinceEpochSec < 0) b.sinceEpochSec = 0;
+        if (b.retiredEpochSec < 0) b.retiredEpochSec = 0;
+        b.extraKm = clampKm(b.extraKm);
+        sanitizeCosts(b);
+        // A missing type on a pre-garage file is guessed by the migration instead.
+        if (logVersion >= BikeCostLog.GARAGE_VERSION) b.type = BikeGarage.cleanType(b.type);
+        b.weightKg     = cleanWeight(b.weightKg);
+        b.tyreWidthMm  = cleanTyreWidth(b.tyreWidthMm);
+        b.chainrings   = cleanText(b.chainrings);
+        b.cassette     = cleanText(b.cassette);
+        b.stravaGearId = cleanText(b.stravaGearId);
+    }
+
+    private static void sanitizeCosts(Bike b) {
+        if (b.costs == null) b.costs = new ArrayList<>();
+        b.costs.removeIf(c -> c == null || c.amountCents <= 0
+                || c.amountCents > EuroAmount.MAX_CENTS);
+        int costIndex = 0;
+        for (BikeCostEntry c : b.costs) {
+            if (c.id == null || c.id.isEmpty()) c.id = b.id + "-cost-" + costIndex;
+            c.kind = BikeCostEntry.cleanKind(c.kind);
+            c.description = cleanDescription(c.description, c.kind);
+            if (c.epochSec < 0) c.epochSec = 0;
+            costIndex++;
+        }
     }
 
     static double cleanWeight(double kg) {

@@ -158,30 +158,36 @@ public final class RouteCollectionRepository {
         boolean changed = false;
         for (RouteCollection c : all) {
             if (c.climbs == null || c.climbs.isEmpty()) continue;
-            List<ClimbMembership> updated = new ArrayList<>(c.climbs.size());
-            boolean localChanged = false;
-            for (ClimbMembership m : c.climbs) {
-                if (!routeId.equals(m.routeId)) {
-                    updated.add(m);
-                    continue;
-                }
-                if (m.climbIndex == removedIndex) {
-                    localChanged = true; // the climb this pointed at is gone; drop the membership
-                    continue;
-                }
-                if (m.climbIndex > removedIndex) {
-                    m.climbIndex -= 1;
-                    localChanged = true;
-                }
-                updated.add(m);
-            }
-            if (localChanged) {
-                c.climbs = updated;
+            if (shiftMemberships(c, routeId, removedIndex)) {
                 c.lastModifiedMs = System.currentTimeMillis();
                 changed = true;
             }
         }
         if (changed) saveAll(all);
+    }
+
+    /**
+     * Drops {@code c}'s membership of the removed climb and shifts later indices of the same
+     * route down by one. Returns whether anything changed.
+     */
+    private static boolean shiftMemberships(RouteCollection c, String routeId, int removedIndex) {
+        List<ClimbMembership> updated = new ArrayList<>(c.climbs.size());
+        boolean changed = false;
+        for (ClimbMembership m : c.climbs) {
+            if (!routeId.equals(m.routeId)) {
+                updated.add(m);
+            } else if (m.climbIndex == removedIndex) {
+                changed = true; // the climb this pointed at is gone; drop the membership
+            } else {
+                if (m.climbIndex > removedIndex) {
+                    m.climbIndex -= 1;
+                    changed = true;
+                }
+                updated.add(m);
+            }
+        }
+        if (changed) c.climbs = updated;
+        return changed;
     }
 
     /** Every route that was deleted must be cleared from all collections it belonged to. */
