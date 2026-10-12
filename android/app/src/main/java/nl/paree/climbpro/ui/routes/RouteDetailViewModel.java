@@ -38,7 +38,6 @@ import nl.paree.climbpro.domain.route.RouteHazards;
 import nl.paree.climbpro.service.OnboardPushService;
 import nl.paree.climbpro.service.RoutePacingPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
-import nl.paree.climbpro.service.SyncScheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;

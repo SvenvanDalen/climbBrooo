@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import nl.paree.climbpro.domain.segment.SurfaceType;
@@ -80,7 +79,6 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     // Pending state while the note/photo edit dialog (issue #46) is open: the row being
     // edited and the photo the user just picked (persisted only on Save).
-    private nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow pendingAttemptRow;
     private android.net.Uri pendingPhotoUri;
     private android.widget.ImageView pendingPhotoPreview;
 
@@ -1539,7 +1537,6 @@ public final class ClimbDetailActivity extends AppCompatActivity {
      * on each history row.
      */
     private void showAttemptNoteDialog(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row) {
-        pendingAttemptRow = row;
         pendingPhotoUri = null;
 
         android.widget.LinearLayout dialogLayout = new android.widget.LinearLayout(this);
@@ -1592,12 +1589,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     viewModel.saveAttemptNote(routeId, climbIndex, row.activityId, row.passIndex,
                             noteInput.getText().toString(),
                             companionsInput.getText().toString(), pendingPhotoUri);
-                    pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;
                 })
                 .setNegativeButton(R.string.action_cancel, (d, w) -> {
-                    pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;
                 })

@@ -506,7 +506,7 @@ class ClimbProView extends Ui.DataField {
         // Clear background
         dc.setColor(Gfx.COLOR_BLACK, Gfx.COLOR_WHITE);
         dc.clear();
-        
+
         var data = App.getApp().climbData;
         var lightsBanner = lights.bannerVisible(Time.now().value());
         if (data == null || !data.payloadReceived) {
