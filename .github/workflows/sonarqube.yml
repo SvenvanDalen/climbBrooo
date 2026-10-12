@@ -42,3 +42,25 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           # AppAuth rejects an empty client id; see preflight.yml.
           STRAVA_CLIENT_ID: ci-placeholder
+
+  # After a scan of main, mirror its BLOCKER issues into GitHub issues (one per rule) labelled
+  # "sonarcube analysis"; fixed rules are closed automatically. SonarQube Cloud treats only
+  # main as a long-lived branch, so other branches would only report new-code issues.
+  blocker-issues:
+    needs: sonar
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync SonarQube blockers to GitHub issues
+        run: python3 .github/scripts/sonar_blockers_to_issues.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_ORG: svenvandalen
+          SONAR_PROJECT: SvenvanDalen_climbBrooo
+          SONAR_BRANCH: main
+          SYNC_LABEL: sonarcube analysis
+          GIT_REF: ${{ github.sha }}
