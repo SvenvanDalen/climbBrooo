@@ -25,7 +25,7 @@ REPO = os.environ["GITHUB_REPOSITORY"]
 ORG = os.environ["SONAR_ORG"]
 PROJECT = os.environ["SONAR_PROJECT"]
 BRANCH = os.environ.get("SONAR_BRANCH", "main")
-LABEL = os.environ.get("SYNC_LABEL", "sonarcube analysis")
+LABEL = os.environ.get("SYNC_LABEL", "sonarqube analysis")
 GIT_REF = os.environ.get("GIT_REF") or BRANCH
 
 

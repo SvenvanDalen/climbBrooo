@@ -44,7 +44,7 @@ jobs:
           STRAVA_CLIENT_ID: ci-placeholder
 
   # After a scan of main, mirror its BLOCKER issues into GitHub issues (one per rule) labelled
-  # "sonarcube analysis"; fixed rules are closed automatically. SonarQube Cloud treats only
+  # "sonarqube analysis"; fixed rules are closed automatically. SonarQube Cloud treats only
   # main as a long-lived branch, so other branches would only report new-code issues.
   blocker-issues:
     needs: sonar
@@ -62,5 +62,5 @@ jobs:
           SONAR_ORG: svenvandalen
           SONAR_PROJECT: SvenvanDalen_climbBrooo
           SONAR_BRANCH: main
-          SYNC_LABEL: sonarcube analysis
+          SYNC_LABEL: sonarqube analysis
           GIT_REF: ${{ github.sha }}
