@@ -42,8 +42,19 @@ public final class RouteSyncWorker extends Worker {
     public  static final String PREF_MODE    = "sync_mode";
     public  static final String MODE_ROUTE   = "route";
     public  static final String MODE_RADIUS  = "radius";
+    /** A collection as an ordered day trip (issue #9); which one is {@link #PREF_DAYTRIP_ID}. */
+    public  static final String MODE_DAYTRIP = "daytrip";
+    public  static final String PREF_DAYTRIP_ID = "daytrip_collection_id";
+    /**
+     * Where the rider was when the day trip was chosen; fixes the riding order so a later
+     * resync doesn't reshuffle it. Absent = no position known then.
+     */
+    public  static final String PREF_DAYTRIP_LAT = "daytrip_start_lat";
+    public  static final String PREF_DAYTRIP_LON = "daytrip_start_lon";
     public  static final String PREF_ROUTE_ID = "active_route_id";
     public  static final String PREF_RADIUS_M = "radius_metres";
+    /** Radius mode: only send climbs where it is dry now (issue #12). */
+    public  static final String PREF_RADIUS_DRY_ONLY = "radius_dry_only";
     public  static final String PREF_LAST_LAT = "last_lat";
     public  static final String PREF_LAST_LON = "last_lon";
 
@@ -92,10 +103,13 @@ public final class RouteSyncWorker extends Worker {
         // wantHash too, so switching km <-> miles resyncs the active route.
         nl.paree.climbpro.domain.units.UnitPreferences units =
                 new nl.paree.climbpro.data.settings.UnitPreferencesRepository(ctx).load();
-        ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper)
+        // Issues #27 / #18 / #24: ridden climbs ('nw') and the usual cadence / heart-rate zone
+        // per gradient class ('cg' / 'hg'); folded into wantHash via habits.signature().
+        WatchHabits habits = WatchHabits.load(ctx);
+        ClimbPayloadBuilder  payloadBuilder  = habits.applyTo(new ClimbPayloadBuilder(mapper)
                 .withIntensityZones(profile).withFtpWatts(profile.ftpWatts)
                 .withPalette(palette).withUnits(units)
-                .withFieldLayout(fieldLayout);
+                .withFieldLayout(fieldLayout));
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -122,7 +136,7 @@ public final class RouteSyncWorker extends Worker {
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
                 prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo,
-                palette, units, fieldLayout);
+                palette, units, fieldLayout, habits);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -243,6 +257,29 @@ public final class RouteSyncWorker extends Worker {
         return routeGhost == null ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
     }
 
+    /**
+     * Position saved when the day trip was chosen (issue #9); null without one, then the trip
+     * starts at the collection's first climb.
+     */
+    static double[] dayTripStart(SharedPreferences prefs) {
+        if (!prefs.contains(PREF_DAYTRIP_LAT) || !prefs.contains(PREF_DAYTRIP_LON)) return null;
+        return new double[] {
+                prefs.getFloat(PREF_DAYTRIP_LAT, 0f), prefs.getFloat(PREF_DAYTRIP_LON, 0f)};
+    }
+
+    /** One Open-Meteo request for every start (issue #12); throws when offline. */
+    static boolean[] openMeteoDryCheck(java.util.List<double[]> starts) throws IOException {
+        java.util.List<nl.paree.climbpro.domain.weather.RouteSampler.Sample> pts =
+                new java.util.ArrayList<>(starts.size());
+        for (double[] s : starts) {
+            pts.add(new nl.paree.climbpro.domain.weather.RouteSampler.Sample(0, s[0], s[1]));
+        }
+        nl.paree.climbpro.domain.weather.PrecipitationGrid grid =
+                new nl.paree.climbpro.data.weather.OpenMeteoClient().fetchPrecipitation(
+                        pts, nl.paree.climbpro.domain.weather.DryClimbFilter.HOURS_AHEAD + 1);
+        return nl.paree.climbpro.domain.weather.DryClimbFilter.dryFlags(grid, java.time.Instant.now());
+    }
+
     /** Palette chosen with the "Kleurenblind-vriendelijk palet" switch (issue #258). */
     static int paletteOf(SharedPreferences prefs) {
         return nl.paree.climbpro.domain.segment.GradientPalette.fromEnabled(prefs.getBoolean(
@@ -261,11 +298,29 @@ public final class RouteSyncWorker extends Worker {
             nl.paree.climbpro.domain.power.GhostTarget ghost,
             ClimbAttemptRepository attemptRepo, int palette,
             nl.paree.climbpro.domain.units.UnitPreferences units,
-            WatchFieldLayout fieldLayout) {
+            WatchFieldLayout fieldLayout, WatchHabits habits) {
         nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo =
                 new nl.paree.climbpro.data.route.RouteGhostRepository(getApplicationContext());
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
+
+        if (MODE_DAYTRIP.equals(mode)) {
+            return new SyncOrchestrator.PayloadJob() {
+                @Override public byte[] build() throws IOException {
+                    nl.paree.climbpro.data.route.RouteCollection trip =
+                            new nl.paree.climbpro.data.route.RouteCollectionRepository(
+                                    getApplicationContext())
+                                    .get(prefs.getString(PREF_DAYTRIP_ID, ""));
+                    if (trip == null) {
+                        Log.w(TAG, "Day-trip collection is gone — nothing to send");
+                        return null;
+                    }
+                    return new DayTripAssembler(routeRepo, payloadBuilder)
+                            .assemble(trip, dayTripStart(prefs));
+                }
+                @Override public void onSent() { /* like radius mode: no per-route sync state */ }
+            };
+        }
 
         if (MODE_RADIUS.equals(mode)) {
             return new SyncOrchestrator.PayloadJob() {
@@ -283,6 +338,9 @@ public final class RouteSyncWorker extends Worker {
                     double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
                     RadiusModeAssembler assembler =
                             new RadiusModeAssembler(routeRepo, payloadBuilder);
+                    if (prefs.getBoolean(PREF_RADIUS_DRY_ONLY, false)) {
+                        assembler.withDryCheck(RouteSyncWorker::openMeteoDryCheck);
+                    }
                     byte[] payload = assembler.assemble(lat, lon, radiusM);
                     if (assembler.wasTruncated()) {
                         Log.w(TAG, "Radius payload was truncated — some climbs omitted");
@@ -311,7 +369,7 @@ public final class RouteSyncWorker extends Worker {
                 StoredRoute route = routeRepo.loadRoute(routeId);
                 int[] routeGhost = ghostRepo.wireFor(route);
                 String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout)
-                        + routeGhostSignature(routeGhost);
+                        + routeGhostSignature(routeGhost) + habits.signature();
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -334,7 +392,7 @@ public final class RouteSyncWorker extends Worker {
                 if (routeRepo.hasRoute(routeId)) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
                     syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout)
-                            + routeGhostSignature(ghostRepo.wireFor(route)));
+                            + routeGhostSignature(ghostRepo.wireFor(route)) + habits.signature());
                 }
             }
         };

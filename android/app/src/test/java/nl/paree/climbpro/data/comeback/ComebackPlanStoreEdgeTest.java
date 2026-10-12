@@ -59,7 +59,7 @@ public class ComebackPlanStoreEdgeTest {
 
     @Test
     public void save_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(ComebackPlanStore.FILE,
+        assertWriteFails(ComebackPlanStore.FILE_NAME,
                 () -> new ComebackPlanStore(app).save(100L, 200L, true));
     }
 }

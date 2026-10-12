@@ -44,7 +44,7 @@ public class EventCalendarRepositoryTest {
         server = new MockWebServer();
         server.start();
         repo = new EventCalendarRepository(app);
-        new File(app.getFilesDir(), EventCalendarRepository.FILE).delete();
+        new File(app.getFilesDir(), EventCalendarRepository.FILE_NAME).delete();
     }
 
     @After
@@ -233,7 +233,7 @@ public class EventCalendarRepositoryTest {
     }
 
     private void write(String json) throws Exception {
-        try (FileOutputStream out = new FileOutputStream(new File(app.getFilesDir(), EventCalendarRepository.FILE))) {
+        try (FileOutputStream out = new FileOutputStream(new File(app.getFilesDir(), EventCalendarRepository.FILE_NAME))) {
             out.write(json.getBytes(StandardCharsets.UTF_8));
         }
     }

@@ -51,7 +51,7 @@ public class OfflinePackageStoreTest {
         File files = tmp.newFolder("files");
         OfflinePackageStore store = new OfflinePackageStore(files);
         assertNull(store.load("nope"));
-        File dir = new File(files, OfflinePackageStore.DIR);
+        File dir = new File(files, OfflinePackageStore.DIR_NAME);
         dir.mkdirs();
         try (FileOutputStream out = new FileOutputStream(new File(dir, "bad.json"))) {
             out.write("{kapot".getBytes("UTF-8"));

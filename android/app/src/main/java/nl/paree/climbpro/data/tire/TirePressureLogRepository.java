@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for the tire-pressure log (issue #155). Layout:
@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class TirePressureLogRepository {
 
     private static final String TAG  = "TirePressureLogRepo";
-    static final String FILE = "tire_pressure_log.json";
+    static final String FILE_NAME = "tire_pressure_log.json";
 
     /** Static: the log screen and the main-screen banner each create their own instance. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -33,7 +33,7 @@ public final class TirePressureLogRepository {
 
     public TirePressureLogRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -113,27 +113,6 @@ public final class TirePressureLogRepository {
     }
 
     private void write(TirePressureLog log) throws IOException {
-        writeAtomic(file, mapper.writeValueAsBytes(log));
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
+        AtomicFiles.write(file, mapper.writeValueAsBytes(log));
     }
 }

@@ -17,7 +17,11 @@ import java.nio.file.Files;
 public class ProtocolLockstepGuardTest {
 
     /** Keys that must appear on every surface of the route-mode wire contract. */
-    private static final String[] LOCKSTEP_KEYS = { "rtl", "ib", "ev", "zc", "un", "hz", "pal", "gh" };
+    private static final String[] LOCKSTEP_KEYS = {
+            "rtl", "ib", "ev", "zc", "un", "hz", "pal", "gh", "nw", "cg", "hg" };
+
+    /** Radius-mode-only keys, checked against the radius example instead (issue #9). */
+    private static final String[] RADIUS_LOCKSTEP_KEYS = { "ord" };
 
     @Test
     public void wireKeysPresentOnAllSurfaces() throws Exception {
@@ -32,6 +36,14 @@ public class ProtocolLockstepGuardTest {
             String q = "\"" + key + "\"";
             assertTrue(key + " missing from schema.json",         schema.contains(q));
             assertTrue(key + " missing from route example",       example.contains(q));
+            assertTrue(key + " missing from ClimbPayloadBuilder", builder.contains(q));
+            assertTrue(key + " missing from CommListener.mc",     commList.contains(q));
+        }
+        String radiusExample = read(new File(root, "protocol/examples/radius_mode.json"));
+        for (String key : RADIUS_LOCKSTEP_KEYS) {
+            String q = "\"" + key + "\"";
+            assertTrue(key + " missing from schema.json",         schema.contains(q));
+            assertTrue(key + " missing from radius example",      radiusExample.contains(q));
             assertTrue(key + " missing from ClimbPayloadBuilder", builder.contains(q));
             assertTrue(key + " missing from CommListener.mc",     commList.contains(q));
         }

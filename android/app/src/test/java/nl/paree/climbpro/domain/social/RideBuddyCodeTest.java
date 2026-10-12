@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.social;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -69,8 +70,10 @@ public class RideBuddyCodeTest {
         assertEquals(in.rideTypes, out.rideTypes);
         assertEquals(in.weekdays, out.weekdays);
         assertEquals(in.dayparts, out.dayparts);
-        assertEquals(in.areaLat, out.areaLat, 1e-9);
-        assertEquals(in.areaLon, out.areaLon, 1e-9);
+        double expectedLat = in.areaLat;
+        double expectedLon = in.areaLon;
+        assertEquals(expectedLat, out.areaLat, 1e-9);
+        assertEquals(expectedLon, out.areaLon, 1e-9);
     }
 
     @Test
@@ -199,7 +202,7 @@ public class RideBuddyCodeTest {
             r.nextBytes(b);
             String text = "CPR1:" + Base64.getUrlEncoder().withoutPadding().encodeToString(b);
             try {
-                RideBuddyCode.decode(text);
+                assertNotNull(RideBuddyCode.decode(text));
             } catch (RideBuddyCode.InvalidCodeException expected) {
                 // fine
             }

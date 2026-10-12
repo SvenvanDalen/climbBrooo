@@ -1000,6 +1000,48 @@ the no-data screen. Settings `lightsReminder` (default on) and `lightsLeadMin` (
 default 15) live in the datafield's app settings. Alert: two 800 ms buzzes + `TONE_ALERT_LO`,
 distinct from the climb, battery and block-done alerts.
 
+### Oldest-backlog batch: watch alerts, day trip, rider habits (issues #6–#27, 2026-10-09)
+
+**Watch-only (no wire change).** `garmin/source/PacingAlert.mc`: `PacingAlert` compares the
+time on the active climb with the plan (`tsec`, else `refsec`) for the distance covered and
+buzzes once when the rider is ahead by ≥ max(15 s, 10 %) (issue #6); quiet in the first
+100 m, latched until back within 5 s, 2 min cooldown, fresh latch per climb, off-route
+suppressed. `summitReached` (same file, issue #8) gates a soft buzz when the active climb
+ends within 100 m of its length (not abandoned); the summary screen adds the average
+gradient. `garmin/source/RadiusNext.mc` (issue #7): in radius mode `ClimbData.updateRadius`
+measures straight-line distance to every start each GPS tick, marks starts within 50 m as
+reached (`climbEntered` doubles as "reached" in radius mode) and keeps the countdown target
+until another climb is ≥ 150 m closer (jitter hysteresis); the next-climb page shows
+`in ~X`. `ClimbData.rideRemainingElev` + `FieldLayout.RIDE_REM_ELEV` (code 16, issue #25)
+sum the rest of the active climb and every later non-skipped climb. `garmin/source/ClimbVibe.mc`
+(issue #26) classifies climbs (≥ 5 km long; < 2.5 km and ≥ 7 % short-steep; else regular)
+and maps the `vibeShortSteep` / `vibeLong` / `vibeRegular` settings to vibration patterns;
+`standaard` keeps the existing climb-start alert (incl. the distinct tone, #83).
+
+**Wire (all optional, schema + examples + builder + `CommListener.mc` + lockstep guard).**
+`nw` per climb (issue #27): `ClimbPayloadBuilder.withRiddenClimbIds` flags climbs whose
+`ClimbIdentity` has no attempt; nothing is flagged when the rider has no attempts at all.
+`cg` / `hg` top-level (issues #18 / #24): six values indexed by gradient class (= segment
+colorIndex). `cg` is `CadenceByGrade` over all rides; `hg` is the new
+`HeartRateByGradeAnalyzer` (moving seconds + heartbeats per class, stored in
+`StoredRideStreamStats.hrGradeSec/hrGradeBeats`, `RideStreamAnalyzer.VERSION` 7) summed by
+`HeartRateByGrade` into zone 1-5 via `ZoneCalculator.heartRateZoneIndex` (max HR: the
+rider's own, else observed). It is per gradient class, not per individual segment: the
+stored history has no per-segment heart rate. `service/WatchHabits` gathers all three
+(route sync + watch requests) and its signature is folded into the sync hash. The watch
+shows `cg` in the cadence slot (`86/90rpm`) and colors segments by `hg` in `colorMode` 2.
+`ord` on radius payloads (issue #9): `RouteSyncWorker.MODE_DAYTRIP` + `PREF_DAYTRIP_ID`,
+set from the collection menu. `DayTripAssembler` gathers the collection's climbs (loose
+climbs + member routes), `domain/climb/DayTripPlanner` orders them nearest-neighbour from
+the position saved when the trip was chosen (stable across resyncs; first climb without
+one), dedupes on `ClimbIdentity`, caps at 16 and drops from the end over budget. The watch
+counts down to the first climb not reached yet and marks skipped earlier ones as reached.
+
+**Phone-only.** Radius weather filter (issue #12): `RadiusModeAssembler.withDryCheck`, one
+Open-Meteo precipitation request for the closest 40 starts; `domain/weather/DryClimbFilter`
+drops a start with ≥ 0.3 mm/h now or in the next 2 h; unknown data counts as dry and any
+failure sends the unfiltered set (offline-first). Setting `radius_dry_only`.
+
 ### Easier stretch ahead during a climb (issue #213)
 
 Watch-only, no wire change: the climb datafield (`garmin`) tells the rider an easier

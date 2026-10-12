@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Persists a user-picked attempt photo (issue #46) under {@code getFilesDir()/attempt_photos/},
@@ -53,7 +54,7 @@ public final class AttemptPhotoStore {
     /** Best-effort delete, e.g. when replacing an attempt's photo with a new one. */
     public static void delete(Context ctx, String filename) {
         if (filename == null || filename.isEmpty()) return;
-        fileFor(ctx, filename).delete();
+        FileCleanup.deleteQuietly(fileFor(ctx, filename));
     }
 
     /**
@@ -77,7 +78,7 @@ public final class AttemptPhotoStore {
         }
         for (File f : files) {
             if (!referenced.contains(f.getName())) {
-                f.delete();
+                FileCleanup.deleteQuietly(f);
             }
         }
     }

@@ -13,7 +13,7 @@ import java.util.List;
 public final class ImportedActivityDedupe {
 
     /** Same ride if the activity starts within this many seconds of a known one. */
-    public static final long SAME_RIDE_WINDOW_SEC = 5 * 60;
+    public static final long SAME_RIDE_WINDOW_SEC = 5 * 60L;
 
     private ImportedActivityDedupe() {}
 

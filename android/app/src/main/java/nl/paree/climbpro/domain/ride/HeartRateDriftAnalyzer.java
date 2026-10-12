@@ -65,7 +65,7 @@ public final class HeartRateDriftAnalyzer {
                 o = (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
             }
             use[i] = true;
-            dt[i] = t[i] - t[i - 1];
+            dt[i] = (double) t[i] - t[i - 1];
             out[i] = o;
             total += dt[i];
             distM += d[i] - d[i - 1];

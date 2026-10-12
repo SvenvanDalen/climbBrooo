@@ -117,7 +117,7 @@ public class RouteStoresEdgeTest {
 
     @Test
     public void ghosts_corruptFile_loadsEmpty_andLookupsReturnNull() throws Exception {
-        corrupt(RouteGhostRepository.FILE);
+        corrupt(RouteGhostRepository.FILE_NAME);
         RouteGhostRepository repo = new RouteGhostRepository(app);
         assertTrue(repo.loadAll().isEmpty());
         assertNull(repo.find("r1"));
@@ -127,7 +127,7 @@ public class RouteStoresEdgeTest {
 
     @Test
     public void ghosts_failedWrite_throwsAndLeavesNoTmp() throws Exception {
-        block(RouteGhostRepository.FILE);
+        block(RouteGhostRepository.FILE_NAME);
         RouteGhostRepository repo = new RouteGhostRepository(app);
         StoredRouteGhost g = new StoredRouteGhost("r1", 1L, 0L, 1000, 100,
                 new int[]{0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100});
@@ -136,7 +136,7 @@ public class RouteStoresEdgeTest {
             fail("expected IOException");
         } catch (IOException expected) {
         }
-        assertFalse(file(RouteGhostRepository.FILE + ".tmp").exists());
+        assertFalse(file(RouteGhostRepository.FILE_NAME + ".tmp").exists());
     }
 
     // ---- attempt repositories ----

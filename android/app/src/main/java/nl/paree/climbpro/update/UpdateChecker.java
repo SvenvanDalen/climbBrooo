@@ -74,7 +74,8 @@ public final class UpdateChecker {
     /** Test seam: points the release lookup at another host (e.g. a MockWebServer). */
     @VisibleForTesting
     UpdateChecker(Context context, String baseUrl) {
-        this.appContext = context.getApplicationContext();
+        Context app = context.getApplicationContext();
+        this.appContext = app != null ? app : context;
         this.baseUrl = baseUrl;
     }
 

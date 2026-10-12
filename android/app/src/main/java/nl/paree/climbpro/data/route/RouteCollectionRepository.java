@@ -7,12 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for user-defined route/climb collections, mirroring the
@@ -220,24 +220,10 @@ public final class RouteCollectionRepository {
     // -------------------------------------------------------------------------
 
     private void saveAll(List<RouteCollection> all) {
-        File tmp = new File(collectionsFile.getParentFile(), FILE + ".tmp");
         try {
-            byte[] data = mapper.writeValueAsBytes(all);
-            try (FileOutputStream out = new FileOutputStream(tmp)) {
-                out.write(data);
-                out.getFD().sync();
-            }
-            try {
-                java.nio.file.Files.move(tmp.toPath(), collectionsFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), collectionsFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
+            AtomicFiles.write(collectionsFile, mapper.writeValueAsBytes(all));
         } catch (IOException e) {
             Log.e(TAG, "Failed to save collections", e);
-            tmp.delete();
         }
     }
 }

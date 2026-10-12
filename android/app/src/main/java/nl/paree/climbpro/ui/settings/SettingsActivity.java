@@ -35,6 +35,7 @@ import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.segment.GradientPalette;
 import nl.paree.climbpro.service.AutoBackupWorker;
 import nl.paree.climbpro.service.StravaHistoryBackfillWorker;
+import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 import nl.paree.climbpro.service.WetRideReminderJob;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
@@ -58,7 +59,7 @@ public final class SettingsActivity extends AppCompatActivity {
     // Cleaning reminder (issue #234): ask for the notification grant when it is switched on.
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (!granted) {
+                if (!Boolean.TRUE.equals(granted)) {
                     Toast.makeText(this, R.string.settings_wet_no_notifications,
                             Toast.LENGTH_LONG).show();
                     // The switch stayed on when the user tapped it; without the grant the
@@ -73,7 +74,7 @@ public final class SettingsActivity extends AppCompatActivity {
     // Radius mode (issue #310) searches around the last known fix, which needs a location grant.
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
+                if (Boolean.TRUE.equals(granted)) {
                     viewModel.refreshRadiusLocation();
                 } else {
                     Toast.makeText(this, R.string.settings_radius_no_permission,
@@ -113,7 +114,9 @@ public final class SettingsActivity extends AppCompatActivity {
 
         viewModel.syncMode().observe(this, mode -> {
             boolean isRadius = "radius".equals(mode);
-            binding.radioRoute.setChecked(!isRadius);
+            // A day trip (issue #9, chosen on a collection) is neither: leave both unchecked.
+            binding.radioRoute.setChecked(!isRadius
+                    && !nl.paree.climbpro.service.RouteSyncWorker.MODE_DAYTRIP.equals(mode));
             binding.radioRadius.setChecked(isRadius);
             binding.radiusContainer.setVisibility(isRadius ? android.view.View.VISIBLE : android.view.View.GONE);
         });
@@ -274,6 +277,19 @@ public final class SettingsActivity extends AppCompatActivity {
             PreferenceManager.getDefaultSharedPreferences(this).edit()
                     .putBoolean(GradientPalette.PREF_COLORBLIND, on).apply();
             SegmentColorPalette.setActive(GradientPalette.fromEnabled(on));
+            try {
+                SyncScheduler.triggerImmediateSync(this);
+            } catch (IllegalStateException e) {
+                // WorkManager not initialised (tests); the periodic sync picks it up later.
+            }
+        });
+        // Radius mode weather filter (issue #12): needs a connection at sync time; without one
+        // the full set is sent. Applied from the next sync, so kick one off.
+        binding.switchRadiusDryOnly.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(RouteSyncWorker.PREF_RADIUS_DRY_ONLY, false));
+        binding.switchRadiusDryOnly.setOnCheckedChangeListener((b, on) -> {
+            PreferenceManager.getDefaultSharedPreferences(this).edit()
+                    .putBoolean(RouteSyncWorker.PREF_RADIUS_DRY_ONLY, on).apply();
             try {
                 SyncScheduler.triggerImmediateSync(this);
             } catch (IllegalStateException e) {
@@ -465,6 +481,7 @@ public final class SettingsActivity extends AppCompatActivity {
                     Set<String> g = gateway.grantedPermissions();
                     for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                     granted = -1;
                 }
             }
@@ -531,7 +548,7 @@ public final class SettingsActivity extends AppCompatActivity {
     }
 
     private void renderHistoryBackfill(java.util.List<WorkInfo> infos) {
-        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS, MODE_PRIVATE)
+        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS_NAME, MODE_PRIVATE)
                 .getBoolean(StravaActivitiesRepository.PREF_BACKFILL_DONE, false);
         WorkInfo info = infos == null || infos.isEmpty() ? null : infos.get(infos.size() - 1);
         boolean active = info != null && !info.getState().isFinished();
@@ -566,6 +583,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 msg = n == 0 ? getString(R.string.settings_health_no_new)
                         : getString(R.string.settings_health_exported, n);
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 msg = getString(R.string.settings_health_write_failed,
                         e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
             }
@@ -580,6 +598,7 @@ public final class SettingsActivity extends AppCompatActivity {
             try {
                 kg = new HealthConnectGateway(this).latestWeightKg();
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 kg = null;
             }
             Double weight = kg;

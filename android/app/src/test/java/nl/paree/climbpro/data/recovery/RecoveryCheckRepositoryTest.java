@@ -3,6 +3,7 @@ package nl.paree.climbpro.data.recovery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -29,7 +30,7 @@ public class RecoveryCheckRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), RecoveryCheckRepository.FILE);
+        file = new File(app.getFilesDir(), RecoveryCheckRepository.FILE_NAME);
         file.delete();
     }
 
@@ -92,14 +93,7 @@ public class RecoveryCheckRepositoryTest {
     @Test
     public void save_rejectsMissingRide() {
         RecoveryCheckRepository repo = new RecoveryCheckRepository(app);
-        try {
-            repo.save(0, 5, 3, null, null, 100);
-            throw new AssertionError("expected IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            // ok
-        } catch (Exception other) {
-            throw new AssertionError(other);
-        }
+        assertThrows(IllegalArgumentException.class, () -> repo.save(0, 5, 3, null, null, 100));
     }
 
     @Test

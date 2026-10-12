@@ -1,6 +1,7 @@
 {
   "v": 3,
   "mode": "radius",
+  "ord": 1,
   "climbs": [
     {
       "slat": 5084231,

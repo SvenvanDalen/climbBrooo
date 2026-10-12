@@ -69,6 +69,13 @@ class PhoneMessageCallback {
         // Optional virtual opponent "gh" (issue #178): the best earlier ride of this route as
         // [stepM, sec1, ...]. Replaced (or cleared) on every payload; malformed = none.
         data.setRouteGhost(msg.get("gh"));
+        // Optional "ord" (issue #9): 1 = radius payload is a day trip, ridden in payload order.
+        var ord = msg.get("ord");
+        data.ordered = ord != null && ord instanceof Toybox.Lang.Number && ord == 1;
+        // Optional per-gradient-class cadence "cg" (issue #18) and heart-rate zone "hg"
+        // (issue #24): 6 Numbers each, replaced (or cleared) on every payload.
+        data.cadenceByGrade = parseGradeClasses(msg.get("cg"), 250);
+        data.hrZoneByGrade = parseGradeClasses(msg.get("hg"), 5);
 
         // Everesting attempt (issue #217): cleared on every payload, set by the first climb
         // that carries a valid "ev".
@@ -91,6 +98,8 @@ class PhoneMessageCallback {
 
         data.payloadReceived = true;
         data.resetNavTrust();
+        data.nextClimbIndex = -1;
+        data.distToNextClimb = -1;
         for (var i = 0; i < data.climbCount; i++) {
             data.calibIdx[i] = 0;
             data.climbEntered[i] = false;
@@ -115,6 +124,8 @@ class PhoneMessageCallback {
         data.climbElevGain[idx]  = getInt(climbDict, "eg",  0);
         data.climbAvgGrad[idx]   = getInt(climbDict, "ag",  0);
         data.climbName[idx]      = climbDict.get("n");
+        // Optional "nw" (issue #27): 1 = the rider never rode this climb before.
+        data.climbNew[idx]       = getInt(climbDict, "nw", 0) == 1;
 
         // Radius mode: lat/lon as ints (degrees × 100000)
         var slatInt = climbDict.get("slat");
@@ -261,6 +272,20 @@ class PhoneMessageCallback {
             } else {
                 out[s] = gradColors[s];
             }
+        }
+        return out;
+    }
+
+    // "cg" / "hg" -> 6-element Array of Numbers in 0..max (anything else in a slot -> 0 =
+    // unknown), or null when absent, not an Array or not exactly 6 long.
+    function parseGradeClasses(raw, max) {
+        if (raw == null || !(raw instanceof Toybox.Lang.Array) || raw.size() != 6) {
+            return null;
+        }
+        var out = new [6];
+        for (var i = 0; i < 6; i++) {
+            var v = raw[i];
+            out[i] = (v instanceof Toybox.Lang.Number && v >= 0 && v <= max) ? v : 0;
         }
         return out;
     }

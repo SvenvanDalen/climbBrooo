@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public final class WatchRequestHandler {
 
@@ -41,9 +42,13 @@ public final class WatchRequestHandler {
     /** Display units sent as 'un' (issue #262); null = metric (no key). */
     private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
     /** Datafield slot layout sent as 'lay'; null = default layout (no key). */
+    @SuppressWarnings("java:S3077")
     private volatile WatchFieldLayoutStore layoutStore;
     /** Best ride per route for 'gh' (issue #178); null = never sent. */
+    @SuppressWarnings("java:S3077")
     private volatile nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo;
+    @SuppressWarnings("java:S3077")
+    private volatile java.util.function.Supplier<nl.paree.climbpro.service.WatchHabits> habitsSource;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -75,12 +80,20 @@ public final class WatchRequestHandler {
      * LOAD_ROUTE / SET_ACTIVE_ROUTE answer uses the same colors as the background sync.
      */
     public void setPaletteSource(java.util.function.IntSupplier source) {
-        if (source != null) this.paletteSource = source;
+        this.paletteSource = Objects.requireNonNull(source, "source");
     }
 
     /** Enables the virtual opponent ('gh', issue #178) in watch-requested route payloads. */
     public void setRouteGhostRepository(nl.paree.climbpro.data.route.RouteGhostRepository repo) {
         this.ghostRepo = repo;
+    }
+
+    /**
+     * Enables the rider-history keys ('nw', 'cg', 'hg'; issues #27, #18, #24) in
+     * watch-requested payloads. Read on every request so new rides count right away.
+     */
+    public void setHabitsSource(java.util.function.Supplier<nl.paree.climbpro.service.WatchHabits> source) {
+        this.habitsSource = source;
     }
 
     /** Enables the datafield slot layout ('lay') in watch-requested payloads. */
@@ -122,6 +135,7 @@ public final class WatchRequestHandler {
                 .withPalette(paletteSource.getAsInt());
         if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
         builder = builder.withFieldLayout(layoutStore != null ? layoutStore.load() : null);
+        if (habitsSource != null) builder = habitsSource.get().applyTo(builder);
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 

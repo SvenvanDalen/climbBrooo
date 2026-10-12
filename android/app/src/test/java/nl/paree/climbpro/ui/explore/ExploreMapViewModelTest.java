@@ -71,7 +71,7 @@ public class ExploreMapViewModelTest {
 
     private void writeRaw(String json) throws Exception {
         try (FileOutputStream out = new FileOutputStream(
-                new File(app.getFilesDir(), ExploreMapRepository.FILE))) {
+                new File(app.getFilesDir(), ExploreMapRepository.FILE_NAME))) {
             out.write(json.getBytes(StandardCharsets.UTF_8));
         }
     }

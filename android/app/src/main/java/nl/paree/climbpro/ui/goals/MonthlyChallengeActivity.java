@@ -21,7 +21,7 @@ import nl.paree.climbpro.domain.ride.MonthlyChallengeCalculator;
 import nl.paree.climbpro.domain.ride.MonthlyChallengeCalculator.Progress;
 import nl.paree.climbpro.domain.ride.MonthlyChallengeCalculator.Type;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Issue #192: the monthly personal challenge — pick a type and target (pre-filled with a
@@ -127,7 +127,7 @@ public final class MonthlyChallengeActivity extends AppCompatActivity {
         MonthlyChallengeViewModel.State s = viewModel.state().getValue();
         if (s == null) return;
         Type[] types = Type.values();
-        Type type = types[new Random().nextInt(types.length)];
+        Type type = types[ThreadLocalRandom.current().nextInt(types.length)];
         viewModel.setChallenge(type, suggestion(s, type));
     }
 
