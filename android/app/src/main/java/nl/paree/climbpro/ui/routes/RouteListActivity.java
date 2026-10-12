@@ -40,7 +40,6 @@ import nl.paree.climbpro.data.route.MyWhooshRouteStore;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.ShareLinkRouteFetcher;
 import nl.paree.climbpro.data.route.StoredRoute;
-import nl.paree.climbpro.ui.settings.SettingsActivity;
 import nl.paree.climbpro.ui.strava.StravaAuthActivity;
 
 import java.io.File;
@@ -107,60 +106,24 @@ public final class RouteListActivity extends AppCompatActivity {
             }
             @Override
             public void onRouteLongClick(nl.paree.climbpro.data.route.RouteCatalogEntry entry) {
-                String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
-                new AlertDialog.Builder(RouteListActivity.this)
-                        .setTitle(name != null ? name : entry.routeId)
-                        .setItems(new String[]{
-                                getString(R.string.route_list_action_add_to_collection),
-                                getString(R.string.action_delete),
-                                getString(R.string.route_list_action_ride_now)}, (d, which) -> {
-                            if (which == 2) {
-                                startQuickStart(entry);
-                            } else if (which == 0) {
-                                nl.paree.climbpro.ui.collections.CollectionMembershipDialog
-                                        .showForRoute(RouteListActivity.this, entry.routeId);
-                            } else {
-                                confirmDeleteRoute(entry.routeId, name);
-                            }
-                        })
-                        .show();
+                showRouteActions(entry);
             }
         });
 
         viewModel.routes().observe(this, adapter::setItems);
         viewModel.catalog().observe(this, catalog -> updateQuickStartButton());
 
-        binding.btnQuickStart.setOnClickListener(v -> {
-            RouteCatalogEntry route = QuickStart.resolve(
-                    QuickStart.activeRouteId(this), viewModel.catalog().getValue());
-            if (route != null) {
-                startQuickStart(route);
-            } else {
-                pickQuickStartRoute();
-            }
-        });
+        binding.btnQuickStart.setOnClickListener(v -> onQuickStartClicked());
         binding.btnQuickStartChange.setOnClickListener(v -> pickQuickStartRoute());
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
-        binding.chipAll.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(-1);
-        });
-        binding.chipAsphalt.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(SurfaceType.ASPHALT);
-        });
-        binding.chipGravel.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(SurfaceType.GRAVEL);
-        });
-        binding.chipDirt.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(SurfaceType.DIRT);
-        });
-        binding.chipCobblestone.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(SurfaceType.COBBLESTONE);
-        });
-        binding.chipMixed.setOnCheckedChangeListener((btn, checked) -> {
-            if (checked) viewModel.setSurfaceFilter(SurfaceType.MIXED);
-        });
+        bindSurfaceChip(binding.chipAll, -1);
+        bindSurfaceChip(binding.chipAsphalt, SurfaceType.ASPHALT);
+        bindSurfaceChip(binding.chipGravel, SurfaceType.GRAVEL);
+        bindSurfaceChip(binding.chipDirt, SurfaceType.DIRT);
+        bindSurfaceChip(binding.chipCobblestone, SurfaceType.COBBLESTONE);
+        bindSurfaceChip(binding.chipMixed, SurfaceType.MIXED);
         binding.maintenanceBanner.setOnClickListener(v -> startActivity(
                 nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this)));
 
@@ -175,52 +138,7 @@ public final class RouteListActivity extends AppCompatActivity {
             handleShareIntent(getIntent()); // a Komoot/RideWithGPS link shared to ClimbPro
         }
 
-        nl.paree.climbpro.service.SyncScheduler.manualSyncInfo(this).observe(this, infos -> {
-            if (infos == null || infos.isEmpty()) return;
-            androidx.work.WorkInfo info = infos.get(infos.size() - 1);
-
-            boolean pullDone =
-                    info.getProgress().getBoolean(
-                            nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false)
-                 || info.getOutputData().getBoolean(
-                            nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false);
-            if (pullDone) {
-                viewModel.loadRoutes(); // new routes appear immediately (at the bottom with default sort)
-            }
-
-            if (quickStartWorkId != null) {
-                for (androidx.work.WorkInfo w : infos) {
-                    if (!quickStartWorkId.equals(w.getId()) || !w.getState().isFinished()) continue;
-                    quickStartWorkId = null;
-                    // Cancelled = replaced by a newer sync, which reports for itself.
-                    if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
-                        boolean sent = w.getOutputData().getBoolean(
-                                nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
-                        Toast.makeText(this, sent
-                                        ? R.string.route_list_quick_start_sent
-                                        : R.string.route_list_quick_start_not_sent,
-                                Toast.LENGTH_LONG).show();
-                    }
-                    break;
-                }
-            }
-
-            if (info.getState().isFinished()) {
-                if (info.getState() == androidx.work.WorkInfo.State.SUCCEEDED) {
-                    int changed = info.getOutputData().getInt(
-                            nl.paree.climbpro.service.RouteSyncWorker.KEY_CHANGED, 0);
-                    viewModel.loadRoutes();
-                    viewModel.loadYearlyGoal(); // the Strava pull also refreshes the ride archive
-                    Toast.makeText(this,
-                            changed > 0
-                                    ? getString(R.string.route_list_sync_done_changes, changed)
-                                    : getString(R.string.route_list_sync_done_none),
-                            Toast.LENGTH_SHORT).show();
-                } else if (info.getState() == androidx.work.WorkInfo.State.FAILED) {
-                    Toast.makeText(this, R.string.route_list_sync_failed, Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        nl.paree.climbpro.service.SyncScheduler.manualSyncInfo(this).observe(this, this::onSyncInfo);
 
         ensureBluetoothPermission();
         // A local/dev build can't install a release APK over itself; only the menu item checks.
@@ -329,6 +247,93 @@ public final class RouteListActivity extends AppCompatActivity {
         Toast.makeText(this, R.string.route_list_update_downloading, Toast.LENGTH_SHORT).show();
     }
 
+    private void showRouteActions(RouteCatalogEntry entry) {
+        String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
+        new AlertDialog.Builder(RouteListActivity.this)
+                .setTitle(name != null ? name : entry.routeId)
+                .setItems(new String[]{
+                        getString(R.string.route_list_action_add_to_collection),
+                        getString(R.string.action_delete),
+                        getString(R.string.route_list_action_ride_now)}, (d, which) -> {
+                    if (which == 2) {
+                        startQuickStart(entry);
+                    } else if (which == 0) {
+                        nl.paree.climbpro.ui.collections.CollectionMembershipDialog
+                                .showForRoute(RouteListActivity.this, entry.routeId);
+                    } else {
+                        confirmDeleteRoute(entry.routeId, name);
+                    }
+                })
+                .show();
+    }
+
+    private void onQuickStartClicked() {
+        RouteCatalogEntry route = QuickStart.resolve(
+                QuickStart.activeRouteId(this), viewModel.catalog().getValue());
+        if (route != null) {
+            startQuickStart(route);
+        } else {
+            pickQuickStartRoute();
+        }
+    }
+
+    private void bindSurfaceChip(android.widget.CompoundButton chip, int surfaceType) {
+        chip.setOnCheckedChangeListener((btn, checked) -> {
+            if (checked) viewModel.setSurfaceFilter(surfaceType);
+        });
+    }
+
+    private void onSyncInfo(List<androidx.work.WorkInfo> infos) {
+        if (infos == null || infos.isEmpty()) return;
+        androidx.work.WorkInfo info = infos.get(infos.size() - 1);
+
+        boolean pullDone =
+                info.getProgress().getBoolean(
+                        nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false)
+             || info.getOutputData().getBoolean(
+                        nl.paree.climbpro.service.RouteSyncWorker.KEY_PULL_DONE, false);
+        if (pullDone) {
+            viewModel.loadRoutes(); // new routes appear immediately (at the bottom with default sort)
+        }
+
+        if (quickStartWorkId != null) reportQuickStart(infos);
+        if (info.getState().isFinished()) reportSyncResult(info);
+    }
+
+    /** Reports whether the quick-start sync reached the watch, once its work has finished. */
+    private void reportQuickStart(List<androidx.work.WorkInfo> infos) {
+        for (androidx.work.WorkInfo w : infos) {
+            if (!quickStartWorkId.equals(w.getId()) || !w.getState().isFinished()) continue;
+            quickStartWorkId = null;
+            // Cancelled = replaced by a newer sync, which reports for itself.
+            if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
+                boolean sent = w.getOutputData().getBoolean(
+                        nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
+                Toast.makeText(this, sent
+                                ? R.string.route_list_quick_start_sent
+                                : R.string.route_list_quick_start_not_sent,
+                        Toast.LENGTH_LONG).show();
+            }
+            break;
+        }
+    }
+
+    private void reportSyncResult(androidx.work.WorkInfo info) {
+        if (info.getState() == androidx.work.WorkInfo.State.SUCCEEDED) {
+            int changed = info.getOutputData().getInt(
+                    nl.paree.climbpro.service.RouteSyncWorker.KEY_CHANGED, 0);
+            viewModel.loadRoutes();
+            viewModel.loadYearlyGoal(); // the Strava pull also refreshes the ride archive
+            Toast.makeText(this,
+                    changed > 0
+                            ? getString(R.string.route_list_sync_done_changes, changed)
+                            : getString(R.string.route_list_sync_done_none),
+                    Toast.LENGTH_SHORT).show();
+        } else if (info.getState() == androidx.work.WorkInfo.State.FAILED) {
+            Toast.makeText(this, R.string.route_list_sync_failed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.route_list_menu, menu);
@@ -338,198 +343,37 @@ public final class RouteListActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
+        Intent screen = RouteListMenuScreens.intentFor(this, id);
+        if (screen != null) {
+            startActivity(screen);
+            return true;
+        }
         if (id == R.id.action_sync) {
             viewModel.triggerSync();
             Toast.makeText(this, R.string.route_list_sync_started, Toast.LENGTH_SHORT).show();
             return true;
-        } else if (id == R.id.action_strava) {
-            startActivity(new Intent(this, StravaAuthActivity.class));
-            return true;
-        } else if (id == R.id.action_import_share_link) {
+        }
+        if (id == R.id.action_import_share_link) {
             showShareLinkDialog();
             return true;
-        } else if (id == R.id.action_logbook) {
-            startActivity(new Intent(this,
-                    nl.paree.climbpro.ui.climbs.ClimbLogbookActivity.class));
-            return true;
-        } else if (id == R.id.action_planning) {
-            startActivity(new Intent(this,
-                    nl.paree.climbpro.ui.planning.PlannedClimbListActivity.class));
-            return true;
-        } else if (id == R.id.action_elevation_target) {
-            startActivity(nl.paree.climbpro.ui.planning.ElevationTargetActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_loop_generator) {
-            startActivity(nl.paree.climbpro.ui.planning.LoopGeneratorActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_climb_of_the_week) {
-            startActivity(nl.paree.climbpro.ui.climbs.ClimbOfTheWeekActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_top_climbs) {
-            startActivity(nl.paree.climbpro.ui.climbs.TopClimbsActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_favorite_start_points) {
-            startActivity(nl.paree.climbpro.ui.planning.FavoriteStartPointsActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_timeline) {
-            startActivity(new Intent(this,
-                    nl.paree.climbpro.ui.climbs.ClimbTimelineActivity.class));
-            return true;
-        } else if (id == R.id.action_rides) {
-            startActivity(nl.paree.climbpro.ui.rides.RideArchiveActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_records) {
-            startActivity(nl.paree.climbpro.ui.records.RideRecordsActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_friend_feed) {
-            startActivity(nl.paree.climbpro.ui.social.FriendFeedActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_ride_buddies) {
-            startActivity(nl.paree.climbpro.ui.social.RideBuddyActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_group_ride_planner) {
-            startActivity(nl.paree.climbpro.ui.social.GroupRidePlannerActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_hr_drift) {
-            startActivity(nl.paree.climbpro.ui.records.HeartRateDriftActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_mywhoosh) {
-            startActivity(nl.paree.climbpro.ui.mywhoosh.MyWhooshActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_power_curve) {
-            startActivity(nl.paree.climbpro.ui.records.PowerCurveActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_ftp_test) {
-            startActivity(nl.paree.climbpro.ui.records.FtpTestActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_zone_distribution) {
-            startActivity(nl.paree.climbpro.ui.records.ZoneDistributionActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_tire_pressure_log) {
-            startActivity(nl.paree.climbpro.ui.tire.TirePressureLogActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_saddle_height) {
-            startActivity(nl.paree.climbpro.ui.fit.SaddleHeightActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_battery_status) {
-            startActivity(nl.paree.climbpro.ui.battery.BatteryActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_pain_log) {
-            startActivity(nl.paree.climbpro.ui.pain.PainLogActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_sweat_loss) {
-            startActivity(nl.paree.climbpro.ui.hydration.SweatLossActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_safe_home) {
-            startActivity(nl.paree.climbpro.ui.safehome.SafeHomeActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_medical_id) {
-            startActivity(nl.paree.climbpro.ui.medical.MedicalIdActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_sunscreen) {
-            startActivity(nl.paree.climbpro.ui.sunscreen.SunscreenActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_clothing) {
-            startActivity(nl.paree.climbpro.ui.clothing.ClothingActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_air_quality) {
-            startActivity(nl.paree.climbpro.ui.airquality.AirQualityActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_comeback_plan) {
-            startActivity(nl.paree.climbpro.ui.comeback.ComebackPlanActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_unfinished_climbs) {
-            startActivity(new Intent(this,
-                    nl.paree.climbpro.ui.climbs.UnfinishedClimbsActivity.class));
-            return true;
-        } else if (id == R.id.action_wrapped) {
-            startActivity(new Intent(this,
-                    nl.paree.climbpro.ui.wrapped.ClimbWrappedActivity.class));
-            return true;
-        } else if (id == R.id.action_recovery) {
-            startActivity(new Intent(this,
-                    nl.paree.climbpro.ui.recovery.RecoveryAdviceActivity.class));
-            return true;
-        } else if (id == R.id.action_periodization) {
-            startActivity(nl.paree.climbpro.ui.training.ClimbPeriodizationActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_fitness) {
-            startActivity(nl.paree.climbpro.ui.fitness.FitnessActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_training_load_calendar) {
-            startActivity(
-                    nl.paree.climbpro.ui.fitness.TrainingLoadCalendarActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_photo_quiz) {
-            startActivity(nl.paree.climbpro.ui.quiz.PhotoQuizActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_collections) {
-            startActivity(nl.paree.climbpro.ui.collections.CollectionListActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_maintenance) {
-            startActivity(nl.paree.climbpro.ui.maintenance.MaintenanceActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_torque) {
-            startActivity(nl.paree.climbpro.ui.maintenance.TorqueActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_frame_size) {
-            startActivity(nl.paree.climbpro.ui.frame.FrameSizeActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_bike_garage) {
-            startActivity(nl.paree.climbpro.ui.bike.BikeGarageActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_bike_costs) {
-            startActivity(nl.paree.climbpro.ui.bike.BikeCostActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_climb_hygiene) {
-            startActivity(nl.paree.climbpro.ui.climbs.ClimbHygieneActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_batch_export) {
+        }
+        if (id == R.id.action_batch_export) {
             showBatchExportDialog();
             return true;
-        } else if (id == R.id.action_export_csv) {
+        }
+        if (id == R.id.action_export_csv) {
             exportCsv();
             return true;
-        } else if (id == R.id.action_privacy) {
-            startActivity(nl.paree.climbpro.ui.privacy.PrivacyDashboardActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_explore_map) {
-            startActivity(nl.paree.climbpro.ui.explore.ExploreMapActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_visited_regions) {
-            startActivity(nl.paree.climbpro.ui.regions.VisitedRegionsActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_elevation_goal) {
-            startActivity(nl.paree.climbpro.ui.goals.ElevationGoalActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_goal_event) {
-            startActivity(nl.paree.climbpro.ui.goals.GoalEventActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_event_calendar) {
-            startActivity(nl.paree.climbpro.ui.events.EventCalendarActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_packing_list) {
-            startActivity(nl.paree.climbpro.ui.planning.PackingListActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_bike_passport) {
-            startActivity(nl.paree.climbpro.ui.bike.BikePassportActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_badges) {
-            startActivity(nl.paree.climbpro.ui.goals.BadgesActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_monthly_challenge) {
-            startActivity(nl.paree.climbpro.ui.goals.MonthlyChallengeActivity.intentFor(this));
-            return true;
-        } else if (id == R.id.action_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-            return true;
-        } else if (id == R.id.action_sort) {
+        }
+        if (id == R.id.action_sort) {
             showSortDialog();
             return true;
-        } else if (id == R.id.action_status_filter) {
+        }
+        if (id == R.id.action_status_filter) {
             showStatusFilterDialog();
             return true;
-        } else if (id == R.id.action_check_update) {
+        }
+        if (id == R.id.action_check_update) {
             checkForAppUpdate(true);
             return true;
         }
@@ -785,6 +629,69 @@ public final class RouteListActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Climbs ridden in the period, one copy per climb. One route at a time, keeping only
+     * routes with a climb ridden that year: holding every route's full geometry at once can
+     * exhaust the heap on a large library (OOM is not caught by the caller).
+     */
+    private static List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> seasonMatches(
+            RouteRepository repo, List<nl.paree.climbpro.data.route.StoredClimbAttempt> attempts,
+            long[] range) {
+        List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches = new ArrayList<>();
+        java.util.Set<String> seenClimbIds = new java.util.HashSet<>();
+        for (nl.paree.climbpro.data.route.RouteCatalogEntry entry : repo.loadCatalog()) {
+            try {
+                StoredRoute route = repo.loadRoute(entry.routeId);
+                for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m
+                        : nl.paree.climbpro.domain.climb.SeasonClimbFilter.climbsInPeriod(
+                                java.util.Collections.singletonList(route), attempts,
+                                range[0], range[1])) {
+                    if (seenClimbIds.add(nl.paree.climbpro.domain.climb.ClimbIdentity.of(m.climb))) {
+                        matches.add(m);
+                    }
+                }
+            } catch (IOException e) {
+                Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
+            }
+        }
+        return matches;
+    }
+
+    /**
+     * Home climb (issue #92) without a usable zone centre: draw and persist one before
+     * sharing, exactly like the single-climb export does.
+     */
+    private static void ensurePrivacyCentre(RouteRepository repo,
+                                            nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m,
+                                            int privacyRadiusM) throws IOException {
+        if (!m.climb.isHome || nl.paree.climbpro.domain.climb.CoordinateFuzzer
+                .isUsableZoneCentre(m.climb.privacyCentreLat, m.climb.privacyCentreLon,
+                        m.climb.startLat, m.climb.startLon, privacyRadiusM)) {
+            return;
+        }
+        double[] centre = nl.paree.climbpro.domain.climb.CoordinateFuzzer
+                .randomZoneCentre(m.climb.startLat, m.climb.startLon,
+                        privacyRadiusM, new java.security.SecureRandom());
+        repo.setClimbPrivacyCentre(m.route.routeId, m.climbIndex, centre[0], centre[1]);
+        m.climb.privacyCentreLat = centre[0];
+        m.climb.privacyCentreLon = centre[1];
+    }
+
+    /** The export entry with the climb's best segment splits and PR time. */
+    private static nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry exportEntry(
+            nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m,
+            List<nl.paree.climbpro.data.route.StoredClimbAttempt> attempts,
+            Map<String, nl.paree.climbpro.domain.climb.LogbookCalculator.Summary> summaries) {
+        int segCount = m.climb.segments != null ? m.climb.segments.size() : 0;
+        String climbId = nl.paree.climbpro.domain.climb.ClimbIdentity.of(m.climb);
+        int[] bestSplitSec = nl.paree.climbpro.domain.climb.SegmentPrCalculator
+                .bestSplits(climbId, segCount, attempts);
+        nl.paree.climbpro.domain.climb.LogbookCalculator.Summary summary = summaries.get(climbId);
+        Integer bestElapsedSec = summary != null ? summary.prSec : null;
+        return new nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry(
+                m.route, m.climb, m.climbIndex, bestSplitSec, bestElapsedSec);
+    }
+
     private void exportSeason(int year) {
         executor.execute(() -> {
             try {
@@ -795,30 +702,8 @@ public final class RouteListActivity extends AppCompatActivity {
 
                 long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(
                         year, java.util.TimeZone.getDefault());
-                // One route at a time, keeping only routes with a climb ridden that year:
-                // holding every route's full geometry at once can exhaust the heap on a large
-                // library (OOM is not caught below).
                 List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches =
-                        new ArrayList<>();
-                java.util.Set<String> seenClimbIds = new java.util.HashSet<>();
-                for (nl.paree.climbpro.data.route.RouteCatalogEntry entry : repo.loadCatalog()) {
-                    try {
-                        StoredRoute route = repo.loadRoute(entry.routeId);
-                        for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m
-                                : nl.paree.climbpro.domain.climb.SeasonClimbFilter.climbsInPeriod(
-                                        java.util.Collections.singletonList(route), attempts,
-                                        range[0], range[1])) {
-                            int len = m.climb.length > 0 ? m.climb.length
-                                    : (m.climb.endDistance - m.climb.startDistance);
-                            if (seenClimbIds.add(nl.paree.climbpro.domain.climb.ClimbIdentity.of(
-                                    m.climb.startLat, m.climb.startLon, len))) {
-                                matches.add(m);
-                            }
-                        }
-                    } catch (IOException e) {
-                        Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
-                    }
-                }
+                        seasonMatches(repo, attempts, range);
 
                 if (matches.isEmpty()) {
                     runOnUiThread(() -> Toast.makeText(this,
@@ -838,31 +723,8 @@ public final class RouteListActivity extends AppCompatActivity {
                 List<nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry> exportEntries =
                         new ArrayList<>();
                 for (nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match m : matches) {
-                    if (m.climb.isHome && !nl.paree.climbpro.domain.climb.CoordinateFuzzer
-                            .isUsableZoneCentre(m.climb.privacyCentreLat, m.climb.privacyCentreLon,
-                                    m.climb.startLat, m.climb.startLon, privacyRadiusM)) {
-                        // Home climb (issue #92) without a usable zone centre: draw and persist
-                        // one before sharing, exactly like the single-climb export does.
-                        double[] centre = nl.paree.climbpro.domain.climb.CoordinateFuzzer
-                                .randomZoneCentre(m.climb.startLat, m.climb.startLon,
-                                        privacyRadiusM, new java.security.SecureRandom());
-                        repo.setClimbPrivacyCentre(m.route.routeId, m.climbIndex,
-                                centre[0], centre[1]);
-                        m.climb.privacyCentreLat = centre[0];
-                        m.climb.privacyCentreLon = centre[1];
-                    }
-                    int segCount = m.climb.segments != null ? m.climb.segments.size() : 0;
-                    int len = m.climb.length > 0 ? m.climb.length
-                            : (m.climb.endDistance - m.climb.startDistance);
-                    String climbId = nl.paree.climbpro.domain.climb.ClimbIdentity.of(
-                            m.climb.startLat, m.climb.startLon, len);
-                    int[] bestSplitSec = nl.paree.climbpro.domain.climb.SegmentPrCalculator
-                            .bestSplits(climbId, segCount, attempts);
-                    nl.paree.climbpro.domain.climb.LogbookCalculator.Summary summary =
-                            summaries.get(climbId);
-                    Integer bestElapsedSec = summary != null ? summary.prSec : null;
-                    exportEntries.add(new nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.Entry(
-                            m.route, m.climb, m.climbIndex, bestSplitSec, bestElapsedSec));
+                    ensurePrivacyCentre(repo, m, privacyRadiusM);
+                    exportEntries.add(exportEntry(m, attempts, summaries));
                 }
 
                 String gpx = nl.paree.climbpro.domain.climb.BatchClimbGpxWriter.toGpx(exportEntries,

@@ -92,43 +92,53 @@ public final class RoutePoiActivity extends AppCompatActivity {
         refresh.setEnabled(false);
         status.setText(R.string.route_pois_loading);
         io.execute(() -> {
-            String message;
-            List<RoutePoi> pois = null;
+            PoiLoad load = new PoiLoad();
             try {
-                StoredRoute route = new RouteRepository(this).loadRoute(routeId);
-                String fp = RoutePoiCache.fingerprint(route.lats, route.lons);
-                RoutePoiCache cache = new RoutePoiCache(getFilesDir());
-                RoutePoiCache.Entry cached = force ? null : cache.load(routeId, fp);
-                if (cached != null) {
-                    pois = cached.pois;
-                    message = summary(pois.size(), cached.fetchedAtMs);
-                } else {
-                    String query = OverpassQueryBuilder.build(route.lats, route.lons, MAX_OFFSET_M);
-                    if (query == null) {
-                        message = getString(R.string.route_pois_no_route);
-                    } else {
-                        pois = RoutePoiLocator.locate(new OverpassClient().fetch(query),
-                                route.lats, route.lons, MAX_OFFSET_M);
-                        long now = System.currentTimeMillis();
-                        cache.save(routeId, fp, now, pois);
-                        message = summary(pois.size(), now);
-                    }
-                }
+                loadPois(force, load);
             } catch (Exception e) {
                 String reason = e.getMessage() != null ? e.getMessage()
                         : e.getClass().getSimpleName();
-                message = getString(R.string.route_pois_failed, reason);
+                load.message = getString(R.string.route_pois_failed, reason);
             }
-            final List<RoutePoi> result = pois;
-            final String text = message;
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                refresh.setEnabled(true);
-                status.setText(text);
-                // A failed refresh keeps the list that was already shown.
-                if (result != null) adapter.setPois(result);
-            });
+            runOnUiThread(() -> showPois(load.message, load.pois));
         });
+    }
+
+    /** POIs found so far (null = none to show) and the status line. */
+    private static final class PoiLoad {
+        List<RoutePoi> pois;
+        String message;
+    }
+
+    /** The route's POIs from the cache (unless {@code force}) or from Overpass. */
+    private void loadPois(boolean force, PoiLoad load) throws java.io.IOException {
+        StoredRoute route = new RouteRepository(this).loadRoute(routeId);
+        String fp = RoutePoiCache.fingerprint(route.lats, route.lons);
+        RoutePoiCache cache = new RoutePoiCache(getFilesDir());
+        RoutePoiCache.Entry cached = force ? null : cache.load(routeId, fp);
+        if (cached != null) {
+            load.pois = cached.pois;
+            load.message = summary(cached.pois.size(), cached.fetchedAtMs);
+            return;
+        }
+        String query = OverpassQueryBuilder.build(route.lats, route.lons, MAX_OFFSET_M);
+        if (query == null) {
+            load.message = getString(R.string.route_pois_no_route);
+            return;
+        }
+        load.pois = RoutePoiLocator.locate(new OverpassClient().fetch(query),
+                route.lats, route.lons, MAX_OFFSET_M);
+        long now = System.currentTimeMillis();
+        cache.save(routeId, fp, now, load.pois);
+        load.message = summary(load.pois.size(), now);
+    }
+
+    private void showPois(String text, List<RoutePoi> result) {
+        if (isFinishing() || isDestroyed()) return;
+        refresh.setEnabled(true);
+        status.setText(text);
+        // A failed refresh keeps the list that was already shown.
+        if (result != null) adapter.setPois(result);
     }
 
     private String summary(int count, long fetchedAtMs) {

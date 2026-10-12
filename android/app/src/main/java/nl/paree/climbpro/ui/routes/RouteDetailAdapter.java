@@ -174,22 +174,23 @@ public final class RouteDetailAdapter
         });
     }
 
-    private void bindClimb(ClimbViewHolder h, int position) {
+    /** Index of the climb at adapter {@code position} among the climbs only. */
+    private int climbIndexAt(int position) {
         int climbIndex = 0;
         for (int i = 0; i < position; i++) {
             if (items.get(i) instanceof StoredClimb) climbIndex++;
         }
-        StoredClimb c = (StoredClimb) items.get(position);
-        String name = c.userDisplayName != null ? c.userDisplayName : c.name;
-        h.nameView.setText(name != null ? name : "Klim " + (climbIndex + 1));
-        h.colorBar.setBackgroundColor(
-                SegmentColorPalette.toColor(GradientColor.forGradient(c.avgGradient)));
+        return climbIndex;
+    }
+
+    /** Length, gradient, gain, difficulty, then category, surface and rating when known. */
+    private static String climbStats(StoredClimb c,
+                                     nl.paree.climbpro.domain.units.UnitFormatter units) {
         double distanceIntoRouteKm = c.startDistance / 1000.0;
         double difficulty = nl.paree.climbpro.domain.climb.DifficultyScoreCalculator
                 .score(c.elevationGain, c.avgGradient, distanceIntoRouteKm);
         String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(c);
         String categorySuffix = categoryLabel.isEmpty() ? "" : "  ·  " + categoryLabel;
-        nl.paree.climbpro.domain.units.UnitFormatter units = units(h.itemView);
         String statsText = String.format("%s · %.1f%% gem. · %s hoogte · moeilijkheid %.0f%s",
                 units.climbLength(c.length), c.avgGradient * 100,
                 units.elevation(c.elevationGain), difficulty, categorySuffix);
@@ -201,20 +202,25 @@ public final class RouteDetailAdapter
         if (!ratingBadge.isEmpty()) {
             statsText += " · " + ratingBadge;
         }
-        h.statsView.setText(statsText);
+        return statsText;
+    }
+
+    /** "  ·  ⏱ target" and "  ·  usage" suffixes when known for this climb. */
+    private String targetAndUsage(int climbIndex) {
+        StringBuilder sb = new StringBuilder();
         if (climbTargetSeconds != null && climbIndex < climbTargetSeconds.length
                 && climbTargetSeconds[climbIndex] >= 0) {
-            h.statsView.setText(h.statsView.getText() + "  ·  ⏱ "
-                    + nl.paree.climbpro.domain.power.DurationFormat.format(
-                            climbTargetSeconds[climbIndex]));
+            sb.append("  ·  ⏱ ").append(nl.paree.climbpro.domain.power.DurationFormat.format(
+                    climbTargetSeconds[climbIndex]));
         }
         if (climbUsageTypes != null && climbIndex < climbUsageTypes.length) {
             String usageLabel = ClimbUsageLabel.forType(climbUsageTypes[climbIndex]);
-            if (!usageLabel.isEmpty()) {
-                h.statsView.setText(h.statsView.getText() + "  ·  " + usageLabel);
-            }
+            if (!usageLabel.isEmpty()) sb.append("  ·  ").append(usageLabel);
         }
-        RestSplitAdvisor.Suggestion rest = restSuggestions.get(climbIndex);
+        return sb.toString();
+    }
+
+    private static void bindRestBadge(ClimbViewHolder h, RestSplitAdvisor.Suggestion rest) {
         if (rest != null) {
             h.restBadge.setVisibility(View.VISIBLE);
             h.restBadge.setOnClickListener(v -> android.widget.Toast.makeText(
@@ -227,6 +233,17 @@ public final class RouteDetailAdapter
             h.restBadge.setVisibility(View.GONE);
             h.restBadge.setOnClickListener(null);
         }
+    }
+
+    private void bindClimb(ClimbViewHolder h, int position) {
+        int climbIndex = climbIndexAt(position);
+        StoredClimb c = (StoredClimb) items.get(position);
+        String name = c.userDisplayName != null ? c.userDisplayName : c.name;
+        h.nameView.setText(name != null ? name : "Klim " + (climbIndex + 1));
+        h.colorBar.setBackgroundColor(
+                SegmentColorPalette.toColor(GradientColor.forGradient(c.avgGradient)));
+        h.statsView.setText(climbStats(c, units(h.itemView)) + targetAndUsage(climbIndex));
+        bindRestBadge(h, restSuggestions.get(climbIndex));
 
         final int ci = climbIndex;
         h.itemView.setOnClickListener(v -> {

@@ -128,24 +128,14 @@ public final class RouteDetailActivity extends AppCompatActivity {
         adapter.setOnStarredClickListener(this::showStarredSurfaceDialog);
         adapter.setOnSurfaceClickListener(this::showSurfaceSectionRowDialog);
 
-        viewModel.route().observe(this, route -> {
-            if (route == null) return;
-            String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-            binding.toolbar.setTitle(name != null ? name : route.routeId);
-            applyStoredNotes(route.notes != null ? route.notes : "");
-            drawRoute(route);
-        });
+        viewModel.route().observe(this, this::onRouteLoaded);
 
         // Pre-ride checklist reads passport at click time; until it's loaded (async, see
         // RouteDetailViewModel.loadRoute), disable the buttons that trigger it so the
         // checklist can't silently under-report climb data on a not-yet-ready route.
         binding.btnSelectRoute.setEnabled(false);
         binding.btnShareToGarmin.setEnabled(false);
-        viewModel.passport().observe(this, p -> {
-            renderPassport(p);
-            binding.btnSelectRoute.setEnabled(p != null);
-            binding.btnShareToGarmin.setEnabled(p != null);
-        });
+        viewModel.passport().observe(this, this::onPassport);
         viewModel.rideStatus().observe(this, status ->
                 binding.btnRideStatus.setText(
                         getString(R.string.route_detail_status, RouteRideStatus.label(status))));
@@ -154,29 +144,14 @@ public final class RouteDetailActivity extends AppCompatActivity {
         viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
 
         viewModel.routeItems().observe(this, items -> adapter.setItems(items));
-        viewModel.elevationProfile().observe(this, profile -> {
-            boolean empty = profile == null || profile.isEmpty();
-            binding.routeProfile.setProfile(profile);
-            binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
-            binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
-        });
-        viewModel.borderCrossings().observe(this, lines -> {
-            boolean none = lines == null || lines.isEmpty();
-            binding.borderCrossingsSummary.setText(
-                    none ? "" : android.text.TextUtils.join("\n", lines));
-            binding.borderCrossingsTitle.setVisibility(none ? View.GONE : View.VISIBLE);
-            binding.borderCrossingsSummary.setVisibility(none ? View.GONE : View.VISIBLE);
-        });
+        viewModel.elevationProfile().observe(this, this::showElevationProfile);
+        viewModel.borderCrossings().observe(this, this::showBorderCrossings);
 
         viewModel.error().observe(this, msg -> {
             binding.btnReverseRoute.setEnabled(true);
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         });
-        viewModel.saved().observe(this, ok -> {
-            if (Boolean.TRUE.equals(ok)) {
-                Toast.makeText(this, R.string.route_detail_saved, Toast.LENGTH_SHORT).show();
-            }
-        });
+        viewModel.saved().observe(this, this::onSaved);
         viewModel.onboardPushMessage().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
@@ -206,30 +181,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnReverseRoute.setEnabled(false);
             viewModel.reverseRoute(routeId);
         });
-        viewModel.reversedRoute().observe(this, result -> {
-            if (result == null) return;
-            viewModel.consumeReversedRoute();
-            binding.btnReverseRoute.setEnabled(true);
-            Toast.makeText(this, result.created
-                            ? getString(R.string.route_reverse_created, result.climbCount)
-                            : getString(R.string.route_reverse_exists),
-                    Toast.LENGTH_LONG).show();
-            startActivity(intentFor(this, result.routeId));
-        });
+        viewModel.reversedRoute().observe(this, this::onReversedRoute);
         binding.btnShortenRoute.setOnClickListener(v -> showShortenOptions());
-        viewModel.shortenedRoute().observe(this, result -> {
-            if (result == null) return;
-            viewModel.consumeShortenedRoute();
-            Toast.makeText(this, result.created
-                            ? getString(R.string.route_shorten_created, result.climbCount)
-                            : getString(R.string.route_shorten_exists),
-                    Toast.LENGTH_LONG).show();
-            startActivity(intentFor(this, result.routeId));
-        });
-        binding.btnTirePressure.setOnClickListener(v -> {
-            StoredRoute r = viewModel.route().getValue();
-            if (r != null) TirePressureAdviceDialog.show(this, r);
-        });
+        viewModel.shortenedRoute().observe(this, this::onShortenedRoute);
+        binding.btnTirePressure.setOnClickListener(v -> showTirePressureAdvice());
         binding.btnFuelPlanner.setOnClickListener(v -> startActivity(
                 nl.paree.climbpro.ui.nutrition.FuelPlannerActivity.intentFor(this, routeId)));
         binding.btnRainRadar.setOnClickListener(v -> toggleRainRadar());
@@ -240,22 +195,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
             binding.btnHazards.setText(R.string.hazards_loading);
             viewModel.lookupTunnels(routeId);
         });
-        viewModel.tunnelLookup().observe(this, result -> {
-            if (result == null) return;
-            viewModel.consumeTunnelLookup();
-            binding.btnHazards.setEnabled(true);
-            binding.btnHazards.setText(R.string.hazards_action);
-            binding.hazardsSummary.setText(describeHazards(result.route, result.error));
-            binding.hazardsSummary.setVisibility(View.VISIBLE);
-        });
+        viewModel.tunnelLookup().observe(this, this::onTunnelLookup);
         binding.btnOfflinePackage.setOnClickListener(v -> viewModel.loadOfflinePackage(routeId));
-        viewModel.offlinePackage().observe(this, result -> {
-            if (result == null) return;
-            viewModel.consumeOfflinePackage();
-            binding.btnOfflinePackage.setEnabled(true);
-            binding.btnOfflinePackage.setText(R.string.offline_pkg_action);
-            showOfflinePackage(result.pkg);
-        });
+        viewModel.offlinePackage().observe(this, this::onOfflinePackage);
         binding.btnRoutePois.setOnClickListener(v ->
                 startActivity(RoutePoiActivity.intentFor(this, routeId)));
 
@@ -299,6 +241,84 @@ public final class RouteDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) { finish(); return true; }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void onRouteLoaded(StoredRoute route) {
+        if (route == null) return;
+        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+        binding.toolbar.setTitle(name != null ? name : route.routeId);
+        applyStoredNotes(route.notes != null ? route.notes : "");
+        drawRoute(route);
+    }
+
+    private void onPassport(RoutePassport p) {
+        renderPassport(p);
+        binding.btnSelectRoute.setEnabled(p != null);
+        binding.btnShareToGarmin.setEnabled(p != null);
+    }
+
+    private void showElevationProfile(RouteElevationProfile profile) {
+        boolean empty = profile == null || profile.isEmpty();
+        binding.routeProfile.setProfile(profile);
+        binding.routeProfile.setVisibility(empty ? View.GONE : View.VISIBLE);
+        binding.routeProfileEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+    }
+
+    private void showBorderCrossings(List<String> lines) {
+        boolean none = lines == null || lines.isEmpty();
+        binding.borderCrossingsSummary.setText(
+                none ? "" : android.text.TextUtils.join("\n", lines));
+        binding.borderCrossingsTitle.setVisibility(none ? View.GONE : View.VISIBLE);
+        binding.borderCrossingsSummary.setVisibility(none ? View.GONE : View.VISIBLE);
+    }
+
+    private void onSaved(Boolean ok) {
+        if (Boolean.TRUE.equals(ok)) {
+            Toast.makeText(this, R.string.route_detail_saved, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void onReversedRoute(nl.paree.climbpro.data.route.RouteReverseService.Result result) {
+        if (result == null) return;
+        viewModel.consumeReversedRoute();
+        binding.btnReverseRoute.setEnabled(true);
+        Toast.makeText(this, result.created
+                        ? getString(R.string.route_reverse_created, result.climbCount)
+                        : getString(R.string.route_reverse_exists),
+                Toast.LENGTH_LONG).show();
+        startActivity(intentFor(this, result.routeId));
+    }
+
+    private void onShortenedRoute(RouteShortenService.Result result) {
+        if (result == null) return;
+        viewModel.consumeShortenedRoute();
+        Toast.makeText(this, result.created
+                        ? getString(R.string.route_shorten_created, result.climbCount)
+                        : getString(R.string.route_shorten_exists),
+                Toast.LENGTH_LONG).show();
+        startActivity(intentFor(this, result.routeId));
+    }
+
+    private void showTirePressureAdvice() {
+        StoredRoute r = viewModel.route().getValue();
+        if (r != null) TirePressureAdviceDialog.show(this, r);
+    }
+
+    private void onTunnelLookup(RouteDetailViewModel.TunnelLookup result) {
+        if (result == null) return;
+        viewModel.consumeTunnelLookup();
+        binding.btnHazards.setEnabled(true);
+        binding.btnHazards.setText(R.string.hazards_action);
+        binding.hazardsSummary.setText(describeHazards(result.route, result.error));
+        binding.hazardsSummary.setVisibility(View.VISIBLE);
+    }
+
+    private void onOfflinePackage(RouteDetailViewModel.OfflineResult result) {
+        if (result == null) return;
+        viewModel.consumeOfflinePackage();
+        binding.btnOfflinePackage.setEnabled(true);
+        binding.btnOfflinePackage.setText(R.string.offline_pkg_action);
+        showOfflinePackage(result.pkg);
     }
 
     private void renderPassport(RoutePassport p) {
@@ -382,12 +402,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
      */
     private void toggleRainRadar() {
         if (rainShown) {
-            if (rainOverlay != null) binding.mapView.getOverlays().remove(rainOverlay);
-            rainOverlay = null;
-            rainShown = false;
-            binding.rainSummary.setVisibility(View.GONE);
-            binding.btnRainRadar.setText(R.string.route_detail_rain_show);
-            binding.mapView.invalidate();
+            hideRainRadar();
             return;
         }
         StoredRoute r = viewModel.route().getValue();
@@ -412,65 +427,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         final java.util.concurrent.atomic.AtomicReference<String> forecastRef =
                 new java.util.concurrent.atomic.AtomicReference<>();
 
-        Thread radarThread = new Thread(() -> {
-            RainRadarOverlay overlay = null;
-            String radarLine;
-            try {
-                RainViewerClient rv = new RainViewerClient();
-                RainRadarFrame frame = rv.fetchLatestFrame();
-                if (frame == null) {
-                    radarLine = getString(R.string.route_detail_radar_none);
-                } else {
-                    List<RadarTiles.Tile> got = new ArrayList<>();
-                    List<Bitmap> bitmaps = new ArrayList<>();
-                    for (RadarTiles.Tile t : tiles) {
-                        try {
-                            byte[] png = rv.fetchTile(frame.tileUrl(t));
-                            Bitmap b;
-                            try {
-                                b = BitmapFactory.decodeByteArray(png, 0, png.length);
-                            } catch (OutOfMemoryError oom) {
-                                b = null; // decode failed; skip this tile, keep the rest
-                            }
-                            if (b != null) {
-                                got.add(t);
-                                bitmaps.add(b);
-                            }
-                        } catch (java.io.InterruptedIOException timeout) {
-                            // slow network: stop asking for more tiles, keep what already decoded
-                            break;
-                        } catch (java.io.IOException ignored) {
-                            // skip this tile; the others still show
-                        }
-                    }
-                    if (got.isEmpty()) {
-                        radarLine = getString(R.string.route_detail_radar_no_tiles);
-                    } else {
-                        overlay = new RainRadarOverlay(got, bitmaps);
-                        radarLine = getString(R.string.route_detail_radar_time,
-                                DateTimeFormatter.ofPattern("HH:mm")
-                                        .withZone(ZoneId.systemDefault()).format(frame.time));
-                    }
-                }
-            } catch (Exception e) {
-                radarLine = getString(R.string.route_detail_radar_failed, reason(e));
-            }
-            radarLineRef.set(radarLine);
-            overlayRef.set(overlay);
-        }, "rain-radar-tiles");
-
-        Thread forecastThread = new Thread(() -> {
-            String forecast;
-            try {
-                PrecipitationGrid g = new OpenMeteoClient()
-                        .fetchPrecipitation(samples, RAIN_FORECAST_HOURS);
-                forecast = RouteRainSummary.describe(samples, g, Instant.now(),
-                        RAIN_FORECAST_HOURS, ZoneId.systemDefault());
-            } catch (Exception e) {
-                forecast = getString(R.string.route_detail_forecast_failed, reason(e));
-            }
-            forecastRef.set(forecast);
-        }, "rain-radar-forecast");
+        Thread radarThread = new Thread(() -> fetchRadar(tiles, radarLineRef, overlayRef),
+                "rain-radar-tiles");
+        Thread forecastThread = new Thread(() -> forecastRef.set(rainForecastText(samples)),
+                "rain-radar-forecast");
 
         new Thread(() -> {
             forecastThread.start();
@@ -484,20 +444,101 @@ public final class RouteDetailActivity extends AppCompatActivity {
             final String text = radarLineRef.get() + "\n\n" + forecastRef.get()
                     + "\n\n" + getString(R.string.route_detail_rain_source);
             final RainRadarOverlay result = overlayRef.get();
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                binding.btnRainRadar.setEnabled(true);
-                binding.btnRainRadar.setText(R.string.route_detail_rain_hide);
-                rainShown = true;
-                rainOverlay = result;
-                if (result != null) {
-                    binding.mapView.getOverlays().add(0, result);
-                    binding.mapView.invalidate();
-                }
-                binding.rainSummary.setText(text);
-                binding.rainSummary.setVisibility(View.VISIBLE);
-            });
+            runOnUiThread(() -> showRainRadar(text, result));
         }, "rain-radar").start();
+    }
+
+    private void hideRainRadar() {
+        if (rainOverlay != null) binding.mapView.getOverlays().remove(rainOverlay);
+        rainOverlay = null;
+        rainShown = false;
+        binding.rainSummary.setVisibility(View.GONE);
+        binding.btnRainRadar.setText(R.string.route_detail_rain_show);
+        binding.mapView.invalidate();
+    }
+
+    private void showRainRadar(String text, RainRadarOverlay result) {
+        if (isFinishing() || isDestroyed()) return;
+        binding.btnRainRadar.setEnabled(true);
+        binding.btnRainRadar.setText(R.string.route_detail_rain_hide);
+        rainShown = true;
+        rainOverlay = result;
+        if (result != null) {
+            binding.mapView.getOverlays().add(0, result);
+            binding.mapView.invalidate();
+        }
+        binding.rainSummary.setText(text);
+        binding.rainSummary.setVisibility(View.VISIBLE);
+    }
+
+    /** Latest radar frame over the route's tiles: a status line, plus the overlay if any. */
+    private void fetchRadar(List<RadarTiles.Tile> tiles,
+                            java.util.concurrent.atomic.AtomicReference<String> radarLineRef,
+                            java.util.concurrent.atomic.AtomicReference<RainRadarOverlay> overlayRef) {
+        RainRadarOverlay overlay = null;
+        String radarLine;
+        try {
+            RainViewerClient rv = new RainViewerClient();
+            RainRadarFrame frame = rv.fetchLatestFrame();
+            if (frame == null) {
+                radarLine = getString(R.string.route_detail_radar_none);
+            } else {
+                List<RadarTiles.Tile> got = new ArrayList<>();
+                List<Bitmap> bitmaps = new ArrayList<>();
+                fetchTiles(rv, frame, tiles, got, bitmaps);
+                if (got.isEmpty()) {
+                    radarLine = getString(R.string.route_detail_radar_no_tiles);
+                } else {
+                    overlay = new RainRadarOverlay(got, bitmaps);
+                    radarLine = getString(R.string.route_detail_radar_time,
+                            DateTimeFormatter.ofPattern("HH:mm")
+                                    .withZone(ZoneId.systemDefault()).format(frame.time));
+                }
+            }
+        } catch (Exception e) {
+            radarLine = getString(R.string.route_detail_radar_failed, reason(e));
+        }
+        radarLineRef.set(radarLine);
+        overlayRef.set(overlay);
+    }
+
+    /** Downloads and decodes each tile into {@code got}/{@code bitmaps}; failed tiles are skipped. */
+    private static void fetchTiles(RainViewerClient rv, RainRadarFrame frame,
+                                   List<RadarTiles.Tile> tiles, List<RadarTiles.Tile> got,
+                                   List<Bitmap> bitmaps) {
+        for (RadarTiles.Tile t : tiles) {
+            try {
+                Bitmap b = decodeTile(rv.fetchTile(frame.tileUrl(t)));
+                if (b != null) {
+                    got.add(t);
+                    bitmaps.add(b);
+                }
+            } catch (java.io.InterruptedIOException timeout) {
+                // slow network: stop asking for more tiles, keep what already decoded
+                break;
+            } catch (java.io.IOException ignored) {
+                // skip this tile; the others still show
+            }
+        }
+    }
+
+    private static Bitmap decodeTile(byte[] png) {
+        try {
+            return BitmapFactory.decodeByteArray(png, 0, png.length);
+        } catch (OutOfMemoryError oom) {
+            return null; // decode failed; skip this tile, keep the rest
+        }
+    }
+
+    private String rainForecastText(List<RouteSampler.Sample> samples) {
+        try {
+            PrecipitationGrid g = new OpenMeteoClient()
+                    .fetchPrecipitation(samples, RAIN_FORECAST_HOURS);
+            return RouteRainSummary.describe(samples, g, Instant.now(),
+                    RAIN_FORECAST_HOURS, ZoneId.systemDefault());
+        } catch (Exception e) {
+            return getString(R.string.route_detail_forecast_failed, reason(e));
+        }
     }
 
     /**

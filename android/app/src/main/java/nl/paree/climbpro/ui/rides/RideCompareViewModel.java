@@ -60,39 +60,45 @@ public final class RideCompareViewModel extends AndroidViewModel {
         if (started) return;
         started = true;
         executor.execute(() -> {
-            StoredRide a = null;
-            StoredRide b = null;
-            for (StoredRide r : new RideRepository(getApplication()).loadAll()) {
-                if (r.activityId == activityIdA) a = r;
-                if (r.activityId == activityIdB) b = r;
-            }
-            if (a == null || b == null) {
+            StoredRide[] pair = findRides(activityIdA, activityIdB);
+            if (pair == null) {
                 error.postValue("Rit niet gevonden in het archief");
                 return;
-            }
-            if (b.startEpochSec < a.startEpochSec) {
-                StoredRide t = a;
-                a = b;
-                b = t;
             }
             StravaAuthRepository auth = new StravaAuthRepository(getApplication());
             if (!auth.isAuthorised()) {
                 error.postValue("Verbind eerst Strava om ritten te vergelijken");
                 return;
             }
-            try {
-                StravaActivitiesRepository repo = new StravaActivitiesRepository(
-                        getApplication(), auth, new RouteRepository(getApplication()),
-                        new ClimbAttemptRepository(getApplication()));
-                RideStreams sa = repo.fetchRideStreams(a.activityId);
-                RideStreams sb = repo.fetchRideStreams(b.activityId);
-                result.postValue(new Result(a, b, RideComparison.compare(sa, sb)));
-            } catch (Exception e) {
-                Log.w(TAG, "Stream fetch failed", e);
-                error.postValue("Streams ophalen mislukt: "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-            }
+            compareStreams(auth, pair[0], pair[1]);
         });
+    }
+
+    /** Both rides from the archive, oldest first; null when either is missing. */
+    private StoredRide[] findRides(long activityIdA, long activityIdB) {
+        StoredRide a = null;
+        StoredRide b = null;
+        for (StoredRide r : new RideRepository(getApplication()).loadAll()) {
+            if (r.activityId == activityIdA) a = r;
+            if (r.activityId == activityIdB) b = r;
+        }
+        if (a == null || b == null) return null;
+        return b.startEpochSec < a.startEpochSec ? new StoredRide[]{b, a} : new StoredRide[]{a, b};
+    }
+
+    private void compareStreams(StravaAuthRepository auth, StoredRide a, StoredRide b) {
+        try {
+            StravaActivitiesRepository repo = new StravaActivitiesRepository(
+                    getApplication(), auth, new RouteRepository(getApplication()),
+                    new ClimbAttemptRepository(getApplication()));
+            RideStreams sa = repo.fetchRideStreams(a.activityId);
+            RideStreams sb = repo.fetchRideStreams(b.activityId);
+            result.postValue(new Result(a, b, RideComparison.compare(sa, sb)));
+        } catch (Exception e) {
+            Log.w(TAG, "Stream fetch failed", e);
+            error.postValue("Streams ophalen mislukt: "
+                    + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        }
     }
 
     @Override
