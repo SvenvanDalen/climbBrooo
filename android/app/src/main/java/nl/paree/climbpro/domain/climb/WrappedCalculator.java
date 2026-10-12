@@ -70,6 +70,39 @@ public final class WrappedCalculator {
         }
     }
 
+    private static Highlights highlights(Map<String, Acc> byClimb) {
+        Highlights h = new Highlights();
+        List<String> climbIds = new ArrayList<>(byClimb.keySet());
+        climbIds.sort(Comparator.naturalOrder()); // deterministic base ordering for tie-breaks
+
+        for (String climbId : climbIds) {
+            Acc acc = byClimb.get(climbId);
+
+            if (h.favoriteId == null
+                    || acc.attemptCount > h.favoriteCount
+                    || (acc.attemptCount == h.favoriteCount
+                        && acc.totalElapsedSec > byClimb.get(h.favoriteId).totalElapsedSec)) {
+                h.favoriteId = climbId;
+                h.favoriteCount = acc.attemptCount;
+            }
+
+            if (acc.validCount >= 2) considerImprovement(h, climbId, acc, byClimb);
+        }
+        return h;
+    }
+
+    private static void considerImprovement(Highlights h, String climbId, Acc acc,
+                                            Map<String, Acc> byClimb) {
+        int candidate = acc.earliestSec - acc.fastestSec;
+        if (h.improvementId == null
+                || candidate > h.improvementSec
+                || (candidate == h.improvementSec
+                    && acc.attemptCount > byClimb.get(h.improvementId).attemptCount)) {
+            h.improvementId = climbId;
+            h.improvementSec = candidate;
+        }
+    }
+
     private static final class Acc {
         int    attemptCount = 0;
         /**
@@ -82,6 +115,29 @@ public final class WrappedCalculator {
         long   earliestDateSec = Long.MAX_VALUE;
         int    earliestSec = 0;
         long   totalElapsedSec = 0;
+
+        void add(StoredClimbAttempt a) {
+            attemptCount++;
+            totalElapsedSec += a.elapsedSec;
+            // fastestSec/earliestSec feed biggestImprovement, a PR-like comparison —
+            // deviated attempts don't contribute to it (issue #77), though they still
+            // count toward attemptCount/totalElapsedSec/favorite-climb tallying above.
+            if (a.routeDeviation) return;
+            validCount++;
+            if (a.elapsedSec < fastestSec) fastestSec = a.elapsedSec;
+            if (a.dateEpochSec < earliestDateSec) {
+                earliestDateSec = a.dateEpochSec;
+                earliestSec = a.elapsedSec;
+            }
+        }
+    }
+
+    /** Most-ridden climb and the climb with the biggest improvement (ids; null if none). */
+    private static final class Highlights {
+        String favoriteId;
+        int favoriteCount;
+        String improvementId;
+        int improvementSec = Integer.MIN_VALUE;
     }
 
     public static int yearOf(long dateEpochSec) {
@@ -108,57 +164,13 @@ public final class WrappedCalculator {
             totalClimbingTimeSec += a.elapsedSec;
             ClimbInfo info = climbInfo.get(a.climbId);
             totalElevationGainM += info != null ? info.elevationGainM : 0;
-
-            Acc acc = byClimb.get(a.climbId);
-            if (acc == null) {
-                acc = new Acc();
-                byClimb.put(a.climbId, acc);
-            }
-            acc.attemptCount++;
-            acc.totalElapsedSec += a.elapsedSec;
-            // fastestSec/earliestSec feed biggestImprovement below, a PR-like comparison —
-            // deviated attempts don't contribute to it (issue #77), though they still
-            // count toward attemptCount/totalElapsedSec/favorite-climb tallying above.
-            if (!a.routeDeviation) {
-                acc.validCount++;
-                if (a.elapsedSec < acc.fastestSec) acc.fastestSec = a.elapsedSec;
-                if (a.dateEpochSec < acc.earliestDateSec) {
-                    acc.earliestDateSec = a.dateEpochSec;
-                    acc.earliestSec = a.elapsedSec;
-                }
-            }
+            byClimb.computeIfAbsent(a.climbId, k -> new Acc()).add(a);
         }
 
-        String favoriteId = null;
-        int favoriteCount = 0;
-        String improvementId = null;
-        int improvementSec = Integer.MIN_VALUE;
-
-        List<String> climbIds = new ArrayList<>(byClimb.keySet());
-        climbIds.sort(Comparator.naturalOrder()); // deterministic base ordering for tie-breaks
-
-        for (String climbId : climbIds) {
-            Acc acc = byClimb.get(climbId);
-
-            if (favoriteId == null
-                    || acc.attemptCount > favoriteCount
-                    || (acc.attemptCount == favoriteCount
-                        && acc.totalElapsedSec > byClimb.get(favoriteId).totalElapsedSec)) {
-                favoriteId = climbId;
-                favoriteCount = acc.attemptCount;
-            }
-
-            if (acc.validCount >= 2) {
-                int candidate = acc.earliestSec - acc.fastestSec;
-                if (improvementId == null
-                        || candidate > improvementSec
-                        || (candidate == improvementSec
-                            && acc.attemptCount > byClimb.get(improvementId).attemptCount)) {
-                    improvementId = climbId;
-                    improvementSec = candidate;
-                }
-            }
-        }
+        Highlights h = highlights(byClimb);
+        String favoriteId = h.favoriteId;
+        String improvementId = h.improvementId;
+        int improvementSec = h.improvementSec;
 
         String favoriteName = favoriteId != null ? nameOf(favoriteId, climbInfo) : null;
         String improvementName = improvementId != null ? nameOf(improvementId, climbInfo) : null;

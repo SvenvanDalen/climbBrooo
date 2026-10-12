@@ -52,12 +52,7 @@ public final class VamCalculator {
             return fallback;
         }
 
-        List<RoutePoint> windowPoints = new java.util.ArrayList<>();
-        for (RoutePoint p : climbPoints) {
-            if (p.distance >= segStartDist - 0.5 && p.distance <= segEndDist + 0.5) {
-                windowPoints.add(p);
-            }
-        }
+        List<RoutePoint> windowPoints = pointsWithin(climbPoints, segStartDist, segEndDist);
         if (windowPoints.size() < 2) {
             return fallback;
         }
@@ -86,6 +81,18 @@ public final class VamCalculator {
             }
         }
         return peak;
+    }
+
+    /** Points between the segment bounds (with half a metre of rounding slack). */
+    private static List<RoutePoint> pointsWithin(List<RoutePoint> points, double startDist,
+                                                 double endDist) {
+        List<RoutePoint> out = new java.util.ArrayList<>();
+        for (RoutePoint p : points) {
+            if (p.distance >= startDist - 0.5 && p.distance <= endDist + 0.5) {
+                out.add(p);
+            }
+        }
+        return out;
     }
 
     private static int round(double v) {

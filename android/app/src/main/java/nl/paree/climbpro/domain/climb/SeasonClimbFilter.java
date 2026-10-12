@@ -60,33 +60,46 @@ public final class SeasonClimbFilter {
     public static List<Match> climbsInPeriod(List<StoredRoute> routes,
             List<StoredClimbAttempt> attempts, long fromEpochSecInclusive,
             long toEpochSecExclusive) {
-        Set<String> climbIdsInPeriod = new HashSet<>();
-        if (attempts != null) {
-            for (StoredClimbAttempt a : attempts) {
-                if (a == null || a.climbId == null) continue;
-                if (a.dateEpochSec >= fromEpochSecInclusive
-                        && a.dateEpochSec < toEpochSecExclusive) {
-                    climbIdsInPeriod.add(a.climbId);
-                }
-            }
-        }
+        Set<String> climbIdsInPeriod =
+                climbIdsInPeriod(attempts, fromEpochSecInclusive, toEpochSecExclusive);
 
         List<Match> out = new ArrayList<>();
         if (routes == null || climbIdsInPeriod.isEmpty()) return out;
         Set<String> emitted = new HashSet<>();
         for (StoredRoute route : routes) {
             if (route == null || route.climbs == null) continue;
-            for (int i = 0; i < route.climbs.size(); i++) {
-                StoredClimb c = route.climbs.get(i);
-                if (c == null) continue;
-                int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
-                if (climbIdsInPeriod.contains(climbId) && emitted.add(climbId)) {
-                    out.add(new Match(route, c, i));
-                }
-            }
+            addMatches(route, climbIdsInPeriod, emitted, out);
         }
         return out;
+    }
+
+    private static Set<String> climbIdsInPeriod(List<StoredClimbAttempt> attempts,
+                                                long fromEpochSecInclusive,
+                                                long toEpochSecExclusive) {
+        Set<String> ids = new HashSet<>();
+        if (attempts == null) return ids;
+        for (StoredClimbAttempt a : attempts) {
+            if (a == null || a.climbId == null) continue;
+            if (a.dateEpochSec >= fromEpochSecInclusive
+                    && a.dateEpochSec < toEpochSecExclusive) {
+                ids.add(a.climbId);
+            }
+        }
+        return ids;
+    }
+
+    /** Adds every climb of {@code route} ridden in the period that wasn't emitted yet. */
+    private static void addMatches(StoredRoute route, Set<String> climbIdsInPeriod,
+                                   Set<String> emitted, List<Match> out) {
+        for (int i = 0; i < route.climbs.size(); i++) {
+            StoredClimb c = route.climbs.get(i);
+            if (c == null) continue;
+            int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+            String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
+            if (climbIdsInPeriod.contains(climbId) && emitted.add(climbId)) {
+                out.add(new Match(route, c, i));
+            }
+        }
     }
 
     /**

@@ -58,16 +58,21 @@ public final class UnfinishedClimbsCalculator {
 
         List<UnfinishedClimb> out = new ArrayList<>(byClimb.size());
         for (Map.Entry<String, List<StoredIncompleteClimbAttempt>> e : byClimb.entrySet()) {
-            long lastDate = 0L;
-            int bestDistance = 0;
-            for (StoredIncompleteClimbAttempt a : e.getValue()) {
-                if (a.dateEpochSec > lastDate) lastDate = a.dateEpochSec;
-                if (a.distanceCoveredM > bestDistance) bestDistance = a.distanceCoveredM;
-            }
-            out.add(new UnfinishedClimb(e.getKey(), lastDate, bestDistance, e.getValue().size()));
+            out.add(summarize(e.getKey(), e.getValue()));
         }
 
         Collections.sort(out, (a, b) -> Long.compare(b.lastAttemptDateSec, a.lastAttemptDateSec));
         return out;
+    }
+
+    private static UnfinishedClimb summarize(String climbId,
+                                             List<StoredIncompleteClimbAttempt> attempts) {
+        long lastDate = 0L;
+        int bestDistance = 0;
+        for (StoredIncompleteClimbAttempt a : attempts) {
+            if (a.dateEpochSec > lastDate) lastDate = a.dateEpochSec;
+            if (a.distanceCoveredM > bestDistance) bestDistance = a.distanceCoveredM;
+        }
+        return new UnfinishedClimb(climbId, lastDate, bestDistance, attempts.size());
     }
 }

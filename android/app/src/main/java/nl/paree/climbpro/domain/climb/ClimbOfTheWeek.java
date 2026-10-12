@@ -155,11 +155,7 @@ public final class ClimbOfTheWeek {
                                         List<DailyForecast.Day> forecast, String pinnedClimbId) {
         if (candidates == null || today == null) return Collections.emptyList();
 
-        Map<String, Candidate> unique = new LinkedHashMap<>();
-        for (Candidate c : candidates) {
-            if (c == null || !validCoord(c.startLat, c.startLon)) continue;
-            unique.putIfAbsent(c.key(), c);
-        }
+        Map<String, Candidate> unique = uniqueValid(candidates);
         if (unique.isEmpty()) return Collections.emptyList();
 
         boolean haveOrigin = validCoord(originLat, originLon);
@@ -180,9 +176,7 @@ public final class ClimbOfTheWeek {
 
         DailyForecast.Day best = bestDay(forecast, today);
         Outlook outlook = best == null ? null : outlookFor(dayQuality(best));
-        double maxDifficulty = 0;
-        for (Candidate c : pool) maxDifficulty = Math.max(maxDifficulty, difficulty(c));
-        if (pinned != null) maxDifficulty = Math.max(maxDifficulty, difficulty(pinned));
+        double maxDifficulty = maxDifficulty(pool, pinned);
 
         List<Suggestion> out = new ArrayList<>();
         for (Candidate c : pool) {
@@ -298,6 +292,23 @@ public final class ClimbOfTheWeek {
     }
 
     private interface Filter { boolean keep(Candidate c); }
+
+    /** Candidates with a valid start coordinate, first one per key. */
+    private static Map<String, Candidate> uniqueValid(List<Candidate> candidates) {
+        Map<String, Candidate> unique = new LinkedHashMap<>();
+        for (Candidate c : candidates) {
+            if (c == null || !validCoord(c.startLat, c.startLon)) continue;
+            unique.putIfAbsent(c.key(), c);
+        }
+        return unique;
+    }
+
+    private static double maxDifficulty(List<Candidate> pool, Candidate pinned) {
+        double max = 0;
+        for (Candidate c : pool) max = Math.max(max, difficulty(c));
+        if (pinned != null) max = Math.max(max, difficulty(pinned));
+        return max;
+    }
 
     private static List<Candidate> keepIfAny(List<Candidate> in, Filter f) {
         List<Candidate> out = new ArrayList<>();

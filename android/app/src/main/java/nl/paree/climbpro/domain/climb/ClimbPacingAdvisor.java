@@ -126,108 +126,144 @@ public final class ClimbPacingAdvisor {
      */
     public static Advice analyze(int[] segDist, double[] segGrad, int[] segSurface,
                                  int[] splitSec, int[] bestSplits, double massKg) {
-        if (segDist == null || segGrad == null || segSurface == null || splitSec == null) {
-            return null;
-        }
+        if (!sameLengths(segDist, segGrad, segSurface, splitSec)) return null;
         int n = segDist.length;
-        if (n < MIN_SEGMENTS || segGrad.length != n || segSurface.length != n
-                || splitSec.length != n) {
-            return null;
-        }
         int total = 0;
         for (int i = 0; i < n; i++) {
             if (segDist[i] <= 0 || splitSec[i] <= 0) return null;
             total += segDist[i];
         }
         double mass = massKg > 0 ? massKg : DEFAULT_MASS_KG;
-
-        double[] power = new double[n];
-        boolean[] analysed = new boolean[n];
-        int[] third = new int[n];
-        int[] startM = new int[n];
-        int cum = 0;
-        for (int i = 0; i < n; i++) {
-            startM[i] = cum;
-            double mid = cum + segDist[i] / 2.0;
-            third[i] = Math.min(2, (int) (3 * mid / total));
-            cum += segDist[i];
-            analysed[i] = segGrad[i] >= MIN_ANALYSED_GRADIENT;
-            if (analysed[i]) {
-                FtpEstimator.Effort e = new FtpEstimator.Effort(new int[]{segDist[i]},
-                        new double[]{segGrad[i]}, new int[]{segSurface[i]}, splitSec[i]);
-                power[i] = FtpEstimator.impliedPowerWatts(e, mass);
-            }
-        }
-
-        double[] work = new double[3];
-        double[] time = new double[3];
-        double allWork = 0, allTime = 0;
-        for (int i = 0; i < n; i++) {
-            if (!analysed[i]) continue;
-            work[third[i]] += power[i] * splitSec[i];
-            time[third[i]] += splitSec[i];
-            allWork += power[i] * splitSec[i];
-            allTime += splitSec[i];
-        }
+        SegmentPower sp = new SegmentPower(segDist, segGrad, segSurface, splitSec, total, mass);
 
         List<Tip> tips = new ArrayList<>();
-        boolean faded = false;
-        if (time[0] > 0 && time[2] > 0) {
-            double first = work[0] / time[0];
-            double last = work[2] / time[2];
-            int firstThirdM = roundTo100(total / 3);
-            double rel = (last - first) / first;
-            int pct = (int) Math.round(Math.abs(rel) * 100);
-            if (rel <= -PACING_THRESHOLD) {
-                faded = true;
-                tips.add(new Tip(TipType.FADED, pct, firstThirdM, 0, -1, 0, 0));
-            } else if (rel >= PACING_THRESHOLD) {
-                tips.add(new Tip(TipType.HELD_BACK, pct, firstThirdM, 0, -1, 0, 0));
-            } else {
-                tips.add(new Tip(TipType.EVEN, pct, 0, 0, -1, 0, 0));
-            }
-        }
-
-        if (allTime > 0) {
-            double avg = allWork / allTime;
-            int weakest = -1;
-            double weakestRatio = 1;
-            for (int i = 0; i < n; i++) {
-                if (!analysed[i]) continue;
-                double ratio = power[i] / avg;
-                if (ratio < weakestRatio) {
-                    weakestRatio = ratio;
-                    weakest = i;
-                }
-            }
-            if (weakest >= 0 && weakestRatio <= 1 - WEAK_SEGMENT_THRESHOLD
-                    && !(faded && third[weakest] == 2)) {
-                tips.add(new Tip(TipType.WEAKEST_SEGMENT,
-                        (int) Math.round((1 - weakestRatio) * 100),
-                        startM[weakest], startM[weakest] + segDist[weakest], weakest, 0,
-                        segGrad[weakest]));
-            }
-        }
-
-        if (bestSplits != null && bestSplits.length == n) {
-            int worst = -1;
-            int worstLoss = 0;
-            for (int i = 0; i < n; i++) {
-                int loss = splitSec[i] - bestSplits[i];
-                if (loss > worstLoss) {
-                    worstLoss = loss;
-                    worst = i;
-                }
-            }
-            if (worst >= 0 && worstLoss >= MIN_PR_LOSS_SEC) {
-                tips.add(new Tip(TipType.LOST_MOST_VS_PR, 0, startM[worst],
-                        startM[worst] + segDist[worst], worst, worstLoss, segGrad[worst]));
-            }
-        }
+        Tip pacing = pacingTip(sp, splitSec, total);
+        if (pacing != null) tips.add(pacing);
+        boolean faded = pacing != null && pacing.type == TipType.FADED;
+        Tip weakest = weakestSegmentTip(sp, segDist, segGrad, splitSec, faded);
+        if (weakest != null) tips.add(weakest);
+        Tip lost = lostMostTip(sp, segDist, segGrad, splitSec, bestSplits);
+        if (lost != null) tips.add(lost);
 
         if (tips.isEmpty()) return null;
         while (tips.size() > MAX_TIPS) tips.remove(tips.size() - 1);
         return new Advice(tips);
+    }
+
+    private static boolean sameLengths(int[] segDist, double[] segGrad, int[] segSurface,
+                                       int[] splitSec) {
+        if (segDist == null || segGrad == null || segSurface == null || splitSec == null) {
+            return false;
+        }
+        int n = segDist.length;
+        return n >= MIN_SEGMENTS && segGrad.length == n && segSurface.length == n
+                && splitSec.length == n;
+    }
+
+    /** Per-segment implied power, start offset and climb third (0–2). */
+    private static final class SegmentPower {
+        final double[] power;
+        final boolean[] analysed;
+        final int[] third;
+        final int[] startM;
+
+        SegmentPower(int[] segDist, double[] segGrad, int[] segSurface, int[] splitSec,
+                     int total, double mass) {
+            int n = segDist.length;
+            power = new double[n];
+            analysed = new boolean[n];
+            third = new int[n];
+            startM = new int[n];
+            int cum = 0;
+            for (int i = 0; i < n; i++) {
+                startM[i] = cum;
+                double mid = cum + segDist[i] / 2.0;
+                third[i] = Math.min(2, (int) (3 * mid / total));
+                cum += segDist[i];
+                analysed[i] = segGrad[i] >= MIN_ANALYSED_GRADIENT;
+                if (analysed[i]) {
+                    FtpEstimator.Effort e = new FtpEstimator.Effort(new int[]{segDist[i]},
+                            new double[]{segGrad[i]}, new int[]{segSurface[i]}, splitSec[i]);
+                    power[i] = FtpEstimator.impliedPowerWatts(e, mass);
+                }
+            }
+        }
+    }
+
+    /** First-vs-last-third average power: faded, held back or even; null without both. */
+    private static Tip pacingTip(SegmentPower sp, int[] splitSec, int total) {
+        double[] work = new double[3];
+        double[] time = new double[3];
+        for (int i = 0; i < splitSec.length; i++) {
+            if (!sp.analysed[i]) continue;
+            work[sp.third[i]] += sp.power[i] * splitSec[i];
+            time[sp.third[i]] += splitSec[i];
+        }
+        if (time[0] <= 0 || time[2] <= 0) return null;
+        double first = work[0] / time[0];
+        double last = work[2] / time[2];
+        int firstThirdM = roundTo100(total / 3);
+        double rel = (last - first) / first;
+        int pct = (int) Math.round(Math.abs(rel) * 100);
+        if (rel <= -PACING_THRESHOLD) {
+            return new Tip(TipType.FADED, pct, firstThirdM, 0, -1, 0, 0);
+        }
+        if (rel >= PACING_THRESHOLD) {
+            return new Tip(TipType.HELD_BACK, pct, firstThirdM, 0, -1, 0, 0);
+        }
+        return new Tip(TipType.EVEN, pct, 0, 0, -1, 0, 0);
+    }
+
+    /**
+     * The analysed segment furthest below the average power, when clearly weak. Skipped when
+     * the rider faded and it lies in the last third (the fade tip already covers it).
+     */
+    private static Tip weakestSegmentTip(SegmentPower sp, int[] segDist, double[] segGrad,
+                                         int[] splitSec, boolean faded) {
+        double allWork = 0, allTime = 0;
+        for (int i = 0; i < splitSec.length; i++) {
+            if (!sp.analysed[i]) continue;
+            allWork += sp.power[i] * splitSec[i];
+            allTime += splitSec[i];
+        }
+        if (allTime <= 0) return null;
+        double avg = allWork / allTime;
+        int weakest = -1;
+        double weakestRatio = 1;
+        for (int i = 0; i < splitSec.length; i++) {
+            if (!sp.analysed[i]) continue;
+            double ratio = sp.power[i] / avg;
+            if (ratio < weakestRatio) {
+                weakestRatio = ratio;
+                weakest = i;
+            }
+        }
+        if (weakest < 0 || weakestRatio > 1 - WEAK_SEGMENT_THRESHOLD
+                || (faded && sp.third[weakest] == 2)) {
+            return null;
+        }
+        return new Tip(TipType.WEAKEST_SEGMENT,
+                (int) Math.round((1 - weakestRatio) * 100),
+                sp.startM[weakest], sp.startM[weakest] + segDist[weakest], weakest, 0,
+                segGrad[weakest]);
+    }
+
+    /** The segment that lost the most time against its best split, when it lost enough. */
+    private static Tip lostMostTip(SegmentPower sp, int[] segDist, double[] segGrad,
+                                   int[] splitSec, int[] bestSplits) {
+        if (bestSplits == null || bestSplits.length != splitSec.length) return null;
+        int worst = -1;
+        int worstLoss = 0;
+        for (int i = 0; i < splitSec.length; i++) {
+            int loss = splitSec[i] - bestSplits[i];
+            if (loss > worstLoss) {
+                worstLoss = loss;
+                worst = i;
+            }
+        }
+        if (worst < 0 || worstLoss < MIN_PR_LOSS_SEC) return null;
+        return new Tip(TipType.LOST_MOST_VS_PR, 0, sp.startM[worst],
+                sp.startM[worst] + segDist[worst], worst, worstLoss, segGrad[worst]);
     }
 
     /** Rounds a distance to the nearest 100 m, never below 100 m. */

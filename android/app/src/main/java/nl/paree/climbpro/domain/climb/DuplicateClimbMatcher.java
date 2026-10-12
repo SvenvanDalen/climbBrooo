@@ -49,25 +49,29 @@ public final class DuplicateClimbMatcher {
 
         for (Climb climb : newClimbs) {
             if (!climb.hasCoordinates()) continue;
-
-            RouteCatalogEntry bestEntry = null;
-            double bestDist = Double.MAX_VALUE;
-            for (RouteCatalogEntry entry : catalog) {
-                if (entry.climbStartCoords == null) continue;
-                double[] coords = entry.climbStartCoords;
-                for (int i = 0; i + 1 < coords.length; i += 2) {
-                    double d = CumulativeDistance.haversine(
-                            climb.startLat, climb.startLon, coords[i], coords[i + 1]);
-                    if (d <= radiusM && d < bestDist) {
-                        bestDist = d;
-                        bestEntry = entry;
-                    }
-                }
-            }
-            if (bestEntry != null) {
-                matches.add(new Match(climb, bestEntry, bestDist));
-            }
+            Match nearest = nearestMatch(climb, catalog, radiusM);
+            if (nearest != null) matches.add(nearest);
         }
         return matches;
+    }
+
+    /** The catalog route with the climb start nearest to {@code climb}'s, within the radius. */
+    private static Match nearestMatch(Climb climb, List<RouteCatalogEntry> catalog,
+                                      double radiusM) {
+        RouteCatalogEntry bestEntry = null;
+        double bestDist = Double.MAX_VALUE;
+        for (RouteCatalogEntry entry : catalog) {
+            if (entry.climbStartCoords == null) continue;
+            double[] coords = entry.climbStartCoords;
+            for (int i = 0; i + 1 < coords.length; i += 2) {
+                double d = CumulativeDistance.haversine(
+                        climb.startLat, climb.startLon, coords[i], coords[i + 1]);
+                if (d <= radiusM && d < bestDist) {
+                    bestDist = d;
+                    bestEntry = entry;
+                }
+            }
+        }
+        return bestEntry != null ? new Match(climb, bestEntry, bestDist) : null;
     }
 }
