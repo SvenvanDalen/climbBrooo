@@ -17,13 +17,13 @@ import java.io.IOException;
 public final class MedicalIdRepository {
 
     private static final String TAG = "MedicalIdRepository";
-    static final String FILE = "medical_id.json";
+    static final String FILE_NAME = "medical_id.json";
 
     private final File file;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public MedicalIdRepository(Context context) {
-        this.file = new File(context.getApplicationContext().getFilesDir(), FILE);
+        this.file = new File(context.getApplicationContext().getFilesDir(), FILE_NAME);
     }
 
     public MedicalId load() {

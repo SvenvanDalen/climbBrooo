@@ -191,6 +191,7 @@ public final class HealthConnectGateway {
             if (availability() != Availability.AVAILABLE || !canWriteRides()) return;
             exportRides();
         } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             Log.w(TAG, "Automatic Health Connect export failed", e);
         }
     }

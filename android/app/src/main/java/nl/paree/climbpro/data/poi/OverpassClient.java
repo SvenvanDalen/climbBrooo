@@ -31,7 +31,7 @@ public final class OverpassClient {
     public OverpassClient() {
         this(new OkHttpClient.Builder()
                 // A little above the server-side [timeout:] so Overpass can answer with its own error.
-                .callTimeout(OverpassQueryBuilder.TIMEOUT_S + 15, TimeUnit.SECONDS)
+                .callTimeout(OverpassQueryBuilder.TIMEOUT_S + 15L, TimeUnit.SECONDS)
                 .build());
     }
 

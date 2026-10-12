@@ -213,6 +213,7 @@ public final class WeightLogActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 message = "Importeren mislukt: " + e.getClass().getSimpleName();
             }
             String shown = message;

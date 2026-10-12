@@ -29,8 +29,8 @@ public class MaintenanceStoresEdgeTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file(TorqueValueRepository.FILE).delete();
-        file(MaintenanceRepository.FILE).delete();
+        file(TorqueValueRepository.FILE_NAME).delete();
+        file(MaintenanceRepository.FILE_NAME).delete();
     }
 
     private File file(String name) {
@@ -72,13 +72,13 @@ public class MaintenanceStoresEdgeTest {
 
     @Test
     public void torque_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(TorqueValueRepository.FILE, () -> new TorqueValueRepository(app)
+        assertWriteFails(TorqueValueRepository.FILE_NAME, () -> new TorqueValueRepository(app)
                 .upsert(null, null, "Stuurpen", 5.0, null));
     }
 
     @Test
     public void maintenance_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(MaintenanceRepository.FILE, () -> new MaintenanceRepository(app)
+        assertWriteFails(MaintenanceRepository.FILE_NAME, () -> new MaintenanceRepository(app)
                 .upsertComponent(null, "Ketting", 3000, 12, false, 0L));
     }
 }

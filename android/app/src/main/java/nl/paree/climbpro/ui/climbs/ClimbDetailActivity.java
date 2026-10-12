@@ -61,7 +61,6 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     private ActivityClimbDetailBinding binding;
     private ClimbDetailViewModel viewModel;
-    private ClimbSegmentAdapter  adapter;
     private String routeId;
     private int    climbIndex;
 
@@ -80,7 +79,6 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     // Pending state while the note/photo edit dialog (issue #46) is open: the row being
     // edited and the photo the user just picked (persisted only on Save).
-    private nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow pendingAttemptRow;
     private android.net.Uri pendingPhotoUri;
     private android.widget.ImageView pendingPhotoPreview;
 
@@ -137,7 +135,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         climbIndex = getIntent().getIntExtra(EXTRA_CLIMB_INDEX, 0);
 
         viewModel = new ViewModelProvider(this).get(ClimbDetailViewModel.class);
-        adapter   = new ClimbSegmentAdapter();
+        ClimbSegmentAdapter adapter = new ClimbSegmentAdapter();
 
         binding.segmentsRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.segmentsRecycler.setAdapter(adapter);
@@ -373,10 +371,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         setupBulkSurfaceSetter();
 
-        adapter.setOnSegmentLongClickListener((position, segment) ->
-                showSegmentSurfaceDialog(position, segment));
-        adapter.setOnSegmentClickListener((position, segment) ->
-                showSegmentTargetTimeDialog(position, segment));
+        adapter.setOnSegmentLongClickListener(this::showSegmentSurfaceDialog);
+        adapter.setOnSegmentClickListener(this::showSegmentTargetTimeDialog);
 
         viewModel.loadClimb(routeId, climbIndex);
     }
@@ -910,7 +906,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                 String nowText = SummitWeather.describe(
                         f, t, now, foot.elevationM, top.elevationM, units);
                 String laterText = SummitWeather.describe(
-                        f, t, now.plusSeconds(3 * 3600), foot.elevationM, top.elevationM, units);
+                        f, t, now.plusSeconds(3 * 3600L), foot.elevationM, top.elevationM, units);
                 StringBuilder sb = new StringBuilder();
                 if (nowText != null) {
                     sb.append(getString(R.string.climb_detail_weather_now)).append('\n').append(nowText);
@@ -1397,8 +1393,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         bar.setRating(current != null ? current : 0f);
         // WRAP_CONTENT is required: a match_parent RatingBar draws extra stars.
         container.addView(bar, new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
         return bar;
     }
 
@@ -1539,7 +1535,6 @@ public final class ClimbDetailActivity extends AppCompatActivity {
      * on each history row.
      */
     private void showAttemptNoteDialog(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row) {
-        pendingAttemptRow = row;
         pendingPhotoUri = null;
 
         android.widget.LinearLayout dialogLayout = new android.widget.LinearLayout(this);
@@ -1592,12 +1587,10 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     viewModel.saveAttemptNote(routeId, climbIndex, row.activityId, row.passIndex,
                             noteInput.getText().toString(),
                             companionsInput.getText().toString(), pendingPhotoUri);
-                    pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;
                 })
                 .setNegativeButton(R.string.action_cancel, (d, w) -> {
-                    pendingAttemptRow = null;
                     pendingPhotoUri = null;
                     pendingPhotoPreview = null;
                 })

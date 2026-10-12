@@ -31,7 +31,7 @@ public class BikeCostRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), BikeCostRepository.FILE);
+        file = new File(app.getFilesDir(), BikeCostRepository.FILE_NAME);
         file.delete();
     }
 

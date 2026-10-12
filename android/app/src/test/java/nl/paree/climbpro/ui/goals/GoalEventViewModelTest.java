@@ -169,7 +169,7 @@ public class GoalEventViewModelTest {
     @Test
     public void delete_removesEventAndFile() throws Exception {
         awaitValue(vm.state(), () -> vm.save(event("Weg", today().plusDays(10).toString(), 50, 500)));
-        File file = new File(app.getFilesDir(), GoalEventStore.FILE);
+        File file = new File(app.getFilesDir(), GoalEventStore.FILE_NAME);
         assertTrue(file.exists());
 
         GoalEventViewModel.State s = awaitValue(vm.state(), vm::delete);
@@ -191,7 +191,7 @@ public class GoalEventViewModelTest {
     @Test
     public void saveFailure_postsMessageAndStillReloads() throws Exception {
         // A directory where the temp file must go makes the write fail.
-        File tmp = new File(app.getFilesDir(), GoalEventStore.FILE + ".tmp");
+        File tmp = new File(app.getFilesDir(), GoalEventStore.FILE_NAME + ".tmp");
         assertTrue(tmp.mkdirs());
 
         GoalEventViewModel.State s = awaitValue(vm.state(),
@@ -207,7 +207,7 @@ public class GoalEventViewModelTest {
     @Test
     public void deleteFailure_postsMessage() throws Exception {
         // A non-empty directory in place of the event file cannot be deleted.
-        File file = new File(app.getFilesDir(), GoalEventStore.FILE);
+        File file = new File(app.getFilesDir(), GoalEventStore.FILE_NAME);
         assertTrue(file.mkdirs());
         assertTrue(new File(file, "child").createNewFile());
 

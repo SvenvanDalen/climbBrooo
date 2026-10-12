@@ -27,7 +27,7 @@ public class ExploreMapRepositoryTest {
 
     @Before
     public void setUp() {
-        file = new File(tmp.getRoot(), ExploreMapRepository.FILE);
+        file = new File(tmp.getRoot(), ExploreMapRepository.FILE_NAME);
         repo = new ExploreMapRepository(file);
     }
 
