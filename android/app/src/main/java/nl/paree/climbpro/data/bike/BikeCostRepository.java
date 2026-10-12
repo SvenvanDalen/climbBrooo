@@ -15,13 +15,12 @@ import nl.paree.climbpro.domain.bike.EuroAmount;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
-import nl.paree.climbpro.data.FileCleanup;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for the bike garage (issue #187) and its cost overview (issue #233).
@@ -341,7 +340,7 @@ public final class BikeCostRepository {
         // Drop links to bikes that are gone (e.g. just deleted) before they are persisted.
         if (BikeGarage.find(log, log.activeBikeId) == null) log.activeBikeId = null;
         if (BikeGarage.find(log, log.indoorBikeId) == null) log.indoorBikeId = null;
-        writeAtomic(file, mapper.writeValueAsBytes(log));
+        AtomicFiles.write(file, mapper.writeValueAsBytes(log));
         mirrorActiveBike(log);
     }
 
@@ -359,26 +358,5 @@ public final class BikeCostRepository {
         if (active.chainrings != null) ed.putString(PREF_GEAR_CHAINRINGS, active.chainrings);
         if (active.cassette != null) ed.putString(PREF_GEAR_CASSETTE, active.cassette);
         ed.apply();
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            FileCleanup.deleteQuietly(tmp);
-            throw moveFailed;
-        }
     }
 }

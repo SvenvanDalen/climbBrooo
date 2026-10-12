@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import nl.paree.climbpro.data.FileCleanup;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for detected "entered but never exited" climb passes (issue #37).
@@ -94,7 +93,7 @@ public final class IncompleteClimbAttemptRepository {
             for (StoredIncompleteClimbAttempt a : passes) {
                 if (seen.add(key(a))) all.add(a);
             }
-            writeAtomic(file, mapper.writeValueAsBytes(all));
+            AtomicFiles.write(file, mapper.writeValueAsBytes(all));
         } finally {
             WRITE_LOCK.unlock();
         }
@@ -117,26 +116,5 @@ public final class IncompleteClimbAttemptRepository {
 
     private static String key(StoredIncompleteClimbAttempt a) {
         return (a.climbId != null ? a.climbId : "") + "#" + a.activityId;
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            FileCleanup.deleteQuietly(tmp);
-            throw moveFailed;
-        }
     }
 }

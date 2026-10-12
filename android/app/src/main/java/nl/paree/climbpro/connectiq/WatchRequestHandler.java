@@ -42,9 +42,12 @@ public final class WatchRequestHandler {
     /** Display units sent as 'un' (issue #262); null = metric (no key). */
     private final nl.paree.climbpro.data.settings.UnitPreferencesRepository unitsRepo;
     /** Datafield slot layout sent as 'lay'; null = default layout (no key). */
+    @SuppressWarnings("java:S3077")
     private volatile WatchFieldLayoutStore layoutStore;
     /** Best ride per route for 'gh' (issue #178); null = never sent. */
+    @SuppressWarnings("java:S3077")
     private volatile nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo;
+    @SuppressWarnings("java:S3077")
     private volatile java.util.function.Supplier<nl.paree.climbpro.service.WatchHabits> habitsSource;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {

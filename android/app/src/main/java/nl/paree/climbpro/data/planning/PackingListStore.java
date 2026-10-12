@@ -3,16 +3,14 @@ package nl.paree.climbpro.data.planning;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import nl.paree.climbpro.data.FileCleanup;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for {@link PackingList}s (issue #189). Takes the target file directly
@@ -185,21 +183,6 @@ public final class PackingListStore {
     }
 
     private void write(List<PackingList> all) throws IOException {
-        File tmp = new File(file.getParentFile(), file.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(MAPPER.writeValueAsBytes(all));
-            out.getFD().sync();
-        }
-        try {
-            try {
-                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            FileCleanup.deleteQuietly(tmp);
-            throw moveFailed;
-        }
+        AtomicFiles.write(file, MAPPER.writeValueAsBytes(all));
     }
 }
