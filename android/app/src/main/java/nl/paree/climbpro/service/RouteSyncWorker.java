@@ -155,36 +155,8 @@ public final class RouteSyncWorker extends Worker {
                 .putBoolean(KEY_NO_LOCATION, radiusWithoutLocation)
                 .build();
 
-        // The yearly km goal card (issue #157) reads the ride archive, which otherwise only
-        // fills from the logbook or the Ritten screen: refresh it on every sync. Then a capped
-        // batch of stream analyses for the fastest-distance records (issue #225). Neither ever
-        // fails the sync.
         if (authorised) {
-            StravaActivitiesRepository rides =
-                    new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo);
-            try {
-                rides.syncRideArchive();
-            } catch (Exception e) {
-                Log.w(TAG, "Ride archive refresh failed; sync continues", e);
-            }
-            try {
-                rides.analyzeRideStreams();
-            } catch (Exception e) {
-                Log.w(TAG, "Ride stream analysis failed; sync continues", e);
-            }
-            // Explore map (issue #194): a capped batch of older rides' tracks; new rides
-            // already arrived with the analysis above.
-            try {
-                rides.exploreRideTracks();
-            } catch (Exception e) {
-                Log.w(TAG, "Explore map backfill failed; sync continues", e);
-            }
-            // MyWhoosh rides in the archive become routes with climbs (issue #344).
-            try {
-                rides.importMyWhooshRides();
-            } catch (Exception e) {
-                Log.w(TAG, "MyWhoosh import failed; sync continues", e);
-            }
+            refreshRideData(new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo));
         }
 
         // Opportunistic, never fails the sync: cleaning reminder after wet rides (issue #234).
@@ -287,6 +259,86 @@ public final class RouteSyncWorker extends Worker {
     }
 
     /**
+     * The yearly km goal card (issue #157) reads the ride archive, which otherwise only
+     * fills from the logbook or the Ritten screen: refresh it on every sync. Then a capped
+     * batch of stream analyses for the fastest-distance records (issue #225). None of these
+     * steps ever fails the sync.
+     */
+    private static void refreshRideData(StravaActivitiesRepository rides) {
+        runQuietly("Ride archive refresh failed; sync continues", rides::syncRideArchive);
+        runQuietly("Ride stream analysis failed; sync continues", rides::analyzeRideStreams);
+        // Explore map (issue #194): a capped batch of older rides' tracks; new rides
+        // already arrived with the analysis above.
+        runQuietly("Explore map backfill failed; sync continues", rides::exploreRideTracks);
+        // MyWhoosh rides in the archive become routes with climbs (issue #344).
+        runQuietly("MyWhoosh import failed; sync continues", rides::importMyWhooshRides);
+    }
+
+    /** A side step of the sync that may fail. */
+    private interface SyncStep {
+        void run() throws IOException;
+    }
+
+    private static void runQuietly(String failureMessage, SyncStep step) {
+        try {
+            step.run();
+        } catch (Exception e) {
+            Log.w(TAG, failureMessage, e);
+        }
+    }
+
+    private SyncOrchestrator.PayloadJob dayTripJob(SharedPreferences prefs,
+                                                   RouteRepository routeRepo,
+                                                   ClimbPayloadBuilder payloadBuilder) {
+        return new SyncOrchestrator.PayloadJob() {
+            @Override public byte[] build() throws IOException {
+                nl.paree.climbpro.data.route.RouteCollection trip =
+                        new nl.paree.climbpro.data.route.RouteCollectionRepository(
+                                getApplicationContext())
+                                .get(prefs.getString(PREF_DAYTRIP_ID, ""));
+                if (trip == null) {
+                    Log.w(TAG, "Day-trip collection is gone — nothing to send");
+                    return null;
+                }
+                return new DayTripAssembler(routeRepo, payloadBuilder)
+                        .assemble(trip, dayTripStart(prefs));
+            }
+            @Override public void onSent() { /* like radius mode: no per-route sync state */ }
+        };
+    }
+
+    private SyncOrchestrator.PayloadJob radiusJob(SharedPreferences prefs,
+                                                  RouteRepository routeRepo,
+                                                  ClimbPayloadBuilder payloadBuilder) {
+        return new SyncOrchestrator.PayloadJob() {
+            @Override public byte[] build() throws IOException {
+                // Never search around 0,0 (issue #310): without a known position
+                // there is nothing sensible to send.
+                double[] position = RadiusLocation.current(getApplicationContext(), prefs);
+                if (position == null) {
+                    Log.w(TAG, "Radius mode without a known location — nothing to send");
+                    radiusWithoutLocation = true;
+                    return null;
+                }
+                double lat = position[0];
+                double lon = position[1];
+                double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
+                RadiusModeAssembler assembler =
+                        new RadiusModeAssembler(routeRepo, payloadBuilder);
+                if (prefs.getBoolean(PREF_RADIUS_DRY_ONLY, false)) {
+                    assembler.withDryCheck(RouteSyncWorker::openMeteoDryCheck);
+                }
+                byte[] payload = assembler.assemble(lat, lon, radiusM);
+                if (assembler.wasTruncated()) {
+                    Log.w(TAG, "Radius payload was truncated — some climbs omitted");
+                }
+                return payload;
+            }
+            @Override public void onSent() { /* radius mode has no per-route sync state */ }
+        };
+    }
+
+    /**
      * Builds the appropriate {@link SyncOrchestrator.PayloadJob} for the active mode.
      * {@link SyncOrchestrator.PayloadJob#build()} returns {@code null} when there is
      * nothing to send (no route selected, or unchanged).
@@ -304,52 +356,8 @@ public final class RouteSyncWorker extends Worker {
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
-        if (MODE_DAYTRIP.equals(mode)) {
-            return new SyncOrchestrator.PayloadJob() {
-                @Override public byte[] build() throws IOException {
-                    nl.paree.climbpro.data.route.RouteCollection trip =
-                            new nl.paree.climbpro.data.route.RouteCollectionRepository(
-                                    getApplicationContext())
-                                    .get(prefs.getString(PREF_DAYTRIP_ID, ""));
-                    if (trip == null) {
-                        Log.w(TAG, "Day-trip collection is gone — nothing to send");
-                        return null;
-                    }
-                    return new DayTripAssembler(routeRepo, payloadBuilder)
-                            .assemble(trip, dayTripStart(prefs));
-                }
-                @Override public void onSent() { /* like radius mode: no per-route sync state */ }
-            };
-        }
-
-        if (MODE_RADIUS.equals(mode)) {
-            return new SyncOrchestrator.PayloadJob() {
-                @Override public byte[] build() throws IOException {
-                    // Never search around 0,0 (issue #310): without a known position
-                    // there is nothing sensible to send.
-                    double[] position = RadiusLocation.current(getApplicationContext(), prefs);
-                    if (position == null) {
-                        Log.w(TAG, "Radius mode without a known location — nothing to send");
-                        radiusWithoutLocation = true;
-                        return null;
-                    }
-                    double lat = position[0];
-                    double lon = position[1];
-                    double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
-                    RadiusModeAssembler assembler =
-                            new RadiusModeAssembler(routeRepo, payloadBuilder);
-                    if (prefs.getBoolean(PREF_RADIUS_DRY_ONLY, false)) {
-                        assembler.withDryCheck(RouteSyncWorker::openMeteoDryCheck);
-                    }
-                    byte[] payload = assembler.assemble(lat, lon, radiusM);
-                    if (assembler.wasTruncated()) {
-                        Log.w(TAG, "Radius payload was truncated — some climbs omitted");
-                    }
-                    return payload;
-                }
-                @Override public void onSent() { /* radius mode has no per-route sync state */ }
-            };
-        }
+        if (MODE_DAYTRIP.equals(mode)) return dayTripJob(prefs, routeRepo, payloadBuilder);
+        if (MODE_RADIUS.equals(mode)) return radiusJob(prefs, routeRepo, payloadBuilder);
 
         return new SyncOrchestrator.PayloadJob() {
             @Override public byte[] build() throws IOException {

@@ -133,31 +133,43 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
 
         if (c.routeIds != null) {
             for (String routeId : c.routeIds) {
-                StoredRoute r = loadCached(cache, routeId);
-                String label = r != null ? routeName(r) : "(verwijderde route)";
-                result.add(new CollectionMember(routeId, -1, label != null ? label : routeId));
-                if (r == null || r.climbs == null) continue;
-                for (int i = 0; i < r.climbs.size(); i++) {
-                    if (explicitClimbs.contains(routeId + "#" + i)) continue;
-                    result.add(new CollectionMember(routeId, i,
-                            "   " + climbName(r.climbs.get(i), i), true));
-                }
+                addRouteMembers(result, routeId, loadCached(cache, routeId), explicitClimbs);
             }
         }
         if (c.climbs != null) {
             for (ClimbMembership m : c.climbs) {
-                StoredRoute r = loadCached(cache, m.routeId);
-                String label = "(verwijderde klim)";
-                if (r != null && r.climbs != null
-                        && m.climbIndex >= 0 && m.climbIndex < r.climbs.size()) {
-                    String routeName = routeName(r);
-                    label = climbName(r.climbs.get(m.climbIndex), m.climbIndex)
-                            + " — " + (routeName != null ? routeName : m.routeId);
-                }
-                result.add(new CollectionMember(m.routeId, m.climbIndex, label));
+                result.add(new CollectionMember(m.routeId, m.climbIndex,
+                        climbMemberLabel(m, loadCached(cache, m.routeId))));
             }
         }
         return result;
+    }
+
+    /**
+     * A route member followed by its climbs (indented) — except climbs that are also members
+     * on their own, which are listed with the explicit climbs.
+     */
+    private static void addRouteMembers(List<CollectionMember> result, String routeId,
+                                        StoredRoute r, Set<String> explicitClimbs) {
+        String label = r != null ? routeName(r) : "(verwijderde route)";
+        result.add(new CollectionMember(routeId, -1, label != null ? label : routeId));
+        if (r == null || r.climbs == null) return;
+        for (int i = 0; i < r.climbs.size(); i++) {
+            if (explicitClimbs.contains(routeId + "#" + i)) continue;
+            result.add(new CollectionMember(routeId, i,
+                    "   " + climbName(r.climbs.get(i), i), true));
+        }
+    }
+
+    /** "Climb — Route", or a placeholder when the climb no longer exists. */
+    private static String climbMemberLabel(ClimbMembership m, StoredRoute r) {
+        if (r == null || r.climbs == null
+                || m.climbIndex < 0 || m.climbIndex >= r.climbs.size()) {
+            return "(verwijderde klim)";
+        }
+        String routeName = routeName(r);
+        return climbName(r.climbs.get(m.climbIndex), m.climbIndex)
+                + " — " + (routeName != null ? routeName : m.routeId);
     }
 
     private static String routeName(StoredRoute r) {

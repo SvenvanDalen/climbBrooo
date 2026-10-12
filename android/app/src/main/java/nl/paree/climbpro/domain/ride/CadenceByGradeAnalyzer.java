@@ -35,7 +35,6 @@ public final class CadenceByGradeAnalyzer {
         }
     }
 
-    /** Null without cadence or altitude, or with too little pedalling. */
     private static boolean isPlausibleCadence(double cad) {
         return !Double.isNaN(cad) && cad > 0 && cad <= MAX_PLAUSIBLE_RPM;
     }
@@ -44,6 +43,7 @@ public final class CadenceByGradeAnalyzer {
         return !Double.isNaN(grade) && grade >= MIN_GRADE;
     }
 
+    /** Null without cadence or altitude, or with too little pedalling. */
     public static Result analyze(RideStreams s) {
         if (s == null || !s.isUsable() || s.cadence == null || s.altitude == null) return null;
         double[] secs = new double[CLASSES];

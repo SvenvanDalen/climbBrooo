@@ -214,7 +214,6 @@ public final class ClimbAttemptMatcher {
         return out;
     }
 
-    /** Shared boundary-interpolation logic used by both {@link #matchSegments} and {@link #matchAllSegments}. */
     /**
      * Interpolated track time at which each cumulative boundary distance is passed; a boundary
      * beyond the last step is placed on that step. Unreached boundaries stay 0.
@@ -243,6 +242,7 @@ public final class ClimbAttemptMatcher {
         return boundaryTime;
     }
 
+    /** Shared boundary-interpolation logic used by both {@link #matchSegments} and {@link #matchAllSegments}. */
     private static int[] splitSegments(List<TrackSample> track, int entryIdx, int exitIdx, int[] segLengthsM) {
         long entryTime = track.get(entryIdx).timeSec;
         long exitTime  = track.get(exitIdx).timeSec;

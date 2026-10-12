@@ -81,15 +81,15 @@ public final class LoopWindAdvisor {
         return new LoopWindAdvice(verdict, forward, reverse, windFromDeg, windKmh, gap);
     }
 
-    /**
-     * Ramp-weighted mean headwind component over the second half of the ride. In reverse the
-     * points are walked backwards with distance measured from the old finish.
-     */
     /** Distance from the ride's start to point i, riding the loop in the given direction. */
     private static double alongRide(double[] distances, int i, int n, boolean reversed) {
         return reversed ? distances[n - 1] - distances[i] : distances[i] - distances[0];
     }
 
+    /**
+     * Ramp-weighted mean headwind component over the second half of the ride. In reverse the
+     * points are walked backwards with distance measured from the old finish.
+     */
     private static double homeHeadwind(double[] lats, double[] lons, double[] distances, int n,
                                        boolean reversed, double windFromDeg, double windKmh) {
         double start = distances[0];

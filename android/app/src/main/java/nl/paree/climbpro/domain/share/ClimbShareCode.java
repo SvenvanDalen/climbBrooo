@@ -91,10 +91,6 @@ public final class ClimbShareCode {
         }
     }
 
-    /**
-     * Finds the first code anywhere in {@code text} (a whole shared message may be pasted) and
-     * decodes it.
-     */
     /** Base64url → inflated JSON bytes. */
     private static byte[] unpack(String encoded) throws InvalidCodeException {
         try {
@@ -120,6 +116,10 @@ public final class ClimbShareCode {
         return new SharedClimb(clip(c.path("n").asText("")), la, lo, el);
     }
 
+    /**
+     * Finds the first code anywhere in {@code text} (a whole shared message may be pasted) and
+     * decodes it.
+     */
     public static Payload decode(String text) throws InvalidCodeException {
         if (text == null) throw new InvalidCodeException("Geen klimcode gevonden.");
         if (text.length() > MAX_CODE_CHARS) {

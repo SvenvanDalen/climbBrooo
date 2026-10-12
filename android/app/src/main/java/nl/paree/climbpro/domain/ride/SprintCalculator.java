@@ -59,10 +59,6 @@ public final class SprintCalculator {
         }
     }
 
-    /**
-     * E-bike rides never count. Indoor rides count for power (a trainer measures real watts)
-     * but not for speed, which is simulated there.
-     */
     private static Map<Long, StoredRide> nonEBikeById(List<StoredRide> rides) {
         Map<Long, StoredRide> byId = new HashMap<>();
         if (rides == null) return byId;
@@ -91,6 +87,10 @@ public final class SprintCalculator {
                 s.sprint10sSpeedAtSec != null ? s.sprint10sSpeedAtSec : 0));
     }
 
+    /**
+     * E-bike rides never count. Indoor rides count for power (a trainer measures real watts)
+     * but not for speed, which is simulated there.
+     */
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats) {
         Map<Long, StoredRide> byId = nonEBikeById(rides);
         List<PowerSprint> power = new ArrayList<>();

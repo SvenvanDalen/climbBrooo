@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.maintenance;
 
 import android.Manifest;
-import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -25,11 +24,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.maintenance.MaintenanceComponent;
 import nl.paree.climbpro.ui.bike.BikePicker;
 
-import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -95,6 +94,27 @@ public final class MaintenanceActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void fillExisting(MaintenanceComponent existing, EditText name, EditText km,
+                              EditText months, CheckBox virtual, TextView history,
+                              EditText warrantyMonths) {
+        name.setText(existing.name);
+        km.setText(positiveText(existing.intervalKm));
+        months.setText(positiveText(existing.intervalMonths));
+        virtual.setChecked(existing.includeVirtualRides);
+        history.setText(historyText(existing.serviceHistory));
+        warrantyMonths.setText(positiveText(existing.warrantyMonths));
+    }
+
+    private String lastServicedLabel(long epochSec) {
+        return epochSec > 0 ? "Laatst gedaan: " + adapter.formatDate(epochSec)
+                            : "Laatst gedaan: onbekend";
+    }
+
+    /** The number, or empty for 0 (= not set). */
+    private static String positiveText(int value) {
+        return value > 0 ? String.valueOf(value) : "";
+    }
+
     /** Add ({@code existing == null}) or edit a component. */
     private void showEditDialog(MaintenanceComponent existing) {
         View view = getLayoutInflater().inflate(R.layout.dialog_maintenance_component, null);
@@ -113,54 +133,27 @@ public final class MaintenanceActivity extends AppCompatActivity {
                 existing != null ? existing.bikeId : null);
 
         if (existing != null) {
-            name.setText(existing.name);
-            km.setText(existing.intervalKm > 0 ? String.valueOf(existing.intervalKm) : "");
-            months.setText(existing.intervalMonths > 0
-                    ? String.valueOf(existing.intervalMonths) : "");
-            virtual.setChecked(existing.includeVirtualRides);
-            history.setText(historyText(existing.serviceHistory));
-            warrantyMonths.setText(existing.warrantyMonths > 0
-                    ? String.valueOf(existing.warrantyMonths) : "");
+            fillExisting(existing, name, km, months, virtual, history, warrantyMonths);
         }
         history.setVisibility(history.length() > 0 ? View.VISIBLE : View.GONE);
 
         long current = existing != null ? existing.lastServicedEpochSec : 0;
         // 0 = unchanged; otherwise the picked day at noon (local time).
         final long[] picked = {0};
-        dateButton.setText(current > 0 ? "Laatst gedaan: " + adapter.formatDate(current)
-                                       : "Laatst gedaan: onbekend");
-        dateButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            long shown = picked[0] > 0 ? picked[0] : current;
-            if (shown > 0) base.setTimeInMillis(shown * 1000L);
-            DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar c = Calendar.getInstance();
-                c.clear();
-                c.set(y, m, d, 12, 0, 0);
-                // Never in the future: a noon timestamp for today may still lie ahead.
-                picked[0] = Math.min(c.getTimeInMillis(), System.currentTimeMillis()) / 1000L;
-                dateButton.setText("Laatst gedaan: " + adapter.formatDate(picked[0]));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
-            dp.getDatePicker().setMaxDate(System.currentTimeMillis());
-            dp.show();
-        });
+        dateButton.setText(lastServicedLabel(current));
+        dateButton.setOnClickListener(v ->
+                PastDayPicker.show(this, picked[0] > 0 ? picked[0] : current, day -> {
+                    picked[0] = day;
+                    dateButton.setText("Laatst gedaan: " + adapter.formatDate(day));
+                }));
 
         // Purchase date for the warranty; starts at the stored value (0 = unknown).
         final long[] purchase = {existing != null ? existing.warrantyPurchaseEpochSec : 0};
         purchaseButton.setText(purchaseLabel(purchase[0]));
-        purchaseButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            if (purchase[0] > 0) base.setTimeInMillis(purchase[0] * 1000L);
-            DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar cal = Calendar.getInstance();
-                cal.clear();
-                cal.set(y, m, d, 12, 0, 0);
-                purchase[0] = Math.min(cal.getTimeInMillis(), System.currentTimeMillis()) / 1000L;
-                purchaseButton.setText(purchaseLabel(purchase[0]));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
-            dp.getDatePicker().setMaxDate(System.currentTimeMillis());
-            dp.show();
-        });
+        purchaseButton.setOnClickListener(v -> PastDayPicker.show(this, purchase[0], day -> {
+            purchase[0] = day;
+            purchaseButton.setText(purchaseLabel(day));
+        }));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle(existing != null ? "Onderdeel bewerken" : "Onderdeel toevoegen")

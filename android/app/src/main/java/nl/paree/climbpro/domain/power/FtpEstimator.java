@@ -175,11 +175,6 @@ public final class FtpEstimator {
         return impliedPower >= MAX_POWER_WATTS - SATURATION_EPSILON_WATTS;
     }
 
-    /**
-     * Suggests a re-estimated FTP from the rider's best efforts across duration buckets,
-     * or returns null when there isn't enough duration-spread data to trust a suggestion
-     * (see {@link #MIN_QUALIFYING_EFFORTS}, {@link #MIN_DISTINCT_BUCKETS}).
-     */
     /** Qualifying-effort count, buckets seen and the best plausible FTP per duration bucket. */
     private static final class BucketBests {
         int qualifying;
@@ -239,6 +234,11 @@ public final class FtpEstimator {
         return ftp > 0 ? ftp : Double.NaN;
     }
 
+    /**
+     * Suggests a re-estimated FTP from the rider's best efforts across duration buckets,
+     * or returns null when there isn't enough duration-spread data to trust a suggestion
+     * (see {@link #MIN_QUALIFYING_EFFORTS}, {@link #MIN_DISTINCT_BUCKETS}).
+     */
     public static Integer suggestFtpWatts(List<Effort> efforts, RiderProfile profile) {
         if (efforts == null || profile == null || !profile.isComplete()) {
             return null;

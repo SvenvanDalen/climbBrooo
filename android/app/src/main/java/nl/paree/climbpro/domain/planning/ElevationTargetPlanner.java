@@ -301,7 +301,6 @@ public final class ElevationTargetPlanner {
         return out;
     }
 
-    /** Nearest-neighbour from the start, then 2-opt with full recomputation (asymmetric tour). */
     /** Index of the climb whose start is nearest to (lat, lon); the first one on a tie. */
     private static int nearestIndex(List<Candidate> climbs, double lat, double lon) {
         int best = 0;
@@ -314,6 +313,7 @@ public final class ElevationTargetPlanner {
         return best;
     }
 
+    /** Nearest-neighbour from the start, then 2-opt with full recomputation (asymmetric tour). */
     static List<Candidate> order(double startLat, double startLon, List<Candidate> climbs) {
         List<Candidate> remaining = new ArrayList<>(climbs);
         List<Candidate> tour = new ArrayList<>();

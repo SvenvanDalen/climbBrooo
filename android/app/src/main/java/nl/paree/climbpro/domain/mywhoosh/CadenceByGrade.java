@@ -36,7 +36,6 @@ public final class CadenceByGrade {
         }
     }
 
-    /** @param myWhooshOnly only MyWhoosh rides (issue #403), or every ride with cadence */
     /** The ride's stats when it qualifies and has cadence-by-grade data for all classes. */
     private static StoredRideStreamStats cadenceStats(StoredRide r,
                                                       Map<Long, StoredRideStreamStats> stats,
@@ -50,6 +49,7 @@ public final class CadenceByGrade {
         return s;
     }
 
+    /** @param myWhooshOnly only MyWhoosh rides (issue #403), or every ride with cadence */
     public static Result compute(List<StoredRide> rides, Map<Long, StoredRideStreamStats> stats,
                                  boolean myWhooshOnly) {
         int n = CadenceByGradeAnalyzer.CLASSES;

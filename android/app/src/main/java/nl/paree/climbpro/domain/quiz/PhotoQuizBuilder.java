@@ -41,13 +41,6 @@ public final class PhotoQuizBuilder {
 
     private PhotoQuizBuilder() {}
 
-    /**
-     * @param namesByClimbId display name per climb; attempts whose climb has no name here
-     *                       (the climb was deleted) are skipped
-     * @param maxQuestions   round length
-     * @return questions in random order; empty when fewer than two distinct climb names
-     *         exist (no wrong answer to offer)
-     */
     /** Photo file names per named climb, in attempt order. */
     private static Map<String, List<String>> photosByName(List<StoredClimbAttempt> attempts,
                                                           Map<String, String> namesByClimbId) {
@@ -61,6 +54,13 @@ public final class PhotoQuizBuilder {
         return photosByName;
     }
 
+    /**
+     * @param namesByClimbId display name per climb; attempts whose climb has no name here
+     *                       (the climb was deleted) are skipped
+     * @param maxQuestions   round length
+     * @return questions in random order; empty when fewer than two distinct climb names
+     *         exist (no wrong answer to offer)
+     */
     public static List<Question> build(List<StoredClimbAttempt> attempts,
                                        Map<String, String> namesByClimbId,
                                        int maxQuestions, Random random) {

@@ -86,12 +86,12 @@ public final class GoalEventProgress {
         return Phase.BASE;
     }
 
-    /** E-bike rides are left out; indoor rides count towards weekly volume only. */
     /** A dated ride on a non-e-bike: the rides that count towards the event preparation. */
     private static boolean isTrainingRide(StoredRide r) {
         return r != null && r.startEpochSec > 0 && !isEBike(r.type);
     }
 
+    /** E-bike rides are left out; indoor rides count towards weekly volume only. */
     public static Result compute(GoalEvent event, List<StoredRide> rides, LocalDate today,
                                  ZoneId zone) {
         LocalDate eventDay = parse(event.date);

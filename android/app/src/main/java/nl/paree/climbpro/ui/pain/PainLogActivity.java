@@ -1,6 +1,5 @@
 package nl.paree.climbpro.ui.pain;
 
-import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -23,12 +22,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.pain.PainLogEntry;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.pain.PainArea;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -90,15 +89,8 @@ public final class PainLogActivity extends AppCompatActivity {
         EditText note = view.findViewById(R.id.input_note);
 
         // Ride picker: recent archived rides, plus "no ride" which enables the date button.
-        List<String> rideLabels = new ArrayList<>();
-        rideLabels.add("Geen rit uit het archief");
-        for (StoredRide r : rides) {
-            rideLabels.add(String.format(Locale.GERMANY, "%s · %s · %.0f km",
-                    adapter.formatDate(r.startEpochSec),
-                    r.name != null ? r.name : "Rit", r.distanceM / 1000.0));
-        }
         ArrayAdapter<String> rideAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, rideLabels);
+                android.R.layout.simple_spinner_item, rideLabels(rides));
         rideAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         rideSpinner.setAdapter(rideAdapter);
         if (!rides.isEmpty()) rideSpinner.setSelection(1);
@@ -111,28 +103,12 @@ public final class PainLogActivity extends AppCompatActivity {
 
         final long[] picked = {System.currentTimeMillis() / 1000L};
         dateButton.setText("Datum: " + adapter.formatDate(picked[0]));
-        dateButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            base.setTimeInMillis(picked[0] * 1000L);
-            DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar cal = Calendar.getInstance();
-                cal.clear();
-                cal.set(y, m, d, 12, 0, 0);
-                picked[0] = Math.min(cal.getTimeInMillis(), System.currentTimeMillis()) / 1000L;
-                dateButton.setText("Datum: " + adapter.formatDate(picked[0]));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
-            dp.getDatePicker().setMaxDate(System.currentTimeMillis());
-            dp.show();
-        });
+        dateButton.setOnClickListener(v -> PastDayPicker.show(this, picked[0], day -> {
+            picked[0] = day;
+            dateButton.setText("Datum: " + adapter.formatDate(day));
+        }));
 
-        List<CheckBox> areaChecks = new ArrayList<>();
-        for (PainArea a : PainArea.values()) {
-            CheckBox cb = new CheckBox(this);
-            cb.setText(a.label);
-            cb.setTag(a.name());
-            areaBox.addView(cb);
-            areaChecks.add(cb);
-        }
+        List<CheckBox> areaChecks = addAreaChecks(areaBox);
 
         severityBar.setMax(4);
         severityBar.setProgress(DEFAULT_SEVERITY - 1);
@@ -146,32 +122,61 @@ public final class PainLogActivity extends AppCompatActivity {
         });
 
         // Pre-fill bike and setup from the latest entry: they rarely change between rides.
-        if (snap != null && !snap.entries.isEmpty()) {
-            PainLogEntry latest = snap.entries.get(0);
-            if (latest.bike != null) bike.setText(latest.bike);
-            if (latest.setup != null) setup.setText(latest.setup);
-        }
+        if (snap != null && !snap.entries.isEmpty()) prefillFromLatest(snap.entries.get(0), bike, setup);
 
         new AlertDialog.Builder(this)
                 .setTitle("Klacht loggen")
                 .setView(view)
                 .setPositiveButton("Opslaan", (d, w) -> {
-                    List<String> areas = new ArrayList<>();
-                    for (CheckBox cb : areaChecks) if (cb.isChecked()) areas.add((String) cb.getTag());
+                    List<String> areas = checkedAreas(areaChecks);
                     if (areas.isEmpty()) {
                         Toast.makeText(this, "Kies minstens één plek", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     int pos = rideSpinner.getSelectedItemPosition();
                     StoredRide ride = pos > 0 ? rides.get(pos - 1) : null;
-                    viewModel.add(ride != null ? ride.activityId : 0,
-                            ride != null ? ride.startEpochSec : picked[0],
+                    long day = ride != null ? ride.startEpochSec : picked[0];
+                    viewModel.add(ride != null ? ride.activityId : 0, day,
                             areas, severityBar.getProgress() + 1,
                             bike.getText().toString(), setup.getText().toString(),
                             note.getText().toString());
                 })
                 .setNegativeButton("Annuleren", null)
                 .show();
+    }
+
+    private List<String> rideLabels(List<StoredRide> rides) {
+        List<String> rideLabels = new ArrayList<>();
+        rideLabels.add("Geen rit uit het archief");
+        for (StoredRide r : rides) {
+            rideLabels.add(String.format(Locale.GERMANY, "%s · %s · %.0f km",
+                    adapter.formatDate(r.startEpochSec),
+                    r.name != null ? r.name : "Rit", r.distanceM / 1000.0));
+        }
+        return rideLabels;
+    }
+
+    private List<CheckBox> addAreaChecks(LinearLayout areaBox) {
+        List<CheckBox> areaChecks = new ArrayList<>();
+        for (PainArea a : PainArea.values()) {
+            CheckBox cb = new CheckBox(this);
+            cb.setText(a.label);
+            cb.setTag(a.name());
+            areaBox.addView(cb);
+            areaChecks.add(cb);
+        }
+        return areaChecks;
+    }
+
+    private static List<String> checkedAreas(List<CheckBox> areaChecks) {
+        List<String> areas = new ArrayList<>();
+        for (CheckBox cb : areaChecks) if (cb.isChecked()) areas.add((String) cb.getTag());
+        return areas;
+    }
+
+    private static void prefillFromLatest(PainLogEntry latest, EditText bike, EditText setup) {
+        if (latest.bike != null) bike.setText(latest.bike);
+        if (latest.setup != null) setup.setText(latest.setup);
     }
 
     static String severityText(int severity) {

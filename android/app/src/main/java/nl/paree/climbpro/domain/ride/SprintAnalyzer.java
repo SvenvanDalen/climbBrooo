@@ -60,11 +60,6 @@ public final class SprintAnalyzer {
     }
 
     /**
-     * Highest average speed (m/s) over at least {@code windowSec} seconds of continuous riding
-     * that doesn't descend more than {@link #MAX_DESCENT_FRACTION}, or null without an altitude
-     * stream: without it a fast descent would pass for a sprint.
-     */
-    /**
      * Average speed from sample i to j, or NaN when the window is too long, not moving, or
      * descends too steeply to count as a sprint.
      */
@@ -79,6 +74,11 @@ public final class SprintAnalyzer {
         return dist / span;
     }
 
+    /**
+     * Highest average speed (m/s) over at least {@code windowSec} seconds of continuous riding
+     * that doesn't descend more than {@link #MAX_DESCENT_FRACTION}, or null without an altitude
+     * stream: without it a fast descent would pass for a sprint.
+     */
     public static Peak peakSpeed(RideStreams s, int windowSec) {
         if (s == null || !s.isUsable() || s.altitude == null || windowSec <= 0) return null;
         int[] t = s.time;

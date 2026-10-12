@@ -68,10 +68,6 @@ public final class OfflinePackageReport {
         return line;
     }
 
-    /**
-     * "km 40: 12–17 °C, wind tot 25 km/u, regen tot 60 %" over the next {@link #WINDOW_HOURS}
-     * from now, or from the forecast's first hour when now lies outside it.
-     */
     /** Temperature range, maximum wind and maximum rain chance over hours [start, end). */
     private static void appendWindow(StringBuilder sb, HourlyForecast f, int start, int end) {
         double tMin = Double.MAX_VALUE, tMax = -Double.MAX_VALUE, wind = 0;
@@ -93,6 +89,10 @@ public final class OfflinePackageReport {
         if (rain >= 0) sb.append(", regen tot ").append(rain).append(" %");
     }
 
+    /**
+     * "km 40: 12–17 °C, wind tot 25 km/u, regen tot 60 %" over the next {@link #WINDOW_HOURS}
+     * from now, or from the forecast's first hour when now lies outside it.
+     */
     static String weatherLine(OfflinePackage.WeatherPoint w, long nowMs) {
         String prefix = String.format(Locale.US, "km %.0f: ", w.distanceM / 1000.0);
         HourlyForecast f;

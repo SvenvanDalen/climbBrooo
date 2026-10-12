@@ -141,13 +141,6 @@ public final class ClimbPeriodizationPlanner {
         return plan(climbs, baselineWeeklyGainM, DEFAULT_BUILD_WEEKS);
     }
 
-    /**
-     * @param climbs              known climbs (any order; duplicate ids are merged).
-     * @param baselineWeeklyGainM the rider's recent average weekly climbing load in metres;
-     *                            0 or less means no history.
-     * @param buildWeeks          number of build weeks before the single recovery week (>= 1).
-     * @return the plan, or null when no climb with positive elevation gain is available.
-     */
     /** One candidate per climb with gain: the copy with the most attempts (first on a tie). */
     private static Map<String, Candidate> mostRiddenCopies(List<Candidate> climbs) {
         Map<String, Candidate> byId = new LinkedHashMap<>();
@@ -159,6 +152,13 @@ public final class ClimbPeriodizationPlanner {
         return byId;
     }
 
+    /**
+     * @param climbs              known climbs (any order; duplicate ids are merged).
+     * @param baselineWeeklyGainM the rider's recent average weekly climbing load in metres;
+     *                            0 or less means no history.
+     * @param buildWeeks          number of build weeks before the single recovery week (>= 1).
+     * @return the plan, or null when no climb with positive elevation gain is available.
+     */
     public static Plan plan(List<Candidate> climbs, double baselineWeeklyGainM, int buildWeeks) {
         if (climbs == null || buildWeeks < 1) return null;
 

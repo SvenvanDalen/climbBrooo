@@ -25,10 +25,6 @@ public final class HeartRateRecoveryAnalyzer {
     static final double MIN_PLAUSIBLE_BPM = 40;
     static final double MAX_PLAUSIBLE_BPM = 230;
 
-    /**
-     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); null
-     * without power and heart rate, or an empty array when the ride has no qualifying interval.
-     */
     /** Seconds whose rolling 30 s average power (over a full window) reaches the threshold. */
     private static boolean[] hardSeconds(double[] watts, double threshold) {
         int n = watts.length;
@@ -77,6 +73,10 @@ public final class HeartRateRecoveryAnalyzer {
         return peak;
     }
 
+    /**
+     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); null
+     * without power and heart rate, or an empty array when the ride has no qualifying interval.
+     */
     public static int[] drops(RideStreams s) {
         if (s == null || s.watts == null || s.heartrate == null) return null;
         Integer np = NormalizedPowerAnalyzer.normalizedPower(s);

@@ -54,7 +54,6 @@ public final class RouteHazards {
         }
     }
 
-    /** Technical descents along the route; empty without usable elevation. */
     /** Absolute heading change at each interior point (0 where a bearing is undefined). */
     private static double[] turnAngles(double[] lats, double[] lons, int n) {
         double[] turn = new double[n];
@@ -99,6 +98,7 @@ public final class RouteHazards {
         return new int[]{(int) Math.floor(lo), (int) Math.ceil(hi)};
     }
 
+    /** Technical descents along the route; empty without usable elevation. */
     public static List<Hazard> detectDescents(double[] lats, double[] lons, double[] elevations,
                                               double[] distances) {
         List<Hazard> out = new ArrayList<>();

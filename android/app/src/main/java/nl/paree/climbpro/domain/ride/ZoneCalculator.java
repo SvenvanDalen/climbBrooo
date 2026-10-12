@@ -56,10 +56,6 @@ public final class ZoneCalculator {
         }
     }
 
-    /**
-     * @param maxHr rider's max heart rate, 0 when unknown (then no heart-rate zones)
-     * @param ftp   rider's FTP in watts, 0 when unknown (then no power zones)
-     */
     private static Map<Long, StoredRideStreamStats> statsById(List<StoredRideStreamStats> stats) {
         Map<Long, StoredRideStreamStats> byId = new HashMap<>();
         if (stats == null) return byId;
@@ -84,6 +80,10 @@ public final class ZoneCalculator {
         return entries;
     }
 
+    /**
+     * @param maxHr rider's max heart rate, 0 when unknown (then no heart-rate zones)
+     * @param ftp   rider's FTP in watts, 0 when unknown (then no power zones)
+     */
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats,
                                  int maxHr, int ftp, long nowEpochSec) {
         List<Entry> entries = entries(rides, statsById(stats), maxHr, ftp);

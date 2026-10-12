@@ -166,8 +166,10 @@ public final class FitTrackDecoder {
     }
 
     /**
-     * Reads one data message; a {@code record} message is appended to {@code out}.
-     * Returns the latest full timestamp ({@code lastTimestamp} when the message has none).
+     * Reads one data message. Timestamps are raw FIT seconds; {@code knownTs} is the
+     * timestamp implied by a compressed header, or -1.
+     *
+     * @return the timestamp to use as the base for later compressed headers
      */
     private static long readData(byte[] d, int p, Definition def, long lastTimestamp,
                                  long knownTs, List<Record> out) {

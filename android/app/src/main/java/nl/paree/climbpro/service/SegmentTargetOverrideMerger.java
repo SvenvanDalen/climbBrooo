@@ -70,21 +70,12 @@ public final class SegmentTargetOverrideMerger {
         if (segs == null || segs.isEmpty()) {
             return planned;
         }
-        boolean anyOverride = false;
-        for (StoredSegment s : segs) {
-            if (s.manualTargetSec != null) { anyOverride = true; break; }
-        }
-        if (!anyOverride) {
+        if (!anyOverride(segs)) {
             return planned;
         }
 
         if (planned != null && planned.length == segs.size()) {
-            int[] merged = planned.clone();
-            for (int i = 0; i < segs.size(); i++) {
-                Integer override = segs.get(i).manualTargetSec;
-                if (override != null) merged[i] = override;
-            }
-            return merged;
+            return overlay(planned, segs);
         }
 
         // No usable planner estimate for this climb. Only emit a value when every
@@ -96,5 +87,22 @@ public final class SegmentTargetOverrideMerger {
         int[] full = new int[segs.size()];
         for (int i = 0; i < segs.size(); i++) full[i] = segs.get(i).manualTargetSec;
         return full;
+    }
+
+    private static boolean anyOverride(List<StoredSegment> segs) {
+        for (StoredSegment s : segs) {
+            if (s.manualTargetSec != null) return true;
+        }
+        return false;
+    }
+
+    /** The planned times with every manual override written over its segment. */
+    private static int[] overlay(int[] planned, List<StoredSegment> segs) {
+        int[] merged = planned.clone();
+        for (int i = 0; i < segs.size(); i++) {
+            Integer override = segs.get(i).manualTargetSec;
+            if (override != null) merged[i] = override;
+        }
+        return merged;
     }
 }

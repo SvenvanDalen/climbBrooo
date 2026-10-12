@@ -224,11 +224,6 @@ public final class MultiDayTourPlanner {
     // ---------------------------------------------------------------- splitting
 
     /**
-     * Returns the first stop index of each of {@code days} non-empty contiguous groups
-     * ({@code days <= loads.length}). Phase 1 finds the minimal possible heaviest day; phase 2
-     * minimises the sum of squared loads subject to every day staying at or below that value.
-     */
-    /**
      * Phase 1: minMax[k][i] = minimal heaviest day splitting the first i stops into k days;
      * returns that optimum for all stops over all days.
      */
@@ -265,6 +260,11 @@ public final class MultiDayTourPlanner {
         }
     }
 
+    /**
+     * Returns the first stop index of each of {@code days} non-empty contiguous groups
+     * ({@code days <= loads.length}). Phase 1 finds the minimal possible heaviest day; phase 2
+     * minimises the sum of squared loads subject to every day staying at or below that value.
+     */
     static int[] partition(long[] loads, int days) {
         int n = loads.length;
         long[] prefix = new long[n + 1];

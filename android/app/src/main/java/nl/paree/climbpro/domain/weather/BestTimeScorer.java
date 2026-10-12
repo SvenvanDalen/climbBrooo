@@ -159,7 +159,6 @@ public final class BestTimeScorer {
         return bestPart;
     }
 
-    /** "juni–september", "november–februari", "april–mei en september", "het hele jaar". */
     /** Last month of the run starting at {@code m}, wrapping from december to january. */
     private static int runEnd(boolean[] in, int m) {
         int end = m;
@@ -171,6 +170,7 @@ public final class BestTimeScorer {
         return m == 12 ? 1 : m + 1;
     }
 
+    /** "juni–september", "november–februari", "april–mei en september", "het hele jaar". */
     static String monthRanges(List<Integer> months) {
         if (months.size() >= 12) return "het hele jaar";
         boolean[] in = new boolean[13];

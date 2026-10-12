@@ -56,11 +56,6 @@ public final class RideStory {
         this.photoFileName = photoFileName;
     }
 
-    /**
-     * @param attempts   every stored climb attempt (needed to tell PRs and repeat counts)
-     * @param climbNames display name per ClimbIdentity key; unknown climbs get "Klim"
-     * @param avgTempC   average temperature from the ride's stream, or null
-     */
     /** Distance, moving time, elevation, speed and power, each only when known. */
     private static List<String> statLines(StoredRide ride) {
         List<String> stats = new ArrayList<>();
@@ -108,6 +103,11 @@ public final class RideStory {
         return tempN > 0 ? tempSum / tempN : null;
     }
 
+    /**
+     * @param attempts   every stored climb attempt (needed to tell PRs and repeat counts)
+     * @param climbNames display name per ClimbIdentity key; unknown climbs get "Klim"
+     * @param avgTempC   average temperature from the ride's stream, or null
+     */
     public static RideStory build(StoredRide ride, List<StoredClimbAttempt> attempts,
                                   Map<String, String> climbNames, Double avgTempC) {
         String title = ride.name != null && !ride.name.trim().isEmpty() ? ride.name.trim() : "Rit";

@@ -45,30 +45,6 @@ public final class ClimbEntryOnlyDetector {
 
     private ClimbEntryOnlyDetector() {}
 
-    /**
-     * @return distance (m) of PROGRESS toward the climb's end — {@code climbLengthM -
-     *         minDistToEnd} at the closest approach the track ever made to the end coordinate
-     *         — for the last genuine incomplete pass found in the track; -1 if the track never
-     *         entered the climb, or no candidate entry produced a genuine incomplete pass.
-     *
-     *         <p>Unlike an earlier version of this method, this is NOT raw path length
-     *         traveled since entry: raw path length double-counts backtracking (a rider who
-     *         climbs 300 m up and rides back down 300 m before the track ends would otherwise
-     *         report 600 m of "progress" on a track whose farthest reach was only 300 m).
-     *         "Progress toward the end" is well-defined even across a backtrack.
-     *
-     *         <p>The entry-gate search retries from {@code entryIdx + 1} whenever a candidate
-     *         entry doesn't yield a genuine incomplete pass (mirroring {@link
-     *         ClimbAttemptMatcher#findAllPasses}), so an incidental/spurious early gate hit
-     *         (e.g. an unrelated road crossing near the climb-start coordinate) doesn't lock
-     *         out a later, genuine attempt. When a candidate entry's scan actually reaches the
-     *         exit gate, that window is a completed pass (not incomplete); the search resumes
-     *         after its exit and keeps looking for a later, separate incomplete attempt. Across
-     *         multiple genuine incomplete candidates in one track (e.g. two separate abandoned
-     *         attempts in an out-and-back ride), the LAST one found is reported — the rider's
-     *         final, most recent attempt in the activity is the one most representative of "how
-     *         far did I get" for a never-completed-climbs overview.
-     */
     /** Outcome of scanning one entry window: the exit index (-1 if none) and closest approach. */
     private static final class WindowScan {
         int exitIdx = -1;
@@ -118,6 +94,30 @@ public final class ClimbEntryOnlyDetector {
         return scan;
     }
 
+    /**
+     * @return distance (m) of PROGRESS toward the climb's end — {@code climbLengthM -
+     *         minDistToEnd} at the closest approach the track ever made to the end coordinate
+     *         — for the last genuine incomplete pass found in the track; -1 if the track never
+     *         entered the climb, or no candidate entry produced a genuine incomplete pass.
+     *
+     *         <p>Unlike an earlier version of this method, this is NOT raw path length
+     *         traveled since entry: raw path length double-counts backtracking (a rider who
+     *         climbs 300 m up and rides back down 300 m before the track ends would otherwise
+     *         report 600 m of "progress" on a track whose farthest reach was only 300 m).
+     *         "Progress toward the end" is well-defined even across a backtrack.
+     *
+     *         <p>The entry-gate search retries from {@code entryIdx + 1} whenever a candidate
+     *         entry doesn't yield a genuine incomplete pass (mirroring {@link
+     *         ClimbAttemptMatcher#findAllPasses}), so an incidental/spurious early gate hit
+     *         (e.g. an unrelated road crossing near the climb-start coordinate) doesn't lock
+     *         out a later, genuine attempt. When a candidate entry's scan actually reaches the
+     *         exit gate, that window is a completed pass (not incomplete); the search resumes
+     *         after its exit and keeps looking for a later, separate incomplete attempt. Across
+     *         multiple genuine incomplete candidates in one track (e.g. two separate abandoned
+     *         attempts in an out-and-back ride), the LAST one found is reported — the rider's
+     *         final, most recent attempt in the activity is the one most representative of "how
+     *         far did I get" for a never-completed-climbs overview.
+     */
     public static int detectIncomplete(List<TrackSample> track,
                                        double startLat, double startLon,
                                        double endLat, double endLon,

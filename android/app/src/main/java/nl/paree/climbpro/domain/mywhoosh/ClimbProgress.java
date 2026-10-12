@@ -40,9 +40,6 @@ public final class ClimbProgress {
         }
     }
 
-    /**
-     * @param indoorActivityIds activity ids of indoor rides, to tell the two apart; may be null
-     */
     private static List<StoredClimbAttempt> timedAttemptsOf(String climbId,
                                                             List<StoredClimbAttempt> attempts) {
         List<StoredClimbAttempt> mine = new ArrayList<>();
@@ -76,6 +73,9 @@ public final class ClimbProgress {
         return strongest;
     }
 
+    /**
+     * @param indoorActivityIds activity ids of indoor rides, to tell the two apart; may be null
+     */
     public static List<Point> compute(String climbId, List<StoredClimbAttempt> attempts,
                                       java.util.Set<Long> indoorActivityIds,
                                       WeightHistory weights) {

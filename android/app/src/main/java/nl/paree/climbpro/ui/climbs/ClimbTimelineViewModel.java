@@ -8,11 +8,10 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
-import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
-import nl.paree.climbpro.data.route.StoredRoute;
+import nl.paree.climbpro.domain.climb.ClimbCatalogIndex;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 
@@ -109,46 +108,42 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
             Map<String, ClimbInfo> resolved = resolveClimbInfo(wanted);
 
             List<TimelineRow> out = new ArrayList<>(ordered.size());
-            for (StoredClimbAttempt a : ordered) {
-                ClimbInfo info = resolved.get(a.climbId);
-                out.add(new TimelineRow(
-                        a.dateEpochSec,
-                        a.activityId,
-                        a.elapsedSec,
-                        info != null ? info.displayName : "Klim",
-                        info != null ? info.lengthM : 0,
-                        info != null ? info.avgGradient : 0,
-                        info != null ? info.routeId : null,
-                        info != null ? info.index : -1,
-                        a.routeDeviation,
-                        a.avgTempC));
-            }
+            for (StoredClimbAttempt a : ordered) out.add(timelineRow(a, resolved.get(a.climbId)));
             rows.postValue(out);
         });
+    }
+
+    /** A timeline row; a climb no longer in any route shows as "Klim" without a link. */
+    private static TimelineRow timelineRow(StoredClimbAttempt a, ClimbInfo info) {
+        return new TimelineRow(
+                a.dateEpochSec,
+                a.activityId,
+                a.elapsedSec,
+                info != null ? info.displayName : "Klim",
+                info != null ? info.lengthM : 0,
+                info != null ? info.avgGradient : 0,
+                info != null ? info.routeId : null,
+                info != null ? info.index : -1,
+                a.routeDeviation,
+                a.avgTempC);
     }
 
     /** Maps each wanted climbId to the first route+index that contains it. */
     private Map<String, ClimbInfo> resolveClimbInfo(Set<String> wanted) {
         Map<String, ClimbInfo> map = new HashMap<>();
-        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
-            try {
-                StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                if (route.climbs == null) continue;
-                for (int i = 0; i < route.climbs.size(); i++) {
-                    StoredClimb c = route.climbs.get(i);
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
-                    if (wanted.contains(id) && !map.containsKey(id)) {
-                        String name = c.userDisplayName != null ? c.userDisplayName
-                                : (c.name != null ? c.name : "Klim");
-                        map.put(id, new ClimbInfo(entry.routeId, i, name, len, c.avgGradient));
-                    }
-                }
-            } catch (Exception ignored) {
-                // A route that fails to load just won't resolve its climbs' names/links.
-            }
+        for (Map.Entry<String, ClimbCatalogIndex.Entry> e
+                : ClimbCatalogIndex.resolve(routeRepo, wanted).entrySet()) {
+            ClimbCatalogIndex.Entry found = e.getValue();
+            StoredClimb c = found.climb;
+            map.put(e.getKey(), new ClimbInfo(found.routeId, found.index, climbName(c),
+                    ClimbIdentity.effectiveLength(c), c.avgGradient));
         }
         return map;
+    }
+
+    static String climbName(StoredClimb c) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        return c.name != null ? c.name : "Klim";
     }
 
     @Override

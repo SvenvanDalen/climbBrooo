@@ -64,7 +64,6 @@ public final class HeartRateDriftCalculator {
         return Level.HIGH;
     }
 
-    /** E-bike rides are left out: the motor decouples output from the rider's heart rate. */
     private static Map<Long, StoredRide> nonEBikeById(List<StoredRide> rides) {
         Map<Long, StoredRide> byId = new HashMap<>();
         if (rides == null) return byId;
@@ -88,6 +87,7 @@ public final class HeartRateDriftCalculator {
         return entries;
     }
 
+    /** E-bike rides are left out: the motor decouples output from the rider's heart rate. */
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats,
                                  long nowEpochSec) {
         List<Entry> entries = entries(nonEBikeById(rides), stats);

@@ -128,10 +128,6 @@ public final class RecoveryTrendAnalyzer {
         return (int) Math.round(rpe * movingTimeSec / 60.0);
     }
 
-    /**
-     * Joins checks with archived rides (checks for rides no longer in the archive are skipped,
-     * a later check for the same ride wins) and computes the trend. Null lists count as empty.
-     */
     private static Map<Long, StoredRide> ridesById(List<StoredRide> rides) {
         Map<Long, StoredRide> rideById = new HashMap<>();
         if (rides == null) return rideById;
@@ -147,6 +143,10 @@ public final class RecoveryTrendAnalyzer {
         return checkByRide;
     }
 
+    /**
+     * Joins checks with archived rides (checks for rides no longer in the archive are skipped,
+     * a later check for the same ride wins) and computes the trend. Null lists count as empty.
+     */
     public static Trend analyze(List<RecoveryCheck> checks, List<StoredRide> rides) {
         Map<Long, StoredRide> rideById = ridesById(rides);
         Map<Long, RecoveryCheck> checkByRide = lastCheckPerRide(checks);

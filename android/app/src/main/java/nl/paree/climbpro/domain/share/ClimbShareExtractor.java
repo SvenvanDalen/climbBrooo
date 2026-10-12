@@ -45,7 +45,6 @@ public final class ClimbShareExtractor {
         return c != null && c.isHome;
     }
 
-    /** The climb with its margin, or null for a home climb or a route without geometry. */
     private static boolean hasAlignedGeometry(StoredRoute route) {
         double[] d = route.distances;
         return d != null && route.lats != null && route.lons != null && route.elevations != null
@@ -67,6 +66,7 @@ public final class ClimbShareExtractor {
         return members;
     }
 
+    /** The climb with its margin, or null for a home climb or a route without geometry. */
     public static SharedClimb extract(StoredRoute route, int climbIndex) {
         StoredClimb c = climbAt(route, climbIndex);
         if (c == null || c.isHome) return null;
