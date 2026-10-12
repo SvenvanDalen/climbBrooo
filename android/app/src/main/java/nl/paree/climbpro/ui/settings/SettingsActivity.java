@@ -547,7 +547,7 @@ public final class SettingsActivity extends AppCompatActivity {
     }
 
     private void renderHistoryBackfill(java.util.List<WorkInfo> infos) {
-        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS, MODE_PRIVATE)
+        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS_NAME, MODE_PRIVATE)
                 .getBoolean(StravaActivitiesRepository.PREF_BACKFILL_DONE, false);
         WorkInfo info = infos == null || infos.isEmpty() ? null : infos.get(infos.size() - 1);
         boolean active = info != null && !info.getState().isFinished();

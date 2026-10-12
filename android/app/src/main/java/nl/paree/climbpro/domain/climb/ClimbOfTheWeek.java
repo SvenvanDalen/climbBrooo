@@ -54,7 +54,7 @@ public final class ClimbOfTheWeek {
     static final double W_FRESHNESS = 0.45;
     static final double W_DISTANCE  = 0.30;
     static final double W_WEATHER   = 0.25;
-    static final double JITTER      = 0.015;
+    static final double JITTER_WEIGHT = 0.015;
 
     static final double GOOD_THRESHOLD  = 0.7;
     static final double MIXED_THRESHOLD = 0.4;
@@ -219,7 +219,7 @@ public final class ClimbOfTheWeek {
             sum += W_WEATHER * weatherFit(outlook, norm);
             weights += W_WEATHER;
         }
-        double score = sum / weights + JITTER * jitter(week, c.key());
+        double score = sum / weights + JITTER_WEIGHT * jitter(week, c.key());
         return new Suggestion(c, score, d, haveOrigin, days, outlook != null, best, outlook,
                 pinned, done);
     }

@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.social;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -199,7 +200,7 @@ public class RideBuddyCodeTest {
             r.nextBytes(b);
             String text = "CPR1:" + Base64.getUrlEncoder().withoutPadding().encodeToString(b);
             try {
-                RideBuddyCode.decode(text);
+                assertNotNull(RideBuddyCode.decode(text));
             } catch (RideBuddyCode.InvalidCodeException expected) {
                 // fine
             }

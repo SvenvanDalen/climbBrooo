@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class BikeCostRepository {
 
     private static final String TAG = "BikeCostRepository";
-    static final String FILE = "bike_costs.json";
+    static final String FILE_NAME = "bike_costs.json";
     /** Upper bound for manually entered km; keeps km * 1000 far from int/long trouble. */
     public static final int MAX_EXTRA_KM = 1_000_000;
     /** Sanity bounds for garage fields; outside them the value counts as unknown (0). */
@@ -56,7 +56,7 @@ public final class BikeCostRepository {
 
     public BikeCostRepository(Context context) {
         this.app    = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

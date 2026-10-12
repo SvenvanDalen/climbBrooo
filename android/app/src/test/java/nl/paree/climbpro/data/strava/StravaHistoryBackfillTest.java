@@ -72,7 +72,7 @@ public class StravaHistoryBackfillTest {
         new File(app.getFilesDir(), "climb_attempts.json").delete();
         new File(app.getFilesDir(), "incomplete_climb_attempts.json").delete();
         new File(app.getFilesDir(), "rides.json").delete();
-        app.getSharedPreferences(StravaActivitiesRepository.PREFS, Context.MODE_PRIVATE)
+        app.getSharedPreferences(StravaActivitiesRepository.PREFS_NAME, Context.MODE_PRIVATE)
                 .edit().clear().commit();
 
         routeRepo   = new RouteRepository(app);

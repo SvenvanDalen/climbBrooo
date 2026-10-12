@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class BatteryRepository {
 
     private static final String TAG  = "BatteryRepository";
-    static final String FILE = "battery_status.json";
+    static final String FILE_NAME = "battery_status.json";
 
     /** Static: the screen and the reminder worker each create their own instance. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -33,7 +33,7 @@ public final class BatteryRepository {
 
     public BatteryRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

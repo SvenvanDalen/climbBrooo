@@ -360,7 +360,7 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
 
     private SharedPreferences stravaPrefs() {
         return getApplication().getSharedPreferences(
-                StravaActivitiesRepository.PREFS, Context.MODE_PRIVATE);
+                StravaActivitiesRepository.PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     private static String[] riderKeys() {

@@ -67,13 +67,13 @@ public class RideBuddyRepositoryTest {
         assertEquals(1, repo.loadAll().size());
         assertTrue(repo.deleteAll());
         assertTrue(repo.loadAll().isEmpty());
-        assertFalse(new File(app.getFilesDir(), RideBuddyRepository.FILE).exists());
+        assertFalse(new File(app.getFilesDir(), RideBuddyRepository.FILE_NAME).exists());
     }
 
     @Test
     public void corruptFile_loadsEmpty() throws Exception {
         try (FileOutputStream out = new FileOutputStream(
-                new File(app.getFilesDir(), RideBuddyRepository.FILE))) {
+                new File(app.getFilesDir(), RideBuddyRepository.FILE_NAME))) {
             out.write("{nope".getBytes(StandardCharsets.UTF_8));
         }
         assertTrue(repo.loadAll().isEmpty());

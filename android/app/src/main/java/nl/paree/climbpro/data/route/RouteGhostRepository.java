@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RouteGhostRepository {
 
     private static final String TAG = "RouteGhostRepo";
-    public static final String FILE = "route_ghosts.json";
+    public static final String FILE_NAME = "route_ghosts.json";
 
     /** Process-wide: the Strava sync and the watch request handler each create instances. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -37,7 +37,7 @@ public final class RouteGhostRepository {
 
     public RouteGhostRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

@@ -28,7 +28,7 @@ public class PainLogRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), PainLogRepository.FILE);
+        file = new File(app.getFilesDir(), PainLogRepository.FILE_NAME);
         file.delete();
     }
 

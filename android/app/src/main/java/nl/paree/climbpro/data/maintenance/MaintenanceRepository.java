@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class MaintenanceRepository {
 
     private static final String TAG  = "MaintenanceRepository";
-    static final String FILE = "maintenance.json";
+    static final String FILE_NAME = "maintenance.json";
 
     /** Static: the tracker screen and the route-list banner each create their own instance. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -35,7 +35,7 @@ public final class MaintenanceRepository {
 
     public MaintenanceRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class PainLogRepository {
 
     private static final String TAG  = "PainLogRepository";
-    static final String FILE = "pain_log.json";
+    static final String FILE_NAME = "pain_log.json";
     static final int MIN_SEVERITY = 1;
     static final int MAX_SEVERITY = 5;
 
@@ -35,7 +35,7 @@ public final class PainLogRepository {
 
     public PainLogRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

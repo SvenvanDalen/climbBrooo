@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class IncompleteClimbAttemptRepository {
 
     private static final String TAG  = "IncompleteAttemptRepo";
-    private static final String FILE = "incomplete_climb_attempts.json";
+    private static final String FILE_NAME = "incomplete_climb_attempts.json";
 
     /**
      * Static/class-level lock, mirroring {@link ClimbAttemptRepository#WRITE_LOCK}: multiple
@@ -47,7 +47,7 @@ public final class IncompleteClimbAttemptRepository {
 
     public IncompleteClimbAttemptRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

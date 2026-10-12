@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RideRepository {
 
     private static final String TAG  = "RideRepository";
-    private static final String FILE = "rides.json";
+    private static final String FILE_NAME = "rides.json";
 
     /**
      * Static like {@code ClimbAttemptRepository#WRITE_LOCK}: several instances (manual sync,
@@ -39,7 +39,7 @@ public final class RideRepository {
 
     public RideRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

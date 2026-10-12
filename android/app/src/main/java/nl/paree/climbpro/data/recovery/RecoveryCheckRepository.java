@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RecoveryCheckRepository {
 
     private static final String TAG = "RecoveryCheckRepo";
-    static final String FILE = "recovery_checks.json";
+    static final String FILE_NAME = "recovery_checks.json";
 
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
@@ -36,7 +36,7 @@ public final class RecoveryCheckRepository {
 
     public RecoveryCheckRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 

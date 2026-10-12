@@ -29,7 +29,7 @@ public class TorqueValueRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), TorqueValueRepository.FILE);
+        file = new File(app.getFilesDir(), TorqueValueRepository.FILE_NAME);
         file.delete();
     }
 

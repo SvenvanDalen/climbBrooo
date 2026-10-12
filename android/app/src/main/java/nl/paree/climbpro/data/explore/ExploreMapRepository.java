@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class ExploreMapRepository {
 
     private static final String TAG = "ExploreMapRepo";
-    public static final String FILE = "explore_tiles.json";
+    public static final String FILE_NAME = "explore_tiles.json";
 
     /** Process-wide: the sync worker and the explore screen each create instances. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -32,7 +32,7 @@ public final class ExploreMapRepository {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ExploreMapRepository(Context context) {
-        this(new File(context.getApplicationContext().getFilesDir(), FILE));
+        this(new File(context.getApplicationContext().getFilesDir(), FILE_NAME));
     }
 
     ExploreMapRepository(File file) {

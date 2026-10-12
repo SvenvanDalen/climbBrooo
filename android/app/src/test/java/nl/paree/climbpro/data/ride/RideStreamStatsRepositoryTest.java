@@ -25,7 +25,7 @@ public class RideStreamStatsRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        new File(app.getFilesDir(), RideStreamStatsRepository.FILE).delete();
+        new File(app.getFilesDir(), RideStreamStatsRepository.FILE_NAME).delete();
     }
 
     private static StoredRideStreamStats stats(long id, Integer best10k) {

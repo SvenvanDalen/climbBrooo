@@ -26,7 +26,7 @@ public class BatteryRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), BatteryRepository.FILE);
+        file = new File(app.getFilesDir(), BatteryRepository.FILE_NAME);
         file.delete();
     }
 
