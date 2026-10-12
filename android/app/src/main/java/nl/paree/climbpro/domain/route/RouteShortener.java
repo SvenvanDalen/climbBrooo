@@ -89,59 +89,90 @@ public final class RouteShortener {
         if (lats == null || lons == null || distances == null || max <= 0) return out;
         int n = Math.min(Math.min(lats.length, lons.length), distances.length);
         if (n < 3) return out;
-        double total = distances[n - 1];
 
-        // Spatial hash on an equirectangular grid with cells of JOIN_RADIUS_M, so each point only
-        // compares against the 3x3 neighbourhood instead of the whole route.
-        double mPerDegLon = M_PER_DEG_LAT * Math.cos(Math.toRadians(lats[0]));
-        Map<Long, List<Integer>> grid = new HashMap<>();
-        for (int k = 0; k < n; k++) {
-            grid.computeIfAbsent(cellKey(cellX(lons[k], mPerDegLon), cellY(lats[k])),
-                    key -> new ArrayList<>()).add(k);
-        }
-
+        JoinSearch search = new JoinSearch(lats, lons, distances, n);
         List<Variant> candidates = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            long cx = cellX(lons[i], mPerDegLon);
-            long cy = cellY(lats[i]);
-            int best = -1;
-            double bestConnector = 0;
-            for (long dx = -1; dx <= 1; dx++) {
-                for (long dy = -1; dy <= 1; dy++) {
-                    List<Integer> cell = grid.get(cellKey(cx + dx, cy + dy));
-                    if (cell == null) continue;
-                    for (int j : cell) {
-                        if (j <= i || (best >= 0 && distances[j] <= distances[best])) continue;
-                        double gap = CumulativeDistance.haversine(lats[i], lons[i], lats[j], lons[j]);
-                        if (gap > JOIN_RADIUS_M) continue;
-                        double saved = distances[j] - distances[i] - gap;
-                        double remaining = total - (distances[j] - distances[i]) + gap;
-                        if (saved < MIN_SAVING_M || remaining < MIN_REMAINING_M) continue;
-                        best = j;
-                        bestConnector = gap;
-                    }
-                }
-            }
-            if (best >= 0) {
-                candidates.add(build(i, best, bestConnector, elevations, distances, total,
-                        climbRanges));
+            search.search(i);
+            if (search.best >= 0) {
+                candidates.add(build(i, search.best, search.bestConnector, elevations, distances,
+                        search.total, climbRanges));
             }
         }
 
         candidates.sort((a, b) -> Double.compare(b.savedM, a.savedM));
         for (Variant c : candidates) {
-            boolean duplicate = false;
-            for (Variant kept : out) {
-                if (Math.abs(kept.fromDistanceM - c.fromDistanceM) < DEDUP_ALONG_M
-                        && Math.abs(kept.toDistanceM - c.toDistanceM) < DEDUP_ALONG_M) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (!duplicate) out.add(c);
+            if (!isDuplicate(out, c)) out.add(c);
             if (out.size() >= max) break;
         }
         return out;
+    }
+
+    /** A kept variant that leaves and rejoins the route at (nearly) the same places. */
+    private static boolean isDuplicate(List<Variant> kept, Variant c) {
+        for (Variant k : kept) {
+            if (Math.abs(k.fromDistanceM - c.fromDistanceM) < DEDUP_ALONG_M
+                    && Math.abs(k.toDistanceM - c.toDistanceM) < DEDUP_ALONG_M) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * For a point i, finds the farthest later route point within {@link #JOIN_RADIUS_M} whose
+     * shortcut saves enough and still leaves a long enough ride. Uses a spatial hash on an
+     * equirectangular grid with cells of JOIN_RADIUS_M, so each point only compares against
+     * the 3x3 neighbourhood instead of the whole route.
+     */
+    private static final class JoinSearch {
+        final double[] lats;
+        final double[] lons;
+        final double[] distances;
+        final double total;
+        final double mPerDegLon;
+        final Map<Long, List<Integer>> grid = new HashMap<>();
+        int best;
+        double bestConnector;
+
+        JoinSearch(double[] lats, double[] lons, double[] distances, int n) {
+            this.lats = lats;
+            this.lons = lons;
+            this.distances = distances;
+            this.total = distances[n - 1];
+            this.mPerDegLon = M_PER_DEG_LAT * Math.cos(Math.toRadians(lats[0]));
+            for (int k = 0; k < n; k++) {
+                grid.computeIfAbsent(cellKey(cellX(lons[k], mPerDegLon), cellY(lats[k])),
+                        key -> new ArrayList<>()).add(k);
+            }
+        }
+
+        /** Sets {@link #best} (-1 if none) and {@link #bestConnector} for point i. */
+        void search(int i) {
+            long cx = cellX(lons[i], mPerDegLon);
+            long cy = cellY(lats[i]);
+            best = -1;
+            bestConnector = 0;
+            for (long dx = -1; dx <= 1; dx++) {
+                for (long dy = -1; dy <= 1; dy++) {
+                    considerCell(i, grid.get(cellKey(cx + dx, cy + dy)));
+                }
+            }
+        }
+
+        private void considerCell(int i, List<Integer> cell) {
+            if (cell == null) return;
+            for (int j : cell) {
+                if (j <= i || (best >= 0 && distances[j] <= distances[best])) continue;
+                double gap = CumulativeDistance.haversine(lats[i], lons[i], lats[j], lons[j]);
+                if (gap > JOIN_RADIUS_M) continue;
+                double saved = distances[j] - distances[i] - gap;
+                double remaining = total - (distances[j] - distances[i]) + gap;
+                if (saved < MIN_SAVING_M || remaining < MIN_REMAINING_M) continue;
+                best = j;
+                bestConnector = gap;
+            }
+        }
     }
 
     /**
@@ -157,27 +188,38 @@ public final class RouteShortener {
         return CumulativeDistance.compute(joined);
     }
 
-    private static Variant build(int i, int j, double connector, double[] elevations,
-                                 double[] distances, double total, int[][] climbRanges) {
+    /** Elevation gained from point i to j (0 without elevation data). */
+    private static double gainBetween(double[] elevations, int i, int j) {
         double gain = 0;
-        if (elevations != null && j < elevations.length) {
-            for (int k = i + 1; k <= j; k++) {
-                double d = elevations[k] - elevations[k - 1];
-                if (d > 0) gain += d; // NaN comparisons are false, so gaps count as 0
+        if (elevations == null || j >= elevations.length) return gain;
+        for (int k = i + 1; k <= j; k++) {
+            double d = elevations[k] - elevations[k - 1];
+            if (d > 0) gain += d; // NaN comparisons are false, so gaps count as 0
+        }
+        return gain;
+    }
+
+    /** Climbs fully inside [from, to] are skipped; climbs overlapping it are partial. */
+    private static void classifyClimbs(int[][] climbRanges, double from, double to,
+                                       List<Integer> skipped, List<Integer> partial) {
+        for (int c = 0; c < climbRanges.length; c++) {
+            int[] r = climbRanges[c];
+            if (r == null || r.length < 2) continue;
+            if (r[0] >= from && r[1] <= to) {
+                skipped.add(c);
+            } else if (r[1] > from && r[0] < to) {
+                partial.add(c);
             }
         }
+    }
+
+    private static Variant build(int i, int j, double connector, double[] elevations,
+                                 double[] distances, double total, int[][] climbRanges) {
+        double gain = gainBetween(elevations, i, j);
         List<Integer> skipped = new ArrayList<>();
         List<Integer> partial = new ArrayList<>();
         if (climbRanges != null) {
-            for (int c = 0; c < climbRanges.length; c++) {
-                int[] r = climbRanges[c];
-                if (r == null || r.length < 2) continue;
-                if (r[0] >= distances[i] && r[1] <= distances[j]) {
-                    skipped.add(c);
-                } else if (r[1] > distances[i] && r[0] < distances[j]) {
-                    partial.add(c);
-                }
-            }
+            classifyClimbs(climbRanges, distances[i], distances[j], skipped, partial);
         }
         double skippedM = distances[j] - distances[i];
         return new Variant(i, j, distances[i], distances[j], connector,

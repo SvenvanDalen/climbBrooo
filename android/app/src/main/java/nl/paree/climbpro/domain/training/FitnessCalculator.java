@@ -78,22 +78,12 @@ public final class FitnessCalculator {
 
     public static Result compute(List<StoredRide> rides, int ftpWatts, LocalDate today,
                                  ZoneId zone, int windowDays) {
-        Map<LocalDate, Double> daily = new HashMap<>();
-        LocalDate first = null;
-        int counted = 0, measured = 0, estimated = 0;
+        DailyLoads loads = new DailyLoads();
         if (rides != null) {
-            for (StoredRide r : rides) {
-                if (r == null || r.startEpochSec <= 0) continue;
-                LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
-                if (day.isAfter(today)) continue;
-                TrainingLoad.Load load = TrainingLoad.of(r, ftpWatts);
-                daily.merge(day, load.tss, Double::sum);
-                if (first == null || day.isBefore(first)) first = day;
-                counted++;
-                if (load.source == TrainingLoad.Source.POWER) measured++;
-                if (load.source == TrainingLoad.Source.ESTIMATED_POWER) estimated++;
-            }
+            for (StoredRide r : rides) loads.add(r, ftpWatts, today, zone);
         }
+        Map<LocalDate, Double> daily = loads.daily;
+        LocalDate first = loads.first;
         if (first == null) {
             return new Result(new ArrayList<>(), null, 0, 0, 0, 0, 0);
         }
@@ -114,6 +104,28 @@ public final class FitnessCalculator {
         Day todayDay = all.get(all.size() - 1);
         double ramp = all.size() > 7 ? todayDay.ctl - all.get(all.size() - 8).ctl : todayDay.ctl;
         int history = (int) ChronoUnit.DAYS.between(first, today) + 1;
-        return new Result(window, todayDay, ramp, history, counted, measured, estimated);
+        return new Result(window, todayDay, ramp, history, loads.counted, loads.measured,
+                loads.estimated);
+    }
+
+    /** TSS per day up to today, the first ride day, and how many loads were power-based. */
+    private static final class DailyLoads {
+        final Map<LocalDate, Double> daily = new HashMap<>();
+        LocalDate first = null;
+        int counted = 0;
+        int measured = 0;
+        int estimated = 0;
+
+        void add(StoredRide r, int ftpWatts, LocalDate today, ZoneId zone) {
+            if (r == null || r.startEpochSec <= 0) return;
+            LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
+            if (day.isAfter(today)) return;
+            TrainingLoad.Load load = TrainingLoad.of(r, ftpWatts);
+            daily.merge(day, load.tss, Double::sum);
+            if (first == null || day.isBefore(first)) first = day;
+            counted++;
+            if (load.source == TrainingLoad.Source.POWER) measured++;
+            if (load.source == TrainingLoad.Source.ESTIMATED_POWER) estimated++;
+        }
     }
 }

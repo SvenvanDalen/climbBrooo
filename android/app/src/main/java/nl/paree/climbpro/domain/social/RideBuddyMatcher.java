@@ -66,72 +66,19 @@ public final class RideBuddyMatcher {
     }
 
     public static Match score(RideBuddyProfile me, RideBuddyProfile other) {
-        double sum = 0;
-        double weight = 0;
-        List<String> why = new ArrayList<>();
-        Double km = null;
-
+        Scorer s = new Scorer();
         if (me != null) {
-            if (me.flatSpeedDkmh > 0 && other.flatSpeedDkmh > 0) {
-                double d = (other.flatSpeedDkmh - me.flatSpeedDkmh) / 10.0;
-                sum += W_PACE * linear(Math.abs(d), PACE_ZERO_KMH);
-                weight += W_PACE;
-                if (Math.abs(d) <= PACE_SIMILAR_KMH) why.add("vergelijkbaar tempo");
-                else why.add(String.format(NL, "rijdt %.1f km/u %s", Math.abs(d),
-                        d > 0 ? "sneller" : "langzamer"));
-            }
-            if (me.hasArea() && other.hasArea()) {
-                km = haversineKm(me.areaLat, me.areaLon, other.areaLat, other.areaLon);
-                double sim = km <= AREA_FULL_KM ? 1
-                        : linear(km - AREA_FULL_KM, AREA_ZERO_KM - AREA_FULL_KM);
-                sum += W_AREA * sim;
-                weight += W_AREA;
-                why.add(km < 2.5 ? "in je buurt"
-                        : String.format(NL, "%d km verderop", Math.round(km)));
-            }
-            if (me.rideTypes != 0 && other.rideTypes != 0) {
-                int common = me.rideTypes & other.rideTypes;
-                sum += W_TYPE * jaccard(me.rideTypes, other.rideTypes);
-                weight += W_TYPE;
-                why.add(common != 0 ? "rijdt ook " + RideBuddyCode.typeNames(common)
-                        : "rijdt vooral " + RideBuddyCode.typeNames(other.rideTypes));
-            }
-            if (me.typicalDistanceKm > 0 && other.typicalDistanceKm > 0) {
-                double ratio = Math.abs(Math.log((double) other.typicalDistanceKm / me.typicalDistanceKm));
-                sum += W_DISTANCE * linear(ratio, Math.log(2));
-                weight += W_DISTANCE;
-                why.add(ratio <= Math.log(1.25)
-                        ? "vergelijkbare ritlengte"
-                        : "ritten van ~" + other.typicalDistanceKm + " km");
-            }
-            if (me.vamMph > 0 && other.vamMph > 0) {
-                int d = other.vamMph - me.vamMph;
-                sum += W_CLIMB * linear(Math.abs(d), VAM_ZERO);
-                weight += W_CLIMB;
-                why.add(Math.abs(d) <= VAM_SIMILAR ? "klimt even snel"
-                        : (d > 0 ? "klimt sneller" : "klimt rustiger"));
-            }
-            boolean days = me.weekdays != 0 && other.weekdays != 0;
-            boolean parts = me.dayparts != 0 && other.dayparts != 0;
-            if (days || parts) {
-                double sim = days && parts
-                        ? 0.7 * jaccard(me.weekdays, other.weekdays)
-                                + 0.3 * jaccard(me.dayparts, other.dayparts)
-                        : days ? jaccard(me.weekdays, other.weekdays)
-                        : jaccard(me.dayparts, other.dayparts);
-                sum += W_SCHEDULE * sim;
-                weight += W_SCHEDULE;
-                if (days) {
-                    int common = me.weekdays & other.weekdays;
-                    why.add(common != 0 ? "rijdt ook op " + RideBuddyCode.dayNames(common)
-                            : "rijdt op andere dagen");
-                } else {
-                    int common = me.dayparts & other.dayparts;
-                    why.add(common != 0 ? "rijdt ook in de " + RideBuddyCode.partNames(common)
-                            : "rijdt op andere tijden");
-                }
-            }
+            s.pace(me, other);
+            s.area(me, other);
+            s.rideTypes(me, other);
+            s.distance(me, other);
+            s.climbing(me, other);
+            s.schedule(me, other);
         }
+        double sum = s.sum;
+        double weight = s.weight;
+        List<String> why = s.why;
+        Double km = s.km;
 
         if (weight == 0) {
             return new Match(other, 0, "Te weinig gegevens om te vergelijken", null);
@@ -139,6 +86,97 @@ public final class RideBuddyMatcher {
         double coverage = weight / W_TOTAL;
         int score = (int) Math.round(100 * (sum / weight) * (0.6 + 0.4 * coverage));
         return new Match(other, Math.max(0, Math.min(100, score)), String.join(", ", why), km);
+    }
+
+    /**
+     * Weighted similarity per aspect both profiles share, with a reason line for each. An
+     * aspect either profile leaves out adds no weight, so it neither helps nor hurts.
+     */
+    private static final class Scorer {
+        double sum = 0;
+        double weight = 0;
+        final List<String> why = new ArrayList<>();
+        Double km = null;
+
+        private void add(double w, double similarity, String reason) {
+            sum += w * similarity;
+            weight += w;
+            why.add(reason);
+        }
+
+        void pace(RideBuddyProfile me, RideBuddyProfile other) {
+            if (me.flatSpeedDkmh <= 0 || other.flatSpeedDkmh <= 0) return;
+            double d = (other.flatSpeedDkmh - me.flatSpeedDkmh) / 10.0;
+            String reason = Math.abs(d) <= PACE_SIMILAR_KMH ? "vergelijkbaar tempo"
+                    : String.format(NL, "rijdt %.1f km/u %s", Math.abs(d),
+                            d > 0 ? "sneller" : "langzamer");
+            add(W_PACE, linear(Math.abs(d), PACE_ZERO_KMH), reason);
+        }
+
+        void area(RideBuddyProfile me, RideBuddyProfile other) {
+            if (!me.hasArea() || !other.hasArea()) return;
+            double dist = haversineKm(me.areaLat, me.areaLon, other.areaLat, other.areaLon);
+            km = dist;
+            double sim = dist <= AREA_FULL_KM ? 1
+                    : linear(dist - AREA_FULL_KM, AREA_ZERO_KM - AREA_FULL_KM);
+            add(W_AREA, sim, dist < 2.5 ? "in je buurt"
+                    : String.format(NL, "%d km verderop", Math.round(dist)));
+        }
+
+        void rideTypes(RideBuddyProfile me, RideBuddyProfile other) {
+            if (me.rideTypes == 0 || other.rideTypes == 0) return;
+            int common = me.rideTypes & other.rideTypes;
+            add(W_TYPE, jaccard(me.rideTypes, other.rideTypes),
+                    common != 0 ? "rijdt ook " + RideBuddyCode.typeNames(common)
+                            : "rijdt vooral " + RideBuddyCode.typeNames(other.rideTypes));
+        }
+
+        void distance(RideBuddyProfile me, RideBuddyProfile other) {
+            if (me.typicalDistanceKm <= 0 || other.typicalDistanceKm <= 0) return;
+            double ratio = Math.abs(Math.log((double) other.typicalDistanceKm / me.typicalDistanceKm));
+            add(W_DISTANCE, linear(ratio, Math.log(2)),
+                    ratio <= Math.log(1.25)
+                            ? "vergelijkbare ritlengte"
+                            : "ritten van ~" + other.typicalDistanceKm + " km");
+        }
+
+        void climbing(RideBuddyProfile me, RideBuddyProfile other) {
+            if (me.vamMph <= 0 || other.vamMph <= 0) return;
+            int d = other.vamMph - me.vamMph;
+            String reason;
+            if (Math.abs(d) <= VAM_SIMILAR) reason = "klimt even snel";
+            else reason = d > 0 ? "klimt sneller" : "klimt rustiger";
+            add(W_CLIMB, linear(Math.abs(d), VAM_ZERO), reason);
+        }
+
+        void schedule(RideBuddyProfile me, RideBuddyProfile other) {
+            boolean days = me.weekdays != 0 && other.weekdays != 0;
+            boolean parts = me.dayparts != 0 && other.dayparts != 0;
+            if (!days && !parts) return;
+            add(W_SCHEDULE, scheduleSimilarity(me, other, days, parts),
+                    days ? weekdayReason(me.weekdays & other.weekdays)
+                            : daypartReason(me.dayparts & other.dayparts));
+        }
+    }
+
+    private static double scheduleSimilarity(RideBuddyProfile me, RideBuddyProfile other,
+                                             boolean days, boolean parts) {
+        if (days && parts) {
+            return 0.7 * jaccard(me.weekdays, other.weekdays)
+                    + 0.3 * jaccard(me.dayparts, other.dayparts);
+        }
+        return days ? jaccard(me.weekdays, other.weekdays)
+                : jaccard(me.dayparts, other.dayparts);
+    }
+
+    private static String weekdayReason(int common) {
+        return common != 0 ? "rijdt ook op " + RideBuddyCode.dayNames(common)
+                : "rijdt op andere dagen";
+    }
+
+    private static String daypartReason(int common) {
+        return common != 0 ? "rijdt ook in de " + RideBuddyCode.partNames(common)
+                : "rijdt op andere tijden";
     }
 
     /** 1 at 0, falling linearly to 0 at {@code zero}. */

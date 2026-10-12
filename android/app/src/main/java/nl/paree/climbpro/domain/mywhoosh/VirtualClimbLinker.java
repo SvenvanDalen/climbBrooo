@@ -61,6 +61,13 @@ public final class VirtualClimbLinker {
      * The best counterpart of {@code climb} on the other side (a real climb for a virtual one
      * and vice versa), or null.
      */
+    /** A different climb on the other side (real vs virtual) with a matching profile. */
+    private static boolean isComparable(Candidate climb, Candidate c) {
+        if (c == null || c.virtual == climb.virtual || c.lengthM <= 0) return false;
+        if (climb.climbId != null && climb.climbId.equals(c.climbId)) return false;
+        return profilesMatch(climb, c);
+    }
+
     public static Candidate counterpart(Candidate climb, List<Candidate> all) {
         if (climb == null || all == null || climb.lengthM <= 0) return null;
         Set<String> words = words(climb);
@@ -68,9 +75,7 @@ public final class VirtualClimbLinker {
         Candidate best = null;
         double bestDiff = Double.MAX_VALUE;
         for (Candidate c : all) {
-            if (c == null || c.virtual == climb.virtual || c.lengthM <= 0) continue;
-            if (climb.climbId != null && climb.climbId.equals(c.climbId)) continue;
-            if (!profilesMatch(climb, c)) continue;
+            if (!isComparable(climb, c)) continue;
             Set<String> shared = words(c);
             shared.retainAll(words);
             if (shared.isEmpty()) continue;

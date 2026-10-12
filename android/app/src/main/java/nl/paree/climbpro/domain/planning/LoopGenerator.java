@@ -98,48 +98,64 @@ public final class LoopGenerator {
         List<Anchored> loops = new ArrayList<>();
         for (Source s : sources) {
             if (s == null || s.points == null || s.points.size() < 3) continue;
-            int k = nearest(s.points, startLat, startLon);
-            RoutePoint p = s.points.get(k);
-            double approach = CumulativeDistance.haversine(startLat, startLon, p.lat, p.lon);
-            if (approach > MAX_APPROACH_M) continue;
-
-            RoutePoint first = s.points.get(0);
-            RoutePoint last = s.points.get(s.points.size() - 1);
-            boolean loop = CumulativeDistance.haversine(first.lat, first.lon, last.lat, last.lon)
-                    <= LOOP_CLOSE_M;
-            if (loop) {
-                List<RoutePoint> rotated = rotate(s.points, k);
-                Anchored a = new Anchored(s, rotated, approach);
-                loops.add(a);
-                addLoop(all, a, startLat, startLon, targetM);
-                addShortened(all, a, startLat, startLon, targetM);
-                addOutAndBack(all, s, rotated, 0, approach, startLat, startLon, targetM);
-            } else {
-                addOutAndBack(all, s, s.points, k, approach, startLat, startLon, targetM);
-            }
+            Anchored loop = addFromSource(all, s, startLat, startLon, targetM);
+            if (loop != null) loops.add(loop);
         }
+        addCombinations(all, loops, startLat, startLon, targetM);
+
+        all.sort((a, b) -> Double.compare(a.score, b.score));
+        List<Suggestion> out = new ArrayList<>();
+        for (Suggestion s : all) {
+            if (s.deviation > MAX_DEVIATION || isDuplicate(out, s)) continue;
+            out.add(s);
+            if (out.size() >= max) break;
+        }
+        return out;
+    }
+
+    /**
+     * Adds the suggestions one source route yields when it passes near the start. Returns the
+     * source anchored at the start when it is a closed loop (for combining), else null.
+     */
+    private static Anchored addFromSource(List<Suggestion> all, Source s, double startLat,
+                                          double startLon, double targetM) {
+        int k = nearest(s.points, startLat, startLon);
+        RoutePoint p = s.points.get(k);
+        double approach = CumulativeDistance.haversine(startLat, startLon, p.lat, p.lon);
+        if (approach > MAX_APPROACH_M) return null;
+
+        RoutePoint first = s.points.get(0);
+        RoutePoint last = s.points.get(s.points.size() - 1);
+        boolean loop = CumulativeDistance.haversine(first.lat, first.lon, last.lat, last.lon)
+                <= LOOP_CLOSE_M;
+        if (!loop) {
+            addOutAndBack(all, s, s.points, k, approach, startLat, startLon, targetM);
+            return null;
+        }
+        List<RoutePoint> rotated = rotate(s.points, k);
+        Anchored a = new Anchored(s, rotated, approach);
+        addLoop(all, a, startLat, startLon, targetM);
+        addShortened(all, a, startLat, startLon, targetM);
+        addOutAndBack(all, s, rotated, 0, approach, startLat, startLon, targetM);
+        return a;
+    }
+
+    /** Every pair of loops through the start, ridden one after the other. */
+    private static void addCombinations(List<Suggestion> all, List<Anchored> loops,
+                                        double startLat, double startLon, double targetM) {
         for (int i = 0; i < loops.size(); i++) {
             for (int j = i + 1; j < loops.size(); j++) {
                 addCombined(all, loops.get(i), loops.get(j), startLat, startLon, targetM);
             }
         }
+    }
 
-        all.sort((a, b) -> Double.compare(a.score, b.score));
-        List<Suggestion> out = new ArrayList<>();
-        for (Suggestion s : all) {
-            if (s.deviation > MAX_DEVIATION) continue;
-            boolean duplicate = false;
-            for (Suggestion kept : out) {
-                if (kept.kind == s.kind && kept.routeIds.equals(s.routeIds)) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (duplicate) continue;
-            out.add(s);
-            if (out.size() >= max) break;
+    /** Same kind over the same routes as a suggestion already kept. */
+    private static boolean isDuplicate(List<Suggestion> kept, Suggestion s) {
+        for (Suggestion k : kept) {
+            if (k.kind == s.kind && k.routeIds.equals(s.routeIds)) return true;
         }
-        return out;
+        return false;
     }
 
     /** A loop restarted at the point nearest to the start. */

@@ -93,9 +93,7 @@ public final class RouteGhostProfile {
             while (seg < n - 2 && distances[seg + 1] < target) seg++;
             double d0 = distances[seg];
             double d1 = distances[seg + 1];
-            double f = d1 > d0 ? (target - d0) / (d1 - d0) : 0.0;
-            if (f < 0) f = 0;
-            if (f > 1) f = 1;
+            double f = d1 > d0 ? Math.max(0.0, Math.min(1.0, (target - d0) / (d1 - d0))) : 0.0;
             la[k] = lats[seg] + (lats[seg + 1] - lats[seg]) * f;
             lo[k] = lons[seg] + (lons[seg + 1] - lons[seg]) * f;
         }

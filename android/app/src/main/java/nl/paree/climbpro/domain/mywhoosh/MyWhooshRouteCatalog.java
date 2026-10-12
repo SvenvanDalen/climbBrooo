@@ -49,6 +49,28 @@ public final class MyWhooshRouteCatalog {
         return title == null ? "" : title.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
+    /** One route's entry; the newest ride first, best time over (nearly) the full route. */
+    private static Entry entryFor(List<StoredRide> group) {
+        group.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
+        float longest = 0;
+        for (StoredRide r : group) longest = Math.max(longest, r.distanceM);
+        int best = 0;
+        Integer bestWatts = null;
+        for (StoredRide r : group) {
+            if (r.movingTimeSec > 0 && r.distanceM >= longest * FULL_ROUTE_SHARE
+                    && (best == 0 || r.movingTimeSec < best)) {
+                best = r.movingTimeSec;
+            }
+            if (r.avgWatts != null && r.avgWatts > 0
+                    && (bestWatts == null || r.avgWatts > bestWatts)) {
+                bestWatts = Math.round(r.avgWatts);
+            }
+        }
+        StoredRide newest = group.get(0);
+        return new Entry(IndoorRides.routeTitle(newest), group.size(), newest.startEpochSec,
+                best, bestWatts, longest, group);
+    }
+
     public static List<Entry> compute(List<StoredRide> rides) {
         Map<String, List<StoredRide>> groups = new LinkedHashMap<>();
         if (rides != null) {
@@ -58,26 +80,7 @@ public final class MyWhooshRouteCatalog {
             }
         }
         List<Entry> out = new ArrayList<>();
-        for (List<StoredRide> group : groups.values()) {
-            group.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
-            float longest = 0;
-            for (StoredRide r : group) longest = Math.max(longest, r.distanceM);
-            int best = 0;
-            Integer bestWatts = null;
-            for (StoredRide r : group) {
-                if (r.movingTimeSec > 0 && r.distanceM >= longest * FULL_ROUTE_SHARE
-                        && (best == 0 || r.movingTimeSec < best)) {
-                    best = r.movingTimeSec;
-                }
-                if (r.avgWatts != null && r.avgWatts > 0
-                        && (bestWatts == null || r.avgWatts > bestWatts)) {
-                    bestWatts = Math.round(r.avgWatts);
-                }
-            }
-            StoredRide newest = group.get(0);
-            out.add(new Entry(IndoorRides.routeTitle(newest), group.size(), newest.startEpochSec,
-                    best, bestWatts, longest, group));
-        }
+        for (List<StoredRide> group : groups.values()) out.add(entryFor(group));
         out.sort((a, b) -> a.count != b.count ? Integer.compare(b.count, a.count)
                 : Long.compare(b.lastEpochSec, a.lastEpochSec));
         return out;

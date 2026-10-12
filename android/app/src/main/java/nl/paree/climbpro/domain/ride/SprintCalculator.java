@@ -63,29 +63,44 @@ public final class SprintCalculator {
      * E-bike rides never count. Indoor rides count for power (a trainer measures real watts)
      * but not for speed, which is simulated there.
      */
-    public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats) {
+    private static Map<Long, StoredRide> nonEBikeById(List<StoredRide> rides) {
         Map<Long, StoredRide> byId = new HashMap<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                if (r != null && !RideRecordsCalculator.isEBike(r.type)) byId.put(r.activityId, r);
-            }
+        if (rides == null) return byId;
+        for (StoredRide r : rides) {
+            if (r != null && !RideRecordsCalculator.isEBike(r.type)) byId.put(r.activityId, r);
         }
+        return byId;
+    }
+
+    private static void addPowerSprint(List<PowerSprint> power, StoredRide r,
+                                       StoredRideStreamStats s) {
+        if (s.sprint5sWatts == null || s.sprint5sWatts <= 0) return;
+        power.add(new PowerSprint(r, s.sprint5sWatts,
+                s.sprint15sWatts != null ? s.sprint15sWatts : 0,
+                s.sprint5sAtSec != null ? s.sprint5sAtSec : 0));
+    }
+
+    /** Virtual rides never count for speed: their speed is simulated. */
+    private static void addSpeedSprint(List<SpeedSprint> speed, StoredRide r,
+                                       StoredRideStreamStats s) {
+        if (s.sprint10sSpeedMps == null || s.sprint10sSpeedMps <= 0
+                || RideRecordsCalculator.VIRTUAL_RIDE_TYPE.equals(r.type)) {
+            return;
+        }
+        speed.add(new SpeedSprint(r, s.sprint10sSpeedMps,
+                s.sprint10sSpeedAtSec != null ? s.sprint10sSpeedAtSec : 0));
+    }
+
+    public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats) {
+        Map<Long, StoredRide> byId = nonEBikeById(rides);
         List<PowerSprint> power = new ArrayList<>();
         List<SpeedSprint> speed = new ArrayList<>();
         if (stats != null) {
             for (StoredRideStreamStats s : stats) {
                 StoredRide r = s != null ? byId.get(s.activityId) : null;
                 if (r == null) continue;
-                if (s.sprint5sWatts != null && s.sprint5sWatts > 0) {
-                    power.add(new PowerSprint(r, s.sprint5sWatts,
-                            s.sprint15sWatts != null ? s.sprint15sWatts : 0,
-                            s.sprint5sAtSec != null ? s.sprint5sAtSec : 0));
-                }
-                if (s.sprint10sSpeedMps != null && s.sprint10sSpeedMps > 0
-                        && !RideRecordsCalculator.VIRTUAL_RIDE_TYPE.equals(r.type)) {
-                    speed.add(new SpeedSprint(r, s.sprint10sSpeedMps,
-                            s.sprint10sSpeedAtSec != null ? s.sprint10sSpeedAtSec : 0));
-                }
+                addPowerSprint(power, r, s);
+                addSpeedSprint(speed, r, s);
             }
         }
         power.sort((a, b) -> a.watts5s != b.watts5s

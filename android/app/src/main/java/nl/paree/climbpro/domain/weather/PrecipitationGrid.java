@@ -1,13 +1,9 @@
 package nl.paree.climbpro.domain.weather;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,38 +22,10 @@ public final class PrecipitationGrid {
     }
 
     public static PrecipitationGrid parse(String json, int expectedLocations) throws IOException {
-        JsonNode root = new ObjectMapper().readTree(json);
-        if (root == null || root.isMissingNode()) {
-            throw new IOException("Onverwacht antwoord van de weerdienst");
-        }
-        List<JsonNode> locations = new ArrayList<>();
-        if (root.isArray()) {
-            for (JsonNode n : root) locations.add(n);
-        } else {
-            locations.add(root);
-        }
-        if (locations.size() != expectedLocations || expectedLocations == 0) {
-            throw new IOException("Onverwacht antwoord van de weerdienst");
-        }
-        JsonNode first = locations.get(0).get("hourly");
-        if (first == null || !first.has("time")) {
-            throw new IOException("Onverwacht antwoord van de weerdienst");
-        }
-        JsonNode time = first.get("time");
-        int hours = time.size();
-        Instant[] times = new Instant[hours];
-        for (int i = 0; i < hours; i++) {
-            times[i] = LocalDateTime.parse(time.get(i).asText()).toInstant(ZoneOffset.UTC);
-        }
-        double[][] mm = new double[locations.size()][hours];
-        for (int l = 0; l < locations.size(); l++) {
-            JsonNode p = locations.get(l).path("hourly").path("precipitation");
-            for (int i = 0; i < hours; i++) {
-                JsonNode v = p.get(i);
-                mm[l][i] = v == null || v.isNull() ? Double.NaN : v.asDouble();
-            }
-        }
-        return new PrecipitationGrid(times, mm);
+        List<JsonNode> locations = HourlyGridParser.locations(json, expectedLocations);
+        Instant[] times = HourlyGridParser.times(locations);
+        return new PrecipitationGrid(times,
+                HourlyGridParser.values(locations, "precipitation", times.length));
     }
 
     /** Index of the hour that contains {@code when}, or -1 outside the forecast. */

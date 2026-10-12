@@ -85,6 +85,11 @@ public final class LoopWindAdvisor {
      * Ramp-weighted mean headwind component over the second half of the ride. In reverse the
      * points are walked backwards with distance measured from the old finish.
      */
+    /** Distance from the ride's start to point i, riding the loop in the given direction. */
+    private static double alongRide(double[] distances, int i, int n, boolean reversed) {
+        return reversed ? distances[n - 1] - distances[i] : distances[i] - distances[0];
+    }
+
     private static double homeHeadwind(double[] lats, double[] lons, double[] distances, int n,
                                        boolean reversed, double windFromDeg, double windKmh) {
         double start = distances[0];
@@ -95,8 +100,8 @@ public final class LoopWindAdvisor {
         for (int k = 0; k < n - 1; k++) {
             int a = reversed ? n - 1 - k : k;
             int b = reversed ? n - 2 - k : k + 1;
-            double sa = reversed ? distances[n - 1] - distances[a] : distances[a] - start;
-            double sb = reversed ? distances[n - 1] - distances[b] : distances[b] - start;
+            double sa = alongRide(distances, a, n, reversed);
+            double sb = alongRide(distances, b, n, reversed);
             // Overlap of this segment with the home half [half, length].
             double lo = Math.max(sa, half);
             double hi = Math.min(sb, length);

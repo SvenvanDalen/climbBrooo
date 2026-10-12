@@ -99,16 +99,26 @@ public final class RideStreamAnalyzer {
             }
             if (start < firstClean) start = firstClean;
             if (d[j] - d[firstClean] < targetM) continue;
-            // Advance while the next sample still leaves a full target distance to j.
-            while (start + 1 < j && d[j] - d[start + 1] >= targetM) start++;
-            double startDist = d[j] - targetM;
-            double span = d[start + 1] - d[start];
-            double frac = span > 0 ? (startDist - d[start]) / span : 0;
-            double startTime = t[start] + frac * (t[start + 1] - t[start]);
-            double elapsed = t[j] - startTime;
+            start = latestWindowStart(d, start, j, targetM);
+            double elapsed = windowElapsed(t, d, start, j, targetM);
             if (elapsed > 0 && elapsed < best) best = elapsed;
         }
         return best == Double.POSITIVE_INFINITY ? null : (int) Math.round(best);
+    }
+
+    /** Advance while the next sample still leaves a full target distance to j. */
+    private static int latestWindowStart(double[] d, int start, int j, double targetM) {
+        while (start + 1 < j && d[j] - d[start + 1] >= targetM) start++;
+        return start;
+    }
+
+    /** Seconds to sample j from the point exactly {@code targetM} before it (interpolated). */
+    private static double windowElapsed(int[] t, double[] d, int start, int j, double targetM) {
+        double startDist = d[j] - targetM;
+        double span = d[start + 1] - d[start];
+        double frac = span > 0 ? (startDist - d[start]) / span : 0;
+        double startTime = t[start] + frac * (t[start + 1] - t[start]);
+        return t[j] - startTime;
     }
 
     static boolean isPlausible(int t0, double d0, int t1, double d1) {

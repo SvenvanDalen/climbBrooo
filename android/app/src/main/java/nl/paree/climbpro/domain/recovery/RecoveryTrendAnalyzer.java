@@ -132,15 +132,24 @@ public final class RecoveryTrendAnalyzer {
      * Joins checks with archived rides (checks for rides no longer in the archive are skipped,
      * a later check for the same ride wins) and computes the trend. Null lists count as empty.
      */
-    public static Trend analyze(List<RecoveryCheck> checks, List<StoredRide> rides) {
+    private static Map<Long, StoredRide> ridesById(List<StoredRide> rides) {
         Map<Long, StoredRide> rideById = new HashMap<>();
-        if (rides != null) {
-            for (StoredRide r : rides) if (r != null) rideById.put(r.activityId, r);
-        }
+        if (rides == null) return rideById;
+        for (StoredRide r : rides) if (r != null) rideById.put(r.activityId, r);
+        return rideById;
+    }
+
+    /** One check per ride (a later check for the same ride replaces an earlier one). */
+    private static Map<Long, RecoveryCheck> lastCheckPerRide(List<RecoveryCheck> checks) {
         Map<Long, RecoveryCheck> checkByRide = new LinkedHashMap<>();
-        if (checks != null) {
-            for (RecoveryCheck c : checks) if (c != null) checkByRide.put(c.rideActivityId, c);
-        }
+        if (checks == null) return checkByRide;
+        for (RecoveryCheck c : checks) if (c != null) checkByRide.put(c.rideActivityId, c);
+        return checkByRide;
+    }
+
+    public static Trend analyze(List<RecoveryCheck> checks, List<StoredRide> rides) {
+        Map<Long, StoredRide> rideById = ridesById(rides);
+        Map<Long, RecoveryCheck> checkByRide = lastCheckPerRide(checks);
         List<Point> points = new ArrayList<>();
         for (RecoveryCheck c : checkByRide.values()) {
             StoredRide r = rideById.get(c.rideActivityId);

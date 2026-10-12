@@ -72,6 +72,27 @@ public final class OfflinePackageReport {
      * "km 40: 12–17 °C, wind tot 25 km/u, regen tot 60 %" over the next {@link #WINDOW_HOURS}
      * from now, or from the forecast's first hour when now lies outside it.
      */
+    /** Temperature range, maximum wind and maximum rain chance over hours [start, end). */
+    private static void appendWindow(StringBuilder sb, HourlyForecast f, int start, int end) {
+        double tMin = Double.MAX_VALUE, tMax = -Double.MAX_VALUE, wind = 0;
+        int rain = -1;
+        for (int i = start; i < end; i++) {
+            if (!Double.isNaN(f.temperature[i])) {
+                tMin = Math.min(tMin, f.temperature[i]);
+                tMax = Math.max(tMax, f.temperature[i]);
+            }
+            if (!Double.isNaN(f.windKmh[i])) wind = Math.max(wind, f.windKmh[i]);
+            if (f.rainPct[i] != null) rain = Math.max(rain, f.rainPct[i]);
+        }
+        if (tMin <= tMax) {
+            sb.append(String.format(Locale.US, "%.0f–%.0f °C", tMin, tMax));
+        } else {
+            sb.append("temperatuur onbekend");
+        }
+        sb.append(String.format(Locale.US, ", wind tot %.0f km/u", wind));
+        if (rain >= 0) sb.append(", regen tot ").append(rain).append(" %");
+    }
+
     static String weatherLine(OfflinePackage.WeatherPoint w, long nowMs) {
         String prefix = String.format(Locale.US, "km %.0f: ", w.distanceM / 1000.0);
         HourlyForecast f;
@@ -90,24 +111,8 @@ public final class OfflinePackageReport {
             start = 0;
         }
         int end = Math.min(f.times.length, start + WINDOW_HOURS);
-        double tMin = Double.MAX_VALUE, tMax = -Double.MAX_VALUE, wind = 0;
-        int rain = -1;
-        for (int i = start; i < end; i++) {
-            if (!Double.isNaN(f.temperature[i])) {
-                tMin = Math.min(tMin, f.temperature[i]);
-                tMax = Math.max(tMax, f.temperature[i]);
-            }
-            if (!Double.isNaN(f.windKmh[i])) wind = Math.max(wind, f.windKmh[i]);
-            if (f.rainPct[i] != null) rain = Math.max(rain, f.rainPct[i]);
-        }
         StringBuilder sb = new StringBuilder(prefix);
-        if (tMin <= tMax) {
-            sb.append(String.format(Locale.US, "%.0f–%.0f °C", tMin, tMax));
-        } else {
-            sb.append("temperatuur onbekend");
-        }
-        sb.append(String.format(Locale.US, ", wind tot %.0f km/u", wind));
-        if (rain >= 0) sb.append(", regen tot ").append(rain).append(" %");
+        appendWindow(sb, f, start, end);
         sb.append(" (").append(end - start).append(" u");
         if (outdated) sb.append(" vanaf begin voorspelling");
         return sb.append(')').toString();

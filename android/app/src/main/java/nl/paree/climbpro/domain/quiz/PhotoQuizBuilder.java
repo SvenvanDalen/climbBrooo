@@ -48,9 +48,9 @@ public final class PhotoQuizBuilder {
      * @return questions in random order; empty when fewer than two distinct climb names
      *         exist (no wrong answer to offer)
      */
-    public static List<Question> build(List<StoredClimbAttempt> attempts,
-                                       Map<String, String> namesByClimbId,
-                                       int maxQuestions, Random random) {
+    /** Photo file names per named climb, in attempt order. */
+    private static Map<String, List<String>> photosByName(List<StoredClimbAttempt> attempts,
+                                                          Map<String, String> namesByClimbId) {
         Map<String, List<String>> photosByName = new LinkedHashMap<>();
         for (StoredClimbAttempt a : attempts) {
             if (a.photoFileName == null || a.photoFileName.isEmpty()) continue;
@@ -58,6 +58,13 @@ public final class PhotoQuizBuilder {
             if (name == null || name.isEmpty()) continue;
             photosByName.computeIfAbsent(name, k -> new ArrayList<>()).add(a.photoFileName);
         }
+        return photosByName;
+    }
+
+    public static List<Question> build(List<StoredClimbAttempt> attempts,
+                                       Map<String, String> namesByClimbId,
+                                       int maxQuestions, Random random) {
+        Map<String, List<String>> photosByName = photosByName(attempts, namesByClimbId);
         Set<String> allNames = new LinkedHashSet<>(photosByName.keySet());
         for (String n : namesByClimbId.values()) if (n != null && !n.isEmpty()) allNames.add(n);
         if (photosByName.isEmpty() || allNames.size() < 2) return new ArrayList<>();

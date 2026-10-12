@@ -31,13 +31,16 @@ final class PerSecondSeries {
             if (t < 0 || t > end) continue;
             double v = values[i];
             out[t] = v;
-            if (i == 0) continue;
-            int prev = s.time[i - 1];
-            int gap = t - prev;
-            if (gap > 1 && gap <= MAX_FILL_SEC && prev >= 0) {
-                for (int k = prev + 1; k < t; k++) out[k] = v;
-            }
+            if (i > 0) fillGap(out, s.time[i - 1], t, v);
         }
         return out;
+    }
+
+    /** Fills the seconds between {@code prev} and {@code t} with {@code v} when the gap is short. */
+    private static void fillGap(double[] out, int prev, int t, double v) {
+        int gap = t - prev;
+        if (gap > 1 && gap <= MAX_FILL_SEC && prev >= 0) {
+            for (int k = prev + 1; k < t; k++) out[k] = v;
+        }
     }
 }

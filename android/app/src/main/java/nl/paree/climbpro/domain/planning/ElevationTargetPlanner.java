@@ -231,6 +231,48 @@ public final class ElevationTargetPlanner {
         return pool;
     }
 
+    /**
+     * 0/1-knapsack step: {@code cost[cnt][s]} is the least distance penalty for {@code cnt}
+     * climbs gaining exactly {@code s} metres, {@code mask} the climbs used.
+     */
+    private static void addToTable(double[][] cost, long[][] mask, Pooled p, int index, int k,
+                                   int sumCap) {
+        int g = p.c.elevationGainM;
+        double pen = DISTANCE_PENALTY_M_PER_KM * p.distM / 1000.0;
+        long bit = 1L << index;
+        for (int cnt = k - 1; cnt >= 0; cnt--) {
+            double[] from = cost[cnt];
+            double[] to   = cost[cnt + 1];
+            for (int s = sumCap - g; s >= 0; s--) {
+                double base = from[s];
+                if (base == Double.POSITIVE_INFINITY) continue;
+                double nc = base + pen;
+                if (nc < to[s + g]) {
+                    to[s + g] = nc;
+                    mask[cnt + 1][s + g] = mask[cnt][s] | bit;
+                }
+            }
+        }
+    }
+
+    /** Mask of the reachable set with the lowest gap-to-target + climb + distance penalty. */
+    private static long bestMask(double[][] cost, long[][] mask, int k, int sumCap, int target) {
+        double bestScore = Double.POSITIVE_INFINITY;
+        long bestMask = 0L;
+        for (int cnt = 1; cnt <= k; cnt++) {
+            for (int s = 0; s <= sumCap; s++) {
+                double c = cost[cnt][s];
+                if (c == Double.POSITIVE_INFINITY) continue;
+                double score = Math.abs(s - target) + CLIMB_PENALTY_M * cnt + c;
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestMask = mask[cnt][s];
+                }
+            }
+        }
+        return bestMask;
+    }
+
     private static List<Candidate> select(Request req, List<Pooled> pool) {
         int n = pool.size();
         int maxClimbs = req.maxClimbs <= 0 ? DEFAULT_MAX_CLIMBS : req.maxClimbs;
@@ -248,38 +290,9 @@ public final class ElevationTargetPlanner {
         for (double[] row : cost) java.util.Arrays.fill(row, Double.POSITIVE_INFINITY);
         cost[0][0] = 0.0;
 
-        for (int i = 0; i < n; i++) {
-            int g = pool.get(i).c.elevationGainM;
-            double pen = DISTANCE_PENALTY_M_PER_KM * pool.get(i).distM / 1000.0;
-            long bit = 1L << i;
-            for (int cnt = k - 1; cnt >= 0; cnt--) {
-                double[] from = cost[cnt];
-                double[] to   = cost[cnt + 1];
-                for (int s = sumCap - g; s >= 0; s--) {
-                    double base = from[s];
-                    if (base == Double.POSITIVE_INFINITY) continue;
-                    double nc = base + pen;
-                    if (nc < to[s + g]) {
-                        to[s + g] = nc;
-                        mask[cnt + 1][s + g] = mask[cnt][s] | bit;
-                    }
-                }
-            }
-        }
+        for (int i = 0; i < n; i++) addToTable(cost, mask, pool.get(i), i, k, sumCap);
 
-        double bestScore = Double.POSITIVE_INFINITY;
-        long bestMask = 0L;
-        for (int cnt = 1; cnt <= k; cnt++) {
-            for (int s = 0; s <= sumCap; s++) {
-                double c = cost[cnt][s];
-                if (c == Double.POSITIVE_INFINITY) continue;
-                double score = Math.abs(s - target) + CLIMB_PENALTY_M * cnt + c;
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestMask = mask[cnt][s];
-                }
-            }
-        }
+        long bestMask = bestMask(cost, mask, k, sumCap, target);
 
         List<Candidate> out = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -289,20 +302,25 @@ public final class ElevationTargetPlanner {
     }
 
     /** Nearest-neighbour from the start, then 2-opt with full recomputation (asymmetric tour). */
+    /** Index of the climb whose start is nearest to (lat, lon); the first one on a tie. */
+    private static int nearestIndex(List<Candidate> climbs, double lat, double lon) {
+        int best = 0;
+        double bestD = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < climbs.size(); i++) {
+            Candidate c = climbs.get(i);
+            double d = CumulativeDistance.haversine(lat, lon, c.startLat, c.startLon);
+            if (d < bestD) { bestD = d; best = i; }
+        }
+        return best;
+    }
+
     static List<Candidate> order(double startLat, double startLon, List<Candidate> climbs) {
         List<Candidate> remaining = new ArrayList<>(climbs);
         List<Candidate> tour = new ArrayList<>();
         double curLat = startLat;
         double curLon = startLon;
         while (!remaining.isEmpty()) {
-            int best = 0;
-            double bestD = Double.POSITIVE_INFINITY;
-            for (int i = 0; i < remaining.size(); i++) {
-                Candidate c = remaining.get(i);
-                double d = CumulativeDistance.haversine(curLat, curLon, c.startLat, c.startLon);
-                if (d < bestD) { bestD = d; best = i; }
-            }
-            Candidate next = remaining.remove(best);
+            Candidate next = remaining.remove(nearestIndex(remaining, curLat, curLon));
             tour.add(next);
             curLat = next.exitLat();
             curLon = next.exitLon();

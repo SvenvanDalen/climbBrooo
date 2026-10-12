@@ -69,6 +69,55 @@ public final class ClimbEntryOnlyDetector {
      *         final, most recent attempt in the activity is the one most representative of "how
      *         far did I get" for a never-completed-climbs overview.
      */
+    /** Outcome of scanning one entry window: the exit index (-1 if none) and closest approach. */
+    private static final class WindowScan {
+        int exitIdx = -1;
+        double minDistToEnd;
+
+        WindowScan(double minDistToEnd) {
+            this.minDistToEnd = minDistToEnd;
+        }
+    }
+
+    /**
+     * Walks the track from {@code entryIdx} until it reaches the exit gate, runs out, or has
+     * covered {@code cutoff} metres, tracking the closest approach to the climb's end.
+     */
+    private static WindowScan scanWindow(List<TrackSample> track, int entryIdx,
+                                         double endLat, double endLon, double cutoff,
+                                         double distToEndAtEntry) {
+        WindowScan scan = new WindowScan(distToEndAtEntry);
+        double covered = 0;
+        for (int i = entryIdx; i < track.size() - 1; i++) {
+            TrackSample a = track.get(i);
+            double distToEnd = CumulativeDistance.haversine(endLat, endLon, a.lat, a.lon);
+            if (distToEnd <= ClimbAttemptMatcher.GATE_M) {
+                scan.exitIdx = i;
+                break; // reached the exit gate — this window is a completed pass
+            }
+            if (distToEnd < scan.minDistToEnd) scan.minDistToEnd = distToEnd;
+            TrackSample b = track.get(i + 1);
+            covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
+            // Check b — the point that may have just pushed `covered` past the cutoff —
+            // against the exit gate BEFORE applying the cutoff early-return. Otherwise a
+            // track that wandered past the cutoff distance but whose very last processed
+            // sample actually landed inside the exit gate (a genuine, if untidy,
+            // completion) would be misflagged as incomplete purely because the cutoff
+            // check ran against `a` (the point before the crossing) and never evaluated
+            // `b` (the point that actually crossed it).
+            double bDistToEnd = CumulativeDistance.haversine(endLat, endLon, b.lat, b.lon);
+            if (bDistToEnd <= ClimbAttemptMatcher.GATE_M) {
+                scan.exitIdx = i + 1;
+                break;
+            }
+            if (bDistToEnd < scan.minDistToEnd) scan.minDistToEnd = bDistToEnd;
+            if (covered >= cutoff) {
+                break; // rode well past the climb without exiting; stop scanning this window
+            }
+        }
+        return scan;
+    }
+
     public static int detectIncomplete(List<TrackSample> track,
                                        double startLat, double startLon,
                                        double endLat, double endLon,
@@ -91,36 +140,10 @@ public final class ClimbEntryOnlyDetector {
                 continue;
             }
 
-            double minDistToEnd = distToEndAtEntry;
-            double covered = 0;
-            int exitIdx = -1;
-            for (int i = entryIdx; i < track.size() - 1; i++) {
-                TrackSample a = track.get(i);
-                double distToEnd = CumulativeDistance.haversine(endLat, endLon, a.lat, a.lon);
-                if (distToEnd <= ClimbAttemptMatcher.GATE_M) {
-                    exitIdx = i;
-                    break; // reached the exit gate — this window is a completed pass
-                }
-                if (distToEnd < minDistToEnd) minDistToEnd = distToEnd;
-                TrackSample b = track.get(i + 1);
-                covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
-                // Check b — the point that may have just pushed `covered` past the cutoff —
-                // against the exit gate BEFORE applying the cutoff early-return. Otherwise a
-                // track that wandered past the cutoff distance but whose very last processed
-                // sample actually landed inside the exit gate (a genuine, if untidy,
-                // completion) would be misflagged as incomplete purely because the cutoff
-                // check ran against `a` (the point before the crossing) and never evaluated
-                // `b` (the point that actually crossed it).
-                double bDistToEnd = CumulativeDistance.haversine(endLat, endLon, b.lat, b.lon);
-                if (bDistToEnd <= ClimbAttemptMatcher.GATE_M) {
-                    exitIdx = i + 1;
-                    break;
-                }
-                if (bDistToEnd < minDistToEnd) minDistToEnd = bDistToEnd;
-                if (covered >= cutoff) {
-                    break; // rode well past the climb without exiting; stop scanning this window
-                }
-            }
+            WindowScan scan = scanWindow(track, entryIdx, endLat, endLon, cutoff,
+                    distToEndAtEntry);
+            int exitIdx = scan.exitIdx;
+            double minDistToEnd = scan.minDistToEnd;
 
             if (exitIdx >= 0) {
                 // A completed pass — not incomplete. Resume searching after its exit for a

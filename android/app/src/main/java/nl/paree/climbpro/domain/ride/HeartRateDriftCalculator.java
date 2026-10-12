@@ -65,23 +65,32 @@ public final class HeartRateDriftCalculator {
     }
 
     /** E-bike rides are left out: the motor decouples output from the rider's heart rate. */
+    private static Map<Long, StoredRide> nonEBikeById(List<StoredRide> rides) {
+        Map<Long, StoredRide> byId = new HashMap<>();
+        if (rides == null) return byId;
+        for (StoredRide r : rides) {
+            if (r != null && !RideRecordsCalculator.isEBike(r.type)) byId.put(r.activityId, r);
+        }
+        return byId;
+    }
+
+    /** A drift entry per known ride with a measured drift. */
+    private static List<Entry> entries(Map<Long, StoredRide> byId,
+                                       List<StoredRideStreamStats> stats) {
+        List<Entry> entries = new ArrayList<>();
+        if (stats == null) return entries;
+        for (StoredRideStreamStats s : stats) {
+            StoredRide r = s != null ? byId.get(s.activityId) : null;
+            if (r == null || s.hrDriftPct == null || s.hrDriftPct.isNaN()) continue;
+            entries.add(new Entry(r, s.hrDriftPct, s.hrDriftBasis,
+                    s.hrDriftMinutes != null ? s.hrDriftMinutes : 0));
+        }
+        return entries;
+    }
+
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats,
                                  long nowEpochSec) {
-        Map<Long, StoredRide> byId = new HashMap<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                if (r != null && !RideRecordsCalculator.isEBike(r.type)) byId.put(r.activityId, r);
-            }
-        }
-        List<Entry> entries = new ArrayList<>();
-        if (stats != null) {
-            for (StoredRideStreamStats s : stats) {
-                StoredRide r = s != null ? byId.get(s.activityId) : null;
-                if (r == null || s.hrDriftPct == null || s.hrDriftPct.isNaN()) continue;
-                entries.add(new Entry(r, s.hrDriftPct, s.hrDriftBasis,
-                        s.hrDriftMinutes != null ? s.hrDriftMinutes : 0));
-            }
-        }
+        List<Entry> entries = entries(nonEBikeById(rides), stats);
         entries.sort((a, b) -> Long.compare(b.ride.startEpochSec, a.ride.startEpochSec));
 
         long window = TREND_WINDOW_DAYS * 86_400L;

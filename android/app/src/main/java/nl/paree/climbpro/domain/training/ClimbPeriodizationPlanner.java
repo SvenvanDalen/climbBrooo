@@ -148,15 +148,21 @@ public final class ClimbPeriodizationPlanner {
      * @param buildWeeks          number of build weeks before the single recovery week (>= 1).
      * @return the plan, or null when no climb with positive elevation gain is available.
      */
-    public static Plan plan(List<Candidate> climbs, double baselineWeeklyGainM, int buildWeeks) {
-        if (climbs == null || buildWeeks < 1) return null;
-
+    /** One candidate per climb with gain: the copy with the most attempts (first on a tie). */
+    private static Map<String, Candidate> mostRiddenCopies(List<Candidate> climbs) {
         Map<String, Candidate> byId = new LinkedHashMap<>();
         for (Candidate c : climbs) {
             if (c == null || c.climbId == null || c.elevationGainM <= 0) continue;
             Candidate existing = byId.get(c.climbId);
             if (existing == null || c.attempts > existing.attempts) byId.put(c.climbId, c);
         }
+        return byId;
+    }
+
+    public static Plan plan(List<Candidate> climbs, double baselineWeeklyGainM, int buildWeeks) {
+        if (climbs == null || buildWeeks < 1) return null;
+
+        Map<String, Candidate> byId = mostRiddenCopies(climbs);
         if (byId.isEmpty()) return null;
 
         List<Candidate> ridden = new ArrayList<>();

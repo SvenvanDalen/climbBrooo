@@ -46,15 +46,32 @@ public final class ClimbShareExtractor {
     }
 
     /** The climb with its margin, or null for a home climb or a route without geometry. */
+    private static boolean hasAlignedGeometry(StoredRoute route) {
+        double[] d = route.distances;
+        return d != null && route.lats != null && route.lons != null && route.elevations != null
+                && d.length == route.lats.length && d.length == route.lons.length
+                && d.length == route.elevations.length;
+    }
+
+    /** The collection's own climbs plus every climb of its member routes, without repeats. */
+    private static Set<ClimbMembership> members(RouteCollection collection,
+                                                Map<String, StoredRoute> routesById) {
+        Set<ClimbMembership> members = new LinkedHashSet<>();
+        if (collection.climbs != null) members.addAll(collection.climbs);
+        if (collection.routeIds == null) return members;
+        for (String routeId : collection.routeIds) {
+            StoredRoute r = routesById.get(routeId);
+            if (r == null || r.climbs == null) continue;
+            for (int i = 0; i < r.climbs.size(); i++) members.add(new ClimbMembership(routeId, i));
+        }
+        return members;
+    }
+
     public static SharedClimb extract(StoredRoute route, int climbIndex) {
         StoredClimb c = climbAt(route, climbIndex);
         if (c == null || c.isHome) return null;
+        if (!hasAlignedGeometry(route)) return null;
         double[] d = route.distances;
-        if (d == null || route.lats == null || route.lons == null || route.elevations == null
-                || d.length != route.lats.length || d.length != route.lons.length
-                || d.length != route.elevations.length) {
-            return null;
-        }
         double from = (double) c.startDistance - MARGIN_M;
         double to = (double) c.endDistance + MARGIN_M;
         int first = -1;
@@ -89,15 +106,7 @@ public final class ClimbShareExtractor {
      */
     public static Selection collect(RouteCollection collection,
                                     Map<String, StoredRoute> routesById) {
-        Set<ClimbMembership> members = new LinkedHashSet<>();
-        if (collection.climbs != null) members.addAll(collection.climbs);
-        if (collection.routeIds != null) {
-            for (String routeId : collection.routeIds) {
-                StoredRoute r = routesById.get(routeId);
-                if (r == null || r.climbs == null) continue;
-                for (int i = 0; i < r.climbs.size(); i++) members.add(new ClimbMembership(routeId, i));
-            }
-        }
+        Set<ClimbMembership> members = members(collection, routesById);
         List<SharedClimb> out = new ArrayList<>();
         int home = 0;
         int over = 0;

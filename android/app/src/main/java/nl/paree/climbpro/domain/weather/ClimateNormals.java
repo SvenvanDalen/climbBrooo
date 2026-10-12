@@ -123,68 +123,101 @@ public final class ClimateNormals {
         JsonNode dir = hourly.path("wind_direction_10m");
         JsonNode precip = hourly.path("precipitation");
 
-        int parts = DayPart.values().length;
-        double[][] tempSum = new double[12][parts], windSum = new double[12][parts];
-        double[][] uSum = new double[12][parts], vSum = new double[12][parts];
-        int[][] tempN = new int[12][parts], windN = new int[12][parts], hours = new int[12][parts];
-        int[][] blocks = new int[12][parts], wetBlocks = new int[12][parts];
-        // Precipitation per (date, day-part): the rain chance is about the ride, not one hour.
-        Map<String, Double> blockRain = new HashMap<>();
-        Map<String, int[]> blockCell = new HashMap<>();
-
+        Sums sums = new Sums(DayPart.values().length);
         for (int i = 0; i < time.size(); i++) {
             String t = time.get(i).asText();
-            if (t.length() < 13) continue;
-            int month, hour;
-            try {
-                month = Integer.parseInt(t.substring(5, 7));
-                hour = Integer.parseInt(t.substring(11, 13));
-            } catch (NumberFormatException e) {
-                continue;
-            }
-            DayPart part = DayPart.ofHour(hour);
+            int[] monthHour = monthAndHour(t);
+            if (monthHour == null) continue;
+            int month = monthHour[0];
+            DayPart part = DayPart.ofHour(monthHour[1]);
             if (part == null || month < 1 || month > 12) continue;
-            int m = month - 1, p = part.ordinal();
+            sums.add(month - 1, part, t, number(temp, i), number(speed, i), number(dir, i),
+                    number(precip, i));
+        }
+        sums.countRainBlocks();
+        return new ClimateNormals(sums.cells());
+    }
+
+    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); null if unparseable. */
+    private static int[] monthAndHour(String t) {
+        if (t.length() < 13) return null;
+        try {
+            return new int[] {Integer.parseInt(t.substring(5, 7)),
+                    Integer.parseInt(t.substring(11, 13))};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** Running sums per (month, day-part) while the hourly archive is read. */
+    private static final class Sums {
+        final int parts;
+        final double[][] tempSum, windSum, uSum, vSum;
+        final int[][] tempN, windN, hours, blocks, wetBlocks;
+        // Precipitation per (date, day-part): the rain chance is about the ride, not one hour.
+        final Map<String, Double> blockRain = new HashMap<>();
+        final Map<String, int[]> blockCell = new HashMap<>();
+
+        Sums(int parts) {
+            this.parts = parts;
+            tempSum = new double[12][parts];
+            windSum = new double[12][parts];
+            uSum = new double[12][parts];
+            vSum = new double[12][parts];
+            tempN = new int[12][parts];
+            windN = new int[12][parts];
+            hours = new int[12][parts];
+            blocks = new int[12][parts];
+            wetBlocks = new int[12][parts];
+        }
+
+        void add(int m, DayPart part, String t, double tv, double sv, double dv, double pv) {
+            int p = part.ordinal();
             hours[m][p]++;
-            double tv = number(temp, i);
             if (!Double.isNaN(tv)) {
                 tempSum[m][p] += tv;
                 tempN[m][p]++;
             }
-            double sv = number(speed, i), dv = number(dir, i);
             if (!Double.isNaN(sv) && !Double.isNaN(dv)) {
                 windSum[m][p] += sv;
                 uSum[m][p] += sv * Math.sin(Math.toRadians(dv));
                 vSum[m][p] += sv * Math.cos(Math.toRadians(dv));
                 windN[m][p]++;
             }
-            double pv = number(precip, i);
             if (!Double.isNaN(pv)) {
                 String key = t.substring(0, 10) + part.name();
                 blockRain.merge(key, pv, Double::sum);
                 blockCell.putIfAbsent(key, new int[] {m, p});
             }
         }
-        for (Map.Entry<String, Double> e : blockRain.entrySet()) {
-            int[] mp = blockCell.get(e.getKey());
-            blocks[mp[0]][mp[1]]++;
-            if (e.getValue() >= WET_MM) wetBlocks[mp[0]][mp[1]]++;
-        }
 
-        Cell[][] out = new Cell[12][parts];
-        for (int m = 0; m < 12; m++) {
-            for (int p = 0; p < parts; p++) {
-                if (hours[m][p] == 0) continue;
-                out[m][p] = new Cell(
-                        tempN[m][p] > 0 ? tempSum[m][p] / tempN[m][p] : Double.NaN,
-                        windN[m][p] > 0 ? windSum[m][p] / windN[m][p] : Double.NaN,
-                        blocks[m][p] > 0 ? (double) wetBlocks[m][p] / blocks[m][p] : Double.NaN,
-                        windN[m][p] > 0 ? uSum[m][p] / windN[m][p] : Double.NaN,
-                        windN[m][p] > 0 ? vSum[m][p] / windN[m][p] : Double.NaN,
-                        hours[m][p]);
+        void countRainBlocks() {
+            for (Map.Entry<String, Double> e : blockRain.entrySet()) {
+                int[] mp = blockCell.get(e.getKey());
+                blocks[mp[0]][mp[1]]++;
+                if (e.getValue() >= WET_MM) wetBlocks[mp[0]][mp[1]]++;
             }
         }
-        return new ClimateNormals(out);
+
+        Cell[][] cells() {
+            Cell[][] out = new Cell[12][parts];
+            for (int m = 0; m < 12; m++) {
+                for (int p = 0; p < parts; p++) {
+                    if (hours[m][p] != 0) out[m][p] = cell(m, p);
+                }
+            }
+            return out;
+        }
+
+        private Cell cell(int m, int p) {
+            return new Cell(
+                    tempN[m][p] > 0 ? tempSum[m][p] / tempN[m][p] : Double.NaN,
+                    windN[m][p] > 0 ? windSum[m][p] / windN[m][p] : Double.NaN,
+                    blocks[m][p] > 0 ? (double) wetBlocks[m][p] / blocks[m][p] : Double.NaN,
+                    windN[m][p] > 0 ? uSum[m][p] / windN[m][p] : Double.NaN,
+                    windN[m][p] > 0 ? vSum[m][p] / windN[m][p] : Double.NaN,
+                    hours[m][p]);
+        }
     }
 
     /** Cache form: {@code {"v":1,"cells":[[temp,wind,rain,u,v,hours] × 48]}} (month-major). */

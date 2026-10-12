@@ -180,70 +180,76 @@ public final class FtpEstimator {
      * or returns null when there isn't enough duration-spread data to trust a suggestion
      * (see {@link #MIN_QUALIFYING_EFFORTS}, {@link #MIN_DISTINCT_BUCKETS}).
      */
-    public static Integer suggestFtpWatts(List<Effort> efforts, RiderProfile profile) {
-        if (efforts == null || profile == null || !profile.isComplete()) {
-            return null;
-        }
-        double massKg = profile.totalMassKg();
-        Double bestShort = null;
-        Double bestMedium = null;
-        Double bestLong = null;
-        boolean seenShort = false;
-        boolean seenMedium = false;
-        boolean seenLong = false;
-        int qualifying = 0;
+    /** Qualifying-effort count, buckets seen and the best plausible FTP per duration bucket. */
+    private static final class BucketBests {
+        int qualifying;
+        final boolean[] seen = new boolean[Bucket.values().length];
+        final Double[] best = new Double[Bucket.values().length];
 
+        int distinctBuckets() {
+            int n = 0;
+            for (boolean s : seen) if (s) n++;
+            return n;
+        }
+
+        /** Highest bucket best; -∞ when every bucket's best was excluded. */
+        double overallBest() {
+            double overall = Double.NEGATIVE_INFINITY;
+            for (Double b : best) if (b != null) overall = Math.max(overall, b);
+            return overall;
+        }
+    }
+
+    private static BucketBests collectBuckets(List<Effort> efforts, double massKg) {
+        BucketBests buckets = new BucketBests();
         for (Effort e : efforts) {
             if (e == null || e.elapsedSec <= 0 || e.segDistMeters.length == 0) continue;
             Bucket bucket = bucketFor(e.elapsedSec);
             if (bucket == null) continue;
-            double power = impliedPowerWatts(e, massKg);
-            // A saturated bisection means the elapsed time didn't plausibly match this
-            // climb's segment geometry (e.g. a resync re-segmented it under a stored
-            // attempt) — treat it as unsolvable, not as a real (absurdly high) result.
-            if (power <= 0 || isSaturated(power)) continue;
-            double ftp = power - PowerConstants.W_PRIME / e.elapsedSec;
-            if (ftp <= 0) continue;
+            double ftp = solvableFtp(e, massKg);
+            if (Double.isNaN(ftp)) continue;
             // This effort was genuinely solvable (not saturated) and produced a positive
             // FTP, so it counts as qualifying data and populates its duration bucket for the
-            // minimum-data gates below, regardless of whether it turns out to be plausible.
-            qualifying++;
-            switch (bucket) {
-                case SHORT: seenShort = true; break;
-                case MEDIUM: seenMedium = true; break;
-                case LONG: seenLong = true; break;
-            }
+            // minimum-data gates, regardless of whether it turns out to be plausible.
+            buckets.qualifying++;
+            int b = bucket.ordinal();
+            buckets.seen[b] = true;
             // An implausibly high implied FTP (e.g. a mistimed ClimbAttemptMatcher pairing
             // that's unsaturated but still absurd) must not be trusted as this bucket's best
-            // effort, the same way a saturated effort is excluded above — but unlike a
+            // effort, the same way a saturated effort is excluded — but unlike a
             // saturated effort it still counted as qualifying data just above, so a good
             // suggestion from a *different* bucket isn't starved of the minimum-data gates.
             // Excluding it here (per bucket) rather than only on the final overall value
             // means one implausible bucket can no longer wipe out a good suggestion from
             // another bucket.
             if (ftp > MAX_PLAUSIBLE_FTP_WATTS) continue;
-            switch (bucket) {
-                case SHORT:
-                    bestShort = (bestShort == null) ? ftp : Math.max(bestShort, ftp);
-                    break;
-                case MEDIUM:
-                    bestMedium = (bestMedium == null) ? ftp : Math.max(bestMedium, ftp);
-                    break;
-                case LONG:
-                    bestLong = (bestLong == null) ? ftp : Math.max(bestLong, ftp);
-                    break;
-            }
+            buckets.best[b] = buckets.best[b] == null ? ftp : Math.max(buckets.best[b], ftp);
         }
+        return buckets;
+    }
 
-        int distinctBuckets = (seenShort ? 1 : 0) + (seenMedium ? 1 : 0) + (seenLong ? 1 : 0);
-        if (qualifying < MIN_QUALIFYING_EFFORTS || distinctBuckets < MIN_DISTINCT_BUCKETS) {
+    /** FTP implied by one effort, or NaN when it isn't solvable or not positive. */
+    private static double solvableFtp(Effort e, double massKg) {
+        double power = impliedPowerWatts(e, massKg);
+        // A saturated bisection means the elapsed time didn't plausibly match this
+        // climb's segment geometry (e.g. a resync re-segmented it under a stored
+        // attempt) — treat it as unsolvable, not as a real (absurdly high) result.
+        if (power <= 0 || isSaturated(power)) return Double.NaN;
+        double ftp = power - PowerConstants.W_PRIME / e.elapsedSec;
+        return ftp > 0 ? ftp : Double.NaN;
+    }
+
+    public static Integer suggestFtpWatts(List<Effort> efforts, RiderProfile profile) {
+        if (efforts == null || profile == null || !profile.isComplete()) {
+            return null;
+        }
+        BucketBests buckets = collectBuckets(efforts, profile.totalMassKg());
+        if (buckets.qualifying < MIN_QUALIFYING_EFFORTS
+                || buckets.distinctBuckets() < MIN_DISTINCT_BUCKETS) {
             return null;
         }
 
-        double overall = Double.NEGATIVE_INFINITY;
-        if (bestShort != null) overall = Math.max(overall, bestShort);
-        if (bestMedium != null) overall = Math.max(overall, bestMedium);
-        if (bestLong != null) overall = Math.max(overall, bestLong);
+        double overall = buckets.overallBest();
         // Every bucket's best effort may have been excluded above (all saturated or all
         // implausibly high) even though the minimum-data gates passed — same "no usable
         // data" outcome as not having enough efforts at all.

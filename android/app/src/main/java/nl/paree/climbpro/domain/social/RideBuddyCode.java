@@ -95,31 +95,7 @@ public final class RideBuddyCode {
 
     /** Finds the first profile code in {@code text} (which may be a whole chat message). */
     public static RideBuddyProfile decode(String text) throws InvalidCodeException {
-        Matcher m = CODE.matcher(text == null ? "" : text);
-        if (!m.find()) throw new InvalidCodeException(MSG_NOT_FOUND);
-        int prefixVersion = Integer.parseInt(m.group(1));
-        if (prefixVersion > VERSION) throw new InvalidCodeException(MSG_NEWER);
-        if (prefixVersion != VERSION) throw new InvalidCodeException(MSG_CORRUPT);
-        String token = m.group(2);
-        if (token.isEmpty()) throw new InvalidCodeException(MSG_CORRUPT);
-        if (token.length() > MAX_CODE_CHARS) throw new InvalidCodeException(MSG_TOO_LARGE);
-
-        byte[] gz;
-        try {
-            gz = Base64.getUrlDecoder().decode(token);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidCodeException(MSG_CORRUPT);
-        }
-        JsonNode root;
-        try {
-            root = MAPPER.readTree(gunzip(gz));
-        } catch (IOException e) {
-            throw new InvalidCodeException(MSG_CORRUPT);
-        }
-        if (root == null || !root.isObject()) throw new InvalidCodeException(MSG_CORRUPT);
-        int v = root.path("v").asInt(-1);
-        if (v > VERSION) throw new InvalidCodeException(MSG_NEWER);
-        if (v != VERSION) throw new InvalidCodeException(MSG_CORRUPT);
+        JsonNode root = readRoot(text);
         String id = text(root, "id");
         String name = text(root, "n");
         if (id == null || id.length() > MAX_ID_CHARS || name == null) {
@@ -137,18 +113,54 @@ public final class RideBuddyCode {
         p.rideTypes = inRange(root, "rt", 1, 7);
         p.weekdays = inRange(root, "wd", 1, 127);
         p.dayparts = inRange(root, "dp", 1, 7);
-        JsonNode a = root.get("a");
-        if (a != null && a.isArray() && a.size() == 2 && a.get(0).isIntegralNumber()
-                && a.get(1).isIntegralNumber()) {
-            double lat = a.get(0).asLong() / 1000.0;
-            double lon = a.get(1).asLong() / 1000.0;
-            if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-                double[] c = RideBuddyProfile.snapToCell(lat, lon);
-                p.areaLat = c[0];
-                p.areaLon = c[1];
-            }
-        }
+        applyArea(p, root.get("a"));
         return p;
+    }
+
+    /** Finds the code in {@code text} and returns its JSON root after the version checks. */
+    private static JsonNode readRoot(String text) throws InvalidCodeException {
+        Matcher m = CODE.matcher(text == null ? "" : text);
+        if (!m.find()) throw new InvalidCodeException(MSG_NOT_FOUND);
+        checkVersion(Integer.parseInt(m.group(1)));
+        String token = m.group(2);
+        if (token.isEmpty()) throw new InvalidCodeException(MSG_CORRUPT);
+        if (token.length() > MAX_CODE_CHARS) throw new InvalidCodeException(MSG_TOO_LARGE);
+
+        byte[] gz;
+        try {
+            gz = Base64.getUrlDecoder().decode(token);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidCodeException(MSG_CORRUPT);
+        }
+        JsonNode root;
+        try {
+            root = MAPPER.readTree(gunzip(gz));
+        } catch (IOException e) {
+            throw new InvalidCodeException(MSG_CORRUPT);
+        }
+        if (root == null || !root.isObject()) throw new InvalidCodeException(MSG_CORRUPT);
+        checkVersion(root.path("v").asInt(-1));
+        return root;
+    }
+
+    private static void checkVersion(int v) throws InvalidCodeException {
+        if (v > VERSION) throw new InvalidCodeException(MSG_NEWER);
+        if (v != VERSION) throw new InvalidCodeException(MSG_CORRUPT);
+    }
+
+    /** The shared area ({@code [lat*1000, lon*1000]}), snapped to its cell; ignored if invalid. */
+    private static void applyArea(RideBuddyProfile p, JsonNode a) {
+        if (a == null || !a.isArray() || a.size() != 2 || !a.get(0).isIntegralNumber()
+                || !a.get(1).isIntegralNumber()) {
+            return;
+        }
+        double lat = a.get(0).asLong() / 1000.0;
+        double lon = a.get(1).asLong() / 1000.0;
+        if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            double[] c = RideBuddyProfile.snapToCell(lat, lon);
+            p.areaLat = c[0];
+            p.areaLon = c[1];
+        }
     }
 
     /**

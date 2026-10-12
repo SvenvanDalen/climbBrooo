@@ -64,6 +64,21 @@ public final class SprintAnalyzer {
      * that doesn't descend more than {@link #MAX_DESCENT_FRACTION}, or null without an altitude
      * stream: without it a fast descent would pass for a sprint.
      */
+    /**
+     * Average speed from sample i to j, or NaN when the window is too long, not moving, or
+     * descends too steeply to count as a sprint.
+     */
+    private static double windowSpeed(int[] t, double[] d, double[] alt, int i, int j,
+                                      int windowSec) {
+        int span = t[j] - t[i];
+        if (span < windowSec || span > windowSec + MAX_WINDOW_SLACK_SEC) return Double.NaN;
+        double dist = d[j] - d[i];
+        if (dist <= 0) return Double.NaN;
+        double drop = alt[i] - alt[j];
+        if (Double.isNaN(drop) || drop / dist > MAX_DESCENT_FRACTION) return Double.NaN;
+        return dist / span;
+    }
+
     public static Peak peakSpeed(RideStreams s, int windowSec) {
         if (s == null || !s.isUsable() || s.altitude == null || windowSec <= 0) return null;
         int[] t = s.time;
@@ -81,13 +96,7 @@ public final class SprintAnalyzer {
             if (i < firstClean) i = firstClean;
             // Latest start that still gives a window of at least windowSec.
             while (i + 1 < j && t[j] - t[i + 1] >= windowSec) i++;
-            int span = t[j] - t[i];
-            if (span < windowSec || span > windowSec + MAX_WINDOW_SLACK_SEC) continue;
-            double dist = d[j] - d[i];
-            if (dist <= 0) continue;
-            double drop = alt[i] - alt[j];
-            if (Double.isNaN(drop) || drop / dist > MAX_DESCENT_FRACTION) continue;
-            double v = dist / span;
+            double v = windowSpeed(t, d, alt, i, j, windowSec);
             if (v > best) {
                 best = v;
                 bestStart = t[i];

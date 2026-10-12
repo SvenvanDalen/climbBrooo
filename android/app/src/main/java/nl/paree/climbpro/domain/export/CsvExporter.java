@@ -82,30 +82,39 @@ public final class CsvExporter {
                 "afwijkend_gereden", "activiteit_id", "notitie", "meegereden_met",
                 "gem_vermogen_w", "w_per_kg", "gem_hartslag_bpm", "gem_cadans_rpm");
         for (StoredClimbAttempt a : sorted) {
-            ClimbInfo c = climbs.get(a.climbId);
-            boolean timed = a.elapsedSec > 0;
-            row(sb,
-                    a.dateEpochSec > 0 ? formatMs(a.dateEpochSec * 1000L, zone) : "",
-                    c != null ? c.name : "",
-                    c != null ? c.routeName : "",
-                    a.climbId,
-                    String.valueOf(a.elapsedSec),
-                    timed ? hms(a.elapsedSec) : "",
-                    c != null ? String.valueOf(c.lengthM) : "",
-                    c != null ? String.valueOf(c.gainM) : "",
-                    c != null && timed ? oneDecimal(c.lengthM / (double) a.elapsedSec * 3.6) : "",
-                    c != null && timed ? String.valueOf(Math.round(c.gainM * 3600.0 / a.elapsedSec)) : "",
-                    String.valueOf(a.passIndex + 1),
-                    a.routeDeviation ? "ja" : "nee",
-                    String.valueOf(a.activityId),
-                    a.note,
-                    a.companions,
-                    a.avgWatts != null ? String.valueOf(a.avgWatts) : "",
-                    wattsPerKg(a, weights),
-                    a.avgHeartrate != null ? String.valueOf(a.avgHeartrate) : "",
-                    a.avgCadence != null ? String.valueOf(a.avgCadence) : "");
+            attemptRow(sb, a, climbs.get(a.climbId), zone, weights);
         }
         return sb.toString();
+    }
+
+    private static void attemptRow(StringBuilder sb, StoredClimbAttempt a, ClimbInfo c,
+                                   ZoneId zone, WeightHistory weights) {
+        boolean timed = a.elapsedSec > 0;
+        boolean withSpeed = c != null && timed;
+        row(sb,
+                a.dateEpochSec > 0 ? formatMs(a.dateEpochSec * 1000L, zone) : "",
+                c != null ? c.name : "",
+                c != null ? c.routeName : "",
+                a.climbId,
+                String.valueOf(a.elapsedSec),
+                timed ? hms(a.elapsedSec) : "",
+                c != null ? String.valueOf(c.lengthM) : "",
+                c != null ? String.valueOf(c.gainM) : "",
+                withSpeed ? oneDecimal(c.lengthM / (double) a.elapsedSec * 3.6) : "",
+                withSpeed ? String.valueOf(Math.round(c.gainM * 3600.0 / a.elapsedSec)) : "",
+                String.valueOf(a.passIndex + 1),
+                a.routeDeviation ? "ja" : "nee",
+                String.valueOf(a.activityId),
+                a.note,
+                a.companions,
+                textOrEmpty(a.avgWatts),
+                wattsPerKg(a, weights),
+                textOrEmpty(a.avgHeartrate),
+                textOrEmpty(a.avgCadence));
+    }
+
+    private static String textOrEmpty(Integer value) {
+        return value != null ? String.valueOf(value) : "";
     }
 
     private static String wattsPerKg(StoredClimbAttempt a, WeightHistory weights) {
