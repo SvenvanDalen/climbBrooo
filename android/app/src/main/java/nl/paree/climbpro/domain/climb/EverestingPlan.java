@@ -66,7 +66,7 @@ public final class EverestingPlan {
     public long estimatedTotalSec(int climbSec, int climbLengthM) {
         if (climbSec <= 0 || climbLengthM <= 0) return -1;
         long descentSec = Math.round(climbLengthM / DESCENT_SPEED_MPS);
-        return (long) repeats * (climbSec + descentSec);
+        return repeats * (climbSec + descentSec);
     }
 
     /**

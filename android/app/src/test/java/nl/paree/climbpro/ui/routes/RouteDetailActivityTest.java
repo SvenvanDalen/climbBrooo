@@ -261,7 +261,7 @@ public class RouteDetailActivityTest {
         boolean quirk = ActivityTestSupport.settleTolerant();
         Intent next = ActivityTestSupport.nextStarted(activity);
         String toast = UiTestEnv.latestToast();
-        assertTrue(quirk || next != null || (toast != null && toast.length() > 0));
+        assertTrue(quirk || next != null || (toast != null && !toast.isEmpty()));
     }
 
     @Test

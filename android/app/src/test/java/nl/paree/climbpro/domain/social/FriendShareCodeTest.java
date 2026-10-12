@@ -113,7 +113,7 @@ public class FriendShareCodeTest {
         assertEquals(FriendShareCode.MSG_NOT_FOUND, errorOf("https://www.strava.com/activities/1"));
     }
 
-    @Test public void rejectsTruncatedAndGarbageCodes() throws Exception {
+    @Test public void rejectsTruncatedAndGarbageCodes() {
         String code = FriendShareCode.encode(ID, "Anna", 1, Collections.singletonList(
                 new FriendFeedEntry(FriendFeedEntry.KIND_RIDE, 10, "Rit", 1_000, 0, 0)));
         assertEquals(FriendShareCode.MSG_CORRUPT, errorOf(code.substring(0, code.length() - 10)));

@@ -189,7 +189,7 @@ public class RouteDetailViewModelActionsTest {
     }
 
     @Test
-    public void surfaceSections_addRenameUpdateDelete() throws Exception {
+    public void surfaceSections_addRenameUpdateDelete() {
         String id = UiTestData.ROUTE_ID;
         vm.addSurfaceSection(id, 1000, 2000, 1);
         awaitMatching(vm.surfaceSections(), l -> l.size() == 1);

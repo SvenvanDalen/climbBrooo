@@ -103,7 +103,7 @@ public class ClimbDetailActivityTest {
     @Test
     public void showsClimbStatsAndDefaultTitle() {
         String stats = ((TextView) activity.findViewById(R.id.climb_stats)).getText().toString();
-        assertTrue(stats, stats.length() > 0);
+        assertTrue(stats, !stats.isEmpty());
         androidx.appcompat.widget.Toolbar tb = activity.findViewById(R.id.toolbar);
         assertEquals(app.getString(R.string.climb_detail_default_name, 1), tb.getTitle().toString());
     }

@@ -177,8 +177,8 @@ public final class ClimbProfileView extends View {
         for (StoredSegment seg : segments) {
             cumulativeElevation += seg.elevationGain;
             cumulativeDistance += seg.distance;
-            float x = padLeft + (cumulativeDistance / (float) totalDistance) * chartWidth;
-            float y = baseline - (cumulativeElevation / (float) totalElevation) * chartHeight;
+            float x = padLeft + (cumulativeDistance / totalDistance) * chartWidth;
+            float y = baseline - (cumulativeElevation / totalElevation) * chartHeight;
             profilePath.lineTo(x, y);
         }
         canvas.drawPath(profilePath, outlinePaint);

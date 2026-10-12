@@ -207,7 +207,7 @@ public class RideBuddyCodeTest {
     }
 
     @Test
-    public void describe_listsExactlyTheSharedFields() throws Exception {
+    public void describe_listsExactlyTheSharedFields() {
         List<String> all = RideBuddyCode.describe(full());
         assertEquals(9, all.size());
         assertTrue(all.contains("Tempo op vlak terrein: 28,5 km/u"));

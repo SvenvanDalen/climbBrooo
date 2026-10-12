@@ -78,6 +78,8 @@ public final class GpxParser {
                         }
                         break;
                     }
+                    default:
+                        break;
                 }
                 event = xpp.next();
             }
