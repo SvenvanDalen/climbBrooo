@@ -43,7 +43,7 @@ public final class SafeHomeRepository {
             SafeHomeSettings s = mapper.readValue(in, SafeHomeSettings.class);
             if (s == null) return new SafeHomeSettings();
             if (s.reportedActivityIds == null) s.reportedActivityIds = new ArrayList<>();
-            s.reportedActivityIds.removeIf(id -> id == null);
+            s.reportedActivityIds.removeIf(java.util.Objects::isNull);
             if (s.message == null || s.message.trim().isEmpty()) {
                 s.message = SafeHomeSettings.DEFAULT_MESSAGE;
             }

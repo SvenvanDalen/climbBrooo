@@ -187,8 +187,8 @@ public class BatchClimbGpxWriterTest {
     @Test
     public void nullOrEmptyEntriesThrows() {
         assertThrows(IllegalArgumentException.class, () -> BatchClimbGpxWriter.toGpx(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> BatchClimbGpxWriter.toGpx(Collections.emptyList()));
+        List<BatchClimbGpxWriter.Entry> none = Collections.emptyList();
+        assertThrows(IllegalArgumentException.class, () -> BatchClimbGpxWriter.toGpx(none));
     }
 
     @Test

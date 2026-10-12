@@ -59,7 +59,7 @@ public final class SettingsActivity extends AppCompatActivity {
     // Cleaning reminder (issue #234): ask for the notification grant when it is switched on.
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (!granted) {
+                if (!Boolean.TRUE.equals(granted)) {
                     Toast.makeText(this, R.string.settings_wet_no_notifications,
                             Toast.LENGTH_LONG).show();
                     // The switch stayed on when the user tapped it; without the grant the
@@ -74,7 +74,7 @@ public final class SettingsActivity extends AppCompatActivity {
     // Radius mode (issue #310) searches around the last known fix, which needs a location grant.
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
+                if (Boolean.TRUE.equals(granted)) {
                     viewModel.refreshRadiusLocation();
                 } else {
                     Toast.makeText(this, R.string.settings_radius_no_permission,
