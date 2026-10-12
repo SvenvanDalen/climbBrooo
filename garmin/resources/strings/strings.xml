@@ -39,6 +39,16 @@
     <string id="FuelHot20">Vanaf 20 °C</string>
     <string id="FuelHot25">Vanaf 25 °C</string>
     <string id="FuelHot30">Vanaf 30 °C</string>
+    <string id="ColorModeHrZone">Hartslagzone</string>
+    <string id="SettingsPacingAlertTitle">Waarschuw bij te snel starten</string>
+    <string id="SettingsSummitAlertTitle">Trilling op de top</string>
+    <string id="SettingsVibeShortSteepTitle">Trilling korte steile klim</string>
+    <string id="SettingsVibeLongTitle">Trilling lange klim</string>
+    <string id="SettingsVibeRegularTitle">Trilling overige klimmen</string>
+    <string id="VibeDefault">Standaard</string>
+    <string id="VibeShortDouble">Kort dubbel</string>
+    <string id="VibeLongSingle">Eén lange</string>
+    <string id="VibeTriple">Drie pulsen</string>
     <string id="SettingsCadenceCoachTitle">Cadans-coach</string>
     <string id="SettingsCadenceLowTitle">Cadans ondergrens (rpm, 0 = uit)</string>
     <string id="SettingsCadenceLowPrompt">Seintje als je cadans 30 s onder deze waarde blijft</string>

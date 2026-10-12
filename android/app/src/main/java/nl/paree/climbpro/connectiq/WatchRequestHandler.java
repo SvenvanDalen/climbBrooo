@@ -44,6 +44,7 @@ public final class WatchRequestHandler {
     private volatile WatchFieldLayoutStore layoutStore;
     /** Best ride per route for 'gh' (issue #178); null = never sent. */
     private volatile nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo;
+    private volatile java.util.function.Supplier<nl.paree.climbpro.service.WatchHabits> habitsSource;
 
     public WatchRequestHandler(RouteRepository routeRepo, ConnectIqClient connectIqClient) {
         this(routeRepo, connectIqClient, null, null);
@@ -81,6 +82,14 @@ public final class WatchRequestHandler {
     /** Enables the virtual opponent ('gh', issue #178) in watch-requested route payloads. */
     public void setRouteGhostRepository(nl.paree.climbpro.data.route.RouteGhostRepository repo) {
         this.ghostRepo = repo;
+    }
+
+    /**
+     * Enables the rider-history keys ('nw', 'cg', 'hg'; issues #27, #18, #24) in
+     * watch-requested payloads. Read on every request so new rides count right away.
+     */
+    public void setHabitsSource(java.util.function.Supplier<nl.paree.climbpro.service.WatchHabits> source) {
+        this.habitsSource = source;
     }
 
     /** Enables the datafield slot layout ('lay') in watch-requested payloads. */
@@ -122,6 +131,7 @@ public final class WatchRequestHandler {
                 .withPalette(paletteSource.getAsInt());
         if (unitsRepo != null) builder = builder.withUnits(unitsRepo.load());
         builder = builder.withFieldLayout(layoutStore != null ? layoutStore.load() : null);
+        if (habitsSource != null) builder = habitsSource.get().applyTo(builder);
         return riderRepo != null ? builder.withIntensityZones(riderRepo.load()) : builder;
     }
 

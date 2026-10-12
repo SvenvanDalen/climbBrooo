@@ -18,7 +18,8 @@
     <property id="climbAlertDistinctTone" type="boolean">false</property>
     <!-- Issue #66: segment color mode. 0 = Helling (gradient colors from segs, default),
          1 = FTP-zone (the phone's per-segment intensity-zone colors "zc"; climbs without
-         zc still use the gradient colors). -->
+         zc still use the gradient colors), 2 = Hartslagzone (issue #24: the zone the rider
+         usually rides at on each gradient class, "hg"; unknown classes keep gradient colors). -->
     <property id="colorMode" type="number">0</property>
     <!-- Issue #198: once-per-ride lights reminder at dusk (sun times computed on the
          watch from GPS + clock), and how many minutes before sunset it fires. -->
@@ -46,4 +47,14 @@
     <property id="cadenceCoach" type="boolean">false</property>
     <property id="cadenceLow" type="number">80</property>
     <property id="cadenceHigh" type="number">100</property>
+    <!-- Issue #6: buzz once when the rider rides clearly faster than the pacing plan (tsec)
+         or, without a plan, the per-segment PR (refsec). On by default. -->
+    <property id="pacingAlert" type="boolean">true</property>
+    <!-- Issue #8: short buzz when a climb is topped out (the summary screen shows anyway). -->
+    <property id="summitAlert" type="boolean">true</property>
+    <!-- Issue #26: climb-start vibration per climb type. 0 = standaard (the normal alert),
+         1 = kort dubbel, 2 = lang, 3 = drie pulsen. -->
+    <property id="vibeRegular" type="number">0</property>
+    <property id="vibeShortSteep" type="number">1</property>
+    <property id="vibeLong" type="number">2</property>
 </properties>
