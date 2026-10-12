@@ -29,15 +29,19 @@ public final class AtomicFiles {
                 out.write(data);
                 out.getFD().sync();
             }
-            try {
-                Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
+            moveIntoPlace(tmp, target);
         } catch (IOException failed) {
             FileCleanup.deleteQuietly(tmp);
             throw failed;
+        }
+    }
+
+    private static void moveIntoPlace(File tmp, File target) throws IOException {
+        try {
+            Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }
