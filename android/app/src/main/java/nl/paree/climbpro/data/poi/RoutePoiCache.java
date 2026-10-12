@@ -17,6 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * Offline cache of a route's points of interest (issue #208) under
@@ -121,6 +122,6 @@ public final class RoutePoiCache {
     /** Drops a route's cache; called when the route itself is deleted. */
     public static void delete(File filesDir, String routeId) {
         //noinspection ResultOfMethodCallIgnored
-        file(filesDir, routeId).delete();
+        FileCleanup.deleteQuietly(file(filesDir, routeId));
     }
 }

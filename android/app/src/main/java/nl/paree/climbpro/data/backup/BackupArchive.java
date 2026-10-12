@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * The zip backup of issue #257: the app's JSON stores and attempt photos plus the user's
@@ -290,6 +291,6 @@ public final class BackupArchive {
             File[] children = f.listFiles();
             if (children != null) for (File c : children) deleteRecursively(c);
         }
-        f.delete();
+        FileCleanup.deleteQuietly(f);
     }
 }

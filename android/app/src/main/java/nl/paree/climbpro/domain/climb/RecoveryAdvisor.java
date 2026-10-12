@@ -194,8 +194,8 @@ public final class RecoveryAdvisor {
                 java.time.temporal.ChronoUnit.DAYS.between(earliestDay, referenceDate) + 1;
         boolean hasEnoughBaselineHistory = historySpanDays >= MIN_BASELINE_HISTORY_DAYS;
 
-        int recentGain = sumRange(gainByDay, referenceDate.minusDays(RECENT_WINDOW_DAYS - 1), referenceDate);
-        int baselineGain = sumRange(gainByDay, referenceDate.minusDays(BASELINE_WINDOW_DAYS - 1), referenceDate);
+        int recentGain = sumRange(gainByDay, referenceDate.minusDays(RECENT_WINDOW_DAYS - 1L), referenceDate);
+        int baselineGain = sumRange(gainByDay, referenceDate.minusDays(BASELINE_WINDOW_DAYS - 1L), referenceDate);
         // Average over the weeks the logbook actually covers: with 21-27 days of history,
         // dividing by the full BASELINE_WEEKS would count the not-yet-logged days as rest days
         // and understate the baseline, making the overload check fire too easily.

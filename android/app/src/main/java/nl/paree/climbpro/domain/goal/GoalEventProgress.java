@@ -93,7 +93,7 @@ public final class GoalEventProgress {
         long daysLeft = eventDay != null ? ChronoUnit.DAYS.between(today, eventDay) : -1;
         Phase phase = phaseFor(daysLeft);
 
-        LocalDate readinessFrom = today.minusDays(READINESS_WINDOW_DAYS - 1);
+        LocalDate readinessFrom = today.minusDays(READINESS_WINDOW_DAYS - 1L);
         LocalDate thisWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         double[] weekKm = new double[WEEKS_SHOWN];
         double[] weekHm = new double[WEEKS_SHOWN];

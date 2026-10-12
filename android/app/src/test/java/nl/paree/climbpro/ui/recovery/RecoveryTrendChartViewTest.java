@@ -97,7 +97,7 @@ public class RecoveryTrendChartViewTest {
     @Test
     public void empty_drawsNothing_andMeasureModes() {
         RecoveryTrendChartView v = new RecoveryTrendChartView(ctx, null, 0);
-        v.setPoints(null);
+        v.setPoints(java.util.Collections.emptyList());
         layout(v, 400, 200);
         Canvas c = mock(Canvas.class);
         v.onDraw(c);

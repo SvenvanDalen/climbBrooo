@@ -16,6 +16,7 @@ import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Point;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * RPE (1–10) and sleep quality (1–5, drawn ×2 on the same 0–10 axis) per logged ride, oldest
@@ -74,7 +75,7 @@ public final class RecoveryTrendChartView extends View {
 
     /** Points oldest first; the caller decides how many to show. */
     public void setPoints(List<Point> points) {
-        this.points = points != null ? points : new ArrayList<>();
+        this.points = Objects.requireNonNull(points, "points");
         invalidate();
     }
 

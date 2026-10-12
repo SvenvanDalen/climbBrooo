@@ -17,7 +17,7 @@ public final class SunriseCalculator {
 
     /** @return sunrise, or null when the sun stays up or stays down all day. */
     public static Instant sunrise(LocalDate date, double lat, double lon) {
-        double n = date.toEpochDay() - J2000_EPOCH_DAY;
+        double n = (double) date.toEpochDay() - J2000_EPOCH_DAY;
         double jStar = n - lon / 360.0;
         double m = Math.toRadians((357.5291 + 0.98560028 * jStar) % 360);
         double c = 1.9148 * Math.sin(m) + 0.0200 * Math.sin(2 * m) + 0.0003 * Math.sin(3 * m);

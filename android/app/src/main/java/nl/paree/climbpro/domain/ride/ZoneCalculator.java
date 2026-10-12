@@ -158,7 +158,7 @@ public final class ZoneCalculator {
 
     public static int total(int[] zones) {
         int sum = 0;
-        if (zones != null) for (int z : zones) sum += z;
+        for (int z : zones) sum += z;
         return sum;
     }
 

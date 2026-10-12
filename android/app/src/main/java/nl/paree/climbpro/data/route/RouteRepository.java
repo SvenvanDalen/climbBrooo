@@ -22,7 +22,6 @@ import nl.paree.climbpro.domain.segment.SurfaceType;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import nl.paree.climbpro.data.AtomicFiles;
+import nl.paree.climbpro.data.FileCleanup;
 
 /**
  * JSON-file persistence for routes.
@@ -88,7 +89,7 @@ public final class RouteRepository {
     }
 
     private void saveCatalog(List<RouteCatalogEntry> catalog) throws IOException {
-        writeAtomic(catalogFile, mapper.writeValueAsBytes(catalog));
+        AtomicFiles.write(catalogFile, mapper.writeValueAsBytes(catalog));
     }
 
     // -------------------------------------------------------------------------
@@ -155,7 +156,7 @@ public final class RouteRepository {
         route.lastModifiedMs = System.currentTimeMillis();
 
         File routeFile = routeFile(route.routeId);
-        writeAtomic(routeFile, mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile, mapper.writeValueAsBytes(route));
 
         List<RouteCatalogEntry> catalog = loadCatalog();
         catalog.removeIf(e -> e.routeId.equals(route.routeId));
@@ -182,7 +183,7 @@ public final class RouteRepository {
         StoredRoute route = loadRoute(routeId);
         route.tunnels = tunnels != null ? new ArrayList<>(tunnels) : new ArrayList<>();
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
     }
 
     public StoredRoute loadRoute(String routeId) throws IOException {
@@ -199,7 +200,8 @@ public final class RouteRepository {
     }
 
     public void deleteRoute(String routeId) throws IOException {
-        routeFile(routeId).delete();
+        File doc = routeFile(routeId);
+        if (!FileCleanup.deleteQuietly(doc)) throw new IOException("Could not delete " + doc);
         // A deleted route can no longer be the active one: leaving the pref behind would make
         // every RouteSyncWorker round fail on it (issue: retry() forever, nothing syncs again).
         clearActiveRouteIfMatches(routeId);
@@ -226,7 +228,7 @@ public final class RouteRepository {
         StoredRoute route = loadRoute(routeId);
         route.userDisplayName = displayName;
         route.lastModifiedMs  = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
 
         List<RouteCatalogEntry> catalog = loadCatalog();
         for (RouteCatalogEntry e : catalog) {
@@ -244,7 +246,7 @@ public final class RouteRepository {
         if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
             route.climbs.get(climbIndex).userDisplayName = displayName;
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -258,7 +260,7 @@ public final class RouteRepository {
         if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
             route.climbs.get(climbIndex).isHome = isHome;
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -274,7 +276,7 @@ public final class RouteRepository {
             c.privacyCentreLat = lat;
             c.privacyCentreLon = lon;
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -299,7 +301,7 @@ public final class RouteRepository {
             }
             route.climbs.get(climbIndex).shapeOverride = normalised;
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -318,7 +320,7 @@ public final class RouteRepository {
         StoredClimb target = route.climbs.get(climbIndex);
         ClimbRating.apply(target, road, traffic, view, note);
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
 
         String identity = ClimbIdentity.of(target);
         for (RouteCatalogEntry entry : loadCatalog()) {
@@ -335,7 +337,7 @@ public final class RouteRepository {
                 }
                 if (changed) {
                     other.lastModifiedMs = System.currentTimeMillis();
-                    writeAtomic(routeFile(entry.routeId), mapper.writeValueAsBytes(other));
+                    AtomicFiles.write(routeFile(entry.routeId), mapper.writeValueAsBytes(other));
                 }
             } catch (IOException e) {
                 Log.w(TAG, "Rating not propagated to route " + entry.routeId, e);
@@ -363,7 +365,7 @@ public final class RouteRepository {
         }
         if (changed) {
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -387,7 +389,7 @@ public final class RouteRepository {
         if (route.removedClimbIds == null) route.removedClimbIds = new ArrayList<>();
         if (!route.removedClimbIds.contains(removedId)) route.removedClimbIds.add(removedId);
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogAfterClimbRemoval(routeId, route);
     }
 
@@ -458,7 +460,7 @@ public final class RouteRepository {
                 c.manualRefLabel = trimmed.isEmpty() ? null : trimmed;
             }
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -475,7 +477,7 @@ public final class RouteRepository {
         if (route.climbs != null && climbIndex >= 0 && climbIndex < route.climbs.size()) {
             route.climbs.get(climbIndex).intervalBlock = block != null ? block.toStored() : null;
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -491,7 +493,7 @@ public final class RouteRepository {
             for (StoredClimb c : route.climbs) c.everestTargetM = null;
             route.climbs.get(climbIndex).everestTargetM = targetM;
             route.lastModifiedMs = System.currentTimeMillis();
-            writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+            AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         }
     }
 
@@ -499,7 +501,7 @@ public final class RouteRepository {
         StoredRoute route = loadRoute(routeId);
         route.notes = notes;
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
 
         List<RouteCatalogEntry> catalog = loadCatalog();
         for (RouteCatalogEntry e : catalog) {
@@ -521,7 +523,7 @@ public final class RouteRepository {
         StoredRoute route = loadRoute(routeId);
         route.rideStatus = normalized;
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
 
         List<RouteCatalogEntry> catalog = loadCatalog();
         for (RouteCatalogEntry e : catalog) {
@@ -700,34 +702,12 @@ public final class RouteRepository {
             if (p.userDisplayName != null)             prevName.put(p.stravaId, p.userDisplayName);
         }
         for (StoredStarredSegment s : result) {
-            Integer su = prevSurface.get(s.stravaId);
+            Integer su = prevSurface.get(Long.valueOf(s.stravaId));
             if (su != null) s.surfaceType = su;
-            String nm = prevName.get(s.stravaId);
+            String nm = prevName.get(Long.valueOf(s.stravaId));
             if (nm != null) s.userDisplayName = nm;
         }
         return result;
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                // Fall back to non-atomic replace when ATOMIC_MOVE is not supported by the filesystem.
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete(); // best-effort cleanup so a failed write leaves no orphan .tmp
-            throw moveFailed;
-        }
     }
 
     private static double[] toDoubleArray(List<RoutePoint> pts, String field) {
@@ -891,7 +871,7 @@ public final class RouteRepository {
         sc.shape             = ClimbShapeClassifier.classifyStored(sc.segments).name();
         route.lastModifiedMs = System.currentTimeMillis();
 
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -910,7 +890,7 @@ public final class RouteRepository {
         }
         sc.segments.get(segmentIndex).surfaceType = surfaceType;
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -931,7 +911,7 @@ public final class RouteRepository {
         }
         sc.segments.get(segmentIndex).manualTargetSec = targetSec;
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
     }
 
     /**
@@ -952,7 +932,7 @@ public final class RouteRepository {
             seg.surfaceType = surfaceType;
         }
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -978,7 +958,7 @@ public final class RouteRepository {
             return;
         }
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -1006,7 +986,7 @@ public final class RouteRepository {
             return;
         }
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -1039,7 +1019,7 @@ public final class RouteRepository {
             return;
         }
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -1085,7 +1065,7 @@ public final class RouteRepository {
         route.surfaceSections.sort((a, b) -> Integer.compare(a.startDistance, b.startDistance));
 
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -1102,7 +1082,7 @@ public final class RouteRepository {
         }
         route.surfaceSections.remove(index);
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -1120,7 +1100,7 @@ public final class RouteRepository {
         route.surfaceSections.get(index).name =
                 (name == null || name.trim().isEmpty()) ? null : name.trim();
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
     }
 
     /**
@@ -1141,7 +1121,7 @@ public final class RouteRepository {
         section.surfaceType = SurfaceType.fromInt(surfaceType);
         section.name = (name == null || name.trim().isEmpty()) ? null : name.trim();
         route.lastModifiedMs = System.currentTimeMillis();
-        writeAtomic(routeFile(routeId), mapper.writeValueAsBytes(route));
+        AtomicFiles.write(routeFile(routeId), mapper.writeValueAsBytes(route));
         rebuildCatalogSurfaceTypes(routeId, route);
     }
 
@@ -1277,9 +1257,9 @@ public final class RouteRepository {
 
         File[] files = routesDir.listFiles();
         if (files != null) {
-            for (File f : files) f.delete();
+            for (File f : files) FileCleanup.deleteQuietly(f);
         }
-        if (catalogFile.exists()) catalogFile.delete();
+        if (catalogFile.exists()) FileCleanup.deleteQuietly(catalogFile);
 
         prefs.edit()
              .putInt(PREF_SEGMENT_VERSION, ClimbConstants.SEGMENT_VERSION)

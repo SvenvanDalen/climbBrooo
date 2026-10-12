@@ -481,6 +481,7 @@ public final class SettingsActivity extends AppCompatActivity {
                     Set<String> g = gateway.grantedPermissions();
                     for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                     granted = -1;
                 }
             }
@@ -582,6 +583,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 msg = n == 0 ? getString(R.string.settings_health_no_new)
                         : getString(R.string.settings_health_exported, n);
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 msg = getString(R.string.settings_health_write_failed,
                         e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
             }
@@ -596,6 +598,7 @@ public final class SettingsActivity extends AppCompatActivity {
             try {
                 kg = new HealthConnectGateway(this).latestWeightKg();
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 kg = null;
             }
             Double weight = kg;
