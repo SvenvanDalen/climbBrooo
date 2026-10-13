@@ -37,6 +37,7 @@ import java.util.List;
  * archive. Phone-only and offline; due parts also show as a banner on the route list.
  */
 public final class MaintenanceActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private MaintenanceViewModel viewModel;
     private MaintenanceAdapter adapter;
@@ -90,7 +91,7 @@ public final class MaintenanceActivity extends AppCompatActivity {
                 .setTitle(c.name + " gedaan?")
                 .setMessage("De teller begint vandaag opnieuw bij 0 km.")
                 .setPositiveButton("Gedaan", (d, w) -> viewModel.markServiced(c.id, c.name))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -168,7 +169,7 @@ public final class MaintenanceActivity extends AppCompatActivity {
                             BikePicker.selectedId(bikeSpinner, garage));
                     if (purchase[0] > 0 && warrantyTerm > 0) ensureNotificationPermission();
                 })
-                .setNegativeButton("Annuleren", null);
+                .setNegativeButton(CANCEL, null);
         if (existing != null) {
             builder.setNeutralButton("Verwijderen", (d, w) -> confirmDelete(existing));
         }
@@ -213,7 +214,7 @@ public final class MaintenanceActivity extends AppCompatActivity {
                 .setTitle(c.name + " verwijderen?")
                 .setMessage("Het onderdeel en de onderhoudshistorie worden verwijderd.")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteComponent(c.id))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

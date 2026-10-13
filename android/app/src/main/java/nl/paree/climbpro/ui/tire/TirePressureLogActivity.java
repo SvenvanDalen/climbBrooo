@@ -38,6 +38,7 @@ import java.util.Locale;
  * surfaced in-app (status here + banner on the route list), not as a system notification.
  */
 public final class TirePressureLogActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private TirePressureLogViewModel viewModel;
     private TirePressureLogAdapter adapter;
@@ -138,7 +139,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                 .setTitle("Controle loggen")
                 .setView(view)
                 .setPositiveButton("Opslaan", null)
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .create();
         // Validate before dismissing so a typo doesn't lose the other fields.
         dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
@@ -221,7 +222,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                 .setPositiveButton("Opslaan", (d, w) ->
                         viewModel.saveReminderSettings(parseNonNegative(days), parseNonNegative(km),
                                 BikePicker.selectedId(bikeSpinner, garage)))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -240,7 +241,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                 .setMessage("Controle van " + adapter.formatDate(entry.timestampEpochSec)
                         + " wordt verwijderd.")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteEntry(entry.id))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

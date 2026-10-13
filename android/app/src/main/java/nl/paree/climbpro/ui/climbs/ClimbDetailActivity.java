@@ -54,6 +54,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class ClimbDetailActivity extends AppCompatActivity {
+    private static final String FILE_PROVIDER_SUFFIX = ".fileprovider";
 
     private static final String EXTRA_ROUTE_ID   = "route_id";
     private static final String EXTRA_CLIMB_INDEX = "climb_index";
@@ -658,7 +659,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     this, title, loadedClimb, lastTimeEstimateText);
             java.io.File file = ClimbShareHandoff.writeShareImage(this, bitmap);
             android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                    this, getPackageName() + ".fileprovider", file);
+                    this, getPackageName() + FILE_PROVIDER_SUFFIX, file);
             Intent share = ClimbShareHandoff.buildShareIntent(uri);
             startActivity(Intent.createChooser(share, getString(R.string.climb_detail_share_chooser)));
         } catch (java.io.IOException e) {
@@ -674,7 +675,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private void shareGpxFile(java.io.File file) {
         if (file == null) return;
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", file);
+                this, getPackageName() + FILE_PROVIDER_SUFFIX, file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
         startActivity(Intent.createChooser(share, getString(R.string.climb_detail_gpx_chooser)));
     }
@@ -808,7 +809,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private void shareWorkout(ClimbDetailViewModel.WorkoutExport export) {
         if (export == null) return;
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", export.file);
+                this, getPackageName() + FILE_PROVIDER_SUFFIX, export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
         if (export.format != ClimbDetailViewModel.WorkoutFormat.MYWHOOSH) {
             startActivity(Intent.createChooser(share, getString(R.string.climb_detail_workout_share)));

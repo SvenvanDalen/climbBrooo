@@ -34,6 +34,8 @@ import java.util.List;
  * date window plus manual km) and the resulting cost per km. Phone-only and offline.
  */
 public final class BikeCostActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
+    private static final String DELETE = "Verwijderen";
 
     private BikeCostViewModel viewModel;
     private BikeCostAdapter adapter;
@@ -109,8 +111,8 @@ public final class BikeCostActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Kosten verwijderen?")
                 .setMessage(costLine(c))
-                .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteCost(bike.id, c.id))
-                .setNegativeButton("Annuleren", null)
+                .setPositiveButton(DELETE, (d, w) -> viewModel.deleteCost(bike.id, c.id))
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -142,7 +144,7 @@ public final class BikeCostActivity extends AppCompatActivity {
                                                  : BikeCostEntry.KIND_PART,
                             description.getText().toString(), cents);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -192,9 +194,9 @@ public final class BikeCostActivity extends AppCompatActivity {
                         name.getText().toString(), since[0],
                         archive.isChecked(), virtual.isChecked(),
                         parseNonNegative(extraKm), retired.isChecked()))
-                .setNegativeButton("Annuleren", null);
+                .setNegativeButton(CANCEL, null);
         if (existing != null) {
-            builder.setNeutralButton("Verwijderen", (d, w) -> confirmDeleteBike(existing));
+            builder.setNeutralButton(DELETE, (d, w) -> confirmDeleteBike(existing));
         }
         builder.show();
     }
@@ -203,8 +205,8 @@ public final class BikeCostActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(bike.name + " verwijderen?")
                 .setMessage("De fiets en al zijn kosten worden verwijderd.")
-                .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteBike(bike.id))
-                .setNegativeButton("Annuleren", null)
+                .setPositiveButton(DELETE, (d, w) -> viewModel.deleteBike(bike.id))
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 

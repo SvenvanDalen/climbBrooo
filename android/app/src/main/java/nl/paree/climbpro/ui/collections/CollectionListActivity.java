@@ -19,6 +19,7 @@ import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.RouteCollection;
 
 public final class CollectionListActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleer";
 
     private CollectionListViewModel viewModel;
 
@@ -81,7 +82,7 @@ public final class CollectionListActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Aanmaken", (d, w) ->
                         viewModel.create(input.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -102,7 +103,7 @@ public final class CollectionListActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Opslaan", (d, w) ->
                         viewModel.rename(collection.id, input.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -111,7 +112,7 @@ public final class CollectionListActivity extends AppCompatActivity {
                 .setTitle("\"" + collection.name + "\" verwijderen?")
                 .setMessage("De routes en klimmen zelf blijven bestaan.")
                 .setPositiveButton("Verwijder", (d, w) -> viewModel.delete(collection.id))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 

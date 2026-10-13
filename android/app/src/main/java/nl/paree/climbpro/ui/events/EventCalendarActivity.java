@@ -37,6 +37,7 @@ import java.util.Locale;
  * manual entries — there is no central free source. Phone-only.
  */
 public final class EventCalendarActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private static final Locale NL = new Locale("nl");
     private static final int[] RADII_KM = {25, 50, 75, 100, 150, 250};
@@ -221,7 +222,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setMessage("Agenda \"" + f.name + "\" verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.removeFeed(f.url))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -241,7 +242,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
                     }
                     viewModel.addFeed(u, name.getText().toString());
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -289,7 +290,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
                     e.url = u.isEmpty() ? null : u;
                     viewModel.addManual(e);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 

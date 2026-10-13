@@ -54,6 +54,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class RouteListActivity extends AppCompatActivity {
+    private static final String TAG = "RouteListActivity";
 
     private ActivityRouteListBinding binding;
     private RouteListViewModel viewModel;
@@ -218,7 +219,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
                     @Override
                     public void onCheckFailed(Exception e) {
-                        Log.w("RouteListActivity", "Update check failed", e);
+                        Log.w(TAG, "Update check failed", e);
                         // Previously fully silent, which made a real failure (network,
                         // GitHub API rate limit, ...) indistinguishable from "no update
                         // available" — always surface it so it's not a mystery.
@@ -650,7 +651,7 @@ public final class RouteListActivity extends AppCompatActivity {
                     }
                 }
             } catch (IOException e) {
-                Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
+                Log.w(TAG, "Skipping unreadable route " + entry.routeId, e);
             }
         }
         return matches;
@@ -986,7 +987,7 @@ public final class RouteListActivity extends AppCompatActivity {
                         }
                     }
                 } catch (Exception e) {
-                    Log.w("RouteListActivity", "Surface type detection failed: " + e.getMessage());
+                    Log.w(TAG, "Surface type detection failed: " + e.getMessage());
                 }
             }
             runOnUiThread(() -> {

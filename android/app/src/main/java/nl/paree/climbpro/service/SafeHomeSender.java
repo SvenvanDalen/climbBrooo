@@ -27,7 +27,7 @@ public final class SafeHomeSender {
 
     private static final String TAG = "SafeHomeSender";
     public  static final String CHANNEL_ID = "safe_home";
-    private static final int NOTIFICATION_ID = "safe_home".hashCode();
+    private static final int NOTIFICATION_ID = CHANNEL_ID.hashCode();
 
     private SafeHomeSender() {}
 

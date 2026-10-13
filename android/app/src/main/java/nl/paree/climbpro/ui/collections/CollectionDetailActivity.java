@@ -20,6 +20,7 @@ import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.RouteCollection;
 
 public final class CollectionDetailActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleer";
 
     private static final String EXTRA_COLLECTION_ID = "collection_id";
 
@@ -120,7 +121,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Opslaan", (d, w) ->
                         viewModel.rename(collectionId, input.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -132,7 +133,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                     viewModel.delete(collectionId);
                     finish();
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -162,7 +163,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                         viewModel.removeRoute(collectionId, member.routeId);
                     }
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

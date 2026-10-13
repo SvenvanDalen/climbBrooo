@@ -55,6 +55,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class ClimbDetailViewModel extends AndroidViewModel {
+    private static final String CLIMB_NOT_LOADED = "Klim nog niet geladen";
+    private static final String SAVE_FAILED = "Opslaan mislukt: ";
 
     private static final String TAG = "ClimbDetailVM";
 
@@ -282,7 +284,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -306,7 +308,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -323,7 +325,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -339,7 +341,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -353,7 +355,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -369,7 +371,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -386,7 +388,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -403,7 +405,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -417,7 +419,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 loadClimb(routeId, climbIndex);
                 saved.postValue(true);
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -443,7 +445,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     public void exportWorkout(WorkoutFormat format, int repeats, int recoverySec) {
         StoredClimb c = lastClimb.get();
         if (c == null || c.segments == null || c.segments.isEmpty()) {
-            error.postValue("Klim nog niet geladen");
+            error.postValue(CLIMB_NOT_LOADED);
             return;
         }
         executor.execute(() -> {
@@ -530,7 +532,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     public void pushToIntervals(int repeats, int recoverySec, LocalDate date, boolean indoor) {
         StoredClimb c = lastClimb.get();
         if (c == null || c.segments == null || c.segments.isEmpty()) {
-            error.postValue("Klim nog niet geladen");
+            error.postValue(CLIMB_NOT_LOADED);
             return;
         }
         executor.execute(() -> {
@@ -580,7 +582,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         StoredClimb c = lastClimb.get();
         StoredRoute r = lastRoute.get();
         if (c == null || r == null) {
-            error.postValue("Klim nog niet geladen");
+            error.postValue(CLIMB_NOT_LOADED);
             return;
         }
         executor.execute(() -> {
@@ -638,7 +640,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                                  String note, String companions, android.net.Uri photoUri) {
         StoredClimb c = lastClimb.get();
         if (c == null) {
-            error.postValue("Klim nog niet geladen");
+            error.postValue(CLIMB_NOT_LOADED);
             return;
         }
         executor.execute(() -> {
@@ -655,7 +657,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                     loadClimb(routeId, climbIndex);
                 }
             } catch (Exception e) {
-                error.postValue("Opslaan mislukt: " + e.getMessage());
+                error.postValue(SAVE_FAILED + e.getMessage());
             }
         });
     }
@@ -703,7 +705,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 nl.paree.climbpro.data.route.AttemptPhotoStore
                         .delete(getApplication(), newPhoto);
             }
-            error.postValue("Opslaan mislukt: " + writeFailure.getMessage());
+            error.postValue(SAVE_FAILED + writeFailure.getMessage());
             return false;
         }
 

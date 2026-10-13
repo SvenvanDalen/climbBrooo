@@ -31,6 +31,7 @@ import java.util.function.Consumer;
  * Phone-only — see {@link PackingListViewModel}.
  */
 public final class PackingListActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private PackingListViewModel viewModel;
     private Spinner spinner;
@@ -148,7 +149,7 @@ public final class PackingListActivity extends AppCompatActivity {
                         .setTitle("\"" + item.text + "\" verwijderen?")
                         .setPositiveButton("Verwijderen",
                                 (d, w) -> viewModel.removeItem(l.id, item.id))
-                        .setNegativeButton("Annuleren", null)
+                        .setNegativeButton(CANCEL, null)
                         .show();
                 return true;
             });
@@ -169,7 +170,7 @@ public final class PackingListActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Lijst \"" + l.name + "\" verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteList(l.id))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -185,7 +186,7 @@ public final class PackingListActivity extends AppCompatActivity {
                     String text = input.getText().toString().trim();
                     if (!text.isEmpty()) onOk.accept(text);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }
