@@ -108,7 +108,8 @@ public final class OfflinePackageBuilder {
         for (int i = 0; i < n - 1; i++) {
             double ax = r.lons[i] * M_PER_DEG * cos;
             double ay = r.lats[i] * M_PER_DEG;
-            double dx = r.lons[i + 1] * M_PER_DEG * cos - ax, dy = r.lats[i + 1] * M_PER_DEG - ay;
+            double dx = r.lons[i + 1] * M_PER_DEG * cos - ax;
+            double dy = r.lats[i + 1] * M_PER_DEG - ay;
             double len2 = dx * dx + dy * dy;
             double t = len2 == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
             double qx = ax + t * dx - px;

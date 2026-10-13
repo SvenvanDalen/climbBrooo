@@ -157,6 +157,8 @@ public class ClimbWorkoutRepeatsTest {
     @Test
     public void ergRepeatsExactShape() {
         String erg = ClimbWorkoutWriter.toErg("Test", CLIMB, 200, 2, 240);
+        // Course data: warm-up, repeat 1 (10-18 min), recovery (18-22), repeat 2 (22-30),
+        // cool-down (30-35).
         String expected = """
                 [COURSE HEADER]
                 VERSION = 2
@@ -171,16 +173,20 @@ public class ClimbWorkoutRepeatsTest {
                 [COURSE DATA]
                 0.00\t90
                 10.00\t150
-                """
-                // repeat 1
-                + "10.00\t180\n15.00\t180\n15.00\t200\n18.00\t200\n"
-                // recovery
-                + "18.00\t100\n22.00\t100\n"
-                // repeat 2
-                + "22.00\t180\n27.00\t180\n27.00\t200\n30.00\t200\n"
-                // cool-down
-                + "30.00\t120\n35.00\t80\n"
-                + "[END COURSE DATA]\n";
+                10.00\t180
+                15.00\t180
+                15.00\t200
+                18.00\t200
+                18.00\t100
+                22.00\t100
+                22.00\t180
+                27.00\t180
+                27.00\t200
+                30.00\t200
+                30.00\t120
+                35.00\t80
+                [END COURSE DATA]
+                """;
         assertEquals(expected, erg);
     }
 
