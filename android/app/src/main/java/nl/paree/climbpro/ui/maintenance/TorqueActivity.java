@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.maintenance;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -124,7 +125,7 @@ public final class TorqueActivity extends AppCompatActivity {
             builder.setNeutralButton("Verwijderen", (d, w) -> confirmDelete(existing));
         }
         AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(di -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(di -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     double value = TorqueReference.parseNm(nm.getText().toString());
                     if (Double.isNaN(value)) {

@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.tire;
 
 import android.app.DatePickerDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -140,7 +141,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                 .setNegativeButton("Annuleren", null)
                 .create();
         // Validate before dismissing so a typo doesn't lose the other fields.
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     Double f = TirePressureUnits.parse(front.getText().toString(), psi);
                     Double r = TirePressureUnits.parse(rear.getText().toString(), psi);
