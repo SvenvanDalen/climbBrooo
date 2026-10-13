@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.rides;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -179,7 +180,7 @@ public class RidesScreensLogicTest {
         List<StoredRide> same = vm.sameRouteCandidates(base);
         boolean hasSecond = false;
         for (StoredRide r : same) {
-            assertTrue(r.activityId != UiTestData.RIDE_OUTDOOR);
+            assertNotEquals(UiTestData.RIDE_OUTDOOR, r.activityId);
             if (r.activityId == UiTestData.RIDE_OUTDOOR_2) hasSecond = true;
         }
         assertTrue(hasSecond);

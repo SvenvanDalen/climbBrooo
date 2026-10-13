@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.pain;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -89,7 +90,7 @@ public class PainLogViewModelTest {
         for (int i = 1; i < s.recentRides.size(); i++) {
             assertTrue(s.recentRides.get(i - 1).startEpochSec > s.recentRides.get(i).startEpochSec);
         }
-        for (StoredRide r : s.recentRides) assertTrue(r.activityId != 999);
+        for (StoredRide r : s.recentRides) assertNotEquals(999, r.activityId);
     }
 
     @Test(expected = UnsupportedOperationException.class)

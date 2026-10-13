@@ -40,6 +40,6 @@ public class ClimbWorkoutExportHandoffTest {
         assertEquals(Intent.ACTION_SEND, i.getAction());
         assertEquals("text/plain", i.getType());
         assertEquals(uri, i.getParcelableExtra(Intent.EXTRA_STREAM));
-        assertTrue((i.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0);
+        assertNotEquals(0, i.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION);
     }
 }

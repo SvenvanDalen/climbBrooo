@@ -34,7 +34,7 @@ public final class TirePressureAdviceDialog {
         new Thread(() -> {
             String bikeLine = bikeLine(app);
             main.post(() -> {
-                if (ctx instanceof Activity && ((Activity) ctx).isFinishing()) return;
+                if (ctx instanceof Activity activity && activity.isFinishing()) return;
                 showNow(ctx, advice, bikeLine);
             });
         }, "tire-advice-bike").start();

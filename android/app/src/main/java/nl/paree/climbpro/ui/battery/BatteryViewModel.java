@@ -73,7 +73,7 @@ public final class BatteryViewModel extends AndroidViewModel {
 
     private void loadNow() {
         devices.postValue(BatteryStatusCalculator.sortByUrgency(
-                repo.load().devices, System.currentTimeMillis() / 1000L));
+                repo.load().devices));
     }
 
     @Override

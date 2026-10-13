@@ -58,7 +58,7 @@ public final class EventTextStats {
         Integer best = null;
         Matcher m = ELEVATION.matcher(text);
         while (m.find()) {
-            String raw = m.group(1) != null ? m.group(1) : m.group(2);
+            String raw = m.group(m.group(1) != null ? 1 : 2);
             int v = Integer.parseInt(raw.replace(".", "").replace(",", ""));
             if (v >= MIN_ELEVATION_M && v <= MAX_ELEVATION_M && (best == null || v > best)) {
                 best = v;

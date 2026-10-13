@@ -219,18 +219,18 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     private void predictPrChance(StoredRoute r, StoredClimb c, String climbId,
                                  List<StoredClimbAttempt> attempts) {
         long now = System.currentTimeMillis() / 1000L;
-        PrChancePredictor.Prediction history =
+        PrChancePredictor.Prediction prediction =
                 PrChancePredictor.predict(climbId, attempts, null, null, now);
-        if (history.firstAttempt) {
-            prChance.postValue(new PrChance(history, false));
+        if (prediction.firstAttempt) {
+            prChance.postValue(new PrChance(prediction, false));
             return;
         }
         PrChancePredictor.Fitness fitness = null;
         try {
             ZoneId zone = ZoneId.systemDefault();
             LocalDate today = LocalDate.now(zone);
-            LocalDate prDate = history.prDateEpochSec > 0
-                    ? Instant.ofEpochSecond(history.prDateEpochSec).atZone(zone).toLocalDate()
+            LocalDate prDate = prediction.prDateEpochSec > 0
+                    ? Instant.ofEpochSecond(prediction.prDateEpochSec).atZone(zone).toLocalDate()
                     : null;
             int window = prDate != null && !prDate.isAfter(today)
                     ? (int) ChronoUnit.DAYS.between(prDate, today) + 1 : 1;
@@ -423,13 +423,6 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     /**
-     * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
-     * track, plus waypoints at every segment boundary and, when PR data exists, at the
-     * climb's personal-record splits — and writes it to the app cache. Posts the resulting
-     * {@link File} to {@link #gpxExportFile()} for the Activity to hand off to the share
-     * sheet; PR lookup and file I/O both happen off the main thread.
-     */
-    /**
      * Writes the climb as an indoor workout (issue #223): Zwift {@code .zwo}, ERG, or the
      * stricter MyWhoosh {@code .zwo} (issue #85). Uses the fresh per-climb estimate, not the
      * route-aware one: indoors you start the climb rested. Needs a complete rider profile for
@@ -576,6 +569,13 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 R.string.intervals_push_ok, date.toString()));
     }
 
+    /**
+     * Builds a GPX 1.1 export of the currently loaded climb (issue #79) — its geometry as a
+     * track, plus waypoints at every segment boundary and, when PR data exists, at the
+     * climb's personal-record splits — and writes it to the app cache. Posts the resulting
+     * {@link File} to {@link #gpxExportFile()} for the Activity to hand off to the share
+     * sheet; PR lookup and file I/O both happen off the main thread.
+     */
     public void exportGpx() {
         StoredClimb c = lastClimb.get();
         StoredRoute r = lastRoute.get();

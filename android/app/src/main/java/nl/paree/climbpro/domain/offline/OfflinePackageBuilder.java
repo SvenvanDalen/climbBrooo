@@ -3,6 +3,7 @@ package nl.paree.climbpro.domain.offline;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.weather.RouteSampler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,13 +28,13 @@ public final class OfflinePackageBuilder {
 
     /** Raw hourly forecast JSON for a point. */
     public interface WeatherSource {
-        String forecast(double lat, double lon) throws Exception;
+        String forecast(double lat, double lon) throws IOException;
     }
 
     /** POIs near the route (positions only; projection happens here). */
     public interface PoiSource {
         List<OfflinePackage.Poi> pois(double[] lats, double[] lons, double[] distances)
-                throws Exception;
+                throws IOException;
     }
 
     private final WeatherSource weather;

@@ -60,10 +60,22 @@ public final class ShareLink {
         return null;
     }
 
+    private static final String LEADING_WRAP = "<([\"'";
+    private static final String TRAILING_WRAP = ">)]\"',.!?";
+
+    /** Drops leading opening brackets/quotes, then trailing closing ones and punctuation. */
+    private static String stripWrapping(String t) {
+        int start = 0;
+        int end = t.length();
+        while (start < end && LEADING_WRAP.indexOf(t.charAt(start)) >= 0) start++;
+        while (end > start && TRAILING_WRAP.indexOf(t.charAt(end - 1)) >= 0) end--;
+        return t.substring(start, end);
+    }
+
     private static ShareLink parseToken(String token) {
         String t = token.trim();
         // Strip wrapping punctuation from chat messages: "(https://...)" or "...123."
-        t = t.replaceAll("^[<(\\[\"']+", "").replaceAll("[>)\\]\"',.!?]+$", "");
+        t = stripWrapping(t);
         if (t.isEmpty()) return null;
         String lower = t.toLowerCase(Locale.ROOT);
         if (!lower.startsWith("http://") && !lower.startsWith("https://")) {

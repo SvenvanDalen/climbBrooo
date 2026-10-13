@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.routes;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -67,7 +68,7 @@ public class GarminHandoffInstrumentedTest {
         assertEquals(Intent.ACTION_SEND, share.getAction());
         assertEquals(GarminHandoff.GPX_MIME, share.getType());
         assertEquals(uri, share.getParcelableExtra(Intent.EXTRA_STREAM));
-        assertTrue((share.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0);
+        assertNotEquals(0, share.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION);
         if (garminInstalled()) {
             assertEquals(GarminHandoff.GARMIN_PACKAGE, share.getPackage());
         } else {

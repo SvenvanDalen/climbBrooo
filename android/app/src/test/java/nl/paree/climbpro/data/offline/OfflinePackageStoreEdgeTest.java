@@ -39,12 +39,6 @@ public class OfflinePackageStoreEdgeTest {
         Files.write(file(name).toPath(), content.getBytes(StandardCharsets.UTF_8));
     }
 
-    /** Turns {@code name} into a non-empty directory so replacing it must fail. */
-    private void block(String name) throws IOException {
-        file(name).mkdirs();
-        Files.write(new File(file(name), "child").toPath(), new byte[]{1});
-    }
-
 
 
     @Test

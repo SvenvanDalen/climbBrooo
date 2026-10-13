@@ -469,7 +469,7 @@ public final class ClimbPayloadBuilder {
         payload.put("climbs", new ArrayList<>());
 
         // Collect all sections (surface sections + qualifying flat segments).
-        List<int[]> ranges = new ArrayList<>();   // {start, end, surfaceType}
+        List<int[]> ranges = new ArrayList<>();   // entries: start, end and surface type
         List<String> names = new ArrayList<>();
         addSurfaceSections(route, ranges, names);
         addNamedFlats(route, ranges, names);

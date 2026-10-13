@@ -39,12 +39,10 @@ public final class ClimbSurfaceClassifier {
             int type = SurfaceType.fromInt(seg.surfaceType);
             int distance = Math.max(0, seg.distance);
             switch (type) {
-                case SurfaceType.ASPHALT:
-                case SurfaceType.COBBLESTONE:
+                case SurfaceType.ASPHALT, SurfaceType.COBBLESTONE:
                     pavedDistance += distance;
                     break;
-                case SurfaceType.GRAVEL:
-                case SurfaceType.DIRT:
+                case SurfaceType.GRAVEL, SurfaceType.DIRT:
                     unpavedDistance += distance;
                     break;
                 case SurfaceType.MIXED:

@@ -1,6 +1,7 @@
 package nl.paree.climbpro.domain.climb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import nl.paree.climbpro.data.route.StoredCalibrationPoint;
@@ -87,8 +88,8 @@ public class KnownClimbsTest {
 
         KnownClimb k = KnownClimbs.fromRoute(route).get(0);
 
-        assertTrue(k.calibLats == null);
-        assertTrue(k.calibLons == null);
+        assertNull(k.calibLats);
+        assertNull(k.calibLons);
     }
 
     @Test

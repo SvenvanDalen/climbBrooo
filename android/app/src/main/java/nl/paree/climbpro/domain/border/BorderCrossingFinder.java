@@ -53,8 +53,8 @@ public final class BorderCrossingFinder {
         String start = null;
         double lastInCurrent = 0;
         List<BorderCrossing> raw = new ArrayList<>();
-        for (double d = 0; ; d += SAMPLE_STEP_M) {
-            if (d > total) d = total;
+        for (double step = 0; ; step += SAMPLE_STEP_M) {
+            double d = Math.min(step, total);
             double[] p = route.at(d);
             String c = lookup.countryAt(p[0], p[1]);
             if (c != null) {

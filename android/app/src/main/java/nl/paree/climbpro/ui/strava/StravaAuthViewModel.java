@@ -33,7 +33,7 @@ public final class StravaAuthViewModel extends AndroidViewModel {
 
     public void onAuthStateReceived(AuthState state) {
         authRepo.updateState(state);
-        authorised.postValue(state.isAuthorized());
+        authorised.postValue(state != null && state.isAuthorized());
     }
 
     public void onAuthError(String message) {

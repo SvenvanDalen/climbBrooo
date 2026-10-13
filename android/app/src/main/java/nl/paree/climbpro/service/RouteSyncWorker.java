@@ -180,6 +180,16 @@ public final class RouteSyncWorker extends Worker {
         return Result.success(output);
     }
 
+    /** OSM tunnels (issue #203) change the 'hz' markers, so a lookup triggers a resync. */
+    static String tunnelSignature(StoredRoute route) {
+        if (route.tunnels == null) return "t-";
+        StringBuilder sb = new StringBuilder("t");
+        for (nl.paree.climbpro.data.route.StoredTunnel t : route.tunnels) {
+            sb.append(t.startDistance).append('-').append(t.endDistance).append(',');
+        }
+        return sb.toString();
+    }
+
     /**
      * Hash the periodic sync compares against {@code SyncState#lastSyncedHash} to decide
      * whether the watch needs a re-sync. Besides the route's source data and rider profile
@@ -191,16 +201,6 @@ public final class RouteSyncWorker extends Worker {
      * (issue #262) are included because they change the payload's 'un' key, and the
      * datafield slot layout because it only lives in preferences.
      */
-    /** OSM tunnels (issue #203) change the 'hz' markers, so a lookup triggers a resync. */
-    static String tunnelSignature(StoredRoute route) {
-        if (route.tunnels == null) return "t-";
-        StringBuilder sb = new StringBuilder("t");
-        for (nl.paree.climbpro.data.route.StoredTunnel t : route.tunnels) {
-            sb.append(t.startDistance).append('-').append(t.endDistance).append(',');
-        }
-        return sb.toString();
-    }
-
     static String wantHash(StoredRoute route, nl.paree.climbpro.domain.power.RiderProfile profile,
                            nl.paree.climbpro.domain.power.GhostTarget ghost, int palette,
                            nl.paree.climbpro.domain.units.UnitPreferences units,
@@ -241,11 +241,9 @@ public final class RouteSyncWorker extends Worker {
 
     /** One Open-Meteo request for every start (issue #12); throws when offline. */
     static boolean[] openMeteoDryCheck(java.util.List<double[]> starts) throws IOException {
-        java.util.List<nl.paree.climbpro.domain.weather.RouteSampler.Sample> pts =
-                new java.util.ArrayList<>(starts.size());
-        for (double[] s : starts) {
-            pts.add(new nl.paree.climbpro.domain.weather.RouteSampler.Sample(0, s[0], s[1]));
-        }
+        java.util.List<nl.paree.climbpro.domain.weather.RouteSampler.Sample> pts = starts.stream()
+                .map(s -> new nl.paree.climbpro.domain.weather.RouteSampler.Sample(0, s[0], s[1]))
+                .collect(java.util.stream.Collectors.toList());
         nl.paree.climbpro.domain.weather.PrecipitationGrid grid =
                 new nl.paree.climbpro.data.weather.OpenMeteoClient().fetchPrecipitation(
                         pts, nl.paree.climbpro.domain.weather.DryClimbFilter.HOURS_AHEAD + 1);

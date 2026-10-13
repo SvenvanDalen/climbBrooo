@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.rides;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -212,7 +213,7 @@ public class RideArchiveViewModelTest {
         List<RideArchiveViewModel.Row> rows = loadRows();
         for (RideArchiveViewModel.Row r : rows) {
             for (StoredRide s : vm.sameRouteCandidates(r.ride)) {
-                assertFalse(s.activityId == r.ride.activityId);
+                assertNotEquals(r.ride.activityId, s.activityId);
             }
         }
     }

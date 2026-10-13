@@ -771,7 +771,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     .show();
             return;
         }
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.systemDefault());
         android.app.DatePickerDialog picker = new android.app.DatePickerDialog(this,
                 (view, y, m, d) -> pickIntervalsType(repeats, recoverySec,
                         java.time.LocalDate.of(y, m + 1, d)),

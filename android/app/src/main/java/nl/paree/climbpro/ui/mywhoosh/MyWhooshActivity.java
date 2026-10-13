@@ -177,7 +177,8 @@ public final class MyWhooshActivity extends AppCompatActivity {
                 .setItems(items, (d, first) -> {
                     String[] others = new String[items.length - 1];
                     long[] ids = new long[items.length - 1];
-                    for (int i = 0, k = 0; i < items.length; i++) {
+                    int k = 0;
+                    for (int i = 0; i < items.length; i++) {
                         if (i == first) continue;
                         others[k] = items[i];
                         ids[k++] = rides.get(i).activityId;

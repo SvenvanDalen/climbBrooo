@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.voice;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
@@ -73,7 +74,7 @@ public class VoiceShortcutActivityTest {
         Intent i = shadowOf(a).getNextStartedActivity();
         assertNotNull(i);
         assertEquals(RouteListActivity.class.getName(), i.getComponent().getClassName());
-        assertTrue((i.getFlags() & Intent.FLAG_ACTIVITY_CLEAR_TOP) != 0);
+        assertNotEquals(0, i.getFlags() & Intent.FLAG_ACTIVITY_CLEAR_TOP);
     }
 
     private void activate(String routeId) {
@@ -88,14 +89,14 @@ public class VoiceShortcutActivityTest {
 
     @Test
     public void nextClimb_withoutActiveRoute_saysSo() {
-        VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
+        open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
         assertEquals("Je hebt nog geen actieve route. Kies er een in ClimbPro.", awaitAnswer());
     }
 
     @Test
     public void nextClimb_activeRouteMissing_saysItCannotOpen() {
         activate("deleted");
-        VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
+        open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
         assertEquals("Ik kan je actieve route niet openen.", awaitAnswer());
     }
 
@@ -125,7 +126,7 @@ public class VoiceShortcutActivityTest {
         l.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
         shadowOf(lm).setLastKnownLocation(LocationManager.GPS_PROVIDER, l);
 
-        VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
+        open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
         String answer = awaitAnswer();
         assertTrue(answer, answer.startsWith("De volgende klim is "));
     }
@@ -141,14 +142,14 @@ public class VoiceShortcutActivityTest {
         l.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos() - 3_600_000_000_000L);
         shadowOf(lm).setLastKnownLocation(LocationManager.NETWORK_PROVIDER, l);
 
-        VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
+        open(new Intent(VoiceCommand.ACTION_NEXT_CLIMB));
         assertTrue(awaitAnswer().startsWith("Ik weet niet waar je bent"));
     }
 
     @Test
     public void startRide_activeRoute_startsSyncAndConfirms() throws Exception {
         activate(UiTestData.ROUTE_ID);
-        VoiceShortcutActivity a = open(new Intent(VoiceCommand.ACTION_START_RIDE));
+        open(new Intent(VoiceCommand.ACTION_START_RIDE));
         assertEquals("Rit gestart. Ardennen rondje wordt naar je horloge gestuurd.", awaitAnswer());
         assertEquals(RouteSyncWorker.MODE_ROUTE, PreferenceManager.getDefaultSharedPreferences(app)
                 .getString(RouteSyncWorker.PREF_MODE, null));
@@ -165,7 +166,7 @@ public class VoiceShortcutActivityTest {
     public void assistantFeatureFromDeepLink() {
         Intent i = new Intent(Intent.ACTION_VIEW,
                 Uri.parse("climbpro://open?feature=volgende%20klim"));
-        VoiceShortcutActivity a = open(i);
+        open(i);
         assertEquals("Je hebt nog geen actieve route. Kies er een in ClimbPro.", awaitAnswer());
     }
 

@@ -44,9 +44,9 @@ public final class FavoriteStartPoint {
         if (t.isEmpty()) return null;
         String[] parts;
         if (t.contains(";")) {
-            parts = t.replace(',', '.').split("\\s*;\\s*");
+            parts = t.replace(',', '.').split("\\s*+;\\s*+");
         } else {
-            parts = t.split("\\s*,\\s*|\\s+");
+            parts = t.split("\\s*+,\\s*+|\\s++");
         }
         if (parts.length != 2) return null;
         double lat;

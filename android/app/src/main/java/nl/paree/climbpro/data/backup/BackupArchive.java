@@ -232,16 +232,16 @@ public final class BackupArchive {
         for (Map.Entry<String, ?> p : prefs.entrySet()) {
             Object v = p.getValue();
             ObjectNode node = MAPPER.createObjectNode();
-            if (v instanceof Boolean) {
-                node.put("t", "b").put("v", (Boolean) v);
-            } else if (v instanceof Integer) {
-                node.put("t", "i").put("v", (Integer) v);
-            } else if (v instanceof Long) {
-                node.put("t", "l").put("v", (Long) v);
-            } else if (v instanceof Float) {
-                node.put("t", "f").put("v", (Float) v);
-            } else if (v instanceof String) {
-                node.put("t", "s").put("v", (String) v);
+            if (v instanceof Boolean bv) {
+                node.put("t", "b").put("v", bv);
+            } else if (v instanceof Integer iv) {
+                node.put("t", "i").put("v", iv);
+            } else if (v instanceof Long lv) {
+                node.put("t", "l").put("v", lv);
+            } else if (v instanceof Float fv) {
+                node.put("t", "f").put("v", fv);
+            } else if (v instanceof String sv) {
+                node.put("t", "s").put("v", sv);
             } else if (v instanceof Set) {
                 node.put("t", "ss");
                 com.fasterxml.jackson.databind.node.ArrayNode arr = node.putArray("v");

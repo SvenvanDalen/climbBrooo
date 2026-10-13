@@ -170,7 +170,7 @@ public final class WatchRequestHandler {
         } else if ("SET_ACTIVE_CLIMB".equals(type)) {
             Object idx = message.get("climbIdx");
             handleSetActiveClimb((String) message.get("id"),
-                    idx instanceof Number ? ((Number) idx).intValue() : -1);
+                    idx instanceof Number n ? n.intValue() : -1);
         } else {
             Log.w(TAG, "Unknown message type from watch: " + type);
         }

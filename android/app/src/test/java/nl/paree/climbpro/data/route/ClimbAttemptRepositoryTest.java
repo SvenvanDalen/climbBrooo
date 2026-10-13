@@ -1,6 +1,7 @@
 package nl.paree.climbpro.data.route;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -318,8 +319,8 @@ public class ClimbAttemptRepositoryTest {
 
             assertTrue("iteration " + i + ": update() write was lost",
                     survivingExisting != null && ("updated-" + i).equals(survivingExisting.note));
-            assertTrue("iteration " + i + ": append() write was lost",
-                    survivingAppended != null);
+            assertNotNull("iteration " + i + ": append() write was lost",
+                    survivingAppended);
         }
     }
 
