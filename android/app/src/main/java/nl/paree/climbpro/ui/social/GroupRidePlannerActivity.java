@@ -235,22 +235,25 @@ public final class GroupRidePlannerActivity extends AppCompatActivity {
               .append(GroupRidePlanner.kmh(GroupRidePlanner.DEFAULT_FLAT_DKMH / 10.0))
               .append(" km/u.\n");
         }
-        if (!p.dates.isEmpty()) {
-            sb.append("\nDatumvoorstellen:\n");
-            for (GroupRidePlanner.DateOption o : p.dates) {
-                sb.append("• ").append(GroupRidePlanner.formatDate(o.date)).append(", ")
-                  .append(GroupRidePlanner.daypartName(o.daypart));
-                if (o.total > 0) {
-                    sb.append(" — ").append(o.available).append('/').append(o.total)
-                      .append(" kunnen");
-                    if (!o.unavailable.isEmpty()) {
-                        sb.append(" (niet: ").append(String.join(", ", o.unavailable)).append(')');
-                    }
-                }
-                sb.append('\n');
-            }
-        }
+        appendDates(sb, p.dates);
         return sb.toString().trim();
+    }
+
+    private static void appendDates(StringBuilder sb, List<GroupRidePlanner.DateOption> dates) {
+        if (dates.isEmpty()) return;
+        sb.append("\nDatumvoorstellen:\n");
+        for (GroupRidePlanner.DateOption o : dates) {
+            sb.append("• ").append(GroupRidePlanner.formatDate(o.date)).append(", ")
+              .append(GroupRidePlanner.daypartName(o.daypart))
+              .append(availability(o)).append('\n');
+        }
+    }
+
+    private static String availability(GroupRidePlanner.DateOption o) {
+        if (o.total <= 0) return "";
+        String line = " — " + o.available + "/" + o.total + " kunnen";
+        if (o.unavailable.isEmpty()) return line;
+        return line + " (niet: " + String.join(", ", o.unavailable) + ")";
     }
 
     private void share() {

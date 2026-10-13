@@ -56,41 +56,53 @@ public final class ClimbPeriodizationViewModel extends AndroidViewModel {
     public void load() {
         executor.execute(() -> {
             List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-            Map<String, Integer> attemptCount = new HashMap<>();
-            for (StoredClimbAttempt a : attempts) {
-                if (a.climbId == null) continue;
-                Integer n = attemptCount.get(a.climbId);
-                attemptCount.put(a.climbId, n == null ? 1 : n + 1);
-            }
-
             Map<String, Candidate> candidates = new LinkedHashMap<>();
             Map<String, Integer> gainById = new HashMap<>();
-            for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
-                try {
-                    StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                    if (route.climbs == null) continue;
-                    for (StoredClimb c : route.climbs) {
-                        String id = ClimbIdentity.of(c);
-                        if (candidates.containsKey(id)) continue;
-                        Integer n = attemptCount.get(id);
-                        candidates.put(id, new Candidate(id, displayName(c), c.elevationGain,
-                                ClimbIdentity.effectiveLength(c), c.avgGradient,
-                                n == null ? 0 : n));
-                        gainById.put(id, c.elevationGain);
-                    }
-                } catch (Exception ignored) {
-                    // A route that fails to load just doesn't contribute climbs.
-                }
-            }
-
-            double baseline = 0;
-            if (!attempts.isEmpty()) {
-                RecoveryAdvisor.Advice advice = RecoveryAdvisor.compute(attempts, gainById);
-                if (advice.hasData) baseline = advice.baselineWeeklyAvgGainM;
-            }
+            collectCandidates(countAttempts(attempts), candidates, gainById);
             state.postValue(new State(ClimbPeriodizationPlanner.plan(
-                    new ArrayList<>(candidates.values()), baseline)));
+                    new ArrayList<>(candidates.values()), baseline(attempts, gainById))));
         });
+    }
+
+    private static Map<String, Integer> countAttempts(List<StoredClimbAttempt> attempts) {
+        Map<String, Integer> attemptCount = new HashMap<>();
+        for (StoredClimbAttempt a : attempts) {
+            if (a.climbId != null) attemptCount.merge(a.climbId, 1, Integer::sum);
+        }
+        return attemptCount;
+    }
+
+    private void collectCandidates(Map<String, Integer> attemptCount,
+                                   Map<String, Candidate> candidates,
+                                   Map<String, Integer> gainById) {
+        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
+            try {
+                addClimbs(routeRepo.loadRoute(entry.routeId), attemptCount, candidates, gainById);
+            } catch (Exception ignored) {
+                // A route that fails to load just doesn't contribute climbs.
+            }
+        }
+    }
+
+    private static void addClimbs(StoredRoute route, Map<String, Integer> attemptCount,
+                                  Map<String, Candidate> candidates,
+                                  Map<String, Integer> gainById) {
+        if (route.climbs == null) return;
+        for (StoredClimb c : route.climbs) {
+            String id = ClimbIdentity.of(c);
+            if (candidates.containsKey(id)) continue;
+            candidates.put(id, new Candidate(id, displayName(c), c.elevationGain,
+                    ClimbIdentity.effectiveLength(c), c.avgGradient,
+                    attemptCount.getOrDefault(id, 0)));
+            gainById.put(id, c.elevationGain);
+        }
+    }
+
+    private static double baseline(List<StoredClimbAttempt> attempts,
+                                   Map<String, Integer> gainById) {
+        if (attempts.isEmpty()) return 0;
+        RecoveryAdvisor.Advice advice = RecoveryAdvisor.compute(attempts, gainById);
+        return advice.hasData ? advice.baselineWeeklyAvgGainM : 0;
     }
 
     private static String displayName(StoredClimb c) {

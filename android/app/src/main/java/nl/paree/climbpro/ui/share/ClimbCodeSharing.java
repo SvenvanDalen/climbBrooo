@@ -61,50 +61,63 @@ public final class ClimbCodeSharing {
     public static void shareCollection(Activity activity, Executor executor,
                                        RouteCollection collection) {
         executor.execute(() -> {
-            RouteRepository repo = new RouteRepository(activity);
-            Map<String, StoredRoute> byId = new HashMap<>();
-            Set<String> ids = new LinkedHashSet<>();
-            if (collection.routeIds != null) ids.addAll(collection.routeIds);
-            if (collection.climbs != null) {
-                for (ClimbMembership m : collection.climbs) {
-                    ids.add(m.routeId);
-                }
-            }
-            for (String id : ids) {
-                try {
-                    byId.put(id, repo.loadRoute(id));
-                } catch (IOException ignored) {
-                    // A deleted route simply isn't shared.
-                }
-            }
+            Map<String, StoredRoute> byId = loadRoutes(new RouteRepository(activity), collection);
             ClimbShareExtractor.Selection s = ClimbShareExtractor.collect(collection, byId);
-            activity.runOnUiThread(() -> {
-                if (s.climbs.isEmpty()) {
-                    Toast.makeText(activity, s.skippedHome > 0
-                            ? "Deze collectie bevat alleen thuisklimmen; die deel je niet."
-                            : "Deze collectie bevat geen klimmen om te delen.",
-                            Toast.LENGTH_LONG).show();
-                    return;
-                }
-                StringBuilder note = new StringBuilder();
-                if (s.skippedHome > 0) {
-                    note.append(s.skippedHome).append(" thuisklim(men) niet gedeeld. ");
-                }
-                if (s.skippedOverLimit > 0) {
-                    note.append(s.skippedOverLimit).append(" klim(men) vallen buiten de code (max ")
-                            .append(ClimbShareCode.MAX_CLIMBS).append(").");
-                }
-                if (note.length() > 0) {
-                    Toast.makeText(activity, note.toString().trim(), Toast.LENGTH_LONG).show();
-                }
-                String name = collection.name != null ? collection.name : "Collectie";
-                String code = ClimbShareCode.encode(new ClimbShareCode.Payload(name, s.climbs));
-                send(activity, "Klimcollectie: " + name, String.format(Locale.getDefault(),
-                        "Collectie \"%s\" met %d klim(men) uit ClimbPro. Importeer in ClimbPro "
-                                + "via het menu > Klimcode importeren:\n\n%s",
-                        name, s.climbs.size(), code));
-            });
+            activity.runOnUiThread(() -> shareSelection(activity, collection, s));
         });
+    }
+
+    private static Map<String, StoredRoute> loadRoutes(RouteRepository repo,
+                                                       RouteCollection collection) {
+        Set<String> ids = new LinkedHashSet<>();
+        if (collection.routeIds != null) ids.addAll(collection.routeIds);
+        if (collection.climbs != null) {
+            for (ClimbMembership m : collection.climbs) {
+                ids.add(m.routeId);
+            }
+        }
+        Map<String, StoredRoute> byId = new HashMap<>();
+        for (String id : ids) {
+            try {
+                byId.put(id, repo.loadRoute(id));
+            } catch (IOException ignored) {
+                // A deleted route simply isn't shared.
+            }
+        }
+        return byId;
+    }
+
+    private static void shareSelection(Activity activity, RouteCollection collection,
+                                       ClimbShareExtractor.Selection s) {
+        if (s.climbs.isEmpty()) {
+            Toast.makeText(activity, s.skippedHome > 0
+                    ? "Deze collectie bevat alleen thuisklimmen; die deel je niet."
+                    : "Deze collectie bevat geen klimmen om te delen.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        String note = skippedNote(s);
+        if (!note.isEmpty()) {
+            Toast.makeText(activity, note, Toast.LENGTH_LONG).show();
+        }
+        String name = collection.name != null ? collection.name : "Collectie";
+        String code = ClimbShareCode.encode(new ClimbShareCode.Payload(name, s.climbs));
+        send(activity, "Klimcollectie: " + name, String.format(Locale.getDefault(),
+                "Collectie \"%s\" met %d klim(men) uit ClimbPro. Importeer in ClimbPro "
+                        + "via het menu > Klimcode importeren:\n\n%s",
+                name, s.climbs.size(), code));
+    }
+
+    private static String skippedNote(ClimbShareExtractor.Selection s) {
+        StringBuilder note = new StringBuilder();
+        if (s.skippedHome > 0) {
+            note.append(s.skippedHome).append(" thuisklim(men) niet gedeeld. ");
+        }
+        if (s.skippedOverLimit > 0) {
+            note.append(s.skippedOverLimit).append(" klim(men) vallen buiten de code (max ")
+                    .append(ClimbShareCode.MAX_CLIMBS).append(").");
+        }
+        return note.toString().trim();
     }
 
     private static void send(Activity activity, String subject, String text) {
@@ -167,31 +180,33 @@ public final class ClimbCodeSharing {
     static String summary(SharedClimbImporter.Preview p) {
         StringBuilder sb = new StringBuilder();
         for (SharedClimbImportPlanner.Plan plan : p.plans) {
-            sb.append("• ").append(plan.shared.name.isEmpty() ? "Klim" : plan.shared.name);
-            if (plan.climb == null) {
-                sb.append(": geen klim gevonden, wordt overgeslagen");
-            } else {
-                sb.append(String.format(Locale.getDefault(), ": %.1f km, %.1f %%",
-                        plan.climb.length / 1000.0, plan.climb.avgGradient * 100));
-                if (!plan.isNew()) sb.append(" (heb je al)");
-            }
-            sb.append('\n');
+            sb.append("• ").append(plan.shared.name.isEmpty() ? "Klim" : plan.shared.name)
+                    .append(planLine(plan)).append('\n');
         }
+        sb.append('\n').append(outcomeLine(p));
+        return sb.toString();
+    }
+
+    private static String planLine(SharedClimbImportPlanner.Plan plan) {
+        if (plan.climb == null) return ": geen klim gevonden, wordt overgeslagen";
+        String line = String.format(Locale.getDefault(), ": %.1f km, %.1f %%",
+                plan.climb.length / 1000.0, plan.climb.avgGradient * 100);
+        return plan.isNew() ? line : line + " (heb je al)";
+    }
+
+    private static String outcomeLine(SharedClimbImporter.Preview p) {
         int fresh = p.count(true);
         int known = p.count(false);
-        sb.append('\n');
-        if (fresh == 0 && known > 0 && p.payload.collectionName == null) {
-            sb.append("Deze klim heb je al; er valt niets te importeren.");
-        } else if (fresh == 0 && known == 0) {
-            sb.append("Er valt niets te importeren.");
-        } else {
-            sb.append(fresh).append(" nieuwe klim(men) worden als route toegevoegd.");
-            if (p.payload.collectionName != null) {
-                sb.append(" Er komt een collectie met alle ").append(fresh + known)
-                        .append(" klim(men).");
-            }
+        boolean collection = p.payload.collectionName != null;
+        if (fresh == 0 && known > 0 && !collection) {
+            return "Deze klim heb je al; er valt niets te importeren.";
         }
-        return sb.toString();
+        if (fresh == 0 && known == 0) return "Er valt niets te importeren.";
+        String line = fresh + " nieuwe klim(men) worden als route toegevoegd.";
+        if (collection) {
+            line += " Er komt een collectie met alle " + (fresh + known) + " klim(men).";
+        }
+        return line;
     }
 
     private static void runImport(Activity activity, SharedClimbImporter importer,
