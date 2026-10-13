@@ -130,7 +130,7 @@ public class RideBuddyCodeTest {
     }
 
     @Test
-    public void decode_rejectsMalformedInput() throws Exception {
+    public void decode_rejectsMalformedEnvelope() {
         assertEquals(RideBuddyCode.MSG_NOT_FOUND, errorOf(null));
         assertEquals(RideBuddyCode.MSG_NOT_FOUND, errorOf(""));
         assertEquals(RideBuddyCode.MSG_NOT_FOUND, errorOf("zomaar tekst"));
@@ -140,6 +140,10 @@ public class RideBuddyCodeTest {
         assertEquals(RideBuddyCode.MSG_CORRUPT, errorOf("CPR1:abc"));
         assertEquals(RideBuddyCode.MSG_CORRUPT, errorOf("CPR0:" + RideBuddyCode.encode(full()).substring(5)));
         assertEquals(RideBuddyCode.MSG_NEWER, errorOf("CPR2:abc"));
+    }
+
+    @Test
+    public void decode_rejectsMalformedPayload() throws Exception {
         assertEquals(RideBuddyCode.MSG_CORRUPT, errorOf(codeOf("[1,2,3]")));
         assertEquals(RideBuddyCode.MSG_CORRUPT, errorOf(codeOf("not json")));
         assertEquals(RideBuddyCode.MSG_CORRUPT, errorOf(codeOf("{\"v\":1,\"n\":\"x\"}")));
