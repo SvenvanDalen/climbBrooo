@@ -90,17 +90,18 @@ public final class WeightLogStore {
                     || !WeightHistory.isPlausible(in.getValue())) continue;
             String key = in.getKey().toString();
             WeightEntry existing = byDate.get(key);
-            if (existing != null && !WeightEntry.SOURCE_HEALTH_CONNECT.equals(existing.source)) {
-                continue;
-            }
             double kg = Math.round(in.getValue() * 10) / 10.0;
-            if (existing != null && existing.kg == kg) continue;
-            WeightEntry e = new WeightEntry();
-            e.date = key;
-            e.kg = kg;
-            e.source = WeightEntry.SOURCE_HEALTH_CONNECT;
-            byDate.put(key, e);
-            changed++;
+            // A manual entry always wins; an unchanged Health Connect value needs no rewrite.
+            boolean keepExisting = existing != null
+                    && (!WeightEntry.SOURCE_HEALTH_CONNECT.equals(existing.source) || existing.kg == kg);
+            if (!keepExisting) {
+                WeightEntry e = new WeightEntry();
+                e.date = key;
+                e.kg = kg;
+                e.source = WeightEntry.SOURCE_HEALTH_CONNECT;
+                byDate.put(key, e);
+                changed++;
+            }
         }
         if (changed > 0) write(new ArrayList<>(byDate.values()));
         return changed;

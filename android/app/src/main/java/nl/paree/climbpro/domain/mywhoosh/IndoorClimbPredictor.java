@@ -50,10 +50,10 @@ public final class IndoorClimbPredictor {
         int best60 = 0;
         int count = 0;
         for (StoredRide r : rides) {
-            if (!IndoorRides.isIndoor(r) || r.startEpochSec < from) continue;
             StoredRideStreamStats s = stats.get(r.activityId);
-            if (s == null || s.powerCurve == null || s.powerCurve.length <= IDX_60_MIN) continue;
-            if (s.powerCurve[IDX_20_MIN] <= 0) continue;
+            if (!IndoorRides.isIndoor(r) || r.startEpochSec < from
+                    || s == null || s.powerCurve == null || s.powerCurve.length <= IDX_60_MIN
+                    || s.powerCurve[IDX_20_MIN] <= 0) continue;
             count++;
             best20 = Math.max(best20, s.powerCurve[IDX_20_MIN]);
             best60 = Math.max(best60, s.powerCurve[IDX_60_MIN]);

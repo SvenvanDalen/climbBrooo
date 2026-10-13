@@ -124,8 +124,9 @@ public final class VoiceShortcutActivity extends AppCompatActivity {
                 Location l = lm.getLastKnownLocation(provider);
                 if (l == null) continue;
                 long age = SystemClock.elapsedRealtimeNanos() - l.getElapsedRealtimeNanos();
-                if (age > MAX_FIX_AGE_NANOS) continue;
-                if (best == null || l.getTime() > best.getTime()) best = l;
+                if (age <= MAX_FIX_AGE_NANOS && (best == null || l.getTime() > best.getTime())) {
+                    best = l;
+                }
             } catch (SecurityException | IllegalArgumentException ignored) {
                 // provider missing or permission revoked mid-call: try the next one
             }

@@ -32,25 +32,18 @@ public final class ClimbDetector {
 
         int i = 0;
         while (i < n - 1) {
-            // Skip flat / downhill sections
-            if (getGradient(points, i, i + 1) < ClimbConstants.MIN_AVG_GRADIENT * 0.5) {
+            // Skip flat / downhill sections; otherwise extend the potential climb start.
+            boolean flat = getGradient(points, i, i + 1) < ClimbConstants.MIN_AVG_GRADIENT * 0.5;
+            int endIdx = flat ? i : peakIndex(points, i);
+            if (endIdx <= i) {
                 i++;
-                continue;
+            } else {
+                if (meetsClimbRules(points.get(i), points.get(endIdx))) {
+                    climbs.add(buildTrimmedClimb(points, i, endIdx));
+                }
+                // Advance past the ORIGINAL (untrimmed) end so a trailing flat is not rescanned.
+                i = endIdx + 1;
             }
-
-            // Found a potential climb start — extend it
-            int startIdx = i;
-            int endIdx = peakIndex(points, startIdx);
-            if (endIdx <= startIdx) {
-                i++;
-                continue;
-            }
-
-            if (meetsClimbRules(points.get(startIdx), points.get(endIdx))) {
-                climbs.add(buildTrimmedClimb(points, startIdx, endIdx));
-            }
-            // Advance past the ORIGINAL (untrimmed) end so a trailing flat is not rescanned.
-            i = endIdx + 1;
         }
 
         return climbs;
@@ -66,11 +59,10 @@ public final class ClimbDetector {
         int peakIdx = startIdx;
         for (int j = startIdx + 1; j < n; j++) {
             double ele = points.get(j).elevation;
-            if (Double.isNaN(ele)) continue;
             if (ele > peakElevation) {
                 peakElevation = ele;
                 peakIdx = j;
-            } else if (peakElevation - ele > DOWNHILL_TOLERANCE_M) {
+            } else if (!Double.isNaN(ele) && peakElevation - ele > DOWNHILL_TOLERANCE_M) {
                 break;
             }
         }

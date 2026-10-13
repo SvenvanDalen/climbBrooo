@@ -97,12 +97,14 @@ public final class RegionalTopClimbs {
         Map<String, Ranked> byKey = new LinkedHashMap<>();
         for (Candidate c : candidates) {
             if (c == null || !validCoord(c.startLat, c.startLon)) continue;
+            // finite: both coordinates were validated above
             double d = CumulativeDistance.haversine(lat, lon, c.startLat, c.startLon);
-            if (d > radiusM) continue;
-            Ranked r = new Ranked(c,
-                    DifficultyScoreCalculator.score(c.elevationGainM, c.avgGradient, 0), d);
-            Ranked existing = byKey.get(c.dedupeKey());
-            if (existing == null || r.score > existing.score) byKey.put(c.dedupeKey(), r);
+            if (d <= radiusM) {
+                Ranked r = new Ranked(c,
+                        DifficultyScoreCalculator.score(c.elevationGainM, c.avgGradient, 0), d);
+                Ranked existing = byKey.get(c.dedupeKey());
+                if (existing == null || r.score > existing.score) byKey.put(c.dedupeKey(), r);
+            }
         }
 
         List<Ranked> out = new ArrayList<>(byKey.values());

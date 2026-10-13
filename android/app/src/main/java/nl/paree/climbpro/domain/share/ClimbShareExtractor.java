@@ -115,15 +115,14 @@ public final class ClimbShareExtractor {
             if (r == null) continue;
             if (isHome(r, m.climbIndex)) {
                 home++;
-                continue;
+            } else {
+                SharedClimb c = extract(r, m.climbIndex);
+                if (c != null && out.size() >= ClimbShareCode.MAX_CLIMBS) {
+                    over++;
+                } else if (c != null) {
+                    out.add(c);
+                }
             }
-            SharedClimb c = extract(r, m.climbIndex);
-            if (c == null) continue;
-            if (out.size() >= ClimbShareCode.MAX_CLIMBS) {
-                over++;
-                continue;
-            }
-            out.add(c);
         }
         return new Selection(out, home, over);
     }
