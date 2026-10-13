@@ -3,6 +3,7 @@ package nl.paree.climbpro.ui.wrapped;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -96,7 +97,7 @@ public final class ClimbWrappedActivity extends AppCompatActivity {
         int pad = (int) (20 * getResources().getDisplayMetrics().density);
         card.setPadding(pad, pad, pad, pad);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.bottomMargin = (int) (16 * getResources().getDisplayMetrics().density);
         card.setLayoutParams(lp);
 

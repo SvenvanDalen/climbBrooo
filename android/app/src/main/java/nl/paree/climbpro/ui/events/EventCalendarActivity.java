@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -109,7 +110,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
             View divider = new View(this);
             divider.setBackgroundColor(0x22888888);
             list.addView(divider, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1));
         }
     }
 

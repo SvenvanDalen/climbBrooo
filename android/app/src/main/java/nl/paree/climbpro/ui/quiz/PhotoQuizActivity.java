@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -147,7 +148,7 @@ public final class PhotoQuizActivity extends AppCompatActivity {
             Button b = new Button(this, null, 0, R.style.Widget_ClimbPro_Button_Outline);
             b.setText(option);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.bottomMargin = (int) (8 * getResources().getDisplayMetrics().density);
             b.setLayoutParams(lp);
             b.setOnClickListener(v -> answer(q, option));

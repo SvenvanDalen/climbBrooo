@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -84,7 +85,7 @@ public final class ClimbPeriodizationActivity extends AppCompatActivity {
         int pad = dp(16);
         card.setPadding(pad, pad, pad, pad);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(16);
         card.setLayoutParams(lp);
 
@@ -114,7 +115,7 @@ public final class ClimbPeriodizationActivity extends AppCompatActivity {
     private TextView text(String value, int sp, int colorRes) {
         TextView tv = new TextView(this);
         tv.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         tv.setText(value);
         tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
         tv.setTextColor(ContextCompat.getColor(this, colorRes));
