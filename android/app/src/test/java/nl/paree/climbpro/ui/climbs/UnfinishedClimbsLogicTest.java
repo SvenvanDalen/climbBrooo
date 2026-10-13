@@ -68,8 +68,8 @@ public class UnfinishedClimbsLogicTest {
         List<UnfinishedClimbsViewModel.Row> rows = UiTestEnv.awaitValue(vm.rows(), l -> true);
 
         assertEquals(2, rows.size());
-        UnfinishedClimbsViewModel.Row known = rows.get(0).routeId != null ? rows.get(0) : rows.get(1);
-        UnfinishedClimbsViewModel.Row unknown = known == rows.get(0) ? rows.get(1) : rows.get(0);
+        UnfinishedClimbsViewModel.Row known = rows.get(rows.get(0).routeId != null ? 0 : 1);
+        UnfinishedClimbsViewModel.Row unknown = rows.get(known == rows.get(0) ? 1 : 0);
         assertEquals(UiTestData.ROUTE_ID_2, known.routeId);
         assertEquals(0, known.climbIndex);
         assertEquals(2, known.attemptCount);

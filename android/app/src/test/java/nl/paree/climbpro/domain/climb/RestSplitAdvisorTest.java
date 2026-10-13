@@ -1,6 +1,7 @@
 package nl.paree.climbpro.domain.climb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -118,7 +119,7 @@ public class RestSplitAdvisorTest {
         List<Double> history = Arrays.asList(10.0, 20.0, 30.0, 40.0, 50.0);
         Double threshold = RestSplitAdvisor.personalHardThreshold(history);
 
-        assertTrue(threshold != null);
+        assertNotNull(threshold);
         // Nearest-rank p90 of 5 values -> ceil(0.9*5)=5th value (index 4) = 50.
         assertEquals(50.0, threshold, 1e-9);
     }

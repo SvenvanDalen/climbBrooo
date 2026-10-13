@@ -2,6 +2,7 @@ package nl.paree.climbpro.data.battery;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 import android.app.Application;
@@ -56,7 +57,7 @@ public class BatteryRepositoryEdgeTest {
     public void upsertWithUnknownId_createsNewDevice() throws Exception {
         BatteryRepository repo = new BatteryRepository(app);
         String id = repo.upsertDevice("bestaat-niet", " Di2 ", "E_SHIFTING", 45, 100L);
-        assertFalse("bestaat-niet".equals(id));
+        assertNotEquals("bestaat-niet", id);
         assertEquals(1, repo.load().devices.size());
         assertEquals("Di2", repo.load().devices.get(0).name);
     }

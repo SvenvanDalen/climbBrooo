@@ -558,7 +558,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.route_detail_no_coordinates, Toast.LENGTH_SHORT).show();
             return;
         }
-        java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now(java.time.ZoneId.systemDefault());
         new android.app.TimePickerDialog(this,
                 (picker, hour, minute) -> loadTemperatureTrend(r, hour, minute),
                 now.getHour(), now.getMinute(),

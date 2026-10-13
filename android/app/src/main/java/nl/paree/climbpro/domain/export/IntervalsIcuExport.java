@@ -81,8 +81,7 @@ public final class IntervalsIcuExport {
     /** User-facing (Dutch) message for a failed HTTP call. */
     public static String errorMessage(int httpCode) {
         switch (httpCode) {
-            case 401:
-            case 403:
+            case 401, 403:
                 return "intervals.icu weigert de API-sleutel; controleer hem in Instellingen.";
             case 404:
                 return "Atleet-id niet gevonden bij intervals.icu; laat hem leeg of vul 0 in "

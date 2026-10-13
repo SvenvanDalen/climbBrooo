@@ -67,7 +67,7 @@ public class PhotoQuizBuilderTest {
                 "x1", "X1", "x2", "X2", "x3", "X3");
 
         for (Question q : PhotoQuizBuilder.build(attempts, n, 10, new Random(7))) {
-            for (String o : q.options) assertTrue(o, o.length() == 1); // never X*
+            for (String o : q.options) assertEquals(o, 1, o.length()); // never X*
         }
     }
 

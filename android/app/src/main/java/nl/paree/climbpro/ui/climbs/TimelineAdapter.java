@@ -87,8 +87,8 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Entry entry = entries.get(position);
-        if (holder instanceof HeaderVH) {
-            ((HeaderVH) holder).label.setText(entry.header);
+        if (holder instanceof HeaderVH header) {
+            header.label.setText(entry.header);
             return;
         }
         AttemptVH h = (AttemptVH) holder;

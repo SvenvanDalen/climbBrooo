@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.climbs;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -61,6 +62,6 @@ public class ClimbShareHandoffTest {
     public void buildShareIntent_grantsReadUriPermission() {
         Intent i = ClimbShareHandoff.buildShareIntent(Uri.parse("content://x/climb_share.png"));
 
-        assertTrue((i.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0);
+        assertNotEquals(0, i.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION);
     }
 }

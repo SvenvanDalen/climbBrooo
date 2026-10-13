@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.voice;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
@@ -73,7 +74,7 @@ public class VoiceShortcutActivityTest {
         Intent i = shadowOf(a).getNextStartedActivity();
         assertNotNull(i);
         assertEquals(RouteListActivity.class.getName(), i.getComponent().getClassName());
-        assertTrue((i.getFlags() & Intent.FLAG_ACTIVITY_CLEAR_TOP) != 0);
+        assertNotEquals(0, i.getFlags() & Intent.FLAG_ACTIVITY_CLEAR_TOP);
     }
 
     private void activate(String routeId) {

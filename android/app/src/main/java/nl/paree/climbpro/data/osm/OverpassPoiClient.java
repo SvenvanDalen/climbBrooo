@@ -131,12 +131,9 @@ public final class OverpassPoiClient {
         String amenity = tags.path("amenity").asText("");
         String shop = tags.path("shop").asText("");
         switch (amenity) {
-            case "drinking_water":
-            case "water_point":
+            case "drinking_water", "water_point":
                 return OfflinePackage.Poi.WATER;
-            case "cafe":
-            case "restaurant":
-            case "fast_food":
+            case "cafe", "restaurant", "fast_food":
                 return OfflinePackage.Poi.FOOD;
             case "toilets":
                 return OfflinePackage.Poi.TOILET;
@@ -150,9 +147,7 @@ public final class OverpassPoiClient {
             return OfflinePackage.Poi.WATER;
         }
         switch (shop) {
-            case "bakery":
-            case "supermarket":
-            case "convenience":
+            case "bakery", "supermarket", "convenience":
                 return OfflinePackage.Poi.FOOD;
             case "bicycle":
                 return OfflinePackage.Poi.BIKE;

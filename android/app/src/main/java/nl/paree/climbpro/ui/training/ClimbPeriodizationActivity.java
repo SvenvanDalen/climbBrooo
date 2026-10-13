@@ -66,9 +66,9 @@ public final class ClimbPeriodizationActivity extends AppCompatActivity {
         }
         emptyText.setVisibility(View.GONE);
 
-        StringBuilder summary = new StringBuilder(plan.baselineFromHistory
-                ? getString(R.string.periodization_start_history, plan.startWeeklyGainM)
-                : getString(R.string.periodization_start_default, plan.startWeeklyGainM));
+        StringBuilder summary = new StringBuilder(getString(plan.baselineFromHistory
+                ? R.string.periodization_start_history
+                : R.string.periodization_start_default, plan.startWeeklyGainM));
         if (!plan.fromRiddenClimbs) {
             summary.append("\n\n").append(getString(R.string.periodization_not_ridden));
         }

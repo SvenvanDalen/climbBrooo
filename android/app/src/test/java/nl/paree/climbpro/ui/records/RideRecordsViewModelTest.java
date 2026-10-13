@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -241,7 +242,7 @@ public class RideRecordsViewModelTest {
         assertEquals(SprintCalculator.TOP_N, r.bySpeed.size());
         assertEquals(6L, r.bySpeed.get(0).ride.activityId);
         assertEquals(20.0, r.bySpeed.get(0).speedMps, 1e-9);
-        for (SprintCalculator.SpeedSprint sp : r.bySpeed) assertTrue(sp.ride.activityId != 7L);
+        for (SprintCalculator.SpeedSprint sp : r.bySpeed) assertNotEquals(7L, sp.ride.activityId);
     }
 
     @Test

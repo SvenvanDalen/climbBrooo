@@ -61,7 +61,7 @@ public class GradientPaletteTest {
             int rgb = GradientPalette.rgb(GradientPalette.COLORBLIND, i);
             for (int shift = 0; shift <= 16; shift += 8) {
                 int ch = (rgb >> shift) & 0xFF;
-                assertTrue(String.format("index %d channel %02X", i, ch), ch % 0x55 == 0);
+                assertEquals(String.format("index %d channel %02X", i, ch), 0, ch % 0x55);
             }
         }
     }

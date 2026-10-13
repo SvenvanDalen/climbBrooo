@@ -122,9 +122,7 @@ public final class MonthlyChallengeCalculator {
         switch (type) {
             case DISTINCT_CLIMBS:
                 return distinctClimbsInMonth(attempts, month, zone);
-            case ELEVATION_M:
-            case DISTANCE_KM:
-            case RIDES:
+            case ELEVATION_M, DISTANCE_KM, RIDES:
                 return rideSumInMonth(type, rides, month, zone);
             default:
                 return 0;

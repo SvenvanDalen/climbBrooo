@@ -282,8 +282,7 @@ public final class PrChancePredictor {
         }
         if (Double.isNaN(f.todayTsb)) return;
         switch (FitnessCalculator.formOf(f.todayTsb)) {
-            case VERY_FRESH:
-            case FRESH:
+            case VERY_FRESH, FRESH:
                 out.add(new Reason(Factor.FRESH, 1, f.todayTsb));
                 break;
             case NEUTRAL:

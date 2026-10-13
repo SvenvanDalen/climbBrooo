@@ -1,6 +1,7 @@
 package nl.paree.climbpro.update;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -109,8 +110,8 @@ public class DownloadCompleteReceiverTest {
         assertEquals("application/vnd.android.package-archive", started.getType());
         assertEquals("content", started.getData().getScheme());
         assertEquals(app.getPackageName() + ".fileprovider", started.getData().getAuthority());
-        assertTrue((started.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0);
-        assertTrue((started.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
+        assertNotEquals(0, started.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        assertNotEquals(0, started.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK);
         assertTrue(cursorClosed);
     }
 

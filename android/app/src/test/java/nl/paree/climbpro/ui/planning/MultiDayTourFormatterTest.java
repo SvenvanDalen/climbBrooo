@@ -51,6 +51,6 @@ public class MultiDayTourFormatterTest {
         assertTrue(MultiDayTourFormatter.dayBody(overloaded.days.get(0), 1000)
                 .contains("boven je maximum van 1.000 hm"));
 
-        assertTrue(MultiDayTourFormatter.warnings(plan(2, 5000, at("a", 6.0, 800))).size() == 1);
+        assertEquals(1, MultiDayTourFormatter.warnings(plan(2, 5000, at("a", 6.0, 800))).size());
     }
 }

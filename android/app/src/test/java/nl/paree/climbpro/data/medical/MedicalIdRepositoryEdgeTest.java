@@ -1,5 +1,6 @@
 package nl.paree.climbpro.data.medical;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -48,9 +49,9 @@ public class MedicalIdRepositoryEdgeTest {
     @Test
     public void load_corruptOrNull_givesEmptyId() throws Exception {
         writeRaw(MedicalIdRepository.FILE_NAME, "{oops");
-        assertTrue(new MedicalIdRepository(app).load() != null);
+        assertNotNull(new MedicalIdRepository(app).load());
         writeRaw(MedicalIdRepository.FILE_NAME, "null");
-        assertTrue(new MedicalIdRepository(app).load() != null);
+        assertNotNull(new MedicalIdRepository(app).load());
     }
 
     @Test

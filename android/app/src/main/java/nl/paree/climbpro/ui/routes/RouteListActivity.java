@@ -461,7 +461,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.route_list_yearly_goal_title,
-                        java.time.LocalDate.now().getYear()))
+                        java.time.LocalDate.now(java.time.ZoneId.systemDefault()).getYear()))
                 .setMessage(R.string.route_list_yearly_goal_message)
                 .setView(container)
                 .setPositiveButton(R.string.action_save, (d, w) -> {

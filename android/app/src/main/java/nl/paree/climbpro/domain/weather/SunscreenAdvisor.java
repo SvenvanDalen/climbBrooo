@@ -135,8 +135,7 @@ public final class SunscreenAdvisor {
         switch (level) {
             case MODERATE: return "factor 30";
             case HIGH: return "factor 50";
-            case VERY_HIGH:
-            case EXTREME: return "factor 50+";
+            case VERY_HIGH, EXTREME: return "factor 50+";
             default: return null;
         }
     }
