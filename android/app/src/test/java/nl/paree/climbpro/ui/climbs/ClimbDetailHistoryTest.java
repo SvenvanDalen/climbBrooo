@@ -68,7 +68,7 @@ public class ClimbDetailHistoryTest {
 
         vm.loadClimb("r1", 0);
         // Drain the VM background executor + main looper (matches existing VM test idiom).
-        UiTestEnv.waitFor(() -> !(got[0] == null), 2000);
+        UiTestEnv.waitFor(() -> got[0] != null, 2000);
         Shadows.shadowOf(Looper.getMainLooper()).idle();
 
         assertNotNull(got[0]);

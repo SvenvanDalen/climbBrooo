@@ -28,6 +28,7 @@ import nl.paree.climbpro.data.planning.PlannedClimb;
 
 import java.util.ArrayList;
 import java.util.List;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * View/add/remove screen for planned climbs (issue #70 — Kalenderintegratie voor geplande
@@ -151,10 +152,9 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
     private void showDateTimePicker(PlannedClimbListViewModel.Pickable target) {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         new DatePickerDialog(this, (view, year, month, day) -> {
-            LocalDate date = LocalDate.of(year, month + 1, day);
+            LocalDate date = PickerDates.pickedDay(year, month, day);
             new TimePickerDialog(this, (tView, hour, minute) ->
-                    showCalendarOptInAndSave(target, date.atTime(hour, minute)
-                            .atZone(ZoneId.systemDefault()).toEpochSecond()),
+                    showCalendarOptInAndSave(target, PickerDates.at(date, hour, minute, ZoneId.systemDefault())),
                     now.getHour(), now.getMinute(), true).show();
         }, now.getYear(), now.getMonthValue() - 1, now.getDayOfMonth()).show();
     }

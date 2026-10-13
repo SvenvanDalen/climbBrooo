@@ -810,9 +810,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         for (int idx : indices) {
             if (r.climbs == null || idx >= r.climbs.size()) continue;
             StoredClimb c = r.climbs.get(idx);
-            String name = "klim " + (idx + 1);
-            if (c.userDisplayName != null) name = c.userDisplayName;
-            else if (c.name != null) name = c.name;
+            String name = climbLabel(c, idx);
             if (sb.length() > 0) sb.append(", ");
             sb.append(name);
         }
@@ -1152,5 +1150,12 @@ public final class RouteDetailActivity extends AppCompatActivity {
         } catch (java.io.IOException e) {
             Toast.makeText(this, R.string.route_detail_gpx_failed, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /** User-given name, else the detected name, else "klim N". */
+    static String climbLabel(StoredClimb c, int idx) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        if (c.name != null) return c.name;
+        return "klim " + (idx + 1);
     }
 }

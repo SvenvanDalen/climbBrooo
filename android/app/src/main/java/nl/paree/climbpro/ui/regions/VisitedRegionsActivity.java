@@ -138,15 +138,7 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
         LinearLayout list = findViewById(R.id.regions_list);
         list.removeAllViews();
         if (countries.isEmpty()) {
-            String text;
-            if (unresolved > 0) {
-                text = "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw.";
-            } else if (hadAttempts) {
-                text = "Geen van je klimpogingen hoort bij een klim met een bekende locatie.";
-            } else {
-                text = "Nog geen klimpogingen. Haal je ritten op in het logboek.";
-            }
-            summary.setText(text);
+            summary.setText(emptySummary(unresolved, hadAttempts));
             return;
         }
         int provinceCount = 0;
@@ -195,4 +187,13 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
     @Override protected void onPause() { super.onPause(); map.onPause(); }
 
     @Override protected void onDestroy() { super.onDestroy(); executor.shutdown(); }
+
+    /** Why the map is empty: lookups failed, attempts lack a location, or there are none. */
+    static String emptySummary(int unresolved, boolean hadAttempts) {
+        if (unresolved > 0) {
+            return "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw.";
+        }
+        if (hadAttempts) return "Geen van je klimpogingen hoort bij een klim met een bekende locatie.";
+        return "Nog geen klimpogingen. Haal je ritten op in het logboek.";
+    }
 }

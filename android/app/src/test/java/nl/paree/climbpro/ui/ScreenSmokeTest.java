@@ -203,11 +203,9 @@ public class ScreenSmokeTest {
     }
 
     /** Lets background loads finish and their LiveData posts reach the main thread. */
-    static void settle() throws InterruptedException {
+    static void settle() {
         UiTestEnv.settle();
     }
-
-    /** Empty rounds in a row before {@link #settle} returns. */
 
     /**
      * Clicks through a screen. A crash inside a click handler fails the test with the view that
@@ -302,7 +300,7 @@ public class ScreenSmokeTest {
          * A dialog that opened gets its first list item or its negative button, so the
          * listener code runs without starting destructive confirmations; then it is closed.
          */
-        static void handleDialogs(boolean confirm) throws InterruptedException {
+        static void handleDialogs(boolean confirm) {
             for (int round = 0; round < 4; round++) {
                 Dialog d = ShadowDialog.getLatestDialog();
                 if (d == null || !d.isShowing()) return;

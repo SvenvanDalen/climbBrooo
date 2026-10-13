@@ -28,7 +28,7 @@ import java.util.List;
 @LooperMode(LooperMode.Mode.PAUSED)
 public class CollectionMembershipDialogTest {
 
-    private static void settle() throws InterruptedException {
+    private static void settle() {
         UiTestEnv.idleFor(150);
     }
 

@@ -232,7 +232,6 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         updateClimbFacts();
     }
 
-    /** Length, gradient, gain and shape, then category and surface when known. */
     /** User-given name, else the detected name, else "Klim N". */
     private String displayName(StoredClimb climb, int index) {
         if (climb.userDisplayName != null) return climb.userDisplayName;
@@ -240,6 +239,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         return getString(R.string.climb_detail_default_name, index + 1);
     }
 
+    /** Length, gradient, gain and shape, then category and surface when known. */
     private String climbStatsText(StoredClimb climb) {
         if (climb == null) return "";
         String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);

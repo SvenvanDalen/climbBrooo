@@ -268,8 +268,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
                     + "laatste %d weken; nog niets om mee te vergelijken.", r.recentIntervals, weeks);
         } else {
             double diff = r.recentAvg - r.previousAvg;
-            String change = diff > 0 ? "Sneller herstel" : "Trager herstel";
-            if (Math.abs(diff) < 1) change = "Ongeveer gelijk";
+            String change = recoveryChange(diff);
             trend = String.format(Locale.getDefault(), "%s dan de %d weken daarvoor (%.0f slagen).",
                     change, weeks, r.previousAvg);
         }
@@ -361,5 +360,12 @@ public final class MyWhooshActivity extends AppCompatActivity {
 
     private static String hours(int sec) {
         return String.format(Locale.getDefault(), "%.1f u", sec / 3600.0);
+    }
+
+    /** Wording for a change in heart-rate recovery; under one beat counts as no change. */
+    static String recoveryChange(double diff) {
+        String change = diff > 0 ? "Sneller herstel" : "Trager herstel";
+        if (Math.abs(diff) < 1) change = "Ongeveer gelijk";
+        return change;
     }
 }

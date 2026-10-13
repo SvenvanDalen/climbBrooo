@@ -57,7 +57,7 @@ public class ClimbDetailRatingTest {
 
         vm.setRating("rate1", 0, 4, 5, 3, "Rustig");
 
-        UiTestEnv.waitFor(() -> !((got[0] == null || got[0].ratingRoad == null)), 3000);
+        UiTestEnv.waitFor(() -> got[0] != null && got[0].ratingRoad != null, 3000);
         assertEquals(Integer.valueOf(4), got[0].ratingRoad);
         assertEquals("Rustig", repo.loadRoute("rate1").climbs.get(0).ratingNote);
     }

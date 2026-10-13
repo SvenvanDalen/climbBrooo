@@ -25,6 +25,7 @@ import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.tire.TirePressureLog;
+import nl.paree.climbpro.ui.PickerDates;
 import nl.paree.climbpro.ui.bike.BikePicker;
 import nl.paree.climbpro.data.tire.TirePressureLogEntry;
 import nl.paree.climbpro.domain.tire.TirePressureReminderCalculator;
@@ -161,7 +162,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
     }
 
     private static long noonEpochSec(LocalDate day) {
-        return day.atTime(12, 0).atZone(ZoneId.systemDefault()).toEpochSecond();
+        return PickerDates.noon(day, ZoneId.systemDefault());
     }
 
     private static void prefillPressures(TirePressureLogEntry latest, EditText front,
@@ -180,7 +181,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         LocalDate today = LocalDate.now(ZoneId.systemDefault());
         LocalDate base = picked[0] != null ? picked[0] : today;
         DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-            LocalDate day = LocalDate.of(y, m + 1, d);
+            LocalDate day = PickerDates.pickedDay(y, m, d);
             if (day.equals(LocalDate.now(ZoneId.systemDefault()))) {
                 picked[0] = null;
                 dateButton.setText("Datum: vandaag");

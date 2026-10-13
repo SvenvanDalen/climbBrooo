@@ -30,7 +30,7 @@ public class CollectionListViewModelTest {
             throws InterruptedException {
         T before = live.getValue();
         trigger.run();
-        UiTestEnv.waitFor(() -> !(live.getValue() == before), 2000);
+        UiTestEnv.waitFor(() -> live.getValue() != before, 2000);
         return live.getValue();
     }
 

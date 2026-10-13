@@ -34,6 +34,7 @@ import nl.paree.climbpro.service.RouteSyncWorker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * "Hoogtemeter-doel" screen (issue #68): the rider enters a target elevation gain for the
@@ -269,10 +270,9 @@ public final class ElevationTargetActivity extends AppCompatActivity {
         if (s == null || s.climbs.isEmpty()) return;
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         new DatePickerDialog(this, (view, year, month, day) -> {
-            LocalDate date = LocalDate.of(year, month + 1, day);
+            LocalDate date = PickerDates.pickedDay(year, month, day);
             new TimePickerDialog(this, (tView, hour, minute) ->
-                    viewModel.addToPlanning(s, date.atTime(hour, minute)
-                            .atZone(ZoneId.systemDefault()).toEpochSecond()),
+                    viewModel.addToPlanning(s, PickerDates.at(date, hour, minute, ZoneId.systemDefault())),
                     now.getHour(), now.getMinute(), true).show();
         }, now.getYear(), now.getMonthValue() - 1, now.getDayOfMonth()).show();
     }

@@ -50,19 +50,19 @@ public class FtpTestViewModelTest {
     }
 
     /** Waits until the LiveData holds a different object than {@code before}. */
-    private static <T> T awaitChange(LiveData<T> live, T before) throws InterruptedException {
-        UiTestEnv.waitFor(() -> !(live.getValue() == before), 3000);
+    private static <T> T awaitChange(LiveData<T> live, T before) {
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
         return awaitChange(live, before);
     }
 
     /** Lets queued executor work finish and posts drain, for asserting "nothing changed". */
-    private static void settle() throws InterruptedException {
+    private static void settle() {
         UiTestEnv.idleFor(300);
     }
 
@@ -92,7 +92,7 @@ public class FtpTestViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private FtpTestViewModel loaded() throws InterruptedException {
+    private FtpTestViewModel loaded() {
         FtpTestViewModel vm = new FtpTestViewModel(app);
         awaitValue(vm.state(), vm::load);
         return vm;
