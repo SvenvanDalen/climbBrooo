@@ -54,10 +54,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class RouteListActivity extends AppCompatActivity {
+    private static final String TAG = "RouteListActivity";
 
     private ActivityRouteListBinding binding;
     private RouteListViewModel viewModel;
-    private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
     /** Status filter labels; index order matches {@link RouteStatusFilter}. */
@@ -94,7 +94,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(RouteListViewModel.class);
         updateStatusFilterSubtitle(viewModel.getStatusFilter()); // survives rotation via the ViewModel
-        adapter   = new RouteListAdapter();
+        RouteListAdapter adapter   = new RouteListAdapter();
 
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerView.setAdapter(adapter);
@@ -219,7 +219,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
                     @Override
                     public void onCheckFailed(Exception e) {
-                        Log.w("RouteListActivity", "Update check failed", e);
+                        Log.w(TAG, "Update check failed", e);
                         // Previously fully silent, which made a real failure (network,
                         // GitHub API rate limit, ...) indistinguishable from "no update
                         // available" — always surface it so it's not a mystery.
@@ -651,7 +651,7 @@ public final class RouteListActivity extends AppCompatActivity {
                     }
                 }
             } catch (IOException e) {
-                Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
+                Log.w(TAG, "Skipping unreadable route " + entry.routeId, e);
             }
         }
         return matches;
@@ -960,6 +960,20 @@ public final class RouteListActivity extends AppCompatActivity {
                 .show();
     }
 
+    /** Gives every climb of a freshly imported route the detected surface type. */
+    private static void applyDetectedSurface(RouteRepository repo, String routeId, int surface) {
+        try {
+            StoredRoute saved = repo.loadRoute(routeId);
+            if (saved.climbs != null) {
+                for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                    repo.setBulkClimbSurfaceType(routeId, ci, surface);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Surface type detection failed: " + e.getMessage());
+        }
+    }
+
     private void finishImport(String name, byte[] bytes, List<RoutePoint> simple,
                               List<Climb> climbs, int detectedSurface,
                               boolean myWhoosh, boolean virtual) {
@@ -979,16 +993,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 repo.saveRoute(stored, simple, climbs);
             }
             if (detectedSurface != SurfaceType.UNKNOWN) {
-                try {
-                    StoredRoute saved = repo.loadRoute(routeId);
-                    if (saved.climbs != null) {
-                        for (int ci = 0; ci < saved.climbs.size(); ci++) {
-                            repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.w("RouteListActivity", "Surface type detection failed: " + e.getMessage());
-                }
+                applyDetectedSurface(repo, routeId, detectedSurface);
             }
             runOnUiThread(() -> {
                 viewModel.loadRoutes();

@@ -40,8 +40,11 @@ import java.util.concurrent.Executors;
 public final class FriendFeedViewModel extends AndroidViewModel {
 
     private static final String TAG = "FriendFeedViewModel";
-    static final String SHARE_INTRO = "Mijn ritten van de afgelopen 30 dagen in ClimbPro. "
-            + "Open ClimbPro → Vriendenfeed → Code plakken, of deel dit bericht met ClimbPro.\n\n";
+    static final String SHARE_INTRO = """
+            Mijn ritten van de afgelopen 30 dagen in ClimbPro. \
+            Open ClimbPro → Vriendenfeed → Code plakken, of deel dit bericht met ClimbPro.
+
+            """;
 
     private final FriendFeedRepository feedRepo;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();

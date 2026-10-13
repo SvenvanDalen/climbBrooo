@@ -128,7 +128,7 @@ public final class ClimbProfileView extends View {
             // Bottom of bar = cumulative elevation before this segment
             float elevBottom = (cumulativeElevation / totalElevation) * chartHeight;
             // Top of bar = cumulative elevation after this segment
-            cumulativeElevation += seg.elevationGain;
+            cumulativeElevation += (float) seg.elevationGain;
             float elevTop = (cumulativeElevation / totalElevation) * chartHeight;
 
             float yBottom = y1Bottom - elevBottom;
@@ -162,7 +162,7 @@ public final class ClimbProfileView extends View {
                 canvas.drawText(label, labelX, labelY, textPaint);
             }
 
-            cumulativeDistance += seg.distance;
+            cumulativeDistance += (float) seg.distance;
         }
 
         // Draw profile outline on top
@@ -174,8 +174,8 @@ public final class ClimbProfileView extends View {
         float baseline = getHeight() - padBottom;
         profilePath.moveTo(padLeft, baseline);
         for (StoredSegment seg : segments) {
-            cumulativeElevation += seg.elevationGain;
-            cumulativeDistance += seg.distance;
+            cumulativeElevation += (float) seg.elevationGain;
+            cumulativeDistance += (float) seg.distance;
             float x = padLeft + (cumulativeDistance / totalDistance) * chartWidth;
             float y = baseline - (cumulativeElevation / totalElevation) * chartHeight;
             profilePath.lineTo(x, y);

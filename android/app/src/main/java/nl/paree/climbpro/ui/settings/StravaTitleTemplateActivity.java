@@ -25,7 +25,6 @@ public final class StravaTitleTemplateActivity extends AppCompatActivity {
     private static final StravaTitleTemplateRenderer.TitleContext SAMPLE_CONTEXT =
             StravaTitleTemplateRenderer.TitleContext.of("Col du Sample", 754, 12, 1180);
 
-    private EditText templateInput;
     private TextView preview;
 
     @Override
@@ -38,7 +37,7 @@ public final class StravaTitleTemplateActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        templateInput = findViewById(R.id.input_template);
+        EditText templateInput = findViewById(R.id.input_template);
         preview = findViewById(R.id.preview);
 
         String saved = PreferenceManager.getDefaultSharedPreferences(this)
@@ -47,7 +46,7 @@ public final class StravaTitleTemplateActivity extends AppCompatActivity {
         updatePreview(saved);
 
         templateInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { /* not needed */ }
 
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 updatePreview(s.toString());

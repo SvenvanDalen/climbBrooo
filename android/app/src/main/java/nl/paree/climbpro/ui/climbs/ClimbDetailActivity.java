@@ -54,6 +54,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class ClimbDetailActivity extends AppCompatActivity {
+    private static final String FILE_PROVIDER_SUFFIX = ".fileprovider";
 
     private static final String EXTRA_ROUTE_ID   = "route_id";
     private static final String EXTRA_CLIMB_INDEX = "climb_index";
@@ -376,7 +377,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     /** "12 mei 2025   7:41   (+0:12)" plus best-of-year and deviation badges. */
     private String historyLine(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row,
                                java.text.SimpleDateFormat fmt) {
-        int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
+        int m = row.elapsedSec / 60;
+        int s = row.elapsedSec % 60;
         String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
         String delta = row.deltaToPrSec == 0
                 ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
@@ -657,7 +659,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     this, title, loadedClimb, lastTimeEstimateText);
             java.io.File file = ClimbShareHandoff.writeShareImage(this, bitmap);
             android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                    this, getPackageName() + ".fileprovider", file);
+                    this, getPackageName() + FILE_PROVIDER_SUFFIX, file);
             Intent share = ClimbShareHandoff.buildShareIntent(uri);
             startActivity(Intent.createChooser(share, getString(R.string.climb_detail_share_chooser)));
         } catch (java.io.IOException e) {
@@ -673,7 +675,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private void shareGpxFile(java.io.File file) {
         if (file == null) return;
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", file);
+                this, getPackageName() + FILE_PROVIDER_SUFFIX, file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
         startActivity(Intent.createChooser(share, getString(R.string.climb_detail_gpx_chooser)));
     }
@@ -807,7 +809,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private void shareWorkout(ClimbDetailViewModel.WorkoutExport export) {
         if (export == null) return;
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", export.file);
+                this, getPackageName() + FILE_PROVIDER_SUFFIX, export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
         if (export.format != ClimbDetailViewModel.WorkoutFormat.MYWHOOSH) {
             startActivity(Intent.createChooser(share, getString(R.string.climb_detail_workout_share)));
@@ -1270,8 +1272,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             preview.setText(p != null ? everestingSummary(p) : everestingRangeHint());
         };
         input.addTextChangedListener(new android.text.TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
             @Override public void afterTextChanged(android.text.Editable s) { refresh.run(); }
         });
         refresh.run();

@@ -62,7 +62,7 @@ public class TargetSpeedRefTimePlannerTest {
         int[] secs = TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(10, 0));
         assertEquals(3, secs.length);
         assertEquals(360, sum(secs));
-        for (int s : secs) assertEquals(120, s, 1);
+        for (int s : secs) assertEquals(120, (float) s, 1);
     }
 
     @Test

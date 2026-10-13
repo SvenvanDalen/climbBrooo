@@ -285,7 +285,8 @@ public final class ClimbGpxWriter {
     }
 
     private static String formatDuration(int totalSec) {
-        int m = totalSec / 60, s = totalSec % 60;
+        int m = totalSec / 60;
+        int s = totalSec % 60;
         return String.format(Locale.US, "%d:%02d", m, s);
     }
 

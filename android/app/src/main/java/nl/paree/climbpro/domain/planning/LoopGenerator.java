@@ -184,7 +184,10 @@ public final class LoopGenerator {
                                      double targetM) {
         if (a.lengthM + 2 * a.approachM <= targetM) return; // only shorten loops that are too long
         int n = a.rotated.size();
-        double[] lats = new double[n], lons = new double[n], eles = new double[n], dists = new double[n];
+        double[] lats = new double[n];
+        double[] lons = new double[n];
+        double[] eles = new double[n];
+        double[] dists = new double[n];
         for (int i = 0; i < n; i++) {
             RoutePoint p = a.rotated.get(i);
             lats[i] = p.lat;

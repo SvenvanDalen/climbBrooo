@@ -174,7 +174,7 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
     private TextView row(String text, boolean country) {
         TextView t = new TextView(this);
         t.setText(text);
-        t.setTextSize(country ? 17 : 15);
+        t.setTextSize((float) (country ? 17 : 15));
         t.setTextColor(ContextCompat.getColor(this, R.color.color_text_primary));
         if (country) {
             t.setTypeface(Typeface.DEFAULT_BOLD);

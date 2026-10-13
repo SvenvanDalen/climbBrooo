@@ -94,7 +94,8 @@ public final class BorderCrossingFinder {
         while (changed) {
             changed = false;
             for (int i = 0; i + 1 < out.size(); i++) {
-                BorderCrossing a = out.get(i), b = out.get(i + 1);
+                BorderCrossing a = out.get(i);
+                BorderCrossing b = out.get(i + 1);
                 if (a.fromCountry.equals(b.toCountry)
                         && b.distanceM - a.distanceM < MIN_STAY_M) {
                     out.remove(i + 1);
@@ -109,7 +110,9 @@ public final class BorderCrossingFinder {
 
     /** Position lookup by route distance, linear interpolation between points. */
     private static final class Route {
-        final double[] lats, lons, dist;
+        final double[] lats;
+        final double[] lons;
+        final double[] dist;
 
         Route(double[] lats, double[] lons, double[] dist) {
             this.lats = lats; this.lons = lons; this.dist = dist;
@@ -119,7 +122,8 @@ public final class BorderCrossingFinder {
             int n = dist.length;
             if (n == 1 || d <= dist[0]) return new double[] {lats[0], lons[0]};
             if (d >= dist[n - 1]) return new double[] {lats[n - 1], lons[n - 1]};
-            int lo = 0, hi = n - 1;
+            int lo = 0;
+            int hi = n - 1;
             while (hi - lo > 1) {
                 int mid = (lo + hi) >>> 1;
                 if (dist[mid] <= d) lo = mid; else hi = mid;

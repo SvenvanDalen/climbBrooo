@@ -160,6 +160,7 @@ public class BikeStoresEdgeTest {
                     null, true, false);
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(new File(app.getFilesDir(), BikeCostRepository.FILE_NAME + ".tmp").exists());
     }

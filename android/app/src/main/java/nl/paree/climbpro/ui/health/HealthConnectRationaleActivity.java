@@ -20,15 +20,19 @@ public final class HealthConnectRationaleActivity extends AppCompatActivity {
         TextView text = new TextView(this);
         text.setPadding(pad, pad, pad, pad);
         text.setTextSize(16);
-        text.setText("ClimbPro en Health Connect\n\n"
-                + "Schrijven: je fietsritten uit Strava als training, met afstand, "
-                + "hoogtemeters en (als Strava het weet) calorieën. Zo staan ze naast je "
-                + "andere gezondheidsdata.\n\n"
-                + "Lezen: alleen je meest recente gewicht, en alleen als je in de instellingen "
-                + "op 'Gewicht overnemen' tikt. Het wordt gebruikt voor de klimtijd-schattingen "
-                + "van je rijdersprofiel.\n\n"
-                + "Er gaat niets naar een server van ClimbPro. Je trekt de toegang in via "
-                + "Health Connect.");
+        text.setText("""
+                ClimbPro en Health Connect
+
+                Schrijven: je fietsritten uit Strava als training, met afstand, \
+                hoogtemeters en (als Strava het weet) calorieën. Zo staan ze naast je \
+                andere gezondheidsdata.
+
+                Lezen: alleen je meest recente gewicht, en alleen als je in de instellingen \
+                op 'Gewicht overnemen' tikt. Het wordt gebruikt voor de klimtijd-schattingen \
+                van je rijdersprofiel.
+
+                Er gaat niets naar een server van ClimbPro. Je trekt de toegang in via \
+                Health Connect.""");
         ScrollView scroll = new ScrollView(this);
         scroll.addView(text);
         setContentView(scroll);

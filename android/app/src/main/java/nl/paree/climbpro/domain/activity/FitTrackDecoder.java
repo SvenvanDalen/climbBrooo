@@ -176,7 +176,8 @@ public final class FitTrackDecoder {
         RecordFields f = new RecordFields(knownTs);
         int q = p;
         for (int i = 0; i < def.nums.length; i++) {
-            int num = def.nums[i], size = def.sizes[i];
+            int num = def.nums[i];
+            int size = def.sizes[i];
             if (num == FIELD_TIMESTAMP && size == 4) {
                 long v = u32(d, q, def.bigEndian);
                 if (v != 0xFFFFFFFFL) f.ts = v;

@@ -152,7 +152,7 @@ public final class SweatLossActivity extends AppCompatActivity {
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 onRidePicked(form, rides, pos);
             }
-            @Override public void onNothingSelected(AdapterView<?> p) { }
+            @Override public void onNothingSelected(AdapterView<?> p) { /* not needed */ }
         });
         if (!rides.isEmpty()) form.rideSpinner.setSelection(1);
 

@@ -139,8 +139,11 @@ public final class PrivacyDashboardActivity extends AppCompatActivity {
         public int getItemCount() { return rows.size(); }
 
         final class VH extends RecyclerView.ViewHolder {
-            final TextView title, description, summary;
-            final Button view, delete;
+            final TextView title;
+            final TextView description;
+            final TextView summary;
+            final Button view;
+            final Button delete;
 
             VH(@NonNull View v) {
                 super(v);

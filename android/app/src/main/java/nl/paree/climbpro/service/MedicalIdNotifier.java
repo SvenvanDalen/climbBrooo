@@ -24,7 +24,7 @@ public final class MedicalIdNotifier {
 
     private static final String TAG = "MedicalIdNotifier";
     public static final String CHANNEL_ID = "medical_id";
-    private static final int NOTIFICATION_ID = "medical_id".hashCode();
+    private static final int NOTIFICATION_ID = CHANNEL_ID.hashCode();
 
     private MedicalIdNotifier() {}
 

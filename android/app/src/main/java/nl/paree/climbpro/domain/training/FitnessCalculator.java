@@ -91,7 +91,8 @@ public final class FitnessCalculator {
         LocalDate windowStart = today.minusDays(Math.max(1, windowDays) - 1L);
         LocalDate start = first.isBefore(windowStart) ? first : windowStart;
         List<Day> all = new ArrayList<>();
-        double ctl = 0, atl = 0;
+        double ctl = 0;
+        double atl = 0;
         for (LocalDate d = start; !d.isAfter(today); d = d.plusDays(1)) {
             double tss = daily.getOrDefault(d, 0.0);
             double tsb = ctl - atl;

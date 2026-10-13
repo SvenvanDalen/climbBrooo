@@ -30,9 +30,12 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class RideBuddyViewModel extends AndroidViewModel {
 
     private static final String TAG = "RideBuddyViewModel";
-    static final String SHARE_INTRO = "Mijn rijdersprofiel in ClimbPro — kijk of we samen kunnen "
-            + "fietsen. Open ClimbPro → Ritmaatjes → Code plakken, of deel dit bericht met "
-            + "ClimbPro.\n\n";
+    static final String SHARE_INTRO = """
+            Mijn rijdersprofiel in ClimbPro — kijk of we samen kunnen \
+            fietsen. Open ClimbPro → Ritmaatjes → Code plakken, of deel dit bericht met \
+            ClimbPro.
+
+            """;
 
     /** The exact code about to be shared plus its decoded contents, for the confirm dialog. */
     public static final class Preview {

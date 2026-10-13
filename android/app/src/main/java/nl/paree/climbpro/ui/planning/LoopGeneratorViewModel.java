@@ -48,7 +48,6 @@ public final class LoopGeneratorViewModel extends AndroidViewModel {
     /** One-shot: id of a just-saved loop route to open. */
     private final MutableLiveData<String> savedRouteId = new MutableLiveData<>();
 
-    private double lastTargetM;
 
     public LoopGeneratorViewModel(@NonNull Application app) {
         super(app);
@@ -97,7 +96,7 @@ public final class LoopGeneratorViewModel extends AndroidViewModel {
             return;
         }
         busy.setValue(true);
-        lastTargetM = targetKm * 1000.0;
+        double lastTargetM = targetKm * 1000.0;
         executor.execute(() -> {
             List<LoopGenerator.Source> sources = new ArrayList<>();
             for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {

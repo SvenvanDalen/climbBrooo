@@ -52,6 +52,9 @@ import java.util.Set;
  * gradient = fraction × 100 × 10 (fixed-point pct×10).
  */
 public final class ClimbPayloadBuilder {
+    private static final String KEY_CLIMBS = "climbs";
+    private static final String KEY_ROUTE_ID = "routeId";
+    private static final String KEY_ROUTE = "route";
 
     private static final int SCHEMA_VERSION = 3;
 
@@ -261,9 +264,9 @@ public final class ClimbPayloadBuilder {
                                     int[] routeGhost) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
-        payload.put("mode",    "route");
+        payload.put("mode",    KEY_ROUTE);
         putUnits(payload);
-        payload.put("routeId", route.routeId);
+        payload.put(KEY_ROUTE_ID, route.routeId);
         putPalette(payload);
         putRouteTotalLength(payload, route);
         putRouteName(payload, route);
@@ -276,7 +279,7 @@ public final class ClimbPayloadBuilder {
         }
         putFieldLayout(payload);
         putGradeHabits(payload);
-        payload.put("climbs", climbs);
+        payload.put(KEY_CLIMBS, climbs);
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
         putHazards(payload, route);
@@ -307,7 +310,7 @@ public final class ClimbPayloadBuilder {
         }
         putFieldLayout(payload);
         putGradeHabits(payload);
-        payload.put("climbs", out);
+        payload.put(KEY_CLIMBS, out);
         return writeWithinBudget(payload, out);
     }
 
@@ -328,9 +331,9 @@ public final class ClimbPayloadBuilder {
         }
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
-        payload.put("mode",    "route");
+        payload.put("mode",    KEY_ROUTE);
         putUnits(payload);
-        payload.put("routeId", route.routeId);
+        payload.put(KEY_ROUTE_ID, route.routeId);
         putPalette(payload);
         putRouteTotalLength(payload, route);
         putRouteName(payload, route);
@@ -342,7 +345,7 @@ public final class ClimbPayloadBuilder {
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
         putFieldLayout(payload);
         putGradeHabits(payload);
-        payload.put("climbs", climbs);
+        payload.put(KEY_CLIMBS, climbs);
         putHazards(payload, route);
         return writeWithinBudget(payload, climbs);
     }
@@ -462,11 +465,11 @@ public final class ClimbPayloadBuilder {
     public byte[] buildSurfaceSectionPayload(StoredRoute route) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
-        payload.put("mode",    "route");
+        payload.put("mode",    KEY_ROUTE);
         putUnits(payload);
-        payload.put("routeId", route.routeId);
+        payload.put(KEY_ROUTE_ID, route.routeId);
         putRouteName(payload, route);
-        payload.put("climbs", new ArrayList<>());
+        payload.put(KEY_CLIMBS, new ArrayList<>());
 
         // Collect all sections (surface sections + qualifying flat segments).
         List<int[]> ranges = new ArrayList<>();   // entries: start, end and surface type

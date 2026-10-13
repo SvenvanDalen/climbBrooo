@@ -47,7 +47,6 @@ public final class RideArchiveActivity extends AppCompatActivity {
     private static final int DEFAULT_SLEEP = 3;
 
     private RideArchiveViewModel viewModel;
-    private ArrayAdapter<String> filterAdapter;
     private RideArchiveAdapter adapter;
 
     public static Intent intentFor(Context context) {
@@ -73,7 +72,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(RideArchiveViewModel.class);
 
         Spinner filter = findViewById(R.id.filter);
-        filterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+        ArrayAdapter<String> filterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
                 new java.util.ArrayList<>(java.util.Arrays.asList(labels(null))));
         filterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         filter.setAdapter(filterAdapter);
@@ -81,7 +80,7 @@ public final class RideArchiveActivity extends AppCompatActivity {
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 viewModel.setFilter(FILTERS[pos]);
             }
-            @Override public void onNothingSelected(AdapterView<?> p) {}
+            @Override public void onNothingSelected(AdapterView<?> p) { /* not needed */ }
         });
 
         findViewById(R.id.btn_refresh).setOnClickListener(v -> viewModel.refreshFromStrava());
@@ -242,8 +241,8 @@ public final class RideArchiveActivity extends AppCompatActivity {
             int idx = Math.max(0, Math.min(words.length - 1, value - 1));
             label.setText(getString(format, value, words[idx]));
         }
-        @Override public void onStartTrackingTouch(SeekBar s) { }
-        @Override public void onStopTrackingTouch(SeekBar s) { }
+        @Override public void onStartTrackingTouch(SeekBar s) { /* not needed */ }
+        @Override public void onStopTrackingTouch(SeekBar s) { /* not needed */ }
     }
 
     private static String[] labels(Map<RideCategory, Integer> counts) {

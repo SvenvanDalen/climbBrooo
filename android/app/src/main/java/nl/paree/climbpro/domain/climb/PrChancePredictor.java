@@ -315,6 +315,6 @@ public final class PrChancePredictor {
     }
 
     private static double daysBetween(long fromEpochSec, long toEpochSec) {
-        return Math.max(0, (toEpochSec - fromEpochSec) / 86_400L);
+        return (double) (Math.max(0, (toEpochSec - fromEpochSec) / 86_400L));
     }
 }

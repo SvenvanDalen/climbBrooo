@@ -8,6 +8,7 @@ import java.util.Locale;
 
 /** Valley-versus-summit weather text with a clothing tip (issue #246). Pure. */
 public final class SummitWeather {
+    private static final String UNKNOWN = "onbekend";
 
     private static final Locale NL = new Locale("nl");
 
@@ -29,10 +30,10 @@ public final class SummitWeather {
         return label("Dal", footEleM, fmt) + temperature(foot.temperature[f], fmt) + "\n"
                 + label("Top", topEleM, fmt) + temperature(top.temperature[t], fmt)
                 + ", voelt als " + temperature(top.apparent[t], fmt) + "\n"
-                + "Wind op de top " + (Double.isNaN(top.windKmh[t]) ? "onbekend"
+                + "Wind op de top " + (Double.isNaN(top.windKmh[t]) ? UNKNOWN
                         : String.format(NL, "%.0f %s", fmt.speedValue(top.windKmh[t]),
                                 fmt.speedUnit()))
-                + " · regenkans " + (rain != null ? rain + "%" : "onbekend") + "\n"
+                + " · regenkans " + (rain != null ? rain + "%" : UNKNOWN) + "\n"
                 + "Tip: " + clothingTip(top.apparent[t], top.windKmh[t]);
     }
 
@@ -48,7 +49,7 @@ public final class SummitWeather {
 
     /** Open-Meteo sends null for missing hours; show "onbekend" rather than "NaN °C". */
     private static String temperature(double c, UnitFormatter fmt) {
-        return Double.isNaN(c) ? "onbekend"
+        return Double.isNaN(c) ? UNKNOWN
                 : String.format(NL, "%.1f %s", fmt.temperatureValue(c), fmt.temperatureUnit());
     }
 

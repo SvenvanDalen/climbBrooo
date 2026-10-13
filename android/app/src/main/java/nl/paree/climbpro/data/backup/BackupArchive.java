@@ -37,6 +37,7 @@ import nl.paree.climbpro.data.FileCleanup;
  * {@code route_pois/} OpenStreetMap POI cache (issue #208, same reasoning).
  */
 public final class BackupArchive {
+    private static final String KEY_FORMAT = "format";
 
     public static final int FORMAT_VERSION = 1;
 
@@ -97,7 +98,7 @@ public final class BackupArchive {
                                 OutputStream out) throws IOException {
         ZipOutputStream zip = new ZipOutputStream(out);
         ObjectNode manifest = MAPPER.createObjectNode();
-        manifest.put("format", FORMAT_VERSION);
+        manifest.put(KEY_FORMAT, FORMAT_VERSION);
         manifest.put("createdAtMs", nowMs);
         putEntry(zip, MANIFEST, MAPPER.writeValueAsBytes(manifest));
 
@@ -199,10 +200,10 @@ public final class BackupArchive {
     }
 
     private static void checkManifest(JsonNode manifest) throws IOException {
-        if (manifest == null || !manifest.has("format")) {
+        if (manifest == null || !manifest.has(KEY_FORMAT)) {
             throw new IOException("Geen ClimbPro-back-up (manifest ontbreekt)");
         }
-        if (manifest.get("format").asInt() > FORMAT_VERSION) {
+        if (manifest.get(KEY_FORMAT).asInt() > FORMAT_VERSION) {
             throw new IOException("Back-up is gemaakt met een nieuwere versie van ClimbPro");
         }
     }

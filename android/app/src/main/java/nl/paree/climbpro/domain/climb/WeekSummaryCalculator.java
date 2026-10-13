@@ -53,7 +53,9 @@ public final class WeekSummaryCalculator {
         long weekStart = monday.atStartOfDay(zone).toEpochSecond();
         long weekEnd = monday.plusWeeks(1).atStartOfDay(zone).toEpochSecond();
 
-        int count = 0, gain = 0, sec = 0;
+        int count = 0;
+        int gain = 0;
+        int sec = 0;
         for (StoredClimbAttempt a : attempts) {
             if (a.dateEpochSec < weekStart || a.dateEpochSec >= weekEnd) continue;
             count++;

@@ -118,7 +118,7 @@ public class RouteGhostProfileTest {
         for (TrackSample s : track(0, 1000, 8, t1 + 1)) t.add(s);   // 125 s
         int[] secs = RouteGhostProfile.match(line(1000), t);
         assertNotNull(secs);
-        assertEquals(125, RouteGhostProfile.sum(secs), 1);
+        assertEquals(125, (float) RouteGhostProfile.sum(secs), 1);
     }
 
     @Test

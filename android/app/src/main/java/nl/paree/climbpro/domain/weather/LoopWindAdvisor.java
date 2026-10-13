@@ -129,7 +129,9 @@ public final class LoopWindAdvisor {
         int first = f.indexAt(from);
         if (first < 0) return null;
         int end = Math.min(first + hours, f.times.length);
-        double x = 0, y = 0, speed = 0;
+        double x = 0;
+        double y = 0;
+        double speed = 0;
         int count = 0;
         for (int i = first; i < end; i++) {
             double dir = f.windDirDeg[i];

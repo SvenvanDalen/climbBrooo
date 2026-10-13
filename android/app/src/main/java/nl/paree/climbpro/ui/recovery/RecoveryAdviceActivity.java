@@ -20,7 +20,6 @@ import nl.paree.climbpro.domain.climb.RecoveryAdvisor.Advice;
  */
 public final class RecoveryAdviceActivity extends AppCompatActivity {
 
-    private RecoveryAdviceViewModel viewModel;
     private TextView statusText;
     private TextView rationaleText;
     private TextView recentGainText;
@@ -45,7 +44,7 @@ public final class RecoveryAdviceActivity extends AppCompatActivity {
         baselineText = findViewById(R.id.baselineText);
         emptyText = findViewById(R.id.emptyText);
 
-        viewModel = new ViewModelProvider(this).get(RecoveryAdviceViewModel.class);
+        RecoveryAdviceViewModel viewModel = new ViewModelProvider(this).get(RecoveryAdviceViewModel.class);
         viewModel.advice().observe(this, this::render);
         viewModel.load();
     }

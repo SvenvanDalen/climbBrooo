@@ -33,6 +33,7 @@ import java.util.Locale;
  * can be imported without copy-paste. No server; phone-only.
  */
 public final class FriendFeedActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     /** Rows rendered at most (a display cap, not a data cap; the store keeps up to 100 per friend). */
     private static final int MAX_ROWS = 200;
@@ -125,7 +126,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                     }
                     viewModel.share(n);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -150,7 +151,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Importeren",
                         (d, w) -> viewModel.importCode(input.getText().toString()))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -201,7 +202,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                 .setMessage("Alle ritten en mijlpalen van " + e.friendName
                         + " uit je feed verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.removeFriend(e.friendId))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

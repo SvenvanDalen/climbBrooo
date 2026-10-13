@@ -87,45 +87,7 @@ public final class ActivityFileReader {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(false);
-            factory.newSAXParser().parse(new ByteArrayInputStream(data), new DefaultHandler() {
-                double lat, lon;
-                boolean inPoint, inTime;
-                Long time;
-                final StringBuilder text = new StringBuilder();
-
-                @Override
-                public void startElement(String uri, String local, String qName, Attributes a) {
-                    String tag = strip(qName);
-                    if (tag.equals("trkpt") || tag.equals("rtept")) {
-                        inPoint = true;
-                        time = null;
-                        lat = parse(a.getValue("lat"));
-                        lon = parse(a.getValue("lon"));
-                    } else if (inPoint && tag.equals("time")) {
-                        inTime = true;
-                        text.setLength(0);
-                    }
-                }
-
-                @Override
-                public void characters(char[] ch, int start, int length) {
-                    if (inTime) text.append(ch, start, length);
-                }
-
-                @Override
-                public void endElement(String uri, String local, String qName) {
-                    String tag = strip(qName);
-                    if (tag.equals("time") && inTime) {
-                        inTime = false;
-                        time = parseTime(text.toString().trim());
-                    } else if (tag.equals("trkpt") || tag.equals("rtept")) {
-                        inPoint = false;
-                        if (time != null && !Double.isNaN(lat) && !Double.isNaN(lon)) {
-                            out.add(new TrackSample(lat, lon, time));
-                        }
-                    }
-                }
-            });
+            factory.newSAXParser().parse(new ByteArrayInputStream(data), new GpxTrackHandler(out));
         } catch (SAXException | javax.xml.parsers.ParserConfigurationException e) {
             throw new IOException("Geen geldig GPX-bestand", e);
         }
@@ -166,5 +128,53 @@ public final class ActivityFileReader {
             if (buf.size() > MAX_ZIP_ENTRY_BYTES) throw new IOException("Bestand in zip is te groot");
         }
         return buf.toByteArray();
+    }
+
+    /** SAX handler collecting timed track/route points of a GPX file. */
+    private static final class GpxTrackHandler extends DefaultHandler {
+        private final List<TrackSample> out;
+        double lat;
+        double lon;
+        boolean inPoint;
+        boolean inTime;
+        Long time;
+        final StringBuilder text = new StringBuilder();
+
+        @Override
+        public void startElement(String uri, String local, String qName, Attributes a) {
+            String tag = strip(qName);
+            if (tag.equals("trkpt") || tag.equals("rtept")) {
+                inPoint = true;
+                time = null;
+                lat = parse(a.getValue("lat"));
+                lon = parse(a.getValue("lon"));
+            } else if (inPoint && tag.equals("time")) {
+                inTime = true;
+                text.setLength(0);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) {
+            if (inTime) text.append(ch, start, length);
+        }
+
+        @Override
+        public void endElement(String uri, String local, String qName) {
+            String tag = strip(qName);
+            if (tag.equals("time") && inTime) {
+                inTime = false;
+                time = parseTime(text.toString().trim());
+            } else if (tag.equals("trkpt") || tag.equals("rtept")) {
+                inPoint = false;
+                if (time != null && !Double.isNaN(lat) && !Double.isNaN(lon)) {
+                    out.add(new TrackSample(lat, lon, time));
+                }
+            }
+        }
+
+        GpxTrackHandler(List<TrackSample> out) {
+            this.out = out;
+        }
     }
 }

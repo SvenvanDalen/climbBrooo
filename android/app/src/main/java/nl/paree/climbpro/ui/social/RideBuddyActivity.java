@@ -39,6 +39,7 @@ import java.util.Locale;
  * ClimbPro" for text, always behind a confirmation dialog.
  */
 public final class RideBuddyActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private static final int PREFILL_MAX_CHARS = RideBuddyCode.MAX_CODE_CHARS + 500;
     private static final Locale NL = new Locale("nl");
@@ -182,7 +183,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                     }
                     viewModel.prepareShare(n, fields);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -206,7 +207,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                 .setTitle("Controleer je code")
                 .setMessage(sb.toString())
                 .setPositiveButton("Delen", (d, w) -> viewModel.confirmShare(preview.code))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -225,7 +226,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Importeren",
                         (d, w) -> viewModel.importCode(input.getText().toString()))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -276,7 +277,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                 .setTitle("Rijder verwijderen")
                 .setMessage("Het profiel van " + p.name + " verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.remove(p.riderId))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

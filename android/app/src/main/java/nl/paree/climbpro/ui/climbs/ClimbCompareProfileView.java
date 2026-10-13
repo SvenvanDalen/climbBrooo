@@ -32,7 +32,10 @@ public final class ClimbCompareProfileView extends View {
     private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
 
-    private double[] firstDist, firstHeight, secondDist, secondHeight;
+    private double[] firstDist;
+    private double[] firstHeight;
+    private double[] secondDist;
+    private double[] secondHeight;
 
     public ClimbCompareProfileView(Context context) {
         super(context);

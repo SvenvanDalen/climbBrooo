@@ -135,6 +135,7 @@ public class RouteStoresEdgeTest {
             repo.offer(Collections.singletonList(g));
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(file(RouteGhostRepository.FILE_NAME + ".tmp").exists());
     }
@@ -176,6 +177,7 @@ public class RouteStoresEdgeTest {
             new ClimbAttemptRepository(app).overwriteAll(Collections.singletonList(attempt(1, "a")));
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(file("climb_attempts.json.tmp").exists());
     }
@@ -197,6 +199,7 @@ public class RouteStoresEdgeTest {
             new IncompleteClimbAttemptRepository(app).append(Collections.singletonList(p));
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(file("incomplete_climb_attempts.json.tmp").exists());
     }

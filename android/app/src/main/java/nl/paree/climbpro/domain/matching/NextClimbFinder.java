@@ -102,13 +102,17 @@ public final class NextClimbFinder {
         double bestAlong = 0;
         for (int i = 0; i < n - 1; i++) {
             // Local equirectangular plane around the query point, in metres.
-            double ax = (r.lons[i] - lon) * cosLat, ay = r.lats[i] - lat;
-            double bx = (r.lons[i + 1] - lon) * cosLat, by = r.lats[i + 1] - lat;
-            double dx = bx - ax, dy = by - ay;
+            double ax = (r.lons[i] - lon) * cosLat;
+            double ay = r.lats[i] - lat;
+            double bx = (r.lons[i + 1] - lon) * cosLat;
+            double by = r.lats[i + 1] - lat;
+            double dx = bx - ax;
+            double dy = by - ay;
             double lenSq = dx * dx + dy * dy;
             double t = lenSq > 0 ? -(ax * dx + ay * dy) / lenSq : 0;
             t = Math.max(0, Math.min(1, t));
-            double px = ax + t * dx, py = ay + t * dy;
+            double px = ax + t * dx;
+            double py = ay + t * dy;
             double d = Math.toRadians(Math.sqrt(px * px + py * py)) * EARTH_RADIUS_M;
             if (d < best) {
                 best = d;

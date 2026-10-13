@@ -130,14 +130,22 @@ public final class StravaRoutesRepository {
         return changed;
     }
 
+    /** The stored route, or null when there is none yet (or it can't be read). */
+    private StoredRoute loadExisting(String routeId) {
+        try {
+            return routeRepo.loadRoute(routeId);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     private boolean processRoute(String token, StravaRouteDto dto,
                                  List<StravaSegmentDto> starredSegments) {
         String routeId = "strava_" + dto.id;
         String hash    = sha256(dto.updatedAt + "_" + dto.distance);
 
         try {
-            StoredRoute existing = null;
-            try { existing = routeRepo.loadRoute(routeId); } catch (IOException ignored) {}
+            StoredRoute existing = loadExisting(routeId);
 
             // Skip unchanged routes — UNLESS the stored doc predates the starred-segment
             // feature (starredSegments == null). Such routes were saved before flat starred

@@ -199,13 +199,17 @@ public final class RouteHazards {
         double px = lon * M_PER_DEG * cosLat;
         double py = lat * M_PER_DEG;
         for (int i = 0; i < n - 1; i++) {
-            double ax = lons[i] * M_PER_DEG * cosLat, ay = lats[i] * M_PER_DEG;
-            double bx = lons[i + 1] * M_PER_DEG * cosLat, by = lats[i + 1] * M_PER_DEG;
-            double dx = bx - ax, dy = by - ay;
+            double ax = lons[i] * M_PER_DEG * cosLat;
+            double ay = lats[i] * M_PER_DEG;
+            double bx = lons[i + 1] * M_PER_DEG * cosLat;
+            double by = lats[i + 1] * M_PER_DEG;
+            double dx = bx - ax;
+            double dy = by - ay;
             double len2 = dx * dx + dy * dy;
             double t = len2 == 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
             t = Math.max(0, Math.min(1, t));
-            double qx = ax + t * dx - px, qy = ay + t * dy - py;
+            double qx = ax + t * dx - px;
+            double qy = ay + t * dy - py;
             double d = Math.sqrt(qx * qx + qy * qy);
             if (d <= best) {
                 best = d;
@@ -217,7 +221,8 @@ public final class RouteHazards {
 
     private static double bearing(double lat1, double lon1, double lat2, double lon2) {
         if (lat1 == lat2 && lon1 == lon2) return Double.NaN;
-        double p1 = Math.toRadians(lat1), p2 = Math.toRadians(lat2);
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
         double dl = Math.toRadians(lon2 - lon1);
         double y = Math.sin(dl) * Math.cos(p2);
         double x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);

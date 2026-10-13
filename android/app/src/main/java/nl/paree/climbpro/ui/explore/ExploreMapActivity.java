@@ -31,7 +31,6 @@ public final class ExploreMapActivity extends AppCompatActivity {
     /** Semi-transparent orange: readable on the light OSM tiles and in both themes. */
     private static final int TILE_COLOR = 0xB0FF6D00;
 
-    private ExploreMapViewModel vm;
     private MapView map;
     private Overlay tilesOverlay;
     private boolean zoomed;
@@ -63,7 +62,7 @@ public final class ExploreMapActivity extends AppCompatActivity {
         Button process = findViewById(R.id.explore_process);
         summary.setText(R.string.explore_map_loading);
 
-        vm = new ViewModelProvider(this).get(ExploreMapViewModel.class);
+        ExploreMapViewModel vm = new ViewModelProvider(this).get(ExploreMapViewModel.class);
         vm.state().observe(this, s -> render(s, summary, pending));
         vm.busy().observe(this, b -> {
             boolean isBusy = Boolean.TRUE.equals(b);
@@ -98,7 +97,10 @@ public final class ExploreMapActivity extends AppCompatActivity {
         map.getOverlays().add(tilesOverlay);
         if (!zoomed && s.bounds.length >= 4) {
             zoomed = true;
-            double south = 90, west = 180, north = -90, east = -180;
+            double south = 90;
+            double west = 180;
+            double north = -90;
+            double east = -180;
             for (int i = 0; i + 3 < s.bounds.length; i += 4) {
                 south = Math.min(south, s.bounds[i]);
                 west = Math.min(west, s.bounds[i + 1]);

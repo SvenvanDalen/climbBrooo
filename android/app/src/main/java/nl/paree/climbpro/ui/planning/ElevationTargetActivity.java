@@ -48,12 +48,10 @@ public final class ElevationTargetActivity extends AppCompatActivity {
     private EditText targetInput;
     private EditText radiusInput;
     private EditText maxClimbsInput;
-    private TextView startLabel;
     private TextView summary;
     private TextView disclaimer;
     private LinearLayout resultList;
     private View addToPlanningButton;
-    private View progress;
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
@@ -83,12 +81,12 @@ public final class ElevationTargetActivity extends AppCompatActivity {
         targetInput = findViewById(R.id.targetInput);
         radiusInput = findViewById(R.id.radiusInput);
         maxClimbsInput = findViewById(R.id.maxClimbsInput);
-        startLabel = findViewById(R.id.startLabel);
+        TextView startLabel = findViewById(R.id.startLabel);
         summary = findViewById(R.id.summary);
         disclaimer = findViewById(R.id.disclaimer);
         resultList = findViewById(R.id.resultList);
         addToPlanningButton = findViewById(R.id.addToPlanningButton);
-        progress = findViewById(R.id.progress);
+        View progress = findViewById(R.id.progress);
 
         if (savedInstanceState == null) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);

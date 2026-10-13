@@ -42,7 +42,7 @@ public final class IntervalsIcuEventDto {
     @JsonProperty("filename")
     public String filename;
 
-    public IntervalsIcuEventDto() {}
+    public IntervalsIcuEventDto() { /* for JSON deserialization */ }
 
     /** A planned workout from a {@code .zwo} file on {@code date}. */
     public static IntervalsIcuEventDto workout(String name, String description, String zwo,

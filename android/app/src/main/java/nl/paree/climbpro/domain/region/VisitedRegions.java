@@ -13,8 +13,11 @@ public final class VisitedRegions {
     public static final String UNKNOWN_PROVINCE = "(regio onbekend)";
 
     public static final class Visit {
-        final String countryCode, country, province;
-        final double lat, lon;
+        final String countryCode;
+        final String country;
+        final String province;
+        final double lat;
+        final double lon;
 
         public Visit(String countryCode, String country, String province, double lat, double lon) {
             this.countryCode = countryCode;
@@ -28,7 +31,8 @@ public final class VisitedRegions {
     public static final class Province {
         public final String name;
         public final int visits;
-        public final double lat, lon;
+        public final double lat;
+        public final double lon;
 
         Province(String name, int visits, double lat, double lon) {
             this.name = name; this.visits = visits; this.lat = lat; this.lon = lon;
@@ -36,7 +40,8 @@ public final class VisitedRegions {
     }
 
     public static final class Country {
-        public final String code, name;
+        public final String code;
+        public final String name;
         public final int visits;
         public final List<Province> provinces;
 
@@ -62,7 +67,8 @@ public final class VisitedRegions {
             List<Province> provinces = new ArrayList<>();
             int total = 0;
             for (Map.Entry<String, List<Visit>> p : c.getValue().entrySet()) {
-                double lat = 0, lon = 0;
+                double lat = 0;
+                double lon = 0;
                 for (Visit v : p.getValue()) { lat += v.lat; lon += v.lon; }
                 int n = p.getValue().size();
                 provinces.add(new Province(p.getKey(), n, lat / n, lon / n));

@@ -101,7 +101,8 @@ public final class FitnessChartView extends View {
         super.onDraw(canvas);
         if (days.size() < 2) return;
 
-        double max = 10, min = 0;
+        double max = 10;
+        double min = 0;
         for (Day d : days) {
             max = Math.max(max, Math.max(d.ctl, Math.max(d.atl, d.tsb)));
             min = Math.min(min, d.tsb);

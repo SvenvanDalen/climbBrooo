@@ -26,14 +26,7 @@ public final class DayTripPlanner {
      * @param startLatLon the rider's position {lat, lon}, or null when unknown
      */
     public static List<StoredClimb> order(List<StoredClimb> climbs, double[] startLatLon) {
-        List<StoredClimb> pool = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-        if (climbs != null) {
-            for (StoredClimb c : climbs) {
-                if (c == null || (c.startLat == 0 && c.startLon == 0)) continue;
-                if (seen.add(ClimbIdentity.of(c))) pool.add(c);
-            }
-        }
+        List<StoredClimb> pool = uniqueLocated(climbs);
         List<StoredClimb> out = new ArrayList<>(pool.size());
         if (pool.isEmpty()) return out;
 
@@ -47,21 +40,38 @@ public final class DayTripPlanner {
             lon = pool.get(0).startLon;
         }
         while (!pool.isEmpty() && out.size() < MAX_CLIMBS) {
-            int best = 0;
-            double bestD = Double.MAX_VALUE;
-            for (int i = 0; i < pool.size(); i++) {
-                double d = distanceM(lat, lon, pool.get(i).startLat, pool.get(i).startLon);
-                if (d < bestD) {
-                    bestD = d;
-                    best = i;
-                }
-            }
-            StoredClimb next = pool.remove(best);
+            StoredClimb next = pool.remove(nearestIndex(pool, lat, lon));
             out.add(next);
             lat = next.startLat;
             lon = next.startLon;
         }
         return out;
+    }
+
+    /** Climbs with a known start, each identity once, in input order. */
+    private static List<StoredClimb> uniqueLocated(List<StoredClimb> climbs) {
+        List<StoredClimb> pool = new ArrayList<>();
+        if (climbs == null) return pool;
+        Set<String> seen = new HashSet<>();
+        for (StoredClimb c : climbs) {
+            if (c == null || (c.startLat == 0 && c.startLon == 0)) continue;
+            if (seen.add(ClimbIdentity.of(c))) pool.add(c);
+        }
+        return pool;
+    }
+
+    /** Index of the climb whose start is closest to (lat, lon); the first one on ties. */
+    private static int nearestIndex(List<StoredClimb> pool, double lat, double lon) {
+        int best = 0;
+        double bestD = Double.MAX_VALUE;
+        for (int i = 0; i < pool.size(); i++) {
+            double d = distanceM(lat, lon, pool.get(i).startLat, pool.get(i).startLon);
+            if (d < bestD) {
+                bestD = d;
+                best = i;
+            }
+        }
+        return best;
     }
 
     /** Haversine distance in metres. */

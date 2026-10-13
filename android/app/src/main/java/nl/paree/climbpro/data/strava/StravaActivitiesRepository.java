@@ -65,6 +65,8 @@ import java.util.TimeZone;
  * Call {@link #syncActivities()} from a background thread.
  */
 public final class StravaActivitiesRepository {
+    private static final String FAILED_HTTP = " failed (HTTP ";
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private static final String TAG       = "StravaActivitiesRepo";
     public  static final String PREFS_NAME = "strava_activities";
@@ -214,7 +216,7 @@ public final class StravaActivitiesRepository {
 
     /** @return number of new attempts persisted. */
     public int syncActivities() throws IOException {
-        String token = "Bearer " + auth.getAccessToken();
+        String token = BEARER_PREFIX + auth.getAccessToken();
         titleUpdateAuthExpired = false;
         ghostRoutes = null; // routes may have changed since the previous run
 
@@ -355,7 +357,7 @@ public final class StravaActivitiesRepository {
             Response<List<StravaActivityDto>> resp =
                     api.listActivities(token, after, page, 50).execute();
             if (!resp.isSuccessful()) {
-                Log.w(TAG, "Activity page " + page + " failed (HTTP "
+                Log.w(TAG, "Activity page " + page + FAILED_HTTP
                         + resp.code() + "); keeping sync cursor for retry");
                 return false; // aborted — do NOT mark complete
             }
@@ -518,7 +520,7 @@ public final class StravaActivitiesRepository {
                     .putLong(PREF_BACKFILL_CURSOR, cursor).apply();
         }
 
-        BackfillRun run = new BackfillRun("Bearer " + auth.getAccessToken(), cursor, floor);
+        BackfillRun run = new BackfillRun(BEARER_PREFIX + auth.getAccessToken(), cursor, floor);
         ghostRoutes = null;
         run.climbs = enumerateKnownClimbs();
         run.known.addAll(attemptRepo.knownActivityIds());
@@ -558,7 +560,7 @@ public final class StravaActivitiesRepository {
         Response<List<StravaActivityDto>> resp = api.listActivitiesBefore(
                 run.token, run.cursor, run.floor, BACKFILL_PAGE_SIZE).execute();
         if (!resp.isSuccessful()) {
-            Log.w(TAG, "Backfill page before " + run.cursor + " failed (HTTP " + resp.code() + ")");
+            Log.w(TAG, "Backfill page before " + run.cursor + FAILED_HTTP + resp.code() + ")");
             return run.result(resp.code() == 429
                     ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY);
         }
@@ -657,13 +659,13 @@ public final class StravaActivitiesRepository {
      * @throws IOException when a page fails, so the caller does not advance its cursor
      */
     public List<StravaActivityDto> listActivitiesSince(long afterEpochSec) throws IOException {
-        String token = "Bearer " + auth.getAccessToken();
+        String token = BEARER_PREFIX + auth.getAccessToken();
         List<StravaActivityDto> out = new ArrayList<>();
         for (int page = 1; ; page++) {
             Response<List<StravaActivityDto>> resp =
                     api.listActivities(token, afterEpochSec, page, 50).execute();
             if (!resp.isSuccessful()) {
-                throw new IOException("Strava activities page " + page + " failed (HTTP "
+                throw new IOException("Strava activities page " + page + FAILED_HTTP
                         + resp.code() + ")");
             }
             if (resp.body() == null || resp.body().isEmpty()) return out;
@@ -920,7 +922,7 @@ public final class StravaActivitiesRepository {
      * @return number of rides archived this run.
      */
     public int syncRideArchive() throws IOException {
-        return syncRideArchive("Bearer " + auth.getAccessToken());
+        return syncRideArchive(BEARER_PREFIX + auth.getAccessToken());
     }
 
     private int syncRideArchive(String token) throws IOException {
@@ -935,7 +937,7 @@ public final class StravaActivitiesRepository {
             Response<List<StravaActivityDto>> resp =
                     api.listActivities(token, after, page, 50).execute();
             if (!resp.isSuccessful()) {
-                Log.w(TAG, "Ride archive page " + page + " failed (HTTP " + resp.code() + ")");
+                Log.w(TAG, "Ride archive page " + page + FAILED_HTTP + resp.code() + ")");
                 break;
             }
             if (resp.body() == null || resp.body().isEmpty()) {
@@ -964,7 +966,7 @@ public final class StravaActivitiesRepository {
      * @return number of rides analyzed in this run
      */
     public int analyzeRideStreams() throws IOException {
-        return analyzeRideStreams("Bearer " + auth.getAccessToken());
+        return analyzeRideStreams(BEARER_PREFIX + auth.getAccessToken());
     }
 
     private int analyzeRideStreams(String token) throws IOException {
@@ -1044,7 +1046,7 @@ public final class StravaActivitiesRepository {
      * @return number of rides processed in this run
      */
     public int exploreRideTracks() throws IOException {
-        String token = "Bearer " + auth.getAccessToken();
+        String token = BEARER_PREFIX + auth.getAccessToken();
         List<StoredRide> todo = exploreTodo(exploreRepo.load());
         Map<Long, RideTrack> tracks = new LinkedHashMap<>();
         try {
@@ -1099,7 +1101,7 @@ public final class StravaActivitiesRepository {
      * @return number of routes created in this run
      */
     public int importMyWhooshRides() throws IOException {
-        return importMyWhooshRides("Bearer " + auth.getAccessToken());
+        return importMyWhooshRides(BEARER_PREFIX + auth.getAccessToken());
     }
 
     private int importMyWhooshRides(String token) {
@@ -1213,9 +1215,9 @@ public final class StravaActivitiesRepository {
      */
     public RideStreams fetchRideStreams(long activityId) throws IOException {
         Response<StravaStreamsDto> resp = api.getStreams(
-                "Bearer " + auth.getAccessToken(), activityId, RIDE_STREAM_KEYS).execute();
+                BEARER_PREFIX + auth.getAccessToken(), activityId, RIDE_STREAM_KEYS).execute();
         if (!resp.isSuccessful()) {
-            Log.w(TAG, "Streams for " + activityId + " failed (HTTP " + resp.code() + ")");
+            Log.w(TAG, "Streams for " + activityId + FAILED_HTTP + resp.code() + ")");
             return null;
         }
         return toRideStreams(resp.body());
@@ -1227,9 +1229,9 @@ public final class StravaActivitiesRepository {
      */
     public RideTrack fetchRideTrack(long activityId) throws IOException {
         Response<StravaStreamsDto> resp = api.getStreams(
-                "Bearer " + auth.getAccessToken(), activityId, "latlng,temp").execute();
+                BEARER_PREFIX + auth.getAccessToken(), activityId, "latlng,temp").execute();
         if (!resp.isSuccessful()) {
-            Log.w(TAG, "Track for " + activityId + " failed (HTTP " + resp.code() + ")");
+            Log.w(TAG, "Track for " + activityId + FAILED_HTTP + resp.code() + ")");
             return null;
         }
         return toRideTrack(resp.body());

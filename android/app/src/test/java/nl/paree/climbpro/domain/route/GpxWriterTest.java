@@ -127,14 +127,14 @@ public class GpxWriterTest {
 
     @Test
     public void nullGeometryThrows() {
-        assertThrows(IllegalArgumentException.class,
-                () -> GpxWriter.toGpx(route(null, null, null, "leeg")));
+        StoredRoute empty = route(null, null, null, "leeg");
+        assertThrows(IllegalArgumentException.class, () -> GpxWriter.toGpx(empty));
     }
 
     @Test
     public void emptyGeometryThrows() {
-        assertThrows(IllegalArgumentException.class,
-                () -> GpxWriter.toGpx(route(new double[0], new double[0], new double[0], "leeg")));
+        StoredRoute empty = route(new double[0], new double[0], new double[0], "leeg");
+        assertThrows(IllegalArgumentException.class, () -> GpxWriter.toGpx(empty));
     }
 
     private static StoredRoute routeWithClimb() {

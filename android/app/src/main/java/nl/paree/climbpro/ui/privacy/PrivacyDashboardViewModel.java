@@ -223,7 +223,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     private void appendAttempts(StringBuilder sb) {
         List<StoredClimbAttempt> attempts = new ClimbAttemptRepository(getApplication()).loadAll();
         Set<String> climbs = new HashSet<>();
-        long first = Long.MAX_VALUE, last = 0;
+        long first = Long.MAX_VALUE;
+        long last = 0;
         int notes = 0;
         for (StoredClimbAttempt a : attempts) {
             climbs.add(a.climbId);
@@ -309,8 +310,11 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         boolean linked = icu.isConfigured();
         sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
         if (linked) sb.append("\nAtleet-id: ").append(icu.athleteId());
-        sb.append("\n\nVerwijderen wist de API-sleutel; workouts op je intervals.icu-"
-                + "kalender blijven staan.");
+        sb.append("""
+
+
+                Verwijderen wist de API-sleutel; workouts op je intervals.icu-\
+                kalender blijven staan.""");
         return sb.toString();
     }
 

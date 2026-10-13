@@ -104,7 +104,7 @@ public final class RecoveryTrendChartView extends View {
         float bottom = getHeight() - PAD_BOTTOM * density;
 
         for (int v = 0; v <= (int) AXIS_MAX; v += 5) {
-            float yy = y(v, top, bottom);
+            float yy = y((float) v, top, bottom);
             canvas.drawLine(left, yy, right, yy, gridPaint);
             canvas.drawText(String.valueOf(v), left - 4 * density,
                     yy + labelPaint.getTextSize() / 3, labelPaint);

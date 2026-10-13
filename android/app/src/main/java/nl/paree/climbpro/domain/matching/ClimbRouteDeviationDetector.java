@@ -89,20 +89,25 @@ public final class ClimbRouteDeviationDetector {
         double metersPerDegLat = 111_320.0;
         double metersPerDegLon = 111_320.0 * Math.cos(Math.toRadians(alat));
 
-        double ax = 0, ay = 0;
+        double ax = 0;
+        double ay = 0;
         double bx = (blon - alon) * metersPerDegLon;
         double by = (blat - alat) * metersPerDegLat;
         double px = (plon - alon) * metersPerDegLon;
         double py = (plat - alat) * metersPerDegLat;
 
-        double abx = bx - ax, aby = by - ay;
-        double apx = px - ax, apy = py - ay;
+        double abx = bx - ax;
+        double aby = by - ay;
+        double apx = px - ax;
+        double apy = py - ay;
         double abLenSq = abx * abx + aby * aby;
         double t = abLenSq > 0 ? (apx * abx + apy * aby) / abLenSq : 0;
         t = Math.max(0.0, Math.min(1.0, t));
 
-        double cx = ax + t * abx, cy = ay + t * aby;
-        double dx = px - cx, dy = py - cy;
+        double cx = ax + t * abx;
+        double cy = ay + t * aby;
+        double dx = px - cx;
+        double dy = py - cy;
         return Math.sqrt(dx * dx + dy * dy);
     }
 }
