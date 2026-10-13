@@ -3,16 +3,15 @@ package nl.paree.climbpro.ui.climbs;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -69,11 +68,7 @@ public class ClimbHygieneViewModelTest {
     }
 
     private void idleUntil(java.util.function.BooleanSupplier condition) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 2000;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> condition.getAsBoolean(), 2000);
     }
 
     /**

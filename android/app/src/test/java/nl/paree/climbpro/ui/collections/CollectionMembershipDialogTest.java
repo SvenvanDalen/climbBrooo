@@ -2,10 +2,8 @@ package nl.paree.climbpro.ui.collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
-import android.os.Looper;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AlertDialog;
@@ -15,6 +13,7 @@ import nl.paree.climbpro.data.route.RouteCollection;
 import nl.paree.climbpro.data.route.RouteCollectionRepository;
 import nl.paree.climbpro.testsupport.UiTestData;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -30,10 +29,7 @@ import java.util.List;
 public class CollectionMembershipDialogTest {
 
     private static void settle() throws InterruptedException {
-        for (int i = 0; i < 30; i++) {
-            shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(5);
-        }
+        UiTestEnv.idleFor(150);
     }
 
     private static Activity host() {

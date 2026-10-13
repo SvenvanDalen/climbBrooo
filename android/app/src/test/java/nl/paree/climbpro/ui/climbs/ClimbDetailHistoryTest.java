@@ -20,6 +20,7 @@ import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -67,11 +68,7 @@ public class ClimbDetailHistoryTest {
 
         vm.loadClimb("r1", 0);
         // Drain the VM background executor + main looper (matches existing VM test idiom).
-        long deadline = System.currentTimeMillis() + 2000;
-        while (got[0] == null && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> !(got[0] == null), 2000);
         Shadows.shadowOf(Looper.getMainLooper()).idle();
 
         assertNotNull(got[0]);

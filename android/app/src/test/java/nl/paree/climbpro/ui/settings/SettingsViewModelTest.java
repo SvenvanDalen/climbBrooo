@@ -3,7 +3,6 @@ package nl.paree.climbpro.ui.settings;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.work.Configuration;
@@ -13,11 +12,11 @@ import androidx.work.WorkManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
@@ -371,10 +370,6 @@ public class SettingsViewModelTest {
     private interface Condition { boolean isMet(); }
 
     private static void drainUntil(Condition condition) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 3000;
-        while (!condition.isMet() && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> condition.isMet(), 3000);
     }
 }

@@ -17,9 +17,12 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.robolectric.shadows.ShadowDialog;
 import org.robolectric.shadows.ShadowToast;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -84,19 +87,39 @@ public final class UiTestEnv {
     /** Drains the main looper until it stays quiet, giving background loads time to post. */
     public static void settle() {
         org.robolectric.shadows.ShadowLooper looper = shadowOf(Looper.getMainLooper());
-        int quiet = 0;
-        for (int i = 0; i < 150 && quiet < 6; i++) {
-            boolean busy = !looper.isIdle();
-            looper.idle();
-            quiet = busy ? 0 : quiet + 1;
-            try {
-                Thread.sleep(3);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
+        int[] quiet = {0};
+        try {
+            Awaitility.await()
+                    .pollInSameThread()
+                    .pollDelay(Duration.ZERO)
+                    .pollInterval(Duration.ofMillis(3))
+                    .atMost(Duration.ofMillis(450))
+                    .until(() -> {
+                        boolean busy = !looper.isIdle();
+                        looper.idle();
+                        quiet[0] = busy ? 0 : quiet[0] + 1;
+                        return quiet[0] >= 6;
+                    });
+        } catch (ConditionTimeoutException e) {
+            // still busy after the budget: carry on, like before
         }
         looper.idle();
+    }
+
+    /**
+     * Keeps draining the main looper for {@code ms}, for checks that nothing changes (or that
+     * fire-and-forget background work has landed) where there is no condition to wait for.
+     */
+    public static void idleFor(long ms) {
+        Awaitility.await()
+                .pollInSameThread()
+                .pollInterval(Duration.ofMillis(10))
+                .during(Duration.ofMillis(ms))
+                .atMost(Duration.ofMillis(ms + 2000))
+                .until(() -> {
+                    shadowOf(Looper.getMainLooper()).idle();
+                    return true;
+                });
     }
 
     /** Idles the main looper until {@code condition} holds or 3 s pass. */
@@ -106,15 +129,19 @@ public final class UiTestEnv {
 
     /** Idles the main looper until {@code condition} holds or {@code timeoutMs} pass. */
     public static boolean waitFor(BooleanSupplier condition, long timeoutMs) {
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle();
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+        try {
+            Awaitility.await()
+                    .pollInSameThread()
+                    .pollDelay(Duration.ZERO)
+                    .pollInterval(Duration.ofMillis(5))
+                    .atMost(Duration.ofMillis(timeoutMs))
+                    .until(() -> {
+                        if (condition.getAsBoolean()) return true;
+                        shadowOf(Looper.getMainLooper()).idle();
+                        return false;
+                    });
+        } catch (ConditionTimeoutException e) {
+            // reported through the return value below
         }
         shadowOf(Looper.getMainLooper()).idle();
         return condition.getAsBoolean();

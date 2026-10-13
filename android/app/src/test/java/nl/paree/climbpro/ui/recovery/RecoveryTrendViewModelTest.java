@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.recovery;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 import androidx.test.core.app.ApplicationProvider;
@@ -13,12 +12,12 @@ import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Direction;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Trend;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,11 +50,7 @@ public class RecoveryTrendViewModelTest {
     private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
         T before = live.getValue();
         trigger.run();
-        long deadline = System.currentTimeMillis() + 3000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> !(live.getValue() == before), 3000);
         return live.getValue();
     }
 

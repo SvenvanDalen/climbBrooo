@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNull;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
@@ -17,10 +16,10 @@ import nl.paree.climbpro.domain.climb.Climb;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.route.RoutePoint;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,12 +57,7 @@ public class ClimbDetailRatingTest {
 
         vm.setRating("rate1", 0, 4, 5, 3, "Rustig");
 
-        long deadline = System.currentTimeMillis() + 3000;
-        while ((got[0] == null || got[0].ratingRoad == null)
-                && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> !((got[0] == null || got[0].ratingRoad == null)), 3000);
         assertEquals(Integer.valueOf(4), got[0].ratingRoad);
         assertEquals("Rustig", repo.loadRoute("rate1").climbs.get(0).ratingNote);
     }

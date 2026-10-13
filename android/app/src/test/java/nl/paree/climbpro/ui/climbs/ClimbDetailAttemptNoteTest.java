@@ -23,6 +23,7 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -218,11 +219,7 @@ public class ClimbDetailAttemptNoteTest {
         // Generous deadline: CI runners can be slow enough under load that the background
         // save/rollback executor hasn't finished within a tighter window, which previously
         // made this test flaky in CI without ever failing locally.
-        long deadline = System.currentTimeMillis() + 10000;
-        while (!condition.met() && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> condition.met(), 10000);
         Shadows.shadowOf(Looper.getMainLooper()).idle();
     }
 
