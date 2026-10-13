@@ -157,19 +157,21 @@ public class ClimbWorkoutRepeatsTest {
     @Test
     public void ergRepeatsExactShape() {
         String erg = ClimbWorkoutWriter.toErg("Test", CLIMB, 200, 2, 240);
-        String expected = "[COURSE HEADER]\n"
-                + "VERSION = 2\n"
-                + "UNITS = METRIC\n"
-                + "DESCRIPTION = Herhaal-klim uit ClimbPro: 2× Test (2 segmenten, 8:00 min per"
-                + " keer) met 4:00 min herstel op 50 % FTP ertussen. Vermogen per segment volgt"
-                + " de helling. 10 min opwarmen en 5 min uitrijden. Totaal 35:00 min.\n"
-                + "FILE NAME = 2× Test\n"
-                + "FTP = 200\n"
-                + "MINUTES WATTS\n"
-                + "[END COURSE HEADER]\n"
-                + "[COURSE DATA]\n"
-                + "0.00\t90\n"
-                + "10.00\t150\n"
+        String expected = """
+                [COURSE HEADER]
+                VERSION = 2
+                UNITS = METRIC
+                DESCRIPTION = Herhaal-klim uit ClimbPro: 2× Test (2 segmenten, 8:00 min per\
+                 keer) met 4:00 min herstel op 50 % FTP ertussen. Vermogen per segment volgt\
+                 de helling. 10 min opwarmen en 5 min uitrijden. Totaal 35:00 min.
+                FILE NAME = 2× Test
+                FTP = 200
+                MINUTES WATTS
+                [END COURSE HEADER]
+                [COURSE DATA]
+                0.00\t90
+                10.00\t150
+                """
                 // repeat 1
                 + "10.00\t180\n15.00\t180\n15.00\t200\n18.00\t200\n"
                 // recovery

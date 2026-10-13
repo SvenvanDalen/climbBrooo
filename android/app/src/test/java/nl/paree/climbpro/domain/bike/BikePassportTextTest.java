@@ -21,12 +21,15 @@ public class BikePassportTextTest {
         p.color = " ";
         p.photoFileNames = Arrays.asList("a.jpg", "b.jpg");
         p.receiptFileName = "r.jpg";
-        assertEquals("Fietspaspoort: Racefiets\n"
-                + "Merk: Canyon\n"
-                + "Model: Ultimate CF SL\n"
-                + "Framenummer: WAC123456\n"
-                + "Aankoopprijs: € 2.499\n"
-                + "\nBijlagen: 2 foto's en aankoopbewijs\n", BikePassportText.format(p));
+        assertEquals("""
+                Fietspaspoort: Racefiets
+                Merk: Canyon
+                Model: Ultimate CF SL
+                Framenummer: WAC123456
+                Aankoopprijs: € 2.499
+
+                Bijlagen: 2 foto's en aankoopbewijs
+                """, BikePassportText.format(p));
     }
 
     @Test

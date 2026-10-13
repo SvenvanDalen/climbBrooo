@@ -112,9 +112,16 @@ public class EventCalendarActivityTest {
         UiTestEnv.settle();
         assertEquals("Vul een https- of webcal-link in", UiTestEnv.latestToast());
 
-        server.enqueue(new MockResponse().setBody("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:x\r\n"
-                + "SUMMARY:Gran Fondo\r\nDTSTART:20270601T080000\r\nGEO:50.8;5.8\r\n"
-                + "END:VEVENT\r\nEND:VCALENDAR\r\n"));
+        server.enqueue(new MockResponse().setBody("""
+                BEGIN:VCALENDAR\r
+                BEGIN:VEVENT\r
+                UID:x\r
+                SUMMARY:Gran Fondo\r
+                DTSTART:20270601T080000\r
+                GEO:50.8;5.8\r
+                END:VEVENT\r
+                END:VCALENDAR\r
+                """));
         activity.findViewById(R.id.btn_feeds).performClick();
         UiTestEnv.settle();
         alert().getButton(AlertDialog.BUTTON_POSITIVE).performClick();

@@ -95,13 +95,14 @@ public final class FrameSizeActivity extends AppCompatActivity {
     private static String explanationText() {
         Locale locale = Locale.getDefault();
         return String.format(locale,
-                "Hoe wordt dit berekend?\n"
-                        + "• Racefiets: zitbuislengte (hart trapas tot bovenkant zitbuis)"
-                        + " ≈ binnenbeenlengte × %.3f.\n"
-                        + "• Mountainbike: zitbuislengte ≈ binnenbeenlengte × %.2f,"
-                        + " omgerekend naar inch (÷ %.2f).\n"
-                        + "• Lettermaat racefiets op basis van lengte: XS onder 165 cm,"
-                        + " S 165–171, M 172–178, L 179–185, XL vanaf 186 cm.",
+                """
+                        Hoe wordt dit berekend?
+                        • Racefiets: zitbuislengte (hart trapas tot bovenkant zitbuis)\
+                         ≈ binnenbeenlengte × %.3f.
+                        • Mountainbike: zitbuislengte ≈ binnenbeenlengte × %.2f,\
+                         omgerekend naar inch (÷ %.2f).
+                        • Lettermaat racefiets op basis van lengte: XS onder 165 cm,\
+                         S 165–171, M 172–178, L 179–185, XL vanaf 186 cm.""",
                 FrameSizeCalculator.ROAD_FACTOR, FrameSizeCalculator.MTB_FACTOR,
                 FrameSizeCalculator.CM_PER_INCH);
     }

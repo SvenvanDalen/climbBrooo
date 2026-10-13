@@ -29,10 +29,11 @@ public class RouteRainSummaryTest {
 
     @Test public void listsDryWetAndUnknownHoursFromTheCurrentHour() throws IOException {
         PrecipitationGrid g = grid("0.0,0.5,null", "0.0,1.2,null", "0.0,0.0,null");
-        assertEquals("Regen langs de route (per uur):\n"
-                        + "10:00  droog\n"
-                        + "11:00  regen bij km 0–4 (1,2 mm)\n"
-                        + "12:00  geen gegevens",
+        assertEquals("""
+                Regen langs de route (per uur):
+                10:00  droog
+                11:00  regen bij km 0–4 (1,2 mm)
+                12:00  geen gegevens""",
                 RouteRainSummary.describe(samples(), g, at("10:20"), 6, ZoneOffset.UTC));
     }
 
@@ -68,10 +69,11 @@ public class RouteRainSummaryTest {
 
     @Test public void unknownHoursWithoutAnyRainUseANeutralHeading() throws IOException {
         PrecipitationGrid g = grid("0,null,0", "0,null,0", "0,null,0");
-        assertEquals("Neerslag langs de route (per uur):\n"
-                        + "10:00  droog\n"
-                        + "11:00  geen gegevens\n"
-                        + "12:00  droog",
+        assertEquals("""
+                Neerslag langs de route (per uur):
+                10:00  droog
+                11:00  geen gegevens
+                12:00  droog""",
                 RouteRainSummary.describe(samples(), g, at("10:00"), 3, ZoneOffset.UTC));
     }
 

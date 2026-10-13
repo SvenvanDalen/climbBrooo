@@ -39,12 +39,22 @@ import okhttp3.mockwebserver.MockWebServer;
 @LooperMode(LooperMode.Mode.PAUSED)
 public class EventCalendarViewModelTest {
 
-    private static final String ICS = "BEGIN:VCALENDAR\r\n"
-            + "BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Gran Fondo\r\nDTSTART:20270601T080000\r\n"
-            + "GEO:50.8;5.8\r\nEND:VEVENT\r\n"
-            + "BEGIN:VEVENT\r\nUID:c\r\nSUMMARY:Ver weg\r\nDTSTART:20270601T080000\r\n"
-            + "GEO:43.0;1.0\r\nEND:VEVENT\r\n"
-            + "END:VCALENDAR\r\n";
+    private static final String ICS = """
+            BEGIN:VCALENDAR\r
+            BEGIN:VEVENT\r
+            UID:b\r
+            SUMMARY:Gran Fondo\r
+            DTSTART:20270601T080000\r
+            GEO:50.8;5.8\r
+            END:VEVENT\r
+            BEGIN:VEVENT\r
+            UID:c\r
+            SUMMARY:Ver weg\r
+            DTSTART:20270601T080000\r
+            GEO:43.0;1.0\r
+            END:VEVENT\r
+            END:VCALENDAR\r
+            """;
 
     private Application app;
     private EventCalendarViewModel vm;

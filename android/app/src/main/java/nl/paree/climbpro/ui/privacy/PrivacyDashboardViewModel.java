@@ -310,8 +310,11 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         boolean linked = icu.isConfigured();
         sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
         if (linked) sb.append("\nAtleet-id: ").append(icu.athleteId());
-        sb.append("\n\nVerwijderen wist de API-sleutel; workouts op je intervals.icu-"
-                + "kalender blijven staan.");
+        sb.append("""
+
+
+                Verwijderen wist de API-sleutel; workouts op je intervals.icu-\
+                kalender blijven staan.""");
         return sb.toString();
     }
 

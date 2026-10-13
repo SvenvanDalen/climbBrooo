@@ -14,10 +14,12 @@ import java.io.StringReader;
 public class CountryPolygonsTest {
 
     private static final String TWO_SQUARES =
-            "# comment line\n"
-            + "\n"
-            + "AA 0,0 10,0 10,10 0,10\n"
-            + "BB 10,0 20,0 20,10 10,10\n"
+            """
+                    # comment line
+
+                    AA 0,0 10,0 10,10 0,10
+                    BB 10,0 20,0 20,10 10,10
+                    """
             // a hole in AA, filled by the small enclave CC
             + "AA 4,4 6,4 6,6 4,6\n"
             + "CC 4,4 6,4 6,6 4,6\n";
