@@ -43,8 +43,11 @@ public final class SyncScheduler {
                 work);
     }
 
-    /** Trigger an immediate sync (e.g. from the "Sync now" button). */
-    /** @return id of the enqueued run, so a caller can follow exactly this run's outcome. */
+    /**
+     * Trigger an immediate sync (e.g. from the "Sync now" button).
+     *
+     * @return id of the enqueued run, so a caller can follow exactly this run's outcome.
+     */
     public static UUID triggerImmediateSync(Context context) {
         OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(RouteSyncWorker.class)
                 .build();

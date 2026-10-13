@@ -61,9 +61,8 @@ public class RouteSimplifierTest {
 
     @Test
     public void nullInputReturnsEmptyList() {
-        // Bug: the guard `if (points == null || points.size() <= 2)` short-circuits on null,
-        // but then executes `return new ArrayList<>(points)` where points is still null —
-        // causing NullPointerException instead of returning an empty list.
+        // Bug: the null/short-list guard short-circuited on null but then copied the still-null
+        // list, causing a NullPointerException instead of returning an empty list.
         List<RoutePoint> out = RouteSimplifier.simplify(null, 5.0);
         assertEquals(0, out.size());
     }

@@ -48,7 +48,7 @@ public final class MedicalIdActivity extends AppCompatActivity {
 
     private final ActivityResultLauncher<String> notificationPermission =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
+                if (Boolean.TRUE.equals(granted)) {
                     io.execute(() -> MedicalIdNotifier.refresh(this));
                 } else {
                     Toast.makeText(this, "Zonder meldingen-toestemming verschijnt de medische ID "

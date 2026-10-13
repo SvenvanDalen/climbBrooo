@@ -23,7 +23,7 @@ import nl.paree.climbpro.data.route.AttemptPhotoStore;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
-import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
@@ -179,14 +179,14 @@ public final class PhotoQuizActivity extends AppCompatActivity {
         int pct = Math.round(100f * score / questions.size());
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         int best = prefs.getInt(PREF_BEST, -1);
-        boolean record = pct > best;
-        if (record) prefs.edit().putInt(PREF_BEST, pct).apply();
+        boolean newRecord = pct > best;
+        if (newRecord) prefs.edit().putInt(PREF_BEST, pct).apply();
 
         options.removeAllViews();
         photo.setImageDrawable(null);
         progress.setText("");
         message.setText(score + " van de " + questions.size() + " goed (" + pct + "%)"
-                + (record ? "\nNieuw record!" : "\nJe record: " + best + "%"));
+                + (newRecord ? "\nNieuw record!" : "\nJe record: " + best + "%"));
         next.setText("Nog een ronde");
         next.setVisibility(View.VISIBLE);
     }

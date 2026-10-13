@@ -816,12 +816,6 @@ public final class StravaActivitiesRepository {
     }
 
     /**
-     * climbId -> {@link StoredClimb}, for title-template rendering (issue #60): unlike
-     * {@link KnownClimb}, {@link StoredClimb} carries the display name and gradient needed for
-     * the {@code {climb}}/{@code {vam}} placeholders. Only built when a title template is
-     * actually configured.
-     */
-    /**
      * PR notification after a MyWhoosh ride (issue #388). Never throws: the attempts are
      * already stored and a notification problem must not fail the sync.
      */
@@ -853,6 +847,12 @@ public final class StravaActivitiesRepository {
         }
     }
 
+    /**
+     * climbId -> {@link StoredClimb}, for title-template rendering (issue #60): unlike
+     * {@link KnownClimb}, {@link StoredClimb} carries the display name and gradient needed for
+     * the {@code {climb}}/{@code {vam}} placeholders. Only built when a title template is
+     * actually configured.
+     */
     private Map<String, StoredClimb> enumerateStoredClimbsById() {
         Map<String, StoredClimb> byId = new HashMap<>();
         for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {

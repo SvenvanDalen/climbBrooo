@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Border crossings along a stored route (issue #209), fully offline: the country lookup uses the
@@ -22,7 +23,7 @@ import java.util.List;
 public final class BorderCrossingService {
 
     private static final String TAG = "BorderCrossingService";
-    private static volatile CountryPolygons polygons;
+    private static final AtomicReference<CountryPolygons> POLYGONS = new AtomicReference<>();
 
     private final Context appContext;
 
@@ -49,18 +50,18 @@ public final class BorderCrossingService {
     }
 
     private CountryPolygons polygons() {
-        CountryPolygons p = polygons;
+        CountryPolygons p = POLYGONS.get();
         if (p != null) return p;
         synchronized (BorderCrossingService.class) {
-            if (polygons == null) {
+            if (POLYGONS.get() == null) {
                 try (InputStream in = appContext.getAssets().open(CountryPolygons.ASSET_PATH)) {
-                    polygons = CountryPolygons.parse(in);
+                    POLYGONS.set(CountryPolygons.parse(in));
                 } catch (Exception e) {
                     Log.w(TAG, "Could not load border polygons", e);
                     return null;
                 }
             }
-            return polygons;
+            return POLYGONS.get();
         }
     }
 }

@@ -28,6 +28,7 @@ import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.data.planning.FavoriteStartPointStore;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -256,7 +257,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
                 .show();
     }
 
-    private interface StoreAction { void run() throws Exception; }
+    private interface StoreAction { void run() throws IOException; }
 
     private void mutate(StoreAction action) {
         executor.execute(() -> {

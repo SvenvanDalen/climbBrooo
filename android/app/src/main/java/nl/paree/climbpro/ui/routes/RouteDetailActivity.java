@@ -874,10 +874,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.addView(nameInput);
 
         final android.widget.Spinner surface = new android.widget.Spinner(this);
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+        android.widget.ArrayAdapter<String> surfaceAdapter = new android.widget.ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, surfaceLabels());
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        surface.setAdapter(adapter);
+        surfaceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(surfaceAdapter);
         surface.setSelection(SurfaceType.fromInt(flat.surfaceType));
         layout.addView(surface);
 
@@ -1059,10 +1059,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         // Surface picker excludes "Onbekend" (index 0..4 only).
         final android.widget.Spinner surface = new android.widget.Spinner(this);
         String[] choices = java.util.Arrays.copyOf(surfaceLabels(), SurfaceType.MIXED + 1);
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+        android.widget.ArrayAdapter<String> surfaceAdapter = new android.widget.ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, choices);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        surface.setAdapter(adapter);
+        surfaceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(surfaceAdapter);
         layout.addView(surface);
 
         new AlertDialog.Builder(this)

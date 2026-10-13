@@ -30,7 +30,7 @@ public final class IntervalsIcuExport {
         String s = raw.trim().toLowerCase(Locale.ROOT);
         if (s.isEmpty() || s.equals(OWN_ATHLETE_ID)) return OWN_ATHLETE_ID;
         if (s.startsWith("i")) s = s.substring(1);
-        if (!s.matches("[0-9]{1,12}")) return null;
+        if (!s.matches("\\d{1,12}")) return null;
         return "i" + s;
     }
 
@@ -38,7 +38,7 @@ public final class IntervalsIcuExport {
     public static boolean isValidApiKey(String key) {
         if (key == null) return false;
         String k = key.trim();
-        return !k.isEmpty() && !k.matches(".*\\s.*");
+        return k.matches("\\S+");
     }
 
     public static String basicAuthHeader(String apiKey) {
