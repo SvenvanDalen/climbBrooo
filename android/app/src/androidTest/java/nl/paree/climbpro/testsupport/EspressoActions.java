@@ -54,7 +54,7 @@ public final class EspressoActions {
             SeekBar bar = (SeekBar) view;
             int[] xy = new int[2];
             bar.getLocationOnScreen(xy);
-            float track = bar.getWidth() - bar.getPaddingLeft() - bar.getPaddingRight();
+            float track = (float) (bar.getWidth() - bar.getPaddingLeft() - bar.getPaddingRight());
             float x = xy[0] + bar.getPaddingLeft() + track * fraction;
             float y = xy[1] + bar.getHeight() / 2f;
             return new float[]{x, y};

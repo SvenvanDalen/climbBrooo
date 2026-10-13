@@ -33,7 +33,7 @@ public class SegmenterTest {
         List<Segment> segs = Segmenter.segment(climb);
         int total = 0;
         for (Segment s : segs) total += s.distance;
-        assertEquals("sum(segment.distance) should equal climb length", 2000, total, 2);
+        assertEquals("sum(segment.distance) should equal climb length", 2000, (float) total, 2);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class SegmenterTest {
         List<CalibrationPoint> cps = Segmenter.calibrationPoints(climb);
         assertFalse("at least one calibration point expected", cps.isEmpty());
         CalibrationPoint last = cps.get(cps.size() - 1);
-        assertEquals("last point at climb end", 800, last.distanceFromClimbStart, 2);
+        assertEquals("last point at climb end", 800, (float) last.distanceFromClimbStart, 2);
     }
 
     @Test
@@ -177,6 +177,6 @@ public class SegmenterTest {
         List<Segment> segs = Segmenter.segment(climb, 8);
         int total = 0;
         for (Segment s : segs) total += s.distance;
-        assertEquals("sum = climb length for 8 segments", 3000, total, 2);
+        assertEquals("sum = climb length for 8 segments", 3000, (float) total, 2);
     }
 }

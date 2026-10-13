@@ -117,7 +117,7 @@ public final class ClimbPeriodizationActivity extends AppCompatActivity {
         tv.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         tv.setText(value);
-        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, (float) sp);
         tv.setTextColor(ContextCompat.getColor(this, colorRes));
         return tv;
     }
