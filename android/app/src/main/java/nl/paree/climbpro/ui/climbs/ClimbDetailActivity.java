@@ -233,6 +233,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
     /** Length, gradient, gain and shape, then category and surface when known. */
     private String climbStatsText(StoredClimb climb) {
+        if (climb == null) return "";
         String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
         String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(climb);
         // Issue #262: length and gain in the rider's display units.

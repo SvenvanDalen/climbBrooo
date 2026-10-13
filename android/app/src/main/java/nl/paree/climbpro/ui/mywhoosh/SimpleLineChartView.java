@@ -149,7 +149,7 @@ public final class SimpleLineChartView extends View {
             float y = y(v, min, max, area.top, area.bottom, s.invertY);
             if (pen) path.lineTo(x, y); else path.moveTo(x, y);
             pen = true;
-            boolean hi = s.highlighted != null && s.highlighted.contains(i);
+            boolean hi = s.highlighted != null && s.highlighted.contains(Integer.valueOf(i));
             canvas.drawCircle(x, y, (hi ? 6 : 3) * density, dot);
         }
         return path;

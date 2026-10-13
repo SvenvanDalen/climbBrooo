@@ -868,7 +868,7 @@ public final class RouteListActivity extends AppCompatActivity {
         input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
                 | android.text.InputType.TYPE_TEXT_VARIATION_URI);
         String clip = clipboardText();
-        if (ShareLink.find(clip) != null) {
+        if (clip != null && ShareLink.find(clip) != null) {
             input.setText(clip.trim());
         }
         int pad = Math.round(20 * getResources().getDisplayMetrics().density);

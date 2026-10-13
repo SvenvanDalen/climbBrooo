@@ -104,7 +104,7 @@ final class RideStoryImageComposer {
 
         Paint footer = text(30, TEXT_DIM, false);
         footer.setTextAlign(Paint.Align.CENTER);
-        c.drawText("ClimbPro", WIDTH / 2f, HEIGHT - 48, footer);
+        c.drawText("ClimbPro", WIDTH / 2f, HEIGHT - 48f, footer);
         return bitmap;
     }
 

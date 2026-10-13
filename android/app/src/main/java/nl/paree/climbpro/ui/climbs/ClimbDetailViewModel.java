@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class ClimbDetailViewModel extends AndroidViewModel {
 
@@ -84,10 +85,10 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     /** Separate thread so a slow/offline weather request never blocks the other work. */
     private final ExecutorService windExecutor = Executors.newSingleThreadExecutor();
     /** Forecast at the climb top, cached per loaded climb; null until fetched or when offline. */
-    private volatile HourlyForecast windForecast;
+    private final AtomicReference<HourlyForecast> windForecast = new AtomicReference<>();
 
-    private volatile StoredClimb lastClimb;
-    private volatile StoredRoute lastRoute;
+    private final AtomicReference<StoredClimb> lastClimb = new AtomicReference<>();
+    private final AtomicReference<StoredRoute> lastRoute = new AtomicReference<>();
     private volatile int lastClimbIndex;
 
     public ClimbDetailViewModel(@NonNull Application app) {
@@ -180,13 +181,13 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
-                lastRoute = r;
-                windForecast = null; // other climb, other place: fetch the wind afresh
+                lastRoute.set(r);
+                windForecast.set(null); // other climb, other place: fetch the wind afresh
                 lastClimbIndex = climbIndex;
                 route.postValue(r);
                 if (r.climbs != null && climbIndex < r.climbs.size()) {
                     StoredClimb loaded = r.climbs.get(climbIndex);
-                    lastClimb = loaded;
+                    lastClimb.set(loaded);
                     climb.postValue(loaded);
                     computeEstimate(loaded);
                     int len = loaded.length > 0
@@ -447,7 +448,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * the climb time, 3–10 min). One repeat is the plain climb workout.
      */
     public void exportWorkout(WorkoutFormat format, int repeats, int recoverySec) {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c == null || c.segments == null || c.segments.isEmpty()) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -534,7 +535,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * and attempt count, since intervals.icu has no climb object of its own.
      */
     public void pushToIntervals(int repeats, int recoverySec, LocalDate date, boolean indoor) {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c == null || c.segments == null || c.segments.isEmpty()) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -576,8 +577,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     }
 
     public void exportGpx() {
-        StoredClimb c = lastClimb;
-        StoredRoute r = lastRoute;
+        StoredClimb c = lastClimb.get();
+        StoredRoute r = lastRoute.get();
         if (c == null || r == null) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -635,7 +636,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      */
     public void saveAttemptNote(String routeId, int climbIndex, long activityId, int passIndex,
                                  String note, String companions, android.net.Uri photoUri) {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c == null) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -725,7 +726,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
 
     /** Recompute using the latest saved rider profile (call from Activity.onResume). */
     public void refreshEstimate() {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c != null) {
             executor.execute(() -> computeEstimate(c));
         }
@@ -768,7 +769,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 nl.paree.climbpro.domain.power.SegmentIntensityZones.zones(c.segments, profile));
 
         // Preferred path: whole-route, fatigue-aware estimate.
-        StoredRoute r = lastRoute;
+        StoredRoute r = lastRoute.get();
         ClimbTimeEstimate estimate = null;
         if (r != null) {
             List<RouteTile> tiles = RouteEffortProfileBuilder.build(r);
@@ -822,22 +823,22 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         }
         double mass = profile.totalMassKg();
         double power = estimate.assumedPowerWatts;
-        HourlyForecast cached = windForecast;
+        HourlyForecast cached = windForecast.get();
         if (cached == null) {
             windImpact.postValue(new WindImpactState(estimate, null, true));
         }
         windExecutor.execute(() -> {
-            HourlyForecast f = windForecast;
+            HourlyForecast f = windForecast.get();
             if (f == null) {
                 try {
                     f = new OpenMeteoClient().fetch(ClimbEndpoints.top(r, c));
-                    windForecast = f;
+                    windForecast.set(f);
                 } catch (Exception e) {
                     android.util.Log.i(TAG, "No wind forecast, estimate stays uncorrected: "
                             + e.getMessage());
                 }
             }
-            if (c != lastClimb) return; // user moved on to another climb meanwhile
+            if (c != lastClimb.get()) return; // user moved on to another climb meanwhile
             WindImpactEstimator.Result result = ClimbWindImpact.compute(
                     r, c, f, java.time.Instant.now(), mass, power);
             windImpact.postValue(new WindImpactState(estimate, result, false));
