@@ -78,8 +78,11 @@ public class ClimbTimeEstimatorTest {
 
     @Test
     public void mismatchedArrayLengthsThrow() {
+        int[] distances = {1000};
+        double[] gradients = {0.05};
+        int[] surfaces = asphalt(2);
         try {
-            ClimbTimeEstimator.estimate(new int[]{1000}, new double[]{0.05}, asphalt(2), RIDER);
+            ClimbTimeEstimator.estimate(distances, gradients, surfaces, RIDER);
             fail("expected IllegalArgumentException");
         } catch (IllegalArgumentException expected) {
             // ok

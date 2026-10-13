@@ -65,9 +65,10 @@ public class ClimbPayloadBuilderActivePayloadTest {
 
     @Test
     public void singleClimbPayload_indexOutOfRange_throws() {
+        ClimbPayloadBuilder builder = new ClimbPayloadBuilder(mapper);
+        StoredRoute route = routeWithTwoClimbs();
         assertThrows(IllegalArgumentException.class, () ->
-                new ClimbPayloadBuilder(mapper)
-                        .buildSingleClimbPayload(routeWithTwoClimbs(), 7));
+                builder.buildSingleClimbPayload(route, 7));
     }
 
     @Test

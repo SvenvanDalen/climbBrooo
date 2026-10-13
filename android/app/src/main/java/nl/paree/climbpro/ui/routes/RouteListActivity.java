@@ -960,6 +960,20 @@ public final class RouteListActivity extends AppCompatActivity {
                 .show();
     }
 
+    /** Gives every climb of a freshly imported route the detected surface type. */
+    private static void applyDetectedSurface(RouteRepository repo, String routeId, int surface) {
+        try {
+            StoredRoute saved = repo.loadRoute(routeId);
+            if (saved.climbs != null) {
+                for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                    repo.setBulkClimbSurfaceType(routeId, ci, surface);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Surface type detection failed: " + e.getMessage());
+        }
+    }
+
     private void finishImport(String name, byte[] bytes, List<RoutePoint> simple,
                               List<Climb> climbs, int detectedSurface,
                               boolean myWhoosh, boolean virtual) {
@@ -979,16 +993,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 repo.saveRoute(stored, simple, climbs);
             }
             if (detectedSurface != SurfaceType.UNKNOWN) {
-                try {
-                    StoredRoute saved = repo.loadRoute(routeId);
-                    if (saved.climbs != null) {
-                        for (int ci = 0; ci < saved.climbs.size(); ci++) {
-                            repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.w(TAG, "Surface type detection failed: " + e.getMessage());
-                }
+                applyDetectedSurface(repo, routeId, detectedSurface);
             }
             runOnUiThread(() -> {
                 viewModel.loadRoutes();
