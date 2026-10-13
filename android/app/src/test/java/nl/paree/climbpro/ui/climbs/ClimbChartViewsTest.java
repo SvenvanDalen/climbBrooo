@@ -226,5 +226,7 @@ public class ClimbChartViewsTest {
         ClimbCompareProfileView cp = new ClimbCompareProfileView(ctx);
         cp.setProfiles(new double[]{0, 10}, new double[]{0, 1}, null, null);
         nl.paree.climbpro.ui.UiTestEnv.draw(cp, 300, 150);
+        assertEquals(120, p.getHeight());
+        assertEquals(150, cp.getHeight());
     }
 }

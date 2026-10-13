@@ -7,6 +7,7 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.rider.WeightHistory;
 
 import org.junit.Test;
 
@@ -86,10 +87,10 @@ public class CsvExporterTest {
 
         assertEquals("datum,klim,route,klim_id,tijd_sec,tijd,lengte_m,hoogtemeters,"
                 + "gem_snelheid_kmh,vam_m_per_uur,doorgang,afwijkend_gereden,activiteit_id,"
-                + "notitie,meegereden_met", lines[0]);
+                + "notitie,meegereden_met,gem_vermogen_w,w_per_kg,gem_hartslag_bpm,gem_cadans_rpm", lines[0]);
         // 1200 m in 240 s = 18.0 km/h; 60 m in 240 s = 900 m/h.
         assertEquals("2023-11-14 22:13,Cauberg (eigen),Rondje," + ClimbIdentity.of(c)
-                + ",240,0:04:00,1200,60,18.0,900,1,ja,42,wind tegen,\"Anna, Bas\"", lines[1]);
+                + ",240,0:04:00,1200,60,18.0,900,1,ja,42,wind tegen,\"Anna, Bas\",,,,", lines[1]);
     }
 
     @Test
@@ -99,7 +100,7 @@ public class CsvExporterTest {
         String[] lines = CsvExporter.attemptsCsv(
                 Collections.singletonList(a), Collections.emptyList(), UTC).split("\r\n");
 
-        assertEquals("2023-11-14 22:13,,,gone,300,0:05:00,,,,,1,nee,42,,", lines[1]);
+        assertEquals("2023-11-14 22:13,,,gone,300,0:05:00,,,,,1,nee,42,,,,,,", lines[1]);
     }
 
     @Test
@@ -117,6 +118,38 @@ public class CsvExporterTest {
         assertTrue(lines[1].contains(",0,,1000,50,,,1,"));
         assertTrue(lines[2].startsWith("2033-05-18"));
     }
+    @Test
+    public void attemptsCsv_powerWattsPerKgHeartRateAndCadence() {
+        StoredClimb c = climb("Alpe", 1000, 50);
+        StoredClimbAttempt a = attempt(ClimbIdentity.of(c), 1_700_000_000L, 240);
+        a.avgWatts = 280;
+        a.avgHeartrate = 165;
+        a.avgCadence = 88;
+        WeightHistory weights = new WeightHistory(Collections.emptyList(), 70, UTC);
+
+        String[] lines = CsvExporter.attemptsCsv(Collections.singletonList(a),
+                Collections.singletonList(route("r", "R", c)), UTC, weights).split("\r\n");
+
+        assertTrue(lines[1].endsWith(",280,4.00,165,88"));
+    }
+
+    @Test
+    public void attemptsCsv_wattsPerKgEmptyWithoutWeightHistoryOrPower() {
+        StoredClimb c = climb("Alpe", 1000, 50);
+        StoredClimbAttempt withPower = attempt(ClimbIdentity.of(c), 1_700_000_000L, 240);
+        withPower.avgWatts = 280;
+        StoredClimbAttempt noPower = attempt(ClimbIdentity.of(c), 1_700_000_100L, 240);
+        WeightHistory weights = new WeightHistory(Collections.emptyList(), 70, UTC);
+
+        String[] noWeights = CsvExporter.attemptsCsv(Collections.singletonList(withPower),
+                Collections.singletonList(route("r", "R", c)), UTC).split("\r\n");
+        String[] noWatts = CsvExporter.attemptsCsv(Collections.singletonList(noPower),
+                Collections.singletonList(route("r", "R", c)), UTC, weights).split("\r\n");
+
+        assertTrue(noWeights[1].endsWith(",280,,,"));
+        assertTrue(noWatts[1].endsWith(",,,,"));
+    }
+
     @Test
     public void bomIsTheUtf8ByteOrderMark() {
         assertEquals("\uFEFF", CsvExporter.BOM); // Excel needs it to read accents as UTF-8

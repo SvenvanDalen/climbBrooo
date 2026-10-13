@@ -76,43 +76,61 @@ public final class PainPatternAnalyzer {
         Map<String, int[]> bikeAgg = new LinkedHashMap<>();
         Map<String, int[]> setupAgg = new LinkedHashMap<>();
         for (PainLogEntry e : list) {
-            if (e.areas != null) {
-                for (String name : new java.util.LinkedHashSet<>(e.areas)) {
-                    PainArea a = PainArea.fromName(name);
-                    if (a != null) add(areaAgg, a.label, e.severity);
-                }
-            }
+            addAreas(areaAgg, e);
             if (e.bike != null) add(bikeAgg, e.bike, e.severity);
             if (e.setup != null) add(setupAgg, e.setup, e.severity);
         }
 
         double complaintKm = 0;
         double allKm = 0;
-        Map<Long, StoredRide> byId = new HashMap<>();
-        List<StoredRide> outdoor = new ArrayList<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                if (r == null || r.distanceM <= 0 || VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type)) {
-                    continue;
-                }
-                outdoor.add(r);
-                byId.put(r.activityId, r);
-            }
+        List<StoredRide> outdoor = outdoorRides(rides);
+        List<StoredRide> linked = linkedRides(list, outdoor);
+        if (linked.size() >= MIN_LINKED_FOR_DISTANCE && outdoor.size() >= MIN_RIDES_FOR_DISTANCE) {
+            complaintKm = avgKm(linked);
+            allKm = avgKm(outdoor);
         }
+
+        return new Report(list.size(), toStats(areaAgg), statsIfCompared(bikeAgg),
+                statsIfCompared(setupAgg), complaintKm, allKm);
+    }
+
+    /** Each distinct known area of the entry counts once. */
+    private static void addAreas(Map<String, int[]> areaAgg, PainLogEntry e) {
+        if (e.areas == null) return;
+        for (String name : new java.util.LinkedHashSet<>(e.areas)) {
+            PainArea a = PainArea.fromName(name);
+            if (a != null) add(areaAgg, a.label, e.severity);
+        }
+    }
+
+    private static List<StoredRide> outdoorRides(List<StoredRide> rides) {
+        List<StoredRide> outdoor = new ArrayList<>();
+        if (rides == null) return outdoor;
+        for (StoredRide r : rides) {
+            if (r == null || r.distanceM <= 0 || VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type)) {
+                continue;
+            }
+            outdoor.add(r);
+        }
+        return outdoor;
+    }
+
+    /** The distinct outdoor rides the entries are linked to. */
+    private static List<StoredRide> linkedRides(List<PainLogEntry> list, List<StoredRide> outdoor) {
+        Map<Long, StoredRide> byId = new HashMap<>();
+        for (StoredRide r : outdoor) byId.put(r.activityId, r);
         List<StoredRide> linked = new ArrayList<>();
         java.util.Set<Long> seen = new java.util.HashSet<>();
         for (PainLogEntry e : list) {
             StoredRide r = e.rideActivityId > 0 ? byId.get(e.rideActivityId) : null;
             if (r != null && seen.add(r.activityId)) linked.add(r);
         }
-        if (linked.size() >= MIN_LINKED_FOR_DISTANCE && outdoor.size() >= MIN_RIDES_FOR_DISTANCE) {
-            complaintKm = avgKm(linked);
-            allKm = avgKm(outdoor);
-        }
+        return linked;
+    }
 
-        return new Report(list.size(), toStats(areaAgg), bikeAgg.size() >= 2
-                ? toStats(bikeAgg) : new ArrayList<>(), setupAgg.size() >= 2
-                ? toStats(setupAgg) : new ArrayList<>(), complaintKm, allKm);
+    /** A comparison only makes sense with at least two bikes/setups. */
+    private static List<Stat> statsIfCompared(Map<String, int[]> agg) {
+        return agg.size() >= 2 ? toStats(agg) : new ArrayList<>();
     }
 
     private static void add(Map<String, int[]> agg, String key, int severity) {

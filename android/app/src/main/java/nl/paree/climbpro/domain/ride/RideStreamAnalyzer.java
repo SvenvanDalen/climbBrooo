@@ -6,7 +6,8 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
  * Derives per-ride efforts from Strava streams: fastest distances (issue #225), sprints
  * (issue #224), heart-rate drift (issue #222), the power curve (issue #219), time per
  * heart rate and power level (issue #218), normalized power (issue #391), cadence per
- * gradient class (issue #403) and heart-rate recovery after intervals (issue #402). Runs once per ride on the phone during the
+ * gradient class (issue #403), heart rate per gradient class (issue #24) and heart-rate
+ * recovery after intervals (issue #402). Runs once per ride on the phone during the
  * ride-archive sync; only the result is stored.
  */
 public final class RideStreamAnalyzer {
@@ -14,7 +15,7 @@ public final class RideStreamAnalyzer {
     private RideStreamAnalyzer() {}
 
     /** Bump when the analysis changes, so stored stats from an older version are redone. */
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
 
     /** Sprint windows (issue #224): peak power over 5 and 15 s, peak speed over 10 s. */
     public static final int SPRINT_POWER_SHORT_SEC = 5;
@@ -68,6 +69,11 @@ public final class RideStreamAnalyzer {
             st.cadenceGradeSec = cadence.seconds;
             st.cadenceGradeRevs = cadence.revolutions;
         }
+        HeartRateByGradeAnalyzer.Result hrGrade = HeartRateByGradeAnalyzer.analyze(streams);
+        if (hrGrade != null) {
+            st.hrGradeSec = hrGrade.seconds;
+            st.hrGradeBeats = hrGrade.beats;
+        }
         st.hrRecoveryDrops = HeartRateRecoveryAnalyzer.drops(streams);
         return st;
     }
@@ -93,16 +99,26 @@ public final class RideStreamAnalyzer {
             }
             if (start < firstClean) start = firstClean;
             if (d[j] - d[firstClean] < targetM) continue;
-            // Advance while the next sample still leaves a full target distance to j.
-            while (start + 1 < j && d[j] - d[start + 1] >= targetM) start++;
-            double startDist = d[j] - targetM;
-            double span = d[start + 1] - d[start];
-            double frac = span > 0 ? (startDist - d[start]) / span : 0;
-            double startTime = t[start] + frac * (t[start + 1] - t[start]);
-            double elapsed = t[j] - startTime;
+            start = latestWindowStart(d, start, j, targetM);
+            double elapsed = windowElapsed(t, d, start, j, targetM);
             if (elapsed > 0 && elapsed < best) best = elapsed;
         }
         return best == Double.POSITIVE_INFINITY ? null : (int) Math.round(best);
+    }
+
+    /** Advance while the next sample still leaves a full target distance to j. */
+    private static int latestWindowStart(double[] d, int start, int j, double targetM) {
+        while (start + 1 < j && d[j] - d[start + 1] >= targetM) start++;
+        return start;
+    }
+
+    /** Seconds to sample j from the point exactly {@code targetM} before it (interpolated). */
+    private static double windowElapsed(int[] t, double[] d, int start, int j, double targetM) {
+        double startDist = d[j] - targetM;
+        double span = d[start + 1] - d[start];
+        double frac = span > 0 ? (startDist - d[start]) / span : 0;
+        double startTime = t[start] + frac * (t[start + 1] - t[start]);
+        return t[j] - startTime;
     }
 
     static boolean isPlausible(int t0, double d0, int t1, double d1) {

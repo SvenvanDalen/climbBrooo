@@ -61,54 +61,62 @@ public final class ZoneDistributionActivity extends AppCompatActivity {
         EditText maxHrInput = findViewById(R.id.input_max_hr);
 
         viewModel = new ViewModelProvider(this).get(ZoneDistributionViewModel.class);
-        findViewById(R.id.btn_save_max_hr).setOnClickListener(v -> {
-            String text = maxHrInput.getText().toString().trim();
-            int bpm;
-            try {
-                bpm = text.isEmpty() ? 0 : Integer.parseInt(text);
-            } catch (NumberFormatException e) {
-                bpm = -1;
-            }
-            if (bpm != 0 && (bpm < MIN_MAX_HR || bpm > MAX_MAX_HR)) {
-                Toast.makeText(this, "Vul een maximale hartslag tussen " + MIN_MAX_HR + " en "
-                        + MAX_MAX_HR + " in, of laat het leeg.", Toast.LENGTH_LONG).show();
-                return;
-            }
-            viewModel.setMaxHeartRate(bpm);
-        });
+        findViewById(R.id.btn_save_max_hr).setOnClickListener(v -> saveMaxHeartRate(maxHrInput));
 
         viewModel.state().observe(this, st -> {
             if (st.maxHrIsSet && maxHrInput.getText().length() == 0) {
                 maxHrInput.setText(String.valueOf(st.maxHr));
             }
             thresholds.setText(thresholdText(st));
-
-            rows.removeAllViews();
-            ZoneCalculator.Result r = st.result;
-            String pending = st.ridesAwaitingAnalysis > 0
-                    ? " Nog " + st.ridesAwaitingAnalysis + " rit(ten) te analyseren; dat gebeurt "
-                    + "in stappen bij elke sync." : "";
-            if (r.entries.isEmpty()) {
-                empty.setVisibility(View.VISIBLE);
-                empty.setText(st.archivedRides == 0
-                        ? "Nog geen ritten in het archief. Open Ritten en tik op Ophalen."
-                        : "Nog geen rit met hartslag- of vermogensdata." + pending);
-                return;
-            }
-            empty.setVisibility(pending.isEmpty() ? View.GONE : View.VISIBLE);
-            empty.setText(pending.trim());
-            addRow(rows, "Laatste " + ZoneCalculator.TOTAL_WINDOW_DAYS / 7 + " weken", null,
-                    r.recentHrZones, r.recentPowerZones);
-            int shown = Math.min(MAX_ROWS, r.entries.size());
-            for (int i = 0; i < shown; i++) {
-                ZoneCalculator.Entry e = r.entries.get(i);
-                String date = e.ride.startEpochSec > 0
-                        ? dateFormat.format(new Date(e.ride.startEpochSec * 1000L))
-                        : "onbekende datum";
-                String name = e.ride.name != null && !e.ride.name.isEmpty() ? e.ride.name : "Rit";
-                addRow(rows, date, name, e.hrZones, e.powerZones);
-            }
+            renderZones(st, empty, rows);
         });
+    }
+
+    /** Empty clears the max heart rate; anything else must be a plausible value. */
+    private void saveMaxHeartRate(EditText maxHrInput) {
+        String text = maxHrInput.getText().toString().trim();
+        int bpm;
+        try {
+            bpm = text.isEmpty() ? 0 : Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            bpm = -1;
+        }
+        if (bpm != 0 && (bpm < MIN_MAX_HR || bpm > MAX_MAX_HR)) {
+            Toast.makeText(this, "Vul een maximale hartslag tussen " + MIN_MAX_HR + " en "
+                    + MAX_MAX_HR + " in, of laat het leeg.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        viewModel.setMaxHeartRate(bpm);
+    }
+
+    private void renderZones(ZoneDistributionViewModel.State st, TextView empty,
+                             LinearLayout rows) {
+        rows.removeAllViews();
+        ZoneCalculator.Result r = st.result;
+        String pending = st.ridesAwaitingAnalysis > 0
+                ? " Nog " + st.ridesAwaitingAnalysis + " rit(ten) te analyseren; dat gebeurt "
+                + "in stappen bij elke sync." : "";
+        if (r.entries.isEmpty()) {
+            empty.setVisibility(View.VISIBLE);
+            empty.setText(st.archivedRides == 0
+                    ? "Nog geen ritten in het archief. Open Ritten en tik op Ophalen."
+                    : "Nog geen rit met hartslag- of vermogensdata." + pending);
+            return;
+        }
+        empty.setVisibility(pending.isEmpty() ? View.GONE : View.VISIBLE);
+        empty.setText(pending.trim());
+        addRow(rows, "Laatste " + ZoneCalculator.TOTAL_WINDOW_DAYS / 7 + " weken", null,
+                r.recentHrZones, r.recentPowerZones);
+        int shown = Math.min(MAX_ROWS, r.entries.size());
+        for (int i = 0; i < shown; i++) addRideRow(rows, r.entries.get(i));
+    }
+
+    private void addRideRow(LinearLayout rows, ZoneCalculator.Entry e) {
+        String date = e.ride.startEpochSec > 0
+                ? dateFormat.format(new Date(e.ride.startEpochSec * 1000L))
+                : "onbekende datum";
+        String name = e.ride.name != null && !e.ride.name.isEmpty() ? e.ride.name : "Rit";
+        addRow(rows, date, name, e.hrZones, e.powerZones);
     }
 
     @Override

@@ -107,50 +107,62 @@ public final class FitTrackDecoder {
             int header = d[p++] & 0xFF;
             if ((header & 0x80) != 0) {
                 // Compressed timestamp header: local type in bits 5-6, 5-bit time offset.
-                Definition def = defs[(header >> 5) & 0x03];
-                if (def == null) throw new IOException("FIT-data zonder definitie");
-                if (p + def.size > end) throw new IOException("FIT-bestand is afgekapt");
-                int offset = header & 0x1F;
-                long ts = -1;
-                if (lastTimestamp >= 0) {
-                    ts = (lastTimestamp & ~0x1FL) + offset;
-                    if (offset < (lastTimestamp & 0x1F)) ts += 0x20; // 5-bit rollover
-                }
+                Definition def = requireDefinition(defs[(header >> 5) & 0x03], p, end);
+                long ts = compressedTimestamp(lastTimestamp, header & 0x1F);
                 lastTimestamp = readData(d, p, def, lastTimestamp, ts, out);
                 p += def.size;
             } else if ((header & 0x40) != 0) {
-                boolean devData = (header & 0x20) != 0;
                 Definition def = new Definition();
-                p++; // reserved
-                def.bigEndian = d[p++] == 1;
-                def.global = (int) (def.bigEndian ? u16be(d, p) : u16le(d, p));
-                p += 2;
-                int fields = d[p++] & 0xFF;
-                def.nums = new int[fields];
-                def.sizes = new int[fields];
-                for (int i = 0; i < fields; i++) {
-                    def.nums[i] = d[p] & 0xFF;
-                    def.sizes[i] = d[p + 1] & 0xFF;
-                    def.size += def.sizes[i];
-                    p += 3;
-                }
-                if (devData) {
-                    int devFields = d[p++] & 0xFF;
-                    for (int i = 0; i < devFields; i++) {
-                        def.size += d[p + 1] & 0xFF;
-                        p += 3;
-                    }
-                }
+                p = readDefinition(d, p, (header & 0x20) != 0, def);
                 defs[header & 0x0F] = def;
             } else {
-                Definition def = defs[header & 0x0F];
-                if (def == null) throw new IOException("FIT-data zonder definitie");
-                if (p + def.size > end) throw new IOException("FIT-bestand is afgekapt");
+                Definition def = requireDefinition(defs[header & 0x0F], p, end);
                 lastTimestamp = readData(d, p, def, lastTimestamp, -1, out);
                 p += def.size;
             }
         }
         return end + 2; // skip the file CRC
+    }
+
+    /** A data message's definition must exist and its data must fit before {@code end}. */
+    private static Definition requireDefinition(Definition def, int p, int end)
+            throws IOException {
+        if (def == null) throw new IOException("FIT-data zonder definitie");
+        if (p + def.size > end) throw new IOException("FIT-bestand is afgekapt");
+        return def;
+    }
+
+    /** Full timestamp of a compressed header; -1 while no full timestamp was seen yet. */
+    private static long compressedTimestamp(long lastTimestamp, int offset) {
+        if (lastTimestamp < 0) return -1;
+        long ts = (lastTimestamp & ~0x1FL) + offset;
+        if (offset < (lastTimestamp & 0x1F)) ts += 0x20; // 5-bit rollover
+        return ts;
+    }
+
+    /** Reads a definition message body at {@code p} into {@code def}; returns the offset after it. */
+    private static int readDefinition(byte[] d, int p, boolean devData, Definition def) {
+        p++; // reserved
+        def.bigEndian = d[p++] == 1;
+        def.global = (int) u16(d, p, def.bigEndian);
+        p += 2;
+        int fields = d[p++] & 0xFF;
+        def.nums = new int[fields];
+        def.sizes = new int[fields];
+        for (int i = 0; i < fields; i++) {
+            def.nums[i] = d[p] & 0xFF;
+            def.sizes[i] = d[p + 1] & 0xFF;
+            def.size += def.sizes[i];
+            p += 3;
+        }
+        if (devData) {
+            int devFields = d[p++] & 0xFF;
+            for (int i = 0; i < devFields; i++) {
+                def.size += d[p + 1] & 0xFF;
+                p += 3;
+            }
+        }
+        return p;
     }
 
     /**
@@ -161,41 +173,73 @@ public final class FitTrackDecoder {
      */
     private static long readData(byte[] d, int p, Definition def, long lastTimestamp,
                                  long knownTs, List<Record> out) {
-        long ts = knownTs;
-        int lat = INVALID_SINT32, lon = INVALID_SINT32;
-        double altitude = Double.NaN, enhancedAltitude = Double.NaN, distance = Double.NaN;
+        RecordFields f = new RecordFields(knownTs);
         int q = p;
         for (int i = 0; i < def.nums.length; i++) {
             int num = def.nums[i], size = def.sizes[i];
             if (num == FIELD_TIMESTAMP && size == 4) {
                 long v = u32(d, q, def.bigEndian);
-                if (v != 0xFFFFFFFFL) ts = v;
-            } else if (def.global == MESG_RECORD && num == FIELD_LAT && size == 4) {
-                lat = (int) u32(d, q, def.bigEndian);
-            } else if (def.global == MESG_RECORD && num == FIELD_LON && size == 4) {
-                lon = (int) u32(d, q, def.bigEndian);
-            } else if (def.global == MESG_RECORD && num == FIELD_ALTITUDE && size == 2) {
-                long v = def.bigEndian ? u16be(d, q) : u16le(d, q);
-                if (v != 0xFFFFL) altitude = v / 5.0 - 500.0;
-            } else if (def.global == MESG_RECORD && num == FIELD_ENHANCED_ALTITUDE && size == 4) {
-                long v = u32(d, q, def.bigEndian);
-                if (v != 0xFFFFFFFFL) enhancedAltitude = v / 5.0 - 500.0;
-            } else if (def.global == MESG_RECORD && num == FIELD_DISTANCE && size == 4) {
-                long v = u32(d, q, def.bigEndian);
-                if (v != 0xFFFFFFFFL) distance = v / 100.0;
+                if (v != 0xFFFFFFFFL) f.ts = v;
+            } else if (def.global == MESG_RECORD) {
+                readRecordField(d, q, def.bigEndian, num, size, f);
             }
             q += size;
         }
-        if (def.global == MESG_RECORD) {
+        if (def.global == MESG_RECORD) out.add(f.toRecord());
+        return f.ts >= 0 ? f.ts : lastTimestamp;
+    }
+
+    private static void readRecordField(byte[] d, int q, boolean bigEndian, int num, int size,
+                                        RecordFields f) {
+        if (size == 4) {
+            readRecordField32(num, u32(d, q, bigEndian), f);
+        } else if (num == FIELD_ALTITUDE && size == 2) {
+            long v = u16(d, q, bigEndian);
+            if (v != 0xFFFFL) f.altitude = v / 5.0 - 500.0;
+        }
+    }
+
+    private static void readRecordField32(int num, long v, RecordFields f) {
+        switch (num) {
+            case FIELD_LAT:
+                f.lat = (int) v;
+                break;
+            case FIELD_LON:
+                f.lon = (int) v;
+                break;
+            case FIELD_ENHANCED_ALTITUDE:
+                if (v != 0xFFFFFFFFL) f.enhancedAltitude = v / 5.0 - 500.0;
+                break;
+            case FIELD_DISTANCE:
+                if (v != 0xFFFFFFFFL) f.distance = v / 100.0;
+                break;
+            default:
+                break;
+        }
+    }
+
+    /** Raw field values of one {@code record} message while it is being read. */
+    private static final class RecordFields {
+        long ts;
+        int lat = INVALID_SINT32;
+        int lon = INVALID_SINT32;
+        double altitude = Double.NaN;
+        double enhancedAltitude = Double.NaN;
+        double distance = Double.NaN;
+
+        RecordFields(long knownTs) {
+            this.ts = knownTs;
+        }
+
+        Record toRecord() {
             boolean positioned = lat != INVALID_SINT32 && lon != INVALID_SINT32;
-            out.add(new Record(
+            return new Record(
                     positioned ? lat * SEMICIRCLE_TO_DEG : Double.NaN,
                     positioned ? lon * SEMICIRCLE_TO_DEG : Double.NaN,
                     Double.isNaN(enhancedAltitude) ? altitude : enhancedAltitude,
                     distance,
-                    ts >= 0 ? ts + FIT_EPOCH_OFFSET : -1));
+                    ts >= 0 ? ts + FIT_EPOCH_OFFSET : -1);
         }
-        return ts >= 0 ? ts : lastTimestamp;
     }
 
     private static final class Definition {
@@ -212,6 +256,10 @@ public final class FitTrackDecoder {
 
     private static long u16be(byte[] d, int p) {
         return ((d[p] & 0xFF) << 8) | (d[p + 1] & 0xFF);
+    }
+
+    private static long u16(byte[] d, int p, boolean bigEndian) {
+        return bigEndian ? u16be(d, p) : u16le(d, p);
     }
 
     private static long u32(byte[] d, int p, boolean bigEndian) {

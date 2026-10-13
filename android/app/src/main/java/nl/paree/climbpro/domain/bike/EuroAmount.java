@@ -24,31 +24,38 @@ public final class EuroAmount {
         String s = input.replace(' ', ' ').replace("€", "").replaceAll("\\s+", "");
         if (s.isEmpty()) return INVALID;
 
-        String intPart;
-        String fracPart;
-        int comma = s.indexOf(',');
-        if (comma >= 0) {
-            if (s.indexOf(',', comma + 1) >= 0) return INVALID;
-            intPart  = s.substring(0, comma);
-            fracPart = s.substring(comma + 1);
-            if (!validThousands(intPart)) return INVALID;
-            intPart = intPart.replace(".", "");
-        } else {
-            int lastDot = s.lastIndexOf('.');
-            int dots = 0;
-            for (int i = 0; i < s.length(); i++) {
-                if (s.charAt(i) == '.') dots++;
-            }
-            if (dots == 1 && s.length() - lastDot - 1 <= 2) {
-                intPart  = s.substring(0, lastDot);
-                fracPart = s.substring(lastDot + 1);
-            } else {
-                if (!validThousands(s)) return INVALID;
-                intPart  = s.replace(".", "");
-                fracPart = "";
-            }
-        }
+        String[] parts = s.indexOf(',') >= 0 ? splitAtComma(s) : splitWithoutComma(s);
+        if (parts == null) return INVALID;
+        return toCents(parts[0], parts[1]);
+    }
 
+    /** {@code "1.234,5"} → {"1234", "5"}; null for a second comma or bad grouping. */
+    private static String[] splitAtComma(String s) {
+        int comma = s.indexOf(',');
+        if (s.indexOf(',', comma + 1) >= 0) return null;
+        String intPart = s.substring(0, comma);
+        if (!validThousands(intPart)) return null;
+        return new String[]{intPart.replace(".", ""), s.substring(comma + 1)};
+    }
+
+    /**
+     * A single dot followed by at most two digits is a decimal point ({@code "12.5"});
+     * otherwise dots group thousands ({@code "1.234"}). Null for bad grouping.
+     */
+    private static String[] splitWithoutComma(String s) {
+        int lastDot = s.lastIndexOf('.');
+        int dots = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == '.') dots++;
+        }
+        if (dots == 1 && s.length() - lastDot - 1 <= 2) {
+            return new String[]{s.substring(0, lastDot), s.substring(lastDot + 1)};
+        }
+        if (!validThousands(s)) return null;
+        return new String[]{s.replace(".", ""), ""};
+    }
+
+    private static long toCents(String intPart, String fracPart) {
         if (intPart.isEmpty() && fracPart.isEmpty()) return INVALID;
         if (!allDigits(intPart) || !allDigits(fracPart) || fracPart.length() > 2) return INVALID;
         if (intPart.length() > 9) return INVALID; // way above MAX_CENTS, avoids overflow

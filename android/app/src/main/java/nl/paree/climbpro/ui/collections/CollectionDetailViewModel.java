@@ -32,6 +32,7 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<RouteCollection>      collection = new MutableLiveData<>();
     private final MutableLiveData<List<CollectionMember>> members  = new MutableLiveData<>();
     private final MutableLiveData<String>               error      = new MutableLiveData<>();
+    private final MutableLiveData<String>               message    = new MutableLiveData<>();
 
     public CollectionDetailViewModel(@NonNull Application app) {
         super(app);
@@ -42,6 +43,39 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
     public LiveData<RouteCollection>        collection() { return collection; }
     public LiveData<List<CollectionMember>> members()    { return members; }
     public LiveData<String>                 error()      { return error; }
+    public LiveData<String>                 message()    { return message; }
+
+    /**
+     * Rides this collection as a day trip (issue #9): switches the watch sync to the ordered
+     * day-trip payload and syncs right away. The current position is saved with it, so the
+     * riding order (nearest-neighbour from here) stays the same on later resyncs.
+     */
+    public void startDayTrip(String collectionId) {
+        executor.execute(() -> {
+            RouteCollection c = collectionRepo.get(collectionId);
+            if (c == null) {
+                error.postValue("Collectie niet gevonden");
+                return;
+            }
+            android.content.SharedPreferences prefs =
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(getApplication());
+            double[] here = nl.paree.climbpro.service.RadiusLocation.current(getApplication(), prefs);
+            android.content.SharedPreferences.Editor e = prefs.edit()
+                    .putString(nl.paree.climbpro.service.RouteSyncWorker.PREF_MODE,
+                            nl.paree.climbpro.service.RouteSyncWorker.MODE_DAYTRIP)
+                    .putString(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_ID, collectionId);
+            if (here != null) {
+                e.putFloat(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LAT, (float) here[0])
+                 .putFloat(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LON, (float) here[1]);
+            } else {
+                e.remove(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LAT)
+                 .remove(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LON);
+            }
+            e.apply();
+            nl.paree.climbpro.service.SyncScheduler.triggerImmediateSync(getApplication());
+            message.postValue("Dagtocht '" + c.name + "' wordt naar het horloge gestuurd");
+        });
+    }
 
     public void load(String collectionId) {
         executor.execute(() -> {
@@ -99,31 +133,43 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
 
         if (c.routeIds != null) {
             for (String routeId : c.routeIds) {
-                StoredRoute r = loadCached(cache, routeId);
-                String label = r != null ? routeName(r) : "(verwijderde route)";
-                result.add(new CollectionMember(routeId, -1, label != null ? label : routeId));
-                if (r == null || r.climbs == null) continue;
-                for (int i = 0; i < r.climbs.size(); i++) {
-                    if (explicitClimbs.contains(routeId + "#" + i)) continue;
-                    result.add(new CollectionMember(routeId, i,
-                            "   " + climbName(r.climbs.get(i), i), true));
-                }
+                addRouteMembers(result, routeId, loadCached(cache, routeId), explicitClimbs);
             }
         }
         if (c.climbs != null) {
             for (ClimbMembership m : c.climbs) {
-                StoredRoute r = loadCached(cache, m.routeId);
-                String label = "(verwijderde klim)";
-                if (r != null && r.climbs != null
-                        && m.climbIndex >= 0 && m.climbIndex < r.climbs.size()) {
-                    String routeName = routeName(r);
-                    label = climbName(r.climbs.get(m.climbIndex), m.climbIndex)
-                            + " — " + (routeName != null ? routeName : m.routeId);
-                }
-                result.add(new CollectionMember(m.routeId, m.climbIndex, label));
+                result.add(new CollectionMember(m.routeId, m.climbIndex,
+                        climbMemberLabel(m, loadCached(cache, m.routeId))));
             }
         }
         return result;
+    }
+
+    /**
+     * A route member followed by its climbs (indented) — except climbs that are also members
+     * on their own, which are listed with the explicit climbs.
+     */
+    private static void addRouteMembers(List<CollectionMember> result, String routeId,
+                                        StoredRoute r, Set<String> explicitClimbs) {
+        String label = r != null ? routeName(r) : "(verwijderde route)";
+        result.add(new CollectionMember(routeId, -1, label != null ? label : routeId));
+        if (r == null || r.climbs == null) return;
+        for (int i = 0; i < r.climbs.size(); i++) {
+            if (explicitClimbs.contains(routeId + "#" + i)) continue;
+            result.add(new CollectionMember(routeId, i,
+                    "   " + climbName(r.climbs.get(i), i), true));
+        }
+    }
+
+    /** "Climb — Route", or a placeholder when the climb no longer exists. */
+    private static String climbMemberLabel(ClimbMembership m, StoredRoute r) {
+        if (r == null || r.climbs == null
+                || m.climbIndex < 0 || m.climbIndex >= r.climbs.size()) {
+            return "(verwijderde klim)";
+        }
+        String routeName = routeName(r);
+        return climbName(r.climbs.get(m.climbIndex), m.climbIndex)
+                + " — " + (routeName != null ? routeName : m.routeId);
     }
 
     private static String routeName(StoredRoute r) {

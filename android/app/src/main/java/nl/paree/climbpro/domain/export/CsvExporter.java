@@ -4,6 +4,7 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.rider.WeightHistory;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -58,6 +59,18 @@ public final class CsvExporter {
      */
     public static String attemptsCsv(List<StoredClimbAttempt> attempts,
                                      List<StoredRoute> routes, ZoneId zone) {
+        return attemptsCsv(attempts, routes, zone, null);
+    }
+
+    /**
+     * Like {@link #attemptsCsv(List, List, ZoneId)}, with power, W/kg, heart rate and cadence
+     * per attempt (issue #410). W/kg uses the rider's weight on the attempt's date from
+     * {@code weights}; it is empty when {@code weights} is null or power/weight is unknown.
+     * Power, heart rate and cadence are empty when the ride had no such stream.
+     */
+    public static String attemptsCsv(List<StoredClimbAttempt> attempts,
+                                     List<StoredRoute> routes, ZoneId zone,
+                                     WeightHistory weights) {
         Map<String, ClimbInfo> climbs = indexClimbs(routes);
         List<StoredClimbAttempt> sorted = new ArrayList<>(attempts);
         sorted.sort(Comparator.comparingLong((StoredClimbAttempt a) -> a.dateEpochSec)
@@ -66,28 +79,48 @@ public final class CsvExporter {
         StringBuilder sb = new StringBuilder();
         row(sb, "datum", "klim", "route", "klim_id", "tijd_sec", "tijd", "lengte_m",
                 "hoogtemeters", "gem_snelheid_kmh", "vam_m_per_uur", "doorgang",
-                "afwijkend_gereden", "activiteit_id", "notitie", "meegereden_met");
+                "afwijkend_gereden", "activiteit_id", "notitie", "meegereden_met",
+                "gem_vermogen_w", "w_per_kg", "gem_hartslag_bpm", "gem_cadans_rpm");
         for (StoredClimbAttempt a : sorted) {
-            ClimbInfo c = climbs.get(a.climbId);
-            boolean timed = a.elapsedSec > 0;
-            row(sb,
-                    a.dateEpochSec > 0 ? formatMs(a.dateEpochSec * 1000L, zone) : "",
-                    c != null ? c.name : "",
-                    c != null ? c.routeName : "",
-                    a.climbId,
-                    String.valueOf(a.elapsedSec),
-                    timed ? hms(a.elapsedSec) : "",
-                    c != null ? String.valueOf(c.lengthM) : "",
-                    c != null ? String.valueOf(c.gainM) : "",
-                    c != null && timed ? oneDecimal(c.lengthM / (double) a.elapsedSec * 3.6) : "",
-                    c != null && timed ? String.valueOf(Math.round(c.gainM * 3600.0 / a.elapsedSec)) : "",
-                    String.valueOf(a.passIndex + 1),
-                    a.routeDeviation ? "ja" : "nee",
-                    String.valueOf(a.activityId),
-                    a.note,
-                    a.companions);
+            attemptRow(sb, a, climbs.get(a.climbId), zone, weights);
         }
         return sb.toString();
+    }
+
+    private static void attemptRow(StringBuilder sb, StoredClimbAttempt a, ClimbInfo c,
+                                   ZoneId zone, WeightHistory weights) {
+        boolean timed = a.elapsedSec > 0;
+        boolean withSpeed = c != null && timed;
+        row(sb,
+                a.dateEpochSec > 0 ? formatMs(a.dateEpochSec * 1000L, zone) : "",
+                c != null ? c.name : "",
+                c != null ? c.routeName : "",
+                a.climbId,
+                String.valueOf(a.elapsedSec),
+                timed ? hms(a.elapsedSec) : "",
+                c != null ? String.valueOf(c.lengthM) : "",
+                c != null ? String.valueOf(c.gainM) : "",
+                withSpeed ? oneDecimal(c.lengthM / (double) a.elapsedSec * 3.6) : "",
+                withSpeed ? String.valueOf(Math.round(c.gainM * 3600.0 / a.elapsedSec)) : "",
+                String.valueOf(a.passIndex + 1),
+                a.routeDeviation ? "ja" : "nee",
+                String.valueOf(a.activityId),
+                a.note,
+                a.companions,
+                textOrEmpty(a.avgWatts),
+                wattsPerKg(a, weights),
+                textOrEmpty(a.avgHeartrate),
+                textOrEmpty(a.avgCadence));
+    }
+
+    private static String textOrEmpty(Integer value) {
+        return value != null ? String.valueOf(value) : "";
+    }
+
+    private static String wattsPerKg(StoredClimbAttempt a, WeightHistory weights) {
+        if (weights == null || a.dateEpochSec <= 0) return "";
+        Double wkg = weights.wattsPerKg(a.avgWatts, a.dateEpochSec);
+        return wkg != null ? String.format(Locale.US, "%.2f", wkg) : "";
     }
 
     /** Quotes a field when it contains a separator, quote or line break; null becomes empty. */

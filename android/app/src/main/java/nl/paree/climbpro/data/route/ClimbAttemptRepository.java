@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for matched climb attempts.
@@ -25,12 +25,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class ClimbAttemptRepository {
 
     private static final String TAG  = "ClimbAttemptRepo";
-    private static final String FILE = "climb_attempts.json";
+    private static final String FILE_NAME = "climb_attempts.json";
 
     /**
      * Guards the read-modify-write critical sections of {@link #append}, {@link #update},
      * {@link #overwriteAll}, and {@link #remapClimbId} — all of which touch the same
-     * {@link #FILE} but can be invoked from different executors (background Strava sync, a
+     * {@link #FILE_NAME} but can be invoked from different executors (background Strava sync, a
      * user-confirmed climb merge, or a note/photo edit). Without a shared lock these
      * read-modify-write cycles can interleave and one write silently clobbers another. Static
      * (not per-instance) since multiple {@code ClimbAttemptRepository} instances are constructed
@@ -46,7 +46,7 @@ public final class ClimbAttemptRepository {
 
     public ClimbAttemptRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -93,7 +93,7 @@ public final class ClimbAttemptRepository {
             for (StoredClimbAttempt a : attempts) {
                 if (seen.add(key(a))) all.add(a);
             }
-            writeAtomic(file, mapper.writeValueAsBytes(all));
+            AtomicFiles.write(file, mapper.writeValueAsBytes(all));
         } finally {
             WRITE_LOCK.unlock();
         }
@@ -108,7 +108,7 @@ public final class ClimbAttemptRepository {
     public void overwriteAll(List<StoredClimbAttempt> attempts) throws IOException {
         WRITE_LOCK.lock();
         try {
-            writeAtomic(file, mapper.writeValueAsBytes(attempts));
+            AtomicFiles.write(file, mapper.writeValueAsBytes(attempts));
         } finally {
             WRITE_LOCK.unlock();
         }
@@ -138,7 +138,7 @@ public final class ClimbAttemptRepository {
                 }
             }
             if (changed) {
-                writeAtomic(file, mapper.writeValueAsBytes(all));
+                AtomicFiles.write(file, mapper.writeValueAsBytes(all));
             }
             return changed;
         } finally {
@@ -169,7 +169,7 @@ public final class ClimbAttemptRepository {
                     break;
                 }
             }
-            if (found) writeAtomic(file, mapper.writeValueAsBytes(all));
+            if (found) AtomicFiles.write(file, mapper.writeValueAsBytes(all));
             return found;
         } finally {
             WRITE_LOCK.unlock();
@@ -192,7 +192,7 @@ public final class ClimbAttemptRepository {
                     cleared++;
                 }
             }
-            if (cleared > 0) writeAtomic(file, mapper.writeValueAsBytes(all));
+            if (cleared > 0) AtomicFiles.write(file, mapper.writeValueAsBytes(all));
             return cleared;
         } finally {
             WRITE_LOCK.unlock();
@@ -216,26 +216,5 @@ public final class ClimbAttemptRepository {
 
     private static String key(StoredClimbAttempt a) {
         return (a.climbId != null ? a.climbId : "") + "#" + a.activityId + "#" + a.passIndex;
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
     }
 }

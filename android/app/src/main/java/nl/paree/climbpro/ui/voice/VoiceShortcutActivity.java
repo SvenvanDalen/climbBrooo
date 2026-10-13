@@ -43,36 +43,42 @@ public final class VoiceShortcutActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        tts = new TextToSpeech(this, status -> {
-            if (status == TextToSpeech.SUCCESS) {
-                tts.setLanguage(new Locale("nl", "NL"));
-                ttsReady = true;
-                if (pendingSpeech != null) speak(pendingSpeech);
-            }
-        });
+        tts = new TextToSpeech(this, this::onTtsInit);
 
-        Intent in = getIntent();
+        VoiceCommand command = parseCommand(getIntent());
+        if (command == null) {
+            openApp();
+            return;
+        }
+        executor.execute(() -> {
+            String answer = command == VoiceCommand.START_RIDE ? startRide() : nextClimb();
+            runOnUiThread(() -> deliver(answer));
+        });
+    }
+
+    private void onTtsInit(int status) {
+        if (status != TextToSpeech.SUCCESS) return;
+        tts.setLanguage(new Locale("nl", "NL"));
+        ttsReady = true;
+        if (pendingSpeech != null) speak(pendingSpeech);
+    }
+
+    private static VoiceCommand parseCommand(Intent in) {
         VoiceCommand command = VoiceCommand.parse(in.getAction(),
                 in.getStringExtra(VoiceCommand.EXTRA_FEATURE));
         if (command == null && in.getData() != null) {
             command = VoiceCommand.parse(null, in.getData().getQueryParameter(VoiceCommand.EXTRA_FEATURE));
         }
-        if (command == null) {
+        return command;
+    }
+
+    private void deliver(String answer) {
+        if (isFinishing() || isDestroyed()) return;
+        if (answer == null) {
             openApp();
-            return;
+        } else {
+            answer(answer);
         }
-        VoiceCommand cmd = command;
-        executor.execute(() -> {
-            String answer = cmd == VoiceCommand.START_RIDE ? startRide() : nextClimb();
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                if (answer == null) {
-                    openApp();
-                } else {
-                    answer(answer);
-                }
-            });
-        });
     }
 
     /** @return the spoken answer, or null when the user has to pick a route in the app. */

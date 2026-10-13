@@ -41,6 +41,19 @@ public final class PhotoQuizBuilder {
 
     private PhotoQuizBuilder() {}
 
+    /** Photo file names per named climb, in attempt order. */
+    private static Map<String, List<String>> photosByName(List<StoredClimbAttempt> attempts,
+                                                          Map<String, String> namesByClimbId) {
+        Map<String, List<String>> photosByName = new LinkedHashMap<>();
+        for (StoredClimbAttempt a : attempts) {
+            if (a.photoFileName == null || a.photoFileName.isEmpty()) continue;
+            String name = namesByClimbId.get(a.climbId);
+            if (name == null || name.isEmpty()) continue;
+            photosByName.computeIfAbsent(name, k -> new ArrayList<>()).add(a.photoFileName);
+        }
+        return photosByName;
+    }
+
     /**
      * @param namesByClimbId display name per climb; attempts whose climb has no name here
      *                       (the climb was deleted) are skipped
@@ -51,13 +64,7 @@ public final class PhotoQuizBuilder {
     public static List<Question> build(List<StoredClimbAttempt> attempts,
                                        Map<String, String> namesByClimbId,
                                        int maxQuestions, Random random) {
-        Map<String, List<String>> photosByName = new LinkedHashMap<>();
-        for (StoredClimbAttempt a : attempts) {
-            if (a.photoFileName == null || a.photoFileName.isEmpty()) continue;
-            String name = namesByClimbId.get(a.climbId);
-            if (name == null || name.isEmpty()) continue;
-            photosByName.computeIfAbsent(name, k -> new ArrayList<>()).add(a.photoFileName);
-        }
+        Map<String, List<String>> photosByName = photosByName(attempts, namesByClimbId);
         Set<String> allNames = new LinkedHashSet<>(photosByName.keySet());
         for (String n : namesByClimbId.values()) if (n != null && !n.isEmpty()) allNames.add(n);
         if (photosByName.isEmpty() || allNames.size() < 2) return new ArrayList<>();

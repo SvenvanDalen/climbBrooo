@@ -433,20 +433,30 @@ public final class RouteDetailViewModel extends AndroidViewModel {
         });
     }
 
+    private static <T> List<T> orEmpty(List<T> list) {
+        return list != null ? list : Collections.<T>emptyList();
+    }
+
+    /** Start distance of item i, or {@link Integer#MAX_VALUE} past the end of the list. */
+    private static <T> int startAt(List<T> list, int i,
+                                   java.util.function.ToIntFunction<T> start) {
+        return i < list.size() ? start.applyAsInt(list.get(i)) : Integer.MAX_VALUE;
+    }
+
     static List<Object> buildRouteItems(StoredRoute r) {
-        List<StoredFlatSegment>    flats   = r.flatSegments    != null ? r.flatSegments    : Collections.emptyList();
-        List<StoredClimb>          climbs  = r.climbs          != null ? r.climbs          : Collections.emptyList();
-        List<StoredStarredSegment> starred = r.starredSegments != null ? r.starredSegments : Collections.emptyList();
-        List<StoredSurfaceSection> surfsec = r.surfaceSections != null ? r.surfaceSections : Collections.emptyList();
+        List<StoredFlatSegment>    flats   = orEmpty(r.flatSegments);
+        List<StoredClimb>          climbs  = orEmpty(r.climbs);
+        List<StoredStarredSegment> starred = orEmpty(r.starredSegments);
+        List<StoredSurfaceSection> surfsec = orEmpty(r.surfaceSections);
 
         List<Object> result = new ArrayList<>(
                 flats.size() + climbs.size() + starred.size() + surfsec.size());
         int fi = 0, ci = 0, si = 0, ui = 0;
         while (fi < flats.size() || ci < climbs.size() || si < starred.size() || ui < surfsec.size()) {
-            int flatPos    = fi < flats.size()   ? flats.get(fi).startDistance    : Integer.MAX_VALUE;
-            int climbPos   = ci < climbs.size()  ? climbs.get(ci).startDistance   : Integer.MAX_VALUE;
-            int starredPos = si < starred.size() ? starred.get(si).startDistance  : Integer.MAX_VALUE;
-            int surfPos    = ui < surfsec.size() ? surfsec.get(ui).startDistance  : Integer.MAX_VALUE;
+            int flatPos    = startAt(flats, fi, f -> f.startDistance);
+            int climbPos   = startAt(climbs, ci, c -> c.startDistance);
+            int starredPos = startAt(starred, si, s -> s.startDistance);
+            int surfPos    = startAt(surfsec, ui, s -> s.startDistance);
 
             int min = Math.min(Math.min(flatPos, climbPos), Math.min(starredPos, surfPos));
             if (flatPos == min)         result.add(flats.get(fi++));

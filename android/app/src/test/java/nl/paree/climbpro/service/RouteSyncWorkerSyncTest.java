@@ -161,7 +161,7 @@ public class RouteSyncWorkerSyncTest {
     }
 
     @Test
-    public void riderProfileChangeTriggersAResync() throws Exception {
+    public void riderProfileChangeTriggersAResync() {
         routeMode(UiTestData.ROUTE_ID);
         run();
         new RiderProfileRepository(app).save(new RiderProfile(300, 74, 8.5));

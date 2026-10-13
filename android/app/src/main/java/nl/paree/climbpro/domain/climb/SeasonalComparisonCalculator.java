@@ -96,14 +96,8 @@ public final class SeasonalComparisonCalculator {
             LocalDate anniversary = recentDate.minusYears(yearsBack);
             if (anniversary.plusDays(windowDays).isBefore(oldestDate)) break;
 
-            StoredClimbAttempt best = null;
-            for (StoredClimbAttempt a : attempts) {
-                if (!isComparableAttemptOf(climbId, a)) continue;
-                long daysOff = ChronoUnit.DAYS.between(
-                        anniversary, localDate(a.dateEpochSec, zone));
-                if (Math.abs(daysOff) > windowDays) continue;
-                if (best == null || a.elapsedSec < best.elapsedSec) best = a;
-            }
+            StoredClimbAttempt best =
+                    bestAround(climbId, attempts, anniversary, zone, windowDays);
             if (best != null) {
                 double percentFaster =
                         (best.elapsedSec - mostRecent.elapsedSec) * 100.0 / best.elapsedSec;
@@ -113,6 +107,21 @@ public final class SeasonalComparisonCalculator {
             }
         }
         return null; // no attempt found in any prior anniversary window
+    }
+
+    /** Fastest comparable attempt within {@code windowDays} of {@code anniversary}; null if none. */
+    private static StoredClimbAttempt bestAround(String climbId, List<StoredClimbAttempt> attempts,
+                                                 LocalDate anniversary, ZoneId zone,
+                                                 int windowDays) {
+        StoredClimbAttempt best = null;
+        for (StoredClimbAttempt a : attempts) {
+            if (!isComparableAttemptOf(climbId, a)) continue;
+            long daysOff = ChronoUnit.DAYS.between(
+                    anniversary, localDate(a.dateEpochSec, zone));
+            if (Math.abs(daysOff) > windowDays) continue;
+            if (best == null || a.elapsedSec < best.elapsedSec) best = a;
+        }
+        return best;
     }
 
     /**

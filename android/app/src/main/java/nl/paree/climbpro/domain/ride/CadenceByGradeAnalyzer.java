@@ -35,6 +35,14 @@ public final class CadenceByGradeAnalyzer {
         }
     }
 
+    private static boolean isPlausibleCadence(double cad) {
+        return !Double.isNaN(cad) && cad > 0 && cad <= MAX_PLAUSIBLE_RPM;
+    }
+
+    private static boolean isClimbingGrade(double grade) {
+        return !Double.isNaN(grade) && grade >= MIN_GRADE;
+    }
+
     /** Null without cadence or altitude, or with too little pedalling. */
     public static Result analyze(RideStreams s) {
         if (s == null || !s.isUsable() || s.cadence == null || s.altitude == null) return null;
@@ -45,16 +53,21 @@ public final class CadenceByGradeAnalyzer {
             int dt = s.time[i] - s.time[i - 1];
             if (dt <= 0 || dt > MAX_GAP_SEC) continue;
             double cad = s.cadence[i];
-            if (Double.isNaN(cad) || cad <= 0 || cad > MAX_PLAUSIBLE_RPM) continue;
+            if (!isPlausibleCadence(cad)) continue;
             while (j + 1 < i && s.distance[i] - s.distance[j + 1] >= GRADE_WINDOW_M) j++;
             double run = s.distance[i] - s.distance[j];
             if (run < GRADE_WINDOW_M) continue;
             double grade = (s.altitude[i] - s.altitude[j]) / run;
-            if (Double.isNaN(grade) || grade < MIN_GRADE) continue;
+            if (!isClimbingGrade(grade)) continue;
             int cls = GradientColor.forGradient(grade);
             secs[cls] += dt;
             revs[cls] += cad * dt / 60.0;
         }
+        return toResult(secs, revs);
+    }
+
+    /** Rounded per-class totals; null when too little climbing time was analyzed. */
+    private static Result toResult(double[] secs, double[] revs) {
         int total = 0;
         int[] seconds = new int[CLASSES];
         int[] revolutions = new int[CLASSES];

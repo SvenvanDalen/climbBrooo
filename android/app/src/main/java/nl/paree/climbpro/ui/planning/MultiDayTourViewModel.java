@@ -131,36 +131,43 @@ public final class MultiDayTourViewModel extends AndroidViewModel {
             String key = TourStopFactory.key(p.routeId, p.climbIndex);
             if (!seen.add(key)) continue; // the same climb planned on two dates is one stop
 
+            if (!routes.containsKey(p.routeId)) loadRoute(p.routeId, profile, routes, pacing);
             StoredRoute route = routes.get(p.routeId);
-            if (route == null && !routes.containsKey(p.routeId)) {
-                try {
-                    route = routeRepo.loadRoute(p.routeId);
-                } catch (Exception ignored) {
-                    route = null; // deleted/corrupt route: skip this plan entry
-                }
-                routes.put(p.routeId, route);
-                // Manual per-segment targets (issue #23) win, like on the watch and route screen.
-                pacing.put(p.routeId, route != null && profile.isComplete()
-                        ? SegmentTargetOverrideMerger.merge(route,
-                                RoutePacingPlanner.plan(route, profile)) : null);
-            }
             if (route == null) continue;
-            int[][] perClimb = pacing.get(p.routeId);
 
-            TourStop stop;
-            if (p.climbIndex == PlannedClimb.WHOLE_ROUTE) {
-                stop = TourStopFactory.fromWholeRoute(route, p.climbIndex,
-                        routeName(route, p), sumAll(perClimb, route));
-            } else if (route.climbs == null || p.climbIndex < 0
-                    || p.climbIndex >= route.climbs.size()) {
-                continue; // climb disappeared after a resync/merge: nothing to place
-            } else {
-                stop = TourStopFactory.fromClimb(route, p.climbIndex,
-                        climbName(route, p), sumOne(perClimb, p.climbIndex));
-            }
+            TourStop stop = stopFor(p, route, pacing.get(p.routeId));
             if (stop != null) out.add(stop);
         }
         return out;
+    }
+
+    /** Loads a route once, with its pacing plan; a deleted/corrupt route is cached as null. */
+    private void loadRoute(String routeId, RiderProfile profile, Map<String, StoredRoute> routes,
+                           Map<String, int[][]> pacing) {
+        StoredRoute route;
+        try {
+            route = routeRepo.loadRoute(routeId);
+        } catch (Exception ignored) {
+            route = null; // deleted/corrupt route: skip this plan entry
+        }
+        routes.put(routeId, route);
+        // Manual per-segment targets (issue #23) win, like on the watch and route screen.
+        pacing.put(routeId, route != null && profile.isComplete()
+                ? SegmentTargetOverrideMerger.merge(route,
+                        RoutePacingPlanner.plan(route, profile)) : null);
+    }
+
+    /** The stop for a planned climb or whole route; null when the climb no longer exists. */
+    private TourStop stopFor(PlannedClimb p, StoredRoute route, int[][] perClimb) {
+        if (p.climbIndex == PlannedClimb.WHOLE_ROUTE) {
+            return TourStopFactory.fromWholeRoute(route, p.climbIndex,
+                    routeName(route, p), sumAll(perClimb, route));
+        }
+        if (route.climbs == null || p.climbIndex < 0 || p.climbIndex >= route.climbs.size()) {
+            return null; // climb disappeared after a resync/merge: nothing to place
+        }
+        return TourStopFactory.fromClimb(route, p.climbIndex,
+                climbName(route, p), sumOne(perClimb, p.climbIndex));
     }
 
     private static String routeName(StoredRoute route, PlannedClimb p) {

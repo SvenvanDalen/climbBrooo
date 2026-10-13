@@ -80,6 +80,24 @@ public final class TopClimbsViewModel extends AndroidViewModel {
         result.setValue(null); // a ranking for another start point is stale
     }
 
+    /** The newest last-known fix over all enabled providers; null without one or permission. */
+    @SuppressLint("MissingPermission")
+    private Location newestLastKnownLocation() {
+        Location best = null;
+        try {
+            LocationManager lm = (LocationManager) getApplication()
+                    .getSystemService(Context.LOCATION_SERVICE);
+            if (lm == null) return null;
+            for (String provider : lm.getProviders(true)) {
+                Location l = lm.getLastKnownLocation(provider);
+                if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
+            }
+        } catch (SecurityException e) {
+            return null;
+        }
+        return best;
+    }
+
     /**
      * Uses the freshest last-known fix from any enabled provider (no active GPS request).
      * Caller must have obtained a location permission first.
@@ -87,19 +105,7 @@ public final class TopClimbsViewModel extends AndroidViewModel {
     @SuppressLint("MissingPermission")
     public void useLastKnownLocation() {
         executor.execute(() -> {
-            Location best = null;
-            try {
-                LocationManager lm = (LocationManager) getApplication()
-                        .getSystemService(Context.LOCATION_SERVICE);
-                if (lm != null) {
-                    for (String provider : lm.getProviders(true)) {
-                        Location l = lm.getLastKnownLocation(provider);
-                        if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
-                    }
-                }
-            } catch (SecurityException e) {
-                best = null;
-            }
+            Location best = newestLastKnownLocation();
             String label = best == null ? null : ElevationTargetViewModel.startLabelForFixAge(
                     (SystemClock.elapsedRealtimeNanos() - best.getElapsedRealtimeNanos()) / 1_000_000L);
             if (label == null) {
@@ -146,6 +152,12 @@ public final class TopClimbsViewModel extends AndroidViewModel {
         });
     }
 
+    /** The rename, the detected name, else "Klim n (route)". */
+    private static String candidateName(StoredClimb c, int index, String routeName) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        return c.name != null ? c.name : ("Klim " + (index + 1) + " (" + routeName + ")");
+    }
+
     /**
      * Climbs from every route with at least one climb start inside the radius (catalog
      * pre-filter, same as radius mode); {@link RegionalTopClimbs} applies the exact per-climb
@@ -165,8 +177,7 @@ public final class TopClimbsViewModel extends AndroidViewModel {
             for (int i = 0; i < route.climbs.size(); i++) {
                 StoredClimb c = route.climbs.get(i);
                 if (c == null) continue;
-                String name = c.userDisplayName != null ? c.userDisplayName
-                        : (c.name != null ? c.name : ("Klim " + (i + 1) + " (" + routeName + ")"));
+                String name = candidateName(c, i, routeName);
                 out.add(new RegionalTopClimbs.Candidate(
                         ClimbIdentity.of(c), entry.routeId, i, name,
                         c.startLat, c.startLon, c.elevationGain, c.avgGradient,

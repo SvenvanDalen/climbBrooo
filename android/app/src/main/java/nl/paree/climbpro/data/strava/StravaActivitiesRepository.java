@@ -67,7 +67,7 @@ import java.util.TimeZone;
 public final class StravaActivitiesRepository {
 
     private static final String TAG       = "StravaActivitiesRepo";
-    public  static final String PREFS     = "strava_activities";
+    public  static final String PREFS_NAME = "strava_activities";
     private static final String PREF_LAST = "last_sync_epoch_sec";
     /**
      * The set of {@link KnownClimb#climbId}s that were known the last time we let
@@ -204,7 +204,7 @@ public final class StravaActivitiesRepository {
         this.ghostRepo = new RouteGhostRepository(context);
         this.exploreRepo = new ExploreMapRepository(context);
         this.api = api;
-        this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        this.prefs = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     /** @see #titleUpdateAuthExpired */
@@ -218,19 +218,7 @@ public final class StravaActivitiesRepository {
         titleUpdateAuthExpired = false;
         ghostRoutes = null; // routes may have changed since the previous run
 
-        // The ride archive is a side feature: it must never block or fail climb matching.
-        try {
-            syncRideArchive(token);
-        } catch (Exception e) {
-            Log.w(TAG, "Ride archive sync failed; climb sync continues", e);
-        }
-        // Before the known climbs are enumerated, so a fresh MyWhoosh ride is matched against
-        // the climbs it just created and shows up in the logbook right away.
-        try {
-            importMyWhooshRides(token);
-        } catch (Exception e) {
-            Log.w(TAG, "MyWhoosh import failed; climb sync continues", e);
-        }
+        runSideImports(token);
 
         long lastSync = prefs.getLong(PREF_LAST, 0L);
         long nowSec   = clock.getAsLong();
@@ -251,77 +239,16 @@ public final class StravaActivitiesRepository {
         // unaffected by this — it's a pre-existing, out-of-scope skip-list.
         Set<String> currentClimbIds = new HashSet<>();
         for (KnownClimb k : climbs) currentClimbIds.add(k.climbId);
-        Set<String> priorClimbIds = prefs.getStringSet(PREF_KNOWN_CLIMB_IDS, java.util.Collections.<String>emptySet());
-        boolean knownClimbSetGrew = !priorClimbIds.containsAll(currentClimbIds);
+        Set<Long> known = skipListFor(currentClimbIds);
 
-        Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
-        if (!knownClimbSetGrew) {
-            known.addAll(incompleteAttemptRepo.knownActivityIds());
-        }
-
-        // Title-update inputs (issue #60): resolved once per sync so per-activity title
-        // rendering doesn't re-scan routes/attempts. priorPrByClimb reflects state BEFORE this
-        // sync's own new attempts, since Strava's title should read "here's your new time vs.
-        // your old best" — comparing against attempts created earlier in the same batch is a
-        // v1 simplification left for a follow-up if it proves confusing in practice.
-        android.content.SharedPreferences defaultPrefs =
-                PreferenceManager.getDefaultSharedPreferences(context);
-        String titleTemplate = defaultPrefs.getString(PREF_TITLE_TEMPLATE, null);
-        long templateSinceSec = defaultPrefs.getLong(PREF_TITLE_TEMPLATE_SINCE, 0L);
-        if (titleTemplate != null && !titleTemplate.trim().isEmpty() && templateSinceSec <= 0) {
-            // Template present without an opt-in timestamp (set outside the editor): fail
-            // safe by treating "now" as the opt-in moment, so no past activity is renamed.
-            templateSinceSec = nowSec;
-            defaultPrefs.edit().putLong(PREF_TITLE_TEMPLATE_SINCE, nowSec).apply();
-        }
-        Map<String, StoredClimb> climbsById = titleTemplate != null && !titleTemplate.trim().isEmpty()
-                ? enumerateStoredClimbsById()
-                : Collections.emptyMap();
-        Map<String, LogbookCalculator.Summary> priorSummaries =
-                LogbookCalculator.summaries(attemptRepo.loadAll());
+        TitleInputs titles = resolveTitleInputs(nowSec);
 
         List<StoredClimbAttempt> created = new ArrayList<>();
         List<StoredIncompleteClimbAttempt> incompleteCreated = new ArrayList<>();
-        boolean paginationComplete = false;
-        int page = 1;
-        while (true) {
-            Response<List<StravaActivityDto>> resp =
-                    api.listActivities(token, after, page, 50).execute();
-            if (!resp.isSuccessful()) {
-                Log.w(TAG, "Activity page " + page + " failed (HTTP "
-                        + resp.code() + "); keeping sync cursor for retry");
-                break; // aborted — do NOT mark complete
-            }
-            if (resp.body() == null || resp.body().isEmpty()) {
-                paginationComplete = true; // reached the end cleanly
-                break;
-            }
-            for (StravaActivityDto act : resp.body()) {
-                if (known.contains(act.id)) continue;
-                List<StoredClimbAttempt> matched = matchActivity(token, act, climbs, incompleteCreated);
-                created.addAll(matched);
-                // Attempts are always recorded above regardless of auth state; only the
-                // title-update HTTP call is skipped once we know the scope is missing —
-                // every remaining activity in this sync run would fail with the same
-                // 401/403 (it's an account-level scope problem, not per-activity), so
-                // calling it again would just waste a doomed request and spam the logs.
-                if (!titleUpdateAuthExpired
-                        && StravaTitleUpdateDecision.shouldUpdateTitle(matched, titleTemplate)
-                        && StravaTitleUpdateDecision.isEligibleActivity(
-                                parseStartDate(act.startDate), templateSinceSec, nowSec)) {
-                    updateActivityTitle(token, act, matched, titleTemplate,
-                            climbsById, priorSummaries);
-                }
-            }
-            page++;
-        }
+        boolean paginationComplete = fetchActivityPages(token, after, nowSec, climbs, known,
+                titles, created, incompleteCreated);
 
-        if (!created.isEmpty()) {
-            List<StoredClimbAttempt> previous = attemptRepo.loadAll();
-            attemptRepo.append(created);
-            notifyMyWhooshPrs(created, previous);
-        }
-        if (!incompleteCreated.isEmpty()) incompleteAttemptRepo.append(incompleteCreated);
+        storeNewAttempts(created, incompleteCreated);
         if (paginationComplete) {
             prefs.edit().putLong(PREF_LAST, nowSec).apply();
             // Record the climb set this run evaluated incomplete-only activities against, so
@@ -337,6 +264,140 @@ public final class StravaActivitiesRepository {
         Log.i(TAG, "Activity sync: " + created.size() + " new attempt(s)"
                 + (paginationComplete ? "" : " (incomplete — cursor not advanced)"));
         return created.size();
+    }
+
+    /** Ride archive and MyWhoosh import: side features that must never fail climb matching. */
+    private void runSideImports(String token) {
+        // The ride archive is a side feature: it must never block or fail climb matching.
+        try {
+            syncRideArchive(token);
+        } catch (Exception e) {
+            Log.w(TAG, "Ride archive sync failed; climb sync continues", e);
+        }
+        // Before the known climbs are enumerated, so a fresh MyWhoosh ride is matched against
+        // the climbs it just created and shows up in the logbook right away.
+        try {
+            importMyWhooshRides(token);
+        } catch (Exception e) {
+            Log.w(TAG, "MyWhoosh import failed; climb sync continues", e);
+        }
+    }
+
+    /**
+     * Activity ids that need no re-matching this run. Incomplete-only activities are skipped
+     * only while the known climb set has not grown (see {@link #syncActivities()}).
+     */
+    private Set<Long> skipListFor(Set<String> currentClimbIds) {
+        Set<String> priorClimbIds = prefs.getStringSet(PREF_KNOWN_CLIMB_IDS, java.util.Collections.<String>emptySet());
+        boolean knownClimbSetGrew = !priorClimbIds.containsAll(currentClimbIds);
+
+        Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
+        if (!knownClimbSetGrew) {
+            known.addAll(incompleteAttemptRepo.knownActivityIds());
+        }
+        return known;
+    }
+
+    /**
+     * Title-update inputs (issue #60): resolved once per sync so per-activity title
+     * rendering doesn't re-scan routes/attempts. priorSummaries reflects state BEFORE this
+     * sync's own new attempts, since Strava's title should read "here's your new time vs.
+     * your old best" — comparing against attempts created earlier in the same batch is a
+     * v1 simplification left for a follow-up if it proves confusing in practice.
+     */
+    private static final class TitleInputs {
+        final String template;
+        final long sinceSec;
+        final Map<String, StoredClimb> climbsById;
+        final Map<String, LogbookCalculator.Summary> priorSummaries;
+
+        TitleInputs(String template, long sinceSec, Map<String, StoredClimb> climbsById,
+                    Map<String, LogbookCalculator.Summary> priorSummaries) {
+            this.template = template;
+            this.sinceSec = sinceSec;
+            this.climbsById = climbsById;
+            this.priorSummaries = priorSummaries;
+        }
+    }
+
+    private TitleInputs resolveTitleInputs(long nowSec) throws IOException {
+        android.content.SharedPreferences defaultPrefs =
+                PreferenceManager.getDefaultSharedPreferences(context);
+        String titleTemplate = defaultPrefs.getString(PREF_TITLE_TEMPLATE, null);
+        long templateSinceSec = defaultPrefs.getLong(PREF_TITLE_TEMPLATE_SINCE, 0L);
+        boolean hasTemplate = titleTemplate != null && !titleTemplate.trim().isEmpty();
+        if (hasTemplate && templateSinceSec <= 0) {
+            // Template present without an opt-in timestamp (set outside the editor): fail
+            // safe by treating "now" as the opt-in moment, so no past activity is renamed.
+            templateSinceSec = nowSec;
+            defaultPrefs.edit().putLong(PREF_TITLE_TEMPLATE_SINCE, nowSec).apply();
+        }
+        Map<String, StoredClimb> climbsById = hasTemplate
+                ? enumerateStoredClimbsById()
+                : Collections.emptyMap();
+        Map<String, LogbookCalculator.Summary> priorSummaries =
+                LogbookCalculator.summaries(attemptRepo.loadAll());
+        return new TitleInputs(titleTemplate, templateSinceSec, climbsById, priorSummaries);
+    }
+
+    /**
+     * Pages through the activities after {@code after}, matching every unknown one.
+     *
+     * @return true when the last page was reached cleanly (false = aborted, keep the cursor)
+     */
+    private boolean fetchActivityPages(String token, long after, long nowSec,
+                                       List<KnownClimb> climbs, Set<Long> known,
+                                       TitleInputs titles, List<StoredClimbAttempt> created,
+                                       List<StoredIncompleteClimbAttempt> incompleteCreated)
+            throws IOException {
+        int page = 1;
+        while (true) {
+            Response<List<StravaActivityDto>> resp =
+                    api.listActivities(token, after, page, 50).execute();
+            if (!resp.isSuccessful()) {
+                Log.w(TAG, "Activity page " + page + " failed (HTTP "
+                        + resp.code() + "); keeping sync cursor for retry");
+                return false; // aborted — do NOT mark complete
+            }
+            if (resp.body() == null || resp.body().isEmpty()) {
+                return true; // reached the end cleanly
+            }
+            for (StravaActivityDto act : resp.body()) {
+                if (known.contains(act.id)) continue;
+                List<StoredClimbAttempt> matched = matchActivity(token, act, climbs, incompleteCreated);
+                created.addAll(matched);
+                maybeUpdateTitle(token, act, matched, titles, nowSec);
+            }
+            page++;
+        }
+    }
+
+    private void maybeUpdateTitle(String token, StravaActivityDto act,
+                                  List<StoredClimbAttempt> matched, TitleInputs titles,
+                                  long nowSec) {
+        // Attempts are always recorded regardless of auth state; only the
+        // title-update HTTP call is skipped once we know the scope is missing —
+        // every remaining activity in this sync run would fail with the same
+        // 401/403 (it's an account-level scope problem, not per-activity), so
+        // calling it again would just waste a doomed request and spam the logs.
+        if (!titleUpdateAuthExpired
+                && StravaTitleUpdateDecision.shouldUpdateTitle(matched, titles.template)
+                && StravaTitleUpdateDecision.isEligibleActivity(
+                        parseStartDate(act.startDate), titles.sinceSec, nowSec)) {
+            updateActivityTitle(token, act, matched, titles.template,
+                    titles.climbsById, titles.priorSummaries);
+        }
+    }
+
+    private void storeNewAttempts(List<StoredClimbAttempt> created,
+                                  List<StoredIncompleteClimbAttempt> incompleteCreated)
+            throws IOException {
+        if (!created.isEmpty()) {
+            List<StoredClimbAttempt> previous = attemptRepo.loadAll();
+            attemptRepo.append(created);
+            notifyMyWhooshPrs(created, previous);
+        }
+        if (!incompleteCreated.isEmpty()) incompleteAttemptRepo.append(incompleteCreated);
     }
 
     /**
@@ -357,14 +418,7 @@ public final class StravaActivitiesRepository {
             if (a.startOffsetSec < best.startOffsetSec) best = a;
         }
         StoredClimb climb = climbsById.get(best.climbId);
-        String climbName = best.climbId;
-        if (climb != null) {
-            if (climb.userDisplayName != null && !climb.userDisplayName.isEmpty()) {
-                climbName = climb.userDisplayName;
-            } else if (climb.name != null && !climb.name.isEmpty()) {
-                climbName = climb.name;
-            }
-        }
+        String climbName = titleClimbName(climb, best.climbId);
         Integer vam = climb != null ? VamCalculator.averageVam(climb.avgGradient) : null;
         LogbookCalculator.Summary prior = priorSummaries.get(best.climbId);
         Integer delta = prior != null ? best.elapsedSec - prior.prSec : null;
@@ -374,20 +428,32 @@ public final class StravaActivitiesRepository {
                         !best.routeDeviation);
         String title = StravaTitleTemplateRenderer.render(template, ctx);
         if (title.isEmpty()) return;
+        putActivityTitle(token, act, title);
+    }
 
+    /** The user's rename, else the detected name, else {@code fallback}. */
+    private static String titleClimbName(StoredClimb climb, String fallback) {
+        if (climb == null) return fallback;
+        if (climb.userDisplayName != null && !climb.userDisplayName.isEmpty()) {
+            return climb.userDisplayName;
+        }
+        if (climb.name != null && !climb.name.isEmpty()) return climb.name;
+        return fallback;
+    }
+
+    private void putActivityTitle(String token, StravaActivityDto act, String title) {
         try {
             Response<StravaActivityDto> resp = api.updateActivity(
                     token, act.id, new StravaUpdateActivityDto(title)).execute();
-            if (!resp.isSuccessful()) {
-                if (resp.code() == 401 || resp.code() == 403) {
-                    titleUpdateAuthExpired = true;
-                    Log.w(TAG, "Title update rejected (HTTP " + resp.code() + ") for activity "
-                            + act.id + " — activity:write scope likely missing; "
-                            + "user must reconnect Strava");
-                } else {
-                    Log.w(TAG, "Title update failed for activity " + act.id
-                            + ": HTTP " + resp.code());
-                }
+            if (resp.isSuccessful()) return;
+            if (resp.code() == 401 || resp.code() == 403) {
+                titleUpdateAuthExpired = true;
+                Log.w(TAG, "Title update rejected (HTTP " + resp.code() + ") for activity "
+                        + act.id + " — activity:write scope likely missing; "
+                        + "user must reconnect Strava");
+            } else {
+                Log.w(TAG, "Title update failed for activity " + act.id
+                        + ": HTTP " + resp.code());
             }
         } catch (IOException e) {
             Log.w(TAG, "Title update failed for activity " + act.id, e);
@@ -452,85 +518,123 @@ public final class StravaActivitiesRepository {
                     .putLong(PREF_BACKFILL_CURSOR, cursor).apply();
         }
 
-        String token = "Bearer " + auth.getAccessToken();
+        BackfillRun run = new BackfillRun("Bearer " + auth.getAccessToken(), cursor, floor);
         ghostRoutes = null;
-        List<KnownClimb> climbs = enumerateKnownClimbs();
-        Set<Long> known = new HashSet<>(attemptRepo.knownActivityIds());
-        known.addAll(incompleteAttemptRepo.knownActivityIds());
+        run.climbs = enumerateKnownClimbs();
+        run.known.addAll(attemptRepo.knownActivityIds());
+        run.known.addAll(incompleteAttemptRepo.knownActivityIds());
 
-        int ridesArchived = 0;
-        int attemptsCreated = 0;
         while (true) {
-            Response<List<StravaActivityDto>> resp =
-                    api.listActivitiesBefore(token, cursor, floor, BACKFILL_PAGE_SIZE).execute();
-            if (!resp.isSuccessful()) {
-                Log.w(TAG, "Backfill page before " + cursor + " failed (HTTP " + resp.code() + ")");
-                BackfillStatus s = resp.code() == 429
-                        ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY;
-                return new BackfillResult(s, ridesArchived, attemptsCreated, cursor, floor);
-            }
-            List<StravaActivityDto> page = resp.body();
-            if (page == null || page.isEmpty()) {
-                prefs.edit().putBoolean(PREF_BACKFILL_DONE, true).apply();
-                Log.i(TAG, "History backfill done");
-                return new BackfillResult(BackfillStatus.DONE, ridesArchived, attemptsCreated,
-                        cursor, floor);
-            }
+            BackfillResult result = backfillPage(run, progress);
+            if (result != null) return result;
+        }
+    }
 
-            // Newest first, so moving the cursor to each processed activity's start keeps
-            // everything not yet processed strictly before it.
-            List<StravaActivityDto> sorted = new ArrayList<>(page);
-            Collections.sort(sorted, (a, b) ->
-                    Long.compare(parseStartDate(b.startDate), parseStartDate(a.startDate)));
+    /** Mutable state of one {@link #backfillHistory} run. */
+    private static final class BackfillRun {
+        final String token;
+        final long floor;
+        final Set<Long> known = new HashSet<>();
+        List<KnownClimb> climbs;
+        long cursor;
+        int ridesArchived;
+        int attemptsCreated;
+        boolean budgetLow;
 
-            List<StoredRide> rides = new ArrayList<>();
-            for (StravaActivityDto act : sorted) {
-                if (isCycling(act.type)) rides.add(toStoredRide(act));
-            }
-            rideRepo.upsertAll(rides); // list data only, idempotent: safe to redo on resume
-            ridesArchived += rides.size();
+        BackfillRun(String token, long cursor, long floor) {
+            this.token = token;
+            this.cursor = cursor;
+            this.floor = floor;
+        }
 
-            boolean budgetLow = StravaRateLimit.nearLimit(resp.headers());
-            long pageStartCursor = cursor;
-            for (StravaActivityDto act : sorted) {
-                if (budgetLow) break;
-                long start = parseStartDate(act.startDate);
-                if (shouldMatchInBackfill(act, climbs, known)) {
-                    List<StoredIncompleteClimbAttempt> incomplete = new ArrayList<>();
-                    MatchResult m = matchActivityChecked(token, act, climbs, incomplete);
-                    if (m.outcome == StreamOutcome.RATE_LIMITED
-                            || m.outcome == StreamOutcome.TRANSIENT_FAILURE) {
-                        // Cursor stays above this activity: it is fetched again on resume.
-                        BackfillStatus s = m.outcome == StreamOutcome.RATE_LIMITED
-                                ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY;
-                        return new BackfillResult(s, ridesArchived, attemptsCreated, cursor, floor);
-                    }
-                    if (!m.attempts.isEmpty()) attemptRepo.append(m.attempts);
-                    incompleteAttemptRepo.append(incomplete);
-                    attemptsCreated += m.attempts.size();
-                    known.add(act.id);
-                    budgetLow = StravaRateLimit.nearLimit(m.headers);
-                }
-                if (start > 0 && start < cursor) {
-                    cursor = start;
-                    prefs.edit().putLong(PREF_BACKFILL_CURSOR, cursor).apply();
-                }
+        BackfillResult result(BackfillStatus status) {
+            return new BackfillResult(status, ridesArchived, attemptsCreated, cursor, floor);
+        }
+    }
+
+    /** Processes one page of the backfill; null when the next page should follow. */
+    private BackfillResult backfillPage(BackfillRun run, BackfillProgress progress)
+            throws IOException {
+        Response<List<StravaActivityDto>> resp = api.listActivitiesBefore(
+                run.token, run.cursor, run.floor, BACKFILL_PAGE_SIZE).execute();
+        if (!resp.isSuccessful()) {
+            Log.w(TAG, "Backfill page before " + run.cursor + " failed (HTTP " + resp.code() + ")");
+            return run.result(resp.code() == 429
+                    ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY);
+        }
+        List<StravaActivityDto> page = resp.body();
+        if (page == null || page.isEmpty()) {
+            prefs.edit().putBoolean(PREF_BACKFILL_DONE, true).apply();
+            Log.i(TAG, "History backfill done");
+            return run.result(BackfillStatus.DONE);
+        }
+
+        // Newest first, so moving the cursor to each processed activity's start keeps
+        // everything not yet processed strictly before it.
+        List<StravaActivityDto> sorted = new ArrayList<>(page);
+        Collections.sort(sorted, (a, b) ->
+                Long.compare(parseStartDate(b.startDate), parseStartDate(a.startDate)));
+
+        List<StoredRide> rides = new ArrayList<>();
+        for (StravaActivityDto act : sorted) {
+            if (isCycling(act.type)) rides.add(toStoredRide(act));
+        }
+        rideRepo.upsertAll(rides); // list data only, idempotent: safe to redo on resume
+        run.ridesArchived += rides.size();
+
+        run.budgetLow = StravaRateLimit.nearLimit(resp.headers());
+        long pageStartCursor = run.cursor;
+        BackfillResult stopped = matchBackfillPage(run, sorted);
+        if (stopped != null) return stopped;
+        if (progress != null) progress.onProgress(run.cursor, run.floor);
+        if (run.budgetLow) {
+            Log.i(TAG, "Backfill pausing: Strava rate-limit reserve reached");
+            return run.result(BackfillStatus.PAUSED_RATE_LIMIT);
+        }
+        if (run.cursor >= pageStartCursor) {
+            // A full page without a parseable start date can't move the window down;
+            // stop instead of re-requesting the same page forever.
+            Log.w(TAG, "Backfill cursor did not move; stopping");
+            prefs.edit().putBoolean(PREF_BACKFILL_DONE, true).apply();
+            return run.result(BackfillStatus.DONE);
+        }
+        return null;
+    }
+
+    /** Matches a sorted page, moving the cursor down; non-null when the run must stop now. */
+    private BackfillResult matchBackfillPage(BackfillRun run, List<StravaActivityDto> sorted)
+            throws IOException {
+        for (StravaActivityDto act : sorted) {
+            if (run.budgetLow) break;
+            long start = parseStartDate(act.startDate);
+            if (shouldMatchInBackfill(act, run.climbs, run.known)) {
+                BackfillResult failed = matchBackfillActivity(run, act);
+                if (failed != null) return failed;
             }
-            if (progress != null) progress.onProgress(cursor, floor);
-            if (budgetLow) {
-                Log.i(TAG, "Backfill pausing: Strava rate-limit reserve reached");
-                return new BackfillResult(BackfillStatus.PAUSED_RATE_LIMIT, ridesArchived,
-                        attemptsCreated, cursor, floor);
-            }
-            if (cursor >= pageStartCursor) {
-                // A full page without a parseable start date can't move the window down;
-                // stop instead of re-requesting the same page forever.
-                Log.w(TAG, "Backfill cursor did not move; stopping");
-                prefs.edit().putBoolean(PREF_BACKFILL_DONE, true).apply();
-                return new BackfillResult(BackfillStatus.DONE, ridesArchived, attemptsCreated,
-                        cursor, floor);
+            if (start > 0 && start < run.cursor) {
+                run.cursor = start;
+                prefs.edit().putLong(PREF_BACKFILL_CURSOR, run.cursor).apply();
             }
         }
+        return null;
+    }
+
+    private BackfillResult matchBackfillActivity(BackfillRun run, StravaActivityDto act)
+            throws IOException {
+        List<StoredIncompleteClimbAttempt> incomplete = new ArrayList<>();
+        MatchResult m = matchActivityChecked(run.token, act, run.climbs, incomplete);
+        if (m.outcome == StreamOutcome.RATE_LIMITED
+                || m.outcome == StreamOutcome.TRANSIENT_FAILURE) {
+            // Cursor stays above this activity: it is fetched again on resume.
+            return run.result(m.outcome == StreamOutcome.RATE_LIMITED
+                    ? BackfillStatus.PAUSED_RATE_LIMIT : BackfillStatus.RETRY);
+        }
+        if (!m.attempts.isEmpty()) attemptRepo.append(m.attempts);
+        incompleteAttemptRepo.append(incomplete);
+        run.attemptsCreated += m.attempts.size();
+        run.known.add(act.id);
+        run.budgetLow = StravaRateLimit.nearLimit(m.headers);
+        return null;
     }
 
     /**
@@ -879,23 +983,7 @@ public final class StravaActivitiesRepository {
         try {
             for (StoredRide r : todo) {
                 if (out.size() >= MAX_STREAM_ANALYSES_PER_RUN) break;
-                Response<StravaStreamsDto> resp =
-                        api.getStreams(token, r.activityId, RIDE_ANALYSIS_STREAM_KEYS).execute();
-                if (resp.code() == 404) {
-                    // Deleted on Strava or a manual entry: nothing to analyze, don't ask again.
-                    out.add(RideStreamAnalyzer.analyze(r.activityId, null));
-                    if (isOutdoorRide(r)) tracks.put(r.activityId, null);
-                    continue;
-                }
-                if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
-                    Log.w(TAG, "Ride stream analysis paused (HTTP " + resp.code() + ")");
-                    break;
-                }
-                if (!resp.isSuccessful()) continue; // transient; retried next run
-                out.add(RideStreamAnalyzer.analyze(r.activityId, toRideStreams(resp.body())));
-                if (isOutdoorRide(r) && !explored.containsRide(r.activityId)) {
-                    tracks.put(r.activityId, toRideTrack(resp.body()));
-                }
+                if (!analyzeRide(token, r, explored, out, tracks)) break;
             }
         } catch (IOException e) {
             Log.w(TAG, "Ride stream fetch failed; keeping " + out.size() + " analyzed ride(s)", e);
@@ -907,6 +995,38 @@ public final class StravaActivitiesRepository {
             Log.w(TAG, "Explore map update failed; the backfill picks these rides up later", e);
         }
         return out.size();
+    }
+
+    /**
+     * Fetches and analyzes one ride's streams into {@code out} (and its track into
+     * {@code tracks}). Returns false when the run must pause (rate limit or auth error).
+     */
+    private boolean analyzeRide(String token, StoredRide r, ExploreMap explored,
+                                List<StoredRideStreamStats> out, Map<Long, RideTrack> tracks)
+            throws IOException {
+        Response<StravaStreamsDto> resp =
+                api.getStreams(token, r.activityId, RIDE_ANALYSIS_STREAM_KEYS).execute();
+        if (resp.code() == 404) {
+            // Deleted on Strava or a manual entry: nothing to analyze, don't ask again.
+            out.add(RideStreamAnalyzer.analyze(r.activityId, null));
+            if (isOutdoorRide(r)) tracks.put(r.activityId, null);
+            return true;
+        }
+        if (isPauseCode(resp.code())) {
+            Log.w(TAG, "Ride stream analysis paused (HTTP " + resp.code() + ")");
+            return false;
+        }
+        if (!resp.isSuccessful()) return true; // transient; retried next run
+        out.add(RideStreamAnalyzer.analyze(r.activityId, toRideStreams(resp.body())));
+        if (isOutdoorRide(r) && !explored.containsRide(r.activityId)) {
+            tracks.put(r.activityId, toRideTrack(resp.body()));
+        }
+        return true;
+    }
+
+    /** Rate limited or not authorized: every further request in this run would fail too. */
+    private static boolean isPauseCode(int code) {
+        return code == 429 || code == 401 || code == 403;
     }
 
     /** Outdoor rides in the archive whose GPS track is not on the explore map yet (issue #194). */
@@ -985,15 +1105,8 @@ public final class StravaActivitiesRepository {
     private int importMyWhooshRides(String token) {
         Set<String> done = new HashSet<>(
                 prefs.getStringSet(PREF_MYWHOOSH_DONE, Collections.<String>emptySet()));
-        List<StoredRide> todo = new ArrayList<>();
-        for (StoredRide r : rideRepo.loadAll()) {
-            if (MyWhooshRouteReader.isMyWhooshActivity(r.name, r.type, r.sportType)
-                    && !done.contains(String.valueOf(r.activityId))) {
-                todo.add(r);
-            }
-        }
+        List<StoredRide> todo = myWhooshTodo(done);
         if (todo.isEmpty()) return 0;
-        todo.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
 
         MyWhooshRouteStore store = new MyWhooshRouteStore(context);
         int fetched = 0;
@@ -1019,6 +1132,19 @@ public final class StravaActivitiesRepository {
         prefs.edit().putStringSet(PREF_MYWHOOSH_DONE, done).apply();
         Log.i(TAG, "MyWhoosh import: " + saved + " new route(s)");
         return saved;
+    }
+
+    /** Archived MyWhoosh rides not handled yet, newest first. */
+    private List<StoredRide> myWhooshTodo(Set<String> done) {
+        List<StoredRide> todo = new ArrayList<>();
+        for (StoredRide r : rideRepo.loadAll()) {
+            if (MyWhooshRouteReader.isMyWhooshActivity(r.name, r.type, r.sportType)
+                    && !done.contains(String.valueOf(r.activityId))) {
+                todo.add(r);
+            }
+        }
+        todo.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
+        return todo;
     }
 
     /** @return true when a route was saved */
@@ -1123,19 +1249,21 @@ public final class StravaActivitiesRepository {
             n++;
         }
         if (n < 2) return null;
-        Double avgTemp = null;
-        if (s.temp != null && s.temp.data != null) {
-            double sum = 0;
-            int count = 0;
-            for (Double t : s.temp.data) {
-                if (t == null) continue;
-                sum += t;
-                count++;
-            }
-            if (count > 0) avgTemp = sum / count;
-        }
         return new RideTrack(java.util.Arrays.copyOf(lat, n), java.util.Arrays.copyOf(lon, n),
-                avgTemp);
+                averageTemp(s));
+    }
+
+    /** Mean of the non-null temperature samples; null without any. */
+    private static Double averageTemp(StravaStreamsDto s) {
+        if (s.temp == null || s.temp.data == null) return null;
+        double sum = 0;
+        int count = 0;
+        for (Double t : s.temp.data) {
+            if (t == null) continue;
+            sum += t;
+            count++;
+        }
+        return count > 0 ? sum / count : null;
     }
 
     /**

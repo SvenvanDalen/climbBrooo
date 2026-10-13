@@ -54,7 +54,7 @@ public class OfflinePackageStoreEdgeTest {
         OfflinePackage pkg = new OfflinePackage();
         pkg.routeId = "r/1";
         store.save(pkg);
-        File target = new File(new File(dir, OfflinePackageStore.DIR), "r_1.json");
+        File target = new File(new File(dir, OfflinePackageStore.DIR_NAME), "r_1.json");
         assertTrue("unsafe id characters are replaced", target.exists());
         target.delete();
         target.mkdirs();

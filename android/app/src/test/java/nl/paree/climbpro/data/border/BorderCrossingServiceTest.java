@@ -54,7 +54,7 @@ public class BorderCrossingServiceTest {
         // Utrecht -> Brussels.
         List<String> lines = new BorderCrossingService(app).describe(line(52.09, 5.12, 50.85, 4.35));
         assertEquals(2, lines.size());
-        assertTrue(lines.get(0), lines.get(0).length() > 0);
-        assertTrue(lines.get(1), lines.get(1).length() > 0);
+        assertTrue(lines.get(0), !lines.get(0).isEmpty());
+        assertTrue(lines.get(1), !lines.get(1).isEmpty());
     }
 }

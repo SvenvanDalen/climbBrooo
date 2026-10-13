@@ -78,11 +78,31 @@
       "items": { "$ref": "#/definitions/FlatStarredSection" }
     },
     "lay": {
-      "description": "Optional datafield stat-slot layout chosen in the phone app: 5 metric codes for [left, middle, right, row 4, bottom line] of the active-climb page. 0 remaining distance, 1 remaining elevation, 2 current-segment gradient, 3 climb average gradient, 4 VAM, 5 ETA, 6 ghost delta (vs PR/plan), 7 interval block, 8 speed, 9 heart rate, 10 power, 11 cadence, 12 elapsed time, 13 empty, 14 auto row 4 (block else VAM), 15 auto bottom (ghost else ETA). Omitted = default [0,1,2,14,15]. Both modes. The watch falls back to the default per slot for an unknown code and to the full default for a malformed array. Codes mirror domain/watch/WatchFieldLayout.java and garmin/source/FieldLayout.mc.",
+      "description": "Optional datafield stat-slot layout chosen in the phone app: 5 metric codes for [left, middle, right, row 4, bottom line] of the active-climb page. 0 remaining distance, 1 remaining elevation, 2 current-segment gradient, 3 climb average gradient, 4 VAM, 5 ETA, 6 ghost delta (vs PR/plan), 7 interval block, 8 speed, 9 heart rate, 10 power, 11 cadence, 12 elapsed time, 13 empty, 14 auto row 4 (block else VAM), 15 auto bottom (ghost else ETA), 16 ascent still to come on the whole ride (issue #25, route mode). Omitted = default [0,1,2,14,15]. Both modes. The watch falls back to the default per slot for an unknown code and to the full default for a malformed array. Codes mirror domain/watch/WatchFieldLayout.java and garmin/source/FieldLayout.mc.",
       "type": "array",
       "minItems": 5,
       "maxItems": 5,
-      "items": { "type": "integer", "minimum": 0, "maximum": 15 }
+      "items": { "type": "integer", "minimum": 0, "maximum": 16 }
+    },
+    "cg": {
+      "description": "Optional (issue #18): the rider's usual cadence in rpm per gradient class, indexed by gradient class = the segment colorIndex (0: 0-2 %, 1: 2-4 %, 2: 4-6 %, 3: 6-8 %, 4: 8-10 %, 5: 10+ %); 0 = not enough data for that class. Computed on the phone from the cadence-per-gradient analysis of the rider's Strava rides (CadenceByGrade). The watch shows it as the cadence target for the current segment ('86/90rpm' in the cadence slot). Any mode; omitted when no class has data.",
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "type": "integer", "minimum": 0, "maximum": 250 }
+    },
+    "hg": {
+      "description": "Optional (issue #24): the heart-rate zone (1-5, share of max heart rate as in ZoneCalculator) the rider usually rides at per gradient class, indexed by gradient class = the segment colorIndex (0: 0-2 %, 1: 2-4 %, 2: 4-6 %, 3: 6-8 %, 4: 8-10 %, 5: 10+ %); 0 = not enough data. Computed on the phone from the heart-rate-per-gradient analysis of the rider's Strava rides (HeartRateByGrade). The watch colors segments by it when its 'Kleurmodus' setting is Hartslagzone (zone 1 light yellow, 2 yellow, 3 orange, 4 dark orange, 5 red); a class with 0 keeps its gradient color. Any mode; omitted without a max heart rate or when no class has data.",
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "type": "integer", "minimum": 0, "maximum": 5 }
+    },
+    "ord": {
+      "description": "Optional, radius mode only (issue #9): 1 = this radius payload is a day trip (a collection's climbs) to be ridden in array order. The watch then counts down to the first climb not reached yet instead of the nearest one and shows 'DAGTOCHT k/n'. Absent = ordinary unordered radius set (closest first).",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1
     }
   },
   "definitions": {
@@ -126,6 +146,12 @@
           "description": "Optional user/display name for the climb (<= 32 chars).",
           "type": "string",
           "maxLength": 32
+        },
+        "nw": {
+          "description": "Optional (issue #27): 1 = the rider has never ridden this climb (no matched attempt with its ClimbIdentity). The watch shows a 'Nieuwe klim!' banner at the climb start. Only emitted when the rider has any attempt history at all, so a fresh install doesn't flag every climb. Both modes.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1
         },
         "segs": {
           "description": "Packed segments: [distance, elevationGain, gradientFixedPoint, colorIndex, ...], 4 ints per segment. gradientFixedPoint = percent x 10; colorIndex 0-5 (see colors.md).",

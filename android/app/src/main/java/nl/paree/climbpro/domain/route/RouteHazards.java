@@ -54,6 +54,50 @@ public final class RouteHazards {
         }
     }
 
+    /** Absolute heading change at each interior point (0 where a bearing is undefined). */
+    private static double[] turnAngles(double[] lats, double[] lons, int n) {
+        double[] turn = new double[n];
+        for (int i = 1; i < n - 1; i++) {
+            double a = bearing(lats[i - 1], lons[i - 1], lats[i], lons[i]);
+            double b = bearing(lats[i], lons[i], lats[i + 1], lons[i + 1]);
+            if (Double.isNaN(a) || Double.isNaN(b)) continue;
+            double d = Math.abs(b - a) % 360.0;
+            turn[i] = d > 180.0 ? 360.0 - d : d;
+        }
+        return turn;
+    }
+
+    /** A long enough window [i, j] that is steep, or less steep but bendy. */
+    private static boolean isHazardousDescent(double[] elevations, double[] distances, int i,
+                                              int j, double turnSum) {
+        double span = distances[j] - distances[i];
+        if (span < WINDOW_M * 0.5 || Double.isNaN(elevations[i])
+                || Double.isNaN(elevations[j])) {
+            return false;
+        }
+        double grade = (elevations[j] - elevations[i]) / span;
+        return grade <= STEEP_GRADIENT
+                || (grade <= BENDY_GRADIENT && turnSum >= BENDY_TURN_DEG);
+    }
+
+    /** Route distance range {from, to} a tunnel way covers; null if it doesn't lie on the route. */
+    private static int[] tunnelRange(double[][] way, double[] lats, double[] lons,
+                                     double[] distances, int n, double cosLat) {
+        double lo = Double.MAX_VALUE;
+        double hi = -Double.MAX_VALUE;
+        int matched = 0;
+        for (double[] node : way) {
+            if (node == null || node.length < 2) continue;
+            double along = project(lats, lons, distances, n, cosLat, node[0], node[1]);
+            if (Double.isNaN(along)) continue;
+            matched++;
+            lo = Math.min(lo, along);
+            hi = Math.max(hi, along);
+        }
+        if (matched < 2 || hi <= lo) return null;
+        return new int[]{(int) Math.floor(lo), (int) Math.ceil(hi)};
+    }
+
     /** Technical descents along the route; empty without usable elevation. */
     public static List<Hazard> detectDescents(double[] lats, double[] lons, double[] elevations,
                                               double[] distances) {
@@ -63,14 +107,7 @@ public final class RouteHazards {
                 Math.min(elevations.length, distances.length));
         if (n < 2) return out;
 
-        double[] turn = new double[n]; // absolute heading change at each interior point
-        for (int i = 1; i < n - 1; i++) {
-            double a = bearing(lats[i - 1], lons[i - 1], lats[i], lons[i]);
-            double b = bearing(lats[i], lons[i], lats[i + 1], lons[i + 1]);
-            if (Double.isNaN(a) || Double.isNaN(b)) continue;
-            double d = Math.abs(b - a) % 360.0;
-            turn[i] = d > 180.0 ? 360.0 - d : d;
-        }
+        double[] turn = turnAngles(lats, lons, n);
 
         int j = 0;
         double turnSum = 0; // sum of turn[i+1 .. j-1]
@@ -84,15 +121,9 @@ public final class RouteHazards {
                 turnSum += turn[j];
                 j++;
             }
-            double span = distances[j] - distances[i];
-            if (span >= WINDOW_M * 0.5 && !Double.isNaN(elevations[i])
-                    && !Double.isNaN(elevations[j])) {
-                double grade = (elevations[j] - elevations[i]) / span;
-                if (grade <= STEEP_GRADIENT
-                        || (grade <= BENDY_GRADIENT && turnSum >= BENDY_TURN_DEG)) {
-                    raw.add(new int[]{(int) Math.round(distances[i]),
-                            (int) Math.round(distances[j])});
-                }
+            if (isHazardousDescent(elevations, distances, i, j, turnSum)) {
+                raw.add(new int[]{(int) Math.round(distances[i]),
+                        (int) Math.round(distances[j])});
             }
             if (i + 1 < j) turnSum -= turn[i + 1];
         }
@@ -116,20 +147,8 @@ public final class RouteHazards {
         double cosLat = Math.cos(Math.toRadians(lats[0]));
         for (double[][] way : tunnelWays) {
             if (way == null) continue;
-            double lo = Double.MAX_VALUE;
-            double hi = -Double.MAX_VALUE;
-            int matched = 0;
-            for (double[] node : way) {
-                if (node == null || node.length < 2) continue;
-                double along = project(lats, lons, distances, n, cosLat, node[0], node[1]);
-                if (Double.isNaN(along)) continue;
-                matched++;
-                lo = Math.min(lo, along);
-                hi = Math.max(hi, along);
-            }
-            if (matched >= 2 && hi > lo) {
-                raw.add(new int[]{(int) Math.floor(lo), (int) Math.ceil(hi)});
-            }
+            int[] range = tunnelRange(way, lats, lons, distances, n, cosLat);
+            if (range != null) raw.add(range);
         }
         List<Hazard> out = new ArrayList<>();
         for (int[] r : mergeRanges(raw)) out.add(new Hazard(r[0], r[1], TYPE_TUNNEL));

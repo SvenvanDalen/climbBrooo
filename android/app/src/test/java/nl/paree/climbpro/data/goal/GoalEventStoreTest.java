@@ -24,7 +24,7 @@ public class GoalEventStoreTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        new File(app.getFilesDir(), GoalEventStore.FILE).delete();
+        new File(app.getFilesDir(), GoalEventStore.FILE_NAME).delete();
     }
 
     @Test
@@ -56,7 +56,7 @@ public class GoalEventStoreTest {
     @Test
     public void corruptFileLoadsAsNoEvent() throws Exception {
         try (FileOutputStream out =
-                     new FileOutputStream(new File(app.getFilesDir(), GoalEventStore.FILE))) {
+                     new FileOutputStream(new File(app.getFilesDir(), GoalEventStore.FILE_NAME))) {
             out.write("{kapot".getBytes());
         }
         assertNull(new GoalEventStore(app).load());

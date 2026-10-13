@@ -28,7 +28,7 @@ public class MaintenanceRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), MaintenanceRepository.FILE);
+        file = new File(app.getFilesDir(), MaintenanceRepository.FILE_NAME);
         file.delete();
     }
 

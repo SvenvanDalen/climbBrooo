@@ -21,6 +21,58 @@ public final class GpxParser {
 
     private GpxParser() {}
 
+    private static boolean isPointTag(String tag) {
+        return "trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag);
+    }
+
+    /** Collects track/route points and waypoints while the pull parser walks the file. */
+    private static final class PointCollector {
+        final List<RoutePoint> points = new ArrayList<>();
+        // Waypoints are only route geometry in a waypoint-only file; next to a track or
+        // route they are POIs (e.g. the climb markers of our own Wahoo/Hammerhead export,
+        // issue #254) and must not be spliced into the line.
+        final List<RoutePoint> waypoints = new ArrayList<>();
+        boolean inWaypoint = false;
+        double lat = Double.NaN, lon = Double.NaN, ele = Double.NaN;
+        boolean inPoint = false;
+        boolean inEle = false;
+
+        void startTag(XmlPullParser xpp) {
+            String tag = xpp.getName();
+            if (isPointTag(tag)) {
+                inPoint = true;
+                inWaypoint = "wpt".equals(tag);
+                lat = parseAttr(xpp, "lat");
+                lon = parseAttr(xpp, "lon");
+                ele = Double.NaN;
+            } else if (inPoint && "ele".equals(tag)) {
+                inEle = true;
+            }
+        }
+
+        void text(XmlPullParser xpp) {
+            if (!inEle) return;
+            try {
+                ele = Double.parseDouble(xpp.getText().trim());
+            } catch (NumberFormatException e) {
+                ele = Double.NaN;
+            }
+        }
+
+        void endTag(String tag) {
+            if (isPointTag(tag)) {
+                if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
+                    (inWaypoint ? waypoints : points).add(new RoutePoint(lat, lon, ele, 0.0));
+                }
+                inPoint = false;
+                inEle = false;
+                lat = lon = ele = Double.NaN;
+            } else if ("ele".equals(tag)) {
+                inEle = false;
+            }
+        }
+    }
+
     public static List<RoutePoint> parse(InputStream in) throws GpxParseException {
         try {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -28,61 +80,27 @@ public final class GpxParser {
             XmlPullParser xpp = factory.newPullParser();
             xpp.setInput(in, null);
 
-            List<RoutePoint> points = new ArrayList<>();
-            // Waypoints are only route geometry in a waypoint-only file; next to a track or
-            // route they are POIs (e.g. the climb markers of our own Wahoo/Hammerhead export,
-            // issue #254) and must not be spliced into the line.
-            List<RoutePoint> waypoints = new ArrayList<>();
-            boolean inWaypoint = false;
-            double lat = Double.NaN, lon = Double.NaN, ele = Double.NaN;
-            boolean inPoint = false;
-            boolean inEle = false;
-
+            PointCollector c = new PointCollector();
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
                 switch (event) {
-                    case XmlPullParser.START_TAG: {
-                        String tag = xpp.getName();
-                        if ("trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag)) {
-                            inPoint = true;
-                            inWaypoint = "wpt".equals(tag);
-                            lat = parseAttr(xpp, "lat");
-                            lon = parseAttr(xpp, "lon");
-                            ele = Double.NaN;
-                        } else if (inPoint && "ele".equals(tag)) {
-                            inEle = true;
-                        }
+                    case XmlPullParser.START_TAG:
+                        c.startTag(xpp);
                         break;
-                    }
-                    case XmlPullParser.TEXT: {
-                        if (inEle) {
-                            try {
-                                ele = Double.parseDouble(xpp.getText().trim());
-                            } catch (NumberFormatException e) {
-                                ele = Double.NaN;
-                            }
-                        }
+                    case XmlPullParser.TEXT:
+                        c.text(xpp);
                         break;
-                    }
-                    case XmlPullParser.END_TAG: {
-                        String tag = xpp.getName();
-                        if ("trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag)) {
-                            if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
-                                (inWaypoint ? waypoints : points).add(new RoutePoint(lat, lon, ele, 0.0));
-                            }
-                            inPoint = false;
-                            inEle = false;
-                            lat = lon = ele = Double.NaN;
-                        } else if ("ele".equals(tag)) {
-                            inEle = false;
-                        }
+                    case XmlPullParser.END_TAG:
+                        c.endTag(xpp.getName());
                         break;
-                    }
+                    default:
+                        break;
                 }
                 event = xpp.next();
             }
 
-            if (points.isEmpty()) points = waypoints;
+            List<RoutePoint> points = c.points;
+            if (points.isEmpty()) points = c.waypoints;
             if (points.isEmpty()) {
                 throw new GpxParseException("No track points found in GPX file");
             }

@@ -63,7 +63,7 @@ public class SocialStoresEdgeTest {
         FriendShareCode.Payload p = FriendShareCode.decode(FriendShareCode.encode("a", "Anna", 1,
                 Collections.singletonList(new FriendFeedEntry(
                         FriendFeedEntry.KIND_RIDE, 100, "Rit", 1_000, 10, 60))));
-        assertWriteFails(FriendFeedRepository.FILE,
+        assertWriteFails(FriendFeedRepository.FILE_NAME,
                 () -> new FriendFeedRepository(app).importPayload(p));
     }
 
@@ -74,7 +74,7 @@ public class SocialStoresEdgeTest {
         p.name = "Anna";
         p.flatSpeedDkmh = 270;
         RideBuddyProfile decoded = RideBuddyCode.decode(RideBuddyCode.encode(p));
-        assertWriteFails(RideBuddyRepository.FILE,
+        assertWriteFails(RideBuddyRepository.FILE_NAME,
                 () -> new RideBuddyRepository(app).upsert(decoded));
     }
 }

@@ -39,13 +39,7 @@ public final class OwnFeedBuilder {
 
     private OwnFeedBuilder() {}
 
-    public static List<FriendFeedEntry> build(List<StoredRide> rides,
-                                              List<StoredClimbAttempt> attempts,
-                                              Map<String, ClimbInfo> climbsById,
-                                              long nowEpochSec) {
-        long from = nowEpochSec - WINDOW_SEC;
-        long to = nowEpochSec + FUTURE_SLACK_SEC;
-
+    private static List<FriendFeedEntry> rideEntries(List<StoredRide> rides, long from, long to) {
         List<FriendFeedEntry> rideEntries = new ArrayList<>();
         for (StoredRide r : rides) {
             if (r == null || r.startEpochSec <= 0 || r.startEpochSec < from || r.startEpochSec > to) continue;
@@ -55,7 +49,11 @@ public final class OwnFeedBuilder {
                     Math.max(0, Math.round(r.elevationGainM)),
                     Math.max(0, r.movingTimeSec)));
         }
+        return rideEntries;
+    }
 
+    /** The earliest attempt (then lowest pass) per climb. */
+    private static Map<String, StoredClimbAttempt> firstAttempts(List<StoredClimbAttempt> attempts) {
         Map<String, StoredClimbAttempt> first = new HashMap<>();
         for (StoredClimbAttempt a : attempts) {
             if (a == null || a.climbId == null) continue;
@@ -65,6 +63,13 @@ public final class OwnFeedBuilder {
                 first.put(a.climbId, a);
             }
         }
+        return first;
+    }
+
+    /** First ascents in the window of named climbs that aren't the rider's home climb. */
+    private static List<FriendFeedEntry> firstAscents(Map<String, StoredClimbAttempt> first,
+                                                      Map<String, ClimbInfo> climbsById,
+                                                      long from, long to) {
         List<FriendFeedEntry> milestones = new ArrayList<>();
         for (StoredClimbAttempt a : first.values()) {
             if (a.dateEpochSec <= 0 || a.dateEpochSec < from || a.dateEpochSec > to) continue;
@@ -73,6 +78,19 @@ public final class OwnFeedBuilder {
             milestones.add(new FriendFeedEntry(FriendFeedEntry.KIND_MILESTONE, a.dateEpochSec,
                     FIRST_ASCENT_PREFIX + c.name.trim(), 0, Math.max(0, c.gainM), 0));
         }
+        return milestones;
+    }
+
+    public static List<FriendFeedEntry> build(List<StoredRide> rides,
+                                              List<StoredClimbAttempt> attempts,
+                                              Map<String, ClimbInfo> climbsById,
+                                              long nowEpochSec) {
+        long from = nowEpochSec - WINDOW_SEC;
+        long to = nowEpochSec + FUTURE_SLACK_SEC;
+
+        List<FriendFeedEntry> rideEntries = rideEntries(rides, from, to);
+        List<FriendFeedEntry> milestones =
+                firstAscents(firstAttempts(attempts), climbsById, from, to);
 
         List<FriendFeedEntry> out = new ArrayList<>(newest(rideEntries, MAX_RIDES));
         out.addAll(newest(milestones, MAX_MILESTONES));

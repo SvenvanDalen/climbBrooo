@@ -56,14 +56,8 @@ public final class RideStory {
         this.photoFileName = photoFileName;
     }
 
-    /**
-     * @param attempts   every stored climb attempt (needed to tell PRs and repeat counts)
-     * @param climbNames display name per ClimbIdentity key; unknown climbs get "Klim"
-     * @param avgTempC   average temperature from the ride's stream, or null
-     */
-    public static RideStory build(StoredRide ride, List<StoredClimbAttempt> attempts,
-                                  Map<String, String> climbNames, Double avgTempC) {
-        String title = ride.name != null && !ride.name.trim().isEmpty() ? ride.name.trim() : "Rit";
+    /** Distance, moving time, elevation, speed and power, each only when known. */
+    private static List<String> statLines(StoredRide ride) {
         List<String> stats = new ArrayList<>();
         stats.add(String.format(Locale.GERMANY, "%.1f km", ride.distanceM / 1000f));
         int moving = ride.movingTimeSec > 0 ? ride.movingTimeSec : ride.elapsedTimeSec;
@@ -73,34 +67,65 @@ public final class RideStory {
             stats.add(String.format(Locale.GERMANY, "%.1f km/u", ride.avgSpeedMps * 3.6f));
         }
         if (ride.avgWatts != null && ride.avgWatts > 0) stats.add(Math.round(ride.avgWatts) + " W");
+        return stats;
+    }
 
+    /** The ride's climb attempts in ride order. */
+    private static List<StoredClimbAttempt> attemptsOnRide(StoredRide ride,
+                                                           List<StoredClimbAttempt> all) {
         List<StoredClimbAttempt> onRide = new ArrayList<>();
-        List<StoredClimbAttempt> all = attempts != null ? attempts : Collections.emptyList();
         for (StoredClimbAttempt a : all) {
             if (a.activityId == ride.activityId) onRide.add(a);
         }
         onRide.sort((x, y) -> x.startOffsetSec != y.startOffsetSec
                 ? Integer.compare(x.startOffsetSec, y.startOffsetSec)
                 : Integer.compare(x.passIndex, y.passIndex));
+        return onRide;
+    }
 
-        List<ClimbLine> lines = new ArrayList<>();
-        String photo = null;
-        Double temp = avgTempC;
+    private static String firstPhoto(List<StoredClimbAttempt> onRide) {
+        for (StoredClimbAttempt a : onRide) {
+            if (a.photoFileName != null) return a.photoFileName;
+        }
+        return null;
+    }
+
+    /** Mean of the attempts' temperatures; null when none has one. */
+    private static Double averageTemp(List<StoredClimbAttempt> onRide) {
         double tempSum = 0;
         int tempN = 0;
+        for (StoredClimbAttempt a : onRide) {
+            if (a.avgTempC != null) {
+                tempSum += a.avgTempC;
+                tempN++;
+            }
+        }
+        return tempN > 0 ? tempSum / tempN : null;
+    }
+
+    /**
+     * @param attempts   every stored climb attempt (needed to tell PRs and repeat counts)
+     * @param climbNames display name per ClimbIdentity key; unknown climbs get "Klim"
+     * @param avgTempC   average temperature from the ride's stream, or null
+     */
+    public static RideStory build(StoredRide ride, List<StoredClimbAttempt> attempts,
+                                  Map<String, String> climbNames, Double avgTempC) {
+        String title = ride.name != null && !ride.name.trim().isEmpty() ? ride.name.trim() : "Rit";
+        List<String> stats = statLines(ride);
+
+        List<StoredClimbAttempt> all = attempts != null ? attempts : Collections.emptyList();
+        List<StoredClimbAttempt> onRide = attemptsOnRide(ride, all);
+
+        List<ClimbLine> lines = new ArrayList<>();
         for (StoredClimbAttempt a : onRide) {
             String name = climbNames != null ? climbNames.get(a.climbId) : null;
             int times = timesRidden(a, all);
             // A first ascent is trivially the fastest; the story calls it a first instead.
             lines.add(new ClimbLine(name != null ? name : "Klim", a.elapsedSec,
                     times > 1 && isPr(a, all), times));
-            if (photo == null && a.photoFileName != null) photo = a.photoFileName;
-            if (a.avgTempC != null) {
-                tempSum += a.avgTempC;
-                tempN++;
-            }
         }
-        if (temp == null && tempN > 0) temp = tempSum / tempN;
+        String photo = firstPhoto(onRide);
+        Double temp = avgTempC != null ? avgTempC : averageTemp(onRide);
 
         List<ClimbLine> shown = new ArrayList<>(lines);
         // Stable: PRs move to the front, the rest keeps ride order.

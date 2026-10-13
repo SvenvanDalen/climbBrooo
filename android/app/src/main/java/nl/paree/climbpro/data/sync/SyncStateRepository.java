@@ -7,12 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * Persists per-route sync state to {@code getFilesDir()/sync_state.json}.
@@ -88,27 +88,10 @@ public final class SyncStateRepository {
     }
 
     private void saveAll(Map<String, SyncState> map) {
-        File tmp = new File(stateFile.getParentFile(), FILE + ".tmp");
         try {
-            byte[] data = mapper.writeValueAsBytes(map.values());
-            try (FileOutputStream out = new FileOutputStream(tmp)) {
-                out.write(data);
-                out.getFD().sync();
-            }
-            // Replace the existing file atomically. File.renameTo does NOT overwrite an
-            // existing target on Windows / non-POSIX filesystems, so use Files.move with
-            // REPLACE_EXISTING (matching RouteRepository.writeAtomic).
-            try {
-                java.nio.file.Files.move(tmp.toPath(), stateFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), stateFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
+            AtomicFiles.write(stateFile, mapper.writeValueAsBytes(map.values()));
         } catch (IOException e) {
             Log.e(TAG, "Failed to save sync state", e);
-            tmp.delete();
         }
     }
 

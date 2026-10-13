@@ -54,7 +54,7 @@ public final class ClimbOfTheWeek {
     static final double W_FRESHNESS = 0.45;
     static final double W_DISTANCE  = 0.30;
     static final double W_WEATHER   = 0.25;
-    static final double JITTER      = 0.015;
+    static final double JITTER_WEIGHT = 0.015;
 
     static final double GOOD_THRESHOLD  = 0.7;
     static final double MIXED_THRESHOLD = 0.4;
@@ -155,11 +155,7 @@ public final class ClimbOfTheWeek {
                                         List<DailyForecast.Day> forecast, String pinnedClimbId) {
         if (candidates == null || today == null) return Collections.emptyList();
 
-        Map<String, Candidate> unique = new LinkedHashMap<>();
-        for (Candidate c : candidates) {
-            if (c == null || !validCoord(c.startLat, c.startLon)) continue;
-            unique.putIfAbsent(c.key(), c);
-        }
+        Map<String, Candidate> unique = uniqueValid(candidates);
         if (unique.isEmpty()) return Collections.emptyList();
 
         boolean haveOrigin = validCoord(originLat, originLon);
@@ -180,9 +176,7 @@ public final class ClimbOfTheWeek {
 
         DailyForecast.Day best = bestDay(forecast, today);
         Outlook outlook = best == null ? null : outlookFor(dayQuality(best));
-        double maxDifficulty = 0;
-        for (Candidate c : pool) maxDifficulty = Math.max(maxDifficulty, difficulty(c));
-        if (pinned != null) maxDifficulty = Math.max(maxDifficulty, difficulty(pinned));
+        double maxDifficulty = maxDifficulty(pool, pinned);
 
         List<Suggestion> out = new ArrayList<>();
         for (Candidate c : pool) {
@@ -219,14 +213,14 @@ public final class ClimbOfTheWeek {
             sum += W_WEATHER * weatherFit(outlook, norm);
             weights += W_WEATHER;
         }
-        double score = sum / weights + JITTER * jitter(week, c.key());
+        double score = sum / weights + JITTER_WEIGHT * jitter(week, c.key());
         return new Suggestion(c, score, d, haveOrigin, days, outlook != null, best, outlook,
                 pinned, done);
     }
 
     static double freshness(Integer daysSince) {
         if (daysSince == null) return 1.0;
-        return 0.9 * Math.min(Math.max(daysSince, 0), FRESH_DAYS) / (double) FRESH_DAYS;
+        return 0.9 * Math.min(Math.max(daysSince, 0), FRESH_DAYS) / FRESH_DAYS;
     }
 
     static double weatherFit(Outlook outlook, double normDifficulty) {
@@ -298,6 +292,23 @@ public final class ClimbOfTheWeek {
     }
 
     private interface Filter { boolean keep(Candidate c); }
+
+    /** Candidates with a valid start coordinate, first one per key. */
+    private static Map<String, Candidate> uniqueValid(List<Candidate> candidates) {
+        Map<String, Candidate> unique = new LinkedHashMap<>();
+        for (Candidate c : candidates) {
+            if (c == null || !validCoord(c.startLat, c.startLon)) continue;
+            unique.putIfAbsent(c.key(), c);
+        }
+        return unique;
+    }
+
+    private static double maxDifficulty(List<Candidate> pool, Candidate pinned) {
+        double max = 0;
+        for (Candidate c : pool) max = Math.max(max, difficulty(c));
+        if (pinned != null) max = Math.max(max, difficulty(pinned));
+        return max;
+    }
 
     private static List<Candidate> keepIfAny(List<Candidate> in, Filter f) {
         List<Candidate> out = new ArrayList<>();

@@ -13,13 +13,13 @@ import java.io.IOException;
 public final class GoalEventStore {
 
     private static final String TAG = "GoalEventStore";
-    public static final String FILE = "goal_event.json";
+    public static final String FILE_NAME = "goal_event.json";
 
     private final File file;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public GoalEventStore(Context context) {
-        this.file = new File(context.getApplicationContext().getFilesDir(), FILE);
+        this.file = new File(context.getApplicationContext().getFilesDir(), FILE_NAME);
     }
 
     /** The stored event, or null when none is set or the file can't be read. */
@@ -34,7 +34,7 @@ public final class GoalEventStore {
     }
 
     public synchronized void save(GoalEvent event) throws IOException {
-        File tmp = new File(file.getParentFile(), FILE + ".tmp");
+        File tmp = new File(file.getParentFile(), FILE_NAME + ".tmp");
         try (FileOutputStream out = new FileOutputStream(tmp)) {
             out.write(mapper.writeValueAsBytes(event));
             out.getFD().sync();

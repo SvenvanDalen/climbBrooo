@@ -52,7 +52,7 @@ public class RecoveryCheckRepositoryEdgeTest {
 
     @Test
     public void save_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(RecoveryCheckRepository.FILE, () -> new RecoveryCheckRepository(app)
+        assertWriteFails(RecoveryCheckRepository.FILE_NAME, () -> new RecoveryCheckRepository(app)
                 .save(1L, 5, 3, null, null, 100L));
     }
 }

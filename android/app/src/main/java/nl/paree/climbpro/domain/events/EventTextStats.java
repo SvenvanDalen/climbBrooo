@@ -26,7 +26,7 @@ public final class EventTextStats {
      * or separator, so "1200 km" is not read as 200.
      */
     private static final Pattern DISTANCES = Pattern.compile(
-            "(?<![\\d.,])((?:\\d{2,3}\\s*(?:/|,|-|en|of|&)\\s*)*\\d{2,3})\\s*(?:km|kilometer)\\b",
+            "(?<![\\d.,])((?:\\d{2,3}\\s*(?:/|,|-|en|of|&)\\s*)*+\\d{2,3})\\s*(?:km|kilometer)\\b",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern NUMBER = Pattern.compile("\\d{2,3}");
     /** "1850 hm", "1.850 hoogtemeters", "2,300 m elevation", "D+ 1850", "1850m D+". */

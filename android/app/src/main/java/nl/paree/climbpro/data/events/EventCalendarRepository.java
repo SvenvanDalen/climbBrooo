@@ -36,7 +36,7 @@ import okhttp3.ResponseBody;
 public final class EventCalendarRepository {
 
     private static final String TAG = "EventCalendarRepo";
-    public static final String FILE = "event_calendar.json";
+    public static final String FILE_NAME = "event_calendar.json";
     /** Feeds are small text files; anything bigger is not a calendar. */
     static final long MAX_FEED_BYTES = 2_000_000;
 
@@ -52,7 +52,7 @@ public final class EventCalendarRepository {
 
     public EventCalendarRepository(Context context) {
         this.app = context.getApplicationContext();
-        this.file = new File(app.getFilesDir(), FILE);
+        this.file = new File(app.getFilesDir(), FILE_NAME);
     }
 
     public EventCalendar load() {
@@ -104,9 +104,7 @@ public final class EventCalendarRepository {
             } catch (IOException e) {
                 Log.w(TAG, "Feed failed: " + f.url, e);
                 f.lastError = e.getMessage() != null ? e.getMessage() : "niet bereikbaar";
-                for (CyclingEvent old : c.feedEvents) {
-                    if (f.url.equals(old.feedUrl)) events.add(old);
-                }
+                keepPreviousEvents(f, c.feedEvents, events);
             }
         }
         for (CyclingEvent e : events) geocode(e, geoCache);
@@ -115,6 +113,13 @@ public final class EventCalendarRepository {
         c.lastFetchMs = System.currentTimeMillis();
         save(c);
         return c;
+    }
+
+    private static void keepPreviousEvents(EventCalendar.Feed f, List<CyclingEvent> previous,
+                                           List<CyclingEvent> out) {
+        for (CyclingEvent old : previous) {
+            if (f.url.equals(old.feedUrl)) out.add(old);
+        }
     }
 
     /** Geocodes the location text of an event without coordinates (best effort). */

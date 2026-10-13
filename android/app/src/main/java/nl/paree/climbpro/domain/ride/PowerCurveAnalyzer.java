@@ -15,16 +15,8 @@ public final class PowerCurveAnalyzer {
     /** Longer recordings are not resampled to 1 Hz (48 h), like {@link SprintAnalyzer}. */
     private static final int MAX_RESAMPLE_SEC = 48 * 3600;
 
-    /**
-     * Best average watts per entry of {@link #DURATIONS_SEC}, rounded; 0 where the ride is
-     * shorter than that duration. Null without a power stream or when the ride has no power
-     * at all. Seconds without a sample count as 0 W, as in {@link SprintAnalyzer#peakPower},
-     * so a pause inside a window lowers it instead of being skipped.
-     */
-    public static int[] bestPowers(RideStreams s) {
-        if (s == null || !s.isUsable() || s.watts == null) return null;
-        int end = s.time[s.time.length - 1];
-        if (end <= 0 || end > MAX_RESAMPLE_SEC) return null;
+    /** Plausible power samples placed on their second (0 elsewhere); null without any. */
+    private static double[] perSecondWatts(RideStreams s, int end) {
         double[] perSecond = new double[end + 1];
         boolean any = false;
         for (int i = 0; i < s.time.length; i++) {
@@ -35,7 +27,21 @@ public final class PowerCurveAnalyzer {
             perSecond[t] = w;
             any = true;
         }
-        if (!any) return null;
+        return any ? perSecond : null;
+    }
+
+    /**
+     * Best average watts per entry of {@link #DURATIONS_SEC}, rounded; 0 where the ride is
+     * shorter than that duration. Null without a power stream or when the ride has no power
+     * at all. Seconds without a sample count as 0 W, as in {@link SprintAnalyzer#peakPower},
+     * so a pause inside a window lowers it instead of being skipped.
+     */
+    public static int[] bestPowers(RideStreams s) {
+        if (s == null || !s.isUsable() || s.watts == null) return null;
+        int end = s.time[s.time.length - 1];
+        if (end <= 0 || end > MAX_RESAMPLE_SEC) return null;
+        double[] perSecond = perSecondWatts(s, end);
+        if (perSecond == null) return null;
         double[] prefix = new double[perSecond.length + 1];
         for (int i = 0; i < perSecond.length; i++) prefix[i + 1] = prefix[i] + perSecond[i];
 

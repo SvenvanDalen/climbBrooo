@@ -53,8 +53,7 @@ public final class FriendFeedMerger {
         List<FriendFeedEntry> kept = new ArrayList<>();
         int added = 0;
         for (FriendFeedEntry e : all) {
-            int n = perFriend.containsKey(e.friendId) ? perFriend.get(e.friendId) + 1 : 1;
-            perFriend.put(e.friendId, n);
+            int n = perFriend.merge(e.friendId, 1, Integer::sum);
             if (n > MAX_ENTRIES_PER_FRIEND) continue;
             kept.add(e);
             if (newKeys.contains(e.dedupeKey())) added++;

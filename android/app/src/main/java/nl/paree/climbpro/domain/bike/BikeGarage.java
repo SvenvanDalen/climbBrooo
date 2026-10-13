@@ -94,23 +94,30 @@ public final class BikeGarage {
     /** Id of the garage bike this ride was on (see the class doc), or null. */
     public static String bikeIdForRide(StoredRide ride, BikeCostLog log) {
         if (ride == null || log == null || log.bikes == null || log.bikes.isEmpty()) return null;
-        if (ride.gearId != null) {
-            for (Bike b : log.bikes) {
-                if (b != null && ride.gearId.equals(b.stravaGearId)) return b.id;
-            }
-        }
+        Bike byGear = bikeWithGear(log, ride.gearId);
+        if (byGear != null) return byGear.id;
         if (isVirtual(ride)) {
             Bike indoor = indoorBike(log);
-            if (indoor != null) return indoor.id;
-            Bike active = activeBike(log);
-            return active != null ? active.id : null;
+            return idOf(indoor != null ? indoor : activeBike(log));
         }
         Bike active = activeBike(log);
         if (active != null && isTrainer(active)) {
             Bike outdoor = firstBike(log, true);
             if (outdoor != null) return outdoor.id;
         }
-        return active != null ? active.id : null;
+        return idOf(active);
+    }
+
+    private static Bike bikeWithGear(BikeCostLog log, String gearId) {
+        if (gearId == null) return null;
+        for (Bike b : log.bikes) {
+            if (b != null && gearId.equals(b.stravaGearId)) return b;
+        }
+        return null;
+    }
+
+    private static String idOf(Bike b) {
+        return b != null ? b.id : null;
     }
 
     /** The archived rides assigned to {@code bikeId}, in archive order. */
@@ -205,29 +212,8 @@ public final class BikeGarage {
                                   String cassette) {
         if (log == null || log.version >= BikeCostLog.GARAGE_VERSION) return false;
         if (log.bikes == null) log.bikes = new ArrayList<>();
-        boolean changed = false;
-
-        for (Bike b : log.bikes) {
-            if (b != null && (b.type == null || !b.type.equals(cleanType(b.type)))) {
-                b.type = cleanType(guessType(b.name));
-                changed = true;
-            }
-        }
-
-        Set<String> names = new HashSet<>();
-        for (Bike b : log.bikes) {
-            if (b != null && b.name != null) names.add(b.name.trim().toLowerCase(Locale.ROOT));
-        }
-        int index = 0;
-        if (passportNames != null) {
-            for (String raw : passportNames) {
-                if (raw == null || raw.trim().isEmpty()) continue;
-                String name = raw.trim();
-                if (!names.add(name.toLowerCase(Locale.ROOT))) continue;
-                log.bikes.add(newBike(MIGRATED_ID_PREFIX + "passport-" + index++, name));
-                changed = true;
-            }
-        }
+        boolean changed = guessMissingTypes(log);
+        changed |= addPassportBikes(log, passportNames);
 
         String rings = clean(chainrings);
         String cogs = clean(cassette);
@@ -236,28 +222,68 @@ public final class BikeGarage {
             changed = true;
         }
 
-        if (!log.bikes.isEmpty() && find(log, log.activeBikeId) == null) {
-            Bike first = firstBike(log, true);
-            if (first == null) first = firstBike(log, false);
-            log.activeBikeId = first.id;
+        changed |= ensureActiveBike(log);
+        Bike active = find(log, log.activeBikeId);
+        if (active != null) changed |= fillProfileSpecs(active, profileBikeWeightKg, rings, cogs);
+        log.version = BikeCostLog.GARAGE_VERSION;
+        return changed;
+    }
+
+    private static boolean guessMissingTypes(BikeCostLog log) {
+        boolean changed = false;
+        for (Bike b : log.bikes) {
+            if (b != null && (b.type == null || !b.type.equals(cleanType(b.type)))) {
+                b.type = cleanType(guessType(b.name));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    /** Adds a bike per bike-passport name that isn't in the garage yet (case-insensitive). */
+    private static boolean addPassportBikes(BikeCostLog log, List<String> passportNames) {
+        if (passportNames == null) return false;
+        Set<String> names = new HashSet<>();
+        for (Bike b : log.bikes) {
+            if (b != null && b.name != null) names.add(b.name.trim().toLowerCase(Locale.ROOT));
+        }
+        boolean changed = false;
+        int index = 0;
+        for (String raw : passportNames) {
+            if (raw == null || raw.trim().isEmpty()) continue;
+            String name = raw.trim();
+            if (!names.add(name.toLowerCase(Locale.ROOT))) continue;
+            log.bikes.add(newBike(MIGRATED_ID_PREFIX + "passport-" + index++, name));
             changed = true;
         }
-        Bike active = find(log, log.activeBikeId);
-        if (active != null) {
-            if (active.weightKg <= 0 && profileBikeWeightKg > 0) {
-                active.weightKg = profileBikeWeightKg;
-                changed = true;
-            }
-            if (active.chainrings == null && rings != null) {
-                active.chainrings = rings;
-                changed = true;
-            }
-            if (active.cassette == null && cogs != null) {
-                active.cassette = cogs;
-                changed = true;
-            }
+        return changed;
+    }
+
+    /** Points {@code activeBikeId} at the first outdoor bike (else any) when it is unset. */
+    private static boolean ensureActiveBike(BikeCostLog log) {
+        if (log.bikes.isEmpty() || find(log, log.activeBikeId) != null) return false;
+        Bike first = firstBike(log, true);
+        if (first == null) first = firstBike(log, false);
+        log.activeBikeId = first.id;
+        return true;
+    }
+
+    /** Copies the old profile's weight and gearing onto the active bike where it has none. */
+    private static boolean fillProfileSpecs(Bike active, double profileBikeWeightKg,
+                                            String rings, String cogs) {
+        boolean changed = false;
+        if (active.weightKg <= 0 && profileBikeWeightKg > 0) {
+            active.weightKg = profileBikeWeightKg;
+            changed = true;
         }
-        log.version = BikeCostLog.GARAGE_VERSION;
+        if (active.chainrings == null && rings != null) {
+            active.chainrings = rings;
+            changed = true;
+        }
+        if (active.cassette == null && cogs != null) {
+            active.cassette = cogs;
+            changed = true;
+        }
         return changed;
     }
 

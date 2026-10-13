@@ -3,15 +3,14 @@ package nl.paree.climbpro.data.planning;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for {@link PackingList}s (issue #189). Takes the target file directly
@@ -161,18 +160,21 @@ public final class PackingListStore {
         if (arr == null) return out;
         for (PackingList l : Arrays.asList(arr)) {
             if (l == null || l.id == null || l.name == null || l.name.trim().isEmpty()) continue;
-            List<PackingList.Item> items = new ArrayList<>();
-            if (l.items != null) {
-                for (PackingList.Item i : l.items) {
-                    if (i != null && i.id != null && i.text != null && !i.text.trim().isEmpty()) {
-                        items.add(i);
-                    }
-                }
-            }
-            l.items = items;
+            l.items = validItems(l.items);
             out.add(l);
         }
         return out;
+    }
+
+    private static List<PackingList.Item> validItems(List<PackingList.Item> raw) {
+        List<PackingList.Item> items = new ArrayList<>();
+        if (raw == null) return items;
+        for (PackingList.Item i : raw) {
+            if (i != null && i.id != null && i.text != null && !i.text.trim().isEmpty()) {
+                items.add(i);
+            }
+        }
+        return items;
     }
 
     private List<PackingList> loadForWrite() throws IOException {
@@ -184,21 +186,6 @@ public final class PackingListStore {
     }
 
     private void write(List<PackingList> all) throws IOException {
-        File tmp = new File(file.getParentFile(), file.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(MAPPER.writeValueAsBytes(all));
-            out.getFD().sync();
-        }
-        try {
-            try {
-                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
+        AtomicFiles.write(file, MAPPER.writeValueAsBytes(all));
     }
 }

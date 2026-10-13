@@ -33,17 +33,24 @@ public final class SegmentPrCalculator {
         if (climbId == null || segCount <= 0 || attempts == null) return null;
         int[] best = null;
         for (StoredClimbAttempt a : attempts) {
-            if (!climbId.equals(a.climbId)) continue;
-            if (a.routeDeviation) continue;
-            if (a.segSplitSec == null || a.segSplitSec.length != segCount) continue;
+            if (!hasCleanSplits(a, climbId, segCount)) continue;
             if (best == null) {
                 best = a.segSplitSec.clone();
             } else {
-                for (int i = 0; i < segCount; i++) {
-                    if (a.segSplitSec[i] < best[i]) best[i] = a.segSplitSec[i];
-                }
+                keepFastest(best, a.segSplitSec);
             }
         }
         return best;
+    }
+
+    private static boolean hasCleanSplits(StoredClimbAttempt a, String climbId, int segCount) {
+        return climbId.equals(a.climbId) && !a.routeDeviation
+                && a.segSplitSec != null && a.segSplitSec.length == segCount;
+    }
+
+    private static void keepFastest(int[] best, int[] splits) {
+        for (int i = 0; i < best.length; i++) {
+            if (splits[i] < best[i]) best[i] = splits[i];
+        }
     }
 }

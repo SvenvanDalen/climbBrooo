@@ -48,6 +48,16 @@ public final class TargetSpeedRefTimePlanner {
         return result;
     }
 
+    /**
+     * Time at the target VAM: from the segment's gain, or for a flat segment from the speed
+     * the VAM implies at the climb's average gradient (0 when neither is known).
+     */
+    private static double vamSeconds(double dist, double gain, double vamMps,
+                                     double vamImpliedMps) {
+        if (gain > 0) return gain / vamMps;
+        return vamImpliedMps > 0 ? dist / vamImpliedMps : 0;
+    }
+
     /** Per-segment reference seconds for one climb, or null when not computable. */
     public static int[] segmentSeconds(StoredClimb climb, GhostTarget target) {
         if (climb == null || target == null || !target.isSet()) return null;
@@ -75,18 +85,22 @@ public final class TargetSpeedRefTimePlanner {
             vamImpliedMps = vamMps / (totalGain / totalLen);
         }
 
-        int[] out = new int[n];
+        return splitSeconds(segs, gains, speedMps, vamMps, vamImpliedMps);
+    }
+
+    /**
+     * Per-segment seconds at the slower of the speed and VAM targets, rounded on the running
+     * total so the splits add up to the rounded climb time.
+     */
+    private static int[] splitSeconds(List<StoredSegment> segs, double[] gains, double speedMps,
+                                      double vamMps, double vamImpliedMps) {
+        int[] out = new int[segs.size()];
         double cumulative = 0;
         long prevRounded = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < out.length; i++) {
             double dist = Math.max(0, segs.get(i).distance);
-            double sec = 0;
-            if (speedMps > 0) sec = dist / speedMps;
-            if (vamMps > 0) {
-                double vamSec = gains[i] > 0 ? gains[i] / vamMps
-                        : (vamImpliedMps > 0 ? dist / vamImpliedMps : 0);
-                sec = Math.max(sec, vamSec);
-            }
+            double sec = speedMps > 0 ? dist / speedMps : 0;
+            if (vamMps > 0) sec = Math.max(sec, vamSeconds(dist, gains[i], vamMps, vamImpliedMps));
             cumulative += sec;
             long rounded = Math.round(cumulative);
             out[i] = (int) (rounded - prevRounded);

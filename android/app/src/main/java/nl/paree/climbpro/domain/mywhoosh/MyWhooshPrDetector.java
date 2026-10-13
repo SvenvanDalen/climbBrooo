@@ -60,30 +60,55 @@ public final class MyWhooshPrDetector {
             if (a == null || a.climbId == null) continue;
             if (myWhooshActivityIds.contains(a.activityId)
                     && a.dateEpochSec >= notBeforeEpochSec) {
-                Integer bestSec = null;
-                Double bestWkg = null;
-                for (StoredClimbAttempt p : seen) {
-                    if (!a.climbId.equals(p.climbId) || p.activityId == a.activityId) continue;
-                    if (!p.routeDeviation && p.elapsedSec > 0
-                            && (bestSec == null || p.elapsedSec < bestSec)) {
-                        bestSec = p.elapsedSec;
-                    }
-                    Double w = weights != null ? weights.wattsPerKg(p.avgWatts, p.dateEpochSec)
-                            : null;
-                    if (w != null && (bestWkg == null || w > bestWkg)) bestWkg = w;
-                }
-                if (!a.routeDeviation && bestSec != null && a.elapsedSec > 0
-                        && a.elapsedSec < bestSec) {
-                    out.add(new Pr(a.climbId, a.activityId, Kind.TIME, a.elapsedSec, bestSec));
-                }
-                Double wkg = weights != null ? weights.wattsPerKg(a.avgWatts, a.dateEpochSec)
-                        : null;
-                if (wkg != null && bestWkg != null && wkg > bestWkg + 0.005) {
-                    out.add(new Pr(a.climbId, a.activityId, Kind.POWER, wkg, bestWkg));
-                }
+                addPrs(a, seen, weights, out);
             }
             seen.add(a);
         }
         return out;
+    }
+
+    /** Adds a time and/or power PR for {@code a} against the earlier attempts in {@code seen}. */
+    private static void addPrs(StoredClimbAttempt a, List<StoredClimbAttempt> seen,
+                               WeightHistory weights, List<Pr> out) {
+        Integer bestSec = previousBestSec(a, seen);
+        Double bestWkg = previousBestWkg(a, seen, weights);
+        if (!a.routeDeviation && bestSec != null && a.elapsedSec > 0
+                && a.elapsedSec < bestSec) {
+            out.add(new Pr(a.climbId, a.activityId, Kind.TIME, a.elapsedSec, bestSec));
+        }
+        Double wkg = weights != null ? weights.wattsPerKg(a.avgWatts, a.dateEpochSec)
+                : null;
+        if (wkg != null && bestWkg != null && wkg > bestWkg + 0.005) {
+            out.add(new Pr(a.climbId, a.activityId, Kind.POWER, wkg, bestWkg));
+        }
+    }
+
+    /** True for an earlier attempt of the same climb from another activity. */
+    private static boolean isEarlierOther(StoredClimbAttempt a, StoredClimbAttempt p) {
+        return a.climbId.equals(p.climbId) && p.activityId != a.activityId;
+    }
+
+    private static Integer previousBestSec(StoredClimbAttempt a, List<StoredClimbAttempt> seen) {
+        Integer bestSec = null;
+        for (StoredClimbAttempt p : seen) {
+            if (!isEarlierOther(a, p)) continue;
+            if (!p.routeDeviation && p.elapsedSec > 0
+                    && (bestSec == null || p.elapsedSec < bestSec)) {
+                bestSec = p.elapsedSec;
+            }
+        }
+        return bestSec;
+    }
+
+    private static Double previousBestWkg(StoredClimbAttempt a, List<StoredClimbAttempt> seen,
+                                          WeightHistory weights) {
+        if (weights == null) return null;
+        Double bestWkg = null;
+        for (StoredClimbAttempt p : seen) {
+            if (!isEarlierOther(a, p)) continue;
+            Double w = weights.wattsPerKg(p.avgWatts, p.dateEpochSec);
+            if (w != null && (bestWkg == null || w > bestWkg)) bestWkg = w;
+        }
+        return bestWkg;
     }
 }

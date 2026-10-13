@@ -27,12 +27,12 @@ public class RouteGhostRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        new File(app.getFilesDir(), RouteGhostRepository.FILE).delete();
+        new File(app.getFilesDir(), RouteGhostRepository.FILE_NAME).delete();
     }
 
     @After
     public void tearDown() {
-        new File(app.getFilesDir(), RouteGhostRepository.FILE).delete();
+        new File(app.getFilesDir(), RouteGhostRepository.FILE_NAME).delete();
     }
 
     private static StoredRouteGhost ghost(String routeId, long activityId, int... secs) {

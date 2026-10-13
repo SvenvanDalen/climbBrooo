@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Serialises a {@link StoredRoute} to the compact wire-format payload (version 3).
@@ -35,11 +36,15 @@ import java.util.Map;
  *      vam:[avgVamMPerH,peakVamMPerH, ...],              // 2 ints × segCount (optional, omitted unless every segment has VAM)
  *      ib:[targetW, lowW, highW],                        // interval block (optional, issue #180; needs FTP)
  *      ev:[targetM, reps, sLat, sLon, topLat, topLon],   // Everesting attempt (optional, issue #217)
- *      zc:[zoneColorIndex, ...]}                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
+ *      zc:[zoneColorIndex, ...],                         // 1 int × segCount (optional, FTP intensity-zone color, issue #66)
+ *      nw:1}                                             // never ridden before (optional, issue #27)
  *   ],
+ *   cg:[rpm × 6], hg:[zone × 6],                        // per gradient class: usual cadence / HR zone (optional, #18 / #24)
  *   fss:[{s,e,t,n?}, ...],                              // specialized starred segments (optional, omitted when none qualify)
  *   hz:[startM, endM, type, ...],                       // tunnels (0) + technical descents (1) (optional, issue #203)
  *   gh:[stepM, sec1, sec2, ...]}                        // route ghost: best earlier ride, seconds per step (optional, issue #178)
+ *
+ * Radius payloads may carry ord:1 (issue #9): a day trip, to be ridden in array order.
  *
  * un = optional display-unit bitmask (issue #262): 1 = imperial distance/elevation/speed,
  *      2 = psi, 4 = °F. Emitted on every payload kind only when non-zero; absent = metric.
@@ -71,6 +76,15 @@ public final class ClimbPayloadBuilder {
     /** Wire key of the optional top-level display-unit bitmask (issue #262). */
     static final String KEY_UNITS = "un";
 
+    /** Per-climb "never ridden before" flag (issue #27). */
+    static final String KEY_NEW_CLIMB = "nw";
+    /** Top-level usual cadence per gradient class (issue #18). */
+    static final String KEY_CADENCE_BY_GRADE = "cg";
+    /** Top-level usual heart-rate zone per gradient class (issue #24). */
+    static final String KEY_HR_ZONE_BY_GRADE = "hg";
+    /** Radius payload is an ordered day trip (issue #9). */
+    static final String KEY_ORDERED = "ord";
+
     private final ObjectMapper mapper;
     /** {@link UnitPreferences#toWireFlags()}; 0 = metric, never emitted. */
     private final int unitFlags;
@@ -82,20 +96,30 @@ public final class ClimbPayloadBuilder {
     private final int[] fieldLayout;
     /** Color palette ({@link GradientPalette}); the default palette emits no 'pal' key. */
     private final int palette;
+    /** ClimbIdentity keys of every climb the rider rode; null = never emit 'nw'. */
+    private final Set<String> riddenClimbIds;
+    /** 'cg' (6 rpm values) or null. */
+    private final int[] cadenceByGrade;
+    /** 'hg' (6 zone values) or null. */
+    private final int[] hrZoneByGrade;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
-        this(mapper, null, 0, GradientPalette.DEFAULT, 0, null);
+        this(mapper, null, 0, GradientPalette.DEFAULT, 0, null, null, null, null);
     }
 
     private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts,
                                 int palette, int unitFlags,
-                                int[] fieldLayout) {
+                                int[] fieldLayout, Set<String> riddenClimbIds,
+                                int[] cadenceByGrade, int[] hrZoneByGrade) {
         this.mapper = mapper;
         this.unitFlags = unitFlags;
         this.zoneProfile = zoneProfile;
         this.ftpWatts = ftpWatts;
         this.palette = GradientPalette.normalize(palette);
         this.fieldLayout = fieldLayout;
+        this.riddenClimbIds = riddenClimbIds;
+        this.cadenceByGrade = cadenceByGrade;
+        this.hrZoneByGrade = hrZoneByGrade;
     }
 
     /**
@@ -106,7 +130,8 @@ public final class ClimbPayloadBuilder {
      * nice-to-have and must never cost a sync (radius mode: never cost a climb).
      */
     public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
-        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, palette, unitFlags, fieldLayout);
+        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, palette, unitFlags, fieldLayout,
+                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
     }
 
     /**
@@ -114,7 +139,8 @@ public final class ClimbPayloadBuilder {
      * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
      */
     public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), palette, unitFlags, fieldLayout);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), palette, unitFlags,
+                fieldLayout, riddenClimbIds, cadenceByGrade, hrZoneByGrade);
     }
 
     /**
@@ -123,7 +149,8 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withFieldLayout(WatchFieldLayout layout) {
         int[] lay = (layout == null || layout.isDefault()) ? null : layout.codes();
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, lay);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, lay,
+                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
     }
 
     /**
@@ -133,7 +160,8 @@ public final class ClimbPayloadBuilder {
      * change on the watch: the colorIndex values in 'segs' and 'zc' are the same.
      */
     public ClimbPayloadBuilder withPalette(int palette) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
+                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
     }
 
     /** Adds {@code pal} when a non-default palette is selected. */
@@ -149,7 +177,48 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withUnits(UnitPreferences units) {
         int flags = units != null ? units.toWireFlags() : 0;
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, flags, fieldLayout);
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, flags, fieldLayout,
+                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
+    }
+
+    /**
+     * Issue #27: climbs whose {@link nl.paree.climbpro.domain.climb.ClimbIdentity} is not in
+     * {@code riddenClimbIds} get {@code "nw": 1}. A null or empty set (no attempt history at
+     * all, e.g. never connected to Strava) emits nothing, so a fresh install doesn't flag
+     * every climb as new.
+     */
+    public ClimbPayloadBuilder withRiddenClimbIds(Set<String> riddenClimbIds) {
+        Set<String> ids = (riddenClimbIds == null || riddenClimbIds.isEmpty()) ? null : riddenClimbIds;
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
+                ids, cadenceByGrade, hrZoneByGrade);
+    }
+
+    /**
+     * Issues #18 / #24: the rider's usual cadence (rpm) and heart-rate zone (1-5) per gradient
+     * class, sent as 'cg' / 'hg'. Each is emitted only when it has exactly six values and at
+     * least one is known (positive); otherwise that key is left out.
+     */
+    public ClimbPayloadBuilder withGradeHabits(int[] cadenceByGrade, int[] hrZoneByGrade) {
+        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
+                riddenClimbIds, gradeClasses(cadenceByGrade, 250), gradeClasses(hrZoneByGrade, 5));
+    }
+
+    /** A copy clamped to 0..max, or null unless six values with at least one known. */
+    static int[] gradeClasses(int[] values, int max) {
+        if (values == null || values.length != 6) return null;
+        int[] out = new int[6];
+        boolean any = false;
+        for (int i = 0; i < 6; i++) {
+            out[i] = Math.max(0, Math.min(max, values[i]));
+            if (out[i] > 0) any = true;
+        }
+        return any ? out : null;
+    }
+
+    /** Adds 'cg' / 'hg' when known. */
+    private void putGradeHabits(Map<String, Object> payload) {
+        if (cadenceByGrade != null) payload.put(KEY_CADENCE_BY_GRADE, cadenceByGrade);
+        if (hrZoneByGrade != null) payload.put(KEY_HR_ZONE_BY_GRADE, hrZoneByGrade);
     }
 
     /** Adds 'un' when the units are not all-metric. */
@@ -197,19 +266,16 @@ public final class ClimbPayloadBuilder {
         payload.put("routeId", route.routeId);
         putPalette(payload);
         putRouteTotalLength(payload, route);
-        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (name != null && name.length() <= 32) payload.put("name", name);
+        putRouteName(payload, route);
         List<Map<String, Object>> climbs = new ArrayList<>();
         if (route.climbs != null) {
             for (int i = 0; i < route.climbs.size(); i++) {
-                int[] tsec = (targetSeconds != null && i < targetSeconds.length)
-                        ? targetSeconds[i] : null;
-                int[] refsec = (refSeconds != null && i < refSeconds.length)
-                        ? refSeconds[i] : null;
-                climbs.add(buildRouteClimb(route.climbs.get(i), tsec, refsec));
+                climbs.add(buildRouteClimb(route.climbs.get(i), rowAt(targetSeconds, i),
+                        rowAt(refSeconds, i)));
             }
         }
         putFieldLayout(payload);
+        putGradeHabits(payload);
         payload.put("climbs", climbs);
         List<Map<String, Object>> fss = buildFlatStarredSections(route.starredSegments);
         if (fss != null && !fss.isEmpty()) payload.put("fss", fss);
@@ -221,9 +287,18 @@ public final class ClimbPayloadBuilder {
     }
 
     public byte[] buildRadiusPayload(List<StoredClimb> climbs) throws IOException {
+        return buildRadiusPayload(climbs, false);
+    }
+
+    /**
+     * @param ordered true for a day trip (issue #9): adds {@code "ord": 1} so the watch counts
+     *                down to the climbs in list order instead of to the nearest one
+     */
+    public byte[] buildRadiusPayload(List<StoredClimb> climbs, boolean ordered) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",      SCHEMA_VERSION);
         payload.put("mode",   "radius");
+        if (ordered) payload.put(KEY_ORDERED, 1);
         putPalette(payload);
         putUnits(payload);
         List<Map<String, Object>> out = new ArrayList<>();
@@ -231,6 +306,7 @@ public final class ClimbPayloadBuilder {
             for (StoredClimb sc : climbs) out.add(buildRadiusClimb(sc));
         }
         putFieldLayout(payload);
+        putGradeHabits(payload);
         payload.put("climbs", out);
         return writeWithinBudget(payload, out);
     }
@@ -257,8 +333,7 @@ public final class ClimbPayloadBuilder {
         payload.put("routeId", route.routeId);
         putPalette(payload);
         putRouteTotalLength(payload, route);
-        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (name != null && name.length() <= 32) payload.put("name", name);
+        putRouteName(payload, route);
         List<Map<String, Object>> climbs = new ArrayList<>(1);
         int[] tsec = (targetSeconds != null && climbIndex < targetSeconds.length)
                 ? targetSeconds[climbIndex] : null;
@@ -266,6 +341,7 @@ public final class ClimbPayloadBuilder {
                 ? refSeconds[climbIndex] : null;
         climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
         putFieldLayout(payload);
+        putGradeHabits(payload);
         payload.put("climbs", climbs);
         putHazards(payload, route);
         return writeWithinBudget(payload, climbs);
@@ -328,6 +404,51 @@ public final class ClimbPayloadBuilder {
         }
     }
 
+    /** The user's name for the route, else its own name, when it fits the watch (≤ 32 chars). */
+    private static void putRouteName(Map<String, Object> payload, StoredRoute route) {
+        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+        if (name != null && name.length() <= 32) payload.put("name", name);
+    }
+
+    /** Row i of a per-climb table, or null when the table is missing or too short. */
+    private static int[] rowAt(int[][] table, int i) {
+        return table != null && i < table.length ? table[i] : null;
+    }
+
+    private static void addSurfaceSections(StoredRoute route, List<int[]> ranges,
+                                           List<String> names) {
+        if (route.surfaceSections == null) return;
+        for (StoredSurfaceSection s : route.surfaceSections) {
+            ranges.add(new int[]{s.startDistance, s.endDistance,
+                    nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
+            names.add(s.name);
+        }
+    }
+
+    /** Flat stretches qualify when they are named or have a known surface. */
+    private static void addNamedFlats(StoredRoute route, List<int[]> ranges, List<String> names) {
+        if (route.flatSegments == null) return;
+        for (nl.paree.climbpro.data.route.StoredFlatSegment f : route.flatSegments) {
+            boolean qualifies = (f.name != null && !f.name.isEmpty())
+                    || f.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN;
+            if (!qualifies) continue;
+            ranges.add(new int[]{f.startDistance, f.endDistance,
+                    nl.paree.climbpro.domain.segment.SurfaceType.fromInt(f.surfaceType)});
+            names.add(f.name);
+        }
+    }
+
+    private static void addSurfacedStarred(StoredRoute route, List<int[]> ranges,
+                                           List<String> names) {
+        if (route.starredSegments == null) return;
+        for (StoredStarredSegment s : route.starredSegments) {
+            if (s.surfaceType == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) continue;
+            ranges.add(new int[]{s.startDistance, s.endDistance,
+                    nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
+            names.add(s.userDisplayName != null ? s.userDisplayName : s.name);
+        }
+    }
+
     /**
      * Lean payload for the surface-sections datafield: no climbs, and a 'surfSec'
      * array of section objects {s,e,t,n?,cp}. 'cp' is a packed checkpoint array
@@ -344,38 +465,15 @@ public final class ClimbPayloadBuilder {
         payload.put("mode",    "route");
         putUnits(payload);
         payload.put("routeId", route.routeId);
-        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (name != null && name.length() <= 32) payload.put("name", name);
+        putRouteName(payload, route);
         payload.put("climbs", new ArrayList<>());
 
         // Collect all sections (surface sections + qualifying flat segments).
         List<int[]> ranges = new ArrayList<>();   // {start, end, surfaceType}
         List<String> names = new ArrayList<>();
-        if (route.surfaceSections != null) {
-            for (StoredSurfaceSection s : route.surfaceSections) {
-                ranges.add(new int[]{s.startDistance, s.endDistance,
-                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
-                names.add(s.name);
-            }
-        }
-        if (route.flatSegments != null) {
-            for (nl.paree.climbpro.data.route.StoredFlatSegment f : route.flatSegments) {
-                boolean qualifies = (f.name != null && !f.name.isEmpty())
-                        || f.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN;
-                if (!qualifies) continue;
-                ranges.add(new int[]{f.startDistance, f.endDistance,
-                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(f.surfaceType)});
-                names.add(f.name);
-            }
-        }
-        if (route.starredSegments != null) {
-            for (StoredStarredSegment s : route.starredSegments) {
-                if (s.surfaceType == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) continue;
-                ranges.add(new int[]{s.startDistance, s.endDistance,
-                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
-                names.add(s.userDisplayName != null ? s.userDisplayName : s.name);
-            }
-        }
+        addSurfaceSections(route, ranges, names);
+        addNamedFlats(route, ranges, names);
+        addSurfacedStarred(route, ranges, names);
         // Sort by start distance, keeping names aligned via an index permutation.
         Integer[] order = new Integer[ranges.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
@@ -441,6 +539,10 @@ public final class ClimbPayloadBuilder {
         c.put("ag",  toFixedPoint(sc.avgGradient));
         String name = sc.userDisplayName != null ? sc.userDisplayName : sc.name;
         if (name != null && name.length() <= 32) c.put("n", name);
+        if (riddenClimbIds != null
+                && !riddenClimbIds.contains(nl.paree.climbpro.domain.climb.ClimbIdentity.of(sc))) {
+            c.put(KEY_NEW_CLIMB, 1);
+        }
         c.put("segs", buildSegs(sc.segments));
         if (sc.calibrationPoints != null && !sc.calibrationPoints.isEmpty()) {
             c.put("calib", buildCalib(sc.calibrationPoints));

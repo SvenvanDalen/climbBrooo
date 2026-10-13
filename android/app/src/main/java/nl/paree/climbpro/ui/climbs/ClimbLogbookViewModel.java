@@ -98,6 +98,17 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
     /** Level + XP derived from all attempts, see {@link XpCalculator}. */
     public LiveData<XpCalculator.Progress> progress() { return progress; }
 
+    /** A logbook row; a climb no longer in any route shows as "Klim" without a link. */
+    private static LogbookRow logbookRow(Summary s, Location loc) {
+        return new LogbookRow(
+                s.climbId,
+                loc != null ? loc.displayName : "Klim",
+                s.prSec, s.attemptCount, s.lastDateSec,
+                loc != null ? loc.routeId : null,
+                loc != null ? loc.index : -1,
+                loc != null ? loc.rating : null);
+    }
+
     public void loadLogbook() {
         executor.execute(() -> {
             List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
@@ -105,16 +116,7 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
             Map<String, Location> located = resolveLocations(summaries.keySet());
 
             List<LogbookRow> out = new ArrayList<>();
-            for (Summary s : summaries.values()) {
-                Location loc = located.get(s.climbId);
-                out.add(new LogbookRow(
-                        s.climbId,
-                        loc != null ? loc.displayName : "Klim",
-                        s.prSec, s.attemptCount, s.lastDateSec,
-                        loc != null ? loc.routeId : null,
-                        loc != null ? loc.index : -1,
-                        loc != null ? loc.rating : null));
-            }
+            for (Summary s : summaries.values()) out.add(logbookRow(s, located.get(s.climbId)));
             unsortedRows = out;
             rows.postValue(sortRows(out, sortByRating));
             streak.postValue(ClimbStreakCalculator.compute(attempts));

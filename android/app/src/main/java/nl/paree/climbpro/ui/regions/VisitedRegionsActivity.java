@@ -74,7 +74,18 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
         executor.execute(this::load);
     }
 
-    private void load() {
+    /** The climb's region, resolved once per load (a failed lookup is remembered as null). */
+    private static RegionCache.Region regionOf(String climbId, double[] start,
+                                               Map<String, RegionCache.Region> byClimb,
+                                               RegionResolver resolver) {
+        if (byClimb.containsKey(climbId)) return byClimb.get(climbId);
+        RegionCache.Region r = resolver.resolve(start[0], start[1]);
+        byClimb.put(climbId, r);
+        return r;
+    }
+
+    /** Start coordinate per climb identity over the whole catalog (first copy wins). */
+    private Map<String, double[]> climbStarts() {
         Map<String, double[]> startById = new HashMap<>();
         RouteRepository routes = new RouteRepository(this);
         for (RouteCatalogEntry e : routes.loadCatalog()) {
@@ -88,6 +99,11 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
                 // an unreadable route just contributes no coordinates
             }
         }
+        return startById;
+    }
+
+    private void load() {
+        Map<String, double[]> startById = climbStarts();
         RegionCache cache = new RegionCache(new File(getFilesDir(), "region_cache.json"));
         RegionResolver resolver = new RegionResolver(this, cache);
         List<VisitedRegions.Visit> visits = new ArrayList<>();
@@ -100,13 +116,7 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
             attempts++;
             double[] p = startById.get(a.climbId);
             if (p == null || (p[0] == 0 && p[1] == 0)) continue; // no usable start coordinate
-            RegionCache.Region r;
-            if (byClimb.containsKey(a.climbId)) {
-                r = byClimb.get(a.climbId);
-            } else {
-                r = resolver.resolve(p[0], p[1]);
-                byClimb.put(a.climbId, r);
-            }
+            RegionCache.Region r = regionOf(a.climbId, p, byClimb, resolver);
             if (r == null) { unresolved++; continue; }
             visits.add(new VisitedRegions.Visit(r.countryCode, r.country, r.province, p[0], p[1]));
         }

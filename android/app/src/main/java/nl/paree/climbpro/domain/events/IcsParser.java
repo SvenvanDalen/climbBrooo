@@ -25,38 +25,44 @@ public final class IcsParser {
             if (line.equalsIgnoreCase("BEGIN:VEVENT")) {
                 cur = new CyclingEvent();
                 cur.feedUrl = feedUrl;
-                continue;
-            }
-            if (line.equalsIgnoreCase("END:VEVENT")) {
-                if (cur != null && cur.name != null && cur.date != null) {
-                    String text = cur.name + " " + (cur.description != null ? cur.description : "");
-                    cur.distancesKm = EventTextStats.distancesKm(text);
-                    cur.elevationM = EventTextStats.elevationM(text);
-                    if (cur.uid == null) cur.uid = cur.date + "|" + cur.name;
-                    out.add(cur);
-                }
+            } else if (line.equalsIgnoreCase("END:VEVENT")) {
+                if (cur != null) finish(cur, out);
                 cur = null;
-                continue;
-            }
-            if (cur == null) continue;
-            int colon = line.indexOf(':');
-            if (colon <= 0) continue;
-            String head = line.substring(0, colon);
-            String value = line.substring(colon + 1);
-            int semi = head.indexOf(';');
-            String name = (semi >= 0 ? head.substring(0, semi) : head).toUpperCase(java.util.Locale.ROOT);
-            switch (name) {
-                case "SUMMARY": cur.name = blankToNull(unescape(value)); break;
-                case "DESCRIPTION": cur.description = blankToNull(unescape(value)); break;
-                case "LOCATION": cur.location = blankToNull(unescape(value)); break;
-                case "URL": cur.url = blankToNull(value.trim()); break;
-                case "UID": cur.uid = blankToNull(value.trim()); break;
-                case "DTSTART": cur.date = parseDate(value); break;
-                case "GEO": parseGeo(cur, value); break;
-                default: break;
+            } else if (cur != null) {
+                applyProperty(cur, line);
             }
         }
         return out;
+    }
+
+    /** Adds a complete event (name and date) with its derived text stats and fallback uid. */
+    private static void finish(CyclingEvent cur, List<CyclingEvent> out) {
+        if (cur.name == null || cur.date == null) return;
+        String text = cur.name + " " + (cur.description != null ? cur.description : "");
+        cur.distancesKm = EventTextStats.distancesKm(text);
+        cur.elevationM = EventTextStats.elevationM(text);
+        if (cur.uid == null) cur.uid = cur.date + "|" + cur.name;
+        out.add(cur);
+    }
+
+    /** Applies one {@code NAME;PARAMS:VALUE} content line to the event being parsed. */
+    private static void applyProperty(CyclingEvent cur, String line) {
+        int colon = line.indexOf(':');
+        if (colon <= 0) return;
+        String head = line.substring(0, colon);
+        String value = line.substring(colon + 1);
+        int semi = head.indexOf(';');
+        String name = (semi >= 0 ? head.substring(0, semi) : head).toUpperCase(java.util.Locale.ROOT);
+        switch (name) {
+            case "SUMMARY": cur.name = blankToNull(unescape(value)); break;
+            case "DESCRIPTION": cur.description = blankToNull(unescape(value)); break;
+            case "LOCATION": cur.location = blankToNull(unescape(value)); break;
+            case "URL": cur.url = blankToNull(value.trim()); break;
+            case "UID": cur.uid = blankToNull(value.trim()); break;
+            case "DTSTART": cur.date = parseDate(value); break;
+            case "GEO": parseGeo(cur, value); break;
+            default: break;
+        }
     }
 
     /** Joins folded lines (a line starting with a space or tab continues the previous one). */

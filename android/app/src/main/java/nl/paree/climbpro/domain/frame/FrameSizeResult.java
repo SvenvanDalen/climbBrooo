@@ -28,7 +28,7 @@ public final class FrameSizeResult {
         this.mtbSeatTubeInch = mtbSeatTubeInch;
     }
 
-    public static FrameSizeResult error(String message) {
+    public static FrameSizeResult failure(String message) {
         return new FrameSizeResult(false, message, 0, null, 0, 0);
     }
 

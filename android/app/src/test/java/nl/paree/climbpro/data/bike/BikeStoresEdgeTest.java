@@ -41,7 +41,7 @@ public class BikeStoresEdgeTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        new File(app.getFilesDir(), BikeCostRepository.FILE).delete();
+        new File(app.getFilesDir(), BikeCostRepository.FILE_NAME).delete();
         PreferenceManager.getDefaultSharedPreferences(app).edit().clear().commit();
     }
 
@@ -153,7 +153,7 @@ public class BikeStoresEdgeTest {
 
     @Test
     public void garage_failedWrite_throwsAndLeavesNoTmp() throws Exception {
-        File file = new File(app.getFilesDir(), BikeCostRepository.FILE);
+        File file = new File(app.getFilesDir(), BikeCostRepository.FILE_NAME);
         block(file);
         try {
             new BikeCostRepository(app).saveGarageBike(null, "Fiets", "road", 8, 25, null, null,
@@ -161,20 +161,20 @@ public class BikeStoresEdgeTest {
             fail("expected IOException");
         } catch (IOException expected) {
         }
-        assertFalse(new File(app.getFilesDir(), BikeCostRepository.FILE + ".tmp").exists());
+        assertFalse(new File(app.getFilesDir(), BikeCostRepository.FILE_NAME + ".tmp").exists());
     }
 
     @Test
     public void garage_migrationThatCannotBeSaved_stillReturnsMigratedLog() throws Exception {
         PreferenceManager.getDefaultSharedPreferences(app).edit()
                 .putFloat(RiderProfileRepository.PREF_BIKE_WEIGHT_KG, 8.2f).commit();
-        block(new File(app.getFilesDir(), BikeCostRepository.FILE + ".tmp"));
+        block(new File(app.getFilesDir(), BikeCostRepository.FILE_NAME + ".tmp"));
 
         BikeCostLog log = new BikeCostRepository(app).load();
 
         assertEquals(1, log.bikes.size());
         assertEquals(8.2, log.bikes.get(0).weightKg, 1e-6);
-        assertFalse(new File(app.getFilesDir(), BikeCostRepository.FILE).exists());
+        assertFalse(new File(app.getFilesDir(), BikeCostRepository.FILE_NAME).exists());
         assertEquals(Arrays.asList(log.bikes.get(0).id), Arrays.asList(log.activeBikeId));
     }
 }

@@ -1,6 +1,5 @@
 package nl.paree.climbpro.ui.hydration;
 
-import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,13 +19,13 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.hydration.SweatLossEntry;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.hydration.SweatLossCalculator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -137,58 +136,31 @@ public final class SweatLossActivity extends AppCompatActivity {
         List<StoredRide> rides = snap != null ? snap.recentRides : new ArrayList<>();
 
         View view = getLayoutInflater().inflate(R.layout.dialog_sweat_loss_entry, null);
-        Spinner rideSpinner = view.findViewById(R.id.spinner_ride);
-        Button dateButton = view.findViewById(R.id.btn_date);
-        EditText before = view.findViewById(R.id.input_weight_before);
-        EditText after = view.findViewById(R.id.input_weight_after);
-        EditText drunk = view.findViewById(R.id.input_drunk);
-        EditText duration = view.findViewById(R.id.input_duration);
-        EditText note = view.findViewById(R.id.input_note);
+        SweatForm form = new SweatForm(view);
 
         if (snap != null && snap.profileWeightKg > 0) {
-            before.setText(String.format(Locale.getDefault(), "%.1f", snap.profileWeightKg));
+            form.before.setText(String.format(Locale.getDefault(), "%.1f", snap.profileWeightKg));
         }
 
         // Ride picker: recent archived rides (fills the duration), plus "no ride" with a date.
-        List<String> rideLabels = new ArrayList<>();
-        rideLabels.add(getString(R.string.sweat_no_ride));
-        for (StoredRide r : rides) {
-            rideLabels.add(getString(R.string.sweat_ride_item, formatDate(r.startEpochSec),
-                    r.name != null ? r.name : getString(R.string.sweat_ride_default),
-                    r.distanceM / 1000.0));
-        }
         ArrayAdapter<String> rideAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, rideLabels);
+                android.R.layout.simple_spinner_item, rideLabels(rides));
         rideAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        rideSpinner.setAdapter(rideAdapter);
-        rideSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        form.rideSpinner.setAdapter(rideAdapter);
+        form.rideSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                dateButton.setVisibility(pos == 0 ? View.VISIBLE : View.GONE);
-                if (pos > 0) {
-                    StoredRide ride = rides.get(pos - 1);
-                    int sec = ride.elapsedTimeSec > 0 ? ride.elapsedTimeSec : ride.movingTimeSec;
-                    if (sec > 0) duration.setText(String.valueOf(Math.round(sec / 60f)));
-                }
+                onRidePicked(form, rides, pos);
             }
             @Override public void onNothingSelected(AdapterView<?> p) { }
         });
-        if (!rides.isEmpty()) rideSpinner.setSelection(1);
+        if (!rides.isEmpty()) form.rideSpinner.setSelection(1);
 
-        final long[] picked = {System.currentTimeMillis() / 1000L};
-        dateButton.setText(getString(R.string.sweat_date, formatDate(picked[0])));
-        dateButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            base.setTimeInMillis(picked[0] * 1000L);
-            DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar cal = Calendar.getInstance();
-                cal.clear();
-                cal.set(y, m, d, 12, 0, 0);
-                picked[0] = Math.min(cal.getTimeInMillis(), System.currentTimeMillis()) / 1000L;
-                dateButton.setText(getString(R.string.sweat_date, formatDate(picked[0])));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
-            dp.getDatePicker().setMaxDate(System.currentTimeMillis());
-            dp.show();
-        });
+        form.pickedDay = System.currentTimeMillis() / 1000L;
+        form.dateButton.setText(getString(R.string.sweat_date, formatDate(form.pickedDay)));
+        form.dateButton.setOnClickListener(v -> PastDayPicker.show(this, form.pickedDay, day -> {
+            form.pickedDay = day;
+            form.dateButton.setText(getString(R.string.sweat_date, formatDate(day)));
+        }));
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.sweat_dialog_title)
@@ -198,23 +170,70 @@ public final class SweatLossActivity extends AppCompatActivity {
                 .show();
         // Validate before closing so a typo doesn't throw the whole form away.
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            double wBefore = parseDecimal(before.getText().toString());
-            double wAfter = parseDecimal(after.getText().toString());
-            int ml = parseInt(drunk.getText().toString(), 0);
-            int min = parseInt(duration.getText().toString(), -1);
-            SweatLossCalculator.Invalid invalid =
-                    SweatLossCalculator.validate(wBefore, wAfter, ml, min);
-            if (invalid != null) {
-                Toast.makeText(this, invalidText(invalid), Toast.LENGTH_LONG).show();
-                return;
-            }
-            int pos = rideSpinner.getSelectedItemPosition();
-            StoredRide ride = pos > 0 ? rides.get(pos - 1) : null;
-            viewModel.add(ride != null ? ride.activityId : 0,
-                    ride != null ? ride.startEpochSec : picked[0],
-                    wBefore, wAfter, ml, min, note.getText().toString());
-            dialog.dismiss();
+            if (saveEntry(form, rides)) dialog.dismiss();
         });
+    }
+
+    /** The add dialog's inputs plus the day picked for an entry without a ride. */
+    private static final class SweatForm {
+        final Spinner rideSpinner;
+        final Button dateButton;
+        final EditText before;
+        final EditText after;
+        final EditText drunk;
+        final EditText duration;
+        final EditText note;
+        long pickedDay;
+
+        SweatForm(View view) {
+            rideSpinner = view.findViewById(R.id.spinner_ride);
+            dateButton = view.findViewById(R.id.btn_date);
+            before = view.findViewById(R.id.input_weight_before);
+            after = view.findViewById(R.id.input_weight_after);
+            drunk = view.findViewById(R.id.input_drunk);
+            duration = view.findViewById(R.id.input_duration);
+            note = view.findViewById(R.id.input_note);
+        }
+    }
+
+    private List<String> rideLabels(List<StoredRide> rides) {
+        List<String> rideLabels = new ArrayList<>();
+        rideLabels.add(getString(R.string.sweat_no_ride));
+        for (StoredRide r : rides) {
+            rideLabels.add(getString(R.string.sweat_ride_item, formatDate(r.startEpochSec),
+                    r.name != null ? r.name : getString(R.string.sweat_ride_default),
+                    r.distanceM / 1000.0));
+        }
+        return rideLabels;
+    }
+
+    /** "No ride" shows the date button; a ride fills in its duration. */
+    private static void onRidePicked(SweatForm form, List<StoredRide> rides, int pos) {
+        form.dateButton.setVisibility(pos == 0 ? View.VISIBLE : View.GONE);
+        if (pos <= 0) return;
+        StoredRide ride = rides.get(pos - 1);
+        int sec = ride.elapsedTimeSec > 0 ? ride.elapsedTimeSec : ride.movingTimeSec;
+        if (sec > 0) form.duration.setText(String.valueOf(Math.round(sec / 60f)));
+    }
+
+    /** Validates and stores the entry; false (with a toast) when an input is invalid. */
+    private boolean saveEntry(SweatForm form, List<StoredRide> rides) {
+        double wBefore = parseDecimal(form.before.getText().toString());
+        double wAfter = parseDecimal(form.after.getText().toString());
+        int ml = parseInt(form.drunk.getText().toString(), 0);
+        int min = parseInt(form.duration.getText().toString(), -1);
+        SweatLossCalculator.Invalid invalid =
+                SweatLossCalculator.validate(wBefore, wAfter, ml, min);
+        if (invalid != null) {
+            Toast.makeText(this, invalidText(invalid), Toast.LENGTH_LONG).show();
+            return false;
+        }
+        int pos = form.rideSpinner.getSelectedItemPosition();
+        StoredRide ride = pos > 0 ? rides.get(pos - 1) : null;
+        viewModel.add(ride != null ? ride.activityId : 0,
+                ride != null ? ride.startEpochSec : form.pickedDay,
+                wBefore, wAfter, ml, min, form.note.getText().toString());
+        return true;
     }
 
     private String invalidText(SweatLossCalculator.Invalid invalid) {

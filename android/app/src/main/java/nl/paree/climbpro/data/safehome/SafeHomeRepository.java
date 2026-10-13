@@ -8,10 +8,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for the "veilig thuis" message (issue #231). Layout:
@@ -21,7 +21,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class SafeHomeRepository {
 
     private static final String TAG  = "SafeHomeRepository";
-    static final String FILE = "safe_home.json";
+    static final String FILE_NAME = "safe_home.json";
     /** Plenty for the reporting window; keeps the file tiny. */
     static final int MAX_REPORTED_IDS = 20;
 
@@ -33,7 +33,7 @@ public final class SafeHomeRepository {
 
     public SafeHomeRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -43,7 +43,7 @@ public final class SafeHomeRepository {
             SafeHomeSettings s = mapper.readValue(in, SafeHomeSettings.class);
             if (s == null) return new SafeHomeSettings();
             if (s.reportedActivityIds == null) s.reportedActivityIds = new ArrayList<>();
-            s.reportedActivityIds.removeIf(id -> id == null);
+            s.reportedActivityIds.removeIf(java.util.Objects::isNull);
             if (s.message == null || s.message.trim().isEmpty()) {
                 s.message = SafeHomeSettings.DEFAULT_MESSAGE;
             }
@@ -97,27 +97,6 @@ public final class SafeHomeRepository {
     }
 
     private void write(SafeHomeSettings s) throws IOException {
-        writeAtomic(file, mapper.writeValueAsBytes(s));
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
+        AtomicFiles.write(file, mapper.writeValueAsBytes(s));
     }
 }

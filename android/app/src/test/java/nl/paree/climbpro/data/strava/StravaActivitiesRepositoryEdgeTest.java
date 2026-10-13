@@ -547,7 +547,7 @@ public class StravaActivitiesRepositoryEdgeTest {
     }
 
     private java.util.Set<String> myWhooshDone() {
-        return app.getSharedPreferences(StravaActivitiesRepository.PREFS, Context.MODE_PRIVATE)
+        return app.getSharedPreferences(StravaActivitiesRepository.PREFS_NAME, Context.MODE_PRIVATE)
                 .getStringSet(StravaActivitiesRepository.PREF_MYWHOOSH_DONE,
                         Collections.<String>emptySet());
     }

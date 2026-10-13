@@ -58,7 +58,7 @@ public class SafeHomeRepositoryEdgeTest {
 
     @Test
     public void load_repairsBlankMessageAndNullIds() throws Exception {
-        writeRaw(SafeHomeRepository.FILE,
+        writeRaw(SafeHomeRepository.FILE_NAME,
                 "{\"enabled\":true,\"message\":\"  \",\"reportedActivityIds\":[1,null,2]}");
         SafeHomeSettings s = new SafeHomeRepository(app).load();
         assertTrue(s.enabled);
@@ -68,7 +68,7 @@ public class SafeHomeRepositoryEdgeTest {
 
     @Test
     public void load_missingIdList_becomesEmpty() throws Exception {
-        writeRaw(SafeHomeRepository.FILE, "{\"message\":\"Thuis!\",\"reportedActivityIds\":null}");
+        writeRaw(SafeHomeRepository.FILE_NAME, "{\"message\":\"Thuis!\",\"reportedActivityIds\":null}");
         SafeHomeSettings s = new SafeHomeRepository(app).load();
         assertTrue(s.reportedActivityIds.isEmpty());
         assertEquals("Thuis!", s.message);
@@ -76,15 +76,15 @@ public class SafeHomeRepositoryEdgeTest {
 
     @Test
     public void load_corruptOrNullFile_givesDefaults() throws Exception {
-        writeRaw(SafeHomeRepository.FILE, "{oops");
+        writeRaw(SafeHomeRepository.FILE_NAME, "{oops");
         assertFalse(new SafeHomeRepository(app).load().enabled);
-        writeRaw(SafeHomeRepository.FILE, "null");
+        writeRaw(SafeHomeRepository.FILE_NAME, "null");
         assertEquals(SafeHomeSettings.DEFAULT_MESSAGE, new SafeHomeRepository(app).load().message);
     }
 
     @Test
     public void save_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(SafeHomeRepository.FILE, () -> new SafeHomeRepository(app)
+        assertWriteFails(SafeHomeRepository.FILE_NAME, () -> new SafeHomeRepository(app)
                 .save(true, "Mam", "0612345678", null, false, 100L));
     }
 }

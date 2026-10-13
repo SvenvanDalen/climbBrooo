@@ -18,14 +18,18 @@ public final class RouteRainSummary {
 
     private RouteRainSummary() {}
 
+    /** Index of the first forecast hour after {@code now}; -1 if none. */
+    private static int firstHourAfter(PrecipitationGrid grid, Instant now) {
+        for (int i = 0; i < grid.times.length; i++) {
+            if (grid.times[i].isAfter(now)) return i;
+        }
+        return -1;
+    }
+
     public static String describe(List<RouteSampler.Sample> samples, PrecipitationGrid grid,
                                   Instant now, int hours, ZoneId zone) {
         int start = grid.indexAt(now);
-        if (start < 0) {
-            for (int i = 0; i < grid.times.length; i++) {
-                if (grid.times[i].isAfter(now)) { start = i; break; }
-            }
-        }
+        if (start < 0) start = firstHourAfter(grid, now);
         if (start < 0 || samples.isEmpty() || hours < 1) {
             return "Geen neerslagverwachting beschikbaar.";
         }

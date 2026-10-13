@@ -201,18 +201,7 @@ public final class PrChancePredictor {
      */
     public static Prediction predict(String climbId, List<StoredClimbAttempt> attempts,
                                      Fitness fitness, Weather weather, long nowEpochSec) {
-        List<StoredClimbAttempt> clean = new ArrayList<>();
-        List<StoredClimbAttempt> all = new ArrayList<>();
-        if (attempts != null) {
-            for (StoredClimbAttempt a : attempts) {
-                if (a == null || a.elapsedSec <= 0 || climbId == null
-                        || !climbId.equals(a.climbId)) continue;
-                all.add(a);
-                if (!a.routeDeviation) clean.add(a);
-            }
-        }
-        // Like LogbookCalculator: fall back to deviated attempts only when there's no clean one.
-        List<StoredClimbAttempt> pool = clean.isEmpty() ? all : clean;
+        List<StoredClimbAttempt> pool = attemptPool(climbId, attempts);
         if (pool.isEmpty()) {
             List<Reason> only = new ArrayList<>();
             only.add(new Reason(Factor.FIRST_ATTEMPT, 0, Double.NaN));
@@ -237,6 +226,23 @@ public final class PrChancePredictor {
                 Math.max(0L, pr.dateEpochSec), pool.size(), reasons);
     }
 
+    /**
+     * The timed attempts of {@code climbId}. Like LogbookCalculator: falls back to deviated
+     * attempts only when there's no clean one.
+     */
+    private static List<StoredClimbAttempt> attemptPool(String climbId,
+                                                        List<StoredClimbAttempt> attempts) {
+        List<StoredClimbAttempt> clean = new ArrayList<>();
+        List<StoredClimbAttempt> all = new ArrayList<>();
+        if (attempts == null || climbId == null) return all;
+        for (StoredClimbAttempt a : attempts) {
+            if (a == null || a.elapsedSec <= 0 || !climbId.equals(a.climbId)) continue;
+            all.add(a);
+            if (!a.routeDeviation) clean.add(a);
+        }
+        return clean.isEmpty() ? all : clean;
+    }
+
     private static void addHistory(List<Reason> out, List<StoredClimbAttempt> pool,
                                    StoredClimbAttempt pr, long now) {
         long recentFrom = now - RECENT_DAYS * 86_400L;
@@ -244,11 +250,8 @@ public final class PrChancePredictor {
         long lastDated = 0;
         for (StoredClimbAttempt a : pool) {
             if (a.dateEpochSec <= 0) continue; // undated: no recency
-            if (a.dateEpochSec > lastDated) lastDated = a.dateEpochSec;
-            if (a.dateEpochSec >= recentFrom
-                    && (recentBest == null || a.elapsedSec < recentBest.elapsedSec)) {
-                recentBest = a;
-            }
+            lastDated = Math.max(lastDated, a.dateEpochSec);
+            if (a.dateEpochSec >= recentFrom && faster(a, recentBest)) recentBest = a;
         }
         if (recentBest == null) {
             double days = lastDated > 0 ? daysBetween(lastDated, now) : Double.NaN;
@@ -263,6 +266,10 @@ public final class PrChancePredictor {
         if (pool.size() <= FEW_ATTEMPTS) {
             out.add(new Reason(Factor.FEW_ATTEMPTS, 1, pool.size()));
         }
+    }
+
+    private static boolean faster(StoredClimbAttempt a, StoredClimbAttempt best) {
+        return best == null || a.elapsedSec < best.elapsedSec;
     }
 
     private static void addFitness(List<Reason> out, Fitness f) {

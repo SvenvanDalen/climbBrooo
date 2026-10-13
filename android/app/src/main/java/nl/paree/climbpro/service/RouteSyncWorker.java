@@ -42,8 +42,19 @@ public final class RouteSyncWorker extends Worker {
     public  static final String PREF_MODE    = "sync_mode";
     public  static final String MODE_ROUTE   = "route";
     public  static final String MODE_RADIUS  = "radius";
+    /** A collection as an ordered day trip (issue #9); which one is {@link #PREF_DAYTRIP_ID}. */
+    public  static final String MODE_DAYTRIP = "daytrip";
+    public  static final String PREF_DAYTRIP_ID = "daytrip_collection_id";
+    /**
+     * Where the rider was when the day trip was chosen; fixes the riding order so a later
+     * resync doesn't reshuffle it. Absent = no position known then.
+     */
+    public  static final String PREF_DAYTRIP_LAT = "daytrip_start_lat";
+    public  static final String PREF_DAYTRIP_LON = "daytrip_start_lon";
     public  static final String PREF_ROUTE_ID = "active_route_id";
     public  static final String PREF_RADIUS_M = "radius_metres";
+    /** Radius mode: only send climbs where it is dry now (issue #12). */
+    public  static final String PREF_RADIUS_DRY_ONLY = "radius_dry_only";
     public  static final String PREF_LAST_LAT = "last_lat";
     public  static final String PREF_LAST_LON = "last_lon";
 
@@ -92,10 +103,13 @@ public final class RouteSyncWorker extends Worker {
         // wantHash too, so switching km <-> miles resyncs the active route.
         nl.paree.climbpro.domain.units.UnitPreferences units =
                 new nl.paree.climbpro.data.settings.UnitPreferencesRepository(ctx).load();
-        ClimbPayloadBuilder  payloadBuilder  = new ClimbPayloadBuilder(mapper)
+        // Issues #27 / #18 / #24: ridden climbs ('nw') and the usual cadence / heart-rate zone
+        // per gradient class ('cg' / 'hg'); folded into wantHash via habits.signature().
+        WatchHabits habits = WatchHabits.load(ctx);
+        ClimbPayloadBuilder  payloadBuilder  = habits.applyTo(new ClimbPayloadBuilder(mapper)
                 .withIntensityZones(profile).withFtpWatts(profile.ftpWatts)
                 .withPalette(palette).withUnits(units)
-                .withFieldLayout(fieldLayout);
+                .withFieldLayout(fieldLayout));
 
         boolean authorised = authRepo.isAuthorised();
 
@@ -122,7 +136,7 @@ public final class RouteSyncWorker extends Worker {
 
         SyncOrchestrator.PayloadJob job = buildPayloadJob(
                 prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo,
-                palette, units, fieldLayout);
+                palette, units, fieldLayout, habits);
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -141,36 +155,8 @@ public final class RouteSyncWorker extends Worker {
                 .putBoolean(KEY_NO_LOCATION, radiusWithoutLocation)
                 .build();
 
-        // The yearly km goal card (issue #157) reads the ride archive, which otherwise only
-        // fills from the logbook or the Ritten screen: refresh it on every sync. Then a capped
-        // batch of stream analyses for the fastest-distance records (issue #225). Neither ever
-        // fails the sync.
         if (authorised) {
-            StravaActivitiesRepository rides =
-                    new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo);
-            try {
-                rides.syncRideArchive();
-            } catch (Exception e) {
-                Log.w(TAG, "Ride archive refresh failed; sync continues", e);
-            }
-            try {
-                rides.analyzeRideStreams();
-            } catch (Exception e) {
-                Log.w(TAG, "Ride stream analysis failed; sync continues", e);
-            }
-            // Explore map (issue #194): a capped batch of older rides' tracks; new rides
-            // already arrived with the analysis above.
-            try {
-                rides.exploreRideTracks();
-            } catch (Exception e) {
-                Log.w(TAG, "Explore map backfill failed; sync continues", e);
-            }
-            // MyWhoosh rides in the archive become routes with climbs (issue #344).
-            try {
-                rides.importMyWhooshRides();
-            } catch (Exception e) {
-                Log.w(TAG, "MyWhoosh import failed; sync continues", e);
-            }
+            refreshRideData(new StravaActivitiesRepository(ctx, authRepo, routeRepo, attemptRepo));
         }
 
         // Opportunistic, never fails the sync: cleaning reminder after wet rides (issue #234).
@@ -243,10 +229,113 @@ public final class RouteSyncWorker extends Worker {
         return routeGhost == null ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
     }
 
+    /**
+     * Position saved when the day trip was chosen (issue #9); null without one, then the trip
+     * starts at the collection's first climb.
+     */
+    static double[] dayTripStart(SharedPreferences prefs) {
+        if (!prefs.contains(PREF_DAYTRIP_LAT) || !prefs.contains(PREF_DAYTRIP_LON)) return null;
+        return new double[] {
+                prefs.getFloat(PREF_DAYTRIP_LAT, 0f), prefs.getFloat(PREF_DAYTRIP_LON, 0f)};
+    }
+
+    /** One Open-Meteo request for every start (issue #12); throws when offline. */
+    static boolean[] openMeteoDryCheck(java.util.List<double[]> starts) throws IOException {
+        java.util.List<nl.paree.climbpro.domain.weather.RouteSampler.Sample> pts =
+                new java.util.ArrayList<>(starts.size());
+        for (double[] s : starts) {
+            pts.add(new nl.paree.climbpro.domain.weather.RouteSampler.Sample(0, s[0], s[1]));
+        }
+        nl.paree.climbpro.domain.weather.PrecipitationGrid grid =
+                new nl.paree.climbpro.data.weather.OpenMeteoClient().fetchPrecipitation(
+                        pts, nl.paree.climbpro.domain.weather.DryClimbFilter.HOURS_AHEAD + 1);
+        return nl.paree.climbpro.domain.weather.DryClimbFilter.dryFlags(grid, java.time.Instant.now());
+    }
+
     /** Palette chosen with the "Kleurenblind-vriendelijk palet" switch (issue #258). */
     static int paletteOf(SharedPreferences prefs) {
         return nl.paree.climbpro.domain.segment.GradientPalette.fromEnabled(prefs.getBoolean(
                 nl.paree.climbpro.domain.segment.GradientPalette.PREF_COLORBLIND, false));
+    }
+
+    /**
+     * The yearly km goal card (issue #157) reads the ride archive, which otherwise only
+     * fills from the logbook or the Ritten screen: refresh it on every sync. Then a capped
+     * batch of stream analyses for the fastest-distance records (issue #225). None of these
+     * steps ever fails the sync.
+     */
+    private static void refreshRideData(StravaActivitiesRepository rides) {
+        runQuietly("Ride archive refresh failed; sync continues", rides::syncRideArchive);
+        runQuietly("Ride stream analysis failed; sync continues", rides::analyzeRideStreams);
+        // Explore map (issue #194): a capped batch of older rides' tracks; new rides
+        // already arrived with the analysis above.
+        runQuietly("Explore map backfill failed; sync continues", rides::exploreRideTracks);
+        // MyWhoosh rides in the archive become routes with climbs (issue #344).
+        runQuietly("MyWhoosh import failed; sync continues", rides::importMyWhooshRides);
+    }
+
+    /** A side step of the sync that may fail. */
+    private interface SyncStep {
+        void run() throws IOException;
+    }
+
+    private static void runQuietly(String failureMessage, SyncStep step) {
+        try {
+            step.run();
+        } catch (Exception e) {
+            Log.w(TAG, failureMessage, e);
+        }
+    }
+
+    private SyncOrchestrator.PayloadJob dayTripJob(SharedPreferences prefs,
+                                                   RouteRepository routeRepo,
+                                                   ClimbPayloadBuilder payloadBuilder) {
+        return new SyncOrchestrator.PayloadJob() {
+            @Override public byte[] build() throws IOException {
+                nl.paree.climbpro.data.route.RouteCollection trip =
+                        new nl.paree.climbpro.data.route.RouteCollectionRepository(
+                                getApplicationContext())
+                                .get(prefs.getString(PREF_DAYTRIP_ID, ""));
+                if (trip == null) {
+                    Log.w(TAG, "Day-trip collection is gone — nothing to send");
+                    return null;
+                }
+                return new DayTripAssembler(routeRepo, payloadBuilder)
+                        .assemble(trip, dayTripStart(prefs));
+            }
+            @Override public void onSent() { /* like radius mode: no per-route sync state */ }
+        };
+    }
+
+    private SyncOrchestrator.PayloadJob radiusJob(SharedPreferences prefs,
+                                                  RouteRepository routeRepo,
+                                                  ClimbPayloadBuilder payloadBuilder) {
+        return new SyncOrchestrator.PayloadJob() {
+            @Override public byte[] build() throws IOException {
+                // Never search around 0,0 (issue #310): without a known position
+                // there is nothing sensible to send.
+                double[] position = RadiusLocation.current(getApplicationContext(), prefs);
+                if (position == null) {
+                    Log.w(TAG, "Radius mode without a known location — nothing to send");
+                    radiusWithoutLocation = true;
+                    return null;
+                }
+                double lat = position[0];
+                double lon = position[1];
+                double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
+                RadiusModeAssembler assembler =
+                        new RadiusModeAssembler(routeRepo, payloadBuilder);
+                if (prefs.getBoolean(PREF_RADIUS_DRY_ONLY, false)) {
+                    assembler.withDryCheck(RouteSyncWorker::openMeteoDryCheck);
+                }
+                byte[] payload = assembler.assemble(lat, lon, radiusM);
+                if (assembler.wasTruncated()) {
+                    Log.w(TAG, "Radius payload was truncated — some climbs omitted");
+                }
+                return payload;
+            }
+            @Override public void onSent() { /* radius mode has no per-route sync state */ }
+        };
     }
 
     /**
@@ -261,37 +350,14 @@ public final class RouteSyncWorker extends Worker {
             nl.paree.climbpro.domain.power.GhostTarget ghost,
             ClimbAttemptRepository attemptRepo, int palette,
             nl.paree.climbpro.domain.units.UnitPreferences units,
-            WatchFieldLayout fieldLayout) {
+            WatchFieldLayout fieldLayout, WatchHabits habits) {
         nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo =
                 new nl.paree.climbpro.data.route.RouteGhostRepository(getApplicationContext());
 
         String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
 
-        if (MODE_RADIUS.equals(mode)) {
-            return new SyncOrchestrator.PayloadJob() {
-                @Override public byte[] build() throws IOException {
-                    // Never search around 0,0 (issue #310): without a known position
-                    // there is nothing sensible to send.
-                    double[] position = RadiusLocation.current(getApplicationContext(), prefs);
-                    if (position == null) {
-                        Log.w(TAG, "Radius mode without a known location — nothing to send");
-                        radiusWithoutLocation = true;
-                        return null;
-                    }
-                    double lat = position[0];
-                    double lon = position[1];
-                    double radiusM = prefs.getInt(PREF_RADIUS_M, DEFAULT_RADIUS_M);
-                    RadiusModeAssembler assembler =
-                            new RadiusModeAssembler(routeRepo, payloadBuilder);
-                    byte[] payload = assembler.assemble(lat, lon, radiusM);
-                    if (assembler.wasTruncated()) {
-                        Log.w(TAG, "Radius payload was truncated — some climbs omitted");
-                    }
-                    return payload;
-                }
-                @Override public void onSent() { /* radius mode has no per-route sync state */ }
-            };
-        }
+        if (MODE_DAYTRIP.equals(mode)) return dayTripJob(prefs, routeRepo, payloadBuilder);
+        if (MODE_RADIUS.equals(mode)) return radiusJob(prefs, routeRepo, payloadBuilder);
 
         return new SyncOrchestrator.PayloadJob() {
             @Override public byte[] build() throws IOException {
@@ -311,7 +377,7 @@ public final class RouteSyncWorker extends Worker {
                 StoredRoute route = routeRepo.loadRoute(routeId);
                 int[] routeGhost = ghostRepo.wireFor(route);
                 String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout)
-                        + routeGhostSignature(routeGhost);
+                        + routeGhostSignature(routeGhost) + habits.signature();
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
@@ -334,7 +400,7 @@ public final class RouteSyncWorker extends Worker {
                 if (routeRepo.hasRoute(routeId)) {
                     StoredRoute route = routeRepo.loadRoute(routeId);
                     syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout)
-                            + routeGhostSignature(ghostRepo.wireFor(route)));
+                            + routeGhostSignature(ghostRepo.wireFor(route)) + habits.signature());
                 }
             }
         };

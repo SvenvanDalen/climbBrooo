@@ -27,7 +27,7 @@ public class TirePressureLogRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), TirePressureLogRepository.FILE);
+        file = new File(app.getFilesDir(), TirePressureLogRepository.FILE_NAME);
         file.delete();
     }
 
@@ -63,7 +63,7 @@ public class TirePressureLogRepositoryTest {
         assertNull(log.entries.get(1).note);
         assertEquals(14, log.reminderDays);
         assertEquals(0, log.reminderKm);
-        assertFalse(new File(app.getFilesDir(), TirePressureLogRepository.FILE + ".tmp").exists());
+        assertFalse(new File(app.getFilesDir(), TirePressureLogRepository.FILE_NAME + ".tmp").exists());
     }
 
     @Test

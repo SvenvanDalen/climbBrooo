@@ -7,8 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * The active comeback plan (issue #226) in getFilesDir()/comeback_plan.json. Only the inputs
@@ -18,7 +18,7 @@ import java.io.IOException;
 public final class ComebackPlanStore {
 
     private static final String TAG = "ComebackPlanStore";
-    static final String FILE = "comeback_plan.json";
+    static final String FILE_NAME = "comeback_plan.json";
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class Saved {
@@ -33,7 +33,7 @@ public final class ComebackPlanStore {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ComebackPlanStore(Context context) {
-        this.file = new File(context.getApplicationContext().getFilesDir(), FILE);
+        this.file = new File(context.getApplicationContext().getFilesDir(), FILE_NAME);
     }
 
     /** The active plan, or null. */
@@ -54,18 +54,7 @@ public final class ComebackPlanStore {
         s.lastRideBeforeBreakEpochSec = lastRideBeforeBreak;
         s.planStartEpochSec = planStart;
         s.injury = injury;
-        File tmp = new File(file.getParentFile(), FILE + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(mapper.writeValueAsBytes(s));
-            out.getFD().sync();
-        }
-        try {
-            java.nio.file.Files.move(tmp.toPath(), file.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
+        AtomicFiles.write(file, mapper.writeValueAsBytes(s));
     }
 
     public synchronized void clear() {

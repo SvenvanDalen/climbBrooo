@@ -11,13 +11,13 @@ import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for post-ride recovery checks (issue #183). Layout:
@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RecoveryCheckRepository {
 
     private static final String TAG = "RecoveryCheckRepo";
-    static final String FILE = "recovery_checks.json";
+    static final String FILE_NAME = "recovery_checks.json";
 
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
 
@@ -36,7 +36,7 @@ public final class RecoveryCheckRepository {
 
     public RecoveryCheckRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -104,27 +104,6 @@ public final class RecoveryCheckRepository {
     }
 
     private void write(List<RecoveryCheck> all) throws IOException {
-        writeAtomic(file, mapper.writeValueAsBytes(all));
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
+        AtomicFiles.write(file, mapper.writeValueAsBytes(all));
     }
 }

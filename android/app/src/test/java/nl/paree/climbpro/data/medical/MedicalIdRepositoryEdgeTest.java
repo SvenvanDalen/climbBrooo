@@ -26,7 +26,7 @@ public class MedicalIdRepositoryEdgeTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file(MedicalIdRepository.FILE).delete();
+        file(MedicalIdRepository.FILE_NAME).delete();
     }
 
     private File file(String name) {
@@ -47,15 +47,15 @@ public class MedicalIdRepositoryEdgeTest {
 
     @Test
     public void load_corruptOrNull_givesEmptyId() throws Exception {
-        writeRaw(MedicalIdRepository.FILE, "{oops");
+        writeRaw(MedicalIdRepository.FILE_NAME, "{oops");
         assertTrue(new MedicalIdRepository(app).load() != null);
-        writeRaw(MedicalIdRepository.FILE, "null");
+        writeRaw(MedicalIdRepository.FILE_NAME, "null");
         assertTrue(new MedicalIdRepository(app).load() != null);
     }
 
     @Test
     public void save_targetCannotBeReplaced_throws() throws Exception {
-        block(MedicalIdRepository.FILE);
+        block(MedicalIdRepository.FILE_NAME);
         try {
             new MedicalIdRepository(app).save(new MedicalId());
             fail("expected IOException");

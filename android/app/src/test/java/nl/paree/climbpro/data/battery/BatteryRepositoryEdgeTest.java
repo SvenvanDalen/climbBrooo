@@ -26,7 +26,7 @@ public class BatteryRepositoryEdgeTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file(BatteryRepository.FILE).delete();
+        file(BatteryRepository.FILE_NAME).delete();
     }
 
     private File file(String name) {
@@ -72,7 +72,7 @@ public class BatteryRepositoryEdgeTest {
 
     @Test
     public void failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(BatteryRepository.FILE, () -> new BatteryRepository(app)
+        assertWriteFails(BatteryRepository.FILE_NAME, () -> new BatteryRepository(app)
                 .upsertDevice(null, "Lamp", "LIGHT", 14, 100L));
     }
 }

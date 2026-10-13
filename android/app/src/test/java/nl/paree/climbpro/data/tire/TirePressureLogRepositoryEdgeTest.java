@@ -25,7 +25,7 @@ public class TirePressureLogRepositoryEdgeTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file(TirePressureLogRepository.FILE).delete();
+        file(TirePressureLogRepository.FILE_NAME).delete();
     }
 
     private File file(String name) {
@@ -53,7 +53,7 @@ public class TirePressureLogRepositoryEdgeTest {
 
     @Test
     public void addEntry_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(TirePressureLogRepository.FILE, () -> new TirePressureLogRepository(app)
+        assertWriteFails(TirePressureLogRepository.FILE_NAME, () -> new TirePressureLogRepository(app)
                 .addEntry(100L, 4.5, 5.0, null));
     }
 }

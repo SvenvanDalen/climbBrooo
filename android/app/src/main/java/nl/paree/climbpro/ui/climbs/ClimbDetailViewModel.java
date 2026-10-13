@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class ClimbDetailViewModel extends AndroidViewModel {
 
@@ -84,10 +85,10 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
     /** Separate thread so a slow/offline weather request never blocks the other work. */
     private final ExecutorService windExecutor = Executors.newSingleThreadExecutor();
     /** Forecast at the climb top, cached per loaded climb; null until fetched or when offline. */
-    private volatile HourlyForecast windForecast;
+    private final AtomicReference<HourlyForecast> windForecast = new AtomicReference<>();
 
-    private volatile StoredClimb lastClimb;
-    private volatile StoredRoute lastRoute;
+    private final AtomicReference<StoredClimb> lastClimb = new AtomicReference<>();
+    private final AtomicReference<StoredRoute> lastRoute = new AtomicReference<>();
     private volatile int lastClimbIndex;
 
     public ClimbDetailViewModel(@NonNull Application app) {
@@ -180,13 +181,13 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 StoredRoute r = routeRepo.loadRoute(routeId);
-                lastRoute = r;
-                windForecast = null; // other climb, other place: fetch the wind afresh
+                lastRoute.set(r);
+                windForecast.set(null); // other climb, other place: fetch the wind afresh
                 lastClimbIndex = climbIndex;
                 route.postValue(r);
                 if (r.climbs != null && climbIndex < r.climbs.size()) {
                     StoredClimb loaded = r.climbs.get(climbIndex);
-                    lastClimb = loaded;
+                    lastClimb.set(loaded);
                     climb.postValue(loaded);
                     computeEstimate(loaded);
                     int len = loaded.length > 0
@@ -447,7 +448,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * the climb time, 3–10 min). One repeat is the plain climb workout.
      */
     public void exportWorkout(WorkoutFormat format, int repeats, int recoverySec) {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c == null || c.segments == null || c.segments.isEmpty()) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -534,34 +535,14 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      * and attempt count, since intervals.icu has no climb object of its own.
      */
     public void pushToIntervals(int repeats, int recoverySec, LocalDate date, boolean indoor) {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c == null || c.segments == null || c.segments.isEmpty()) {
             error.postValue("Klim nog niet geladen");
             return;
         }
         executor.execute(() -> {
             try {
-                ClimbWorkoutWriter.Plan plan = workoutPlan(c);
-                if (plan == null) return;
-                String name = workoutName(c);
-                int recovery = recoverySec == RECOVERY_AUTO
-                        ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
-                String zwo = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery,
-                        plan.blockLabel);
-
-                int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
-                LogbookCalculator.Summary summary =
-                        LogbookCalculator.summaries(attemptRepo.loadAll()).get(climbId);
-                String description = IntervalsIcuExport.description(name, repeats,
-                        summary != null ? summary.prSec : 0,
-                        summary != null ? summary.attemptCount : 0);
-
-                intervalsRepo.createEvent(IntervalsIcuEventDto.workout(
-                        IntervalsIcuExport.eventName(name, repeats), description, zwo,
-                        ClimbWorkoutWriter.fileName(name, "zwo", repeats), date, indoor));
-                intervalsResult.postValue(getApplication().getString(
-                        R.string.intervals_push_ok, date.toString()));
+                pushWorkout(c, repeats, recoverySec, date, indoor);
             } catch (Exception e) {
                 intervalsResult.postValue(getApplication().getString(R.string.intervals_push_failed,
                         e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
@@ -569,9 +550,35 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    /** Builds the climb's workout and creates it as an intervals.icu event (background). */
+    private void pushWorkout(StoredClimb c, int repeats, int recoverySec, LocalDate date,
+                             boolean indoor) throws java.io.IOException {
+        ClimbWorkoutWriter.Plan plan = workoutPlan(c);
+        if (plan == null) return;
+        String name = workoutName(c);
+        int recovery = recoverySec == RECOVERY_AUTO
+                ? ClimbWorkoutWriter.defaultRecoverySeconds(plan.steps) : recoverySec;
+        String zwo = ClimbWorkoutWriter.toZwo(name, plan.steps, repeats, recovery,
+                plan.blockLabel);
+
+        int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+        String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
+        LogbookCalculator.Summary summary =
+                LogbookCalculator.summaries(attemptRepo.loadAll()).get(climbId);
+        String description = IntervalsIcuExport.description(name, repeats,
+                summary != null ? summary.prSec : 0,
+                summary != null ? summary.attemptCount : 0);
+
+        intervalsRepo.createEvent(IntervalsIcuEventDto.workout(
+                IntervalsIcuExport.eventName(name, repeats), description, zwo,
+                ClimbWorkoutWriter.fileName(name, "zwo", repeats), date, indoor));
+        intervalsResult.postValue(getApplication().getString(
+                R.string.intervals_push_ok, date.toString()));
+    }
+
     public void exportGpx() {
-        StoredClimb c = lastClimb;
-        StoredRoute r = lastRoute;
+        StoredClimb c = lastClimb.get();
+        StoredRoute r = lastRoute.get();
         if (c == null || r == null) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -629,7 +636,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
      */
     public void saveAttemptNote(String routeId, int climbIndex, long activityId, int passIndex,
                                  String note, String companions, android.net.Uri photoUri) {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c == null) {
             error.postValue("Klim nog niet geladen");
             return;
@@ -638,68 +645,14 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
             try {
                 int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
                 String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
-
-                StoredClimbAttempt target = null;
-                for (StoredClimbAttempt a : attemptRepo.loadAll()) {
-                    if (climbId.equals(a.climbId) && a.activityId == activityId
-                            && a.passIndex == passIndex) {
-                        target = a;
-                        break;
-                    }
-                }
+                StoredClimbAttempt target = findAttempt(climbId, activityId, passIndex);
                 if (target == null) {
                     error.postValue("Attempt niet gevonden");
                     return;
                 }
-
-                target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
-                target.companions = nl.paree.climbpro.domain.ride.SummitGroupPhotos
-                        .normalizeCompanions(companions);
-
-                // Write the NEW photo first, but don't touch the OLD one yet — if the JSON
-                // record update below fails, we must be able to roll back to a state where
-                // the attempt still has a valid, working photo reference (see saveAttemptNote
-                // javadoc). Only once attemptRepo.update() confirms success do we delete the
-                // old file; only on failure do we delete the new one instead.
-                String oldPhoto = target.photoFileName;
-                String newPhoto = oldPhoto;
-                boolean photoChanged = false;
-                if (photoUri != null) {
-                    newPhoto = nl.paree.climbpro.data.route.AttemptPhotoStore
-                            .savePickedPhoto(getApplication(), photoUri);
-                    photoChanged = true;
-                }
-                target.photoFileName = newPhoto;
-
-                boolean updateSucceeded;
-                try {
-                    updateSucceeded = attemptRepo.update(target);
-                } catch (java.io.IOException writeFailure) {
-                    // Write itself blew up (e.g. disk full) — same rollback as an explicit
-                    // false return: the new photo never becomes referenced by anything.
-                    if (photoChanged) {
-                        nl.paree.climbpro.data.route.AttemptPhotoStore
-                                .delete(getApplication(), newPhoto);
-                    }
-                    error.postValue("Opslaan mislukt: " + writeFailure.getMessage());
-                    return;
-                }
-
-                if (updateSucceeded) {
-                    if (photoChanged) {
-                        nl.paree.climbpro.data.route.AttemptPhotoStore
-                                .delete(getApplication(), oldPhoto);
-                    }
+                if (updateAttemptNote(target, note, companions, photoUri)) {
                     saved.postValue(true);
                     loadClimb(routeId, climbIndex);
-                } else {
-                    if (photoChanged) {
-                        // Roll back the just-written new photo; leave the old photo + old
-                        // JSON record untouched so the attempt still has a working reference.
-                        nl.paree.climbpro.data.route.AttemptPhotoStore
-                                .delete(getApplication(), newPhoto);
-                    }
-                    error.postValue("Opslaan mislukt");
                 }
             } catch (Exception e) {
                 error.postValue("Opslaan mislukt: " + e.getMessage());
@@ -707,9 +660,73 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         });
     }
 
+    private StoredClimbAttempt findAttempt(String climbId, long activityId, int passIndex) {
+        for (StoredClimbAttempt a : attemptRepo.loadAll()) {
+            if (climbId.equals(a.climbId) && a.activityId == activityId
+                    && a.passIndex == passIndex) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Writes note, companions and (optionally) a new photo onto {@code target}. Returns true
+     * when stored; on failure the error is posted and any new photo is rolled back.
+     */
+    private boolean updateAttemptNote(StoredClimbAttempt target, String note, String companions,
+                                      android.net.Uri photoUri) throws java.io.IOException {
+        target.note = (note == null || note.trim().isEmpty()) ? null : note.trim();
+        target.companions = nl.paree.climbpro.domain.ride.SummitGroupPhotos
+                .normalizeCompanions(companions);
+
+        // Write the NEW photo first, but don't touch the OLD one yet — if the JSON
+        // record update below fails, we must be able to roll back to a state where
+        // the attempt still has a valid, working photo reference (see saveAttemptNote
+        // javadoc). Only once attemptRepo.update() confirms success do we delete the
+        // old file; only on failure do we delete the new one instead.
+        String oldPhoto = target.photoFileName;
+        boolean photoChanged = photoUri != null;
+        String newPhoto = photoChanged
+                ? nl.paree.climbpro.data.route.AttemptPhotoStore
+                        .savePickedPhoto(getApplication(), photoUri)
+                : oldPhoto;
+        target.photoFileName = newPhoto;
+
+        boolean updateSucceeded;
+        try {
+            updateSucceeded = attemptRepo.update(target);
+        } catch (java.io.IOException writeFailure) {
+            // Write itself blew up (e.g. disk full) — same rollback as an explicit
+            // false return: the new photo never becomes referenced by anything.
+            if (photoChanged) {
+                nl.paree.climbpro.data.route.AttemptPhotoStore
+                        .delete(getApplication(), newPhoto);
+            }
+            error.postValue("Opslaan mislukt: " + writeFailure.getMessage());
+            return false;
+        }
+
+        if (!updateSucceeded) {
+            if (photoChanged) {
+                // Roll back the just-written new photo; leave the old photo + old
+                // JSON record untouched so the attempt still has a working reference.
+                nl.paree.climbpro.data.route.AttemptPhotoStore
+                        .delete(getApplication(), newPhoto);
+            }
+            error.postValue("Opslaan mislukt");
+            return false;
+        }
+        if (photoChanged) {
+            nl.paree.climbpro.data.route.AttemptPhotoStore
+                    .delete(getApplication(), oldPhoto);
+        }
+        return true;
+    }
+
     /** Recompute using the latest saved rider profile (call from Activity.onResume). */
     public void refreshEstimate() {
-        StoredClimb c = lastClimb;
+        StoredClimb c = lastClimb.get();
         if (c != null) {
             executor.execute(() -> computeEstimate(c));
         }
@@ -752,7 +769,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 nl.paree.climbpro.domain.power.SegmentIntensityZones.zones(c.segments, profile));
 
         // Preferred path: whole-route, fatigue-aware estimate.
-        StoredRoute r = lastRoute;
+        StoredRoute r = lastRoute.get();
         ClimbTimeEstimate estimate = null;
         if (r != null) {
             List<RouteTile> tiles = RouteEffortProfileBuilder.build(r);
@@ -806,22 +823,22 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         }
         double mass = profile.totalMassKg();
         double power = estimate.assumedPowerWatts;
-        HourlyForecast cached = windForecast;
+        HourlyForecast cached = windForecast.get();
         if (cached == null) {
             windImpact.postValue(new WindImpactState(estimate, null, true));
         }
         windExecutor.execute(() -> {
-            HourlyForecast f = windForecast;
+            HourlyForecast f = windForecast.get();
             if (f == null) {
                 try {
                     f = new OpenMeteoClient().fetch(ClimbEndpoints.top(r, c));
-                    windForecast = f;
+                    windForecast.set(f);
                 } catch (Exception e) {
                     android.util.Log.i(TAG, "No wind forecast, estimate stays uncorrected: "
                             + e.getMessage());
                 }
             }
-            if (c != lastClimb) return; // user moved on to another climb meanwhile
+            if (c != lastClimb.get()) return; // user moved on to another climb meanwhile
             WindImpactEstimator.Result result = ClimbWindImpact.compute(
                     r, c, f, java.time.Instant.now(), mass, power);
             windImpact.postValue(new WindImpactState(estimate, result, false));

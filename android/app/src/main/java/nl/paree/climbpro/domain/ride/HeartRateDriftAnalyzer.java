@@ -45,60 +45,81 @@ public final class HeartRateDriftAnalyzer {
     public static Drift analyze(RideStreams s) {
         if (s == null || !s.isUsable() || s.heartrate == null) return null;
         boolean power = hasPower(s);
-        int[] t = s.time;
-        double[] d = s.distance;
-        int n = t.length;
-
-        double[] dt = new double[n];
-        double[] out = new double[n];
-        boolean[] use = new boolean[n];
-        double total = 0;
-        double distM = 0;
-        double climbM = 0;
-        for (int i = 1; i < n; i++) {
-            if (!isMovingSample(s, i) || t[i] - t[0] < WARMUP_SEC) continue;
-            double o;
-            if (power) {
-                o = s.watts[i];
-                if (Double.isNaN(o) || o < 0 || o > SprintAnalyzer.MAX_PLAUSIBLE_WATTS) continue;
-            } else {
-                o = (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
-            }
-            use[i] = true;
-            dt[i] = t[i] - t[i - 1];
-            out[i] = o;
-            total += dt[i];
-            distM += d[i] - d[i - 1];
-            if (s.altitude != null) {
-                double rise = s.altitude[i] - s.altitude[i - 1];
-                if (rise > 0) climbM += rise;
-            }
-        }
-        if (total < MIN_ANALYZED_SEC) return null;
-        if (!power && distM > 0 && climbM / (distM / 1000) > MAX_CLIMB_M_PER_KM_FOR_SPEED) {
+        Samples m = Samples.collect(s, power);
+        if (m.total < MIN_ANALYZED_SEC) return null;
+        if (!power && m.distM > 0 && m.climbM / (m.distM / 1000) > MAX_CLIMB_M_PER_KM_FOR_SPEED) {
             return null;
         }
 
-        double half = total / 2;
-        double elapsed = 0;
-        double out1 = 0, hr1 = 0, out2 = 0, hr2 = 0;
-        for (int i = 1; i < n; i++) {
-            if (!use[i]) continue;
-            double hr = s.heartrate[i];
-            if (elapsed < half) {
-                out1 += out[i] * dt[i];
-                hr1 += hr * dt[i];
-            } else {
-                out2 += out[i] * dt[i];
-                hr2 += hr * dt[i];
-            }
-            elapsed += dt[i];
-        }
+        double[] h = m.halves(s.heartrate);
+        double out1 = h[0], hr1 = h[1], out2 = h[2], hr2 = h[3];
         if (hr1 <= 0 || hr2 <= 0 || out1 <= 0) return null;
         double ef1 = out1 / hr1;
         double ef2 = out2 / hr2;
         return new Drift((ef1 - ef2) / ef1 * 100, power ? BASIS_POWER : BASIS_SPEED,
-                (int) Math.round(total / 60));
+                (int) Math.round(m.total / 60));
+    }
+
+    /**
+     * The moving samples after the warm-up with their output (watts, or speed without a power
+     * meter) and duration, plus the totals the speed basis is gated on.
+     */
+    private static final class Samples {
+        final double[] dt;
+        final double[] out;
+        final boolean[] use;
+        double total;
+        double distM;
+        double climbM;
+
+        private Samples(int n) {
+            dt = new double[n];
+            out = new double[n];
+            use = new boolean[n];
+        }
+
+        static Samples collect(RideStreams s, boolean power) {
+            int[] t = s.time;
+            double[] d = s.distance;
+            Samples m = new Samples(t.length);
+            for (int i = 1; i < t.length; i++) {
+                if (!isMovingSample(s, i) || t[i] - t[0] < WARMUP_SEC) continue;
+                if (power && !isPlausibleWatts(s.watts[i])) continue;
+                m.use[i] = true;
+                m.dt[i] = (double) t[i] - t[i - 1];
+                m.out[i] = power ? s.watts[i] : (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
+                m.total += m.dt[i];
+                m.distM += d[i] - d[i - 1];
+                m.climbM += riseAt(s.altitude, i);
+            }
+            return m;
+        }
+
+        /** Time-weighted {output, heart rate} sums of the first and second half: {o1, h1, o2, h2}. */
+        double[] halves(double[] heartrate) {
+            double half = total / 2;
+            double elapsed = 0;
+            double[] h = new double[4];
+            for (int i = 1; i < use.length; i++) {
+                if (!use[i]) continue;
+                int base = elapsed < half ? 0 : 2;
+                h[base] += out[i] * dt[i];
+                h[base + 1] += heartrate[i] * dt[i];
+                elapsed += dt[i];
+            }
+            return h;
+        }
+    }
+
+    private static boolean isPlausibleWatts(double o) {
+        return !Double.isNaN(o) && o >= 0 && o <= SprintAnalyzer.MAX_PLAUSIBLE_WATTS;
+    }
+
+    /** Altitude gained since the previous sample (0 when descending or without altitude). */
+    private static double riseAt(double[] altitude, int i) {
+        if (altitude == null) return 0;
+        double rise = altitude[i] - altitude[i - 1];
+        return rise > 0 ? rise : 0;
     }
 
     /** Time-weighted average heart rate while moving, or null without heart-rate data. */

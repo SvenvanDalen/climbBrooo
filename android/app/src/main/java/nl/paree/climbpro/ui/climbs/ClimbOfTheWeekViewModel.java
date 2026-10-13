@@ -153,6 +153,22 @@ public final class ClimbOfTheWeekViewModel extends AndroidViewModel {
     }
 
     private List<ClimbOfTheWeek.Candidate> loadCandidates() {
+        Map<String, Long> lastRidden = lastRiddenEpochDays();
+        List<ClimbOfTheWeek.Candidate> out = new ArrayList<>();
+        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
+            StoredRoute route;
+            try {
+                route = routeRepo.loadRoute(entry.routeId);
+            } catch (Exception e) {
+                continue;
+            }
+            if (route.climbs != null) addCandidates(out, entry, route.climbs, lastRidden);
+        }
+        return out;
+    }
+
+    /** Epoch day each climb was last ridden. */
+    private Map<String, Long> lastRiddenEpochDays() {
         Map<String, Long> lastRidden = new HashMap<>();
         ZoneId zone = ZoneId.systemDefault();
         for (StoredClimbAttempt a : attemptRepo.loadAll()) {
@@ -162,30 +178,28 @@ public final class ClimbOfTheWeekViewModel extends AndroidViewModel {
             Long prev = lastRidden.get(a.climbId);
             if (prev == null || day > prev) lastRidden.put(a.climbId, day);
         }
+        return lastRidden;
+    }
 
-        List<ClimbOfTheWeek.Candidate> out = new ArrayList<>();
-        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
-            StoredRoute route;
-            try {
-                route = routeRepo.loadRoute(entry.routeId);
-            } catch (Exception e) {
-                continue;
-            }
-            if (route.climbs == null) continue;
-            String routeName = entry.userDisplayName != null ? entry.userDisplayName
-                    : (entry.name != null ? entry.name : entry.routeId);
-            for (int i = 0; i < route.climbs.size(); i++) {
-                StoredClimb c = route.climbs.get(i);
-                if (c == null) continue;
-                String id = ClimbIdentity.of(c);
-                String name = c.userDisplayName != null ? c.userDisplayName
-                        : (c.name != null ? c.name : ("Klim " + (i + 1) + " (" + routeName + ")"));
-                out.add(new ClimbOfTheWeek.Candidate(id, entry.routeId, i, name,
-                        c.startLat, c.startLon, c.elevationGain, c.avgGradient,
-                        ClimbIdentity.effectiveLength(c), lastRidden.get(id)));
-            }
+    private static void addCandidates(List<ClimbOfTheWeek.Candidate> out, RouteCatalogEntry entry,
+                                      List<StoredClimb> climbs, Map<String, Long> lastRidden) {
+        String routeName = entry.userDisplayName != null ? entry.userDisplayName
+                : (entry.name != null ? entry.name : entry.routeId);
+        for (int i = 0; i < climbs.size(); i++) {
+            StoredClimb c = climbs.get(i);
+            if (c == null) continue;
+            String id = ClimbIdentity.of(c);
+            out.add(new ClimbOfTheWeek.Candidate(id, entry.routeId, i,
+                    candidateName(c, i, routeName),
+                    c.startLat, c.startLon, c.elevationGain, c.avgGradient,
+                    ClimbIdentity.effectiveLength(c), lastRidden.get(id)));
         }
-        return out;
+    }
+
+    /** The rename, the detected name, else "Klim n (route)". */
+    private static String candidateName(StoredClimb c, int index, String routeName) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        return c.name != null ? c.name : ("Klim " + (index + 1) + " (" + routeName + ")");
     }
 
     private boolean hasLocationPermission() {

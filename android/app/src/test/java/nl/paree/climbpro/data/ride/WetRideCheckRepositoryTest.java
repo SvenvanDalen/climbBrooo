@@ -30,7 +30,7 @@ public class WetRideCheckRepositoryTest {
     @Before
     public void setUp() {
         app = ApplicationProvider.getApplicationContext();
-        file = new File(app.getFilesDir(), WetRideCheckRepository.FILE);
+        file = new File(app.getFilesDir(), WetRideCheckRepository.FILE_NAME);
         file.delete();
     }
 

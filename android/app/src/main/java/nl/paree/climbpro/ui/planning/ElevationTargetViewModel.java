@@ -173,6 +173,12 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
         });
     }
 
+    /** The rename, the detected name, else "Klim n (route)". */
+    private static String candidateName(StoredClimb c, int index, String routeName) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        return c.name != null ? c.name : ("Klim " + (index + 1) + " (" + routeName + ")");
+    }
+
     /**
      * Candidate climbs from every route with at least one climb start inside the radius
      * (catalog pre-filter, same as radius mode); the planner applies the exact per-climb
@@ -198,8 +204,7 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
                     endLat = known.get(i).endLat;
                     endLon = known.get(i).endLon;
                 }
-                String name = c.userDisplayName != null ? c.userDisplayName
-                        : (c.name != null ? c.name : ("Klim " + (i + 1) + " (" + routeName + ")"));
+                String name = candidateName(c, i, routeName);
                 out.add(new ElevationTargetPlanner.Candidate(
                         ClimbIdentity.of(c), entry.routeId, i, name,
                         c.startLat, c.startLon, endLat, endLon,

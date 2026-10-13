@@ -71,41 +71,74 @@ public final class FtpTestResultDetector {
         long namedCutoff = nowEpochSec - NAMED_LOOKBACK_DAYS * DAY_SEC;
         long windowEnd = exportedAtEpochSec + EXPORT_WINDOW_DAYS * DAY_SEC;
 
-        StoredRide latestNamed = null;
-        int latestNamedWatts = 0;
-        StoredRide bestWindow = null;
-        int bestWindowWatts = 0;
+        Pick named = new Pick();
+        Pick window = new Pick();
         for (StoredRide r : rides) {
-            if (r == null || r.activityId == handledActivityId
-                    || RideRecordsCalculator.isEBike(r.type)) {
-                continue;
-            }
-            StoredRideStreamStats s = stats.get(r.activityId);
-            if (s == null || s.powerCurve == null || s.powerCurve.length <= index) continue;
-            int watts = s.powerCurve[index];
+            int watts = usableTwentyMinuteWatts(r, stats, index, handledActivityId);
+            if (watts <= 0) continue;
             int ftp = FtpTestPlan.ftpFromTwentyMinuteWatts(watts);
-            if (watts <= 0 || ftp > FtpEstimator.MAX_PLAUSIBLE_FTP_WATTS) continue;
-
             if (isNamedTest(r.name) && r.startEpochSec >= namedCutoff) {
-                if (latestNamed == null || r.startEpochSec > latestNamed.startEpochSec) {
-                    latestNamed = r;
-                    latestNamedWatts = watts;
-                }
-            } else if (exportedAtEpochSec > 0 && r.startEpochSec >= exportedAtEpochSec
-                    && r.startEpochSec <= windowEnd
-                    && (currentFtpWatts <= 0 || ftp >= MIN_EFFORT_FRACTION * currentFtpWatts)) {
-                if (bestWindow == null || watts > bestWindowWatts) {
-                    bestWindow = r;
-                    bestWindowWatts = watts;
-                }
+                named.keepLatest(r, watts);
+            } else if (inExportWindow(r.startEpochSec, exportedAtEpochSec, windowEnd)
+                    && isHardEnough(ftp, currentFtpWatts)) {
+                window.keepStrongest(r, watts);
             }
         }
-        if (latestNamed == null && bestWindow == null) return null;
-        if (bestWindow == null
-                || (latestNamed != null && latestNamed.startEpochSec >= bestWindow.startEpochSec)) {
-            return new Result(latestNamed, latestNamedWatts, Reason.NAMED);
+        if (named.ride == null && window.ride == null) return null;
+        if (window.ride == null
+                || (named.ride != null && named.ride.startEpochSec >= window.ride.startEpochSec)) {
+            return new Result(named.ride, named.watts, Reason.NAMED);
         }
-        return new Result(bestWindow, bestWindowWatts, Reason.AFTER_EXPORT);
+        return new Result(window.ride, window.watts, Reason.AFTER_EXPORT);
+    }
+
+    private static boolean inExportWindow(long startEpochSec, long exportedAtEpochSec,
+                                          long windowEnd) {
+        return exportedAtEpochSec > 0 && startEpochSec >= exportedAtEpochSec
+                && startEpochSec <= windowEnd;
+    }
+
+    /** Without a current FTP any effort counts; otherwise it must be a real test effort. */
+    private static boolean isHardEnough(int ftp, int currentFtpWatts) {
+        return currentFtpWatts <= 0 || ftp >= MIN_EFFORT_FRACTION * currentFtpWatts;
+    }
+
+    /** A candidate test ride and its 20-minute power. */
+    private static final class Pick {
+        StoredRide ride;
+        int watts;
+
+        void keepLatest(StoredRide r, int w) {
+            if (ride == null || r.startEpochSec > ride.startEpochSec) set(r, w);
+        }
+
+        void keepStrongest(StoredRide r, int w) {
+            if (ride == null || w > watts) set(r, w);
+        }
+
+        private void set(StoredRide r, int w) {
+            ride = r;
+            watts = w;
+        }
+    }
+
+    /**
+     * The ride's best 20-minute power, or 0 when the ride is excluded (already handled,
+     * e-bike), has no power curve that long, or implies an implausible FTP.
+     */
+    private static int usableTwentyMinuteWatts(StoredRide r,
+                                               Map<Long, StoredRideStreamStats> stats,
+                                               int index, long handledActivityId) {
+        if (r == null || r.activityId == handledActivityId
+                || RideRecordsCalculator.isEBike(r.type)) {
+            return 0;
+        }
+        StoredRideStreamStats s = stats.get(r.activityId);
+        if (s == null || s.powerCurve == null || s.powerCurve.length <= index) return 0;
+        int watts = s.powerCurve[index];
+        int ftp = FtpTestPlan.ftpFromTwentyMinuteWatts(watts);
+        if (watts <= 0 || ftp > FtpEstimator.MAX_PLAUSIBLE_FTP_WATTS) return 0;
+        return watts;
     }
 
     /** True when the ride name contains "FTP" as a word (any case). */

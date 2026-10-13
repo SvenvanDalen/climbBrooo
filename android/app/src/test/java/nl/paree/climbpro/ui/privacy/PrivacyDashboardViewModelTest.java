@@ -87,7 +87,7 @@ public class PrivacyDashboardViewModelTest {
         vm.message().observeForever(o);
         box[0] = null;
         vm.delete(c);
-        UiTestEnv.waitFor(() -> box[0] != null && box[0].length() > 0);
+        UiTestEnv.waitFor(() -> box[0] != null && !box[0].isEmpty());
         UiTestEnv.settle();
         vm.message().removeObserver(o);
         return box[0];
@@ -114,7 +114,7 @@ public class PrivacyDashboardViewModelTest {
         prefs.edit().putLong(RouteSyncWorker.PREF_LAST_LAT, Double.doubleToLongBits(50.5))
                 .putLong(RouteSyncWorker.PREF_LAST_LON, Double.doubleToLongBits(5.5)).commit();
         prefs.edit().putString(FriendShareIdentity.PREF_NAME, "Sven").commit();
-        app.getSharedPreferences(StravaActivitiesRepository.PREFS, Context.MODE_PRIVATE).edit()
+        app.getSharedPreferences(StravaActivitiesRepository.PREFS_NAME, Context.MODE_PRIVATE).edit()
                 .putLong("last_sync_epoch_sec", 1_700_000_000L).commit();
 
         Map<PrivacyCategory, PrivacyDashboardViewModel.Row> rows = loadRows();
@@ -188,7 +188,7 @@ public class PrivacyDashboardViewModelTest {
     public void deleteLocationFriendsAndLinks_clearPrefs() {
         prefs.edit().putLong(RouteSyncWorker.PREF_LAST_LAT, 1L).putLong(RouteSyncWorker.PREF_LAST_LON, 1L)
                 .putString(FriendShareIdentity.PREF_NAME, "Sven").commit();
-        SharedPreferences strava = app.getSharedPreferences(StravaActivitiesRepository.PREFS,
+        SharedPreferences strava = app.getSharedPreferences(StravaActivitiesRepository.PREFS_NAME,
                 Context.MODE_PRIVATE);
         strava.edit().putLong("last_sync_epoch_sec", 5L).commit();
 

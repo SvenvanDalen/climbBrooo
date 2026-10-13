@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * Persists {@link StoredRideStreamStats} as {@code ride_stream_stats.json} in
@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RideStreamStatsRepository {
 
     private static final String TAG = "RideStreamStatsRepo";
-    public static final String FILE = "ride_stream_stats.json";
+    public static final String FILE_NAME = "ride_stream_stats.json";
 
     /** Process-wide, like {@code RideRepository}: the sync worker and UI each create instances. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -34,7 +34,7 @@ public final class RideStreamStatsRepository {
 
     public RideStreamStatsRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -67,7 +67,7 @@ public final class RideStreamStatsRepository {
             for (StoredRideStreamStats s : stats) {
                 if (s != null) byId.put(s.activityId, s);
             }
-            writeAtomic(file, mapper.writeValueAsBytes(new ArrayList<>(byId.values())));
+            AtomicFiles.write(file, mapper.writeValueAsBytes(new ArrayList<>(byId.values())));
         } finally {
             WRITE_LOCK.unlock();
         }
@@ -80,27 +80,6 @@ public final class RideStreamStatsRepository {
             return !file.exists() || file.delete();
         } finally {
             WRITE_LOCK.unlock();
-        }
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
         }
     }
 }

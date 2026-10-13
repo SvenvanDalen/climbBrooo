@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +48,7 @@ public final class ConnectIqClient {
      * outdated. Those errors aren't transient, so retrying every 5 s only burns
      * battery; the back-off doubles from {@link #RECONNECT_DELAY_MS} up to this.
      */
-    private static final long GCM_MISSING_MAX_DELAY_MS = 5 * 60_000;
+    private static final long GCM_MISSING_MAX_DELAY_MS = 5 * 60_000L;
 
     /** Control message the phone sends to the widget right after (re)connecting. */
     static final String MSG_TYPE_HELLO = "HELLO";
@@ -74,12 +75,16 @@ public final class ConnectIqClient {
     private final MutableLiveData<ConnectIqState> stateLd =
             new MutableLiveData<>(ConnectIqState.DISCONNECTED);
 
+    // java:S3077: the device handle is swapped as a whole; volatile publishes it the same way
+    // an AtomicReference would. Its status is re-read from SDK callbacks, not cached here.
+    @SuppressWarnings("java:S3077")
     private volatile IQDevice device;
     private volatile boolean connected;
     // The check-then-set in maybeSendHello() is not atomic across SDK callback
     // threads, so a startup race can send HELLO twice. That's accepted by design:
     // HELLO is an idempotent prime/refresh trigger, a duplicate is harmless.
     private volatile boolean helloSent;
+    @SuppressWarnings("java:S3077") // set once from ClimbProApplication, swapped as a whole
     private volatile WatchRequestHandler requestHandler;
 
     /**
@@ -110,7 +115,7 @@ public final class ConnectIqClient {
     @VisibleForTesting
     ConnectIqClient(Context context, ConnectIQ connectIQ) {
         this.context = context.getApplicationContext();
-        this.connectIQ = connectIQ;
+        this.connectIQ = Objects.requireNonNull(connectIQ, "connectIQ");
     }
 
     public LiveData<ConnectIqState> state() { return stateLd; }

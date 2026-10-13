@@ -66,31 +66,41 @@ public final class IndoorSeasonSummary {
         TreeMap<Integer, Season> seasons = new TreeMap<>();
         Set<Long> indoorIds = IndoorRides.indoorIds(rides);
         if (rides != null) {
-            for (StoredRide r : rides) {
-                if (!IndoorRides.isIndoor(r) || r.startEpochSec <= 0) continue;
-                Integer year = seasonOf(day(r.startEpochSec, zone));
-                if (year == null) continue;
-                Season s = seasons.computeIfAbsent(year, Season::new);
-                s.rides++;
-                s.movingSec += Math.max(0, r.movingTimeSec);
-                s.tss += TrainingLoad.of(r, ftpWatts).tss;
-                s.elevationM += Math.max(0, r.elevationGainM);
-                StoredRideStreamStats st = stats != null ? stats.get(r.activityId) : null;
-                if (st != null && st.powerCurve != null && st.powerCurve.length > IDX_20_MIN) {
-                    s.best5MinWatts = Math.max(s.best5MinWatts, st.powerCurve[IDX_5_MIN]);
-                    s.best20MinWatts = Math.max(s.best20MinWatts, st.powerCurve[IDX_20_MIN]);
-                }
-            }
+            for (StoredRide r : rides) addRide(seasons, r, stats, ftpWatts, zone);
         }
-        if (attempts != null) {
-            for (StoredClimbAttempt a : attempts) {
-                if (a == null || !indoorIds.contains(a.activityId)) continue;
-                Integer year = seasonOf(day(a.dateEpochSec, zone));
-                Season s = year != null ? seasons.get(year) : null;
-                if (s != null) s.climbs++;
-            }
-        }
+        if (attempts != null) countIndoorClimbs(seasons, attempts, indoorIds, zone);
         return new ArrayList<>(seasons.descendingMap().values());
+    }
+
+    /** Counts climb attempts ridden indoors towards the season they fall in. */
+    private static void countIndoorClimbs(TreeMap<Integer, Season> seasons,
+                                          List<StoredClimbAttempt> attempts, Set<Long> indoorIds,
+                                          ZoneId zone) {
+        for (StoredClimbAttempt a : attempts) {
+            if (a == null || !indoorIds.contains(a.activityId)) continue;
+            Integer year = seasonOf(day(a.dateEpochSec, zone));
+            Season s = year != null ? seasons.get(year) : null;
+            if (s != null) s.climbs++;
+        }
+    }
+
+    /** Adds an indoor ride to the season it falls in (rides outside a season are skipped). */
+    private static void addRide(TreeMap<Integer, Season> seasons, StoredRide r,
+                                Map<Long, StoredRideStreamStats> stats, int ftpWatts,
+                                ZoneId zone) {
+        if (!IndoorRides.isIndoor(r) || r.startEpochSec <= 0) return;
+        Integer year = seasonOf(day(r.startEpochSec, zone));
+        if (year == null) return;
+        Season s = seasons.computeIfAbsent(year, Season::new);
+        s.rides++;
+        s.movingSec += Math.max(0, r.movingTimeSec);
+        s.tss += TrainingLoad.of(r, ftpWatts).tss;
+        s.elevationM += Math.max(0, r.elevationGainM);
+        StoredRideStreamStats st = stats != null ? stats.get(r.activityId) : null;
+        if (st != null && st.powerCurve != null && st.powerCurve.length > IDX_20_MIN) {
+            s.best5MinWatts = Math.max(s.best5MinWatts, st.powerCurve[IDX_5_MIN]);
+            s.best20MinWatts = Math.max(s.best20MinWatts, st.powerCurve[IDX_20_MIN]);
+        }
     }
 
     private static LocalDate day(long epochSec, ZoneId zone) {

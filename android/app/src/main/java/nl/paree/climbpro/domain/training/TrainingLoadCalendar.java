@@ -103,16 +103,10 @@ public final class TrainingLoadCalendar {
         double elevation;
     }
 
-    public static Result compute(List<StoredRide> rides, List<StoredClimbAttempt> attempts,
-                                 int ftpWatts, LocalDate today, ZoneId zone, int weeks) {
-        int w = Math.max(1, weeks);
-        LocalDate first = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                .minusWeeks(w - 1L);
-        List<StoredRide> rideList = rides != null ? rides : Collections.<StoredRide>emptyList();
-        List<StoredClimbAttempt> attemptList =
-                attempts != null ? attempts : Collections.<StoredClimbAttempt>emptyList();
-
-        Map<LocalDate, Acc> acc = new HashMap<>();
+    /** Adds every ride in the range; returns the ids of all archived rides. */
+    private static Set<Long> addRides(Map<LocalDate, Acc> acc, List<StoredRide> rideList,
+                                      int ftpWatts, ZoneId zone, LocalDate first,
+                                      LocalDate today) {
         Set<Long> archived = new HashSet<>();
         for (StoredRide r : rideList) {
             if (r == null) continue;
@@ -124,6 +118,13 @@ public final class TrainingLoadCalendar {
             a.rides++;
             a.elevation += Math.max(0, r.elevationGainM);
         }
+        return archived;
+    }
+
+    /** Counts climbs per day; a climb from a ride not in the archive adds its own load. */
+    private static void addClimbs(Map<LocalDate, Acc> acc, List<StoredClimbAttempt> attemptList,
+                                  Set<Long> archived, ZoneId zone, LocalDate first,
+                                  LocalDate today) {
         for (StoredClimbAttempt at : attemptList) {
             if (at == null) continue;
             LocalDate day = dayOf(at.dateEpochSec, zone, first, today);
@@ -135,6 +136,20 @@ public final class TrainingLoadCalendar {
                 a.load += hours * CLIMB_INTENSITY * CLIMB_INTENSITY * 100;
             }
         }
+    }
+
+    public static Result compute(List<StoredRide> rides, List<StoredClimbAttempt> attempts,
+                                 int ftpWatts, LocalDate today, ZoneId zone, int weeks) {
+        int w = Math.max(1, weeks);
+        LocalDate first = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .minusWeeks(w - 1L);
+        List<StoredRide> rideList = rides != null ? rides : Collections.<StoredRide>emptyList();
+        List<StoredClimbAttempt> attemptList =
+                attempts != null ? attempts : Collections.<StoredClimbAttempt>emptyList();
+
+        Map<LocalDate, Acc> acc = new HashMap<>();
+        Set<Long> archived = addRides(acc, rideList, ftpWatts, zone, first, today);
+        addClimbs(acc, attemptList, archived, zone, first, today);
 
         List<Day> days = new ArrayList<>();
         int active = 0, streak = 0, longest = 0;

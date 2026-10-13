@@ -28,23 +28,30 @@ public final class EventFilter {
         LocalDate last = today.plusDays(HORIZON_DAYS);
         if (events == null) return out;
         for (CyclingEvent e : events) {
-            if (e == null || e.date == null) continue;
-            LocalDate d;
-            try {
-                d = LocalDate.parse(e.date);
-            } catch (RuntimeException ex) {
-                continue;
-            }
-            if (d.isBefore(today) || d.isAfter(last)) continue;
+            LocalDate d = eventDate(e);
+            if (d == null || d.isBefore(today) || d.isAfter(last)) continue;
             double km = distanceKm(e, home);
             if (km >= 0 && km > radiusKm) continue;
-            String key = e.uid != null ? e.uid : e.date + "|" + e.name;
-            if (!seen.add(key)) continue;
+            if (!seen.add(dedupeKey(e))) continue;
             out.add(e);
         }
         out.sort(Comparator.comparing((CyclingEvent e) -> e.date)
                 .thenComparing(e -> e.lat == null ? 1 : 0));
         return out;
+    }
+
+    /** The event's date, or null for a missing event/date or an unparseable one. */
+    private static LocalDate eventDate(CyclingEvent e) {
+        if (e == null || e.date == null) return null;
+        try {
+            return LocalDate.parse(e.date);
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    private static String dedupeKey(CyclingEvent e) {
+        return e.uid != null ? e.uid : e.date + "|" + e.name;
     }
 
     /** Great-circle distance from home in km, or -1 when either position is unknown. */

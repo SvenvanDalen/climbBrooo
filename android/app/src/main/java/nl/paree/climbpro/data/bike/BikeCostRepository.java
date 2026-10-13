@@ -15,12 +15,12 @@ import nl.paree.climbpro.domain.bike.EuroAmount;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for the bike garage (issue #187) and its cost overview (issue #233).
@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class BikeCostRepository {
 
     private static final String TAG = "BikeCostRepository";
-    static final String FILE = "bike_costs.json";
+    static final String FILE_NAME = "bike_costs.json";
     /** Upper bound for manually entered km; keeps km * 1000 far from int/long trouble. */
     public static final int MAX_EXTRA_KM = 1_000_000;
     /** Sanity bounds for garage fields; outside them the value counts as unknown (0). */
@@ -56,7 +56,7 @@ public final class BikeCostRepository {
 
     public BikeCostRepository(Context context) {
         this.app    = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -291,35 +291,43 @@ public final class BikeCostRepository {
         log.bikes.removeIf(b -> b == null);
         int bikeIndex = 0;
         for (Bike b : log.bikes) {
-            // Deterministic fallback ids so an edit on a later load still finds the item.
-            if (b.id == null || b.id.isEmpty()) b.id = "bike-" + bikeIndex;
-            b.name = cleanName(b.name);
-            if (b.sinceEpochSec < 0) b.sinceEpochSec = 0;
-            if (b.retiredEpochSec < 0) b.retiredEpochSec = 0;
-            b.extraKm = clampKm(b.extraKm);
-            if (b.costs == null) b.costs = new ArrayList<>();
-            b.costs.removeIf(c -> c == null || c.amountCents <= 0
-                    || c.amountCents > EuroAmount.MAX_CENTS);
-            int costIndex = 0;
-            for (BikeCostEntry c : b.costs) {
-                if (c.id == null || c.id.isEmpty()) c.id = b.id + "-cost-" + costIndex;
-                c.kind = BikeCostEntry.cleanKind(c.kind);
-                c.description = cleanDescription(c.description, c.kind);
-                if (c.epochSec < 0) c.epochSec = 0;
-                costIndex++;
-            }
-            // A missing type on a pre-garage file is guessed by the migration instead.
-            if (log.version >= BikeCostLog.GARAGE_VERSION) b.type = BikeGarage.cleanType(b.type);
-            b.weightKg     = cleanWeight(b.weightKg);
-            b.tyreWidthMm  = cleanTyreWidth(b.tyreWidthMm);
-            b.chainrings   = cleanText(b.chainrings);
-            b.cassette     = cleanText(b.cassette);
-            b.stravaGearId = cleanText(b.stravaGearId);
+            sanitizeBike(b, bikeIndex, log.version);
             bikeIndex++;
         }
         if (BikeGarage.find(log, log.activeBikeId) == null) log.activeBikeId = null;
         if (BikeGarage.find(log, log.indoorBikeId) == null) log.indoorBikeId = null;
         return log;
+    }
+
+    private static void sanitizeBike(Bike b, int bikeIndex, int logVersion) {
+        // Deterministic fallback ids so an edit on a later load still finds the item.
+        if (b.id == null || b.id.isEmpty()) b.id = "bike-" + bikeIndex;
+        b.name = cleanName(b.name);
+        if (b.sinceEpochSec < 0) b.sinceEpochSec = 0;
+        if (b.retiredEpochSec < 0) b.retiredEpochSec = 0;
+        b.extraKm = clampKm(b.extraKm);
+        sanitizeCosts(b);
+        // A missing type on a pre-garage file is guessed by the migration instead.
+        if (logVersion >= BikeCostLog.GARAGE_VERSION) b.type = BikeGarage.cleanType(b.type);
+        b.weightKg     = cleanWeight(b.weightKg);
+        b.tyreWidthMm  = cleanTyreWidth(b.tyreWidthMm);
+        b.chainrings   = cleanText(b.chainrings);
+        b.cassette     = cleanText(b.cassette);
+        b.stravaGearId = cleanText(b.stravaGearId);
+    }
+
+    private static void sanitizeCosts(Bike b) {
+        if (b.costs == null) b.costs = new ArrayList<>();
+        b.costs.removeIf(c -> c == null || c.amountCents <= 0
+                || c.amountCents > EuroAmount.MAX_CENTS);
+        int costIndex = 0;
+        for (BikeCostEntry c : b.costs) {
+            if (c.id == null || c.id.isEmpty()) c.id = b.id + "-cost-" + costIndex;
+            c.kind = BikeCostEntry.cleanKind(c.kind);
+            c.description = cleanDescription(c.description, c.kind);
+            if (c.epochSec < 0) c.epochSec = 0;
+            costIndex++;
+        }
     }
 
     static double cleanWeight(double kg) {
@@ -340,7 +348,7 @@ public final class BikeCostRepository {
         // Drop links to bikes that are gone (e.g. just deleted) before they are persisted.
         if (BikeGarage.find(log, log.activeBikeId) == null) log.activeBikeId = null;
         if (BikeGarage.find(log, log.indoorBikeId) == null) log.indoorBikeId = null;
-        writeAtomic(file, mapper.writeValueAsBytes(log));
+        AtomicFiles.write(file, mapper.writeValueAsBytes(log));
         mirrorActiveBike(log);
     }
 
@@ -358,26 +366,5 @@ public final class BikeCostRepository {
         if (active.chainrings != null) ed.putString(PREF_GEAR_CHAINRINGS, active.chainrings);
         if (active.cassette != null) ed.putString(PREF_GEAR_CASSETTE, active.cassette);
         ed.apply();
-    }
-
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
     }
 }

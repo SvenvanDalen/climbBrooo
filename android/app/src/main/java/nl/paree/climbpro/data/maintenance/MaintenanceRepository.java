@@ -10,11 +10,11 @@ import nl.paree.climbpro.domain.maintenance.MaintenanceCalculator;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import nl.paree.climbpro.data.AtomicFiles;
 
 /**
  * JSON-file persistence for the maintenance tracker (issue #154). Layout:
@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class MaintenanceRepository {
 
     private static final String TAG  = "MaintenanceRepository";
-    static final String FILE = "maintenance.json";
+    static final String FILE_NAME = "maintenance.json";
 
     /** Static: the tracker screen and the route-list banner each create their own instance. */
     private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
@@ -35,7 +35,7 @@ public final class MaintenanceRepository {
 
     public MaintenanceRepository(Context context) {
         Context app = context.getApplicationContext();
-        this.file   = new File(app.getFilesDir(), FILE);
+        this.file   = new File(app.getFilesDir(), FILE_NAME);
         this.mapper = new ObjectMapper().disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -184,49 +184,31 @@ public final class MaintenanceRepository {
         log.components.removeIf(c -> c == null);
         int index = 0;
         for (MaintenanceComponent c : log.components) {
-            // Deterministic fallback id so an edit on a later load still finds the component.
-            if (c.id == null || c.id.isEmpty()) c.id = "component-" + index;
-            c.name = cleanName(c.name);
-            if (c.intervalKm < 0) c.intervalKm = 0;
-            if (c.intervalMonths < 0) c.intervalMonths = 0;
-            if (c.lastServicedEpochSec < 0) c.lastServicedEpochSec = 0;
-            if (c.warrantyPurchaseEpochSec < 0) c.warrantyPurchaseEpochSec = 0;
-            if (c.warrantyMonths < 0) c.warrantyMonths = 0;
-            if (c.warrantyReminderSentForExpiryEpochSec < 0) {
-                c.warrantyReminderSentForExpiryEpochSec = 0;
-            }
-            if (c.serviceHistory == null) c.serviceHistory = new ArrayList<>();
-            c.serviceHistory.removeIf(ts -> ts == null || ts <= 0);
-            for (Long ts : c.serviceHistory) {
-                if (ts > c.lastServicedEpochSec) c.lastServicedEpochSec = ts;
-            }
+            sanitizeComponent(c, index);
             index++;
         }
         return log;
     }
 
-    private void write(MaintenanceLog log) throws IOException {
-        writeAtomic(file, mapper.writeValueAsBytes(log));
+    private static void sanitizeComponent(MaintenanceComponent c, int index) {
+        // Deterministic fallback id so an edit on a later load still finds the component.
+        if (c.id == null || c.id.isEmpty()) c.id = "component-" + index;
+        c.name = cleanName(c.name);
+        c.intervalKm = Math.max(0, c.intervalKm);
+        c.intervalMonths = Math.max(0, c.intervalMonths);
+        c.lastServicedEpochSec = Math.max(0, c.lastServicedEpochSec);
+        c.warrantyPurchaseEpochSec = Math.max(0, c.warrantyPurchaseEpochSec);
+        c.warrantyMonths = Math.max(0, c.warrantyMonths);
+        c.warrantyReminderSentForExpiryEpochSec =
+                Math.max(0, c.warrantyReminderSentForExpiryEpochSec);
+        if (c.serviceHistory == null) c.serviceHistory = new ArrayList<>();
+        c.serviceHistory.removeIf(ts -> ts == null || ts <= 0);
+        for (Long ts : c.serviceHistory) {
+            if (ts > c.lastServicedEpochSec) c.lastServicedEpochSec = ts;
+        }
     }
 
-    private static void writeAtomic(File target, byte[] data) throws IOException {
-        File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
-        try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(data);
-            out.getFD().sync();
-        }
-        try {
-            try {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException moveFailed) {
-            tmp.delete();
-            throw moveFailed;
-        }
+    private void write(MaintenanceLog log) throws IOException {
+        AtomicFiles.write(file, mapper.writeValueAsBytes(log));
     }
 }

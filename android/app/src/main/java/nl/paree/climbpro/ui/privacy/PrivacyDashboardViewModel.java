@@ -37,9 +37,10 @@ import nl.paree.climbpro.service.PlannedClimbWorkScheduler;
 import nl.paree.climbpro.service.RouteSyncWorker;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -120,153 +121,201 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     private Row rowFor(PrivacyCategory c) {
         SharedPreferences prefs = defaultPrefs();
         switch (c) {
-            case LOCATION: {
-                boolean has = prefs.contains(RouteSyncWorker.PREF_LAST_LAT);
-                return new Row(c, has ? "Opgeslagen" : "Niets opgeslagen", has);
-            }
-            case RIDER_PROFILE: {
-                boolean has = hasAny(prefs, riderKeys());
-                return new Row(c, has ? "Ingevuld" : "Niet ingevuld", has);
-            }
-            case STRAVA: {
-                boolean linked = new StravaAuthRepository(getApplication()).isAuthorised();
-                boolean syncState = !stravaPrefs().getAll().isEmpty();
-                return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
-                        : "Niet gekoppeld"), linked || syncState);
-            }
-            case INTERVALS_ICU: {
-                boolean linked = new IntervalsIcuRepository(getApplication()).isConfigured();
-                return new Row(c, linked ? "Gekoppeld" : "Niet gekoppeld", linked);
-            }
-            case FRIENDS: {
-                // The chosen share name lives in prefs, not friend_feed.json, so it must count
-                // as data on its own: otherwise a user who shared once but received nothing yet
-                // sees "Leeg" with nothing to erase, even though their name is still stored.
-                PrivacyInventory.Usage u = inventory.usage(c);
-                boolean hasName = !FriendShareIdentity.name(prefs).isEmpty();
-                boolean has = u.fileCount > 0 || hasName;
-                String summary = u.fileCount > 0
-                        ? u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes)
-                        : (hasName ? "Geen feed, deelnaam bewaard" : "Leeg");
-                return new Row(c, summary, has);
-            }
-            default: {
-                PrivacyInventory.Usage u = inventory.usage(c);
-                return new Row(c, u.fileCount == 0 ? "Leeg"
-                        : u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes),
-                        u.fileCount > 0);
-            }
+            case LOCATION:
+                return yesNoRow(c, prefs.contains(RouteSyncWorker.PREF_LAST_LAT),
+                        "Opgeslagen", "Niets opgeslagen");
+            case RIDER_PROFILE:
+                return yesNoRow(c, hasAny(prefs, riderKeys()), "Ingevuld", "Niet ingevuld");
+            case STRAVA:
+                return stravaRow(c);
+            case INTERVALS_ICU:
+                return yesNoRow(c, new IntervalsIcuRepository(getApplication()).isConfigured(),
+                        "Gekoppeld", "Niet gekoppeld");
+            case FRIENDS:
+                return friendsRow(c, prefs);
+            default:
+                return fileRow(c);
         }
+    }
+
+    private static Row yesNoRow(PrivacyCategory c, boolean has, String yes, String no) {
+        return new Row(c, has ? yes : no, has);
+    }
+
+    private Row stravaRow(PrivacyCategory c) {
+        boolean linked = new StravaAuthRepository(getApplication()).isAuthorised();
+        boolean syncState = !stravaPrefs().getAll().isEmpty();
+        return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
+                : "Niet gekoppeld"), linked || syncState);
+    }
+
+    /**
+     * The chosen share name lives in prefs, not friend_feed.json, so it must count
+     * as data on its own: otherwise a user who shared once but received nothing yet
+     * sees "Leeg" with nothing to erase, even though their name is still stored.
+     */
+    private Row friendsRow(PrivacyCategory c, SharedPreferences prefs) {
+        PrivacyInventory.Usage u = inventory.usage(c);
+        boolean hasName = !FriendShareIdentity.name(prefs).isEmpty();
+        boolean has = u.fileCount > 0 || hasName;
+        String summary = u.fileCount > 0
+                ? u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes)
+                : (hasName ? "Geen feed, deelnaam bewaard" : "Leeg");
+        return new Row(c, summary, has);
+    }
+
+    private Row fileRow(PrivacyCategory c) {
+        PrivacyInventory.Usage u = inventory.usage(c);
+        return new Row(c, u.fileCount == 0 ? "Leeg"
+                : u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes),
+                u.fileCount > 0);
     }
 
     // --- details --------------------------------------------------------------------------
 
     private String describe(PrivacyCategory c) {
         StringBuilder sb = new StringBuilder(c.description).append("\n\n");
-        SharedPreferences prefs = defaultPrefs();
         switch (c) {
-            case ROUTES: {
-                List<RouteCatalogEntry> routes = new RouteRepository(getApplication()).loadCatalog();
-                sb.append(routes.size()).append(" route(s):\n");
-                List<String> names = new ArrayList<>();
-                for (RouteCatalogEntry e : routes) {
-                    String n = e.userDisplayName != null ? e.userDisplayName : e.name;
-                    names.add("• " + (n != null ? n : e.routeId) + " (" + e.climbCount + " klimmen)");
-                }
-                appendCapped(sb, names);
-                break;
-            }
-            case ATTEMPTS: {
-                List<StoredClimbAttempt> attempts = new ClimbAttemptRepository(getApplication()).loadAll();
-                Set<String> climbs = new HashSet<>();
-                long first = Long.MAX_VALUE, last = 0;
-                int notes = 0;
-                for (StoredClimbAttempt a : attempts) {
-                    climbs.add(a.climbId);
-                    if (a.dateEpochSec > 0) {
-                        first = Math.min(first, a.dateEpochSec);
-                        last = Math.max(last, a.dateEpochSec);
-                    }
-                    if (a.note != null && !a.note.isEmpty()) notes++;
-                }
-                sb.append(attempts.size()).append(" poging(en) op ").append(climbs.size())
-                  .append(" klim(men)");
-                if (last > 0) sb.append("\nVan ").append(date(first)).append(" t/m ").append(date(last));
-                sb.append("\n").append(notes).append(" met notitie");
-                break;
-            }
-            case COLLECTIONS: {
-                List<String> names = new ArrayList<>();
-                for (RouteCollection col : new RouteCollectionRepository(getApplication()).loadAll()) {
-                    names.add("• " + col.name + " (" + col.routeIds.size() + " routes, "
-                            + col.climbs.size() + " klimmen)");
-                }
-                appendCapped(sb, names);
-                break;
-            }
-            case PLANNING: {
-                List<String> names = new ArrayList<>();
-                for (PlannedClimb p : new PlannedClimbRepository(getApplication()).loadAll()) {
-                    names.add("• " + p.displayName + " op " + date(p.plannedAtEpochSec));
-                }
-                appendCapped(sb, names);
-                break;
-            }
-            case RIDE_BUDDIES: {
-                List<String> names = new ArrayList<>();
-                for (nl.paree.climbpro.domain.social.RideBuddyProfile p
-                        : new RideBuddyRepository(getApplication()).loadAll()) {
-                    names.add("• " + p.name);
-                }
-                appendCapped(sb, names);
-                break;
-            }
-            case FAVORITE_START_POINTS: {
-                List<String> names = new ArrayList<>();
-                for (FavoriteStartPoint f : new FavoriteStartPointStore(new File(
-                        getApplication().getFilesDir(), FavoriteStartPointStore.FILE_NAME)).loadAll()) {
-                    names.add("• " + f.name);
-                }
-                appendCapped(sb, names);
-                break;
-            }
             case LOCATION:
-                if (prefs.contains(RouteSyncWorker.PREF_LAST_LAT)) {
-                    sb.append(String.format(Locale.US, "%.3f, %.3f",
-                            Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LAT, 0)),
-                            Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LON, 0))));
-                } else {
-                    sb.append("Niets opgeslagen");
-                }
-                return sb.toString();
-            case RIDER_PROFILE: {
-                RiderProfile p = new RiderProfileRepository(getApplication()).load();
-                sb.append("FTP: ").append(p.ftpWatts > 0 ? p.ftpWatts + " W" : "—")
-                  .append("\nGewicht: ").append(p.riderWeightKg > 0 ? kg(p.riderWeightKg) : "—")
-                  .append("\nFiets: ").append(p.bikeWeightKg > 0 ? kg(p.bikeWeightKg) : "—")
-                  .append("\nRit-intensiteit: ").append(p.rideIntensityPct).append("%");
-                return sb.toString();
-            }
-            case STRAVA: {
-                boolean linked = new StravaAuthRepository(getApplication()).isAuthorised();
-                sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
-                long lastSync = stravaPrefs().getLong("last_sync_epoch_sec", 0);
-                if (lastSync > 0) sb.append("\nLaatste activiteiten-sync: ").append(date(lastSync));
-                sb.append("\n\nVerwijderen ontkoppelt Strava; routes en pogingen blijven staan.");
-                return sb.toString();
-            }
-            case INTERVALS_ICU: {
-                IntervalsIcuRepository icu = new IntervalsIcuRepository(getApplication());
-                boolean linked = icu.isConfigured();
-                sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
-                if (linked) sb.append("\nAtleet-id: ").append(icu.athleteId());
-                sb.append("\n\nVerwijderen wist de API-sleutel; workouts op je intervals.icu-"
-                        + "kalender blijven staan.");
-                return sb.toString();
-            }
+                return describeLocation(sb);
+            case RIDER_PROFILE:
+                return describeRiderProfile(sb);
+            case STRAVA:
+                return describeStrava(sb);
+            case INTERVALS_ICU:
+                return describeIntervals(sb);
+            case ROUTES:
+                appendRoutes(sb);
+                break;
+            case ATTEMPTS:
+                appendAttempts(sb);
+                break;
+            case COLLECTIONS:
+                appendCapped(sb, collectionLines());
+                break;
+            case PLANNING:
+                appendCapped(sb, planningLines());
+                break;
+            case RIDE_BUDDIES:
+                appendCapped(sb, rideBuddyLines());
+                break;
+            case FAVORITE_START_POINTS:
+                appendCapped(sb, startPointLines());
+                break;
             default:
                 break;
         }
+        appendFiles(sb, c);
+        return sb.toString().trim();
+    }
+
+    private void appendRoutes(StringBuilder sb) {
+        List<RouteCatalogEntry> routes = new RouteRepository(getApplication()).loadCatalog();
+        sb.append(routes.size()).append(" route(s):\n");
+        List<String> names = new ArrayList<>();
+        for (RouteCatalogEntry e : routes) {
+            String n = e.userDisplayName != null ? e.userDisplayName : e.name;
+            names.add("• " + (n != null ? n : e.routeId) + " (" + e.climbCount + " klimmen)");
+        }
+        appendCapped(sb, names);
+    }
+
+    private void appendAttempts(StringBuilder sb) {
+        List<StoredClimbAttempt> attempts = new ClimbAttemptRepository(getApplication()).loadAll();
+        Set<String> climbs = new HashSet<>();
+        long first = Long.MAX_VALUE, last = 0;
+        int notes = 0;
+        for (StoredClimbAttempt a : attempts) {
+            climbs.add(a.climbId);
+            if (a.dateEpochSec > 0) {
+                first = Math.min(first, a.dateEpochSec);
+                last = Math.max(last, a.dateEpochSec);
+            }
+            if (a.note != null && !a.note.isEmpty()) notes++;
+        }
+        sb.append(attempts.size()).append(" poging(en) op ").append(climbs.size())
+          .append(" klim(men)");
+        if (last > 0) sb.append("\nVan ").append(date(first)).append(" t/m ").append(date(last));
+        sb.append("\n").append(notes).append(" met notitie");
+    }
+
+    private List<String> collectionLines() {
+        List<String> names = new ArrayList<>();
+        for (RouteCollection col : new RouteCollectionRepository(getApplication()).loadAll()) {
+            names.add("• " + col.name + " (" + col.routeIds.size() + " routes, "
+                    + col.climbs.size() + " klimmen)");
+        }
+        return names;
+    }
+
+    private List<String> planningLines() {
+        List<String> names = new ArrayList<>();
+        for (PlannedClimb p : new PlannedClimbRepository(getApplication()).loadAll()) {
+            names.add("• " + p.displayName + " op " + date(p.plannedAtEpochSec));
+        }
+        return names;
+    }
+
+    private List<String> rideBuddyLines() {
+        List<String> names = new ArrayList<>();
+        for (nl.paree.climbpro.domain.social.RideBuddyProfile p
+                : new RideBuddyRepository(getApplication()).loadAll()) {
+            names.add("• " + p.name);
+        }
+        return names;
+    }
+
+    private List<String> startPointLines() {
+        List<String> names = new ArrayList<>();
+        for (FavoriteStartPoint f : new FavoriteStartPointStore(new File(
+                getApplication().getFilesDir(), FavoriteStartPointStore.FILE_NAME)).loadAll()) {
+            names.add("• " + f.name);
+        }
+        return names;
+    }
+
+    private String describeLocation(StringBuilder sb) {
+        SharedPreferences prefs = defaultPrefs();
+        if (prefs.contains(RouteSyncWorker.PREF_LAST_LAT)) {
+            sb.append(String.format(Locale.US, "%.3f, %.3f",
+                    Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LAT, 0)),
+                    Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LON, 0))));
+        } else {
+            sb.append("Niets opgeslagen");
+        }
+        return sb.toString();
+    }
+
+    private String describeRiderProfile(StringBuilder sb) {
+        RiderProfile p = new RiderProfileRepository(getApplication()).load();
+        sb.append("FTP: ").append(p.ftpWatts > 0 ? p.ftpWatts + " W" : "—")
+          .append("\nGewicht: ").append(p.riderWeightKg > 0 ? kg(p.riderWeightKg) : "—")
+          .append("\nFiets: ").append(p.bikeWeightKg > 0 ? kg(p.bikeWeightKg) : "—")
+          .append("\nRit-intensiteit: ").append(p.rideIntensityPct).append("%");
+        return sb.toString();
+    }
+
+    private String describeStrava(StringBuilder sb) {
+        boolean linked = new StravaAuthRepository(getApplication()).isAuthorised();
+        sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
+        long lastSync = stravaPrefs().getLong("last_sync_epoch_sec", 0);
+        if (lastSync > 0) sb.append("\nLaatste activiteiten-sync: ").append(date(lastSync));
+        sb.append("\n\nVerwijderen ontkoppelt Strava; routes en pogingen blijven staan.");
+        return sb.toString();
+    }
+
+    private String describeIntervals(StringBuilder sb) {
+        IntervalsIcuRepository icu = new IntervalsIcuRepository(getApplication());
+        boolean linked = icu.isConfigured();
+        sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
+        if (linked) sb.append("\nAtleet-id: ").append(icu.athleteId());
+        sb.append("\n\nVerwijderen wist de API-sleutel; workouts op je intervals.icu-"
+                + "kalender blijven staan.");
+        return sb.toString();
+    }
+
+    /** The category's files with their sizes ("Leeg" for photos/cache without any). */
+    private void appendFiles(StringBuilder sb, PrivacyCategory c) {
         List<File> files = inventory.filesOf(c);
         if (!files.isEmpty()) {
             sb.append("\n\nBestanden:\n");
@@ -278,7 +327,6 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         } else if (c == PrivacyCategory.PHOTOS || c == PrivacyCategory.CACHE) {
             sb.append("Leeg");
         }
-        return sb.toString().trim();
     }
 
     // --- deletion -------------------------------------------------------------------------
@@ -288,58 +336,38 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         Context app = getApplication();
         SharedPreferences prefs = defaultPrefs();
         switch (c) {
-            case ROUTES: {
-                RouteRepository routeRepo = new RouteRepository(app);
-                RouteCollectionRepository collections = new RouteCollectionRepository(app);
-                for (RouteCatalogEntry e : routeRepo.loadCatalog()) {
-                    routeRepo.deleteRoute(e.routeId);
-                    collections.removeRouteEverywhere(e.routeId);
-                }
-                prefs.edit().remove(RouteSyncWorker.PREF_ROUTE_ID).apply();
-                return inventory.deleteFiles(c);
-            }
-            case ATTEMPTS: {
-                // Through the repositories' write locks: a raw file delete could be undone by
-                // a Strava sync appending at the same moment (it rewrites the list it read).
-                int failed = new ClimbAttemptRepository(app).deleteAll() ? 0 : 1;
-                failed += new IncompleteClimbAttemptRepository(app).deleteAll() ? 0 : 1;
-                failed += new nl.paree.climbpro.data.route.RouteGhostRepository(app).deleteAll() ? 0 : 1;
-                // Photos only exist as part of an attempt, so they go with it.
-                return failed + inventory.deleteFiles(c) + inventory.deleteFiles(PrivacyCategory.PHOTOS);
-            }
+            case ROUTES:
+                return eraseRoutes(app, prefs);
+            case ATTEMPTS:
+                return eraseAttempts(app);
             case RIDES:
                 // Through the repository's write lock, like ATTEMPTS.
-                return (new RideRepository(app).deleteAll() ? 0 : 1)
-                        + (new RideStreamStatsRepository(app).deleteAll() ? 0 : 1)
-                        + (new nl.paree.climbpro.data.explore.ExploreMapRepository(app)
-                                .deleteAll() ? 0 : 1)
+                return failures(new RideRepository(app).deleteAll())
+                        + failures(new RideStreamStatsRepository(app).deleteAll())
+                        + failures(new nl.paree.climbpro.data.explore.ExploreMapRepository(app)
+                                .deleteAll())
                         + inventory.deleteFiles(c);
             case FRIENDS:
                 // Through the repository lock (an import may be writing). The random share id
                 // stays: friends who already imported you would otherwise see a second "you".
                 prefs.edit().remove(FriendShareIdentity.PREF_NAME).apply();
-                return (new FriendFeedRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
+                return failures(new FriendFeedRepository(app).deleteAll()) + inventory.deleteFiles(c);
             case RIDE_BUDDIES:
                 // Through the repository lock (an import may be writing).
-                return (new RideBuddyRepository(app).deleteAll() ? 0 : 1) + inventory.deleteFiles(c);
+                return failures(new RideBuddyRepository(app).deleteAll()) + inventory.deleteFiles(c);
             case PHOTOS:
                 new ClimbAttemptRepository(app).clearPhotoReferences();
                 return inventory.deleteFiles(c);
             case PLANNING:
-                for (PlannedClimb p : new PlannedClimbRepository(app).loadAll()) {
-                    PlannedClimbWorkScheduler.cancel(app, p.id);
-                }
+                cancelPlannedReminders(app);
                 return inventory.deleteFiles(c);
             case LOCATION:
                 prefs.edit().remove(RouteSyncWorker.PREF_LAST_LAT)
                         .remove(RouteSyncWorker.PREF_LAST_LON).apply();
                 return 0;
-            case RIDER_PROFILE: {
-                SharedPreferences.Editor ed = prefs.edit();
-                for (String k : riderKeys()) ed.remove(k);
-                ed.apply();
+            case RIDER_PROFILE:
+                removeRiderKeys(prefs);
                 return 0;
-            }
             case STRAVA:
                 new StravaAuthRepository(app).signOut();
                 stravaPrefs().edit().clear().apply();
@@ -352,6 +380,45 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         }
     }
 
+    /** 0 for a successful delete, 1 for a failed one. */
+    private static int failures(boolean deleted) {
+        return deleted ? 0 : 1;
+    }
+
+    private int eraseRoutes(Context app, SharedPreferences prefs) throws java.io.IOException {
+        RouteRepository routeRepo = new RouteRepository(app);
+        RouteCollectionRepository collections = new RouteCollectionRepository(app);
+        for (RouteCatalogEntry e : routeRepo.loadCatalog()) {
+            routeRepo.deleteRoute(e.routeId);
+            collections.removeRouteEverywhere(e.routeId);
+        }
+        prefs.edit().remove(RouteSyncWorker.PREF_ROUTE_ID).apply();
+        return inventory.deleteFiles(PrivacyCategory.ROUTES);
+    }
+
+    private int eraseAttempts(Context app) {
+        // Through the repositories' write locks: a raw file delete could be undone by
+        // a Strava sync appending at the same moment (it rewrites the list it read).
+        int failed = failures(new ClimbAttemptRepository(app).deleteAll());
+        failed += failures(new IncompleteClimbAttemptRepository(app).deleteAll());
+        failed += failures(new nl.paree.climbpro.data.route.RouteGhostRepository(app).deleteAll());
+        // Photos only exist as part of an attempt, so they go with it.
+        return failed + inventory.deleteFiles(PrivacyCategory.ATTEMPTS)
+                + inventory.deleteFiles(PrivacyCategory.PHOTOS);
+    }
+
+    private static void cancelPlannedReminders(Context app) {
+        for (PlannedClimb p : new PlannedClimbRepository(app).loadAll()) {
+            PlannedClimbWorkScheduler.cancel(app, p.id);
+        }
+    }
+
+    private static void removeRiderKeys(SharedPreferences prefs) {
+        SharedPreferences.Editor ed = prefs.edit();
+        for (String k : riderKeys()) ed.remove(k);
+        ed.apply();
+    }
+
     // --- helpers --------------------------------------------------------------------------
 
     private SharedPreferences defaultPrefs() {
@@ -360,7 +427,7 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
 
     private SharedPreferences stravaPrefs() {
         return getApplication().getSharedPreferences(
-                StravaActivitiesRepository.PREFS, Context.MODE_PRIVATE);
+                StravaActivitiesRepository.PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     private static String[] riderKeys() {
@@ -391,7 +458,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     }
 
     private static String date(long epochSec) {
-        return new SimpleDateFormat("d MMM yyyy", new Locale("nl")).format(new Date(epochSec * 1000L));
+        return DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"))
+                .format(Instant.ofEpochSecond(epochSec).atZone(ZoneId.systemDefault()));
     }
 
     private static String kg(double v) {

@@ -7,6 +7,8 @@ import android.util.Log;
 
 import androidx.core.content.FileProvider;
 
+import nl.paree.climbpro.data.rider.RiderProfileRepository;
+import nl.paree.climbpro.data.rider.WeightLogStore;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -75,7 +77,9 @@ public final class CsvExportHandoff {
         File routesFile = write(new File(dir, "routes_" + date + ".csv"),
                 CsvExporter.routesCsv(routes, zone));
         File attemptsFile = write(new File(dir, "klimpogingen_" + date + ".csv"),
-                CsvExporter.attemptsCsv(new ClimbAttemptRepository(ctx).loadAll(), routes, zone));
+                CsvExporter.attemptsCsv(new ClimbAttemptRepository(ctx).loadAll(), routes, zone,
+                        WeightLogStore.of(ctx).history(
+                                new RiderProfileRepository(ctx).load().riderWeightKg, zone)));
 
         String authority = ctx.getPackageName() + ".fileprovider";
         ArrayList<Uri> uris = new ArrayList<>();

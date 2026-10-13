@@ -45,30 +45,41 @@ public final class FastestDistanceCalculator {
         }
     }
 
+    private static Map<Long, StoredRide> outdoorUnassistedById(List<StoredRide> rides) {
+        Map<Long, StoredRide> ridesById = new HashMap<>();
+        if (rides == null) return ridesById;
+        for (StoredRide r : rides) {
+            if (r != null && isOutdoorUnassisted(r)) ridesById.put(r.activityId, r);
+        }
+        return ridesById;
+    }
+
+    /** Every known ride's time over effort distance {@code index}. */
+    private static List<Effort> effortsFor(int index, double target,
+                                           List<StoredRideStreamStats> stats,
+                                           Map<Long, StoredRide> ridesById) {
+        List<Effort> efforts = new ArrayList<>();
+        if (stats == null) return efforts;
+        for (StoredRideStreamStats s : stats) {
+            if (s == null) continue;
+            StoredRide r = ridesById.get(s.activityId);
+            Integer sec = secondsFor(s, index);
+            if (r != null && sec != null && sec > 0) efforts.add(new Effort(r, sec, target));
+        }
+        return efforts;
+    }
+
     /**
      * One entry per {@link RideStreamAnalyzer#EFFORT_DISTANCES_M}, in that order. Indoor and
      * e-bike rides are left out, as in the average-speed record; stats without a matching ride
      * in the archive are ignored.
      */
     public static List<Distance> compute(List<StoredRide> rides, List<StoredRideStreamStats> stats) {
-        Map<Long, StoredRide> ridesById = new HashMap<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                if (r != null && isOutdoorUnassisted(r)) ridesById.put(r.activityId, r);
-            }
-        }
+        Map<Long, StoredRide> ridesById = outdoorUnassistedById(rides);
         List<Distance> out = new ArrayList<>();
         for (int i = 0; i < RideStreamAnalyzer.EFFORT_DISTANCES_M.length; i++) {
             double target = RideStreamAnalyzer.EFFORT_DISTANCES_M[i];
-            List<Effort> efforts = new ArrayList<>();
-            if (stats != null) {
-                for (StoredRideStreamStats s : stats) {
-                    if (s == null) continue;
-                    StoredRide r = ridesById.get(s.activityId);
-                    Integer sec = secondsFor(s, i);
-                    if (r != null && sec != null && sec > 0) efforts.add(new Effort(r, sec, target));
-                }
-            }
+            List<Effort> efforts = effortsFor(i, target, stats, ridesById);
             efforts.sort((a, b) -> a.seconds != b.seconds
                     ? Integer.compare(a.seconds, b.seconds)
                     : Long.compare(startOrMax(a.ride), startOrMax(b.ride)));

@@ -35,6 +35,7 @@ import nl.paree.climbpro.domain.climb.CoordinateFuzzer;
 import nl.paree.climbpro.domain.segment.GradientPalette;
 import nl.paree.climbpro.service.AutoBackupWorker;
 import nl.paree.climbpro.service.StravaHistoryBackfillWorker;
+import nl.paree.climbpro.service.RouteSyncWorker;
 import nl.paree.climbpro.service.SyncScheduler;
 import nl.paree.climbpro.service.WetRideReminderJob;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
@@ -58,7 +59,7 @@ public final class SettingsActivity extends AppCompatActivity {
     // Cleaning reminder (issue #234): ask for the notification grant when it is switched on.
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (!granted) {
+                if (!Boolean.TRUE.equals(granted)) {
                     Toast.makeText(this, R.string.settings_wet_no_notifications,
                             Toast.LENGTH_LONG).show();
                     // The switch stayed on when the user tapped it; without the grant the
@@ -73,7 +74,7 @@ public final class SettingsActivity extends AppCompatActivity {
     // Radius mode (issue #310) searches around the last known fix, which needs a location grant.
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
+                if (Boolean.TRUE.equals(granted)) {
                     viewModel.refreshRadiusLocation();
                 } else {
                     Toast.makeText(this, R.string.settings_radius_no_permission,
@@ -106,48 +107,43 @@ public final class SettingsActivity extends AppCompatActivity {
         renderLanguageButton();
         binding.btnLanguage.setOnClickListener(v -> showLanguageDialog());
 
-        viewModel.stravaSignedIn().observe(this, signedIn -> {
-            binding.btnStravaAuth.setText(Boolean.TRUE.equals(signedIn)
-                    ? R.string.settings_strava_sign_out : R.string.settings_strava_sign_in);
-        });
+        viewModel.syncStatus().observe(this,
+                msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
 
+        bindSyncMode();
+        bindRiderProfile();
+        bindGhostTarget();
+        bindRadiusSeekBars();
+        bindStrava();
+        bindBackup();
+        bindPreferenceSwitches();
+        bindUnitSwitches();
+        bindHealth();
+    }
+
+    private void bindSyncMode() {
         viewModel.syncMode().observe(this, mode -> {
             boolean isRadius = "radius".equals(mode);
-            binding.radioRoute.setChecked(!isRadius);
+            // A day trip (issue #9, chosen on a collection) is neither: leave both unchecked.
+            binding.radioRoute.setChecked(!isRadius
+                    && !nl.paree.climbpro.service.RouteSyncWorker.MODE_DAYTRIP.equals(mode));
             binding.radioRadius.setChecked(isRadius);
             binding.radiusContainer.setVisibility(isRadius ? android.view.View.VISIBLE : android.view.View.GONE);
         });
 
-        viewModel.radiusKm().observe(this, km -> {
-            if (km != null) {
-                binding.radiusSeekBar.setProgress(km);
-                binding.radiusLabel.setText(getString(R.string.unit_km_value, km));
+        binding.radioRoute.setOnClickListener(v ->
+                viewModel.setSyncMode("route"));
+        binding.radioRadius.setOnClickListener(v -> {
+            viewModel.setSyncMode("radius");
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
             }
         });
+    }
 
-        viewModel.privacyRadiusM().observe(this, meters -> {
-            if (meters != null) {
-                binding.privacyRadiusSeekBar.setProgress(
-                        meters - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
-                binding.privacyRadiusLabel.setText(getString(R.string.unit_m_value, meters));
-            }
-        });
-
-        viewModel.syncStatus().observe(this,
-                msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
-
-        viewModel.riderProfile().observe(this, profile -> {
-            if (profile == null) return;
-            binding.inputFtp.setText(profile.ftpWatts > 0 ? String.valueOf(profile.ftpWatts) : "");
-            binding.inputRiderWeight.setText(
-                    profile.riderWeightKg > 0 ? formatKg(profile.riderWeightKg) : "");
-            binding.inputBikeWeight.setText(
-                    profile.bikeWeightKg > 0 ? formatKg(profile.bikeWeightKg) : "");
-            binding.inputRideIntensity.setText(String.valueOf(
-                    profile.rideIntensityPct > 0
-                            ? profile.rideIntensityPct
-                            : nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT));
-        });
+    private void bindRiderProfile() {
+        viewModel.riderProfile().observe(this, this::renderRiderProfile);
 
         // Issue #20: suggested FTP re-estimate from repeated climb performances. Shown
         // only when computable and meaningfully different (SettingsViewModel gates this);
@@ -180,9 +176,24 @@ public final class SettingsActivity extends AppCompatActivity {
             viewModel.saveRiderProfile(ftp, rider, bike, intensity);
             Toast.makeText(this, R.string.settings_profile_saved, Toast.LENGTH_SHORT).show();
         });
+    }
 
-        // Issue #31: virtual ghost at a target speed/VAM for climbs without a PR or
-        // manual reference. Empty/0 switches that part off.
+    private void renderRiderProfile(nl.paree.climbpro.domain.power.RiderProfile profile) {
+        if (profile == null) return;
+        binding.inputFtp.setText(profile.ftpWatts > 0 ? String.valueOf(profile.ftpWatts) : "");
+        binding.inputRiderWeight.setText(
+                profile.riderWeightKg > 0 ? formatKg(profile.riderWeightKg) : "");
+        binding.inputBikeWeight.setText(
+                profile.bikeWeightKg > 0 ? formatKg(profile.bikeWeightKg) : "");
+        binding.inputRideIntensity.setText(String.valueOf(
+                profile.rideIntensityPct > 0
+                        ? profile.rideIntensityPct
+                        : nl.paree.climbpro.domain.power.RiderProfile.DEFAULT_RIDE_INTENSITY_PCT));
+    }
+
+    // Issue #31: virtual ghost at a target speed/VAM for climbs without a PR or
+    // manual reference. Empty/0 switches that part off.
+    private void bindGhostTarget() {
         viewModel.ghostTarget().observe(this, target -> {
             if (target == null) return;
             binding.inputGhostSpeed.setText(target.hasSpeed() ? formatKg(target.speedKmh) : "");
@@ -196,14 +207,21 @@ public final class SettingsActivity extends AppCompatActivity {
                     ? R.string.settings_ghost_saved : R.string.settings_ghost_disabled,
                     Toast.LENGTH_SHORT).show();
         });
+    }
 
-        binding.radioRoute.setOnClickListener(v ->
-                viewModel.setSyncMode("route"));
-        binding.radioRadius.setOnClickListener(v -> {
-            viewModel.setSyncMode("radius");
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+    private void bindRadiusSeekBars() {
+        viewModel.radiusKm().observe(this, km -> {
+            if (km != null) {
+                binding.radiusSeekBar.setProgress(km);
+                binding.radiusLabel.setText(getString(R.string.unit_km_value, km));
+            }
+        });
+
+        viewModel.privacyRadiusM().observe(this, meters -> {
+            if (meters != null) {
+                binding.privacyRadiusSeekBar.setProgress(
+                        meters - CoordinateFuzzer.MIN_PRIVACY_RADIUS_M);
+                binding.privacyRadiusLabel.setText(getString(R.string.unit_m_value, meters));
             }
         });
 
@@ -231,6 +249,13 @@ public final class SettingsActivity extends AppCompatActivity {
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}
         });
+    }
+
+    private void bindStrava() {
+        viewModel.stravaSignedIn().observe(this, signedIn -> {
+            binding.btnStravaAuth.setText(Boolean.TRUE.equals(signedIn)
+                    ? R.string.settings_strava_sign_out : R.string.settings_strava_sign_in);
+        });
 
         binding.btnStravaAuth.setOnClickListener(v -> {
             if (Boolean.TRUE.equals(viewModel.stravaSignedIn().getValue())) {
@@ -252,7 +277,9 @@ public final class SettingsActivity extends AppCompatActivity {
 
         binding.btnStravaHistoryBackfill.setOnClickListener(v -> confirmHistoryBackfill());
         SyncScheduler.historyBackfillInfo(this).observe(this, this::renderHistoryBackfill);
+    }
 
+    private void bindBackup() {
         binding.btnBackupCreate.setOnClickListener(v -> backupCreator.launch(
                 BackupRetention.fileName(System.currentTimeMillis(), ZoneId.systemDefault())));
         binding.btnBackupRestore.setOnClickListener(v -> backupPicker.launch(
@@ -265,41 +292,51 @@ public final class SettingsActivity extends AppCompatActivity {
             }
         });
         renderBackupStatus();
+    }
 
+    private void bindPreferenceSwitches() {
         // Colorblind-friendly palette (issue #258): phone screens switch at once; the watch
         // gets the new 'pal' flag with the next sync, which we kick off right away.
-        binding.switchColorblindPalette.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
-                .getBoolean(GradientPalette.PREF_COLORBLIND, false));
-        binding.switchColorblindPalette.setOnCheckedChangeListener((b, on) -> {
-            PreferenceManager.getDefaultSharedPreferences(this).edit()
-                    .putBoolean(GradientPalette.PREF_COLORBLIND, on).apply();
+        bindPrefSwitch(binding.switchColorblindPalette, GradientPalette.PREF_COLORBLIND, on -> {
             SegmentColorPalette.setActive(GradientPalette.fromEnabled(on));
-            try {
-                SyncScheduler.triggerImmediateSync(this);
-            } catch (IllegalStateException e) {
-                // WorkManager not initialised (tests); the periodic sync picks it up later.
-            }
+            triggerImmediateSync();
         });
-        bindUnitSwitches();
-
+        // Radius mode weather filter (issue #12): needs a connection at sync time; without one
+        // the full set is sent. Applied from the next sync, so kick one off.
+        bindPrefSwitch(binding.switchRadiusDryOnly, RouteSyncWorker.PREF_RADIUS_DRY_ONLY,
+                on -> triggerImmediateSync());
         // Cleaning reminder after wet rides (issue #234).
-        binding.switchWetRideReminder.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
-                .getBoolean(WetRideReminderJob.PREF_ENABLED, false));
-        binding.switchWetRideReminder.setOnCheckedChangeListener((b, on) -> {
-            PreferenceManager.getDefaultSharedPreferences(this).edit()
-                    .putBoolean(WetRideReminderJob.PREF_ENABLED, on).apply();
+        bindPrefSwitch(binding.switchWetRideReminder, WetRideReminderJob.PREF_ENABLED, on -> {
             if (on) ensureNotificationPermission();
         });
+    }
 
-        // Health Connect (issue #255).
+    /** Binds a switch to a boolean preference (default off), then runs {@code onChange}. */
+    private void bindPrefSwitch(android.widget.CompoundButton toggle, String key,
+                                java.util.function.Consumer<Boolean> onChange) {
+        toggle.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(key, false));
+        toggle.setOnCheckedChangeListener((b, on) -> {
+            PreferenceManager.getDefaultSharedPreferences(this).edit()
+                    .putBoolean(key, on).apply();
+            onChange.accept(on);
+        });
+    }
+
+    private void triggerImmediateSync() {
+        try {
+            SyncScheduler.triggerImmediateSync(this);
+        } catch (IllegalStateException e) {
+            // WorkManager not initialised (tests); the periodic sync picks it up later.
+        }
+    }
+
+    // Health Connect (issue #255).
+    private void bindHealth() {
         binding.btnHealthConnect.setOnClickListener(v -> connectHealth());
         binding.btnHealthExport.setOnClickListener(v -> exportRidesToHealth());
         binding.btnHealthWeight.setOnClickListener(v -> importWeightFromHealth());
-        binding.switchHealthAuto.setChecked(PreferenceManager.getDefaultSharedPreferences(this)
-                .getBoolean(HealthConnectGateway.PREF_AUTO, false));
-        binding.switchHealthAuto.setOnCheckedChangeListener((b, on) ->
-                PreferenceManager.getDefaultSharedPreferences(this).edit()
-                        .putBoolean(HealthConnectGateway.PREF_AUTO, on).apply());
+        bindPrefSwitch(binding.switchHealthAuto, HealthConnectGateway.PREF_AUTO, on -> { });
         renderHealthStatus();
     }
 
@@ -340,11 +377,7 @@ public final class SettingsActivity extends AppCompatActivity {
             repo.save(new UnitPreferences(binding.switchUnitsImperial.isChecked(),
                     binding.switchUnitsPsi.isChecked(),
                     binding.switchUnitsFahrenheit.isChecked()));
-            try {
-                SyncScheduler.triggerImmediateSync(this);
-            } catch (IllegalStateException e) {
-                // WorkManager not initialised (tests); the periodic sync picks it up later.
-            }
+            triggerImmediateSync();
         };
         binding.switchUnitsImperial.setOnCheckedChangeListener(save);
         binding.switchUnitsPsi.setOnCheckedChangeListener(save);
@@ -459,46 +492,60 @@ public final class SettingsActivity extends AppCompatActivity {
         HealthConnectGateway gateway = new HealthConnectGateway(this);
         healthExecutor.execute(() -> {
             HealthConnectGateway.Availability availability = gateway.availability();
-            int granted = 0;
-            if (availability == HealthConnectGateway.Availability.AVAILABLE) {
-                try {
-                    Set<String> g = gateway.grantedPermissions();
-                    for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
-                } catch (Exception e) {
-                    granted = -1;
-                }
-            }
-            int grantedCount = granted;
-            runOnUiThread(() -> {
-                boolean linked = availability == HealthConnectGateway.Availability.AVAILABLE
-                        && grantedCount > 0;
-                String status;
-                switch (availability) {
-                    case UNAVAILABLE:
-                        status = getString(R.string.settings_health_unavailable);
-                        break;
-                    case NEEDS_UPDATE:
-                        status = getString(R.string.settings_health_needs_update);
-                        break;
-                    default:
-                        status = linked
-                                ? getString(R.string.settings_health_linked, grantedCount,
-                                        HealthConnectGateway.PERMISSIONS.size())
-                                : getString(R.string.settings_health_not_linked);
-                }
-                binding.healthStatus.setText(status);
-                binding.btnHealthConnect.setEnabled(
-                        availability != HealthConnectGateway.Availability.UNAVAILABLE);
-                binding.btnHealthConnect.setText(availability
-                        == HealthConnectGateway.Availability.NEEDS_UPDATE
-                        ? R.string.settings_health_install
-                        : linked ? R.string.settings_health_change_permissions
-                                 : R.string.settings_health_connect);
-                binding.btnHealthExport.setEnabled(linked);
-                binding.btnHealthWeight.setEnabled(linked);
-                binding.switchHealthAuto.setEnabled(linked);
-            });
+            int grantedCount = availability == HealthConnectGateway.Availability.AVAILABLE
+                    ? countGrantedHealthPermissions(gateway) : 0;
+            runOnUiThread(() -> applyHealthStatus(availability, grantedCount));
         });
+    }
+
+    /** @return how many of our permissions are granted, or -1 when that couldn't be read. */
+    private static int countGrantedHealthPermissions(HealthConnectGateway gateway) {
+        try {
+            Set<String> g = gateway.grantedPermissions();
+            int granted = 0;
+            for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
+            return granted;
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return -1;
+        }
+    }
+
+    private void applyHealthStatus(HealthConnectGateway.Availability availability,
+                                   int grantedCount) {
+        boolean linked = availability == HealthConnectGateway.Availability.AVAILABLE
+                && grantedCount > 0;
+        binding.healthStatus.setText(healthStatusText(availability, linked, grantedCount));
+        binding.btnHealthConnect.setEnabled(
+                availability != HealthConnectGateway.Availability.UNAVAILABLE);
+        binding.btnHealthConnect.setText(healthConnectLabel(availability, linked));
+        binding.btnHealthExport.setEnabled(linked);
+        binding.btnHealthWeight.setEnabled(linked);
+        binding.switchHealthAuto.setEnabled(linked);
+    }
+
+    private String healthStatusText(HealthConnectGateway.Availability availability,
+                                    boolean linked, int grantedCount) {
+        switch (availability) {
+            case UNAVAILABLE:
+                return getString(R.string.settings_health_unavailable);
+            case NEEDS_UPDATE:
+                return getString(R.string.settings_health_needs_update);
+            default:
+                return linked
+                        ? getString(R.string.settings_health_linked, grantedCount,
+                                HealthConnectGateway.PERMISSIONS.size())
+                        : getString(R.string.settings_health_not_linked);
+        }
+    }
+
+    private static int healthConnectLabel(HealthConnectGateway.Availability availability,
+                                          boolean linked) {
+        if (availability == HealthConnectGateway.Availability.NEEDS_UPDATE) {
+            return R.string.settings_health_install;
+        }
+        return linked ? R.string.settings_health_change_permissions
+                : R.string.settings_health_connect;
     }
 
     private void connectHealth() {
@@ -531,7 +578,7 @@ public final class SettingsActivity extends AppCompatActivity {
     }
 
     private void renderHistoryBackfill(java.util.List<WorkInfo> infos) {
-        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS, MODE_PRIVATE)
+        boolean done = getSharedPreferences(StravaActivitiesRepository.PREFS_NAME, MODE_PRIVATE)
                 .getBoolean(StravaActivitiesRepository.PREF_BACKFILL_DONE, false);
         WorkInfo info = infos == null || infos.isEmpty() ? null : infos.get(infos.size() - 1);
         boolean active = info != null && !info.getState().isFinished();
@@ -566,6 +613,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 msg = n == 0 ? getString(R.string.settings_health_no_new)
                         : getString(R.string.settings_health_exported, n);
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 msg = getString(R.string.settings_health_write_failed,
                         e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
             }
@@ -580,6 +628,7 @@ public final class SettingsActivity extends AppCompatActivity {
             try {
                 kg = new HealthConnectGateway(this).latestWeightKg();
             } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 kg = null;
             }
             Double weight = kg;

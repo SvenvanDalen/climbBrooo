@@ -54,7 +54,7 @@ public class PainLogRepositoryEdgeTest {
 
     @Test
     public void add_failedWrite_throwsAndCleansTmp() throws Exception {
-        assertWriteFails(PainLogRepository.FILE, () -> new PainLogRepository(app)
+        assertWriteFails(PainLogRepository.FILE_NAME, () -> new PainLogRepository(app)
                 .add(1L, 100L, Collections.singletonList("KNEE"), 3, null, null, null));
     }
 }
