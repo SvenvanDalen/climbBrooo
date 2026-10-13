@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.hydration;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -169,7 +170,7 @@ public final class SweatLossActivity extends AppCompatActivity {
                 .setNegativeButton(R.string.sweat_cancel, null)
                 .show();
         // Validate before closing so a typo doesn't throw the whole form away.
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
             if (saveEntry(form, rides)) dialog.dismiss();
         });
     }

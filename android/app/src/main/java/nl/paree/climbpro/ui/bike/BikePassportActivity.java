@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.bike;
 
 import android.content.ClipData;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -153,7 +154,7 @@ public final class BikePassportActivity extends AppCompatActivity {
                 .setPositiveButton("Opslaan", null)
                 .setNegativeButton("Annuleren", null)
                 .create();
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     if (name.getText().toString().trim().isEmpty()) {
                         name.setError("Naam is verplicht");

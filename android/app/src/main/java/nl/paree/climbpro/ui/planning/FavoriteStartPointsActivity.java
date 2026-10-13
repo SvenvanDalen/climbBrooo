@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.planning;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -180,7 +181,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
         }
         AlertDialog dialog = builder.create();
         EditText coords = coordInput;
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     String name = nameInput.getText().toString().trim();
                     if (name.isEmpty()) {
@@ -235,7 +236,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.fav_start_save, null)
                 .setNegativeButton(R.string.fav_start_cancel, null)
                 .create();
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     String name = input.getText().toString().trim();
                     if (name.isEmpty()) {
