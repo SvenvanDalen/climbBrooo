@@ -137,7 +137,7 @@ public final class StravaRoutesRepository {
 
         try {
             StoredRoute existing = null;
-            try { existing = routeRepo.loadRoute(routeId); } catch (IOException ignored) {}
+            try { existing = routeRepo.loadRoute(routeId); } catch (IOException ignored) { /* treated as no existing route */ }
 
             // Skip unchanged routes — UNLESS the stored doc predates the starred-segment
             // feature (starredSegments == null). Such routes were saved before flat starred

@@ -88,6 +88,7 @@ public class StravaAuthRepositoryTest {
             repo.getAccessToken();
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
     }
 

@@ -52,7 +52,10 @@ public final class HeartRateDriftAnalyzer {
         }
 
         double[] h = m.halves(s.heartrate);
-        double out1 = h[0], hr1 = h[1], out2 = h[2], hr2 = h[3];
+        double out1 = h[0];
+        double hr1 = h[1];
+        double out2 = h[2];
+        double hr2 = h[3];
         if (hr1 <= 0 || hr2 <= 0 || out1 <= 0) return null;
         double ef1 = out1 / hr1;
         double ef2 = out2 / hr2;

@@ -220,7 +220,8 @@ public final class ClimbPacingAdvisor {
      */
     private static Tip weakestSegmentTip(SegmentPower sp, int[] segDist, double[] segGrad,
                                          int[] splitSec, boolean faded) {
-        double allWork = 0, allTime = 0;
+        double allWork = 0;
+        double allTime = 0;
         for (int i = 0; i < splitSec.length; i++) {
             if (!sp.analysed[i]) continue;
             allWork += sp.power[i] * splitSec[i];

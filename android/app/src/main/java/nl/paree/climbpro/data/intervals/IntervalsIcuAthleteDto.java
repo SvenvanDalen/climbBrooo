@@ -13,5 +13,5 @@ public final class IntervalsIcuAthleteDto {
     @JsonProperty("name")
     public String name;
 
-    public IntervalsIcuAthleteDto() {}
+    public IntervalsIcuAthleteDto() { /* for JSON deserialization */ }
 }

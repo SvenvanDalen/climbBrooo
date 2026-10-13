@@ -152,8 +152,15 @@ public final class ClimateNormals {
     /** Running sums per (month, day-part) while the hourly archive is read. */
     private static final class Sums {
         final int parts;
-        final double[][] tempSum, windSum, uSum, vSum;
-        final int[][] tempN, windN, hours, blocks, wetBlocks;
+        final double[][] tempSum;
+        final double[][] windSum;
+        final double[][] uSum;
+        final double[][] vSum;
+        final int[][] tempN;
+        final int[][] windN;
+        final int[][] hours;
+        final int[][] blocks;
+        final int[][] wetBlocks;
         // Precipitation per (date, day-part): the rain chance is about the ride, not one hour.
         final Map<String, Double> blockRain = new HashMap<>();
         final Map<String, int[]> blockCell = new HashMap<>();
@@ -265,7 +272,8 @@ public final class ClimateNormals {
     /** Initial compass bearing from foot to top in degrees (0 = north), NaN for one point. */
     public static double bearingDeg(double lat1, double lon1, double lat2, double lon2) {
         if (lat1 == lat2 && lon1 == lon2) return Double.NaN;
-        double p1 = Math.toRadians(lat1), p2 = Math.toRadians(lat2);
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
         double dl = Math.toRadians(lon2 - lon1);
         double y = Math.sin(dl) * Math.cos(p2);
         double x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);

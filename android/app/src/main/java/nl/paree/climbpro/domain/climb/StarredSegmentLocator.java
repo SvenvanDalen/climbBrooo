@@ -23,8 +23,14 @@ public final class StarredSegmentLocator {
 
     /** Located span of a starred segment on a route (distances cumulative from route start). */
     public static final class Span {
-        public final int startDistance, endDistance, length;
-        public final double startLat, startLon, endLat, endLon, avgGradient;
+        public final int startDistance;
+        public final int endDistance;
+        public final int length;
+        public final double startLat;
+        public final double startLon;
+        public final double endLat;
+        public final double endLon;
+        public final double avgGradient;
         Span(int startDistance, int endDistance, int length,
              double startLat, double startLon, double endLat, double endLon, double avgGradient) {
             this.startDistance = startDistance; this.endDistance = endDistance; this.length = length;

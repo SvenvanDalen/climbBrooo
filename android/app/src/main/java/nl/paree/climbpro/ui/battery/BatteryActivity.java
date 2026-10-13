@@ -98,8 +98,8 @@ public final class BatteryActivity extends AppCompatActivity {
         final boolean[] intervalTouched = {alreadyTouched};
         final boolean[] settingDefault = {false};
         interval.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
             @Override public void afterTextChanged(Editable s) {
                 if (!settingDefault[0]) intervalTouched[0] = true;
             }
@@ -111,7 +111,7 @@ public final class BatteryActivity extends AppCompatActivity {
                 interval.setText(String.valueOf(kinds[pos].defaultIntervalDays));
                 settingDefault[0] = false;
             }
-            @Override public void onNothingSelected(AdapterView<?> p) { }
+            @Override public void onNothingSelected(AdapterView<?> p) { /* not needed */ }
         });
     }
 

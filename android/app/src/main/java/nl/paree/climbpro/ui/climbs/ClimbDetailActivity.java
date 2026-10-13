@@ -376,7 +376,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     /** "12 mei 2025   7:41   (+0:12)" plus best-of-year and deviation badges. */
     private String historyLine(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row,
                                java.text.SimpleDateFormat fmt) {
-        int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
+        int m = row.elapsedSec / 60;
+        int s = row.elapsedSec % 60;
         String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
         String delta = row.deltaToPrSec == 0
                 ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
@@ -1270,8 +1271,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             preview.setText(p != null ? everestingSummary(p) : everestingRangeHint());
         };
         input.addTextChangedListener(new android.text.TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
             @Override public void afterTextChanged(android.text.Editable s) { refresh.run(); }
         });
         refresh.run();

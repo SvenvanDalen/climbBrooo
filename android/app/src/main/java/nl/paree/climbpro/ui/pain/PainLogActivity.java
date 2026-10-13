@@ -98,7 +98,7 @@ public final class PainLogActivity extends AppCompatActivity {
             @Override public void onItemSelected(android.widget.AdapterView<?> p, View v, int pos, long id) {
                 dateButton.setVisibility(pos == 0 ? View.VISIBLE : View.GONE);
             }
-            @Override public void onNothingSelected(android.widget.AdapterView<?> p) { }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> p) { /* not needed */ }
         });
 
         final long[] picked = {System.currentTimeMillis() / 1000L};
@@ -117,8 +117,8 @@ public final class PainLogActivity extends AppCompatActivity {
             @Override public void onProgressChanged(SeekBar s, int progress, boolean fromUser) {
                 severityLabel.setText(severityText(progress + 1));
             }
-            @Override public void onStartTrackingTouch(SeekBar s) { }
-            @Override public void onStopTrackingTouch(SeekBar s) { }
+            @Override public void onStartTrackingTouch(SeekBar s) { /* not needed */ }
+            @Override public void onStopTrackingTouch(SeekBar s) { /* not needed */ }
         });
 
         // Pre-fill bike and setup from the latest entry: they rarely change between rides.

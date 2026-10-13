@@ -116,7 +116,8 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public int getItemCount() { return entries.size(); }
 
     static String formatTime(int sec) {
-        int m = sec / 60, s = sec % 60;
+        int m = sec / 60;
+        int s = sec % 60;
         return String.format(Locale.getDefault(), "%d:%02d", m, s);
     }
 

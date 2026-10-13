@@ -152,8 +152,12 @@ public final class TrainingLoadCalendar {
         addClimbs(acc, attemptList, archived, zone, first, today);
 
         List<Day> days = new ArrayList<>();
-        int active = 0, streak = 0, longest = 0;
-        double total = 0, weekLoad = 0, busiestLoad = 0;
+        int active = 0;
+        int streak = 0;
+        int longest = 0;
+        double total = 0;
+        double weekLoad = 0;
+        double busiestLoad = 0;
         LocalDate busiest = null;
         for (LocalDate d = first; !d.isAfter(today); d = d.plusDays(1)) {
             Acc a = acc.get(d);

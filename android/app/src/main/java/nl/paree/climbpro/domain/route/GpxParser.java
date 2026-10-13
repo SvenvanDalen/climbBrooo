@@ -33,7 +33,9 @@ public final class GpxParser {
         // issue #254) and must not be spliced into the line.
         final List<RoutePoint> waypoints = new ArrayList<>();
         boolean inWaypoint = false;
-        double lat = Double.NaN, lon = Double.NaN, ele = Double.NaN;
+        double lat = Double.NaN;
+        double lon = Double.NaN;
+        double ele = Double.NaN;
         boolean inPoint = false;
         boolean inEle = false;
 

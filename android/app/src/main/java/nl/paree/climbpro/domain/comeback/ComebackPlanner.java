@@ -148,7 +148,9 @@ public final class ComebackPlanner {
     /** Baseline from the rides in the {@link #BASELINE_WEEKS} weeks up to {@code breakStart}. */
     static Baseline baseline(List<StoredRide> rides, long breakStartEpochSec) {
         long from = breakStartEpochSec - BASELINE_WEEKS * WEEK;
-        double km = 0, hours = 0, longest = 0;
+        double km = 0;
+        double hours = 0;
+        double longest = 0;
         int count = 0;
         if (rides != null) {
             for (StoredRide r : rides) {
@@ -197,7 +199,8 @@ public final class ComebackPlanner {
 
     /** {hours, km, rides} ridden in [from, to). */
     private static double[] actual(List<StoredRide> rides, long from, long to) {
-        double hours = 0, km = 0;
+        double hours = 0;
+        double km = 0;
         int count = 0;
         if (rides != null) {
             for (StoredRide r : rides) {

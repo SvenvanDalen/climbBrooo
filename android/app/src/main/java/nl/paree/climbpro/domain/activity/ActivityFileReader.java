@@ -88,8 +88,10 @@ public final class ActivityFileReader {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(false);
             factory.newSAXParser().parse(new ByteArrayInputStream(data), new DefaultHandler() {
-                double lat, lon;
-                boolean inPoint, inTime;
+                double lat;
+                double lon;
+                boolean inPoint;
+                boolean inTime;
                 Long time;
                 final StringBuilder text = new StringBuilder();
 

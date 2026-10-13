@@ -70,7 +70,9 @@ public final class OfflinePackageReport {
 
     /** Temperature range, maximum wind and maximum rain chance over hours [start, end). */
     private static void appendWindow(StringBuilder sb, HourlyForecast f, int start, int end) {
-        double tMin = Double.MAX_VALUE, tMax = -Double.MAX_VALUE, wind = 0;
+        double tMin = Double.MAX_VALUE;
+        double tMax = -Double.MAX_VALUE;
+        double wind = 0;
         int rain = -1;
         for (int i = start; i < end; i++) {
             if (!Double.isNaN(f.temperature[i])) {

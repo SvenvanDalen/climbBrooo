@@ -30,8 +30,10 @@ public final class CountryPolygons {
         final String code;
         final List<float[]> rings = new ArrayList<>(); // interleaved lon,lat
         final List<float[]> ringBoxes = new ArrayList<>(); // minLon,minLat,maxLon,maxLat
-        float minLon = Float.MAX_VALUE, minLat = Float.MAX_VALUE;
-        float maxLon = -Float.MAX_VALUE, maxLat = -Float.MAX_VALUE;
+        float minLon = Float.MAX_VALUE;
+        float minLat = Float.MAX_VALUE;
+        float maxLon = -Float.MAX_VALUE;
+        float maxLat = -Float.MAX_VALUE;
 
         Country(String code) { this.code = code; }
 
@@ -129,8 +131,10 @@ public final class CountryPolygons {
         boolean inside = false;
         int n = ring.length / 2;
         for (int i = 0, j = n - 1; i < n; j = i++) {
-            double xi = ring[i * 2], yi = ring[i * 2 + 1];
-            double xj = ring[j * 2], yj = ring[j * 2 + 1];
+            double xi = ring[i * 2];
+            double yi = ring[i * 2 + 1];
+            double xj = ring[j * 2];
+            double yj = ring[j * 2 + 1];
             if ((yi > lat) != (yj > lat)
                     && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
                 inside = !inside;

@@ -66,7 +66,9 @@ public final class AirQualityForecast {
         JsonNode time = hourly.get("time");
         int n = time.size();
         Instant[] times = new Instant[n];
-        double[] pm25 = new double[n], pm10 = new double[n], aqi = new double[n];
+        double[] pm25 = new double[n];
+        double[] pm10 = new double[n];
+        double[] aqi = new double[n];
         double[][] pollen = new double[Pollen.values().length][n];
         for (int i = 0; i < n; i++) {
             times[i] = LocalDateTime.parse(time.get(i).asText()).toInstant(ZoneOffset.UTC);

@@ -66,7 +66,7 @@ public final class PackingListActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) { }
+            public void onNothingSelected(AdapterView<?> parent) { /* not needed */ }
         });
 
         findViewById(R.id.addItemButton).setOnClickListener(v -> {

@@ -71,6 +71,7 @@ public class ClimbFactsRepositoryTest {
             facts.add(null);
             throw new AssertionError("list must be unmodifiable");
         } catch (UnsupportedOperationException expected) {
+            // expected: the call under test must fail
         }
     }
 }

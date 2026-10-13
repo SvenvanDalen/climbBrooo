@@ -15,8 +15,10 @@ public final class StoredStarredSegment {
     public int    startDistance;
     public int    endDistance;
     public int    length;
-    public double startLat = Double.NaN, startLon = Double.NaN;
-    public double endLat   = Double.NaN, endLon   = Double.NaN;
+    public double startLat = Double.NaN;
+    public double startLon = Double.NaN;
+    public double endLat   = Double.NaN;
+    public double endLon   = Double.NaN;
     public double avgGradient;
     public int    surfaceType = SurfaceType.UNKNOWN;
     /** Strava segment name; re-derived each sync. */

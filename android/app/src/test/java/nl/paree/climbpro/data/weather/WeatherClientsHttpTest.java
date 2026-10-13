@@ -186,11 +186,13 @@ public class WeatherClientsHttpTest {
             c.fetchClimate(50, 5, 100, 2026);
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         try {
             c.fetchDaily(50, 5);
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertTrue(server.takeRequest().getPath()
                 .contains("start_date=2023-01-01&end_date=2025-12-31"));

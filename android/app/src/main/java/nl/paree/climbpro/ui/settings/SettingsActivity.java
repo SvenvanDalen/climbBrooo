@@ -232,8 +232,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 binding.radiusLabel.setText(getString(R.string.unit_km_value, km));
                 if (user) viewModel.setRadiusKm(km);
             }
-            public void onStartTrackingTouch(SeekBar sb) {}
-            public void onStopTrackingTouch(SeekBar sb) {}
+            public void onStartTrackingTouch(SeekBar sb) { /* not needed */ }
+            public void onStopTrackingTouch(SeekBar sb) { /* not needed */ }
         });
 
         // SeekBar has no API-24-safe min, so progress is an offset above the minimum radius:
@@ -246,8 +246,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 binding.privacyRadiusLabel.setText(getString(R.string.unit_m_value, meters));
                 if (user) viewModel.setPrivacyRadiusM(meters);
             }
-            public void onStartTrackingTouch(SeekBar sb) {}
-            public void onStopTrackingTouch(SeekBar sb) {}
+            public void onStartTrackingTouch(SeekBar sb) { /* not needed */ }
+            public void onStopTrackingTouch(SeekBar sb) { /* not needed */ }
         });
     }
 

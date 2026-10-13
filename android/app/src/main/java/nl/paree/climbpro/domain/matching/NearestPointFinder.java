@@ -70,11 +70,15 @@ public final class NearestPointFinder {
      */
     private static double[] projectOntoSegment(
             double lat, double lon, RoutePoint a, RoutePoint b) {
-        double ax = a.lon, ay = a.lat;
-        double bx = b.lon, by = b.lat;
-        double px = lon,   py = lat;
+        double ax = a.lon;
+        double ay = a.lat;
+        double bx = b.lon;
+        double by = b.lat;
+        double px = lon;
+        double py = lat;
 
-        double dx = bx - ax, dy = by - ay;
+        double dx = bx - ax;
+        double dy = by - ay;
         double lenSq = dx * dx + dy * dy;
         double t = lenSq > 0 ? ((px - ax) * dx + (py - ay) * dy) / lenSq : 0;
         t = Math.max(0, Math.min(1, t));

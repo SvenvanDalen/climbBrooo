@@ -79,7 +79,10 @@ public final class FamousClimbMatcher {
      */
     private static final class TopSearch {
         final boolean hasStart;
-        final double startLat, startLon, topLat, topLon;
+        final double startLat;
+        final double startLon;
+        final double topLat;
+        final double topLon;
         Match best;
         double bestScore = Double.MAX_VALUE;
         Match bestTopOnly;

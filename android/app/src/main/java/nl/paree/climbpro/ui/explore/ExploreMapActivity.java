@@ -98,7 +98,10 @@ public final class ExploreMapActivity extends AppCompatActivity {
         map.getOverlays().add(tilesOverlay);
         if (!zoomed && s.bounds.length >= 4) {
             zoomed = true;
-            double south = 90, west = 180, north = -90, east = -180;
+            double south = 90;
+            double west = 180;
+            double north = -90;
+            double east = -180;
             for (int i = 0; i + 3 < s.bounds.length; i += 4) {
                 south = Math.min(south, s.bounds[i]);
                 west = Math.min(west, s.bounds[i + 1]);

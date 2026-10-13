@@ -47,7 +47,7 @@ public final class StravaTitleTemplateActivity extends AppCompatActivity {
         updatePreview(saved);
 
         templateInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { /* not needed */ }
 
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 updatePreview(s.toString());
