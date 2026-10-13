@@ -145,8 +145,10 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     private Row stravaRow(PrivacyCategory c) {
         boolean linked = new StravaAuthRepository(getApplication()).isAuthorised();
         boolean syncState = !stravaPrefs().getAll().isEmpty();
-        return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
-                : "Niet gekoppeld"), linked || syncState);
+        String status = "Niet gekoppeld";
+        if (linked) status = "Gekoppeld";
+        else if (syncState) status = "Niet gekoppeld, sync-status bewaard";
+        return new Row(c, status, linked || syncState);
     }
 
     /**
@@ -158,9 +160,10 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         PrivacyInventory.Usage u = inventory.usage(c);
         boolean hasName = !FriendShareIdentity.name(prefs).isEmpty();
         boolean has = u.fileCount > 0 || hasName;
-        String summary = u.fileCount > 0
-                ? u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes)
-                : (hasName ? "Geen feed, deelnaam bewaard" : "Leeg");
+        String summary = hasName ? "Geen feed, deelnaam bewaard" : "Leeg";
+        if (u.fileCount > 0) {
+            summary = u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes);
+        }
         return new Row(c, summary, has);
     }
 

@@ -137,8 +137,9 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
                 : ClimbCatalogIndex.resolve(routeRepo, wanted).entrySet()) {
             ClimbCatalogIndex.Entry located = en.getValue();
             StoredClimb c = located.climb;
-            String name = c.userDisplayName != null ? c.userDisplayName
-                    : (c.name != null ? c.name : "Klim");
+            String name = "Klim";
+            if (c.userDisplayName != null) name = c.userDisplayName;
+            else if (c.name != null) name = c.name;
             int len = ClimbIdentity.effectiveLength(c);
             map.put(en.getKey(), new Location(located.routeId, located.index, name,
                     c.elevationGain, len,

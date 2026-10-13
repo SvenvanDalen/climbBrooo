@@ -113,8 +113,9 @@ public final class GearCalculatorViewModel extends AndroidViewModel {
         if (climb == null || climb.segments == null || climb.segments.isEmpty()) {
             return new State(null, null, 0, false, "Klim niet gevonden of nog niet gesegmenteerd.");
         }
-        String name = climb.userDisplayName != null ? climb.userDisplayName
-                : climb.name != null ? climb.name : "Klim " + (climbIndex + 1);
+        String name = "Klim " + (climbIndex + 1);
+        if (climb.userDisplayName != null) name = climb.userDisplayName;
+        else if (climb.name != null) name = climb.name;
         int[] chainrings;
         int[] sprockets;
         try {

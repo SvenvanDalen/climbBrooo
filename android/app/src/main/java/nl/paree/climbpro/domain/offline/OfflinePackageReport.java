@@ -60,9 +60,10 @@ public final class OfflinePackageReport {
 
     static String ageLine(long createdAtMs, long nowMs) {
         long ageMin = Math.max(0, (nowMs - createdAtMs) / 60_000);
-        String age = ageMin < 60 ? ageMin + " min geleden"
-                : ageMin < 48 * 60 ? (ageMin / 60) + " uur geleden"
-                : (ageMin / (24 * 60)) + " dagen geleden";
+        String age;
+        if (ageMin < 60) age = ageMin + " min geleden";
+        else if (ageMin < 48 * 60) age = (ageMin / 60) + " uur geleden";
+        else age = (ageMin / (24 * 60)) + " dagen geleden";
         String line = "Opgeslagen " + age + ".";
         if (nowMs - createdAtMs > STALE_MS) line += " Verouderd — vernieuw als je bereik hebt.";
         return line;

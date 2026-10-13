@@ -135,11 +135,15 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
         LinearLayout list = findViewById(R.id.regions_list);
         list.removeAllViews();
         if (countries.isEmpty()) {
-            summary.setText(unresolved > 0
-                    ? "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw."
-                    : hadAttempts
-                            ? "Geen van je klimpogingen hoort bij een klim met een bekende locatie."
-                            : "Nog geen klimpogingen. Haal je ritten op in het logboek.");
+            String text;
+            if (unresolved > 0) {
+                text = "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw.";
+            } else if (hadAttempts) {
+                text = "Geen van je klimpogingen hoort bij een klim met een bekende locatie.";
+            } else {
+                text = "Nog geen klimpogingen. Haal je ritten op in het logboek.";
+            }
+            summary.setText(text);
             return;
         }
         int provinceCount = 0;

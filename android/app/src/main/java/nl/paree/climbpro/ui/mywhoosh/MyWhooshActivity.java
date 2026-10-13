@@ -268,9 +268,10 @@ public final class MyWhooshActivity extends AppCompatActivity {
                     + "laatste %d weken; nog niets om mee te vergelijken.", r.recentIntervals, weeks);
         } else {
             double diff = r.recentAvg - r.previousAvg;
+            String change = diff > 0 ? "Sneller herstel" : "Trager herstel";
+            if (Math.abs(diff) < 1) change = "Ongeveer gelijk";
             trend = String.format(Locale.getDefault(), "%s dan de %d weken daarvoor (%.0f slagen).",
-                    Math.abs(diff) < 1 ? "Ongeveer gelijk" : diff > 0 ? "Sneller herstel" : "Trager herstel",
-                    weeks, r.previousAvg);
+                    change, weeks, r.previousAvg);
         }
         addRow(rows, "Daling 60 s na een interval",
                 r.recentAvg != null ? String.format(Locale.getDefault(), "%.0f slagen", r.recentAvg) : "–",

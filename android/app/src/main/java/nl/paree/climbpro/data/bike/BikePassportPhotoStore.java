@@ -31,8 +31,9 @@ public final class BikePassportPhotoStore {
         File dir = dir(ctx);
         dir.mkdirs();
         String type = ctx.getContentResolver().getType(source);
-        String ext = type != null && type.contains("png") ? ".png"
-                : type != null && type.contains("pdf") ? ".pdf" : ".jpg";
+        String ext = ".jpg";
+        if (type != null && type.contains("png")) ext = ".png";
+        else if (type != null && type.contains("pdf")) ext = ".pdf";
         String filename = UUID.randomUUID() + ext;
         ContentResolver resolver = ctx.getContentResolver();
         try (InputStream in = resolver.openInputStream(source)) {

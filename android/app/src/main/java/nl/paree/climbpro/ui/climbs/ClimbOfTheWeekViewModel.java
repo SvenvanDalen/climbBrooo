@@ -183,8 +183,9 @@ public final class ClimbOfTheWeekViewModel extends AndroidViewModel {
 
     private static void addCandidates(List<ClimbOfTheWeek.Candidate> out, RouteCatalogEntry entry,
                                       List<StoredClimb> climbs, Map<String, Long> lastRidden) {
-        String routeName = entry.userDisplayName != null ? entry.userDisplayName
-                : (entry.name != null ? entry.name : entry.routeId);
+        String routeName = entry.routeId;
+        if (entry.userDisplayName != null) routeName = entry.userDisplayName;
+        else if (entry.name != null) routeName = entry.name;
         for (int i = 0; i < climbs.size(); i++) {
             StoredClimb c = climbs.get(i);
             if (c == null) continue;

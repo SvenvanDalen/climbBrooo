@@ -94,8 +94,8 @@ public final class HeartRateDriftActivity extends AppCompatActivity {
                             + "vergelijken.", r.recentCount, weeks);
         } else {
             double diff = r.recentAvg - r.previousAvg;
-            String direction = Math.abs(diff) < 0.5 ? "ongeveer gelijk aan"
-                    : diff < 0 ? "lager dan (beter)" : "hoger dan";
+            String direction = diff < 0 ? "lager dan (beter)" : "hoger dan";
+            if (Math.abs(diff) < 0.5) direction = "ongeveer gelijk aan";
             detail = String.format(Locale.getDefault(),
                     "Gemiddeld over %d rit(ten) in de laatste %d weken, %s de %d weken daarvoor "
                             + "(%s over %d rit(ten)).", r.recentCount, weeks, direction, weeks,

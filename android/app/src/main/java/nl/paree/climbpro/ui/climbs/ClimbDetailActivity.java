@@ -233,6 +233,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     }
 
     /** Length, gradient, gain and shape, then category and surface when known. */
+    /** User-given name, else the detected name, else "Klim N". */
+    private String displayName(StoredClimb climb, int index) {
+        if (climb.userDisplayName != null) return climb.userDisplayName;
+        if (climb.name != null) return climb.name;
+        return getString(R.string.climb_detail_default_name, index + 1);
+    }
+
     private String climbStatsText(StoredClimb climb) {
         if (climb == null) return "";
         String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
@@ -450,9 +457,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         DateTimeFormatter hm = DateTimeFormatter.ofPattern("HH:mm");
         DateTimeFormatter dayHm =
                 DateTimeFormatter.ofPattern("EEE d MMM HH:mm", locale);
-        String name = c.userDisplayName != null ? c.userDisplayName
-                : (c.name != null ? c.name
-                        : getString(R.string.climb_detail_default_name, climbIndex + 1));
+        String name = displayName(c, climbIndex);
         String msg = getString(R.string.climb_detail_sunrise_message,
                 hm.format(sunrise.atZone(zone)),
                 hm.format(plan.arrivalTop.atZone(zone)),
@@ -650,10 +655,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.climb_detail_not_loaded, Toast.LENGTH_SHORT).show();
             return;
         }
-        String title = loadedClimb.userDisplayName != null
-                ? loadedClimb.userDisplayName
-                : (loadedClimb.name != null ? loadedClimb.name
-                        : getString(R.string.climb_detail_default_name, climbIndex + 1));
+        String title = displayName(loadedClimb, climbIndex);
         try {
             android.graphics.Bitmap bitmap = ClimbShareImageComposer.compose(
                     this, title, loadedClimb, lastTimeEstimateText);

@@ -138,9 +138,9 @@ public final class ClimbHygieneActivity extends AppCompatActivity {
     }
 
     private static String climbLabel(NearDuplicateClimbFinder.ClimbRef ref) {
-        String climbName = ref.climb.userDisplayName != null ? ref.climb.userDisplayName
-                : ref.climb.name != null ? ref.climb.name
-                : "Klim " + (ref.climbIndex + 1);
+        String climbName = "Klim " + (ref.climbIndex + 1);
+        if (ref.climb.userDisplayName != null) climbName = ref.climb.userDisplayName;
+        else if (ref.climb.name != null) climbName = ref.climb.name;
         return climbName + " (" + ref.routeDisplayName + ")";
     }
 }

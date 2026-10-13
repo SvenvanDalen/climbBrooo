@@ -231,8 +231,9 @@ public final class ElevationTargetActivity extends AppCompatActivity {
             return;
         }
 
-        String delta = s.deltaM == 0 ? "precies op doel"
-                : (s.deltaM > 0 ? s.deltaM + " hm boven doel" : (-s.deltaM) + " hm onder doel");
+        String delta = "precies op doel";
+        if (s.deltaM > 0) delta = s.deltaM + " hm boven doel";
+        else if (s.deltaM < 0) delta = (-s.deltaM) + " hm onder doel";
         summary.setText(String.format(Locale.getDefault(),
                 "%d klimmen · %d hm (doel %d hm, %s)\nKlimmen samen %.1f km · verbindingen ≈ %.0f km hemelsbreed (incl. terug naar start)\n%d bekende klimmen binnen de straal",
                 s.climbs.size(), s.totalGainM, s.targetGainM, delta,

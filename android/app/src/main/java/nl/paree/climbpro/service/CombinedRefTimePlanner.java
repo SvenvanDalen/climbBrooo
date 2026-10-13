@@ -57,6 +57,7 @@ public final class CombinedRefTimePlanner {
     }
 
     private static int[][] firstNonNull(int[][] a, int[][] b, int[][] c) {
-        return a != null ? a : (b != null ? b : c);
+        if (a != null) return a;
+        return b != null ? b : c;
     }
 }

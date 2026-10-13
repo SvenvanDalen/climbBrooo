@@ -147,7 +147,7 @@ public final class ShareLink {
 
     /** Fallback route name when the provider does not return one. */
     public String defaultName() {
-        return provider == Provider.KOMOOT ? "Komoot-tour " + id
-                : (trip ? "RideWithGPS-rit " : "RideWithGPS-route ") + id;
+        if (provider == Provider.KOMOOT) return "Komoot-tour " + id;
+        return (trip ? "RideWithGPS-rit " : "RideWithGPS-route ") + id;
     }
 }

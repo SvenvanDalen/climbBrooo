@@ -144,7 +144,9 @@ public final class FitnessChartView extends View {
         float step = (right - left) / (days.size() - 1);
         for (int i = 0; i < days.size(); i++) {
             Day d = days.get(i);
-            double v = which == 0 ? d.ctl : which == 1 ? d.atl : d.tsb;
+            double v = d.tsb;
+            if (which == 0) v = d.ctl;
+            else if (which == 1) v = d.atl;
             float x = left + i * step;
             float yy = y(v, min, max, top, bottom);
             if (i == 0) path.moveTo(x, yy);

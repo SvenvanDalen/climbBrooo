@@ -66,8 +66,9 @@ public final class RecoveryTrendAnalyzer {
             this.movingTimeSec = Math.max(0, r.movingTimeSec);
             this.avgSpeedKmh = r.avgSpeedMps * 3.6;
             this.elevationGainM = r.elevationGainM;
-            this.avgWatts = r.weightedAvgWatts != null ? r.weightedAvgWatts
-                    : r.avgWatts != null ? Integer.valueOf(Math.round(r.avgWatts)) : null;
+            if (r.weightedAvgWatts != null) this.avgWatts = r.weightedAvgWatts;
+            else if (r.avgWatts != null) this.avgWatts = Math.round(r.avgWatts);
+            else this.avgWatts = null;
             this.sessionLoad = sessionLoad(this.rpe, this.movingTimeSec);
         }
     }

@@ -810,8 +810,9 @@ public final class RouteDetailActivity extends AppCompatActivity {
         for (int idx : indices) {
             if (r.climbs == null || idx >= r.climbs.size()) continue;
             StoredClimb c = r.climbs.get(idx);
-            String name = c.userDisplayName != null ? c.userDisplayName
-                    : c.name != null ? c.name : "klim " + (idx + 1);
+            String name = "klim " + (idx + 1);
+            if (c.userDisplayName != null) name = c.userDisplayName;
+            else if (c.name != null) name = c.name;
             if (sb.length() > 0) sb.append(", ");
             sb.append(name);
         }

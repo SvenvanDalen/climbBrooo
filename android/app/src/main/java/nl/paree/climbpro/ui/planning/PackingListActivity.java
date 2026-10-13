@@ -133,9 +133,12 @@ public final class PackingListActivity extends AppCompatActivity {
             progress.setText("Nog geen paklijsten. Maak er een via het menu.");
             return;
         }
-        progress.setText(l.items.isEmpty() ? "Deze lijst is nog leeg."
-                : l.checkedCount() + " van " + l.items.size() + " ingepakt"
-                        + (l.checkedCount() == l.items.size() ? " — klaar om te gaan!" : ""));
+        String status = "Deze lijst is nog leeg.";
+        if (!l.items.isEmpty()) {
+            status = l.checkedCount() + " van " + l.items.size() + " ingepakt"
+                    + (l.checkedCount() == l.items.size() ? " — klaar om te gaan!" : "");
+        }
+        progress.setText(status);
         int pad = Math.round(8 * getResources().getDisplayMetrics().density);
         for (PackingList.Item item : l.items) {
             CheckBox box = new CheckBox(this);

@@ -340,7 +340,7 @@ public final class ClimbOfTheWeek {
     }
 
     private static double clamp01(double v) {
-        return v < 0 ? 0 : (v > 1 ? 1 : v);
+        return Math.max(0, Math.min(1, v));
     }
 
     private static boolean validCoord(double lat, double lon) {

@@ -101,10 +101,9 @@ public final class RideCompareActivity extends AppCompatActivity {
                     + "beide ritten, dus vergelijken per kilometer lukt niet.";
         }
         int delta = rows.get(rows.size() - 1).cumulativeDeltaSec;
-        String verdict = delta < 0
-                ? "B was " + RideCompareAdapter.duration(-delta) + " sneller"
-                : delta > 0 ? "B was " + RideCompareAdapter.duration(delta) + " langzamer"
-                : "Precies even snel";
+        String verdict = "Precies even snel";
+        if (delta < 0) verdict = "B was " + RideCompareAdapter.duration(-delta) + " sneller";
+        else if (delta > 0) verdict = "B was " + RideCompareAdapter.duration(delta) + " langzamer";
         double km = 0;
         for (RideComparison.Km k : rows) km += k.lengthM;
         return a + "\n" + b + "\n\n" + verdict + String.format(Locale.getDefault(),

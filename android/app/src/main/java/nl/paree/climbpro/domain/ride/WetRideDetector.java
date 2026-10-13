@@ -56,8 +56,9 @@ public final class WetRideDetector {
 
     /** Ride end: start + elapsed time, else moving time, else one hour. */
     public static long endSec(StoredRide r) {
-        int dur = r.elapsedTimeSec > 0 ? r.elapsedTimeSec
-                : r.movingTimeSec > 0 ? r.movingTimeSec : FALLBACK_DURATION_SEC;
+        int dur = FALLBACK_DURATION_SEC;
+        if (r.elapsedTimeSec > 0) dur = r.elapsedTimeSec;
+        else if (r.movingTimeSec > 0) dur = r.movingTimeSec;
         return r.startEpochSec + dur;
     }
 

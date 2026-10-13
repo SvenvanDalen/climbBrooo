@@ -108,8 +108,10 @@ public final class MonthlyChallengeCalculator {
                                     List<StoredClimbAttempt> attempts, YearMonth month,
                                     LocalDate today, ZoneId zone) {
         int current = valueInMonth(type, rides, attempts, month, zone);
-        int day = YearMonth.from(today).equals(month) ? today.getDayOfMonth()
-                : (today.isBefore(month.atDay(1)) ? 0 : month.lengthOfMonth());
+        int day;
+        if (YearMonth.from(today).equals(month)) day = today.getDayOfMonth();
+        else if (today.isBefore(month.atDay(1))) day = 0;
+        else day = month.lengthOfMonth();
         double expected = target * (double) day / month.lengthOfMonth();
         int daysLeft = Math.max(0, month.lengthOfMonth() - day);
         return new Progress(type, month, target, current, expected, daysLeft);
