@@ -396,20 +396,21 @@ public class StravaRoutesRepositoryEdgeTest {
     }
 
     @Test
-    public void syncRoutes_429WithHttpDateRetryAfter_usesDefaultBackoff() throws Exception {
-        when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(call(
-                StravaRoutesRepositoryEdgeTest.<List<StravaRouteDto>>error(
-                        429, "Wed, 21 Oct 2026 07:28:00 GMT")));
-        repo().syncRoutes();
-        assertEquals(5_000L, (long) slept.get(0));
-    }
-
-    @Test
-    public void syncRoutes_429WithNegativeRetryAfter_usesDefaultBackoff() throws Exception {
-        when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(call(
-                StravaRoutesRepositoryEdgeTest.<List<StravaRouteDto>>error(429, "-3")));
-        repo().syncRoutes();
-        assertEquals(5_000L, (long) slept.get(0));
+    public void syncRoutes_429RetryAfterHeaderDecidesFirstBackoff() throws Exception {
+        // {Retry-After header, expected first backoff in ms}: unusable values fall back to 5 s;
+        // the 60 s cap itself is still honoured.
+        String[][] cases = {
+                {"Wed, 21 Oct 2026 07:28:00 GMT", "5000"},
+                {"-3", "5000"},
+                {"60", "60000"},
+        };
+        for (String[] c : cases) {
+            slept.clear();
+            when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(call(
+                    StravaRoutesRepositoryEdgeTest.<List<StravaRouteDto>>error(429, c[0])));
+            repo().syncRoutes();
+            assertEquals("Retry-After " + c[0], Long.parseLong(c[1]), (long) slept.get(0));
+        }
     }
 
     @Test
@@ -430,13 +431,6 @@ public class StravaRoutesRepositoryEdgeTest {
         verify(api, never()).exportGpx(anyString(), anyLong());
     }
 
-    @Test
-    public void syncRoutes_retryAfterAtCap_stillWaits() throws Exception {
-        when(api.listRoutes(anyString(), eq(1), anyInt())).thenReturn(
-                call(StravaRoutesRepositoryEdgeTest.<List<StravaRouteDto>>error(429, "60")));
-        repo().syncRoutes();
-        assertEquals(60_000L, (long) slept.get(0));
-    }
 
     @Test
     public void syncRoutes_interruptedBackoff_throwsAndKeepsInterruptFlag() throws Exception {
