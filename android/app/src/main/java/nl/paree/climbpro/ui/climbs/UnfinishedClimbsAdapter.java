@@ -8,12 +8,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.climbs.UnfinishedClimbsViewModel.Row;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -24,7 +24,7 @@ public final class UnfinishedClimbsAdapter extends RecyclerView.Adapter<Unfinish
 
     private final List<Row> rows = new ArrayList<>();
     private final OnClick onClick;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault());
 
     public UnfinishedClimbsAdapter(OnClick onClick) { this.onClick = onClick; }
 
@@ -48,7 +48,7 @@ public final class UnfinishedClimbsAdapter extends RecyclerView.Adapter<Unfinish
         holder.name.setText(row.displayName);
 
         String date = row.lastAttemptDateSec > 0
-                ? dateFormat.format(new Date(row.lastAttemptDateSec * 1000L)) : "onbekende datum";
+                ? EpochDates.format(dateFormat, row.lastAttemptDateSec) : "onbekende datum";
         String progress = row.lengthM > 0
                 ? String.format(Locale.getDefault(), "%d%% van %d m",
                         Math.min(100, Math.round(100f * row.bestDistanceCoveredM / row.lengthM)),

@@ -15,14 +15,14 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.mywhoosh.ClimbProgress;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.climbs.ClimbDetailActivity;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -39,7 +39,7 @@ public final class ClimbIndoorActivity extends AppCompatActivity {
     private static final String EXTRA_ROUTE_ID = "route_id";
     private static final String EXTRA_CLIMB_INDEX = "climb_index";
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
 
     public static Intent intentFor(Context ctx, String routeId, int climbIndex) {
         return new Intent(ctx, ClimbIndoorActivity.class)
@@ -91,7 +91,7 @@ public final class ClimbIndoorActivity extends AppCompatActivity {
         }
         for (int i = points.size() - 1; i >= 0; i--) {
             ClimbProgress.Point p = points.get(i);
-            addRow(rows, dateFormat.format(new Date(p.dateEpochSec * 1000L)),
+            addRow(rows, EpochDates.format(dateFormat, p.dateEpochSec),
                     MyWhooshActivity.duration(p.elapsedSec), progressDetail(p));
         }
     }

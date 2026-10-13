@@ -8,13 +8,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.climb.AttemptTemperature;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.climbs.ClimbTimelineViewModel.TimelineRow;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,8 +42,8 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     private final List<Entry> entries = new ArrayList<>();
     private final OnClick onClick;
     private final OnLongClick onLongClick;
-    private final SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM", Locale.getDefault());
+    private final DateTimeFormatter monthFormat = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault());
 
     public TimelineAdapter(OnClick onClick) { this(onClick, null); }
 
@@ -56,7 +56,7 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         entries.clear();
         String lastMonth = null;
         for (TimelineRow row : rows) {
-            String month = monthFormat.format(new Date(row.dateEpochSec * 1000L));
+            String month = EpochDates.format(monthFormat, row.dateEpochSec);
             if (!month.equals(lastMonth)) {
                 entries.add(new Entry(month));
                 lastMonth = month;
@@ -94,7 +94,7 @@ public final class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         AttemptVH h = (AttemptVH) holder;
         TimelineRow row = entry.row;
         h.name.setText(row.displayName);
-        String date = dateFormat.format(new Date(row.dateEpochSec * 1000L));
+        String date = EpochDates.format(dateFormat, row.dateEpochSec);
         String deviationMarker = row.routeDeviation ? "  ⚠️ afwijkende route" : "";
         String tempNote = AttemptTemperature.label(row.avgTempC);
         String tempMarker = tempNote != null ? "  " + tempNote : "";

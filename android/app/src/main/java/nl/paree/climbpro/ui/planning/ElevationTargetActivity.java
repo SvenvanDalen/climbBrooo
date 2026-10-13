@@ -23,13 +23,15 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.domain.planning.ElevationTargetPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -264,17 +266,13 @@ public final class ElevationTargetActivity extends AppCompatActivity {
     private void pickDateTimeAndAdd() {
         ElevationTargetPlanner.Suggestion s = viewModel.suggestion().getValue();
         if (s == null || s.climbs.isEmpty()) return;
-        Calendar now = Calendar.getInstance();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         new DatePickerDialog(this, (view, year, month, day) -> {
-            Calendar picked = Calendar.getInstance();
-            picked.set(year, month, day);
-            new TimePickerDialog(this, (tView, hour, minute) -> {
-                picked.set(Calendar.HOUR_OF_DAY, hour);
-                picked.set(Calendar.MINUTE, minute);
-                picked.set(Calendar.SECOND, 0);
-                picked.set(Calendar.MILLISECOND, 0);
-                viewModel.addToPlanning(s, picked.getTimeInMillis() / 1000L);
-            }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();
-        }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show();
+            LocalDate date = LocalDate.of(year, month + 1, day);
+            new TimePickerDialog(this, (tView, hour, minute) ->
+                    viewModel.addToPlanning(s, date.atTime(hour, minute)
+                            .atZone(ZoneId.systemDefault()).toEpochSecond()),
+                    now.getHour(), now.getMinute(), true).show();
+        }, now.getYear(), now.getMonthValue() - 1, now.getDayOfMonth()).show();
     }
 }

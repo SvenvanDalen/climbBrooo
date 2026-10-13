@@ -26,13 +26,13 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.battery.BatteryDevice;
 import nl.paree.climbpro.domain.battery.BatteryKind;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -45,8 +45,8 @@ public final class BatteryActivity extends AppCompatActivity {
     private BatteryViewModel viewModel;
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> { });
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
 
     public static Intent intentFor(Context context) {
         return new Intent(context, BatteryActivity.class);
@@ -175,7 +175,7 @@ public final class BatteryActivity extends AppCompatActivity {
     }
 
     private String chargedLabel(long epochSec) {
-        return epochSec > 0 ? "Laatst geladen: " + dateFormat.format(new Date(epochSec * 1000L))
+        return epochSec > 0 ? "Laatst geladen: " + EpochDates.format(dateFormat, epochSec)
                             : "Laatst geladen: onbekend";
     }
 
