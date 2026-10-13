@@ -65,26 +65,32 @@ public final class BadgesViewModel extends AndroidViewModel {
         List<CollectionClimbs> out = new ArrayList<>();
         for (RouteCollection c : collectionRepo.loadAll()) {
             Set<String> ids = new HashSet<>();
-            if (c.routeIds != null) {
-                for (String routeId : c.routeIds) {
-                    StoredRoute route = route(routeCache, routeId);
-                    if (route == null || route.climbs == null) continue;
-                    for (StoredClimb climb : route.climbs) ids.add(ClimbIdentity.of(climb));
-                }
-            }
-            if (c.climbs != null) {
-                for (ClimbMembership m : c.climbs) {
-                    StoredRoute route = route(routeCache, m.routeId);
-                    if (route == null || route.climbs == null
-                            || m.climbIndex < 0 || m.climbIndex >= route.climbs.size()) {
-                        continue;
-                    }
-                    ids.add(ClimbIdentity.of(route.climbs.get(m.climbIndex)));
-                }
-            }
+            if (c.routeIds != null) addRouteClimbIds(ids, c.routeIds, routeCache);
+            if (c.climbs != null) addMemberClimbIds(ids, c.climbs, routeCache);
             out.add(new CollectionClimbs(c.id, c.name, ids));
         }
         return out;
+    }
+
+    private void addRouteClimbIds(Set<String> ids, List<String> routeIds,
+                                  Map<String, StoredRoute> routeCache) {
+        for (String routeId : routeIds) {
+            StoredRoute route = route(routeCache, routeId);
+            if (route == null || route.climbs == null) continue;
+            for (StoredClimb climb : route.climbs) ids.add(ClimbIdentity.of(climb));
+        }
+    }
+
+    private void addMemberClimbIds(Set<String> ids, List<ClimbMembership> members,
+                                   Map<String, StoredRoute> routeCache) {
+        for (ClimbMembership m : members) {
+            StoredRoute route = route(routeCache, m.routeId);
+            if (route == null || route.climbs == null
+                    || m.climbIndex < 0 || m.climbIndex >= route.climbs.size()) {
+                continue;
+            }
+            ids.add(ClimbIdentity.of(route.climbs.get(m.climbIndex)));
+        }
     }
 
     /** Loads a route once per refresh; null when it is gone or fails to load. */

@@ -8,12 +8,10 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
-import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
-import nl.paree.climbpro.data.route.StoredRoute;
-import nl.paree.climbpro.domain.climb.ClimbIdentity;
+import nl.paree.climbpro.domain.climb.ClimbCatalogIndex;
 import nl.paree.climbpro.domain.climb.RideFatigueCurveCalculator;
 import nl.paree.climbpro.domain.climb.RideFatigueCurveCalculator.ClimbRef;
 import nl.paree.climbpro.domain.climb.RideFatigueCurveCalculator.FatiguePoint;
@@ -72,22 +70,12 @@ public final class RideFatigueViewModel extends AndroidViewModel {
     /** Maps each wanted climbId to the first route (+ its climb index) that contains it. */
     private Map<String, ClimbRef> resolveClimbRefs(Set<String> wanted) {
         Map<String, ClimbRef> map = new HashMap<>();
-        for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
-            try {
-                StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                if (route.climbs == null) continue;
-                for (int i = 0; i < route.climbs.size(); i++) {
-                    StoredClimb c = route.climbs.get(i);
-                    String id = ClimbIdentity.of(c);
-                    if (wanted.contains(id) && !map.containsKey(id)) {
-                        String name = c.userDisplayName != null ? c.userDisplayName
-                                : (c.name != null ? c.name : "Klim");
-                        map.put(id, new ClimbRef(name, c.elevationGain, entry.routeId, i));
-                    }
-                }
-            } catch (Exception ignored) {
-                // A route that fails to load just won't resolve its climbs.
-            }
+        for (Map.Entry<String, ClimbCatalogIndex.Entry> e
+                : ClimbCatalogIndex.resolve(routeRepo, wanted).entrySet()) {
+            ClimbCatalogIndex.Entry found = e.getValue();
+            StoredClimb c = found.climb;
+            map.put(e.getKey(), new ClimbRef(ClimbTimelineViewModel.climbName(c), c.elevationGain,
+                    found.routeId, found.index));
         }
         return map;
     }

@@ -136,37 +136,11 @@ public final class BackupArchive {
         deleteRecursively(staging);
         staging.mkdirs();
         try {
-            List<String> staged = new ArrayList<>();
-            JsonNode manifest = null;
-            JsonNode prefs = null;
-            ZipInputStream zip = new ZipInputStream(in);
-            ZipEntry e;
-            while ((e = zip.getNextEntry()) != null) {
-                if (e.isDirectory()) continue;
-                String name = e.getName();
-                if (MANIFEST.equals(name)) {
-                    manifest = MAPPER.readTree(readAll(zip));
-                } else if (PREFS.equals(name)) {
-                    prefs = MAPPER.readTree(readAll(zip));
-                } else if (name.startsWith(FILES_PREFIX)) {
-                    String rel = name.substring(FILES_PREFIX.length());
-                    if (!isIncluded(rel)) {
-                        throw new IOException("Onverwacht bestand in back-up: " + name);
-                    }
-                    File target = new File(staging, rel);
-                    target.getParentFile().mkdirs();
-                    try (FileOutputStream out = new FileOutputStream(target)) {
-                        copy(zip, out);
-                    }
-                    staged.add(rel);
-                }
-            }
-            if (manifest == null || !manifest.has("format")) {
-                throw new IOException("Geen ClimbPro-back-up (manifest ontbreekt)");
-            }
-            if (manifest.get("format").asInt() > FORMAT_VERSION) {
-                throw new IOException("Back-up is gemaakt met een nieuwere versie van ClimbPro");
-            }
+            Unpacked unpacked = unpack(in, staging);
+            List<String> staged = unpacked.staged;
+            JsonNode manifest = unpacked.manifest;
+            JsonNode prefs = unpacked.prefs;
+            checkManifest(manifest);
 
             for (String path : INCLUDED_PATHS) deleteRecursively(new File(filesDir, path));
             for (String rel : staged) {
@@ -181,6 +155,55 @@ public final class BackupArchive {
                     prefs != null ? prefs.size() : 0);
         } finally {
             deleteRecursively(staging);
+        }
+    }
+
+    /** What {@link #unpack} found in the archive. */
+    private static final class Unpacked {
+        final List<String> staged = new ArrayList<>();
+        JsonNode manifest;
+        JsonNode prefs;
+    }
+
+    /** Reads every entry: manifest and prefs into memory, store files into {@code staging}. */
+    private static Unpacked unpack(InputStream in, File staging) throws IOException {
+        Unpacked result = new Unpacked();
+        ZipInputStream zip = new ZipInputStream(in);
+        ZipEntry e;
+        while ((e = zip.getNextEntry()) != null) {
+            if (e.isDirectory()) continue;
+            String name = e.getName();
+            if (MANIFEST.equals(name)) {
+                result.manifest = MAPPER.readTree(readAll(zip));
+            } else if (PREFS.equals(name)) {
+                result.prefs = MAPPER.readTree(readAll(zip));
+            } else if (name.startsWith(FILES_PREFIX)) {
+                result.staged.add(stageFile(zip, name, staging));
+            }
+        }
+        return result;
+    }
+
+    private static String stageFile(ZipInputStream zip, String name, File staging)
+            throws IOException {
+        String rel = name.substring(FILES_PREFIX.length());
+        if (!isIncluded(rel)) {
+            throw new IOException("Onverwacht bestand in back-up: " + name);
+        }
+        File target = new File(staging, rel);
+        target.getParentFile().mkdirs();
+        try (FileOutputStream out = new FileOutputStream(target)) {
+            copy(zip, out);
+        }
+        return rel;
+    }
+
+    private static void checkManifest(JsonNode manifest) throws IOException {
+        if (manifest == null || !manifest.has("format")) {
+            throw new IOException("Geen ClimbPro-back-up (manifest ontbreekt)");
+        }
+        if (manifest.get("format").asInt() > FORMAT_VERSION) {
+            throw new IOException("Back-up is gemaakt met een nieuwere versie van ClimbPro");
         }
     }
 

@@ -116,13 +116,35 @@ public final class GroupRidePlanner {
         double km = Math.max(0, distanceM) / 1000.0;
         int ascent = Math.max(0, ascentM);
 
-        List<Integer> flats = new ArrayList<>();
+        Tally tally = new Tally();
+        for (GroupRideParticipant p : ps) tally.add(p, km, ascent);
+        int unknown = tally.unknown;
+        int minVam = tally.minVam;
+        String slowestName = tally.slowestName;
+        int fastestSolo = tally.fastestSolo;
+        int groupFlat = groupFlat(tally.flats);
+        int moving = movingSec(km, ascent, groupFlat, minVam);
+        int pause = (moving / PAUSE_EVERY_SEC) * PAUSE_SEC;
+        double avg = moving > 0 ? km / (moving / 3600.0) : groupFlat / 10.0;
+        boolean spread = ps.size() >= 2 && fastestSolo < BIG_SPREAD_RATIO * moving;
+        if (participants == null || participants.isEmpty()) {
+            unknown = 0;
+            slowestName = "";
+        }
+        return new Estimate(groupFlat, minVam, moving, pause, avg, fastestSolo, slowestName,
+                unknown, spread);
+    }
+
+    /** Per-participant speeds (unknown ones at the defaults), slowest rider and best solo time. */
+    private static final class Tally {
+        final List<Integer> flats = new ArrayList<>();
         int unknown = 0;
         int minVam = Integer.MAX_VALUE;
         int slowestFlat = Integer.MAX_VALUE;
         String slowestName = "";
         int fastestSolo = Integer.MAX_VALUE;
-        for (GroupRideParticipant p : ps) {
+
+        void add(GroupRideParticipant p, double km, int ascent) {
             int flat = p.flatSpeedDkmh > 0 ? p.flatSpeedDkmh : DEFAULT_FLAT_DKMH;
             if (p.flatSpeedDkmh <= 0) unknown++;
             int vam = p.vamMph > 0 ? p.vamMph : DEFAULT_VAM_MPH;
@@ -134,21 +156,16 @@ public final class GroupRidePlanner {
             }
             fastestSolo = Math.min(fastestSolo, movingSec(km, ascent, flat, vam));
         }
+    }
+
+    /** The group rides at the slowest flat speed, lifted by drafting up to the next slowest. */
+    private static int groupFlat(List<Integer> flats) {
         Collections.sort(flats);
         int groupFlat = flats.get(0);
         if (flats.size() >= 2) {
             groupFlat = (int) Math.min(Math.round(flats.get(0) * DRAFT_BONUS), flats.get(1));
         }
-        int moving = movingSec(km, ascent, groupFlat, minVam);
-        int pause = (moving / PAUSE_EVERY_SEC) * PAUSE_SEC;
-        double avg = moving > 0 ? km / (moving / 3600.0) : groupFlat / 10.0;
-        boolean spread = ps.size() >= 2 && fastestSolo < BIG_SPREAD_RATIO * moving;
-        if (participants == null || participants.isEmpty()) {
-            unknown = 0;
-            slowestName = "";
-        }
-        return new Estimate(groupFlat, minVam, moving, pause, avg, fastestSolo, slowestName,
-                unknown, spread);
+        return groupFlat;
     }
 
     private static int movingSec(double km, int ascentM, int flatDkmh, int vamMph) {
@@ -187,25 +204,29 @@ public final class GroupRidePlanner {
                 ? new ArrayList<>() : participants;
         List<DateOption> days = new ArrayList<>();
         for (int i = 0; i < Math.max(0, horizonDays); i++) {
-            LocalDate d = firstDay.plusDays(i);
-            int dow = d.getDayOfWeek().getValue() - 1;
-            DateOption best = null;
-            for (int part : PARTS) {
-                List<String> missing = new ArrayList<>();
-                int ok = 0;
-                for (GroupRideParticipant p : ps) {
-                    if (p.ridesOn(dow) && p.ridesIn(part)) ok++;
-                    else missing.add(p.name);
-                }
-                if (best == null || ok > best.available) {
-                    best = new DateOption(d, part, ok, ps.size(), missing);
-                }
-            }
-            days.add(best);
+            days.add(bestPartOfDay(firstDay.plusDays(i), ps));
         }
         Collections.sort(days, Comparator.comparingInt((DateOption o) -> -o.available)
                 .thenComparing(o -> o.date));
         return new ArrayList<>(days.subList(0, Math.min(Math.max(0, count), days.size())));
+    }
+
+    /** The part of day {@code d} most participants can ride (the earliest part on a tie). */
+    private static DateOption bestPartOfDay(LocalDate d, List<GroupRideParticipant> ps) {
+        int dow = d.getDayOfWeek().getValue() - 1;
+        DateOption best = null;
+        for (int part : PARTS) {
+            List<String> missing = new ArrayList<>();
+            int ok = 0;
+            for (GroupRideParticipant p : ps) {
+                if (p.ridesOn(dow) && p.ridesIn(part)) ok++;
+                else missing.add(p.name);
+            }
+            if (best == null || ok > best.available) {
+                best = new DateOption(d, part, ok, ps.size(), missing);
+            }
+        }
+        return best;
     }
 
     /** "za 10 okt" — fixed Dutch abbreviations, independent of the JVM's locale data. */

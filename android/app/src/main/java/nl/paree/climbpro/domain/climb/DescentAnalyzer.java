@@ -4,6 +4,7 @@ import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 
 import java.util.ArrayDeque;
+import java.util.List;
 
 /**
  * What the descent after a climb looks like (issue #215): length, drop, average and maximum
@@ -70,21 +71,11 @@ public final class DescentAnalyzer {
                 || climbIndex >= route.climbs.size()) {
             return null;
         }
+        if (!hasAlignedGeometry(route)) return null;
         double[] d = route.distances;
         double[] ele = route.elevations;
-        double[] lat = route.lats;
-        double[] lon = route.lons;
-        if (d == null || ele == null || lat == null || lon == null || d.length < 2
-                || ele.length != d.length || lat.length != d.length || lon.length != d.length) {
-            return null;
-        }
         StoredClimb climb = route.climbs.get(climbIndex);
-        double nextStart = Double.POSITIVE_INFINITY;
-        for (StoredClimb c : route.climbs) {
-            if (c.startDistance >= climb.endDistance && c.startDistance < nextStart) {
-                nextStart = c.startDistance;
-            }
-        }
+        double nextStart = nextClimbStart(route.climbs, climb);
 
         int top = -1;
         for (int i = 0; i < d.length; i++) {
@@ -95,21 +86,8 @@ public final class DescentAnalyzer {
         }
         if (top < 0 || top >= d.length - 1) return null;
 
-        // Lowest point before a rise of END_RISE_M, the next climb, or the route end.
-        int low = top;
-        End end = End.ROUTE_END;
-        for (int j = top + 1; j < d.length; j++) {
-            if (d[j] > nextStart) {
-                end = End.NEXT_CLIMB;
-                break;
-            }
-            if (Double.isNaN(ele[j])) continue;
-            if (ele[j] < ele[low]) low = j;
-            if (ele[j] - ele[low] >= END_RISE_M) {
-                end = End.RISE;
-                break;
-            }
-        }
+        LowPoint lowPoint = lowestPoint(d, ele, top, nextStart);
+        int low = lowPoint.index;
         if (low == top) return null;
 
         int start = trimLeading(d, ele, top, low);
@@ -118,10 +96,52 @@ public final class DescentAnalyzer {
         double drop = ele[start] - ele[stop];
         if (length <= 0 || drop < MIN_DROP_M) return null;
 
-        double[] turns = turnStats(d, lat, lon, start, stop);
+        double[] turns = turnStats(d, route.lats, route.lons, start, stop);
         return new Descent((int) Math.round(length), (int) Math.round(drop), drop / length,
                 maxGradient(d, ele, start, stop), turns[0] / (length / 1000.0), (int) turns[1],
-                end);
+                lowPoint.end);
+    }
+
+    private static boolean hasAlignedGeometry(StoredRoute route) {
+        double[] d = route.distances;
+        double[] ele = route.elevations;
+        double[] lat = route.lats;
+        double[] lon = route.lons;
+        return d != null && ele != null && lat != null && lon != null && d.length >= 2
+                && ele.length == d.length && lat.length == d.length && lon.length == d.length;
+    }
+
+    /** Start distance of the first climb starting after {@code climb} ends; +∞ if none. */
+    private static double nextClimbStart(List<StoredClimb> climbs, StoredClimb climb) {
+        double nextStart = Double.POSITIVE_INFINITY;
+        for (StoredClimb c : climbs) {
+            if (c.startDistance >= climb.endDistance && c.startDistance < nextStart) {
+                nextStart = c.startDistance;
+            }
+        }
+        return nextStart;
+    }
+
+    private static final class LowPoint {
+        final int index;
+        final End end;
+
+        LowPoint(int index, End end) {
+            this.index = index;
+            this.end = end;
+        }
+    }
+
+    /** Lowest point before a rise of END_RISE_M, the next climb, or the route end. */
+    private static LowPoint lowestPoint(double[] d, double[] ele, int top, double nextStart) {
+        int low = top;
+        for (int j = top + 1; j < d.length; j++) {
+            if (d[j] > nextStart) return new LowPoint(low, End.NEXT_CLIMB);
+            if (Double.isNaN(ele[j])) continue;
+            if (ele[j] < ele[low]) low = j;
+            if (ele[j] - ele[low] >= END_RISE_M) return new LowPoint(low, End.RISE);
+        }
+        return new LowPoint(low, End.ROUTE_END);
     }
 
     /** Skips a summit plateau: leading points that descend less than the false-flat gradient. */
@@ -182,9 +202,7 @@ public final class DescentAnalyzer {
             if (d[i + 1] - d[i] <= 0) continue;
             double b = bearing(lat[i], lon[i], lat[i + 1], lon[i + 1]);
             if (!Double.isNaN(prevBearing)) {
-                double turn = b - prevBearing;
-                while (turn > 180) turn -= 360;
-                while (turn < -180) turn += 360;
+                double turn = normalizeTurn(b - prevBearing);
                 total += Math.abs(turn);
                 window.addLast(new double[]{d[i], turn});
                 windowSum += turn;
@@ -200,6 +218,13 @@ public final class DescentAnalyzer {
             prevBearing = b;
         }
         return new double[]{total, hairpins};
+    }
+
+    /** Wraps a bearing difference into [-180, 180]. */
+    private static double normalizeTurn(double turn) {
+        while (turn > 180) turn -= 360;
+        while (turn < -180) turn += 360;
+        return turn;
     }
 
     private static double bearing(double lat1, double lon1, double lat2, double lon2) {

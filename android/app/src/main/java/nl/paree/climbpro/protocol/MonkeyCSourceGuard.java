@@ -22,24 +22,43 @@ public final class MonkeyCSourceGuard {
             char c = src.charAt(i);
             char d = (i + 1 < n) ? src.charAt(i + 1) : '\0';
             if (c == '/' && d == '/') {
-                while (i < n && src.charAt(i) != '\n') { i++; }
+                i = skipLineComment(src, i);
             } else if (c == '/' && d == '*') {
-                i += 2;
-                while (i + 1 < n && !(src.charAt(i) == '*' && src.charAt(i + 1) == '/')) { i++; }
-                i += 2;
+                i = skipBlockComment(src, i);
             } else if (c == '"') {
-                i++;
-                while (i < n && src.charAt(i) != '"') {
-                    if (src.charAt(i) == '\\') { i++; }
-                    i++;
-                }
-                i++;
+                i = skipString(src, i);
             } else {
                 out.append(c);
                 i++;
             }
         }
         return out.toString();
+    }
+
+    /** Index of the newline ending the line comment at {@code i} (or the end of the source). */
+    private static int skipLineComment(String src, int i) {
+        int n = src.length();
+        while (i < n && src.charAt(i) != '\n') { i++; }
+        return i;
+    }
+
+    /** Index just past the block comment starting at {@code i}. */
+    private static int skipBlockComment(String src, int i) {
+        int n = src.length();
+        i += 2;
+        while (i + 1 < n && !(src.charAt(i) == '*' && src.charAt(i + 1) == '/')) { i++; }
+        return i + 2;
+    }
+
+    /** Index just past the string literal starting at {@code i} (escapes skipped). */
+    private static int skipString(String src, int i) {
+        int n = src.length();
+        i++;
+        while (i < n && src.charAt(i) != '"') {
+            if (src.charAt(i) == '\\') { i++; }
+            i++;
+        }
+        return i + 1;
     }
 
     /** True when {} and () are balanced (ignoring comments/strings). */

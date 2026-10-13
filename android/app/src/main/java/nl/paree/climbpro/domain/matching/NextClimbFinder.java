@@ -3,6 +3,7 @@ package nl.paree.climbpro.domain.matching;
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredRoute;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -60,27 +61,30 @@ public final class NextClimbFinder {
     public static Answer find(StoredRoute route, Double lat, Double lon) {
         double along = 0;
         boolean onRoute = false;
-        if (lat != null && lon != null) {
-            double[] proj = project(route, lat, lon);
-            if (proj != null && proj[0] <= OFF_ROUTE_M) {
-                along = proj[1];
-                onRoute = true;
-            }
+        double[] proj = lat != null && lon != null ? project(route, lat, lon) : null;
+        if (proj != null && proj[0] <= OFF_ROUTE_M) {
+            along = proj[1];
+            onRoute = true;
         }
-        if (route.climbs != null) {
-            StoredClimb next = null;
-            for (StoredClimb c : route.climbs) {
-                if (c.endDistance > along && (next == null || c.startDistance < next.startDistance)) {
-                    next = c;
-                }
-            }
-            if (next != null) {
-                boolean onClimb = onRoute && along >= next.startDistance;
-                int toGo = (int) Math.round(onClimb ? next.endDistance - along : next.startDistance - along);
-                return new Answer(next, onClimb, onRoute, Math.max(0, toGo));
-            }
+        StoredClimb next = firstClimbEndingAfter(route.climbs, along);
+        if (next != null) {
+            boolean onClimb = onRoute && along >= next.startDistance;
+            int toGo = (int) Math.round(onClimb ? next.endDistance - along : next.startDistance - along);
+            return new Answer(next, onClimb, onRoute, Math.max(0, toGo));
         }
         return new Answer(null, false, onRoute, 0);
+    }
+
+    /** The earliest-starting climb that ends after {@code along}; null if none. */
+    private static StoredClimb firstClimbEndingAfter(List<StoredClimb> climbs, double along) {
+        if (climbs == null) return null;
+        StoredClimb next = null;
+        for (StoredClimb c : climbs) {
+            if (c.endDistance > along && (next == null || c.startDistance < next.startDistance)) {
+                next = c;
+            }
+        }
+        return next;
     }
 
     /**

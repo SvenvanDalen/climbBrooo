@@ -36,6 +36,19 @@ public final class CadenceByGrade {
         }
     }
 
+    /** The ride's stats when it qualifies and has cadence-by-grade data for all classes. */
+    private static StoredRideStreamStats cadenceStats(StoredRide r,
+                                                      Map<Long, StoredRideStreamStats> stats,
+                                                      boolean myWhooshOnly, int n) {
+        if (r == null || (myWhooshOnly && !IndoorRides.isMyWhoosh(r))) return null;
+        StoredRideStreamStats s = stats.get(r.activityId);
+        if (s == null || s.cadenceGradeSec == null || s.cadenceGradeRevs == null
+                || s.cadenceGradeSec.length != n || s.cadenceGradeRevs.length != n) {
+            return null;
+        }
+        return s;
+    }
+
     /** @param myWhooshOnly only MyWhoosh rides (issue #403), or every ride with cadence */
     public static Result compute(List<StoredRide> rides, Map<Long, StoredRideStreamStats> stats,
                                  boolean myWhooshOnly) {
@@ -45,12 +58,8 @@ public final class CadenceByGrade {
         int count = 0;
         if (rides != null && stats != null) {
             for (StoredRide r : rides) {
-                if (r == null || (myWhooshOnly && !IndoorRides.isMyWhoosh(r))) continue;
-                StoredRideStreamStats s = stats.get(r.activityId);
-                if (s == null || s.cadenceGradeSec == null || s.cadenceGradeRevs == null
-                        || s.cadenceGradeSec.length != n || s.cadenceGradeRevs.length != n) {
-                    continue;
-                }
+                StoredRideStreamStats s = cadenceStats(r, stats, myWhooshOnly, n);
+                if (s == null) continue;
                 count++;
                 for (int c = 0; c < n; c++) {
                     secs[c] += Math.max(0, s.cadenceGradeSec[c]);

@@ -214,20 +214,13 @@ public final class ClimbAttemptMatcher {
         return out;
     }
 
-    /** Shared boundary-interpolation logic used by both {@link #matchSegments} and {@link #matchAllSegments}. */
-    private static int[] splitSegments(List<TrackSample> track, int entryIdx, int exitIdx, int[] segLengthsM) {
-        long entryTime = track.get(entryIdx).timeSec;
-        long exitTime  = track.get(exitIdx).timeSec;
-
-        // Cumulative segment boundary distances from the climb start.
-        double[] boundaries = new double[segLengthsM.length];
-        double cum = 0;
-        for (int i = 0; i < segLengthsM.length; i++) {
-            cum += segLengthsM[i];
-            boundaries[i] = cum;
-        }
-
-        long[] boundaryTime = new long[segLengthsM.length];
+    /**
+     * Interpolated track time at which each cumulative boundary distance is passed; a boundary
+     * beyond the last step is placed on that step. Unreached boundaries stay 0.
+     */
+    private static long[] boundaryTimes(List<TrackSample> track, int entryIdx, int exitIdx,
+                                        double[] boundaries) {
+        long[] boundaryTime = new long[boundaries.length];
         double distSoFar = 0;
         int sampleIdx = entryIdx;
         for (int b = 0; b < boundaries.length; b++) {
@@ -246,6 +239,23 @@ public final class ClimbAttemptMatcher {
                 sampleIdx++;
             }
         }
+        return boundaryTime;
+    }
+
+    /** Shared boundary-interpolation logic used by both {@link #matchSegments} and {@link #matchAllSegments}. */
+    private static int[] splitSegments(List<TrackSample> track, int entryIdx, int exitIdx, int[] segLengthsM) {
+        long entryTime = track.get(entryIdx).timeSec;
+        long exitTime  = track.get(exitIdx).timeSec;
+
+        // Cumulative segment boundary distances from the climb start.
+        double[] boundaries = new double[segLengthsM.length];
+        double cum = 0;
+        for (int i = 0; i < segLengthsM.length; i++) {
+            cum += segLengthsM[i];
+            boundaries[i] = cum;
+        }
+
+        long[] boundaryTime = boundaryTimes(track, entryIdx, exitIdx, boundaries);
 
         int[] splits = new int[segLengthsM.length];
         long prevTime = entryTime;

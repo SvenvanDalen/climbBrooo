@@ -78,17 +78,22 @@ public final class SunscreenAdvisor {
         }
         Level level = Double.isNaN(peak) ? Level.LOW : Level.of(peak);
 
+        List<Instant> reapply = !Double.isNaN(peak) && level != Level.LOW
+                ? reapplyTimes(f, start, end) : new ArrayList<>();
+        return new Advice(peak, level, reapply, protectHours);
+    }
+
+    /** Every reapply interval after the start that falls in an hour needing protection. */
+    private static List<Instant> reapplyTimes(HourlyForecast f, Instant start, Instant end) {
         List<Instant> reapply = new ArrayList<>();
-        if (!Double.isNaN(peak) && level != Level.LOW) {
-            for (Instant t = start.plusSeconds(REAPPLY_EVERY_SEC); t.isBefore(end);
-                 t = t.plusSeconds(REAPPLY_EVERY_SEC)) {
-                int i = f.indexAt(t);
-                if (i >= 0 && !Double.isNaN(f.uvIndex[i]) && f.uvIndex[i] >= PROTECT_FROM_UV) {
-                    reapply.add(t);
-                }
+        for (Instant t = start.plusSeconds(REAPPLY_EVERY_SEC); t.isBefore(end);
+             t = t.plusSeconds(REAPPLY_EVERY_SEC)) {
+            int i = f.indexAt(t);
+            if (i >= 0 && !Double.isNaN(f.uvIndex[i]) && f.uvIndex[i] >= PROTECT_FROM_UV) {
+                reapply.add(t);
             }
         }
-        return new Advice(peak, level, reapply, protectHours);
+        return reapply;
     }
 
     /** Lead time for the "smeer nu in" reminder before a planned start. */

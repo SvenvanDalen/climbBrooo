@@ -104,13 +104,7 @@ public final class SegmentRemapper {
         List<ClimbMatch> out = new ArrayList<>();
 
         // Pass 1: start-anchored pairs (exact start distance or near start coordinate).
-        List<double[]> anchored = new ArrayList<>(); // {score, freshIdx, prevIdx}
-        for (int fi = 0; fi < fresh.size(); fi++) {
-            for (int pi = 0; pi < previous.size(); pi++) {
-                double score = anchoredScore(fresh.get(fi), previous.get(pi));
-                if (score > 0) anchored.add(new double[]{score, fi, pi});
-            }
-        }
+        List<double[]> anchored = anchoredCandidates(fresh, previous);
         for (int[] pair : greedy(anchored, freshUsed, prevUsed)) {
             out.add(new ClimbMatch(pair[0], pair[1],
                     alignmentOffset(fresh.get(pair[0]), previous.get(pair[1]))));
@@ -118,6 +112,33 @@ public final class SegmentRemapper {
 
         // Pass 2: distance-range overlap for what is left, in the route-shift-aligned frame.
         int shift = routeOffset(out);
+        List<double[]> ranged = rangedCandidates(fresh, previous, freshUsed, prevUsed, shift);
+        for (int[] pair : greedy(ranged, freshUsed, prevUsed)) {
+            out.add(new ClimbMatch(pair[0], pair[1], shift));
+        }
+
+        Collections.sort(out, (x, y) -> Integer.compare(x.freshIndex, y.freshIndex));
+        return out;
+    }
+
+    /** Every start-anchored pair as {score, freshIdx, prevIdx}. */
+    private static List<double[]> anchoredCandidates(List<StoredClimb> fresh,
+                                                     List<StoredClimb> previous) {
+        List<double[]> anchored = new ArrayList<>();
+        for (int fi = 0; fi < fresh.size(); fi++) {
+            for (int pi = 0; pi < previous.size(); pi++) {
+                double score = anchoredScore(fresh.get(fi), previous.get(pi));
+                if (score > 0) anchored.add(new double[]{score, fi, pi});
+            }
+        }
+        return anchored;
+    }
+
+    /** Unused pairs whose ranges overlap enough after shifting the previous climb by {@code shift}. */
+    private static List<double[]> rangedCandidates(List<StoredClimb> fresh,
+                                                   List<StoredClimb> previous,
+                                                   boolean[] freshUsed, boolean[] prevUsed,
+                                                   int shift) {
         List<double[]> ranged = new ArrayList<>();
         for (int fi = 0; fi < fresh.size(); fi++) {
             if (freshUsed[fi]) continue;
@@ -130,12 +151,7 @@ public final class SegmentRemapper {
                 if (overlap >= MIN_CLIMB_RANGE_OVERLAP) ranged.add(new double[]{overlap, fi, pi});
             }
         }
-        for (int[] pair : greedy(ranged, freshUsed, prevUsed)) {
-            out.add(new ClimbMatch(pair[0], pair[1], shift));
-        }
-
-        Collections.sort(out, (x, y) -> Integer.compare(x.freshIndex, y.freshIndex));
-        return out;
+        return ranged;
     }
 
     /**

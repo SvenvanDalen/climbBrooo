@@ -63,6 +63,22 @@ public final class PlannedClimbListViewModel extends AndroidViewModel {
         });
     }
 
+    private void addClimbPickables(List<Pickable> out, String routeId, String routeName)
+            throws java.io.IOException {
+        StoredRoute route = routeRepo.loadRoute(routeId);
+        if (route.climbs == null) return;
+        for (int i = 0; i < route.climbs.size(); i++) {
+            StoredClimb c = route.climbs.get(i);
+            out.add(new Pickable(routeId, i, "  Klim: " + climbName(c, i) + " (" + routeName + ")"));
+        }
+    }
+
+    /** The rename, the detected name, else "Klim n". */
+    private static String climbName(StoredClimb c, int index) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        return c.name != null ? c.name : ("Klim " + (index + 1));
+    }
+
     /** Builds the list of routes/climbs the add dialog can offer, off the main thread. */
     public void loadPickables(PickablesCallback callback) {
         executor.execute(() -> {
@@ -71,14 +87,7 @@ public final class PlannedClimbListViewModel extends AndroidViewModel {
                 String routeName = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
                 out.add(new Pickable(entry.routeId, PlannedClimb.WHOLE_ROUTE, "Route: " + routeName));
                 try {
-                    StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                    if (route.climbs == null) continue;
-                    for (int i = 0; i < route.climbs.size(); i++) {
-                        StoredClimb c = route.climbs.get(i);
-                        String name = c.userDisplayName != null ? c.userDisplayName
-                                : (c.name != null ? c.name : ("Klim " + (i + 1)));
-                        out.add(new Pickable(entry.routeId, i, "  Klim: " + name + " (" + routeName + ")"));
-                    }
+                    addClimbPickables(out, entry.routeId, routeName);
                 } catch (Exception ignored) {
                     // Route failed to load fully; still offer the whole-route entry above.
                 }

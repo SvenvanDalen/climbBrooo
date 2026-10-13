@@ -128,19 +128,10 @@ public final class LogbookCalculator {
         Map<String, Integer> prAny = new LinkedHashMap<>();
         Map<String, Integer> prValid = new LinkedHashMap<>();
         for (StoredClimbAttempt a : attempts) {
-            Integer c = count.get(a.climbId);
-            count.put(a.climbId, c == null ? 1 : c + 1);
-
-            Long ld = lastDate.get(a.climbId);
-            if (ld == null || a.dateEpochSec > ld) lastDate.put(a.climbId, a.dateEpochSec);
-
-            Integer pa = prAny.get(a.climbId);
-            if (pa == null || a.elapsedSec < pa) prAny.put(a.climbId, a.elapsedSec);
-
-            if (!a.routeDeviation) {
-                Integer pv = prValid.get(a.climbId);
-                if (pv == null || a.elapsedSec < pv) prValid.put(a.climbId, a.elapsedSec);
-            }
+            count.merge(a.climbId, 1, Integer::sum);
+            lastDate.merge(a.climbId, a.dateEpochSec, Long::max);
+            prAny.merge(a.climbId, a.elapsedSec, Integer::min);
+            if (!a.routeDeviation) prValid.merge(a.climbId, a.elapsedSec, Integer::min);
         }
         Map<String, Summary> out = new LinkedHashMap<>();
         for (Map.Entry<String, Integer> e : count.entrySet()) {
@@ -186,21 +177,7 @@ public final class LogbookCalculator {
         mine.sort(Comparator.comparingLong((StoredClimbAttempt a) -> a.dateEpochSec).reversed());
         boolean mostRecentIsBestOfYear =
                 BestOfYearCalculator.isMostRecentBestOfYear(climbId, attempts, nowEpochSec);
-        // The badge belongs to the most recent NON-DEVIATED attempt within the current year —
-        // not necessarily row 0, since `mine` (unlike BestOfYearCalculator's own scan) still
-        // includes deviated attempts, which can be newer without being eligible (issue #77/#122).
-        int bestOfYearIndex = -1;
-        if (mostRecentIsBestOfYear) {
-            java.time.ZoneId zone = java.time.ZoneId.systemDefault();
-            int currentYear = BestOfYearCalculator.yearOf(nowEpochSec, zone);
-            for (int i = 0; i < mine.size(); i++) {
-                StoredClimbAttempt a = mine.get(i);
-                if (!a.routeDeviation && BestOfYearCalculator.yearOf(a.dateEpochSec, zone) == currentYear) {
-                    bestOfYearIndex = i;
-                    break;
-                }
-            }
-        }
+        int bestOfYearIndex = mostRecentIsBestOfYear ? bestOfYearIndex(mine, nowEpochSec) : -1;
         List<HistoryRow> rows = new ArrayList<>(mine.size());
         for (int i = 0; i < mine.size(); i++) {
             StoredClimbAttempt a = mine.get(i);
@@ -211,5 +188,23 @@ public final class LogbookCalculator {
                     a.companions));
         }
         return rows;
+    }
+
+    /**
+     * The badge belongs to the most recent NON-DEVIATED attempt within the current year —
+     * not necessarily row 0, since {@code mine} (unlike BestOfYearCalculator's own scan) still
+     * includes deviated attempts, which can be newer without being eligible (issue #77/#122).
+     * {@code mine} is sorted newest first; -1 when none qualifies.
+     */
+    private static int bestOfYearIndex(List<StoredClimbAttempt> mine, long nowEpochSec) {
+        java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+        int currentYear = BestOfYearCalculator.yearOf(nowEpochSec, zone);
+        for (int i = 0; i < mine.size(); i++) {
+            StoredClimbAttempt a = mine.get(i);
+            if (!a.routeDeviation && BestOfYearCalculator.yearOf(a.dateEpochSec, zone) == currentYear) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

@@ -78,22 +78,26 @@ public final class ClimbWrappedViewModel extends AndroidViewModel {
         Map<String, ClimbInfo> map = new HashMap<>();
         for (RouteCatalogEntry entry : routeRepo.loadCatalog()) {
             try {
-                StoredRoute route = routeRepo.loadRoute(entry.routeId);
-                if (route.climbs == null) continue;
-                for (StoredClimb c : route.climbs) {
-                    int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
-                    String id = ClimbIdentity.of(c.startLat, c.startLon, len);
-                    if (!map.containsKey(id)) {
-                        String name = c.userDisplayName != null ? c.userDisplayName
-                                : (c.name != null ? c.name : "Klim");
-                        map.put(id, new ClimbInfo(name, c.elevationGain));
-                    }
-                }
+                addClimbInfo(routeRepo.loadRoute(entry.routeId), map);
             } catch (Exception ignored) {
                 // A route that fails to load just won't resolve its climbs' names/elevation.
             }
         }
         return map;
+    }
+
+    private static void addClimbInfo(StoredRoute route, Map<String, ClimbInfo> map) {
+        if (route.climbs == null) return;
+        for (StoredClimb c : route.climbs) {
+            int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
+            map.computeIfAbsent(ClimbIdentity.of(c.startLat, c.startLon, len),
+                    id -> new ClimbInfo(climbName(c), c.elevationGain));
+        }
+    }
+
+    private static String climbName(StoredClimb c) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        return c.name != null ? c.name : "Klim";
     }
 
     @Override

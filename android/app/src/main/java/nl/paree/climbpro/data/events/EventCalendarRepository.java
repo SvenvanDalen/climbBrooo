@@ -104,9 +104,7 @@ public final class EventCalendarRepository {
             } catch (IOException e) {
                 Log.w(TAG, "Feed failed: " + f.url, e);
                 f.lastError = e.getMessage() != null ? e.getMessage() : "niet bereikbaar";
-                for (CyclingEvent old : c.feedEvents) {
-                    if (f.url.equals(old.feedUrl)) events.add(old);
-                }
+                keepPreviousEvents(f, c.feedEvents, events);
             }
         }
         for (CyclingEvent e : events) geocode(e, geoCache);
@@ -115,6 +113,13 @@ public final class EventCalendarRepository {
         c.lastFetchMs = System.currentTimeMillis();
         save(c);
         return c;
+    }
+
+    private static void keepPreviousEvents(EventCalendar.Feed f, List<CyclingEvent> previous,
+                                           List<CyclingEvent> out) {
+        for (CyclingEvent old : previous) {
+            if (f.url.equals(old.feedUrl)) out.add(old);
+        }
     }
 
     /** Geocodes the location text of an event without coordinates (best effort). */

@@ -86,6 +86,11 @@ public final class GoalEventProgress {
         return Phase.BASE;
     }
 
+    /** A dated ride on a non-e-bike: the rides that count towards the event preparation. */
+    private static boolean isTrainingRide(StoredRide r) {
+        return r != null && r.startEpochSec > 0 && !isEBike(r.type);
+    }
+
     /** E-bike rides are left out; indoor rides count towards weekly volume only. */
     public static Result compute(GoalEvent event, List<StoredRide> rides, LocalDate today,
                                  ZoneId zone) {
@@ -100,8 +105,9 @@ public final class GoalEventProgress {
         int[] weekRides = new int[WEEKS_SHOWN];
         double longestKm = 0;
         double mostHm = 0;
-        for (StoredRide r : rides != null ? rides : Collections.<StoredRide>emptyList()) {
-            if (r == null || r.startEpochSec <= 0 || isEBike(r.type)) continue;
+        List<StoredRide> all = rides != null ? rides : Collections.<StoredRide>emptyList();
+        for (StoredRide r : all) {
+            if (!isTrainingRide(r)) continue;
             LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
             if (day.isAfter(today)) continue;
             double km = r.distanceM / 1000.0;

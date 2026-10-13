@@ -160,18 +160,21 @@ public final class PackingListStore {
         if (arr == null) return out;
         for (PackingList l : Arrays.asList(arr)) {
             if (l == null || l.id == null || l.name == null || l.name.trim().isEmpty()) continue;
-            List<PackingList.Item> items = new ArrayList<>();
-            if (l.items != null) {
-                for (PackingList.Item i : l.items) {
-                    if (i != null && i.id != null && i.text != null && !i.text.trim().isEmpty()) {
-                        items.add(i);
-                    }
-                }
-            }
-            l.items = items;
+            l.items = validItems(l.items);
             out.add(l);
         }
         return out;
+    }
+
+    private static List<PackingList.Item> validItems(List<PackingList.Item> raw) {
+        List<PackingList.Item> items = new ArrayList<>();
+        if (raw == null) return items;
+        for (PackingList.Item i : raw) {
+            if (i != null && i.id != null && i.text != null && !i.text.trim().isEmpty()) {
+                items.add(i);
+            }
+        }
+        return items;
     }
 
     private List<PackingList> loadForWrite() throws IOException {

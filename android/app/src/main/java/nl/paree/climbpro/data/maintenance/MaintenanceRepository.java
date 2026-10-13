@@ -184,25 +184,28 @@ public final class MaintenanceRepository {
         log.components.removeIf(c -> c == null);
         int index = 0;
         for (MaintenanceComponent c : log.components) {
-            // Deterministic fallback id so an edit on a later load still finds the component.
-            if (c.id == null || c.id.isEmpty()) c.id = "component-" + index;
-            c.name = cleanName(c.name);
-            if (c.intervalKm < 0) c.intervalKm = 0;
-            if (c.intervalMonths < 0) c.intervalMonths = 0;
-            if (c.lastServicedEpochSec < 0) c.lastServicedEpochSec = 0;
-            if (c.warrantyPurchaseEpochSec < 0) c.warrantyPurchaseEpochSec = 0;
-            if (c.warrantyMonths < 0) c.warrantyMonths = 0;
-            if (c.warrantyReminderSentForExpiryEpochSec < 0) {
-                c.warrantyReminderSentForExpiryEpochSec = 0;
-            }
-            if (c.serviceHistory == null) c.serviceHistory = new ArrayList<>();
-            c.serviceHistory.removeIf(ts -> ts == null || ts <= 0);
-            for (Long ts : c.serviceHistory) {
-                if (ts > c.lastServicedEpochSec) c.lastServicedEpochSec = ts;
-            }
+            sanitizeComponent(c, index);
             index++;
         }
         return log;
+    }
+
+    private static void sanitizeComponent(MaintenanceComponent c, int index) {
+        // Deterministic fallback id so an edit on a later load still finds the component.
+        if (c.id == null || c.id.isEmpty()) c.id = "component-" + index;
+        c.name = cleanName(c.name);
+        c.intervalKm = Math.max(0, c.intervalKm);
+        c.intervalMonths = Math.max(0, c.intervalMonths);
+        c.lastServicedEpochSec = Math.max(0, c.lastServicedEpochSec);
+        c.warrantyPurchaseEpochSec = Math.max(0, c.warrantyPurchaseEpochSec);
+        c.warrantyMonths = Math.max(0, c.warrantyMonths);
+        c.warrantyReminderSentForExpiryEpochSec =
+                Math.max(0, c.warrantyReminderSentForExpiryEpochSec);
+        if (c.serviceHistory == null) c.serviceHistory = new ArrayList<>();
+        c.serviceHistory.removeIf(ts -> ts == null || ts <= 0);
+        for (Long ts : c.serviceHistory) {
+            if (ts > c.lastServicedEpochSec) c.lastServicedEpochSec = ts;
+        }
     }
 
     private void write(MaintenanceLog log) throws IOException {

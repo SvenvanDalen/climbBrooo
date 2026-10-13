@@ -53,17 +53,34 @@ public final class PowerCurveCalculator {
         public boolean isEmpty() { return ridesWithPower == 0; }
     }
 
+    private static Map<Long, StoredRide> nonEBikeById(List<StoredRide> rides) {
+        Map<Long, StoredRide> byId = new HashMap<>();
+        if (rides == null) return byId;
+        for (StoredRide r : rides) {
+            if (r != null && !RideRecordsCalculator.isEBike(r.type)) byId.put(r.activityId, r);
+        }
+        return byId;
+    }
+
+    /** Takes over every duration where {@code r}'s curve beats the best so far. */
+    private static void keepBest(int[] watts, StoredRide[] from, int[] curve, StoredRide r) {
+        for (int k = 0; k < watts.length; k++) {
+            int w = curve[k];
+            // Ties go to the earliest ride, like the other records.
+            if (w > watts[k] || (w == watts[k] && w > 0
+                    && r.startEpochSec < from[k].startEpochSec)) {
+                watts[k] = w;
+                from[k] = r;
+            }
+        }
+    }
+
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats,
                                  Period period, long nowEpochSec) {
         int n = PowerCurveAnalyzer.DURATIONS_SEC.length;
         int[] watts = new int[n];
         StoredRide[] from = new StoredRide[n];
-        Map<Long, StoredRide> byId = new HashMap<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                if (r != null && !RideRecordsCalculator.isEBike(r.type)) byId.put(r.activityId, r);
-            }
-        }
+        Map<Long, StoredRide> byId = nonEBikeById(rides);
         long cutoff = period.days > 0 ? nowEpochSec - period.days * 86_400L : Long.MIN_VALUE;
         int count = 0;
         if (stats != null) {
@@ -72,15 +89,7 @@ public final class PowerCurveCalculator {
                 if (r == null || s.powerCurve == null || s.powerCurve.length != n) continue;
                 if (r.startEpochSec < cutoff) continue;
                 count++;
-                for (int k = 0; k < n; k++) {
-                    int w = s.powerCurve[k];
-                    // Ties go to the earliest ride, like the other records.
-                    if (w > watts[k] || (w == watts[k] && w > 0
-                            && r.startEpochSec < from[k].startEpochSec)) {
-                        watts[k] = w;
-                        from[k] = r;
-                    }
-                }
+                keepBest(watts, from, s.powerCurve, r);
             }
         }
         Best[] bests = new Best[n];

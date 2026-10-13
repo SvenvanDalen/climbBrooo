@@ -56,27 +56,37 @@ public final class ZoneCalculator {
         }
     }
 
+    private static Map<Long, StoredRideStreamStats> statsById(List<StoredRideStreamStats> stats) {
+        Map<Long, StoredRideStreamStats> byId = new HashMap<>();
+        if (stats == null) return byId;
+        for (StoredRideStreamStats s : stats) if (s != null) byId.put(s.activityId, s);
+        return byId;
+    }
+
+    /** Zone times per ride with heart-rate and/or (non-e-bike) power zones. */
+    private static List<Entry> entries(List<StoredRide> rides,
+                                       Map<Long, StoredRideStreamStats> byId, int maxHr,
+                                       int ftp) {
+        List<Entry> entries = new ArrayList<>();
+        if (rides == null) return entries;
+        for (StoredRide r : rides) {
+            StoredRideStreamStats s = r != null ? byId.get(r.activityId) : null;
+            if (s == null) continue;
+            int[] hr = heartRateZones(s.hrSecondsPerBpm, maxHr);
+            int[] power = RideRecordsCalculator.isEBike(r.type)
+                    ? null : powerZones(s.powerSecondsPer10W, ftp);
+            if (hr != null || power != null) entries.add(new Entry(r, hr, power));
+        }
+        return entries;
+    }
+
     /**
      * @param maxHr rider's max heart rate, 0 when unknown (then no heart-rate zones)
      * @param ftp   rider's FTP in watts, 0 when unknown (then no power zones)
      */
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats,
                                  int maxHr, int ftp, long nowEpochSec) {
-        Map<Long, StoredRideStreamStats> byId = new HashMap<>();
-        if (stats != null) {
-            for (StoredRideStreamStats s : stats) if (s != null) byId.put(s.activityId, s);
-        }
-        List<Entry> entries = new ArrayList<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                StoredRideStreamStats s = r != null ? byId.get(r.activityId) : null;
-                if (s == null) continue;
-                int[] hr = heartRateZones(s.hrSecondsPerBpm, maxHr);
-                int[] power = RideRecordsCalculator.isEBike(r.type)
-                        ? null : powerZones(s.powerSecondsPer10W, ftp);
-                if (hr != null || power != null) entries.add(new Entry(r, hr, power));
-            }
-        }
+        List<Entry> entries = entries(rides, statsById(stats), maxHr, ftp);
         entries.sort((a, b) -> Long.compare(b.ride.startEpochSec, a.ride.startEpochSec));
 
         long cutoff = nowEpochSec - TOTAL_WINDOW_DAYS * 86_400L;

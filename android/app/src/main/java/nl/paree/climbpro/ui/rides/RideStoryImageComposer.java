@@ -14,6 +14,7 @@ import nl.paree.climbpro.domain.ride.RouteShape;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -37,6 +38,26 @@ final class RideStoryImageComposer {
     private static final int TEXT_DIM = Color.parseColor("#B3B3B3");
 
     private RideStoryImageComposer() {}
+
+    /** One line per climb from {@code y} down: name, time and a PR / "n-th time" badge. */
+    private static void drawClimbLines(Canvas c, List<RideStory.ClimbLine> climbs, float y,
+                                       float boxRight, Paint body) {
+        Paint right = text(40, TEXT, false);
+        right.setTextAlign(Paint.Align.RIGHT);
+        for (RideStory.ClimbLine line : climbs) {
+            Paint badgePaint = text(34, line.pr ? ACCENT : TEXT_DIM, line.pr);
+            badgePaint.setTextAlign(Paint.Align.RIGHT);
+            c.drawText(badge(line), boxRight, y, badgePaint);
+            c.drawText(duration(line.elapsedSec), boxRight - 230, y, right);
+            c.drawText(ellipsize(line.name, body, WIDTH - 2 * PAD - 460), PAD, y, body);
+            y += 64;
+        }
+    }
+
+    private static String badge(RideStory.ClimbLine line) {
+        if (line.pr) return "PR";
+        return line.timesRidden <= 1 ? "eerste keer" : line.timesRidden + "e keer";
+    }
 
     /**
      * @param track may be null (no GPS or not fetched): the shape box then says so
@@ -78,23 +99,12 @@ final class RideStoryImageComposer {
         if (story.climbs.isEmpty()) {
             c.drawText("Geen bekende klimmen op deze rit", PAD, y, dim);
         } else {
-            Paint right = text(40, TEXT, false);
-            right.setTextAlign(Paint.Align.RIGHT);
-            for (RideStory.ClimbLine line : story.climbs) {
-                String badge = line.pr ? "PR"
-                        : line.timesRidden <= 1 ? "eerste keer" : line.timesRidden + "e keer";
-                Paint badgePaint = text(34, line.pr ? ACCENT : TEXT_DIM, line.pr);
-                badgePaint.setTextAlign(Paint.Align.RIGHT);
-                c.drawText(badge, boxRight, y, badgePaint);
-                c.drawText(duration(line.elapsedSec), boxRight - 230, y, right);
-                c.drawText(ellipsize(line.name, body, WIDTH - 2 * PAD - 460), PAD, y, body);
-                y += 64;
-            }
+            drawClimbLines(c, story.climbs, y, boxRight, body);
         }
 
         Paint footer = text(30, TEXT_DIM, false);
         footer.setTextAlign(Paint.Align.CENTER);
-        c.drawText("ClimbPro", WIDTH / 2f, HEIGHT - 48, footer);
+        c.drawText("ClimbPro", WIDTH / 2f, HEIGHT - 48f, footer);
         return bitmap;
     }
 

@@ -29,42 +29,51 @@ public final class ClimbFactsParser {
         return out;
     }
 
+    private static List<String> facts(JsonNode factsNode) {
+        List<String> facts = new ArrayList<>();
+        if (factsNode == null || !factsNode.isArray()) return facts;
+        for (JsonNode f : factsNode) {
+            String s = f.asText("").trim();
+            if (!s.isEmpty()) facts.add(s);
+        }
+        return facts;
+    }
+
+    /** The normalized name first, then every distinct normalized alias. */
+    private static List<String> aliases(String normName, JsonNode aliasNode) {
+        List<String> aliases = new ArrayList<>();
+        if (!normName.isEmpty()) aliases.add(normName);
+        if (aliasNode == null || !aliasNode.isArray()) return aliases;
+        for (JsonNode a : aliasNode) {
+            String s = FamousClimbMatcher.normalize(a.asText(""));
+            if (!s.isEmpty() && !aliases.contains(s)) aliases.add(s);
+        }
+        return aliases;
+    }
+
+    private static List<FamousClimb.Side> sides(JsonNode sidesNode) {
+        List<FamousClimb.Side> sides = new ArrayList<>();
+        if (sidesNode == null || !sidesNode.isArray()) return sides;
+        for (JsonNode s : sidesNode) {
+            double[] start = latLon(s.get("start"));
+            if (start == null) continue;
+            String label = text(s, "label");
+            sides.add(new FamousClimb.Side(label, start[0], start[1]));
+        }
+        return sides;
+    }
+
     private static FamousClimb parseClimb(JsonNode c) {
         String name = text(c, "name");
         double[] top = latLon(c.get("top"));
         if (name == null || top == null) return null;
 
-        List<String> facts = new ArrayList<>();
-        JsonNode factsNode = c.get("facts");
-        if (factsNode != null && factsNode.isArray()) {
-            for (JsonNode f : factsNode) {
-                String s = f.asText("").trim();
-                if (!s.isEmpty()) facts.add(s);
-            }
-        }
+        List<String> facts = facts(c.get("facts"));
         if (facts.isEmpty()) return null;
 
-        List<String> aliases = new ArrayList<>();
         String normName = FamousClimbMatcher.normalize(name);
-        if (!normName.isEmpty()) aliases.add(normName);
-        JsonNode aliasNode = c.get("aliases");
-        if (aliasNode != null && aliasNode.isArray()) {
-            for (JsonNode a : aliasNode) {
-                String s = FamousClimbMatcher.normalize(a.asText(""));
-                if (!s.isEmpty() && !aliases.contains(s)) aliases.add(s);
-            }
-        }
-
-        List<FamousClimb.Side> sides = new ArrayList<>();
-        JsonNode sidesNode = c.get("sides");
-        if (sidesNode != null && sidesNode.isArray()) {
-            for (JsonNode s : sidesNode) {
-                double[] start = latLon(s.get("start"));
-                if (start == null) continue;
-                String label = text(s, "label");
-                sides.add(new FamousClimb.Side(label, start[0], start[1]));
-            }
-        }
+        List<String> aliases = aliases(normName, c.get("aliases"));
+        List<FamousClimb.Side> sides = sides(c.get("sides"));
 
         String id = text(c, "id");
         return new FamousClimb(id != null ? id : normName, name, aliases, top[0], top[1],

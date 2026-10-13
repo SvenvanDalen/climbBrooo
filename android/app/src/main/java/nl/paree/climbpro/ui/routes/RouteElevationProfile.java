@@ -126,6 +126,31 @@ public final class RouteElevationProfile {
     }
 
     /**
+     * Keeps the lowest and highest point (in route order) of the samples from {@code i} up to
+     * {@code bucketEnd} (the last bucket takes everything left); returns the index of the
+     * first sample after the bucket.
+     */
+    private static int keepBucketExtremes(double[] d, double[] e, int count, int i,
+                                          double bucketEnd, boolean lastBucket,
+                                          List<Integer> keep) {
+        int minIdx = -1;
+        int maxIdx = -1;
+        while (i < count - 1 && (d[i] <= bucketEnd || lastBucket)) {
+            if (minIdx < 0 || e[i] < e[minIdx]) minIdx = i;
+            if (maxIdx < 0 || e[i] > e[maxIdx]) maxIdx = i;
+            i++;
+        }
+        if (minIdx < 0) return i;
+        if (minIdx == maxIdx) {
+            keep.add(minIdx);
+        } else {
+            keep.add(Math.min(minIdx, maxIdx));
+            keep.add(Math.max(minIdx, maxIdx));
+        }
+        return i;
+    }
+
+    /**
      * Splits [first, last] into equal distance buckets and keeps each bucket's lowest and highest
      * sample in distance order, plus the first and last sample. Returns the input unchanged when
      * it is already small enough.
@@ -145,20 +170,7 @@ public final class RouteElevationProfile {
         int i = 1;
         for (int b = 0; b < maxBuckets && i < count - 1; b++) {
             double bucketEnd = first + span * (b + 1) / maxBuckets;
-            int minIdx = -1;
-            int maxIdx = -1;
-            while (i < count - 1 && (d[i] <= bucketEnd || b == maxBuckets - 1)) {
-                if (minIdx < 0 || e[i] < e[minIdx]) minIdx = i;
-                if (maxIdx < 0 || e[i] > e[maxIdx]) maxIdx = i;
-                i++;
-            }
-            if (minIdx < 0) continue;
-            if (minIdx == maxIdx) {
-                keep.add(minIdx);
-            } else {
-                keep.add(Math.min(minIdx, maxIdx));
-                keep.add(Math.max(minIdx, maxIdx));
-            }
+            i = keepBucketExtremes(d, e, count, i, bucketEnd, b == maxBuckets - 1, keep);
         }
         keep.add(count - 1);
         double[] od = new double[keep.size()];

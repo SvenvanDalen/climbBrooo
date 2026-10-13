@@ -25,20 +25,9 @@ public final class HeartRateRecoveryAnalyzer {
     static final double MIN_PLAUSIBLE_BPM = 40;
     static final double MAX_PLAUSIBLE_BPM = 230;
 
-    /**
-     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); null
-     * without power and heart rate, or an empty array when the ride has no qualifying interval.
-     */
-    public static int[] drops(RideStreams s) {
-        if (s == null || s.watts == null || s.heartrate == null) return null;
-        Integer np = NormalizedPowerAnalyzer.normalizedPower(s);
-        if (np == null || np < MIN_NP_WATTS) return null;
-        double[] watts = PerSecondSeries.of(s, s.watts);
-        double[] hr = PerSecondSeries.of(s, s.heartrate);
-        if (watts == null || hr == null) return null;
-
+    /** Seconds whose rolling 30 s average power (over a full window) reaches the threshold. */
+    private static boolean[] hardSeconds(double[] watts, double threshold) {
         int n = watts.length;
-        double threshold = INTERVAL_FACTOR * np;
         boolean[] hard = new boolean[n];
         double window = 0;
         int valid = 0;
@@ -54,6 +43,51 @@ public final class HeartRateRecoveryAnalyzer {
             hard[t] = valid == NormalizedPowerAnalyzer.ROLLING_SEC
                     && window / NormalizedPowerAnalyzer.ROLLING_SEC >= threshold;
         }
+        return hard;
+    }
+
+    /**
+     * Heart-rate drop after the hard interval [start, stop): peak near its end minus the heart
+     * rate {@link #RECOVERY_SEC} later. Null when the interval is too short, the recovery is
+     * interrupted or runs past the ride, or the heart rate isn't plausible.
+     */
+    private static Integer dropAfterInterval(double[] watts, double[] hr, boolean[] hard,
+                                             int start, int stop, double threshold) {
+        // The 30 s average lags: the effort really ended at the last hard second itself.
+        int end = stop - 1;
+        while (end > start && (Double.isNaN(watts[end]) || watts[end] < threshold)) end--;
+        if (stop - start < MIN_INTERVAL_SEC) return null;
+        int after = end + RECOVERY_SEC;
+        if (after >= watts.length || anyHard(hard, stop, after)) return null;
+        double peak = peakHeartRate(hr, end);
+        if (Double.isNaN(peak) || !plausible(hr[after])) return null;
+        return (int) Math.round(peak - hr[after]);
+    }
+
+    /** Highest plausible heart rate in the {@link #PEAK_WINDOW_SEC} up to {@code end}; NaN if none. */
+    private static double peakHeartRate(double[] hr, int end) {
+        double peak = Double.NaN;
+        for (int k = Math.max(0, end - PEAK_WINDOW_SEC + 1); k <= end; k++) {
+            if (plausible(hr[k]) && (Double.isNaN(peak) || hr[k] > peak)) peak = hr[k];
+        }
+        return peak;
+    }
+
+    /**
+     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); null
+     * without power and heart rate, or an empty array when the ride has no qualifying interval.
+     */
+    public static int[] drops(RideStreams s) {
+        if (s == null || s.watts == null || s.heartrate == null) return null;
+        Integer np = NormalizedPowerAnalyzer.normalizedPower(s);
+        if (np == null || np < MIN_NP_WATTS) return null;
+        double[] watts = PerSecondSeries.of(s, s.watts);
+        double[] hr = PerSecondSeries.of(s, s.heartrate);
+        if (watts == null || hr == null) return null;
+
+        int n = watts.length;
+        double threshold = INTERVAL_FACTOR * np;
+        boolean[] hard = hardSeconds(watts, threshold);
 
         List<Integer> out = new ArrayList<>();
         int t = 0;
@@ -64,18 +98,8 @@ public final class HeartRateRecoveryAnalyzer {
             }
             int start = t;
             while (t < n && hard[t]) t++;
-            // The 30 s average lags: the effort really ended at the last hard second itself.
-            int end = t - 1;
-            while (end > start && (Double.isNaN(watts[end]) || watts[end] < threshold)) end--;
-            if (t - start < MIN_INTERVAL_SEC) continue;
-            int after = end + RECOVERY_SEC;
-            if (after >= n || anyHard(hard, t, after)) continue;
-            double peak = Double.NaN;
-            for (int k = Math.max(0, end - PEAK_WINDOW_SEC + 1); k <= end; k++) {
-                if (plausible(hr[k]) && (Double.isNaN(peak) || hr[k] > peak)) peak = hr[k];
-            }
-            if (Double.isNaN(peak) || !plausible(hr[after])) continue;
-            out.add((int) Math.round(peak - hr[after]));
+            Integer drop = dropAfterInterval(watts, hr, hard, start, t, threshold);
+            if (drop != null) out.add(drop);
         }
         int[] drops = new int[out.size()];
         for (int i = 0; i < drops.length; i++) drops[i] = out.get(i);

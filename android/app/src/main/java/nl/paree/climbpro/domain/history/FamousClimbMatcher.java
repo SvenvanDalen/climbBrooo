@@ -64,38 +64,61 @@ public final class FamousClimbMatcher {
         boolean hasTop = valid(topLat, topLon);
 
         if (hasTop) {
-            Match best = null;
-            double bestScore = Double.MAX_VALUE;
-            Match bestTopOnly = null;
-            double bestTopOnlyDist = Double.MAX_VALUE;
-            for (FamousClimb fc : dataset) {
-                double dTop = CumulativeDistance.haversine(topLat, topLon, fc.topLat, fc.topLon);
-                double topTol = TOP_TOL_NO_SIDES_M;
-                boolean topNear = false;
-                for (FamousClimb.Side side : fc.sides) {
-                    double span = CumulativeDistance.haversine(side.lat, side.lon, fc.topLat, fc.topLon);
-                    double sideTopTol = clamp(0.2 * span, TOP_TOL_MIN_M, TOP_TOL_MAX_M);
-                    if (dTop > sideTopTol) continue;
-                    topNear = true;
-                    if (!hasStart) continue;
-                    double dStart = CumulativeDistance.haversine(startLat, startLon, side.lat, side.lon);
-                    double startTol = clamp(0.4 * span, START_TOL_MIN_M, START_TOL_MAX_M);
-                    if (dStart <= startTol && dTop + dStart < bestScore) {
-                        bestScore = dTop + dStart;
-                        best = new Match(fc, Kind.START_AND_TOP, side.label);
-                    }
-                }
-                if (fc.sides.isEmpty() && dTop <= topTol) topNear = true;
-                if (topNear && dTop < bestTopOnlyDist) {
-                    bestTopOnlyDist = dTop;
-                    bestTopOnly = new Match(fc, Kind.TOP, null);
-                }
-            }
-            if (best != null) return best;
-            if (bestTopOnly != null) return bestTopOnly;
+            TopSearch search = new TopSearch(hasStart, startLat, startLon, topLat, topLon);
+            for (FamousClimb fc : dataset) search.consider(fc);
+            if (search.best != null) return search.best;
+            if (search.bestTopOnly != null) return search.bestTopOnly;
         }
 
         return matchByName(dataset, hasStart, startLat, startLon, hasTop, topLat, topLon, names);
+    }
+
+    /**
+     * Best start-and-top match (lowest summed distance) and best top-only match (nearest top)
+     * over the dataset; a side's tolerances scale with its start-to-top span.
+     */
+    private static final class TopSearch {
+        final boolean hasStart;
+        final double startLat, startLon, topLat, topLon;
+        Match best;
+        double bestScore = Double.MAX_VALUE;
+        Match bestTopOnly;
+        double bestTopOnlyDist = Double.MAX_VALUE;
+
+        TopSearch(boolean hasStart, double startLat, double startLon,
+                  double topLat, double topLon) {
+            this.hasStart = hasStart;
+            this.startLat = startLat;
+            this.startLon = startLon;
+            this.topLat = topLat;
+            this.topLon = topLon;
+        }
+
+        void consider(FamousClimb fc) {
+            double dTop = CumulativeDistance.haversine(topLat, topLon, fc.topLat, fc.topLon);
+            boolean topNear = fc.sides.isEmpty() && dTop <= TOP_TOL_NO_SIDES_M;
+            for (FamousClimb.Side side : fc.sides) {
+                double span = CumulativeDistance.haversine(side.lat, side.lon, fc.topLat, fc.topLon);
+                double sideTopTol = clamp(0.2 * span, TOP_TOL_MIN_M, TOP_TOL_MAX_M);
+                if (dTop > sideTopTol) continue;
+                topNear = true;
+                if (hasStart) considerStart(fc, side, span, dTop);
+            }
+            if (topNear && dTop < bestTopOnlyDist) {
+                bestTopOnlyDist = dTop;
+                bestTopOnly = new Match(fc, Kind.TOP, null);
+            }
+        }
+
+        private void considerStart(FamousClimb fc, FamousClimb.Side side, double span,
+                                   double dTop) {
+            double dStart = CumulativeDistance.haversine(startLat, startLon, side.lat, side.lon);
+            double startTol = clamp(0.4 * span, START_TOL_MIN_M, START_TOL_MAX_M);
+            if (dStart <= startTol && dTop + dStart < bestScore) {
+                bestScore = dTop + dStart;
+                best = new Match(fc, Kind.START_AND_TOP, side.label);
+            }
+        }
     }
 
     private static Match matchByName(List<FamousClimb> dataset,
@@ -113,16 +136,26 @@ public final class FamousClimbMatcher {
                 if (!withinNameRange(fc, hasStart, startLat, startLon, hasTop, topLat, topLon)) {
                     continue;
                 }
-                for (String alias : fc.aliases) {
-                    // Longest alias wins: "muur van geraardsbergen" beats a shorter overlap.
-                    if (alias.length() > bestLen && padded.contains(" " + alias + " ")) {
-                        bestLen = alias.length();
-                        best = new Match(fc, Kind.NAME, null);
-                    }
+                // Longest alias wins: "muur van geraardsbergen" beats a shorter overlap.
+                int len = longestAliasIn(fc, padded);
+                if (len > bestLen) {
+                    bestLen = len;
+                    best = new Match(fc, Kind.NAME, null);
                 }
             }
         }
         return best;
+    }
+
+    /** Length of {@code fc}'s longest alias that occurs as whole words in {@code padded}; 0 if none. */
+    private static int longestAliasIn(FamousClimb fc, String padded) {
+        int longest = 0;
+        for (String alias : fc.aliases) {
+            if (alias.length() > longest && padded.contains(" " + alias + " ")) {
+                longest = alias.length();
+            }
+        }
+        return longest;
     }
 
     private static boolean withinNameRange(FamousClimb fc,

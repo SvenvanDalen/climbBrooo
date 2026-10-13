@@ -63,29 +63,7 @@ public final class RadiusModeAssembler {
     public byte[] assemble(double lat, double lon, double radiusM) throws IOException {
         truncated = false;
 
-        List<RouteCatalogEntry> nearbyRoutes = routeRepo.findNearby(lat, lon, radiusM);
-        List<ClimbWithDist> candidates = new ArrayList<>();
-
-        for (RouteCatalogEntry entry : nearbyRoutes) {
-            StoredRoute route;
-            try { route = routeRepo.loadRoute(entry.routeId); }
-            catch (IOException e) {
-                Log.w(TAG, "Could not load route " + entry.routeId, e);
-                continue;
-            }
-            if (route.climbs == null) continue;
-            double[] coords = entry.climbStartCoords;
-            for (int i = 0; i < route.climbs.size(); i++) {
-                StoredClimb c = route.climbs.get(i);
-                double d = (coords != null && (i * 2 + 1) < coords.length)
-                        ? haversine(lat, lon, coords[i * 2], coords[i * 2 + 1])
-                        : Double.MAX_VALUE;
-                if (d <= radiusM) {
-                    candidates.add(new ClimbWithDist(c, d));
-                }
-            }
-        }
-
+        List<ClimbWithDist> candidates = climbsWithin(lat, lon, radiusM);
         candidates.sort(Comparator.comparingDouble(cwd -> cwd.distance));
         candidates = keepDry(candidates);
 
@@ -146,6 +124,33 @@ public final class RadiusModeAssembler {
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    /** Every climb of the nearby routes whose start lies within the radius. */
+    private List<ClimbWithDist> climbsWithin(double lat, double lon, double radiusM) {
+        List<ClimbWithDist> candidates = new ArrayList<>();
+        for (RouteCatalogEntry entry : routeRepo.findNearby(lat, lon, radiusM)) {
+            StoredRoute route;
+            try { route = routeRepo.loadRoute(entry.routeId); }
+            catch (IOException e) {
+                Log.w(TAG, "Could not load route " + entry.routeId, e);
+                continue;
+            }
+            if (route.climbs != null) {
+                addClimbsWithin(candidates, route.climbs, entry.climbStartCoords, lat, lon, radiusM);
+            }
+        }
+        return candidates;
+    }
+
+    private static void addClimbsWithin(List<ClimbWithDist> candidates, List<StoredClimb> climbs,
+                                        double[] coords, double lat, double lon, double radiusM) {
+        for (int i = 0; i < climbs.size(); i++) {
+            double d = (coords != null && (i * 2 + 1) < coords.length)
+                    ? haversine(lat, lon, coords[i * 2], coords[i * 2 + 1])
+                    : Double.MAX_VALUE;
+            if (d <= radiusM) candidates.add(new ClimbWithDist(climbs.get(i), d));
+        }
     }
 
     private static final class ClimbWithDist {

@@ -74,68 +74,83 @@ public final class FtpTestActivity extends AppCompatActivity {
                     ? getString(R.string.ftp_test_current_ftp, ftp, FtpTestPlan.testTargetWatts(ftp))
                     : getString(R.string.ftp_test_no_ftp));
             renderPhases(phases, ftp);
-
-            if (st.exportedAtEpochSec > 0) {
-                exportedAt.setVisibility(View.VISIBLE);
-                exportedAt.setText(getString(R.string.ftp_test_exported_at,
-                        dateFormat.format(new Date(st.exportedAtEpochSec * 1000L))));
-            } else {
-                exportedAt.setVisibility(View.GONE);
-            }
-
-            FtpTestResultDetector.Result r = st.result;
-            String pending = st.ridesAwaitingAnalysis > 0
-                    ? "\n\n" + getString(R.string.ftp_test_result_pending, st.ridesAwaitingAnalysis)
-                    : "";
-            if (r == null) {
-                result.setText(getString(R.string.ftp_test_result_none,
-                        FtpTestResultDetector.EXPORT_WINDOW_DAYS) + pending);
-                apply.setVisibility(View.GONE);
-                dismiss.setVisibility(View.GONE);
-                return;
-            }
-            String name = r.ride.name != null && !r.ride.name.isEmpty()
-                    ? r.ride.name : getString(R.string.ftp_test_unknown_ride);
-            String date = dateFormat.format(new Date(r.ride.startEpochSec * 1000L));
-            StringBuilder text = new StringBuilder(getString(R.string.ftp_test_result_found,
-                    name, date, r.twentyMinuteWatts, r.ftpWatts));
-            if (ftp > 0) {
-                text.append('\n').append(r.ftpWatts == ftp
-                        ? getString(R.string.ftp_test_result_same)
-                        : getString(R.string.ftp_test_result_delta, r.ftpWatts - ftp, ftp));
-            }
-            result.setText(text.append(pending).toString());
-            dismiss.setVisibility(View.VISIBLE);
-            dismiss.setOnClickListener(v -> viewModel.dismissResult(r));
-            if (r.ftpWatts == ftp) {
-                apply.setVisibility(View.GONE);
-            } else {
-                apply.setVisibility(View.VISIBLE);
-                apply.setText(getString(R.string.ftp_test_apply, r.ftpWatts));
-                apply.setOnClickListener(v -> confirmApply(r, ftp));
-            }
+            renderExportedAt(exportedAt, st.exportedAtEpochSec);
+            renderResult(st, result, apply, dismiss);
         });
 
-        viewModel.export().observe(this, ex -> {
-            if (ex == null) return;
-            viewModel.consumeExport();
-            if (ex.file == null) {
-                Toast.makeText(this, getString(R.string.ftp_test_export_failed, ex.error),
-                        Toast.LENGTH_LONG).show();
-                return;
-            }
-            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", ex.file);
-            Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri,
-                    ClimbWorkoutExportHandoff.ZWO_MIME);
-            new AlertDialog.Builder(this)
-                    .setTitle(R.string.ftp_test_export_dialog_title)
-                    .setMessage(getString(R.string.ftp_test_export_dialog_message,
-                            FtpTestResultDetector.EXPORT_WINDOW_DAYS))
-                    .setPositiveButton(R.string.ftp_test_share, (d, w) -> startActivity(
-                            Intent.createChooser(share, getString(R.string.ftp_test_share_chooser))))
-                    .setNegativeButton(R.string.ftp_test_cancel, null)
-                    .show();
-        });
+        viewModel.export().observe(this, this::onExport);
+    }
+
+    private void renderExportedAt(TextView exportedAt, long exportedAtEpochSec) {
+        if (exportedAtEpochSec > 0) {
+            exportedAt.setVisibility(View.VISIBLE);
+            exportedAt.setText(getString(R.string.ftp_test_exported_at,
+                    dateFormat.format(new Date(exportedAtEpochSec * 1000L))));
+        } else {
+            exportedAt.setVisibility(View.GONE);
+        }
+    }
+
+    /** The detected test result with apply/dismiss buttons, or the "nothing found yet" text. */
+    private void renderResult(FtpTestViewModel.State st, TextView result, Button apply,
+                              Button dismiss) {
+        int ftp = st.currentFtpWatts;
+        FtpTestResultDetector.Result r = st.result;
+        String pending = st.ridesAwaitingAnalysis > 0
+                ? "\n\n" + getString(R.string.ftp_test_result_pending, st.ridesAwaitingAnalysis)
+                : "";
+        if (r == null) {
+            result.setText(getString(R.string.ftp_test_result_none,
+                    FtpTestResultDetector.EXPORT_WINDOW_DAYS) + pending);
+            apply.setVisibility(View.GONE);
+            dismiss.setVisibility(View.GONE);
+            return;
+        }
+        result.setText(resultText(r, ftp) + pending);
+        dismiss.setVisibility(View.VISIBLE);
+        dismiss.setOnClickListener(v -> viewModel.dismissResult(r));
+        if (r.ftpWatts == ftp) {
+            apply.setVisibility(View.GONE);
+        } else {
+            apply.setVisibility(View.VISIBLE);
+            apply.setText(getString(R.string.ftp_test_apply, r.ftpWatts));
+            apply.setOnClickListener(v -> confirmApply(r, ftp));
+        }
+    }
+
+    private String resultText(FtpTestResultDetector.Result r, int ftp) {
+        String name = r.ride.name != null && !r.ride.name.isEmpty()
+                ? r.ride.name : getString(R.string.ftp_test_unknown_ride);
+        String date = dateFormat.format(new Date(r.ride.startEpochSec * 1000L));
+        StringBuilder text = new StringBuilder(getString(R.string.ftp_test_result_found,
+                name, date, r.twentyMinuteWatts, r.ftpWatts));
+        if (ftp > 0) {
+            text.append('\n').append(r.ftpWatts == ftp
+                    ? getString(R.string.ftp_test_result_same)
+                    : getString(R.string.ftp_test_result_delta, r.ftpWatts - ftp, ftp));
+        }
+        return text.toString();
+    }
+
+    private void onExport(FtpTestViewModel.ExportResult ex) {
+        if (ex == null) return;
+        viewModel.consumeExport();
+        if (ex.file == null) {
+            Toast.makeText(this, getString(R.string.ftp_test_export_failed, ex.error),
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", ex.file);
+        Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri,
+                ClimbWorkoutExportHandoff.ZWO_MIME);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.ftp_test_export_dialog_title)
+                .setMessage(getString(R.string.ftp_test_export_dialog_message,
+                        FtpTestResultDetector.EXPORT_WINDOW_DAYS))
+                .setPositiveButton(R.string.ftp_test_share, (d, w) -> startActivity(
+                        Intent.createChooser(share, getString(R.string.ftp_test_share_chooser))))
+                .setNegativeButton(R.string.ftp_test_cancel, null)
+                .show();
     }
 
     @Override

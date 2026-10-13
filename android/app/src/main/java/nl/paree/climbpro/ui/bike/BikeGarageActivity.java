@@ -76,6 +76,42 @@ public final class BikeGarageActivity extends AppCompatActivity {
         viewModel.load();
     }
 
+    private static int typeIndexOf(Bike existing) {
+        if (existing == null) return 0;
+        int typeIndex = 0;
+        for (int i = 0; i < BikeGarage.TYPES.length; i++) {
+            if (BikeGarage.TYPES[i].equals(existing.type)) typeIndex = i;
+        }
+        return typeIndex;
+    }
+
+    /** "No link", every gear id in the archive, plus the bike's stored one if unseen. */
+    private static void addGearChoices(BikeGarageViewModel.State s, Bike existing,
+                                       List<String> gearIds, List<String> gearLabels) {
+        gearIds.add(null);
+        gearLabels.add("Geen koppeling");
+        for (BikeGarage.GearUsage g : s.gears) {
+            gearIds.add(g.gearId);
+            String owner = ownerName(s, g.gearId, existing);
+            gearLabels.add(g.gearId + " — " + g.rides + (g.rides == 1 ? " rit, " : " ritten, ")
+                    + BikeCostCalculator.kmText(g.meters)
+                    + (owner != null ? " (nu: " + owner + ")" : ""));
+        }
+        if (existing != null && existing.stravaGearId != null
+                && !gearIds.contains(existing.stravaGearId)) {
+            gearIds.add(existing.stravaGearId);
+            gearLabels.add(existing.stravaGearId + " — geen ritten in het archief");
+        }
+    }
+
+    private static String textOrEmpty(String s) {
+        return s != null ? s : "";
+    }
+
+    private static boolean isSameBike(Bike a, Bike b) {
+        return a != null && a.id.equals(b.id);
+    }
+
     /** Add ({@code existing == null}) or edit a bike. */
     private void showBikeDialog(Bike existing) {
         BikeGarageViewModel.State s = viewModel.state().getValue();
@@ -93,31 +129,16 @@ public final class BikeGarageActivity extends AppCompatActivity {
         CheckBox indoor = view.findViewById(R.id.check_indoor);
 
         String[] typeLabels = new String[BikeGarage.TYPES.length];
-        int typeIndex = 0;
         for (int i = 0; i < BikeGarage.TYPES.length; i++) {
             typeLabels[i] = BikeGarage.typeLabel(BikeGarage.TYPES[i]);
-            if (existing != null && BikeGarage.TYPES[i].equals(existing.type)) typeIndex = i;
         }
         type.setAdapter(spinnerAdapter(typeLabels));
-        type.setSelection(typeIndex);
+        type.setSelection(typeIndexOf(existing));
 
         // Gear choices: "none", every gear id in the archive, plus the stored one if unseen.
         List<String> gearIds = new ArrayList<>();
         List<String> gearLabels = new ArrayList<>();
-        gearIds.add(null);
-        gearLabels.add("Geen koppeling");
-        for (BikeGarage.GearUsage g : s.gears) {
-            gearIds.add(g.gearId);
-            String owner = ownerName(s, g.gearId, existing);
-            gearLabels.add(g.gearId + " — " + g.rides + (g.rides == 1 ? " rit, " : " ritten, ")
-                    + BikeCostCalculator.kmText(g.meters)
-                    + (owner != null ? " (nu: " + owner + ")" : ""));
-        }
-        if (existing != null && existing.stravaGearId != null
-                && !gearIds.contains(existing.stravaGearId)) {
-            gearIds.add(existing.stravaGearId);
-            gearLabels.add(existing.stravaGearId + " — geen ritten in het archief");
-        }
+        addGearChoices(s, existing, gearIds, gearLabels);
         gear.setAdapter(spinnerAdapter(gearLabels.toArray(new String[0])));
         gear.setSelection(existing != null ? Math.max(0, gearIds.indexOf(existing.stravaGearId))
                                            : 0);
@@ -128,10 +149,10 @@ public final class BikeGarageActivity extends AppCompatActivity {
             name.setText(existing.name);
             weight.setText(existing.weightKg > 0 ? BikeGarage.formatKg(existing.weightKg) : "");
             tyre.setText(existing.tyreWidthMm > 0 ? String.valueOf(existing.tyreWidthMm) : "");
-            chainrings.setText(existing.chainrings != null ? existing.chainrings : "");
-            cassette.setText(existing.cassette != null ? existing.cassette : "");
-            active.setChecked(currentActive != null && currentActive.id.equals(existing.id));
-            indoor.setChecked(currentIndoor != null && currentIndoor.id.equals(existing.id));
+            chainrings.setText(textOrEmpty(existing.chainrings));
+            cassette.setText(textOrEmpty(existing.cassette));
+            active.setChecked(isSameBike(currentActive, existing));
+            indoor.setChecked(isSameBike(currentIndoor, existing));
         } else {
             active.setChecked(currentActive == null);
         }

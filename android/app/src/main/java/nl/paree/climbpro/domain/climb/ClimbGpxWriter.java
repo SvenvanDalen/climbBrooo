@@ -93,49 +93,16 @@ public final class ClimbGpxWriter {
     static void appendClimb(StringBuilder wptOut, StringBuilder trkOut, StoredRoute route,
             StoredClimb climb, int climbIndex, int[] bestSplitSec, Integer bestElapsedSec,
             boolean prefixWaypointNames, double privacyRadiusMeters) {
-        if (route == null || route.lats == null || route.lons == null || route.distances == null
-                || route.lats.length == 0
-                || route.lons.length < route.lats.length
-                || route.distances.length < route.lats.length) {
-            throw new IllegalArgumentException("route has no geometry to write as GPX");
-        }
-        if (climb == null) {
-            throw new IllegalArgumentException("climb is null");
-        }
-
-        int startIdx = -1;
-        int endIdx = -1;
-        for (int i = 0; i < route.distances.length; i++) {
-            if (startIdx == -1 && route.distances[i] >= climb.startDistance) startIdx = i;
-            if (route.distances[i] <= climb.endDistance) endIdx = i;
-        }
-        if (startIdx == -1 || endIdx == -1 || endIdx < startIdx) {
-            throw new IllegalArgumentException("climb geometry not found in route");
-        }
+        requireGeometry(route, climb);
+        int[] range = climbRange(route, climb);
+        int startIdx = range[0];
+        int endIdx = range[1];
 
         String name = climb.userDisplayName != null ? climb.userDisplayName
                 : climb.name != null ? climb.name
                 : "Climb " + (climbIndex + 1);
 
-        // WHY drop geometry, not just relabel the start: the track polyline near the start IS
-        // the start location, so for a home climb every trackpoint and waypoint inside the
-        // privacy zone is dropped and the zone centre stands in for the start — the way
-        // Strava's privacy zones hide the approach to a saved place, not just its pin. The
-        // zone is tested by straight-line distance (a hairpin that loops back near the start
-        // is hidden too) and centred on the stored random centre, not on the real start, so
-        // the edge where the visible track begins doesn't point back at the start either.
-        double[] zoneCentre = null;
-        if (climb.isHome && privacyRadiusMeters > 0) {
-            // Fail closed: exporting a home climb without a usable centre would either leak
-            // the start or need a centre derived from it (reversible). Callers persist a
-            // SecureRandom centre first (see ClimbDetailViewModel#exportGpx).
-            if (!CoordinateFuzzer.isUsableZoneCentre(climb.privacyCentreLat,
-                    climb.privacyCentreLon, climb.startLat, climb.startLon, privacyRadiusMeters)) {
-                throw new IllegalArgumentException(
-                        "home climb has no usable privacy zone centre for this radius");
-            }
-            zoneCentre = new double[] {climb.privacyCentreLat, climb.privacyCentreLon};
-        }
+        double[] zoneCentre = privacyZoneCentre(climb, privacyRadiusMeters);
 
         String wptPrefix = prefixWaypointNames ? name + " — " : "";
         appendWaypoints(wptOut, route, climb, startIdx, endIdx, zoneCentre, privacyRadiusMeters,
@@ -145,28 +112,82 @@ public final class ClimbGpxWriter {
         trkOut.append("    <name>").append(escape(name)).append("</name>\n");
         trkOut.append("    <trkseg>\n");
         if (zoneCentre != null) {
-            trkOut.append("      <trkpt lat=\"").append(fmt(zoneCentre[0]))
-                  .append("\" lon=\"").append(fmt(zoneCentre[1])).append("\">");
-            if (route.elevations != null && startIdx < route.elevations.length
-                    && !Double.isNaN(route.elevations[startIdx])) {
-                // Elevation alone doesn't pinpoint a location, so the true value at the climb
-                // start is kept — only lat/lon within the privacy zone are obscured/dropped.
-                trkOut.append("<ele>").append(fmtEle(route.elevations[startIdx])).append("</ele>");
-            }
-            trkOut.append("</trkpt>\n");
+            // Elevation alone doesn't pinpoint a location, so the true value at the climb
+            // start is kept — only lat/lon within the privacy zone are obscured/dropped.
+            appendTrackPoint(trkOut, zoneCentre[0], zoneCentre[1], elevationAt(route, startIdx));
         }
         for (int i = startIdx; i <= endIdx; i++) {
             if (isHidden(route, i, zoneCentre, privacyRadiusMeters)) continue;
-            trkOut.append("      <trkpt lat=\"").append(fmt(route.lats[i]))
-                  .append("\" lon=\"").append(fmt(route.lons[i])).append("\">");
-            if (route.elevations != null && i < route.elevations.length
-                    && !Double.isNaN(route.elevations[i])) {
-                trkOut.append("<ele>").append(fmtEle(route.elevations[i])).append("</ele>");
-            }
-            trkOut.append("</trkpt>\n");
+            appendTrackPoint(trkOut, route.lats[i], route.lons[i], elevationAt(route, i));
         }
         trkOut.append("    </trkseg>\n");
         trkOut.append("  </trk>\n");
+    }
+
+    private static void requireGeometry(StoredRoute route, StoredClimb climb) {
+        if (route == null || route.lats == null || route.lons == null || route.distances == null
+                || route.lats.length == 0
+                || route.lons.length < route.lats.length
+                || route.distances.length < route.lats.length) {
+            throw new IllegalArgumentException("route has no geometry to write as GPX");
+        }
+        if (climb == null) {
+            throw new IllegalArgumentException("climb is null");
+        }
+    }
+
+    /** {start, end} route-point indices covering the climb's distance range. */
+    private static int[] climbRange(StoredRoute route, StoredClimb climb) {
+        int startIdx = -1;
+        int endIdx = -1;
+        for (int i = 0; i < route.distances.length; i++) {
+            if (startIdx == -1 && route.distances[i] >= climb.startDistance) startIdx = i;
+            if (route.distances[i] <= climb.endDistance) endIdx = i;
+        }
+        if (startIdx == -1 || endIdx == -1 || endIdx < startIdx) {
+            throw new IllegalArgumentException("climb geometry not found in route");
+        }
+        return new int[] {startIdx, endIdx};
+    }
+
+    /**
+     * WHY drop geometry, not just relabel the start: the track polyline near the start IS
+     * the start location, so for a home climb every trackpoint and waypoint inside the
+     * privacy zone is dropped and the zone centre stands in for the start — the way
+     * Strava's privacy zones hide the approach to a saved place, not just its pin. The
+     * zone is tested by straight-line distance (a hairpin that loops back near the start
+     * is hidden too) and centred on the stored random centre, not on the real start, so
+     * the edge where the visible track begins doesn't point back at the start either.
+     *
+     * @return the zone centre {lat, lon}, or null when no privacy zone applies
+     */
+    private static double[] privacyZoneCentre(StoredClimb climb, double privacyRadiusMeters) {
+        if (!climb.isHome || privacyRadiusMeters <= 0) return null;
+        // Fail closed: exporting a home climb without a usable centre would either leak
+        // the start or need a centre derived from it (reversible). Callers persist a
+        // SecureRandom centre first (see ClimbDetailViewModel#exportGpx).
+        if (!CoordinateFuzzer.isUsableZoneCentre(climb.privacyCentreLat,
+                climb.privacyCentreLon, climb.startLat, climb.startLon, privacyRadiusMeters)) {
+            throw new IllegalArgumentException(
+                    "home climb has no usable privacy zone centre for this radius");
+        }
+        return new double[] {climb.privacyCentreLat, climb.privacyCentreLon};
+    }
+
+    private static void appendTrackPoint(StringBuilder trkOut, double lat, double lon,
+                                         Double ele) {
+        trkOut.append("      <trkpt lat=\"").append(fmt(lat))
+              .append("\" lon=\"").append(fmt(lon)).append("\">");
+        if (ele != null) {
+            trkOut.append("<ele>").append(fmtEle(ele)).append("</ele>");
+        }
+        trkOut.append("</trkpt>\n");
+    }
+
+    /** Elevation of route point {@code idx}, or null when missing/NaN. */
+    private static Double elevationAt(StoredRoute route, int idx) {
+        return route.elevations != null && idx < route.elevations.length
+                && !Double.isNaN(route.elevations[idx]) ? route.elevations[idx] : null;
     }
 
     private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
@@ -176,18 +197,9 @@ public final class ClimbGpxWriter {
         if (segments == null || segments.isEmpty()) return;
 
         if (bestElapsedSec != null && bestElapsedSec > 0) {
-            String prDesc = climbName + " — personal record " + formatDuration(bestElapsedSec);
-            if (zoneCentre != null) {
-                Double ele = route.elevations != null && startIdx < route.elevations.length
-                        && !Double.isNaN(route.elevations[startIdx])
-                        ? route.elevations[startIdx] : null;
-                appendWaypoint(sb, zoneCentre[0], zoneCentre[1], ele,
-                        wptPrefix + "PR", prDesc, "Flag, Green");
-            } else {
-                appendWaypoint(sb, route,
-                        nearestIndex(route, startIdx, endIdx, climb.startDistance),
-                        wptPrefix + "PR", prDesc, "Flag, Green");
-            }
+            appendPrWaypoint(sb, route, climb, startIdx, endIdx, zoneCentre,
+                    climbName + " — personal record " + formatDuration(bestElapsedSec),
+                    wptPrefix);
         }
 
         boolean havePr = bestSplitSec != null && bestSplitSec.length == segments.size();
@@ -196,24 +208,40 @@ public final class ClimbGpxWriter {
         for (int i = 0; i < segments.size(); i++) {
             StoredSegment seg = segments.get(i);
             boundary += seg.distance;
+            if (havePr) cumulativeSplitSec += bestSplitSec[i];
             int idx = nearestIndex(route, startIdx, endIdx, boundary);
-            if (idx < 0 || isHidden(route, idx, zoneCentre, privacyRadiusMeters)) {
-                // Inside the trimmed privacy zone: skip rather than expose a precise point.
-                if (havePr) cumulativeSplitSec += bestSplitSec[i];
-                continue;
-            }
+            // Inside the trimmed privacy zone: skip rather than expose a precise point.
+            if (idx < 0 || isHidden(route, idx, zoneCentre, privacyRadiusMeters)) continue;
 
             boolean isTop = i == segments.size() - 1;
             String wptName = wptPrefix + (isTop ? "Top" : "Segment " + (i + 1));
-            StringBuilder desc = new StringBuilder();
-            desc.append(String.format(Locale.US, "%.1f%% gradient", seg.gradient * 100));
-            if (havePr) {
-                cumulativeSplitSec += bestSplitSec[i];
-                desc.append(" · PR split ").append(formatDuration(cumulativeSplitSec));
-            }
-            appendWaypoint(sb, route, idx, wptName, desc.toString(),
+            appendWaypoint(sb, route, idx, wptName,
+                    segmentDescription(seg, havePr, cumulativeSplitSec),
                     isTop ? "Summit" : "Flag, Blue");
         }
+    }
+
+    /** PR waypoint at the climb start, or at the privacy zone centre for a home climb. */
+    private static void appendPrWaypoint(StringBuilder sb, StoredRoute route, StoredClimb climb,
+            int startIdx, int endIdx, double[] zoneCentre, String prDesc, String wptPrefix) {
+        if (zoneCentre != null) {
+            appendWaypoint(sb, zoneCentre[0], zoneCentre[1], elevationAt(route, startIdx),
+                    wptPrefix + "PR", prDesc, "Flag, Green");
+        } else {
+            appendWaypoint(sb, route,
+                    nearestIndex(route, startIdx, endIdx, climb.startDistance),
+                    wptPrefix + "PR", prDesc, "Flag, Green");
+        }
+    }
+
+    private static String segmentDescription(StoredSegment seg, boolean havePr,
+                                             int cumulativeSplitSec) {
+        StringBuilder desc = new StringBuilder();
+        desc.append(String.format(Locale.US, "%.1f%% gradient", seg.gradient * 100));
+        if (havePr) {
+            desc.append(" — PR split ").append(formatDuration(cumulativeSplitSec));
+        }
+        return desc.toString();
     }
 
     /** True when route point {@code i} lies inside the privacy zone (none when centre is null). */
@@ -226,9 +254,8 @@ public final class ClimbGpxWriter {
     private static void appendWaypoint(StringBuilder sb, StoredRoute route, int idx,
             String wptName, String desc, String sym) {
         if (idx < 0) return;
-        Double ele = route.elevations != null && idx < route.elevations.length
-                && !Double.isNaN(route.elevations[idx]) ? route.elevations[idx] : null;
-        appendWaypoint(sb, route.lats[idx], route.lons[idx], ele, wptName, desc, sym);
+        appendWaypoint(sb, route.lats[idx], route.lons[idx], elevationAt(route, idx),
+                wptName, desc, sym);
     }
 
     private static void appendWaypoint(StringBuilder sb, double lat, double lon, Double ele,

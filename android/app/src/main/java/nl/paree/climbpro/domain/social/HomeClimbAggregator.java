@@ -24,30 +24,27 @@ public final class HomeClimbAggregator {
     public static OwnFeedBuilder.ClimbInfo aggregate(List<StoredClimb> copies) {
         if (copies == null || copies.isEmpty()) return null;
 
-        boolean isHome = false;
-        for (StoredClimb c : copies) {
-            if (c != null && c.isHome) isHome = true;
-        }
+        boolean isHome = first(copies, c -> c.isHome) != null;
 
-        String name = null;
-        int gainM = 0;
+        StoredClimb renamed = first(copies, c -> notBlank(c.userDisplayName));
+        if (renamed != null) {
+            return new OwnFeedBuilder.ClimbInfo(renamed.userDisplayName.trim(),
+                    renamed.elevationGain, isHome);
+        }
+        StoredClimb named = first(copies, c -> notBlank(c.name));
+        if (named != null) {
+            return new OwnFeedBuilder.ClimbInfo(named.name.trim(), named.elevationGain, isHome);
+        }
+        return new OwnFeedBuilder.ClimbInfo(null, 0, isHome);
+    }
+
+    /** First non-null copy matching {@code test}; null if none. */
+    private static StoredClimb first(List<StoredClimb> copies,
+                                     java.util.function.Predicate<StoredClimb> test) {
         for (StoredClimb c : copies) {
-            if (c == null) continue;
-            if (name == null && notBlank(c.userDisplayName)) {
-                name = c.userDisplayName.trim();
-                gainM = c.elevationGain;
-            }
+            if (c != null && test.test(c)) return c;
         }
-        if (name == null) {
-            for (StoredClimb c : copies) {
-                if (c != null && notBlank(c.name)) {
-                    name = c.name.trim();
-                    gainM = c.elevationGain;
-                    break;
-                }
-            }
-        }
-        return new OwnFeedBuilder.ClimbInfo(name, gainM, isHome);
+        return null;
     }
 
     private static boolean notBlank(String s) {

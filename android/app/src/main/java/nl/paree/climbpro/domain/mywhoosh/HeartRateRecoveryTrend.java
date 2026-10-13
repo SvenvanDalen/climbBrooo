@@ -53,33 +53,51 @@ public final class HeartRateRecoveryTrend {
     public static Result compute(List<StoredRide> rides, Map<Long, StoredRideStreamStats> stats,
                                  long nowEpochSec, boolean indoorOnly) {
         List<Entry> entries = new ArrayList<>();
-        double recentSum = 0;
-        double prevSum = 0;
-        int recentN = 0;
-        int prevN = 0;
-        long window = TREND_WINDOW_DAYS * 86_400L;
+        Windows w = new Windows(TREND_WINDOW_DAYS * 86_400L);
         if (rides != null && stats != null) {
             for (StoredRide r : rides) {
-                if (r == null || (indoorOnly && !IndoorRides.isIndoor(r))) continue;
-                StoredRideStreamStats s = stats.get(r.activityId);
-                if (s == null || s.hrRecoveryDrops == null || s.hrRecoveryDrops.length == 0) {
-                    continue;
-                }
+                int[] drops = recoveryDrops(r, stats, indoorOnly);
+                if (drops == null) continue;
                 double sum = 0;
-                for (int d : s.hrRecoveryDrops) sum += d;
-                entries.add(new Entry(r, sum / s.hrRecoveryDrops.length, s.hrRecoveryDrops.length));
-                long age = nowEpochSec - r.startEpochSec;
-                if (age >= 0 && age < window) {
-                    recentSum += sum;
-                    recentN += s.hrRecoveryDrops.length;
-                } else if (age >= window && age < 2 * window) {
-                    prevSum += sum;
-                    prevN += s.hrRecoveryDrops.length;
-                }
+                for (int d : drops) sum += d;
+                entries.add(new Entry(r, sum / drops.length, drops.length));
+                w.add(nowEpochSec - r.startEpochSec, sum, drops.length);
             }
         }
         entries.sort((a, b) -> Long.compare(b.ride.startEpochSec, a.ride.startEpochSec));
-        return new Result(entries, recentN > 0 ? recentSum / recentN : null,
-                prevN > 0 ? prevSum / prevN : null, recentN, prevN);
+        return new Result(entries, w.recentN > 0 ? w.recentSum / w.recentN : null,
+                w.prevN > 0 ? w.prevSum / w.prevN : null, w.recentN, w.prevN);
+    }
+
+    /** The ride's heart-rate recovery drops; null when it doesn't qualify or has none. */
+    private static int[] recoveryDrops(StoredRide r, Map<Long, StoredRideStreamStats> stats,
+                                       boolean indoorOnly) {
+        if (r == null || (indoorOnly && !IndoorRides.isIndoor(r))) return null;
+        StoredRideStreamStats s = stats.get(r.activityId);
+        if (s == null || s.hrRecoveryDrops == null || s.hrRecoveryDrops.length == 0) return null;
+        return s.hrRecoveryDrops;
+    }
+
+    /** Drop sums and counts for the recent window and the window before it. */
+    private static final class Windows {
+        final long window;
+        double recentSum;
+        double prevSum;
+        int recentN;
+        int prevN;
+
+        Windows(long window) {
+            this.window = window;
+        }
+
+        void add(long age, double sum, int n) {
+            if (age >= 0 && age < window) {
+                recentSum += sum;
+                recentN += n;
+            } else if (age >= window && age < 2 * window) {
+                prevSum += sum;
+                prevN += n;
+            }
+        }
     }
 }

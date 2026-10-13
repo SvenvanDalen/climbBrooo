@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import nl.paree.climbpro.domain.segment.SurfaceType;
@@ -140,184 +139,24 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.segmentsRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.segmentsRecycler.setAdapter(adapter);
 
-        viewModel.route().observe(this, route -> {
-            loadedRoute = route;
-            tryDrawMap();
-            updateDescentInfo();
-            updateClimbFacts();
-            loadBestTime(false);
-        });
+        viewModel.route().observe(this, this::onRouteLoaded);
 
-        viewModel.climb().observe(this, climb -> {
-            if (climb == null) return;
-            loadBestTime(false);
-
-            String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
-            binding.toolbar.setTitle(name != null ? name
-                    : getString(R.string.climb_detail_default_name, climbIndex + 1));
-            String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
-            String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(climb);
-            // Issue #262: length and gain in the rider's display units.
-            nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
-            String statsText = getString(R.string.climb_detail_stats,
-                    units.climbLength(climb.length), climb.avgGradient * 100,
-                    units.elevation(climb.elevationGain),
-                    nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb));
-            if (!categoryLabel.isEmpty()) {
-                statsText += " · " + categoryLabel;
-            }
-            if (!surfaceLabel.isEmpty()) {
-                statsText += " · " + surfaceLabel;
-            }
-            binding.climbStats.setText(statsText);
-            binding.climbProfile.setSegments(climb.segments);
-            adapter.setItems(climb.segments);
-
-            loadedClimb = climb;
-            binding.btnToggleHomeClimb.setText(climb.isHome
-                    ? R.string.climb_detail_home_on
-                    : R.string.climb_detail_mark_home);
-            binding.climbRating.setText(
-                    nl.paree.climbpro.domain.climb.ClimbRating.detailText(climb));
-            binding.btnRateClimb.setText(
-                    nl.paree.climbpro.domain.climb.ClimbRating.isRated(climb)
-                            || climb.ratingNote != null
-                            ? R.string.climb_detail_rate_edit : R.string.climb_detail_rate);
-            tryDrawMap();
-            updateManualRefText();
-            updateIntervalBlockText();
-            updateEverestingText();
-            updateDescentInfo();
-            updateClimbFacts();
-        });
-
-        viewModel.timeEstimate().observe(this, estimate -> {
-            if (estimate == null) {
-                binding.climbTimeEstimate.setText(R.string.climb_detail_estimate_missing);
-                adapter.setSegmentSeconds(null);
-                lastTimeEstimateText = null;
-                lastEstimateSeconds = null;
-            } else {
-                lastTimeEstimateText = getString(R.string.climb_detail_estimate,
-                        DurationFormat.format(estimate.totalSeconds),
-                        estimate.assumedPowerWatts);
-                binding.climbTimeEstimate.setText(lastTimeEstimateText);
-                adapter.setSegmentSeconds(estimate.segmentSeconds);
-                lastEstimateSeconds = estimate.totalSeconds;
-            }
-            updateManualRefText();
-            updateEverestingText();
-        });
+        viewModel.climb().observe(this, climb -> onClimbLoaded(adapter, climb));
+        viewModel.timeEstimate().observe(this, estimate -> onTimeEstimate(adapter, estimate));
 
         viewModel.segmentZones().observe(this, adapter::setSegmentZones);
         viewModel.windImpact().observe(this, this::showWindImpact);
 
-        viewModel.seasonalComparison().observe(this, result -> {
-            if (result == null) {
-                binding.seasonalComparison.setVisibility(android.view.View.GONE);
-                return;
-            }
-            binding.seasonalComparison.setText(getString(result.percentFaster >= 0
-                            ? R.string.climb_detail_seasonal_faster
-                            : R.string.climb_detail_seasonal_slower,
-                    Math.abs(result.percentFaster), result.priorYear));
-            binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
-        });
+        viewModel.seasonalComparison().observe(this, this::showSeasonalComparison);
 
         viewModel.trainingAdvice().observe(this, this::renderTrainingAdvice);
         viewModel.prChance().observe(this, this::showPrChance);
 
         viewModel.error().observe(this,
                 msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
-        viewModel.saved().observe(this, isSaved -> {
-            if (Boolean.TRUE.equals(isSaved))
-                Toast.makeText(this, R.string.route_detail_saved, Toast.LENGTH_SHORT).show();
-        });
+        viewModel.saved().observe(this, this::onSaved);
 
-        viewModel.history().observe(this, rows -> {
-            android.widget.TextView header = binding.historyHeader;
-            android.widget.LinearLayout container = binding.historyContainer;
-            container.removeAllViews();
-            if (rows == null || rows.isEmpty()) {
-                header.setVisibility(android.view.View.GONE);
-                return;
-            }
-            header.setVisibility(android.view.View.VISIBLE);
-            java.text.SimpleDateFormat fmt =
-                    new java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault());
-            for (nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row : rows) {
-                android.widget.LinearLayout rowLayout = new android.widget.LinearLayout(this);
-                rowLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
-                rowLayout.setPadding(0, 8, 0, 16);
-
-                android.widget.TextView tv = new android.widget.TextView(this);
-                int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
-                String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
-                String delta = row.deltaToPrSec == 0
-                        ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
-                        + String.format(java.util.Locale.getDefault(), "%02d", row.deltaToPrSec % 60);
-                String badge = row.bestOfYear
-                        ? "  " + getString(R.string.climb_detail_history_best_of_year) : "";
-                String deviationBadge = row.routeDeviation
-                        ? "  " + getString(R.string.climb_detail_history_deviation) : "";
-                tv.setText(String.format(java.util.Locale.getDefault(),
-                        "%s   %d:%02d   (%s)%s%s", date, m, s, delta, badge, deviationBadge));
-                rowLayout.addView(tv);
-
-                String tempNote = nl.paree.climbpro.domain.climb.AttemptTemperature.label(row.avgTempC);
-                if (tempNote != null) {
-                    android.widget.TextView tempView = new android.widget.TextView(this);
-                    tempView.setText(tempNote);
-                    tempView.setTextSize(13f);
-                    tempView.setPadding(0, 4, 0, 0);
-                    rowLayout.addView(tempView);
-                }
-
-                if (row.note != null && !row.note.isEmpty()) {
-                    android.widget.TextView noteView = new android.widget.TextView(this);
-                    noteView.setText("“" + row.note + "”");
-                    noteView.setTextSize(13f);
-                    noteView.setPadding(0, 4, 0, 0);
-                    rowLayout.addView(noteView);
-                }
-
-                String companionsLabel =
-                        nl.paree.climbpro.domain.ride.SummitGroupPhotos.companionsLabel(row.companions);
-                if (companionsLabel != null) {
-                    android.widget.TextView groupView = new android.widget.TextView(this);
-                    boolean hasPhoto = row.photoFileName != null && !row.photoFileName.isEmpty();
-                    groupView.setText(hasPhoto
-                            ? getString(R.string.climb_detail_group_photo, companionsLabel)
-                            : "👥 " + companionsLabel);
-                    groupView.setTextSize(13f);
-                    groupView.setPadding(0, 4, 0, 0);
-                    rowLayout.addView(groupView);
-                }
-
-                if (row.photoFileName != null && !row.photoFileName.isEmpty()) {
-                    android.widget.ImageView thumb = new android.widget.ImageView(this);
-                    int sizePx = (int) (72 * getResources().getDisplayMetrics().density);
-                    android.widget.LinearLayout.LayoutParams lp =
-                            new android.widget.LinearLayout.LayoutParams(sizePx, sizePx);
-                    lp.topMargin = 8;
-                    thumb.setLayoutParams(lp);
-                    thumb.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
-                    rowLayout.addView(thumb);
-                    loadAttemptThumbnailAsync(row.photoFileName, sizePx, thumb);
-                }
-
-                android.widget.TextView editLink = new android.widget.TextView(this);
-                editLink.setText(row.note != null || row.photoFileName != null
-                        || row.companions != null
-                        ? R.string.climb_detail_attempt_edit : R.string.climb_detail_attempt_add);
-                editLink.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
-                editLink.setPadding(0, 8, 0, 0);
-                editLink.setOnClickListener(v -> showAttemptNoteDialog(row));
-                rowLayout.addView(editLink);
-
-                container.addView(rowLayout);
-            }
-        });
+        viewModel.history().observe(this, this::renderHistory);
 
         binding.btnRenameClimb.setOnClickListener(v -> showRenameDialog());
         binding.btnManualRef.setOnClickListener(v -> showManualRefDialog());
@@ -333,29 +172,11 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.btnShareClimb.setOnClickListener(v -> shareClimbAsImage());
         binding.btnExportGpx.setOnClickListener(v -> viewModel.exportGpx());
         binding.btnExportWorkout.setOnClickListener(v -> pickWorkoutFormat());
-        binding.btnShareCode.setOnClickListener(v -> {
-            StoredRoute r = viewModel.route().getValue();
-            if (r == null) {
-                Toast.makeText(this, R.string.climb_detail_not_loaded, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            nl.paree.climbpro.ui.share.ClimbCodeSharing.shareClimb(this, r, climbIndex);
-        });
-        binding.btnToggleHomeClimb.setOnClickListener(v -> {
-            if (loadedClimb == null) return;
-            viewModel.setHomeClimb(routeId, climbIndex, !loadedClimb.isHome);
-        });
+        binding.btnShareCode.setOnClickListener(v -> shareClimbCode());
+        binding.btnToggleHomeClimb.setOnClickListener(v -> toggleHomeClimb());
         binding.btnSunriseRide.setOnClickListener(v -> pickSunriseDate());
         binding.btnSummitWeather.setOnClickListener(v -> showSummitWeather());
-        binding.bestTime.setOnClickListener(v -> {
-            if (bestTimeLoaded) {
-                boolean shown = binding.bestTimeTable.getVisibility() == android.view.View.VISIBLE;
-                binding.bestTimeTable.setVisibility(
-                        shown ? android.view.View.GONE : android.view.View.VISIBLE);
-            } else {
-                loadBestTime(true);
-            }
-        });
+        binding.bestTime.setOnClickListener(v -> onBestTimeClicked());
         binding.btnCompareClimb.setOnClickListener(v ->
                 startActivity(ClimbCompareActivity.intentFor(this, routeId, climbIndex)));
         binding.btnGearCalculator.setOnClickListener(v ->
@@ -363,11 +184,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         viewModel.gpxExportFile().observe(this, this::shareGpxFile);
         viewModel.workoutExport().observe(this, this::shareWorkout);
-        viewModel.intervalsResult().observe(this, msg -> {
-            if (msg == null) return;
-            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-            viewModel.consumeIntervalsResult();
-        });
+        viewModel.intervalsResult().observe(this, this::onIntervalsResult);
 
         setupBulkSurfaceSetter();
 
@@ -375,6 +192,221 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         adapter.setOnSegmentClickListener(this::showSegmentTargetTimeDialog);
 
         viewModel.loadClimb(routeId, climbIndex);
+    }
+
+    private void onRouteLoaded(StoredRoute route) {
+        loadedRoute = route;
+        tryDrawMap();
+        updateDescentInfo();
+        updateClimbFacts();
+        loadBestTime(false);
+    }
+
+    private void onClimbLoaded(ClimbSegmentAdapter adapter, StoredClimb climb) {
+        if (climb == null) return;
+        loadBestTime(false);
+
+        String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;
+        binding.toolbar.setTitle(name != null ? name
+                : getString(R.string.climb_detail_default_name, climbIndex + 1));
+        binding.climbStats.setText(climbStatsText(climb));
+        binding.climbProfile.setSegments(climb.segments);
+        adapter.setItems(climb.segments);
+
+        loadedClimb = climb;
+        binding.btnToggleHomeClimb.setText(climb.isHome
+                ? R.string.climb_detail_home_on
+                : R.string.climb_detail_mark_home);
+        binding.climbRating.setText(
+                nl.paree.climbpro.domain.climb.ClimbRating.detailText(climb));
+        binding.btnRateClimb.setText(
+                nl.paree.climbpro.domain.climb.ClimbRating.isRated(climb)
+                        || climb.ratingNote != null
+                        ? R.string.climb_detail_rate_edit : R.string.climb_detail_rate);
+        tryDrawMap();
+        updateManualRefText();
+        updateIntervalBlockText();
+        updateEverestingText();
+        updateDescentInfo();
+        updateClimbFacts();
+    }
+
+    /** Length, gradient, gain and shape, then category and surface when known. */
+    private String climbStatsText(StoredClimb climb) {
+        if (climb == null) return "";
+        String surfaceLabel = nl.paree.climbpro.domain.climb.ClimbSurfaceLabel.forStoredClimb(climb);
+        String categoryLabel = nl.paree.climbpro.domain.climb.ClimbCategoryLabel.forStoredClimb(climb);
+        // Issue #262: length and gain in the rider's display units.
+        nl.paree.climbpro.domain.units.UnitFormatter units = nl.paree.climbpro.data.settings.UnitPreferencesRepository.formatter(this);
+        String statsText = getString(R.string.climb_detail_stats,
+                units.climbLength(climb.length), climb.avgGradient * 100,
+                units.elevation(climb.elevationGain),
+                nl.paree.climbpro.domain.climb.ClimbShapeLabel.forStoredClimb(climb));
+        if (!categoryLabel.isEmpty()) {
+            statsText += " · " + categoryLabel;
+        }
+        if (!surfaceLabel.isEmpty()) {
+            statsText += " · " + surfaceLabel;
+        }
+        return statsText;
+    }
+
+    private void onTimeEstimate(ClimbSegmentAdapter adapter, ClimbTimeEstimate estimate) {
+        if (estimate == null) {
+            binding.climbTimeEstimate.setText(R.string.climb_detail_estimate_missing);
+            adapter.setSegmentSeconds(null);
+            lastTimeEstimateText = null;
+            lastEstimateSeconds = null;
+        } else {
+            lastTimeEstimateText = getString(R.string.climb_detail_estimate,
+                    DurationFormat.format(estimate.totalSeconds),
+                    estimate.assumedPowerWatts);
+            binding.climbTimeEstimate.setText(lastTimeEstimateText);
+            adapter.setSegmentSeconds(estimate.segmentSeconds);
+            lastEstimateSeconds = estimate.totalSeconds;
+        }
+        updateManualRefText();
+        updateEverestingText();
+    }
+
+    private void showSeasonalComparison(
+            nl.paree.climbpro.domain.climb.SeasonalComparisonCalculator.Result result) {
+        if (result == null) {
+            binding.seasonalComparison.setVisibility(android.view.View.GONE);
+            return;
+        }
+        binding.seasonalComparison.setText(getString(result.percentFaster >= 0
+                        ? R.string.climb_detail_seasonal_faster
+                        : R.string.climb_detail_seasonal_slower,
+                Math.abs(result.percentFaster), result.priorYear));
+        binding.seasonalComparison.setVisibility(android.view.View.VISIBLE);
+    }
+
+    private void onSaved(Boolean isSaved) {
+        if (Boolean.TRUE.equals(isSaved))
+            Toast.makeText(this, R.string.route_detail_saved, Toast.LENGTH_SHORT).show();
+    }
+
+    private void onIntervalsResult(String msg) {
+        if (msg == null) return;
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        viewModel.consumeIntervalsResult();
+    }
+
+    private void shareClimbCode() {
+        StoredRoute r = viewModel.route().getValue();
+        if (r == null) {
+            Toast.makeText(this, R.string.climb_detail_not_loaded, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        nl.paree.climbpro.ui.share.ClimbCodeSharing.shareClimb(this, r, climbIndex);
+    }
+
+    private void toggleHomeClimb() {
+        if (loadedClimb == null) return;
+        viewModel.setHomeClimb(routeId, climbIndex, !loadedClimb.isHome);
+    }
+
+    /** First tap loads the best-time table; later taps fold it open and shut. */
+    private void onBestTimeClicked() {
+        if (bestTimeLoaded) {
+            boolean shown = binding.bestTimeTable.getVisibility() == android.view.View.VISIBLE;
+            binding.bestTimeTable.setVisibility(
+                    shown ? android.view.View.GONE : android.view.View.VISIBLE);
+        } else {
+            loadBestTime(true);
+        }
+    }
+
+    private void renderHistory(
+            List<nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow> rows) {
+        android.widget.TextView header = binding.historyHeader;
+        android.widget.LinearLayout container = binding.historyContainer;
+        container.removeAllViews();
+        if (rows == null || rows.isEmpty()) {
+            header.setVisibility(android.view.View.GONE);
+            return;
+        }
+        header.setVisibility(android.view.View.VISIBLE);
+        java.text.SimpleDateFormat fmt =
+                new java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault());
+        for (nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row : rows) {
+            container.addView(historyRowView(row, fmt));
+        }
+    }
+
+    private android.view.View historyRowView(
+            nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row,
+            java.text.SimpleDateFormat fmt) {
+        android.widget.LinearLayout rowLayout = new android.widget.LinearLayout(this);
+        rowLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        rowLayout.setPadding(0, 8, 0, 16);
+
+        android.widget.TextView tv = new android.widget.TextView(this);
+        tv.setText(historyLine(row, fmt));
+        rowLayout.addView(tv);
+
+        String tempNote = nl.paree.climbpro.domain.climb.AttemptTemperature.label(row.avgTempC);
+        if (tempNote != null) addHistoryDetail(rowLayout, tempNote);
+        if (row.note != null && !row.note.isEmpty()) {
+            addHistoryDetail(rowLayout, "“" + row.note + "”");
+        }
+
+        boolean hasPhoto = row.photoFileName != null && !row.photoFileName.isEmpty();
+        String companionsLabel =
+                nl.paree.climbpro.domain.ride.SummitGroupPhotos.companionsLabel(row.companions);
+        if (companionsLabel != null) {
+            addHistoryDetail(rowLayout, hasPhoto
+                    ? getString(R.string.climb_detail_group_photo, companionsLabel)
+                    : "👥 " + companionsLabel);
+        }
+        if (hasPhoto) addHistoryThumbnail(rowLayout, row.photoFileName);
+
+        android.widget.TextView editLink = new android.widget.TextView(this);
+        editLink.setText(row.note != null || row.photoFileName != null
+                || row.companions != null
+                ? R.string.climb_detail_attempt_edit : R.string.climb_detail_attempt_add);
+        editLink.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
+        editLink.setPadding(0, 8, 0, 0);
+        editLink.setOnClickListener(v -> showAttemptNoteDialog(row));
+        rowLayout.addView(editLink);
+        return rowLayout;
+    }
+
+    /** "12 mei 2025   7:41   (+0:12)" plus best-of-year and deviation badges. */
+    private String historyLine(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row,
+                               java.text.SimpleDateFormat fmt) {
+        int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
+        String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
+        String delta = row.deltaToPrSec == 0
+                ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
+                + String.format(java.util.Locale.getDefault(), "%02d", row.deltaToPrSec % 60);
+        String badge = row.bestOfYear
+                ? "  " + getString(R.string.climb_detail_history_best_of_year) : "";
+        String deviationBadge = row.routeDeviation
+                ? "  " + getString(R.string.climb_detail_history_deviation) : "";
+        return String.format(java.util.Locale.getDefault(),
+                "%s   %d:%02d   (%s)%s%s", date, m, s, delta, badge, deviationBadge);
+    }
+
+    private void addHistoryDetail(android.widget.LinearLayout rowLayout, String text) {
+        android.widget.TextView view = new android.widget.TextView(this);
+        view.setText(text);
+        view.setTextSize(13f);
+        view.setPadding(0, 4, 0, 0);
+        rowLayout.addView(view);
+    }
+
+    private void addHistoryThumbnail(android.widget.LinearLayout rowLayout, String photoFileName) {
+        android.widget.ImageView thumb = new android.widget.ImageView(this);
+        int sizePx = (int) (72 * getResources().getDisplayMetrics().density);
+        android.widget.LinearLayout.LayoutParams lp =
+                new android.widget.LinearLayout.LayoutParams(sizePx, sizePx);
+        lp.topMargin = 8;
+        thumb.setLayoutParams(lp);
+        thumb.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+        rowLayout.addView(thumb);
+        loadAttemptThumbnailAsync(photoFileName, sizePx, thumb);
     }
 
     @Override
@@ -537,12 +569,52 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         binding.descentInfo.setVisibility(android.view.View.VISIBLE);
     }
 
+    private static boolean hasMapGeometry(StoredRoute route) {
+        return route.lats != null && route.lons != null && route.distances != null
+                && route.lats.length > 0
+                && route.lons.length >= route.lats.length
+                && route.distances.length >= route.lats.length;
+    }
+
+    /**
+     * One polyline per segment in its gradient color, each joined to the previous one's last
+     * point; every climb point is also collected into {@code allClimbPoints}.
+     */
+    private void drawClimbSegments(List<GeoPoint> allClimbPoints) {
+        GeoPoint prevSegLastPoint = null;
+        double segBoundary = loadedClimb.startDistance;
+        for (StoredSegment seg : loadedClimb.segments) {
+            double segEnd = segBoundary + seg.distance;
+            List<GeoPoint> segPoints = new ArrayList<>();
+            if (prevSegLastPoint != null) segPoints.add(prevSegLastPoint);
+            List<GeoPoint> inSegment = routePointsBetween(segBoundary, segEnd);
+            segPoints.addAll(inSegment);
+            allClimbPoints.addAll(inSegment);
+
+            if (segPoints.size() >= 2) {
+                Polyline segLine = new Polyline();
+                segLine.setColor(SegmentColorPalette.toColor(seg.colorIndex));
+                segLine.setWidth(7f);
+                segLine.setPoints(segPoints);
+                binding.mapView.getOverlays().add(segLine);
+                prevSegLastPoint = segPoints.get(segPoints.size() - 1);
+            }
+            segBoundary = segEnd;
+        }
+    }
+
+    private List<GeoPoint> routePointsBetween(double from, double to) {
+        List<GeoPoint> points = new ArrayList<>();
+        for (int i = 0; i < loadedRoute.distances.length; i++) {
+            if (loadedRoute.distances[i] >= from && loadedRoute.distances[i] <= to) {
+                points.add(new GeoPoint(loadedRoute.lats[i], loadedRoute.lons[i]));
+            }
+        }
+        return points;
+    }
+
     private void tryDrawMap() {
-        if (loadedRoute == null || loadedClimb == null) return;
-        if (loadedRoute.lats == null || loadedRoute.lons == null || loadedRoute.distances == null
-                || loadedRoute.lats.length == 0
-                || loadedRoute.lons.length < loadedRoute.lats.length
-                || loadedRoute.distances.length < loadedRoute.lats.length) return;
+        if (loadedRoute == null || loadedClimb == null || !hasMapGeometry(loadedRoute)) return;
 
         // Full route — gray background
         List<GeoPoint> allPoints = new ArrayList<>(loadedRoute.lats.length);
@@ -559,38 +631,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         // Per-segment colored polylines on the climb portion
         List<GeoPoint> allClimbPoints = new ArrayList<>();
-        GeoPoint prevSegLastPoint = null;
-        double segBoundary = loadedClimb.startDistance;
-
-        if (loadedClimb.segments != null) {
-            for (StoredSegment seg : loadedClimb.segments) {
-                double segStart = segBoundary;
-                double segEnd   = segBoundary + seg.distance;
-
-                List<GeoPoint> segPoints = new ArrayList<>();
-                if (prevSegLastPoint != null) segPoints.add(prevSegLastPoint);
-
-                for (int i = 0; i < loadedRoute.distances.length; i++) {
-                    if (loadedRoute.distances[i] >= segStart
-                            && loadedRoute.distances[i] <= segEnd) {
-                        GeoPoint p = new GeoPoint(loadedRoute.lats[i], loadedRoute.lons[i]);
-                        segPoints.add(p);
-                        allClimbPoints.add(p);
-                    }
-                }
-
-                if (segPoints.size() >= 2) {
-                    Polyline segLine = new Polyline();
-                    segLine.setColor(SegmentColorPalette.toColor(seg.colorIndex));
-                    segLine.setWidth(7f);
-                    segLine.setPoints(segPoints);
-                    binding.mapView.getOverlays().add(segLine);
-                    prevSegLastPoint = segPoints.get(segPoints.size() - 1);
-                }
-
-                segBoundary = segEnd;
-            }
-        }
+        if (loadedClimb.segments != null) drawClimbSegments(allClimbPoints);
 
         List<GeoPoint> zoomTarget = allClimbPoints.isEmpty() ? allPoints : allClimbPoints;
         BoundingBox box = BoundingBox.fromGeoPoints(zoomTarget);
@@ -896,42 +937,49 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         new Thread(() -> {
             String msg;
             try {
-                OpenMeteoClient client =
-                        new OpenMeteoClient();
-                HourlyForecast f = client.fetch(foot);
-                HourlyForecast t = client.fetch(top);
-                Instant now = Instant.now();
-                nl.paree.climbpro.domain.units.UnitPreferences units =
-                        new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load();
-                String nowText = SummitWeather.describe(
-                        f, t, now, foot.elevationM, top.elevationM, units);
-                String laterText = SummitWeather.describe(
-                        f, t, now.plusSeconds(3 * 3600L), foot.elevationM, top.elevationM, units);
-                StringBuilder sb = new StringBuilder();
-                if (nowText != null) {
-                    sb.append(getString(R.string.climb_detail_weather_now)).append('\n').append(nowText);
-                }
-                if (laterText != null) {
-                    sb.append(sb.length() > 0 ? "\n\n" : "")
-                            .append(getString(R.string.climb_detail_weather_later))
-                            .append('\n').append(laterText);
-                }
-                msg = sb.length() > 0 ? sb.toString() : getString(R.string.climb_detail_weather_none);
+                msg = summitWeatherText(foot, top);
             } catch (Exception e) {
                 String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                 msg = getString(R.string.climb_detail_weather_failed, reason);
             }
             String text = msg + "\n\n" + getString(R.string.source_open_meteo);
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                binding.btnSummitWeather.setEnabled(true);
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.climb_detail_summit_weather)
-                        .setMessage(text)
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show();
-            });
+            runOnUiThread(() -> showSummitWeatherDialog(text));
         }, "summit-weather").start();
+    }
+
+    /** Foot-versus-summit weather now and in three hours (off the main thread). */
+    private String summitWeatherText(ClimbEndpoints.Point foot, ClimbEndpoints.Point top)
+            throws java.io.IOException {
+        OpenMeteoClient client = new OpenMeteoClient();
+        HourlyForecast f = client.fetch(foot);
+        HourlyForecast t = client.fetch(top);
+        Instant now = Instant.now();
+        nl.paree.climbpro.domain.units.UnitPreferences units =
+                new nl.paree.climbpro.data.settings.UnitPreferencesRepository(this).load();
+        String nowText = SummitWeather.describe(
+                f, t, now, foot.elevationM, top.elevationM, units);
+        String laterText = SummitWeather.describe(
+                f, t, now.plusSeconds(3 * 3600L), foot.elevationM, top.elevationM, units);
+        StringBuilder sb = new StringBuilder();
+        if (nowText != null) {
+            sb.append(getString(R.string.climb_detail_weather_now)).append('\n').append(nowText);
+        }
+        if (laterText != null) {
+            sb.append(sb.length() > 0 ? "\n\n" : "")
+                    .append(getString(R.string.climb_detail_weather_later))
+                    .append('\n').append(laterText);
+        }
+        return sb.length() > 0 ? sb.toString() : getString(R.string.climb_detail_weather_none);
+    }
+
+    private void showSummitWeatherDialog(String text) {
+        if (isFinishing() || isDestroyed()) return;
+        binding.btnSummitWeather.setEnabled(true);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.climb_detail_summit_weather)
+                .setMessage(text)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
     }
 
     /**
@@ -949,48 +997,64 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         ClimbEndpoints.Point foot = ClimbEndpoints.foot(r, c);
         ClimbEndpoints.Point top = ClimbEndpoints.top(r, c);
         double bearing = ClimateNormals.bearingDeg(foot.lat, foot.lon, top.lat, top.lon);
-        double elevation = Double.isNaN(foot.elevationM) ? top.elevationM
-                : Double.isNaN(top.elevationM) ? foot.elevationM
-                : (foot.elevationM + top.elevationM) / 2;
+        double elevation = meanElevation(foot, top);
         java.io.File filesDir = getFilesDir();
         new Thread(() -> {
             ClimateCache cache = new ClimateCache(filesDir);
-            ClimateNormals normals = cache.load(foot.lat, foot.lon);
-            String error = null;
-            if (normals == null && fetch) {
-                try {
-                    normals = new OpenMeteoClient().fetchClimate(
-                            foot.lat, foot.lon, elevation, LocalDate.now().getYear());
-                    cache.save(foot.lat, foot.lon, normals);
-                } catch (java.net.UnknownHostException | java.net.ConnectException
-                         | java.io.InterruptedIOException e) { // offline or timed out
-                    error = getString(R.string.climb_detail_best_offline);
-                } catch (Exception e) {
-                    String reason = e.getMessage() != null ? e.getMessage()
-                            : e.getClass().getSimpleName();
-                    error = getString(R.string.climb_detail_best_failed, reason);
-                }
-            }
+            ClimateNormals cached = cache.load(foot.lat, foot.lon);
+            String[] error = new String[1];
+            ClimateNormals normals = cached == null && fetch
+                    ? fetchClimate(cache, foot, elevation, error) : cached;
             BestTimeScorer.Result result =
                     normals == null ? null : BestTimeScorer.evaluate(normals, bearing);
-            String message = error;
             boolean hadData = normals != null;
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                bestTimeBusy = false;
-                if (result != null) {
-                    bestTimeLoaded = true;
-                    binding.bestTime.setText(getString(R.string.climb_detail_best, result.summary()));
-                    binding.bestTimeTable.setText(result.monthTable()
-                            + "\n" + getString(R.string.climb_detail_best_footer));
-                    binding.bestTimeTable.setVisibility(android.view.View.VISIBLE);
-                } else if (message != null) {
-                    binding.bestTime.setText(message);
-                } else if (hadData) {
-                    binding.bestTime.setText(R.string.climb_detail_best_no_history);
-                }
-            });
+            runOnUiThread(() -> showBestTime(result, error[0], hadData));
         }, "best-time").start();
+    }
+
+    /** Mean of the foot and summit elevation, or whichever one is known. */
+    private static double meanElevation(ClimbEndpoints.Point foot, ClimbEndpoints.Point top) {
+        if (Double.isNaN(foot.elevationM)) return top.elevationM;
+        if (Double.isNaN(top.elevationM)) return foot.elevationM;
+        return (foot.elevationM + top.elevationM) / 2;
+    }
+
+    /**
+     * Fetches and caches the climate normals at the foot; null on failure, with the reason in
+     * {@code error[0]}.
+     */
+    private ClimateNormals fetchClimate(ClimateCache cache, ClimbEndpoints.Point foot,
+                                        double elevation, String[] error) {
+        try {
+            ClimateNormals normals = new OpenMeteoClient().fetchClimate(
+                    foot.lat, foot.lon, elevation, LocalDate.now().getYear());
+            cache.save(foot.lat, foot.lon, normals);
+            return normals;
+        } catch (java.net.UnknownHostException | java.net.ConnectException
+                 | java.io.InterruptedIOException e) { // offline or timed out
+            error[0] = getString(R.string.climb_detail_best_offline);
+        } catch (Exception e) {
+            String reason = e.getMessage() != null ? e.getMessage()
+                    : e.getClass().getSimpleName();
+            error[0] = getString(R.string.climb_detail_best_failed, reason);
+        }
+        return null;
+    }
+
+    private void showBestTime(BestTimeScorer.Result result, String message, boolean hadData) {
+        if (isFinishing() || isDestroyed()) return;
+        bestTimeBusy = false;
+        if (result != null) {
+            bestTimeLoaded = true;
+            binding.bestTime.setText(getString(R.string.climb_detail_best, result.summary()));
+            binding.bestTimeTable.setText(result.monthTable()
+                    + "\n" + getString(R.string.climb_detail_best_footer));
+            binding.bestTimeTable.setVisibility(android.view.View.VISIBLE);
+        } else if (message != null) {
+            binding.bestTime.setText(message);
+        } else if (hadData) {
+            binding.bestTime.setText(R.string.climb_detail_best_no_history);
+        }
     }
 
     private void showRenameDialog() {

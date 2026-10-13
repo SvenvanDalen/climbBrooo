@@ -40,79 +40,82 @@ public final class ClimbDetector {
 
             // Found a potential climb start — extend it
             int startIdx = i;
-            double peakElevation = points.get(i).elevation;
-            int peakIdx = i;
-
-            int j = i + 1;
-            while (j < n) {
-                double ele = points.get(j).elevation;
-                if (!Double.isNaN(ele)) {
-                    if (ele > peakElevation) {
-                        peakElevation = ele;
-                        peakIdx = j;
-                    } else if (peakElevation - ele > DOWNHILL_TOLERANCE_M) {
-                        break;
-                    }
-                }
-                j++;
-            }
-
-            int endIdx = peakIdx;
+            int endIdx = peakIndex(points, startIdx);
             if (endIdx <= startIdx) {
                 i++;
                 continue;
             }
 
-            // Untrimmed metrics — used only for the climb-validity checks below;
-            // the emitted Climb is rebuilt from the trimmed points further down.
-            RoutePoint start = points.get(startIdx);
-            RoutePoint end   = points.get(endIdx);
-            double length    = end.distance - start.distance;
-            double eleGain   = end.elevation - start.elevation;
-
-            if (length < ClimbConstants.MIN_CLIMB_LENGTH_M || eleGain <= 0) {
-                i = endIdx + 1;
-                continue;
+            if (meetsClimbRules(points.get(startIdx), points.get(endIdx))) {
+                climbs.add(buildTrimmedClimb(points, startIdx, endIdx));
             }
-
-            double avgGradient = eleGain / length;
-            if (avgGradient < ClimbConstants.MIN_AVG_GRADIENT) {
-                i = endIdx + 1;
-                continue;
-            }
-
-            // Trim leading/trailing false flat, then recompute the climb from the trimmed points.
-            // endIdx > startIdx was already checked above, so the sub-list has >= 2 points and
-            // ClimbTrimmer never returns fewer, making the get(0)/get(size()-1) accesses safe.
-            // No re-validation after trimming: the trimmer only removes sub-2% ends and never
-            // drops below MIN_CLIMB_LENGTH_M, so a climb that passed >=800 m / >=3% still passes.
-            List<RoutePoint> climbPoints = ClimbTrimmer.trim(points.subList(startIdx, endIdx + 1));
-            RoutePoint trimmedStart = climbPoints.get(0);
-            RoutePoint trimmedEnd   = climbPoints.get(climbPoints.size() - 1);
-            double trimmedLength   = trimmedEnd.distance - trimmedStart.distance;
-            double trimmedEleGain  = trimmedEnd.elevation - trimmedStart.elevation;
-            double trimmedGradient = trimmedLength > 0 ? trimmedEleGain / trimmedLength : 0;
-
-            List<Segment> segments = Segmenter.segment(climbPoints);
-
-            Climb climb = Climb.builder()
-                    .startDistance((int) Math.round(trimmedStart.distance))
-                    .endDistance((int) Math.round(trimmedEnd.distance))
-                    .length((int) Math.round(trimmedLength))
-                    .elevationGain((int) Math.round(trimmedEleGain))
-                    .avgGradient(trimmedGradient)
-                    .startLat(trimmedStart.lat)
-                    .startLon(trimmedStart.lon)
-                    .segments(segments)
-                    .calibrationPoints(Segmenter.calibrationPoints(climbPoints))
-                    .build();
-
-            climbs.add(climb);
             // Advance past the ORIGINAL (untrimmed) end so a trailing flat is not rescanned.
             i = endIdx + 1;
         }
 
         return climbs;
+    }
+
+    /**
+     * Index of the highest point reached from {@code startIdx} before the road drops more
+     * than {@link #DOWNHILL_TOLERANCE_M} below it (NaN elevations are skipped).
+     */
+    private static int peakIndex(List<RoutePoint> points, int startIdx) {
+        int n = points.size();
+        double peakElevation = points.get(startIdx).elevation;
+        int peakIdx = startIdx;
+        for (int j = startIdx + 1; j < n; j++) {
+            double ele = points.get(j).elevation;
+            if (Double.isNaN(ele)) continue;
+            if (ele > peakElevation) {
+                peakElevation = ele;
+                peakIdx = j;
+            } else if (peakElevation - ele > DOWNHILL_TOLERANCE_M) {
+                break;
+            }
+        }
+        return peakIdx;
+    }
+
+    /**
+     * Untrimmed metrics — used only for the climb-validity checks; the emitted Climb is rebuilt
+     * from the trimmed points by {@link #buildTrimmedClimb}.
+     */
+    private static boolean meetsClimbRules(RoutePoint start, RoutePoint end) {
+        double length  = end.distance - start.distance;
+        double eleGain = end.elevation - start.elevation;
+        if (length < ClimbConstants.MIN_CLIMB_LENGTH_M || eleGain <= 0) return false;
+        return eleGain / length >= ClimbConstants.MIN_AVG_GRADIENT;
+    }
+
+    /**
+     * Trim leading/trailing false flat, then recompute the climb from the trimmed points.
+     * endIdx > startIdx was already checked, so the sub-list has >= 2 points and
+     * ClimbTrimmer never returns fewer, making the get(0)/get(size()-1) accesses safe.
+     * No re-validation after trimming: the trimmer only removes sub-2% ends and never
+     * drops below MIN_CLIMB_LENGTH_M, so a climb that passed >=800 m / >=3% still passes.
+     */
+    private static Climb buildTrimmedClimb(List<RoutePoint> points, int startIdx, int endIdx) {
+        List<RoutePoint> climbPoints = ClimbTrimmer.trim(points.subList(startIdx, endIdx + 1));
+        RoutePoint trimmedStart = climbPoints.get(0);
+        RoutePoint trimmedEnd   = climbPoints.get(climbPoints.size() - 1);
+        double trimmedLength   = trimmedEnd.distance - trimmedStart.distance;
+        double trimmedEleGain  = trimmedEnd.elevation - trimmedStart.elevation;
+        double trimmedGradient = trimmedLength > 0 ? trimmedEleGain / trimmedLength : 0;
+
+        List<Segment> segments = Segmenter.segment(climbPoints);
+
+        return Climb.builder()
+                .startDistance((int) Math.round(trimmedStart.distance))
+                .endDistance((int) Math.round(trimmedEnd.distance))
+                .length((int) Math.round(trimmedLength))
+                .elevationGain((int) Math.round(trimmedEleGain))
+                .avgGradient(trimmedGradient)
+                .startLat(trimmedStart.lat)
+                .startLon(trimmedStart.lon)
+                .segments(segments)
+                .calibrationPoints(Segmenter.calibrationPoints(climbPoints))
+                .build();
     }
 
     private static double getGradient(List<RoutePoint> pts, int a, int b) {

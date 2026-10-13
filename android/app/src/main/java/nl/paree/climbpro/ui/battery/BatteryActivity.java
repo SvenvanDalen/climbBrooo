@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.battery;
 
 import android.Manifest;
-import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -28,11 +27,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.battery.BatteryDevice;
 import nl.paree.climbpro.domain.battery.BatteryKind;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -90,6 +89,41 @@ public final class BatteryActivity extends AppCompatActivity {
         viewModel.load();
     }
 
+    /**
+     * Keeps the interval at the selected kind's default until the rider edits it (an existing
+     * device counts as edited).
+     */
+    private static void followKindDefault(EditText interval, Spinner kindSpinner,
+                                          BatteryKind[] kinds, boolean alreadyTouched) {
+        final boolean[] intervalTouched = {alreadyTouched};
+        final boolean[] settingDefault = {false};
+        interval.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(Editable s) {
+                if (!settingDefault[0]) intervalTouched[0] = true;
+            }
+        });
+        kindSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
+                if (intervalTouched[0]) return;
+                settingDefault[0] = true;
+                interval.setText(String.valueOf(kinds[pos].defaultIntervalDays));
+                settingDefault[0] = false;
+            }
+            @Override public void onNothingSelected(AdapterView<?> p) { }
+        });
+    }
+
+    /** Date button for the last charge; {@code charged[0]} holds the picked epoch second. */
+    private void bindChargeDatePicker(Button dateButton, long[] charged) {
+        dateButton.setText(chargedLabel(charged[0]));
+        dateButton.setOnClickListener(v -> PastDayPicker.show(this, charged[0], day -> {
+            charged[0] = day;
+            dateButton.setText(chargedLabel(day));
+        }));
+    }
+
     private void showDeviceDialog(BatteryDevice existing) {
         View view = getLayoutInflater().inflate(R.layout.dialog_battery_device, null);
         EditText name = view.findViewById(R.id.input_name);
@@ -115,42 +149,12 @@ public final class BatteryActivity extends AppCompatActivity {
             interval.setText(String.valueOf(initialKind.defaultIntervalDays));
         }
         // New device: follow the kind's default interval until the rider edits it themselves.
-        final boolean[] intervalTouched = {existing != null};
-        final boolean[] settingDefault = {false};
-        interval.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void afterTextChanged(Editable s) {
-                if (!settingDefault[0]) intervalTouched[0] = true;
-            }
-        });
-        kindSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                if (intervalTouched[0]) return;
-                settingDefault[0] = true;
-                interval.setText(String.valueOf(kinds[pos].defaultIntervalDays));
-                settingDefault[0] = false;
-            }
-            @Override public void onNothingSelected(AdapterView<?> p) { }
-        });
+        followKindDefault(interval, kindSpinner, kinds, existing != null);
 
         // Last charge: stored value, "now" for a new device; picked days land at noon.
         final long[] charged = {existing != null ? existing.lastChargedEpochSec
                                                  : System.currentTimeMillis() / 1000L};
-        dateButton.setText(chargedLabel(charged[0]));
-        dateButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            if (charged[0] > 0) base.setTimeInMillis(charged[0] * 1000L);
-            DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar cal = Calendar.getInstance();
-                cal.clear();
-                cal.set(y, m, d, 12, 0, 0);
-                charged[0] = Math.min(cal.getTimeInMillis(), System.currentTimeMillis()) / 1000L;
-                dateButton.setText(chargedLabel(charged[0]));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
-            dp.getDatePicker().setMaxDate(System.currentTimeMillis());
-            dp.show();
-        });
+        bindChargeDatePicker(dateButton, charged);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle(existing != null ? "Accu bewerken" : "Accu toevoegen")

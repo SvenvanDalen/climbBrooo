@@ -51,78 +51,100 @@ public final class RideBuddyProfileBuilder {
         p.createdEpochSec = nowEpochSec;
         long from = nowEpochSec - WINDOW_SEC;
 
-        List<StoredRide> used = new ArrayList<>();
-        if (rides != null) {
-            for (StoredRide r : rides) {
-                if (isUsable(r) && r.startEpochSec >= from && r.startEpochSec <= nowEpochSec + 86_400) {
-                    used.add(r);
-                }
-            }
-        }
+        List<StoredRide> used = usedRides(rides, from, nowEpochSec);
         p.rideCount = used.size();
         if (used.size() < MIN_RIDES) return p;
 
+        Habits h = new Habits();
+        for (StoredRide r : used) h.add(r, zone);
         // Pace: median speed on flat-ish rides; all rides when there are too few flat ones.
-        List<Double> flat = new ArrayList<>();
-        List<Double> all = new ArrayList<>();
-        List<Double> distances = new ArrayList<>();
-        int[] typeCounts = new int[3];
-        int[] dayCounts = new int[7];
-        int[] partCounts = new int[3];
-        Map<String, Integer> cellCounts = new HashMap<>();
-        Map<String, double[]> cellCentres = new HashMap<>();
-        for (StoredRide r : used) {
-            double kmh = speedKmh(r);
-            all.add(kmh);
-            if (r.elevationGainM / (r.distanceM / 1000f) < FLAT_M_PER_KM) flat.add(kmh);
-            distances.add(r.distanceM / 1000.0);
-            typeCounts[typeIndex(r)]++;
-            if (r.startEpochSec > 0) {
-                ZonedDateTime t = Instant.ofEpochSecond(r.startEpochSec).atZone(zone);
-                dayCounts[t.getDayOfWeek().getValue() - 1]++;
-                int part = daypartIndex(t.getHour());
-                if (part >= 0) partCounts[part]++;
-            }
-            if (r.startLat != null && r.startLon != null
-                    && !(r.startLat == 0 && r.startLon == 0)) {
-                String key = RideBuddyProfile.cellKey(r.startLat, r.startLon);
-                cellCounts.put(key, cellCounts.getOrDefault(key, 0) + 1);
-                cellCentres.put(key, RideBuddyProfile.snapToCell(r.startLat, r.startLon));
-            }
-        }
-        double pace = median(flat.size() >= 2 ? flat : all);
+        double pace = median(h.flat.size() >= 2 ? h.flat : h.all);
         p.flatSpeedDkmh = (int) Math.round(pace * 10);
-        p.typicalDistanceKm = Math.max(1, (int) Math.round(median(distances)));
+        p.typicalDistanceKm = Math.max(1, (int) Math.round(median(h.distances)));
 
         int n = used.size();
-        int types = 0;
-        for (int i = 0; i < 3; i++) if (typeCounts[i] >= Math.ceil(TYPE_SHARE * n)) types |= 1 << i;
-        if (types == 0) types = 1 << argMax(typeCounts);
+        int types = bits(h.typeCounts, Math.ceil(TYPE_SHARE * n));
+        if (types == 0) types = 1 << argMax(h.typeCounts);
         p.rideTypes = types;
 
-        int dayMin = Math.max(1, (int) Math.ceil(DAY_SHARE * n));
-        for (int i = 0; i < 7; i++) if (dayCounts[i] >= dayMin) p.weekdays |= 1 << i;
-        int partMin = Math.max(1, (int) Math.ceil(PART_SHARE * n));
-        for (int i = 0; i < 3; i++) if (partCounts[i] >= partMin) p.dayparts |= 1 << i;
+        p.weekdays |= bits(h.dayCounts, Math.max(1, (int) Math.ceil(DAY_SHARE * n)));
+        p.dayparts |= bits(h.partCounts, Math.max(1, (int) Math.ceil(PART_SHARE * n)));
 
-        String bestCell = null;
-        int best = 0;
-        for (Map.Entry<String, Integer> e : cellCounts.entrySet()) {
-            // Ties broken by key so the result doesn't depend on HashMap order.
-            if (e.getValue() > best || (e.getValue() == best && bestCell != null
-                    && e.getKey().compareTo(bestCell) < 0)) {
-                best = e.getValue();
-                bestCell = e.getKey();
-            }
-        }
-        if (bestCell != null && best >= MIN_AREA_STARTS) {
-            double[] c = cellCentres.get(bestCell);
+        String bestCell = mostCommonCell(h.cellCounts);
+        if (bestCell != null && h.cellCounts.get(bestCell) >= MIN_AREA_STARTS) {
+            double[] c = h.cellCentres.get(bestCell);
             p.areaLat = c[0];
             p.areaLon = c[1];
         }
 
         p.vamMph = vam(attempts, climbGainById, from);
         return p;
+    }
+
+    /** Usable rides that started in the profile window (a day of clock slack into the future). */
+    private static List<StoredRide> usedRides(List<StoredRide> rides, long from, long nowEpochSec) {
+        List<StoredRide> used = new ArrayList<>();
+        if (rides == null) return used;
+        for (StoredRide r : rides) {
+            if (isUsable(r) && r.startEpochSec >= from && r.startEpochSec <= nowEpochSec + 86_400) {
+                used.add(r);
+            }
+        }
+        return used;
+    }
+
+    /** Bit i set for every count that reaches {@code min}. */
+    private static int bits(int[] counts, double min) {
+        int mask = 0;
+        for (int i = 0; i < counts.length; i++) if (counts[i] >= min) mask |= 1 << i;
+        return mask;
+    }
+
+    /** Cell with the most ride starts; ties broken by key so HashMap order doesn't matter. */
+    private static String mostCommonCell(Map<String, Integer> cellCounts) {
+        String bestCell = null;
+        int best = 0;
+        for (Map.Entry<String, Integer> e : cellCounts.entrySet()) {
+            if (e.getValue() > best || (e.getValue() == best && bestCell != null
+                    && e.getKey().compareTo(bestCell) < 0)) {
+                best = e.getValue();
+                bestCell = e.getKey();
+            }
+        }
+        return bestCell;
+    }
+
+    /** Speeds, distances, ride types, start days/dayparts and start cells of the used rides. */
+    private static final class Habits {
+        final List<Double> flat = new ArrayList<>();
+        final List<Double> all = new ArrayList<>();
+        final List<Double> distances = new ArrayList<>();
+        final int[] typeCounts = new int[3];
+        final int[] dayCounts = new int[7];
+        final int[] partCounts = new int[3];
+        final Map<String, Integer> cellCounts = new HashMap<>();
+        final Map<String, double[]> cellCentres = new HashMap<>();
+
+        void add(StoredRide r, ZoneId zone) {
+            double kmh = speedKmh(r);
+            all.add(kmh);
+            if (r.elevationGainM / (r.distanceM / 1000f) < FLAT_M_PER_KM) flat.add(kmh);
+            distances.add(r.distanceM / 1000.0);
+            typeCounts[typeIndex(r)]++;
+            if (r.startEpochSec > 0) addStartTime(Instant.ofEpochSecond(r.startEpochSec).atZone(zone));
+            if (r.startLat != null && r.startLon != null
+                    && !(r.startLat == 0 && r.startLon == 0)) {
+                String key = RideBuddyProfile.cellKey(r.startLat, r.startLon);
+                cellCounts.merge(key, 1, Integer::sum);
+                cellCentres.put(key, RideBuddyProfile.snapToCell(r.startLat, r.startLon));
+            }
+        }
+
+        private void addStartTime(ZonedDateTime t) {
+            dayCounts[t.getDayOfWeek().getValue() - 1]++;
+            int part = daypartIndex(t.getHour());
+            if (part >= 0) partCounts[part]++;
+        }
     }
 
     static boolean isUsable(StoredRide r) {

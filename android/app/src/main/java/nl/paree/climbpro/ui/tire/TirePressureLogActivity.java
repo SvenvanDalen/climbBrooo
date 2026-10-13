@@ -126,38 +126,12 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         // Pre-fill with the latest check: riders usually pump to the same pressures.
         TirePressureLogEntry latest = viewModel.current() != null
                 ? TirePressureReminderCalculator.latest(viewModel.current().log.entries) : null;
-        if (latest != null) {
-            if (psi) {
-                front.setText(String.valueOf(TirePressureUnits.barToPsi(latest.frontBar)));
-                rear.setText(String.valueOf(TirePressureUnits.barToPsi(latest.rearBar)));
-            } else {
-                front.setText(String.format(Locale.ROOT, "%.1f", latest.frontBar));
-                rear.setText(String.format(Locale.ROOT, "%.1f", latest.rearBar));
-            }
-        }
+        if (latest != null) prefillPressures(latest, front, rear, psi);
 
         // null = "now"; otherwise the picked day at noon (local time).
         final Calendar[] picked = {null};
         dateButton.setText("Datum: vandaag");
-        dateButton.setOnClickListener(v -> {
-            Calendar base = picked[0] != null ? picked[0] : Calendar.getInstance();
-            DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar today = Calendar.getInstance();
-                if (y == today.get(Calendar.YEAR) && m == today.get(Calendar.MONTH)
-                        && d == today.get(Calendar.DAY_OF_MONTH)) {
-                    picked[0] = null;
-                    dateButton.setText("Datum: vandaag");
-                } else {
-                    Calendar c = Calendar.getInstance();
-                    c.clear();
-                    c.set(y, m, d, 12, 0, 0);
-                    picked[0] = c;
-                    dateButton.setText("Datum: " + adapter.formatDate(c.getTimeInMillis() / 1000L));
-                }
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
-            dp.getDatePicker().setMaxDate(System.currentTimeMillis());
-            dp.show();
-        });
+        dateButton.setOnClickListener(v -> pickCheckDate(dateButton, picked));
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Controle loggen")
@@ -171,14 +145,8 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                     Double f = TirePressureUnits.parse(front.getText().toString(), psi);
                     Double r = TirePressureUnits.parse(rear.getText().toString(), psi);
                     if (f == null || r == null) {
-                        String range = psi
-                                ? String.format(Locale.getDefault(), "%d en %d psi",
-                                        TirePressureUnits.barToPsi(TirePressureUnits.MIN_BAR),
-                                        TirePressureUnits.barToPsi(TirePressureUnits.MAX_BAR))
-                                : String.format(Locale.getDefault(), "%.1f en %.1f bar",
-                                        TirePressureUnits.MIN_BAR, TirePressureUnits.MAX_BAR);
-                        Toast.makeText(this, "Vul voor en achter een druk in tussen " + range,
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Vul voor en achter een druk in tussen "
+                                + pressureRange(psi), Toast.LENGTH_SHORT).show();
                         return;
                     }
                     long ts = picked[0] != null ? picked[0].getTimeInMillis() / 1000L
@@ -187,6 +155,49 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                     dialog.dismiss();
                 }));
         dialog.show();
+    }
+
+    private static void prefillPressures(TirePressureLogEntry latest, EditText front,
+                                         EditText rear, boolean psi) {
+        if (psi) {
+            front.setText(String.valueOf(TirePressureUnits.barToPsi(latest.frontBar)));
+            rear.setText(String.valueOf(TirePressureUnits.barToPsi(latest.rearBar)));
+        } else {
+            front.setText(String.format(Locale.ROOT, "%.1f", latest.frontBar));
+            rear.setText(String.format(Locale.ROOT, "%.1f", latest.rearBar));
+        }
+    }
+
+    /** Picking today again means "now"; any other day lands at noon (local time). */
+    private void pickCheckDate(Button dateButton, Calendar[] picked) {
+        Calendar base = picked[0] != null ? picked[0] : Calendar.getInstance();
+        DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
+            Calendar today = Calendar.getInstance();
+            if (y == today.get(Calendar.YEAR) && m == today.get(Calendar.MONTH)
+                    && d == today.get(Calendar.DAY_OF_MONTH)) {
+                picked[0] = null;
+                dateButton.setText("Datum: vandaag");
+            } else {
+                Calendar c = Calendar.getInstance();
+                c.clear();
+                c.set(y, m, d, 12, 0, 0);
+                picked[0] = c;
+                dateButton.setText("Datum: " + adapter.formatDate(c.getTimeInMillis() / 1000L));
+            }
+        }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
+        dp.getDatePicker().setMaxDate(System.currentTimeMillis());
+        dp.show();
+    }
+
+    /** The valid pressure range in the rider's unit, for the error message. */
+    private static String pressureRange(boolean psi) {
+        if (psi) {
+            return String.format(Locale.getDefault(), "%d en %d psi",
+                    TirePressureUnits.barToPsi(TirePressureUnits.MIN_BAR),
+                    TirePressureUnits.barToPsi(TirePressureUnits.MAX_BAR));
+        }
+        return String.format(Locale.getDefault(), "%.1f en %.1f bar",
+                TirePressureUnits.MIN_BAR, TirePressureUnits.MAX_BAR);
     }
 
     private void showReminderDialog() {

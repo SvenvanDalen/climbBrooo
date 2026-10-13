@@ -139,33 +139,10 @@ public final class ClimbIndoorViewModel extends AndroidViewModel {
                 ClimbProgress.compute(climbId, attempts, indoorIds, weights);
 
         // #395: the counterpart on the other side, among every climb in the collection.
-        List<VirtualClimbLinker.Candidate> all = new ArrayList<>();
-        VirtualClimbLinker.Candidate self = null;
-        for (RouteCatalogEntry e : routes.loadCatalog()) {
-            StoredRoute r;
-            try {
-                r = e.routeId.equals(routeId) ? route : routes.loadRoute(e.routeId);
-            } catch (Exception ex) {
-                continue;
-            }
-            if (r.climbs == null) continue;
-            String routeName = r.userDisplayName != null ? r.userDisplayName : r.name;
-            boolean v = isMyWhooshRoute(r.name);
-            for (int i = 0; i < r.climbs.size(); i++) {
-                StoredClimb c = r.climbs.get(i);
-                VirtualClimbLinker.Candidate cand = new VirtualClimbLinker.Candidate(
-                        climbId(c), name(c, i), stripMyWhoosh(routeName), length(c),
-                        c.avgGradient, v, e.routeId, i);
-                if (e.routeId.equals(routeId) && i == climbIndex) self = cand;
-                all.add(cand);
-            }
-        }
-        VirtualClimbLinker.Candidate counterpart = self != null
-                ? VirtualClimbLinker.counterpart(self, all) : null;
-        Side selfSide = side(virtual ? "Indoor (MyWhoosh)" : "Buiten", climbId, attempts, weights);
+        VirtualClimbLinker.Candidate counterpart = counterpartOf(routes, route, routeId, climbIndex);
+        Side selfSide = side(sideLabel(virtual), climbId, attempts, weights);
         Side otherSide = counterpart != null
-                ? side(counterpart.virtual ? "Indoor (MyWhoosh)" : "Buiten", counterpart.climbId,
-                        attempts, weights)
+                ? side(sideLabel(counterpart.virtual), counterpart.climbId, attempts, weights)
                 : null;
 
         // #396: predict the real climb — this one, or the real counterpart of a MyWhoosh climb.
@@ -182,32 +159,86 @@ public final class ClimbIndoorViewModel extends AndroidViewModel {
         IndoorClimbPredictor.Basis basis = IndoorClimbPredictor.basis(rides,
                 new RideStreamStatsRepository(app).loadById(), System.currentTimeMillis() / 1000L);
         double weightKg = weights.weightOn(LocalDate.now());
-        ClimbTimeEstimate prediction = null;
-        String hint = null;
-        if (target == null) {
-            hint = "Geen echte klim gekoppeld aan deze MyWhoosh-klim, dus niets te voorspellen.";
-        } else if (basis == null) {
-            hint = "Nog geen indoorrit met 20 minuten vermogen in de laatste "
-                    + IndoorClimbPredictor.WINDOW_DAYS + " dagen.";
-        } else if (weightKg <= 0 || profile.bikeWeightKg <= 0) {
-            hint = "Vul je gewicht en het gewicht van je fiets in bij Instellingen.";
-        } else if (target.segments == null || target.segments.isEmpty()) {
-            hint = "Deze klim heeft geen segmenten.";
-        } else {
-            List<StoredSegment> segs = target.segments;
-            int[] dist = new int[segs.size()];
-            double[] grad = new double[segs.size()];
-            int[] surface = new int[segs.size()];
-            for (int i = 0; i < segs.size(); i++) {
-                dist[i] = segs.get(i).distance;
-                grad[i] = segs.get(i).gradient;
-                surface[i] = segs.get(i).surfaceType;
-            }
-            prediction = IndoorClimbPredictor.predict(basis, weightKg, profile.bikeWeightKg,
-                    dist, grad, surface);
-        }
+        String hint = predictionHint(target, basis, weightKg, profile.bikeWeightKg);
+        ClimbTimeEstimate prediction = hint == null
+                ? predict(target.segments, basis, weightKg, profile.bikeWeightKg) : null;
         return new State(climbName, virtual, progress, counterpart, selfSide, otherSide,
                 targetName, basis, prediction, weightKg, hint);
+    }
+
+    private static String sideLabel(boolean virtual) {
+        return virtual ? "Indoor (MyWhoosh)" : "Buiten";
+    }
+
+    /** The matching climb on the other side (real vs MyWhoosh) among every catalog climb. */
+    private static VirtualClimbLinker.Candidate counterpartOf(RouteRepository routes,
+                                                              StoredRoute route, String routeId,
+                                                              int climbIndex) {
+        List<VirtualClimbLinker.Candidate> all = new ArrayList<>();
+        VirtualClimbLinker.Candidate self = null;
+        for (RouteCatalogEntry e : routes.loadCatalog()) {
+            StoredRoute r;
+            try {
+                r = e.routeId.equals(routeId) ? route : routes.loadRoute(e.routeId);
+            } catch (Exception ex) {
+                continue;
+            }
+            if (r.climbs == null) continue;
+            int selfIndex = e.routeId.equals(routeId) ? climbIndex : -1;
+            VirtualClimbLinker.Candidate found = addCandidates(all, e.routeId, r, selfIndex);
+            if (found != null) self = found;
+        }
+        return self != null ? VirtualClimbLinker.counterpart(self, all) : null;
+    }
+
+    /** Adds every climb of {@code r}; returns the one at {@code selfIndex} (null if none). */
+    private static VirtualClimbLinker.Candidate addCandidates(
+            List<VirtualClimbLinker.Candidate> all, String routeId, StoredRoute r, int selfIndex) {
+        String routeName = r.userDisplayName != null ? r.userDisplayName : r.name;
+        boolean v = isMyWhooshRoute(r.name);
+        VirtualClimbLinker.Candidate self = null;
+        for (int i = 0; i < r.climbs.size(); i++) {
+            StoredClimb c = r.climbs.get(i);
+            VirtualClimbLinker.Candidate cand = new VirtualClimbLinker.Candidate(
+                    climbId(c), name(c, i), stripMyWhoosh(routeName), length(c),
+                    c.avgGradient, v, routeId, i);
+            if (i == selfIndex) self = cand;
+            all.add(cand);
+        }
+        return self;
+    }
+
+    /** Why the real climb can't be predicted; null when it can. */
+    private static String predictionHint(StoredClimb target, IndoorClimbPredictor.Basis basis,
+                                         double weightKg, double bikeWeightKg) {
+        if (target == null) {
+            return "Geen echte klim gekoppeld aan deze MyWhoosh-klim, dus niets te voorspellen.";
+        }
+        if (basis == null) {
+            return "Nog geen indoorrit met 20 minuten vermogen in de laatste "
+                    + IndoorClimbPredictor.WINDOW_DAYS + " dagen.";
+        }
+        if (weightKg <= 0 || bikeWeightKg <= 0) {
+            return "Vul je gewicht en het gewicht van je fiets in bij Instellingen.";
+        }
+        if (target.segments == null || target.segments.isEmpty()) {
+            return "Deze klim heeft geen segmenten.";
+        }
+        return null;
+    }
+
+    private static ClimbTimeEstimate predict(List<StoredSegment> segs,
+                                             IndoorClimbPredictor.Basis basis, double weightKg,
+                                             double bikeWeightKg) {
+        int[] dist = new int[segs.size()];
+        double[] grad = new double[segs.size()];
+        int[] surface = new int[segs.size()];
+        for (int i = 0; i < segs.size(); i++) {
+            dist[i] = segs.get(i).distance;
+            grad[i] = segs.get(i).gradient;
+            surface[i] = segs.get(i).surfaceType;
+        }
+        return IndoorClimbPredictor.predict(basis, weightKg, bikeWeightKg, dist, grad, surface);
     }
 
     private static Side side(String label, String climbId, List<StoredClimbAttempt> attempts,

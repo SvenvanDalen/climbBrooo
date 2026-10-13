@@ -87,6 +87,18 @@ public final class NearDuplicateClimbFinder {
         List<Candidate> result = new ArrayList<>();
         if (routes == null) return result;
 
+        List<ClimbRef> all = allClimbs(routes);
+        for (int i = 0; i < all.size(); i++) {
+            ClimbRef ra = all.get(i);
+            for (int j = i + 1; j < all.size(); j++) {
+                Candidate c = compare(ra, all.get(j), radiusM, lengthTolerance, gradientTolerance);
+                if (c != null) result.add(c);
+            }
+        }
+        return result;
+    }
+
+    private static List<ClimbRef> allClimbs(List<RouteClimbs> routes) {
         List<ClimbRef> all = new ArrayList<>();
         for (RouteClimbs rc : routes) {
             if (rc.climbs == null) continue;
@@ -94,31 +106,29 @@ public final class NearDuplicateClimbFinder {
                 all.add(new ClimbRef(rc.routeId, rc.routeDisplayName, i, rc.climbs.get(i)));
             }
         }
+        return all;
+    }
 
-        for (int i = 0; i < all.size(); i++) {
-            ClimbRef ra = all.get(i);
-            for (int j = i + 1; j < all.size(); j++) {
-                ClimbRef rb = all.get(j);
-                if (ra.routeId.equals(rb.routeId)) continue;
+    /** A candidate when two climbs on different routes are near-duplicates, else null. */
+    private static Candidate compare(ClimbRef ra, ClimbRef rb, double radiusM,
+                                     double lengthTolerance, double gradientTolerance) {
+        if (ra.routeId.equals(rb.routeId)) return null;
 
-                String idA = ClimbIdentity.of(ra.climb.startLat, ra.climb.startLon, ra.climb.length);
-                String idB = ClimbIdentity.of(rb.climb.startLat, rb.climb.startLon, rb.climb.length);
-                if (idA.equals(idB)) continue;
+        String idA = ClimbIdentity.of(ra.climb.startLat, ra.climb.startLon, ra.climb.length);
+        String idB = ClimbIdentity.of(rb.climb.startLat, rb.climb.startLon, rb.climb.length);
+        if (idA.equals(idB)) return null;
 
-                double distanceM = CumulativeDistance.haversine(
-                        ra.climb.startLat, ra.climb.startLon, rb.climb.startLat, rb.climb.startLon);
-                if (distanceM > radiusM) continue;
+        double distanceM = CumulativeDistance.haversine(
+                ra.climb.startLat, ra.climb.startLon, rb.climb.startLat, rb.climb.startLon);
+        if (distanceM > radiusM) return null;
 
-                int lengthDiffM = Math.abs(ra.climb.length - rb.climb.length);
-                int maxLength = Math.max(ra.climb.length, rb.climb.length);
-                if (maxLength > 0 && (double) lengthDiffM / maxLength > lengthTolerance) continue;
+        int lengthDiffM = Math.abs(ra.climb.length - rb.climb.length);
+        int maxLength = Math.max(ra.climb.length, rb.climb.length);
+        if (maxLength > 0 && (double) lengthDiffM / maxLength > lengthTolerance) return null;
 
-                double gradientDiffAbs = Math.abs(ra.climb.avgGradient - rb.climb.avgGradient);
-                if (gradientDiffAbs > gradientTolerance) continue;
+        double gradientDiffAbs = Math.abs(ra.climb.avgGradient - rb.climb.avgGradient);
+        if (gradientDiffAbs > gradientTolerance) return null;
 
-                result.add(new Candidate(ra, rb, distanceM, lengthDiffM, gradientDiffAbs));
-            }
-        }
-        return result;
+        return new Candidate(ra, rb, distanceM, lengthDiffM, gradientDiffAbs);
     }
 }

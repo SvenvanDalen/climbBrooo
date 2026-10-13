@@ -104,6 +104,22 @@ public final class MultiDayTourPlanner {
     static List<TourStop> order(List<TourStop> stops, Request request) {
         int n = stops.size();
         if (n <= 1) return new ArrayList<>(stops);
+        double[][] leg = legMatrix(stops);
+        double[] fromStart = request.hasStart() ? distancesFromStart(stops, request) : null;
+
+        int[] best = fromStart != null
+                ? nearestNeighbour(closestIndex(fromStart), leg)
+                : bestOpenTour(leg);
+        twoOpt(best, leg, fromStart);
+
+        List<TourStop> ordered = new ArrayList<>(n);
+        for (int idx : best) ordered.add(stops.get(idx));
+        return ordered;
+    }
+
+    /** {@code leg[i][j]}: distance from the end of stop i to the start of stop j. */
+    private static double[][] legMatrix(List<TourStop> stops) {
+        int n = stops.size();
         double[][] leg = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -112,37 +128,37 @@ public final class MultiDayTourPlanner {
                         stops.get(j).startLat, stops.get(j).startLon);
             }
         }
-        double[] fromStart = null;
-        if (request.hasStart()) {
-            fromStart = new double[n];
-            for (int i = 0; i < n; i++) {
-                fromStart[i] = distance(request.startLat, request.startLon,
-                        stops.get(i).startLat, stops.get(i).startLon);
-            }
-        }
+        return leg;
+    }
 
+    private static double[] distancesFromStart(List<TourStop> stops, Request request) {
+        double[] fromStart = new double[stops.size()];
+        for (int i = 0; i < stops.size(); i++) {
+            fromStart[i] = distance(request.startLat, request.startLon,
+                    stops.get(i).startLat, stops.get(i).startLon);
+        }
+        return fromStart;
+    }
+
+    private static int closestIndex(double[] fromStart) {
+        int first = 0;
+        for (int i = 1; i < fromStart.length; i++) if (fromStart[i] < fromStart[first]) first = i;
+        return first;
+    }
+
+    /** Without a start point: the cheapest nearest-neighbour tour over every first stop. */
+    private static int[] bestOpenTour(double[][] leg) {
         int[] best = null;
         double bestCost = Double.MAX_VALUE;
-        if (fromStart != null) {
-            int first = 0;
-            for (int i = 1; i < n; i++) if (fromStart[i] < fromStart[first]) first = i;
-            best = nearestNeighbour(first, leg);
-            bestCost = cost(best, leg, fromStart);
-        } else {
-            for (int first = 0; first < n; first++) {
-                int[] tour = nearestNeighbour(first, leg);
-                double c = cost(tour, leg, null);
-                if (c < bestCost - TWO_OPT_EPSILON_M) {
-                    best = tour;
-                    bestCost = c;
-                }
+        for (int first = 0; first < leg.length; first++) {
+            int[] tour = nearestNeighbour(first, leg);
+            double c = cost(tour, leg, null);
+            if (c < bestCost - TWO_OPT_EPSILON_M) {
+                best = tour;
+                bestCost = c;
             }
         }
-        twoOpt(best, leg, fromStart);
-
-        List<TourStop> ordered = new ArrayList<>(n);
-        for (int idx : best) ordered.add(stops.get(idx));
-        return ordered;
+        return best;
     }
 
     private static int[] nearestNeighbour(int first, double[][] leg) {
@@ -208,16 +224,11 @@ public final class MultiDayTourPlanner {
     // ---------------------------------------------------------------- splitting
 
     /**
-     * Returns the first stop index of each of {@code days} non-empty contiguous groups
-     * ({@code days <= loads.length}). Phase 1 finds the minimal possible heaviest day; phase 2
-     * minimises the sum of squared loads subject to every day staying at or below that value.
+     * Phase 1: minMax[k][i] = minimal heaviest day splitting the first i stops into k days;
+     * returns that optimum for all stops over all days.
      */
-    static int[] partition(long[] loads, int days) {
-        int n = loads.length;
-        long[] prefix = new long[n + 1];
-        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + loads[i];
-
-        // Phase 1: minMax[k][i] = minimal heaviest day splitting the first i stops into k days.
+    private static long minimalHeaviestDay(long[] prefix, int days) {
+        int n = prefix.length - 1;
         long inf = Long.MAX_VALUE;
         long[][] minMax = new long[days + 1][n + 1];
         for (long[] row : minMax) java.util.Arrays.fill(row, inf);
@@ -231,26 +242,43 @@ public final class MultiDayTourPlanner {
                 }
             }
         }
-        long cap = minMax[days][n];
+        return minMax[days][n];
+    }
+
+    /** Best sum-of-squares split of the first i stops into k days, no day above {@code cap}. */
+    private static void relaxEven(long[][] sq, int[][] from, long[] prefix, int k, int i,
+                                  long cap) {
+        for (int j = k - 1; j < i; j++) {
+            if (sq[k - 1][j] == Long.MAX_VALUE) continue;
+            long load = prefix[i] - prefix[j];
+            if (load > cap) continue;
+            long v = sq[k - 1][j] + load * load;
+            if (v < sq[k][i]) {
+                sq[k][i] = v;
+                from[k][i] = j;
+            }
+        }
+    }
+
+    /**
+     * Returns the first stop index of each of {@code days} non-empty contiguous groups
+     * ({@code days <= loads.length}). Phase 1 finds the minimal possible heaviest day; phase 2
+     * minimises the sum of squared loads subject to every day staying at or below that value.
+     */
+    static int[] partition(long[] loads, int days) {
+        int n = loads.length;
+        long[] prefix = new long[n + 1];
+        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + loads[i];
+
+        long cap = minimalHeaviestDay(prefix, days);
 
         // Phase 2: most even split whose heaviest day equals the optimum.
         long[][] sq = new long[days + 1][n + 1];
         int[][] from = new int[days + 1][n + 1];
-        for (long[] row : sq) java.util.Arrays.fill(row, inf);
+        for (long[] row : sq) java.util.Arrays.fill(row, Long.MAX_VALUE);
         sq[0][0] = 0;
         for (int k = 1; k <= days; k++) {
-            for (int i = k; i <= n; i++) {
-                for (int j = k - 1; j < i; j++) {
-                    if (sq[k - 1][j] == inf) continue;
-                    long load = prefix[i] - prefix[j];
-                    if (load > cap) continue;
-                    long v = sq[k - 1][j] + load * load;
-                    if (v < sq[k][i]) {
-                        sq[k][i] = v;
-                        from[k][i] = j;
-                    }
-                }
-            }
+            for (int i = k; i <= n; i++) relaxEven(sq, from, prefix, k, i, cap);
         }
 
         int[] starts = new int[days];

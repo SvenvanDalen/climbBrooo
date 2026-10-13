@@ -162,14 +162,24 @@ public final class MyWhooshRouteReader {
             throw new IOException("Geen hoogtedata in deze rit");
         }
 
-        List<RoutePoint> out = new ArrayList<>();
         if (positioned >= withAltitude.size() * MIN_POSITIONED_SHARE) {
-            for (FitTrackDecoder.Record r : withAltitude) {
-                if (r.hasPosition()) out.add(new RoutePoint(r.lat, r.lon, r.altitudeM, 0));
-            }
-            return new Result(out, false);
+            return new Result(positionedPoints(withAltitude), false);
         }
+        return new Result(distancePoints(withAltitude), true);
+    }
 
+    private static List<RoutePoint> positionedPoints(List<FitTrackDecoder.Record> records) {
+        List<RoutePoint> out = new ArrayList<>();
+        for (FitTrackDecoder.Record r : records) {
+            if (r.hasPosition()) out.add(new RoutePoint(r.lat, r.lon, r.altitudeM, 0));
+        }
+        return out;
+    }
+
+    /** No usable GPS: the distance becomes a virtual northward track. */
+    private static List<RoutePoint> distancePoints(List<FitTrackDecoder.Record> withAltitude)
+            throws IOException {
+        List<RoutePoint> out = new ArrayList<>();
         double lastDistance = -1;
         for (FitTrackDecoder.Record r : withAltitude) {
             if (Double.isNaN(r.distanceM) || r.distanceM <= lastDistance) continue; // standing still
@@ -179,6 +189,6 @@ public final class MyWhooshRouteReader {
         if (out.size() < 2) {
             throw new IOException("Geen GPS- of afstandsdata in deze rit");
         }
-        return new Result(out, true);
+        return out;
     }
 }

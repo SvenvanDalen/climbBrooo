@@ -74,21 +74,24 @@ public final class ActivityImportActivity extends AppCompatActivity {
 
     private void importAll(List<Uri> uris) {
         executor.execute(() -> {
-            ActivityFileImporter importer = new ActivityFileImporter(this);
-            int activities = 0, added = 0, known = 0;
-            List<String> errors = new ArrayList<>();
-            for (Uri uri : uris) {
-                String name = displayName(uri);
-                try {
-                    ActivityFileImporter.Result r = importer.importFile(name, read(uri));
-                    activities += r.activities;
-                    added += r.newAttempts;
-                    known += r.alreadyKnown;
-                } catch (Exception e) {
-                    errors.add(name + ": "
-                            + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-                }
-            }
+            ImportTotals totals = importFiles(uris);
+            // Picked from the logbook: it is right underneath and reloads in onRestart(), so
+            // opening it again would stack a second logbook.
+            boolean offerLogbook = totals.added > 0
+                    && !getIntent().getBooleanExtra(EXTRA_PICK, false);
+            String msg = totals.message();
+            runOnUiThread(() -> showResult(msg, offerLogbook));
+        });
+    }
+
+    /** What importing a batch of files added up to, plus one error line per failed file. */
+    private static final class ImportTotals {
+        int activities;
+        int added;
+        int known;
+        final List<String> errors = new ArrayList<>();
+
+        String message() {
             StringBuilder msg = new StringBuilder();
             if (activities > 0) {
                 msg.append(activities).append(" rit(ten) gelezen\n")
@@ -96,23 +99,40 @@ public final class ActivityImportActivity extends AppCompatActivity {
                 if (known > 0) msg.append("\n").append(known).append(" al bekend (bijv. via Strava)");
             }
             for (String e : errors) msg.append(msg.length() > 0 ? "\n\n" : "").append(e);
-            // Picked from the logbook: it is right underneath and reloads in onRestart(), so
-            // opening it again would stack a second logbook.
-            boolean offerLogbook = added > 0 && !getIntent().getBooleanExtra(EXTRA_PICK, false);
-            runOnUiThread(() -> {
-                if (isFinishing() || isDestroyed()) return;
-                new AlertDialog.Builder(this)
-                        .setTitle("Garmin-rit importeren")
-                        .setMessage(msg.toString())
-                        .setPositiveButton(offerLogbook ? "Naar logboek" : "OK", (d, w) -> {
-                            if (offerLogbook) {
-                                startActivity(new Intent(this, ClimbLogbookActivity.class));
-                            }
-                        })
-                        .setOnDismissListener(d -> finish())
-                        .show();
-            });
-        });
+            return msg.toString();
+        }
+    }
+
+    private ImportTotals importFiles(List<Uri> uris) {
+        ActivityFileImporter importer = new ActivityFileImporter(this);
+        ImportTotals totals = new ImportTotals();
+        for (Uri uri : uris) {
+            String name = displayName(uri);
+            try {
+                ActivityFileImporter.Result r = importer.importFile(name, read(uri));
+                totals.activities += r.activities;
+                totals.added += r.newAttempts;
+                totals.known += r.alreadyKnown;
+            } catch (Exception e) {
+                totals.errors.add(name + ": "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            }
+        }
+        return totals;
+    }
+
+    private void showResult(String msg, boolean offerLogbook) {
+        if (isFinishing() || isDestroyed()) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Garmin-rit importeren")
+                .setMessage(msg)
+                .setPositiveButton(offerLogbook ? "Naar logboek" : "OK", (d, w) -> {
+                    if (offerLogbook) {
+                        startActivity(new Intent(this, ClimbLogbookActivity.class));
+                    }
+                })
+                .setOnDismissListener(d -> finish())
+                .show();
     }
 
     private byte[] read(Uri uri) throws IOException {

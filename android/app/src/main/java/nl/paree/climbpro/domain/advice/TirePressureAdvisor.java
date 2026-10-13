@@ -106,16 +106,18 @@ public final class TirePressureAdvisor {
         }
 
         if (route.climbs != null) {
-            for (StoredClimb climb : route.climbs) {
-                if (climb.segments == null) continue;
-                for (nl.paree.climbpro.data.route.StoredSegment seg : climb.segments) {
-                    int type = SurfaceType.fromInt(seg.surfaceType);
-                    if (type == SurfaceType.UNKNOWN) continue;
-                    byType[type] += Math.max(0, seg.distance);
-                }
-            }
+            for (StoredClimb climb : route.climbs) addSegmentSurfaces(climb, byType);
         }
         return byType;
+    }
+
+    private static void addSegmentSurfaces(StoredClimb climb, long[] byType) {
+        if (climb.segments == null) return;
+        for (nl.paree.climbpro.data.route.StoredSegment seg : climb.segments) {
+            int type = SurfaceType.fromInt(seg.surfaceType);
+            if (type == SurfaceType.UNKNOWN) continue;
+            byType[type] += Math.max(0, seg.distance);
+        }
     }
 
     private static long sum(long[] arr) {

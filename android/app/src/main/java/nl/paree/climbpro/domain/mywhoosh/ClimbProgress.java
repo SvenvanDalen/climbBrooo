@@ -40,6 +40,39 @@ public final class ClimbProgress {
         }
     }
 
+    private static List<StoredClimbAttempt> timedAttemptsOf(String climbId,
+                                                            List<StoredClimbAttempt> attempts) {
+        List<StoredClimbAttempt> mine = new ArrayList<>();
+        for (StoredClimbAttempt a : attempts) {
+            if (a != null && climbId.equals(a.climbId) && a.elapsedSec > 0) mine.add(a);
+        }
+        return mine;
+    }
+
+    /** Fastest attempt that followed the climb; the earliest one on a tie. */
+    private static StoredClimbAttempt fastestClean(List<StoredClimbAttempt> mine) {
+        StoredClimbAttempt fastest = null;
+        for (StoredClimbAttempt a : mine) {
+            if (!a.routeDeviation && (fastest == null || a.elapsedSec < fastest.elapsedSec)) {
+                fastest = a;
+            }
+        }
+        return fastest;
+    }
+
+    /** Attempt with the highest W/kg (index-aligned {@code wkg}); the earliest one on a tie. */
+    private static StoredClimbAttempt strongest(List<StoredClimbAttempt> mine, Double[] wkg) {
+        StoredClimbAttempt strongest = null;
+        double bestWkg = 0;
+        for (int i = 0; i < mine.size(); i++) {
+            if (wkg[i] != null && wkg[i] > bestWkg) {
+                bestWkg = wkg[i];
+                strongest = mine.get(i);
+            }
+        }
+        return strongest;
+    }
+
     /**
      * @param indoorActivityIds activity ids of indoor rides, to tell the two apart; may be null
      */
@@ -47,29 +80,18 @@ public final class ClimbProgress {
                                       java.util.Set<Long> indoorActivityIds,
                                       WeightHistory weights) {
         if (climbId == null || attempts == null) return Collections.emptyList();
-        List<StoredClimbAttempt> mine = new ArrayList<>();
-        for (StoredClimbAttempt a : attempts) {
-            if (a != null && climbId.equals(a.climbId) && a.elapsedSec > 0) mine.add(a);
-        }
+        List<StoredClimbAttempt> mine = timedAttemptsOf(climbId, attempts);
         mine.sort((x, y) -> x.dateEpochSec != y.dateEpochSec
                 ? Long.compare(x.dateEpochSec, y.dateEpochSec)
                 : Integer.compare(x.startOffsetSec, y.startOffsetSec));
 
-        StoredClimbAttempt fastest = null;
-        StoredClimbAttempt strongest = null;
-        double bestWkg = 0;
         Double[] wkg = new Double[mine.size()];
         for (int i = 0; i < mine.size(); i++) {
             StoredClimbAttempt a = mine.get(i);
             wkg[i] = weights != null ? weights.wattsPerKg(a.avgWatts, a.dateEpochSec) : null;
-            if (!a.routeDeviation && (fastest == null || a.elapsedSec < fastest.elapsedSec)) {
-                fastest = a;
-            }
-            if (wkg[i] != null && wkg[i] > bestWkg) {
-                bestWkg = wkg[i];
-                strongest = a;
-            }
         }
+        StoredClimbAttempt fastest = fastestClean(mine);
+        StoredClimbAttempt strongest = strongest(mine, wkg);
         List<Point> out = new ArrayList<>();
         for (int i = 0; i < mine.size(); i++) {
             StoredClimbAttempt a = mine.get(i);

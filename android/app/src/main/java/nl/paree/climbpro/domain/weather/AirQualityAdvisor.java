@@ -75,16 +75,47 @@ public final class AirQualityAdvisor {
     /** Hours overlapping {@code [start, start + durationSec)}. */
     public static Advice advise(AirQualityForecast f, Instant start, long durationSec) {
         Instant end = start.plusSeconds(durationSec);
+        Maxima mx = new Maxima();
+        for (int i = 0; i < f.times.length; i++) {
+            Instant h = f.times[i];
+            if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
+            mx.add(f, i, h);
+        }
+        boolean pollenKnown = false;
+        List<PollenPeak> peaks = new ArrayList<>();
+        for (Pollen p : Pollen.values()) {
+            double g = mx.maxPollen[p.ordinal()];
+            if (Double.isNaN(g)) continue;
+            pollenKnown = true;
+            Level level = pollenLevel(p, g);
+            if (level != Level.GOOD) peaks.add(new PollenPeak(p, g, level));
+        }
+        Collections.sort(peaks, (a, b) -> a.level != b.level
+                ? b.level.ordinal() - a.level.ordinal()
+                : Double.compare(b.grains / b.type.highFrom, a.grains / a.type.highFrom));
+        return new Advice(mx.covered, mx.maxAqi, mx.maxAqiAt, mx.maxPm25, mx.maxPm10, peaks,
+                pollenKnown);
+    }
+
+    private static Level pollenLevel(Pollen p, double grains) {
+        if (grains >= p.highFrom) return Level.HIGH;
+        return grains >= p.moderateFrom ? Level.MODERATE : Level.GOOD;
+    }
+
+    /** Highest values over the hours that overlap the ride (NaN when never forecast). */
+    private static final class Maxima {
         boolean covered = false;
         double maxAqi = Double.NaN;
         Instant maxAqiAt = null;
         double maxPm25 = Double.NaN;
         double maxPm10 = Double.NaN;
-        double[] maxPollen = new double[Pollen.values().length];
-        java.util.Arrays.fill(maxPollen, Double.NaN);
-        for (int i = 0; i < f.times.length; i++) {
-            Instant h = f.times[i];
-            if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
+        final double[] maxPollen = new double[Pollen.values().length];
+
+        Maxima() {
+            java.util.Arrays.fill(maxPollen, Double.NaN);
+        }
+
+        void add(AirQualityForecast f, int i, Instant h) {
             covered = true;
             if (!Double.isNaN(f.europeanAqi[i])
                     && (Double.isNaN(maxAqi) || f.europeanAqi[i] > maxAqi)) {
@@ -97,20 +128,6 @@ public final class AirQualityAdvisor {
                 maxPollen[p.ordinal()] = max(maxPollen[p.ordinal()], f.pollen[p.ordinal()][i]);
             }
         }
-        boolean pollenKnown = false;
-        List<PollenPeak> peaks = new ArrayList<>();
-        for (Pollen p : Pollen.values()) {
-            double g = maxPollen[p.ordinal()];
-            if (Double.isNaN(g)) continue;
-            pollenKnown = true;
-            Level level = g >= p.highFrom ? Level.HIGH
-                    : g >= p.moderateFrom ? Level.MODERATE : Level.GOOD;
-            if (level != Level.GOOD) peaks.add(new PollenPeak(p, g, level));
-        }
-        Collections.sort(peaks, (a, b) -> a.level != b.level
-                ? b.level.ordinal() - a.level.ordinal()
-                : Double.compare(b.grains / b.type.highFrom, a.grains / a.type.highFrom));
-        return new Advice(covered, maxAqi, maxAqiAt, maxPm25, maxPm10, peaks, pollenKnown);
     }
 
     static Level aqiLevel(double aqi) {
@@ -127,22 +144,24 @@ public final class AirQualityAdvisor {
         }
     }
 
+    private static void appendAirQuality(StringBuilder sb, Advice a, ZoneId zone) {
+        sb.append(String.format(Locale.GERMANY, "Luchtkwaliteit: %s (Europese AQI tot %.0f",
+                aqiLabel(a.maxAqi), a.maxAqi));
+        if (a.maxAqiAt != null) {
+            sb.append(" om ").append(DateTimeFormatter.ofPattern("HH:mm")
+                    .format(a.maxAqiAt.atZone(zone)));
+        }
+        sb.append(')');
+        if (!Double.isNaN(a.maxPm25) || !Double.isNaN(a.maxPm10)) {
+            sb.append(String.format(Locale.GERMANY, "\nFijnstof: PM2,5 tot %s, PM10 tot %s µg/m³",
+                    fmt(a.maxPm25), fmt(a.maxPm10)));
+        }
+    }
+
     public static String detail(Advice a, ZoneId zone) {
         if (!a.covered) return "";
         StringBuilder sb = new StringBuilder();
-        if (!Double.isNaN(a.maxAqi)) {
-            sb.append(String.format(Locale.GERMANY, "Luchtkwaliteit: %s (Europese AQI tot %.0f",
-                    aqiLabel(a.maxAqi), a.maxAqi));
-            if (a.maxAqiAt != null) {
-                sb.append(" om ").append(DateTimeFormatter.ofPattern("HH:mm")
-                        .format(a.maxAqiAt.atZone(zone)));
-            }
-            sb.append(')');
-            if (!Double.isNaN(a.maxPm25) || !Double.isNaN(a.maxPm10)) {
-                sb.append(String.format(Locale.GERMANY, "\nFijnstof: PM2,5 tot %s, PM10 tot %s µg/m³",
-                        fmt(a.maxPm25), fmt(a.maxPm10)));
-            }
-        }
+        if (!Double.isNaN(a.maxAqi)) appendAirQuality(sb, a, zone);
         if (!a.pollenKnown) {
             sb.append("\nPollen: geen verwachting voor deze plek of dit seizoen");
         } else if (a.pollen.isEmpty()) {

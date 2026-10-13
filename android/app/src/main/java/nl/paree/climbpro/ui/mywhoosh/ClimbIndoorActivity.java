@@ -84,6 +84,20 @@ public final class ClimbIndoorActivity extends AppCompatActivity {
             addText(rows, "Nog geen pogingen op deze klim.");
             return;
         }
+        if (points.size() >= 2) {
+            rows.addView(progressChart(points));
+            addText(rows, "Oud → nieuw. Hoger is beter: een snellere tijd staat hoger. "
+                    + "Grote stippen zijn je PR's.");
+        }
+        for (int i = points.size() - 1; i >= 0; i--) {
+            ClimbProgress.Point p = points.get(i);
+            addRow(rows, dateFormat.format(new Date(p.dateEpochSec * 1000L)),
+                    MyWhooshActivity.duration(p.elapsedSec), progressDetail(p));
+        }
+    }
+
+    /** Time per attempt, plus W/kg when any attempt has power; PRs as big dots. */
+    private SimpleLineChartView progressChart(List<ClimbProgress.Point> points) {
         List<Double> times = new ArrayList<>();
         List<Double> wkg = new ArrayList<>();
         Set<Integer> timePr = new HashSet<>();
@@ -97,38 +111,34 @@ public final class ClimbIndoorActivity extends AppCompatActivity {
             if (p.timePr) timePr.add(i);
             if (p.powerPr) powerPr.add(i);
         }
-        if (points.size() >= 2) {
-            SimpleLineChartView chart = new SimpleLineChartView(this);
-            List<SimpleLineChartView.Series> series = new ArrayList<>();
-            series.add(new SimpleLineChartView.Series(times,
-                    ContextCompat.getColor(this, R.color.color_accent), "tijd", true, timePr,
-                    v -> MyWhooshActivity.duration((int) Math.round(v))));
-            if (anyPower) {
-                series.add(new SimpleLineChartView.Series(wkg, SegmentColorPalette.statusOk(),
-                        "W/kg", false, powerPr,
-                        v -> String.format(Locale.getDefault(), "%.2f", v)));
-            }
-            chart.setSeries(series, false);
-            int pad = (int) (16 * getResources().getDisplayMetrics().density);
-            chart.setPadding(pad, pad, pad, 0);
-            rows.addView(chart);
-            addText(rows, "Oud → nieuw. Hoger is beter: een snellere tijd staat hoger. "
-                    + "Grote stippen zijn je PR's.");
+        SimpleLineChartView chart = new SimpleLineChartView(this);
+        List<SimpleLineChartView.Series> series = new ArrayList<>();
+        series.add(new SimpleLineChartView.Series(times,
+                ContextCompat.getColor(this, R.color.color_accent), "tijd", true, timePr,
+                v -> MyWhooshActivity.duration((int) Math.round(v))));
+        if (anyPower) {
+            series.add(new SimpleLineChartView.Series(wkg, SegmentColorPalette.statusOk(),
+                    "W/kg", false, powerPr,
+                    v -> String.format(Locale.getDefault(), "%.2f", v)));
         }
-        for (int i = points.size() - 1; i >= 0; i--) {
-            ClimbProgress.Point p = points.get(i);
-            StringBuilder detail = new StringBuilder(p.indoor ? "Indoor" : "Buiten");
-            if (p.avgWatts != null) {
-                detail.append(String.format(Locale.getDefault(), ", %d W", p.avgWatts));
-            }
-            if (p.wattsPerKg != null) {
-                detail.append(String.format(Locale.getDefault(), ", %.2f W/kg", p.wattsPerKg));
-            }
-            if (p.timePr) detail.append("  •  PR tijd");
-            if (p.powerPr) detail.append("  •  PR W/kg");
-            addRow(rows, dateFormat.format(new Date(p.dateEpochSec * 1000L)),
-                    MyWhooshActivity.duration(p.elapsedSec), detail.toString());
+        chart.setSeries(series, false);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        chart.setPadding(pad, pad, pad, 0);
+        return chart;
+    }
+
+    /** "Indoor, 250 W, 3.40 W/kg  •  PR tijd". */
+    private static String progressDetail(ClimbProgress.Point p) {
+        StringBuilder detail = new StringBuilder(p.indoor ? "Indoor" : "Buiten");
+        if (p.avgWatts != null) {
+            detail.append(String.format(Locale.getDefault(), ", %d W", p.avgWatts));
         }
+        if (p.wattsPerKg != null) {
+            detail.append(String.format(Locale.getDefault(), ", %.2f W/kg", p.wattsPerKg));
+        }
+        if (p.timePr) detail.append("  •  PR tijd");
+        if (p.powerPr) detail.append("  •  PR W/kg");
+        return detail.toString();
     }
 
     // --- #395 -----------------------------------------------------------------------------

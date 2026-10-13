@@ -108,18 +108,8 @@ public final class BestTimeScorer {
         Month[] months = new Month[12];
         double top = Double.NEGATIVE_INFINITY;
         for (int m = 1; m <= 12; m++) {
-            DayPart best = null;
-            double bestScore = Double.NaN;
-            for (DayPart p : DayPart.values()) {
-                double s = score(normals.cell(m, p), bearingDeg);
-                if (!Double.isNaN(s) && (best == null || s > bestScore)) {
-                    best = p;
-                    bestScore = s;
-                }
-            }
-            months[m - 1] = new Month(m, best, bestScore,
-                    best == null ? Cell.EMPTY : normals.cell(m, best));
-            if (best != null) top = Math.max(top, bestScore);
+            months[m - 1] = bestOfMonth(normals, m, bearingDeg);
+            if (months[m - 1].bestPart != null) top = Math.max(top, months[m - 1].score);
         }
         if (top == Double.NEGATIVE_INFINITY) return null;
 
@@ -127,7 +117,28 @@ public final class BestTimeScorer {
         for (Month m : months) {
             if (m.bestPart != null && m.score >= top - BEST_MARGIN) bestMonths.add(m.month);
         }
-        // The day-part that is best on average over the best months.
+        DayPart bestPart = bestAveragePart(normals, bestMonths, bearingDeg);
+        return new Result(Collections.unmodifiableList(bestMonths), bestPart, months);
+    }
+
+    /** The month's best-scoring day-part (none when no part has data). */
+    private static Month bestOfMonth(ClimateNormals normals, int m, double bearingDeg) {
+        DayPart best = null;
+        double bestScore = Double.NaN;
+        for (DayPart p : DayPart.values()) {
+            double s = score(normals.cell(m, p), bearingDeg);
+            if (!Double.isNaN(s) && (best == null || s > bestScore)) {
+                best = p;
+                bestScore = s;
+            }
+        }
+        return new Month(m, best, bestScore,
+                best == null ? Cell.EMPTY : normals.cell(m, best));
+    }
+
+    /** The day-part that is best on average over the best months. */
+    private static DayPart bestAveragePart(ClimateNormals normals, List<Integer> bestMonths,
+                                           double bearingDeg) {
         DayPart bestPart = null;
         double bestMean = Double.NEGATIVE_INFINITY;
         for (DayPart p : DayPart.values()) {
@@ -145,7 +156,18 @@ public final class BestTimeScorer {
                 bestPart = p;
             }
         }
-        return new Result(Collections.unmodifiableList(bestMonths), bestPart, months);
+        return bestPart;
+    }
+
+    /** Last month of the run starting at {@code m}, wrapping from december to january. */
+    private static int runEnd(boolean[] in, int m) {
+        int end = m;
+        while (in[nextMonth(end)]) end = nextMonth(end);
+        return end;
+    }
+
+    private static int nextMonth(int m) {
+        return m == 12 ? 1 : m + 1;
     }
 
     /** "juni–september", "november–februari", "april–mei en september", "het hele jaar". */
@@ -157,8 +179,7 @@ public final class BestTimeScorer {
         for (int m = 1; m <= 12; m++) {
             int prev = m == 1 ? 12 : m - 1;
             if (!in[m] || in[prev]) continue; // not the start of a run
-            int end = m;
-            while (in[end == 12 ? 1 : end + 1]) end = end == 12 ? 1 : end + 1;
+            int end = runEnd(in, m);
             // A run may cross New Year (november–februari); runs are listed by start month.
             String run = end == m ? MONTHS[m - 1] : MONTHS[m - 1] + "–" + MONTHS[end - 1];
             runs.add(run);

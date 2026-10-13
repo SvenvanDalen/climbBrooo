@@ -120,33 +120,42 @@ public final class MonthlyChallengeCalculator {
                                    List<StoredClimbAttempt> attempts, YearMonth month,
                                    ZoneId zone) {
         switch (type) {
-            case DISTINCT_CLIMBS: {
-                if (attempts == null) return 0;
-                Set<String> ids = new HashSet<>();
-                for (StoredClimbAttempt a : attempts) {
-                    if (a == null || a.climbId == null || a.dateEpochSec <= 0) continue;
-                    if (inMonth(a.dateEpochSec, month, zone)) ids.add(a.climbId);
-                }
-                return ids.size();
-            }
+            case DISTINCT_CLIMBS:
+                return distinctClimbsInMonth(attempts, month, zone);
             case ELEVATION_M:
             case DISTANCE_KM:
-            case RIDES: {
-                if (rides == null) return 0;
-                double sum = 0;
-                for (StoredRide r : rides) {
-                    if (r == null || r.startEpochSec <= 0) continue;
-                    if (!inMonth(r.startEpochSec, month, zone)) continue;
-                    if (type == Type.ELEVATION_M) sum += Math.max(0, r.elevationGainM);
-                    else if (type == Type.DISTANCE_KM) sum += Math.max(0, r.distanceM) / 1000.0;
-                    else sum += 1;
-                }
-                // Floored: never claim a metre or kilometre that hasn't been ridden yet.
-                return (int) Math.floor(sum);
-            }
+            case RIDES:
+                return rideSumInMonth(type, rides, month, zone);
             default:
                 return 0;
         }
+    }
+
+    private static int distinctClimbsInMonth(List<StoredClimbAttempt> attempts, YearMonth month,
+                                             ZoneId zone) {
+        if (attempts == null) return 0;
+        Set<String> ids = new HashSet<>();
+        for (StoredClimbAttempt a : attempts) {
+            if (a == null || a.climbId == null || a.dateEpochSec <= 0) continue;
+            if (inMonth(a.dateEpochSec, month, zone)) ids.add(a.climbId);
+        }
+        return ids.size();
+    }
+
+    /** Elevation (m), distance (km) or ride count in the month. */
+    private static int rideSumInMonth(Type type, List<StoredRide> rides, YearMonth month,
+                                      ZoneId zone) {
+        if (rides == null) return 0;
+        double sum = 0;
+        for (StoredRide r : rides) {
+            if (r == null || r.startEpochSec <= 0) continue;
+            if (!inMonth(r.startEpochSec, month, zone)) continue;
+            if (type == Type.ELEVATION_M) sum += Math.max(0, r.elevationGainM);
+            else if (type == Type.DISTANCE_KM) sum += Math.max(0, r.distanceM) / 1000.0;
+            else sum += 1;
+        }
+        // Floored: never claim a metre or kilometre that hasn't been ridden yet.
+        return (int) Math.floor(sum);
     }
 
     /**

@@ -91,6 +91,31 @@ public final class ClimbShareCode {
         }
     }
 
+    /** Base64url → inflated JSON bytes. */
+    private static byte[] unpack(String encoded) throws InvalidCodeException {
+        try {
+            byte[] zipped = Base64.getUrlDecoder().decode(encoded);
+            return inflate(zipped);
+        } catch (IllegalArgumentException | IOException e) {
+            throw new InvalidCodeException("De code is beschadigd of onvolledig gekopieerd.");
+        }
+    }
+
+    private static SharedClimb readClimb(JsonNode c) throws InvalidCodeException {
+        double[] la = readDeltas(c.path("la"), COORD_SCALE);
+        double[] lo = readDeltas(c.path("lo"), COORD_SCALE);
+        double[] el = readDeltas(c.path("el"), ELEVATION_SCALE);
+        if (la.length < 2 || la.length != lo.length || la.length != el.length) {
+            throw new InvalidCodeException("De code bevat een ongeldige klim.");
+        }
+        for (int i = 0; i < la.length; i++) {
+            if (Math.abs(la[i]) > 90 || Math.abs(lo[i]) > 180) {
+                throw new InvalidCodeException("De code bevat ongeldige coördinaten.");
+            }
+        }
+        return new SharedClimb(clip(c.path("n").asText("")), la, lo, el);
+    }
+
     /**
      * Finds the first code anywhere in {@code text} (a whole shared message may be pasted) and
      * decodes it.
@@ -105,13 +130,7 @@ public final class ClimbShareCode {
             throw new InvalidCodeException("Geen klimcode gevonden. Een klimcode begint met "
                     + PREFIX);
         }
-        byte[] json;
-        try {
-            byte[] zipped = Base64.getUrlDecoder().decode(m.group(1));
-            json = inflate(zipped);
-        } catch (IllegalArgumentException | IOException e) {
-            throw new InvalidCodeException("De code is beschadigd of onvolledig gekopieerd.");
-        }
+        byte[] json = unpack(m.group(1));
         try {
             JsonNode root = MAPPER.readTree(json);
             if (root == null || root.path("v").asInt() != 1) {
@@ -125,20 +144,7 @@ public final class ClimbShareCode {
                 throw new InvalidCodeException("De code bevat te veel klimmen.");
             }
             List<SharedClimb> out = new ArrayList<>();
-            for (JsonNode c : climbs) {
-                double[] la = readDeltas(c.path("la"), COORD_SCALE);
-                double[] lo = readDeltas(c.path("lo"), COORD_SCALE);
-                double[] el = readDeltas(c.path("el"), ELEVATION_SCALE);
-                if (la.length < 2 || la.length != lo.length || la.length != el.length) {
-                    throw new InvalidCodeException("De code bevat een ongeldige klim.");
-                }
-                for (int i = 0; i < la.length; i++) {
-                    if (Math.abs(la[i]) > 90 || Math.abs(lo[i]) > 180) {
-                        throw new InvalidCodeException("De code bevat ongeldige coördinaten.");
-                    }
-                }
-                out.add(new SharedClimb(clip(c.path("n").asText("")), la, lo, el));
-            }
+            for (JsonNode c : climbs) out.add(readClimb(c));
             JsonNode name = root.get("n");
             return new Payload(name != null && name.isTextual() ? clip(name.asText()) : null, out);
         } catch (IOException e) {

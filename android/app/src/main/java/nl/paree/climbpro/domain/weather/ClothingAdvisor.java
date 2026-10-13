@@ -52,15 +52,31 @@ public final class ClothingAdvisor {
     /** Hours overlapping {@code [start, start + durationSec)}. */
     public static Advice advise(HourlyForecast f, Instant start, long durationSec) {
         Instant end = start.plusSeconds(durationSec);
+        RideWeather w = new RideWeather();
+        for (int i = 0; i < f.times.length; i++) {
+            Instant h = f.times[i];
+            if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
+            w.add(f, i);
+        }
+        double coldest = w.coldest;
+        if (Double.isNaN(coldest)) {
+            return new Advice(false, Double.NaN, Double.NaN, 0, 0,
+                    new ArrayList<>(), new ArrayList<>());
+        }
+        return new Advice(true, coldest, w.warmest, w.maxRain, w.maxWind, kitFor(coldest),
+                notes(coldest, w.warmest, w.maxRain, w.maxWind));
+    }
+
+    /** Felt-temperature range, rain chance and wind over the hours with a temperature. */
+    private static final class RideWeather {
         double coldest = Double.NaN;
         double warmest = Double.NaN;
         int maxRain = 0;
         double maxWind = 0;
-        for (int i = 0; i < f.times.length; i++) {
-            Instant h = f.times[i];
-            if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
+
+        void add(HourlyForecast f, int i) {
             double t = f.temperature[i];
-            if (Double.isNaN(t)) continue;
+            if (Double.isNaN(t)) return;
             double wind = Double.isNaN(f.windKmh[i]) ? 0 : f.windKmh[i];
             double feel = feelsOnBike(t, wind);
             coldest = Double.isNaN(coldest) ? feel : Math.min(coldest, feel);
@@ -68,11 +84,10 @@ public final class ClothingAdvisor {
             if (f.rainPct[i] != null) maxRain = Math.max(maxRain, f.rainPct[i]);
             maxWind = Math.max(maxWind, wind);
         }
-        if (Double.isNaN(coldest)) {
-            return new Advice(false, Double.NaN, Double.NaN, 0, 0,
-                    new ArrayList<>(), new ArrayList<>());
-        }
-        List<String> kit = kitFor(coldest);
+    }
+
+    private static List<String> notes(double coldest, double warmest, int maxRain,
+                                      double maxWind) {
         List<String> notes = new ArrayList<>();
         if (warmest - coldest >= SWING_C) {
             notes.add(String.format(Locale.GERMANY,
@@ -92,7 +107,7 @@ public final class ClothingAdvisor {
         if (coldest < 1) {
             notes.add("Rond het vriespunt: kans op gladheid, vooral op bruggen en in de schaduw.");
         }
-        return new Advice(true, coldest, warmest, maxRain, maxWind, kit, notes);
+        return notes;
     }
 
     /**

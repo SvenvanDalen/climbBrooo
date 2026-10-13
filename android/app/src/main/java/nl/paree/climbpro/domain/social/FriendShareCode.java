@@ -107,11 +107,33 @@ public final class FriendShareCode {
 
     /** Finds the first share code in {@code text} (which may contain a whole chat message). */
     public static Payload decode(String text) throws InvalidCodeException {
+        JsonNode root = readRoot(text);
+        String id = text(root, "id");
+        String name = text(root, "n");
+        JsonNode arr = root.get("e");
+        if (id == null || id.length() > MAX_ID_CHARS || name == null
+                || arr == null || !arr.isArray()) {
+            throw new InvalidCodeException(MSG_CORRUPT);
+        }
+        name = truncate(name, MAX_NAME_CHARS);
+
+        List<FriendFeedEntry> entries = new ArrayList<>();
+        for (JsonNode n : arr) {
+            if (entries.size() >= MAX_ENTRIES) break;
+            FriendFeedEntry e = readEntry(n);
+            if (e == null) continue;
+            e.friendId = id;
+            e.friendName = name;
+            entries.add(e);
+        }
+        return new Payload(id, name, Math.max(0, root.path("t").asLong(0)), entries);
+    }
+
+    /** Finds the code in {@code text} and returns its JSON root after the version checks. */
+    private static JsonNode readRoot(String text) throws InvalidCodeException {
         Matcher m = CODE.matcher(text == null ? "" : text);
         if (!m.find()) throw new InvalidCodeException(MSG_NOT_FOUND);
-        int prefixVersion = Integer.parseInt(m.group(1));
-        if (prefixVersion > VERSION) throw new InvalidCodeException(MSG_NEWER);
-        if (prefixVersion != VERSION) throw new InvalidCodeException(MSG_CORRUPT);
+        checkVersion(Integer.parseInt(m.group(1)));
         String token = m.group(2);
         if (token.isEmpty()) throw new InvalidCodeException(MSG_CORRUPT);
         if (token.length() > MAX_CODE_CHARS) throw new InvalidCodeException(MSG_TOO_LARGE);
@@ -129,35 +151,26 @@ public final class FriendShareCode {
             throw new InvalidCodeException(MSG_CORRUPT);
         }
         if (root == null || !root.isObject()) throw new InvalidCodeException(MSG_CORRUPT);
-        int v = root.path("v").asInt(-1);
+        checkVersion(root.path("v").asInt(-1));
+        return root;
+    }
+
+    private static void checkVersion(int v) throws InvalidCodeException {
         if (v > VERSION) throw new InvalidCodeException(MSG_NEWER);
         if (v != VERSION) throw new InvalidCodeException(MSG_CORRUPT);
-        String id = text(root, "id");
-        String name = text(root, "n");
-        JsonNode arr = root.get("e");
-        if (id == null || id.length() > MAX_ID_CHARS || name == null
-                || arr == null || !arr.isArray()) {
-            throw new InvalidCodeException(MSG_CORRUPT);
-        }
-        name = truncate(name, MAX_NAME_CHARS);
+    }
 
-        List<FriendFeedEntry> entries = new ArrayList<>();
-        for (JsonNode n : arr) {
-            if (entries.size() >= MAX_ENTRIES) break;
-            if (!n.isObject()) continue;
-            String kind = appKind(text(n, "k"));
-            long t = n.path("t").asLong(0);
-            String title = text(n, "s");
-            if (kind == null || t <= 0 || title == null) continue;
-            FriendFeedEntry e = new FriendFeedEntry(kind, t, truncate(title, MAX_TITLE_CHARS),
-                    Math.max(0, n.path("d").asInt(0)),
-                    Math.max(0, n.path("h").asInt(0)),
-                    Math.max(0, n.path("m").asInt(0)));
-            e.friendId = id;
-            e.friendName = name;
-            entries.add(e);
-        }
-        return new Payload(id, name, Math.max(0, root.path("t").asLong(0)), entries);
+    /** One feed entry; null when it isn't an object or misses its kind, time or title. */
+    private static FriendFeedEntry readEntry(JsonNode n) {
+        if (!n.isObject()) return null;
+        String kind = appKind(text(n, "k"));
+        long t = n.path("t").asLong(0);
+        String title = text(n, "s");
+        if (kind == null || t <= 0 || title == null) return null;
+        return new FriendFeedEntry(kind, t, truncate(title, MAX_TITLE_CHARS),
+                Math.max(0, n.path("d").asInt(0)),
+                Math.max(0, n.path("h").asInt(0)),
+                Math.max(0, n.path("m").asInt(0)));
     }
 
     /** Inflates with a hard output limit so a tiny code can't expand into megabytes. */

@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -52,6 +53,8 @@ public final class SimpleLineChartView extends View {
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint grid = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final float density;
+    /** Plot area, recomputed on every draw (kept as a field to avoid allocating in onDraw). */
+    private final RectF area = new RectF();
 
     public SimpleLineChartView(Context context) {
         this(context, null);
@@ -87,70 +90,81 @@ public final class SimpleLineChartView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        float left = 8 * density;
-        float right = getWidth() - 8 * density;
-        float top = 18 * density;
-        float bottom = getHeight() - 18 * density;
-        canvas.drawLine(left, bottom, right, bottom, grid);
-        canvas.drawLine(left, top, right, top, grid);
-        for (int si = 0; si < series.size(); si++) {
-            Series s = series.get(si);
-            int n = s.values.size();
-            if (n == 0) continue;
-            double min = Double.MAX_VALUE;
-            double max = -Double.MAX_VALUE;
-            for (Double v : s.values) {
-                if (v == null) continue;
-                min = Math.min(min, v);
-                max = Math.max(max, v);
-            }
-            if (min == Double.MAX_VALUE) continue;
-            if (zeroLine) {
-                min = Math.min(min, 0);
-                max = Math.max(max, 0);
-            }
-            if (max - min < 1e-9) {
-                max += 1;
-                min -= 1;
-            }
-            line.setColor(s.color);
-            dot.setColor(s.color);
-            Path path = new Path();
-            boolean pen = false;
-            for (int i = 0; i < n; i++) {
-                Double v = s.values.get(i);
-                if (v == null) {
-                    pen = false;
-                    continue;
-                }
-                float x = n == 1 ? (left + right) / 2 : left + (right - left) * i / (n - 1f);
-                float y = y(v, min, max, top, bottom, s.invertY);
-                if (pen) path.lineTo(x, y); else path.moveTo(x, y);
-                pen = true;
-                boolean hi = s.highlighted != null && s.highlighted.contains(i);
-                canvas.drawCircle(x, y, (hi ? 6 : 3) * density, dot);
-            }
-            canvas.drawPath(path, line);
-            if (zeroLine && si == 0) {
-                float zy = y(0, min, max, top, bottom, s.invertY);
-                canvas.drawLine(left, zy, right, zy, grid);
-            }
-            if (si < 2 && s.format != null) {
-                text.setColor(s.color);
-                String hiLabel = s.format.format(s.invertY ? min : max);
-                String loLabel = s.format.format(s.invertY ? max : min);
-                String name = s.label != null ? s.label + "  " : "";
-                if (si == 0) {
-                    text.setTextAlign(Paint.Align.LEFT);
-                    canvas.drawText(name + hiLabel, left, top - 5 * density, text);
-                    canvas.drawText(loLabel, left, bottom + 13 * density, text);
-                } else {
-                    text.setTextAlign(Paint.Align.RIGHT);
-                    canvas.drawText(name + hiLabel, right, top - 5 * density, text);
-                    canvas.drawText(loLabel, right, bottom + 13 * density, text);
-                }
-            }
+        area.set(8 * density, 18 * density, getWidth() - 8 * density,
+                getHeight() - 18 * density);
+        canvas.drawLine(area.left, area.bottom, area.right, area.bottom, grid);
+        canvas.drawLine(area.left, area.top, area.right, area.top, grid);
+        for (int si = 0; si < series.size(); si++) drawSeries(canvas, si, series.get(si));
+    }
+
+    private void drawSeries(Canvas canvas, int si, Series s) {
+        double[] range = valueRange(s);
+        if (range == null) return;
+        double min = range[0];
+        double max = range[1];
+        line.setColor(s.color);
+        dot.setColor(s.color);
+        canvas.drawPath(plot(canvas, s, min, max), line);
+        if (zeroLine && si == 0) {
+            float zy = y(0, min, max, area.top, area.bottom, s.invertY);
+            canvas.drawLine(area.left, zy, area.right, zy, grid);
         }
+        if (si < 2 && s.format != null) drawRangeLabels(canvas, si, s, min, max);
+    }
+
+    /** {min, max} of the series (with the zero line and a minimum span); null without values. */
+    private double[] valueRange(Series s) {
+        double min = Double.MAX_VALUE;
+        double max = -Double.MAX_VALUE;
+        for (Double v : s.values) {
+            if (v == null) continue;
+            min = Math.min(min, v);
+            max = Math.max(max, v);
+        }
+        if (min == Double.MAX_VALUE) return null;
+        if (zeroLine) {
+            min = Math.min(min, 0);
+            max = Math.max(max, 0);
+        }
+        if (max - min < 1e-9) {
+            max += 1;
+            min -= 1;
+        }
+        return new double[]{min, max};
+    }
+
+    /** Draws the dots (big ones highlighted) and returns the line, broken at missing values. */
+    private Path plot(Canvas canvas, Series s, double min, double max) {
+        int n = s.values.size();
+        Path path = new Path();
+        boolean pen = false;
+        for (int i = 0; i < n; i++) {
+            Double v = s.values.get(i);
+            if (v == null) {
+                pen = false;
+                continue;
+            }
+            float x = n == 1 ? (area.left + area.right) / 2
+                    : area.left + (area.right - area.left) * i / (n - 1f);
+            float y = y(v, min, max, area.top, area.bottom, s.invertY);
+            if (pen) path.lineTo(x, y); else path.moveTo(x, y);
+            pen = true;
+            boolean hi = s.highlighted != null && s.highlighted.contains(Integer.valueOf(i));
+            canvas.drawCircle(x, y, (hi ? 6 : 3) * density, dot);
+        }
+        return path;
+    }
+
+    /** Top and bottom value labels: the first series on the left, the second on the right. */
+    private void drawRangeLabels(Canvas canvas, int si, Series s, double min, double max) {
+        text.setColor(s.color);
+        String hiLabel = s.format.format(s.invertY ? min : max);
+        String loLabel = s.format.format(s.invertY ? max : min);
+        String name = s.label != null ? s.label + "  " : "";
+        float x = si == 0 ? area.left : area.right;
+        text.setTextAlign(si == 0 ? Paint.Align.LEFT : Paint.Align.RIGHT);
+        canvas.drawText(name + hiLabel, x, area.top - 5 * density, text);
+        canvas.drawText(loLabel, x, area.bottom + 13 * density, text);
     }
 
     private static float y(double v, double min, double max, float top, float bottom,

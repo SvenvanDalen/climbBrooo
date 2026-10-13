@@ -2,7 +2,6 @@ package nl.paree.climbpro.data.strava;
 
 import android.util.Log;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
@@ -147,9 +146,7 @@ public final class StravaRoutesRepository {
             // non-null (possibly empty) and the route skips normally again.
             // Likewise for the public-segment match (issue #35): a route that hasn't been
             // explored yet is reprocessed once, but only while this sync has budget for it.
-            if (existing != null && hash.equals(existing.sourceHash)
-                    && existing.starredSegments != null
-                    && (Boolean.TRUE.equals(existing.stravaSegmentsExplored) || !exploreBudgetLeft)) {
+            if (isUpToDate(existing, hash)) {
                 Log.d(TAG, "Route " + routeId + " unchanged, skipping");
                 return false;
             }
@@ -213,21 +210,7 @@ public final class StravaRoutesRepository {
             // Seed surface type from the Strava sub_type on FIRST import only. On a
             // re-sync (existing != null) saveRoute has already preserved the user's
             // per-segment surface edits, and a blanket bulk-set here would clobber them.
-            int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
-                    .detectFromStravaSubType(dto.subType);
-            if (existing == null
-                    && detectedSurface != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
-                try {
-                    StoredRoute saved = routeRepo.loadRoute(routeId);
-                    if (saved.climbs != null) {
-                        for (int ci = 0; ci < saved.climbs.size(); ci++) {
-                            routeRepo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
-                        }
-                    }
-                } catch (IOException e2) {
-                    Log.w(TAG, "Surface type wiring failed for " + routeId, e2);
-                }
-            }
+            if (existing == null) seedSurfaceType(routeId, dto.subType);
 
             return true;
 
@@ -319,6 +302,33 @@ public final class StravaRoutesRepository {
     }
 
     /**
+     * Skip unchanged routes — UNLESS the stored doc predates the starred-segment feature
+     * (starredSegments == null), or its public segments haven't been explored yet while this
+     * sync still has budget for it (issue #35). See {@link #processRoute}.
+     */
+    private boolean isUpToDate(StoredRoute existing, String hash) {
+        return existing != null && hash.equals(existing.sourceHash)
+                && existing.starredSegments != null
+                && (Boolean.TRUE.equals(existing.stravaSegmentsExplored) || !exploreBudgetLeft);
+    }
+
+    /** Bulk-sets the surface derived from the Strava route sub_type on every climb. */
+    private void seedSurfaceType(String routeId, int subType) {
+        int detectedSurface = nl.paree.climbpro.domain.segment.SurfaceTypeDetector
+                .detectFromStravaSubType(subType);
+        if (detectedSurface == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) return;
+        try {
+            StoredRoute saved = routeRepo.loadRoute(routeId);
+            if (saved.climbs == null) return;
+            for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                routeRepo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
+            }
+        } catch (IOException e2) {
+            Log.w(TAG, "Surface type wiring failed for " + routeId, e2);
+        }
+    }
+
+    /**
      * Asks {@code segments/explore} for each tile of the route (issue #35) and collects the
      * segments, de-duplicated by id. Stops early, marking the result incomplete so a later sync
      * retries, when Strava answers 429 or its rate-limit headers say the budget is nearly used
@@ -346,17 +356,21 @@ public final class StravaRoutesRepository {
                 return new ExploreResult(found, false);
             }
             if (!resp.isSuccessful()) return new ExploreResult(found, true);
-            if (resp.body() != null && resp.body().segments != null) {
-                for (StravaSegmentExploreDto.Entry e : resp.body().segments) {
-                    if (e != null && seen.add(e.id)) found.add(e.toSegment());
-                }
-            }
+            collectNewSegments(resp.body(), seen, found);
             if (StravaRateLimit.nearLimit(resp.headers())) {
                 exploreBudgetLeft = false;
                 return new ExploreResult(found, t == tiles.size() - 1);
             }
         }
         return new ExploreResult(found, true);
+    }
+
+    private static void collectNewSegments(StravaSegmentExploreDto body, Set<Long> seen,
+                                           List<StravaSegmentDto> found) {
+        if (body == null || body.segments == null) return;
+        for (StravaSegmentExploreDto.Entry e : body.segments) {
+            if (e != null && seen.add(e.id)) found.add(e.toSegment());
+        }
     }
 
     /** {@code segments} without the ones whose id is in {@code exclude}. */

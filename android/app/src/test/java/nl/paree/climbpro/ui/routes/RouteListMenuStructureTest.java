@@ -57,12 +57,18 @@ public class RouteListMenuStructureTest {
         int start = activity.indexOf("public boolean onOptionsItemSelected");
         int end = activity.indexOf("return super.onOptionsItemSelected", start);
         Set<String> handled = new TreeSet<>();
-        Matcher m = Pattern.compile("R\\.id\\.(action_\\w+)")
-                .matcher(activity.substring(start, end));
-        while (m.find()) {
-            handled.add(m.group(1));
-        }
+        collectActionIds(activity.substring(start, end), handled);
+        // Plain "open this screen" entries are mapped in RouteListMenuScreens instead.
+        collectActionIds(read(new File(androidAppDir(),
+                "src/main/java/nl/paree/climbpro/ui/routes/RouteListMenuScreens.java")), handled);
         assertEquals(leaves, handled);
+    }
+
+    private static void collectActionIds(String source, Set<String> out) {
+        Matcher m = Pattern.compile("R\\.id\\.(action_\\w+)").matcher(source);
+        while (m.find()) {
+            out.add(m.group(1));
+        }
     }
 
     private static void collectLeaves(Element menu, Set<String> out) {

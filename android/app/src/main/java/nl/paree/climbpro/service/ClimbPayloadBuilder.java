@@ -266,16 +266,12 @@ public final class ClimbPayloadBuilder {
         payload.put("routeId", route.routeId);
         putPalette(payload);
         putRouteTotalLength(payload, route);
-        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (name != null && name.length() <= 32) payload.put("name", name);
+        putRouteName(payload, route);
         List<Map<String, Object>> climbs = new ArrayList<>();
         if (route.climbs != null) {
             for (int i = 0; i < route.climbs.size(); i++) {
-                int[] tsec = (targetSeconds != null && i < targetSeconds.length)
-                        ? targetSeconds[i] : null;
-                int[] refsec = (refSeconds != null && i < refSeconds.length)
-                        ? refSeconds[i] : null;
-                climbs.add(buildRouteClimb(route.climbs.get(i), tsec, refsec));
+                climbs.add(buildRouteClimb(route.climbs.get(i), rowAt(targetSeconds, i),
+                        rowAt(refSeconds, i)));
             }
         }
         putFieldLayout(payload);
@@ -337,8 +333,7 @@ public final class ClimbPayloadBuilder {
         payload.put("routeId", route.routeId);
         putPalette(payload);
         putRouteTotalLength(payload, route);
-        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (name != null && name.length() <= 32) payload.put("name", name);
+        putRouteName(payload, route);
         List<Map<String, Object>> climbs = new ArrayList<>(1);
         int[] tsec = (targetSeconds != null && climbIndex < targetSeconds.length)
                 ? targetSeconds[climbIndex] : null;
@@ -409,6 +404,51 @@ public final class ClimbPayloadBuilder {
         }
     }
 
+    /** The user's name for the route, else its own name, when it fits the watch (≤ 32 chars). */
+    private static void putRouteName(Map<String, Object> payload, StoredRoute route) {
+        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
+        if (name != null && name.length() <= 32) payload.put("name", name);
+    }
+
+    /** Row i of a per-climb table, or null when the table is missing or too short. */
+    private static int[] rowAt(int[][] table, int i) {
+        return table != null && i < table.length ? table[i] : null;
+    }
+
+    private static void addSurfaceSections(StoredRoute route, List<int[]> ranges,
+                                           List<String> names) {
+        if (route.surfaceSections == null) return;
+        for (StoredSurfaceSection s : route.surfaceSections) {
+            ranges.add(new int[]{s.startDistance, s.endDistance,
+                    nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
+            names.add(s.name);
+        }
+    }
+
+    /** Flat stretches qualify when they are named or have a known surface. */
+    private static void addNamedFlats(StoredRoute route, List<int[]> ranges, List<String> names) {
+        if (route.flatSegments == null) return;
+        for (nl.paree.climbpro.data.route.StoredFlatSegment f : route.flatSegments) {
+            boolean qualifies = (f.name != null && !f.name.isEmpty())
+                    || f.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN;
+            if (!qualifies) continue;
+            ranges.add(new int[]{f.startDistance, f.endDistance,
+                    nl.paree.climbpro.domain.segment.SurfaceType.fromInt(f.surfaceType)});
+            names.add(f.name);
+        }
+    }
+
+    private static void addSurfacedStarred(StoredRoute route, List<int[]> ranges,
+                                           List<String> names) {
+        if (route.starredSegments == null) return;
+        for (StoredStarredSegment s : route.starredSegments) {
+            if (s.surfaceType == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) continue;
+            ranges.add(new int[]{s.startDistance, s.endDistance,
+                    nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
+            names.add(s.userDisplayName != null ? s.userDisplayName : s.name);
+        }
+    }
+
     /**
      * Lean payload for the surface-sections datafield: no climbs, and a 'surfSec'
      * array of section objects {s,e,t,n?,cp}. 'cp' is a packed checkpoint array
@@ -425,38 +465,15 @@ public final class ClimbPayloadBuilder {
         payload.put("mode",    "route");
         putUnits(payload);
         payload.put("routeId", route.routeId);
-        String name = route.userDisplayName != null ? route.userDisplayName : route.name;
-        if (name != null && name.length() <= 32) payload.put("name", name);
+        putRouteName(payload, route);
         payload.put("climbs", new ArrayList<>());
 
         // Collect all sections (surface sections + qualifying flat segments).
         List<int[]> ranges = new ArrayList<>();   // {start, end, surfaceType}
         List<String> names = new ArrayList<>();
-        if (route.surfaceSections != null) {
-            for (StoredSurfaceSection s : route.surfaceSections) {
-                ranges.add(new int[]{s.startDistance, s.endDistance,
-                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
-                names.add(s.name);
-            }
-        }
-        if (route.flatSegments != null) {
-            for (nl.paree.climbpro.data.route.StoredFlatSegment f : route.flatSegments) {
-                boolean qualifies = (f.name != null && !f.name.isEmpty())
-                        || f.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN;
-                if (!qualifies) continue;
-                ranges.add(new int[]{f.startDistance, f.endDistance,
-                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(f.surfaceType)});
-                names.add(f.name);
-            }
-        }
-        if (route.starredSegments != null) {
-            for (StoredStarredSegment s : route.starredSegments) {
-                if (s.surfaceType == nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) continue;
-                ranges.add(new int[]{s.startDistance, s.endDistance,
-                        nl.paree.climbpro.domain.segment.SurfaceType.fromInt(s.surfaceType)});
-                names.add(s.userDisplayName != null ? s.userDisplayName : s.name);
-            }
-        }
+        addSurfaceSections(route, ranges, names);
+        addNamedFlats(route, ranges, names);
+        addSurfacedStarred(route, ranges, names);
         // Sort by start distance, keeping names aligned via an index permutation.
         Integer[] order = new Integer[ranges.size()];
         for (int i = 0; i < order.length; i++) order[i] = i;
