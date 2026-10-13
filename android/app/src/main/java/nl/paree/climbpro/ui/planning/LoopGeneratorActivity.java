@@ -38,10 +38,8 @@ public final class LoopGeneratorActivity extends AppCompatActivity {
 
     private LoopGeneratorViewModel viewModel;
     private EditText distanceInput;
-    private TextView startLabel;
     private TextView summary;
     private LinearLayout resultList;
-    private View progress;
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
@@ -68,10 +66,10 @@ public final class LoopGeneratorActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         distanceInput = findViewById(R.id.distanceInput);
-        startLabel = findViewById(R.id.startLabel);
+        TextView startLabel = findViewById(R.id.startLabel);
         summary = findViewById(R.id.summary);
         resultList = findViewById(R.id.resultList);
-        progress = findViewById(R.id.progress);
+        View progress = findViewById(R.id.progress);
 
         viewModel = new ViewModelProvider(this).get(LoopGeneratorViewModel.class);
         viewModel.start().observe(this, p -> startLabel.setText(p == null

@@ -24,8 +24,6 @@ public final class CollectionDetailActivity extends AppCompatActivity {
     private static final String EXTRA_COLLECTION_ID = "collection_id";
 
     private CollectionDetailViewModel viewModel;
-    private CollectionDetailAdapter   adapter;
-    private View                      emptyView;
     private Toolbar                   toolbar;
     private String                    collectionId;
     /** Builds share codes off the main thread (issue #216). */
@@ -49,10 +47,10 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        emptyView = findViewById(R.id.empty);
+        View emptyView = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CollectionDetailAdapter();
+        CollectionDetailAdapter adapter = new CollectionDetailAdapter();
         list.setAdapter(adapter);
         adapter.setListener(this::confirmRemoveMember);
         adapter.setClickListener(this::openMember);

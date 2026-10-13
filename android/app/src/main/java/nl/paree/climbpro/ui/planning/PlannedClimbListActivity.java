@@ -35,8 +35,6 @@ import java.util.List;
 public final class PlannedClimbListActivity extends AppCompatActivity {
 
     private PlannedClimbListViewModel viewModel;
-    private PlannedClimbAdapter adapter;
-    private TextView empty;
 
     private PlannedClimbListViewModel.Pickable pendingTarget;
 
@@ -62,10 +60,10 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        empty = findViewById(R.id.empty);
+        TextView empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new PlannedClimbAdapter(this::confirmRemove);
+        PlannedClimbAdapter adapter = new PlannedClimbAdapter(this::confirmRemove);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(PlannedClimbListViewModel.class);

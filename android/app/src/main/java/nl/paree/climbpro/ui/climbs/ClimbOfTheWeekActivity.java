@@ -43,7 +43,6 @@ public final class ClimbOfTheWeekActivity extends AppCompatActivity {
     private View locationButton;
     private View alternativesTitle;
     private LinearLayout alternatives;
-    private View progress;
     private ClimbOfTheWeek.Candidate shown;
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
@@ -72,7 +71,7 @@ public final class ClimbOfTheWeekActivity extends AppCompatActivity {
         locationButton = findViewById(R.id.locationButton);
         alternativesTitle = findViewById(R.id.alternativesTitle);
         alternatives = findViewById(R.id.alternatives);
-        progress = findViewById(R.id.progress);
+        View progress = findViewById(R.id.progress);
 
         findViewById(R.id.openClimbButton).setOnClickListener(v -> {
             if (shown != null) {

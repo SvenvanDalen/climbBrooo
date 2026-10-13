@@ -57,7 +57,6 @@ public final class RouteListActivity extends AppCompatActivity {
 
     private ActivityRouteListBinding binding;
     private RouteListViewModel viewModel;
-    private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
     /** Status filter labels; index order matches {@link RouteStatusFilter}. */
@@ -94,7 +93,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(RouteListViewModel.class);
         updateStatusFilterSubtitle(viewModel.getStatusFilter()); // survives rotation via the ViewModel
-        adapter   = new RouteListAdapter();
+        RouteListAdapter adapter   = new RouteListAdapter();
 
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerView.setAdapter(adapter);

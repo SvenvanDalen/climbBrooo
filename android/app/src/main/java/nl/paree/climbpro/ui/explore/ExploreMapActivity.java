@@ -31,7 +31,6 @@ public final class ExploreMapActivity extends AppCompatActivity {
     /** Semi-transparent orange: readable on the light OSM tiles and in both themes. */
     private static final int TILE_COLOR = 0xB0FF6D00;
 
-    private ExploreMapViewModel vm;
     private MapView map;
     private Overlay tilesOverlay;
     private boolean zoomed;
@@ -63,7 +62,7 @@ public final class ExploreMapActivity extends AppCompatActivity {
         Button process = findViewById(R.id.explore_process);
         summary.setText(R.string.explore_map_loading);
 
-        vm = new ViewModelProvider(this).get(ExploreMapViewModel.class);
+        ExploreMapViewModel vm = new ViewModelProvider(this).get(ExploreMapViewModel.class);
         vm.state().observe(this, s -> render(s, summary, pending));
         vm.busy().observe(this, b -> {
             boolean isBusy = Boolean.TRUE.equals(b);

@@ -17,10 +17,6 @@ import nl.paree.climbpro.R;
  */
 public final class IntervalsIcuSettingsActivity extends AppCompatActivity {
 
-    private IntervalsIcuSettingsViewModel viewModel;
-    private EditText keyInput;
-    private EditText athleteInput;
-    private TextView status;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,11 +28,11 @@ public final class IntervalsIcuSettingsActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        keyInput = findViewById(R.id.input_api_key);
-        athleteInput = findViewById(R.id.input_athlete_id);
-        status = findViewById(R.id.status);
+        EditText keyInput = findViewById(R.id.input_api_key);
+        EditText athleteInput = findViewById(R.id.input_athlete_id);
+        TextView status = findViewById(R.id.status);
 
-        viewModel = new ViewModelProvider(this).get(IntervalsIcuSettingsViewModel.class);
+        IntervalsIcuSettingsViewModel viewModel = new ViewModelProvider(this).get(IntervalsIcuSettingsViewModel.class);
         viewModel.state().observe(this, s -> {
             if (s == null) return;
             keyInput.setText("");

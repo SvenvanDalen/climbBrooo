@@ -21,8 +21,6 @@ import nl.paree.climbpro.data.route.RouteCollection;
 public final class CollectionListActivity extends AppCompatActivity {
 
     private CollectionListViewModel viewModel;
-    private CollectionListAdapter   adapter;
-    private View                    emptyView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,10 +31,10 @@ public final class CollectionListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        emptyView = findViewById(R.id.empty);
+        View emptyView = findViewById(R.id.empty);
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CollectionListAdapter();
+        CollectionListAdapter adapter = new CollectionListAdapter();
         recyclerView.setAdapter(adapter);
 
         adapter.setListener(new CollectionListAdapter.OnCollectionClickListener() {

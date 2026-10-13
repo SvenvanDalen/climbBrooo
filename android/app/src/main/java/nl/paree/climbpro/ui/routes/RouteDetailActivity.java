@@ -71,7 +71,6 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private ActivityRouteDetailBinding binding;
     private RouteDetailViewModel        viewModel;
-    private RouteDetailAdapter          adapter;
     private String                      routeId;
 
     private static final String STATE_NOTES_BASELINE = "notes_baseline";
@@ -113,7 +112,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             notesBaseline = savedInstanceState.getString(STATE_NOTES_BASELINE);
         }
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
-        adapter   = new RouteDetailAdapter();
+        RouteDetailAdapter adapter   = new RouteDetailAdapter();
 
         binding.climbsRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.climbsRecycler.setAdapter(adapter);
