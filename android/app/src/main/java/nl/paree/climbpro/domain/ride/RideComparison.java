@@ -191,9 +191,10 @@ public final class RideComparison {
         for (int i = 0; i < s.distance.length; i++) {
             if (s.distance[i] < from || s.distance[i] > to) continue;
             double v = values[i];
-            if (Double.isNaN(v) || v < 0 || (v == 0 && !includeZero)) continue;
-            sum += v;
-            n++;
+            if (v > 0 || (v == 0 && includeZero)) {
+                sum += v;
+                n++;
+            }
         }
         return n > 0 ? sum / n : Double.NaN;
     }
@@ -205,9 +206,10 @@ public final class RideComparison {
         for (int i = 0; i < s.distance.length; i++) {
             if (s.distance[i] < from || s.distance[i] > to) continue;
             double hr = s.heartrate[i];
-            if (Double.isNaN(hr) || hr <= 0) continue;
-            sum += hr;
-            n++;
+            if (hr > 0) {
+                sum += hr;
+                n++;
+            }
         }
         return n > 0 ? sum / n : Double.NaN;
     }

@@ -118,8 +118,9 @@ public final class SeasonalComparisonCalculator {
             if (!isComparableAttemptOf(climbId, a)) continue;
             long daysOff = ChronoUnit.DAYS.between(
                     anniversary, localDate(a.dateEpochSec, zone));
-            if (Math.abs(daysOff) > windowDays) continue;
-            if (best == null || a.elapsedSec < best.elapsedSec) best = a;
+            if (Math.abs(daysOff) <= windowDays) {
+                if (best == null || a.elapsedSec < best.elapsedSec) best = a;
+            }
         }
         return best;
     }

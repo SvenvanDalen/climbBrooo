@@ -101,8 +101,9 @@ public final class ElevationGoalCalculator {
         for (StoredRide r : rides) {
             if (r == null || r.startEpochSec <= 0 || !(r.elevationGainM > 0)) continue;
             LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
-            if (day.isBefore(start) || !day.isBefore(endExclusive)) continue;
-            total += r.elevationGainM;
+            if (!day.isBefore(start) && day.isBefore(endExclusive)) {
+                total += r.elevationGainM;
+            }
         }
         return (int) Math.round(total);
     }

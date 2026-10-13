@@ -251,11 +251,12 @@ public final class MultiDayTourPlanner {
         for (int j = k - 1; j < i; j++) {
             if (sq[k - 1][j] == Long.MAX_VALUE) continue;
             long load = prefix[i] - prefix[j];
-            if (load > cap) continue;
-            long v = sq[k - 1][j] + load * load;
-            if (v < sq[k][i]) {
-                sq[k][i] = v;
-                from[k][i] = j;
+            if (load <= cap) {
+                long v = sq[k - 1][j] + load * load;
+                if (v < sq[k][i]) {
+                    sq[k][i] = v;
+                    from[k][i] = j;
+                }
             }
         }
     }

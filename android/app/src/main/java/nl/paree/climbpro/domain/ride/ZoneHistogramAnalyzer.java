@@ -32,8 +32,9 @@ public final class ZoneHistogramAnalyzer {
             double hr = s.heartrate[i];
             if (dt <= 0 || dt > MAX_GAP_SEC || Double.isNaN(hr)) continue;
             int bpm = (int) Math.round(hr);
-            if (bpm < HR_MIN_BPM || bpm > HR_MAX_BPM) continue;
-            bins[bpm - HR_MIN_BPM] += dt;
+            if (bpm >= HR_MIN_BPM && bpm <= HR_MAX_BPM) {
+                bins[bpm - HR_MIN_BPM] += dt;
+            }
         }
         return trim(bins);
     }

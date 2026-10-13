@@ -181,9 +181,10 @@ public final class RideBuddyProfileBuilder {
         for (StoredClimbAttempt a : attempts) {
             if (a == null || a.climbId == null || a.dateEpochSec < from) continue;
             Integer gain = gains.get(a.climbId);
-            if (gain == null || gain < MIN_VAM_GAIN_M || a.elapsedSec < MIN_VAM_SEC) continue;
-            double v = gain * 3600.0 / a.elapsedSec;
-            if (v >= MIN_VAM && v <= MAX_VAM) vams.add(v);
+            if (gain != null && gain >= MIN_VAM_GAIN_M && a.elapsedSec >= MIN_VAM_SEC) {
+                double v = gain * 3600.0 / a.elapsedSec;
+                if (v >= MIN_VAM && v <= MAX_VAM) vams.add(v);
+            }
         }
         return vams.isEmpty() ? 0 : (int) Math.round(median(vams));
     }

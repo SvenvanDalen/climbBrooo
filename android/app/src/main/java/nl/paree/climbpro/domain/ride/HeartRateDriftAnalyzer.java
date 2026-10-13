@@ -87,13 +87,14 @@ public final class HeartRateDriftAnalyzer {
             Samples m = new Samples(t.length);
             for (int i = 1; i < t.length; i++) {
                 if (!isMovingSample(s, i) || t[i] - t[0] < WARMUP_SEC) continue;
-                if (power && !isPlausibleWatts(s.watts[i])) continue;
-                m.use[i] = true;
-                m.dt[i] = (double) t[i] - t[i - 1];
-                m.out[i] = power ? s.watts[i] : (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
-                m.total += m.dt[i];
-                m.distM += d[i] - d[i - 1];
-                m.climbM += riseAt(s.altitude, i);
+                if (!power || isPlausibleWatts(s.watts[i])) {
+                    m.use[i] = true;
+                    m.dt[i] = (double) t[i] - t[i - 1];
+                    m.out[i] = power ? s.watts[i] : (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
+                    m.total += m.dt[i];
+                    m.distM += d[i] - d[i - 1];
+                    m.climbM += riseAt(s.altitude, i);
+                }
             }
             return m;
         }

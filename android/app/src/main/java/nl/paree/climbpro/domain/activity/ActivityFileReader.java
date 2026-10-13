@@ -66,12 +66,13 @@ public final class ActivityFileReader {
             while ((e = zip.getNextEntry()) != null) {
                 if (e.isDirectory()) continue;
                 String entry = e.getName().toLowerCase(Locale.ROOT);
-                if (!entry.endsWith(".fit") && !entry.endsWith(".gpx")) continue;
-                byte[] bytes = readCapped(zip);
-                try {
-                    out.addAll(read(e.getName(), bytes));
-                } catch (IOException bad) {
-                    // One unreadable file in the export must not sink the others.
+                if (entry.endsWith(".fit") || entry.endsWith(".gpx")) {
+                    byte[] bytes = readCapped(zip);
+                    try {
+                        out.addAll(read(e.getName(), bytes));
+                    } catch (IOException bad) {
+                        // One unreadable file in the export must not sink the others.
+                    }
                 }
             }
         }

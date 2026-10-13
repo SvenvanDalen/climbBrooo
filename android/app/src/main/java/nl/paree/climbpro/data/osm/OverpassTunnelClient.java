@@ -86,13 +86,14 @@ public final class OverpassTunnelClient {
         for (JsonNode el : elements) {
             if (!"way".equals(el.path("type").asText())) continue;
             JsonNode geom = el.get("geometry");
-            if (geom == null || !geom.isArray() || geom.size() < 2) continue;
-            double[][] way = new double[geom.size()][];
-            for (int i = 0; i < geom.size(); i++) {
-                way[i] = new double[]{geom.get(i).path("lat").asDouble(),
-                        geom.get(i).path("lon").asDouble()};
+            if (geom != null && geom.isArray() && geom.size() >= 2) {
+                double[][] way = new double[geom.size()][];
+                for (int i = 0; i < geom.size(); i++) {
+                    way[i] = new double[]{geom.get(i).path("lat").asDouble(),
+                            geom.get(i).path("lon").asDouble()};
+                }
+                out.add(way);
             }
-            out.add(way);
         }
         return out;
     }

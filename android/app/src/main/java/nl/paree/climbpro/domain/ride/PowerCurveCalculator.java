@@ -87,9 +87,10 @@ public final class PowerCurveCalculator {
             for (StoredRideStreamStats s : stats) {
                 StoredRide r = s != null ? byId.get(s.activityId) : null;
                 if (r == null || s.powerCurve == null || s.powerCurve.length != n) continue;
-                if (r.startEpochSec < cutoff) continue;
-                count++;
-                keepBest(watts, from, s.powerCurve, r);
+                if (r.startEpochSec >= cutoff) {
+                    count++;
+                    keepBest(watts, from, s.powerCurve, r);
+                }
             }
         }
         Best[] bests = new Best[n];
