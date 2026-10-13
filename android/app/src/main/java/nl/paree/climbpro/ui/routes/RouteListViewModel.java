@@ -35,6 +35,9 @@ public final class RouteListViewModel extends AndroidViewModel {
     private final ExecutorService      executor = Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<RouteCatalogEntry>> allRoutes   = new MutableLiveData<>();
+    // Last catalog loaded on the executor. Filters re-apply against this rather than
+    // allRoutes.getValue(), which stays null until the main looper delivers the first post.
+    private volatile List<RouteCatalogEntry> loadedCatalog;
     private final MutableLiveData<List<RouteCatalogEntry>> routes      = new MutableLiveData<>();
     private final MutableLiveData<String>                  error       = new MutableLiveData<>();
     private final MutableLiveData<Boolean>                 loading     = new MutableLiveData<>(false);
@@ -94,6 +97,7 @@ public final class RouteListViewModel extends AndroidViewModel {
     public void loadRoutes() {
         executor.execute(() -> {
             List<RouteCatalogEntry> all = routeRepo.loadCatalog();
+            loadedCatalog = all;
             allRoutes.postValue(all);
             routes.postValue(applyView(all, activeSurfaceFilter, activeStatusFilter, activeSortMode));
         });
@@ -101,10 +105,7 @@ public final class RouteListViewModel extends AndroidViewModel {
 
     public void setSurfaceFilter(int surfaceType) {
         activeSurfaceFilter = surfaceType;
-        List<RouteCatalogEntry> all = allRoutes.getValue();
-        if (all != null) {
-            routes.postValue(applyView(all, surfaceType, activeStatusFilter, activeSortMode));
-        }
+        refreshView();
     }
 
     public int getSortMode() { return activeSortMode; }
@@ -113,20 +114,28 @@ public final class RouteListViewModel extends AndroidViewModel {
         activeSortMode = sortMode;
         PreferenceManager.getDefaultSharedPreferences(getApplication())
                 .edit().putInt(PREF_SORT_MODE, sortMode).apply();
-        List<RouteCatalogEntry> all = allRoutes.getValue();
-        if (all != null) {
-            routes.postValue(applyView(all, activeSurfaceFilter, activeStatusFilter, sortMode));
-        }
+        refreshView();
     }
 
     public int getStatusFilter() { return activeStatusFilter; }
 
     public void setStatusFilter(int statusFilter) {
         activeStatusFilter = statusFilter;
-        List<RouteCatalogEntry> all = allRoutes.getValue();
-        if (all != null) {
-            routes.postValue(applyView(all, activeSurfaceFilter, statusFilter, activeSortMode));
-        }
+        refreshView();
+    }
+
+    /**
+     * Re-applies the current filters on the executor, so it always runs after a pending
+     * load: a filter set while the first load is in flight is never lost.
+     */
+    private void refreshView() {
+        executor.execute(() -> {
+            List<RouteCatalogEntry> all = loadedCatalog;
+            if (all != null) {
+                routes.postValue(applyView(all, activeSurfaceFilter, activeStatusFilter,
+                        activeSortMode));
+            }
+        });
     }
 
     public void deleteRoute(String routeId) {
