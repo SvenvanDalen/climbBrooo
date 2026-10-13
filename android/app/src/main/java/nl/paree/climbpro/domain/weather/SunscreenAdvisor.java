@@ -72,9 +72,10 @@ public final class SunscreenAdvisor {
             Instant hourEnd = hourStart.plusSeconds(3600);
             if (!hourEnd.isAfter(start) || !hourStart.isBefore(end)) continue;
             double uv = f.uvIndex[i];
-            if (Double.isNaN(uv)) continue;
-            if (Double.isNaN(peak) || uv > peak) peak = uv;
-            if (uv >= PROTECT_FROM_UV) protectHours++;
+            if (!Double.isNaN(uv)) {
+                if (Double.isNaN(peak) || uv > peak) peak = uv;
+                if (uv >= PROTECT_FROM_UV) protectHours++;
+            }
         }
         Level level = Double.isNaN(peak) ? Level.LOW : Level.of(peak);
 

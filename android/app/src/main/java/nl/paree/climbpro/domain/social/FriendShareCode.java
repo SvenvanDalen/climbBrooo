@@ -83,15 +83,16 @@ public final class FriendShareCode {
         for (FriendFeedEntry e : sorted) {
             if (entries.size() >= MAX_ENTRIES) break;
             String k = wireKind(e.kind);
-            if (k == null) continue;
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("k", k);
-            m.put("t", e.epochSec);
-            m.put("s", truncate(e.title == null ? "" : e.title.trim(), MAX_TITLE_CHARS));
-            if (e.distanceM > 0) m.put("d", e.distanceM);
-            if (e.gainM > 0) m.put("h", e.gainM);
-            if (e.movingSec > 0) m.put("m", e.movingSec);
-            entries.add(m);
+            if (k != null) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("k", k);
+                m.put("t", e.epochSec);
+                m.put("s", truncate(e.title == null ? "" : e.title.trim(), MAX_TITLE_CHARS));
+                if (e.distanceM > 0) m.put("d", e.distanceM);
+                if (e.gainM > 0) m.put("h", e.gainM);
+                if (e.movingSec > 0) m.put("m", e.movingSec);
+                entries.add(m);
+            }
         }
         root.put("e", entries);
         try {
@@ -121,10 +122,11 @@ public final class FriendShareCode {
         for (JsonNode n : arr) {
             if (entries.size() >= MAX_ENTRIES) break;
             FriendFeedEntry e = readEntry(n);
-            if (e == null) continue;
-            e.friendId = id;
-            e.friendName = name;
-            entries.add(e);
+            if (e != null) {
+                e.friendId = id;
+                e.friendName = name;
+                entries.add(e);
+            }
         }
         return new Payload(id, name, Math.max(0, root.path("t").asLong(0)), entries);
     }

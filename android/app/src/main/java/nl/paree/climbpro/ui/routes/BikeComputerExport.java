@@ -55,11 +55,12 @@ public final class BikeComputerExport {
         for (String p : packages) {
             if (p == null) continue;
             String lower = p.toLowerCase(Locale.ROOT);
-            if (!lower.contains(target.packageKeyword)) continue;
-            for (String hint : COMPANION_HINTS) {
-                if (lower.contains(hint)) return p;
+            if (lower.contains(target.packageKeyword)) {
+                for (String hint : COMPANION_HINTS) {
+                    if (lower.contains(hint)) return p;
+                }
+                if (any == null) any = p;
             }
-            if (any == null) any = p;
         }
         return any;
     }

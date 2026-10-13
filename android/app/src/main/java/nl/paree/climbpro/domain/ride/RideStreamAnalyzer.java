@@ -22,7 +22,12 @@ public final class RideStreamAnalyzer {
     public static final int SPRINT_POWER_LONG_SEC = 15;
     public static final int SPRINT_SPEED_SEC = 10;
 
-    public static final double[] EFFORT_DISTANCES_M = {10_000, 40_000, 100_000};
+    private static final double[] EFFORT_DISTANCES_M = {10_000, 40_000, 100_000};
+
+    /** Distances of the fastest-effort records, in metres (a copy). */
+    public static double[] effortDistancesM() {
+        return EFFORT_DISTANCES_M.clone();
+    }
 
     /**
      * Faster than this between two samples is a GPS jump, not riding (108 km/h). A window

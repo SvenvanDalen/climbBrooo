@@ -161,8 +161,8 @@ public final class MaintenanceCalculator {
         if (rides == null) return 0;
         double meters = 0;
         for (StoredRide r : rides) {
-            if (r == null || r.startEpochSec <= 0 || r.startEpochSec <= sinceEpochSec) continue;
-            if (!includeVirtual && VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type)) continue;
+            if ((r == null || r.startEpochSec <= 0 || r.startEpochSec <= sinceEpochSec)
+                    || (!includeVirtual && VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type))) continue;
             if (r.distanceM > 0) meters += r.distanceM;
         }
         return meters / 1000.0;

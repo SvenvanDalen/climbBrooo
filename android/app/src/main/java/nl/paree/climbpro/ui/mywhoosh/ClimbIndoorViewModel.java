@@ -183,10 +183,11 @@ public final class ClimbIndoorViewModel extends AndroidViewModel {
             } catch (Exception ex) {
                 continue;
             }
-            if (r.climbs == null) continue;
-            int selfIndex = e.routeId.equals(routeId) ? climbIndex : -1;
-            VirtualClimbLinker.Candidate found = addCandidates(all, e.routeId, r, selfIndex);
-            if (found != null) self = found;
+            if (r.climbs != null) {
+                int selfIndex = e.routeId.equals(routeId) ? climbIndex : -1;
+                VirtualClimbLinker.Candidate found = addCandidates(all, e.routeId, r, selfIndex);
+                if (found != null) self = found;
+            }
         }
         return self != null ? VirtualClimbLinker.counterpart(self, all) : null;
     }

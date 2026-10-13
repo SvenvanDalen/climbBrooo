@@ -167,16 +167,17 @@ public final class ClothingActivity extends AppCompatActivity {
         for (int i = 0; i < f.times.length; i++) {
             Instant h = f.times[i];
             if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
-            if (Double.isNaN(f.temperature[i])) continue;
-            if (sb.length() > 0) sb.append('\n');
-            sb.append(hm.format(h.atZone(zone)))
-              .append(String.format(Locale.GERMANY, "  %3.0f " + units.temperatureUnit(),
-                      units.temperatureValue(f.temperature[i])));
-            if (!Double.isNaN(f.windKmh[i])) {
-                sb.append(String.format(Locale.GERMANY, "  wind %2.0f " + units.speedUnit(),
-                        units.speedValue(f.windKmh[i])));
+            if (!Double.isNaN(f.temperature[i])) {
+                if (sb.length() > 0) sb.append('\n');
+                sb.append(hm.format(h.atZone(zone)))
+                  .append(String.format(Locale.GERMANY, "  %3.0f " + units.temperatureUnit(),
+                          units.temperatureValue(f.temperature[i])));
+                if (!Double.isNaN(f.windKmh[i])) {
+                    sb.append(String.format(Locale.GERMANY, "  wind %2.0f " + units.speedUnit(),
+                            units.speedValue(f.windKmh[i])));
+                }
+                if (f.rainPct[i] != null) sb.append("  regen ").append(f.rainPct[i]).append('%');
             }
-            if (f.rainPct[i] != null) sb.append("  regen ").append(f.rainPct[i]).append('%');
         }
         return sb.toString();
     }

@@ -89,11 +89,9 @@ public final class SweatLossStore {
         List<SweatLossEntry> out = new ArrayList<>();
         if (arr == null) return out;
         for (SweatLossEntry e : arr) {
-            if (e == null || e.id == null) continue;
-            if (SweatLossCalculator.validate(e.weightBeforeKg, e.weightAfterKg, e.drunkMl,
-                    e.durationMin) != null) {
-                continue;
-            }
+            if ((e == null || e.id == null)
+                    || SweatLossCalculator.validate(e.weightBeforeKg, e.weightAfterKg, e.drunkMl,
+                    e.durationMin) != null) continue;
             out.add(e);
         }
         out.sort((a, b) -> Long.compare(b.timestampEpochSec, a.timestampEpochSec));

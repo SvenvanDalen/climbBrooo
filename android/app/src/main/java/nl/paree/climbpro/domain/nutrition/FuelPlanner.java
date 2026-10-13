@@ -126,9 +126,10 @@ public final class FuelPlanner {
         for (int i = 0; i < f.times.length; i++) {
             Instant h = f.times[i];
             if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
-            if (Double.isNaN(f.temperature[i])) continue;
-            sum += f.temperature[i];
-            n++;
+            if (!Double.isNaN(f.temperature[i])) {
+                sum += f.temperature[i];
+                n++;
+            }
         }
         return n == 0 ? Double.NaN : sum / n;
     }

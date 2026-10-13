@@ -98,9 +98,9 @@ public class PowerCurveViewModelTest {
         assertEquals(PowerCurveCalculator.Period.DAYS_90, s.period);
         assertTrue(s.result.isEmpty());
         assertTrue(s.allTime.isEmpty());
-        assertEquals(PowerCurveAnalyzer.DURATIONS_SEC.length, s.result.bests.length);
+        assertEquals(PowerCurveAnalyzer.durationsSec().length, s.result.bests.length);
         for (int i = 0; i < s.result.bests.length; i++) {
-            assertEquals(PowerCurveAnalyzer.DURATIONS_SEC[i], s.result.bests[i].durationSec);
+            assertEquals(PowerCurveAnalyzer.durationsSec()[i], s.result.bests[i].durationSec);
             assertEquals(0, s.result.bests[i].watts);
             assertNull(s.result.bests[i].ride);
         }

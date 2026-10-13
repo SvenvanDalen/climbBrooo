@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * The rider's power curve per period (issue #219): for each of
- * {@link PowerCurveAnalyzer#DURATIONS_SEC}, the best stored ride value inside the period.
+ * {@link PowerCurveAnalyzer#durationsSec()}, the best stored ride value inside the period.
  * E-bike rides are left out (the motor's power isn't the rider's); indoor rides count, since
  * trainer power is real power.
  */
@@ -40,7 +40,7 @@ public final class PowerCurveCalculator {
     }
 
     public static final class Result {
-        /** One entry per {@link PowerCurveAnalyzer#DURATIONS_SEC}, in that order. */
+        /** One entry per {@link PowerCurveAnalyzer#durationsSec()}, in that order. */
         public final Best[] bests;
         /** Rides in the period that contributed a power curve. */
         public final int ridesWithPower;
@@ -77,7 +77,7 @@ public final class PowerCurveCalculator {
 
     public static Result compute(List<StoredRide> rides, List<StoredRideStreamStats> stats,
                                  Period period, long nowEpochSec) {
-        int n = PowerCurveAnalyzer.DURATIONS_SEC.length;
+        int n = PowerCurveAnalyzer.durationsSec().length;
         int[] watts = new int[n];
         StoredRide[] from = new StoredRide[n];
         Map<Long, StoredRide> byId = nonEBikeById(rides);
@@ -94,7 +94,7 @@ public final class PowerCurveCalculator {
         }
         Best[] bests = new Best[n];
         for (int k = 0; k < n; k++) {
-            bests[k] = new Best(PowerCurveAnalyzer.DURATIONS_SEC[k], watts[k], from[k]);
+            bests[k] = new Best(PowerCurveAnalyzer.durationsSec()[k], watts[k], from[k]);
         }
         return new Result(bests, count);
     }

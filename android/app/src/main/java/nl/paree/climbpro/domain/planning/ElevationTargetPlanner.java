@@ -222,8 +222,9 @@ public final class ElevationTargetPlanner {
         for (Candidate c : sorted) {
             double d = CumulativeDistance.haversine(req.startLat, req.startLon, c.startLat, c.startLon);
             if (d > req.radiusM) continue;
-            if (!seen.add(c.dedupeKey())) continue;
-            pool.add(new Pooled(c, d));
+            if (seen.add(c.dedupeKey())) {
+                pool.add(new Pooled(c, d));
+            }
         }
         pool.sort(Comparator
                 .comparingDouble((Pooled p) -> p.distM)

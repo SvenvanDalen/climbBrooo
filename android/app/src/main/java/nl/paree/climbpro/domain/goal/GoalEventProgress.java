@@ -109,18 +109,19 @@ public final class GoalEventProgress {
         for (StoredRide r : all) {
             if (!isTrainingRide(r)) continue;
             LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
-            if (day.isAfter(today)) continue;
-            double km = r.distanceM / 1000.0;
-            long weeksAgo = ChronoUnit.WEEKS.between(
-                    day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)), thisWeek);
-            if (weeksAgo >= 0 && weeksAgo < WEEKS_SHOWN) {
-                weekKm[(int) weeksAgo] += km;
-                weekHm[(int) weeksAgo] += r.elevationGainM;
-                weekRides[(int) weeksAgo]++;
-            }
-            if (!day.isBefore(readinessFrom) && !"VirtualRide".equals(r.type)) {
-                longestKm = Math.max(longestKm, km);
-                mostHm = Math.max(mostHm, r.elevationGainM);
+            if (!day.isAfter(today)) {
+                double km = r.distanceM / 1000.0;
+                long weeksAgo = ChronoUnit.WEEKS.between(
+                        day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)), thisWeek);
+                if (weeksAgo >= 0 && weeksAgo < WEEKS_SHOWN) {
+                    weekKm[(int) weeksAgo] += km;
+                    weekHm[(int) weeksAgo] += r.elevationGainM;
+                    weekRides[(int) weeksAgo]++;
+                }
+                if (!day.isBefore(readinessFrom) && !"VirtualRide".equals(r.type)) {
+                    longestKm = Math.max(longestKm, km);
+                    mostHm = Math.max(mostHm, r.elevationGainM);
+                }
             }
         }
         List<Week> weeks = new ArrayList<>();

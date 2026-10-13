@@ -14,11 +14,21 @@ import androidx.core.os.LocaleListCompat;
 public final class AppLanguage {
 
     /** Language tags in picker order; "" = follow the system. */
-    public static final String[] TAGS = {"", "nl", "en", "de", "fr", "it"};
+    private static final String[] TAGS = {"", "nl", "en", "de", "fr", "it"};
+
+    /** Language tags offered in the picker, "" first for the system language (a copy). */
+    public static String[] tags() {
+        return TAGS.clone();
+    }
 
     /** Endonyms, so a user who picked a language they cannot read can still find their own. */
-    public static final String[] ENDONYMS = {
+    private static final String[] ENDONYMS = {
             null, "Nederlands", "English", "Deutsch", "Français", "Italiano"};
+
+    /** Picker labels in each language itself, parallel to {@link #tags()} (a copy). */
+    public static String[] endonyms() {
+        return ENDONYMS.clone();
+    }
 
     private AppLanguage() {}
 

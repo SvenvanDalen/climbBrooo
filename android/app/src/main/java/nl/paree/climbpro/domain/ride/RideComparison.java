@@ -117,11 +117,11 @@ public final class RideComparison {
         if (IndoorRides.isMyWhoosh(base)) return sameMyWhooshRoute(base, all);
         if (base.distanceM <= 0) return out;
         for (StoredRide r : all) {
-            if (r == null || r.activityId == base.activityId) continue;
-            if (Math.abs(r.distanceM - base.distanceM)
-                    > base.distanceM * SAME_ROUTE_DISTANCE_TOLERANCE) continue;
-            if (!near(base.startLat, base.startLon, r.startLat, r.startLon)) continue;
-            if (!near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
+            if ((r == null || r.activityId == base.activityId)
+                    || Math.abs(r.distanceM - base.distanceM)
+                    > base.distanceM * SAME_ROUTE_DISTANCE_TOLERANCE
+                    || !near(base.startLat, base.startLon, r.startLat, r.startLon)
+                    || !near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
             out.add(r);
         }
         out.sort((x, y) -> Long.compare(y.startEpochSec, x.startEpochSec));

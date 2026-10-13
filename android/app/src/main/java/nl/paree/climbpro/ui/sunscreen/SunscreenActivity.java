@@ -181,10 +181,11 @@ public final class SunscreenActivity extends AppCompatActivity {
         for (int i = 0; i < f.times.length; i++) {
             Instant h = f.times[i];
             if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
-            if (Double.isNaN(f.uvIndex[i])) continue;
-            if (sb.length() > 0) sb.append('\n');
-            sb.append(hm.format(h.atZone(zone))).append("  UV ")
-              .append(String.format(Locale.GERMANY, "%.0f", f.uvIndex[i]));
+            if (!Double.isNaN(f.uvIndex[i])) {
+                if (sb.length() > 0) sb.append('\n');
+                sb.append(hm.format(h.atZone(zone))).append("  UV ")
+                  .append(String.format(Locale.GERMANY, "%.0f", f.uvIndex[i]));
+            }
         }
         return sb.toString();
     }

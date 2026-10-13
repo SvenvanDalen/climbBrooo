@@ -78,11 +78,12 @@ public final class VirtualClimbLinker {
             if (!isComparable(climb, c)) continue;
             Set<String> shared = words(c);
             shared.retainAll(words);
-            if (shared.isEmpty()) continue;
-            double diff = Math.abs(c.lengthM - climb.lengthM) / (double) climb.lengthM;
-            if (diff < bestDiff) {
-                bestDiff = diff;
-                best = c;
+            if (!shared.isEmpty()) {
+                double diff = Math.abs(c.lengthM - climb.lengthM) / (double) climb.lengthM;
+                if (diff < bestDiff) {
+                    bestDiff = diff;
+                    best = c;
+                }
             }
         }
         return best;

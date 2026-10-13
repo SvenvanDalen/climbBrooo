@@ -112,9 +112,9 @@ public final class BikeCostCalculator {
         if (rides == null || sinceEpochSec <= 0) return 0;
         double meters = 0;
         for (StoredRide r : rides) {
-            if (r == null || r.startEpochSec <= 0 || r.startEpochSec < sinceEpochSec) continue;
-            if (untilEpochSec > 0 && r.startEpochSec >= untilEpochSec) continue;
-            if (!includeVirtual && VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type)) continue;
+            if ((r == null || r.startEpochSec <= 0 || r.startEpochSec < sinceEpochSec)
+                    || (untilEpochSec > 0 && r.startEpochSec >= untilEpochSec)
+                    || (!includeVirtual && VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type))) continue;
             if (r.distanceM > 0) meters += r.distanceM;
         }
         return Math.round(meters);

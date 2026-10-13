@@ -10,7 +10,12 @@ public final class PowerCurveAnalyzer {
     private PowerCurveAnalyzer() {}
 
     /** The standard durations: sprint, anaerobic, VO2max, threshold and one hour. */
-    public static final int[] DURATIONS_SEC = {5, 60, 300, 1200, 3600};
+    private static final int[] DURATIONS_SEC = {5, 60, 300, 1200, 3600};
+
+    /** Window lengths of the power curve, in seconds (a copy). */
+    public static int[] durationsSec() {
+        return DURATIONS_SEC.clone();
+    }
 
     /** Longer recordings are not resampled to 1 Hz (48 h), like {@link SprintAnalyzer}. */
     private static final int MAX_RESAMPLE_SEC = 48 * 3600;

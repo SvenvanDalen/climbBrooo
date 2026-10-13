@@ -39,7 +39,7 @@ public final class StoredRideStreamStats {
     public Integer hrDriftMinutes;
     /**
      * Best average watts over 5 s, 1, 5, 20 and 60 min (issue #219), aligned with
-     * {@code PowerCurveAnalyzer.DURATIONS_SEC}; 0 where the ride is shorter. Null without power.
+     * {@code PowerCurveAnalyzer.durationsSec()}; 0 where the ride is shorter. Null without power.
      */
     public int[]   powerCurve;
     /**

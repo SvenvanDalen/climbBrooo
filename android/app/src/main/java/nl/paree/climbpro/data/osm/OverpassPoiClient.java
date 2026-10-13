@@ -118,10 +118,11 @@ public final class OverpassPoiClient {
             if (pos == null || !pos.has("lat") || !pos.has("lon")) continue;
             JsonNode tags = el.path("tags");
             String type = typeOf(tags);
-            if (type == null) continue;
-            String name = tags.path("name").asText(null);
-            out.add(new OfflinePackage.Poi(type, name, pos.get("lat").asDouble(),
-                    pos.get("lon").asDouble()));
+            if (type != null) {
+                String name = tags.path("name").asText(null);
+                out.add(new OfflinePackage.Poi(type, name, pos.get("lat").asDouble(),
+                        pos.get("lon").asDouble()));
+            }
         }
         return out;
     }

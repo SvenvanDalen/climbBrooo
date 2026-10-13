@@ -22,7 +22,7 @@ public final class IndoorClimbPredictor {
 
     public static final int WINDOW_DAYS = 90;
     static final double TWENTY_MIN_TO_FTP = 0.95;
-    /** Indices into {@code StoredRideStreamStats.powerCurve} (PowerCurveAnalyzer.DURATIONS_SEC). */
+    /** Indices into {@code StoredRideStreamStats.powerCurve} (PowerCurveAnalyzer.durationsSec()). */
     static final int IDX_20_MIN = 3;
     static final int IDX_60_MIN = 4;
 

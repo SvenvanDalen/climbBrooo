@@ -70,15 +70,15 @@ public final class FastestDistanceCalculator {
     }
 
     /**
-     * One entry per {@link RideStreamAnalyzer#EFFORT_DISTANCES_M}, in that order. Indoor and
+     * One entry per {@link RideStreamAnalyzer#effortDistancesM()}, in that order. Indoor and
      * e-bike rides are left out, as in the average-speed record; stats without a matching ride
      * in the archive are ignored.
      */
     public static List<Distance> compute(List<StoredRide> rides, List<StoredRideStreamStats> stats) {
         Map<Long, StoredRide> ridesById = outdoorUnassistedById(rides);
         List<Distance> out = new ArrayList<>();
-        for (int i = 0; i < RideStreamAnalyzer.EFFORT_DISTANCES_M.length; i++) {
-            double target = RideStreamAnalyzer.EFFORT_DISTANCES_M[i];
+        for (int i = 0; i < RideStreamAnalyzer.effortDistancesM().length; i++) {
+            double target = RideStreamAnalyzer.effortDistancesM()[i];
             List<Effort> efforts = effortsFor(i, target, stats, ridesById);
             efforts.sort((a, b) -> a.seconds != b.seconds
                     ? Integer.compare(a.seconds, b.seconds)

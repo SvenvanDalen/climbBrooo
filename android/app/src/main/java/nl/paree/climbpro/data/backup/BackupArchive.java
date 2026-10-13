@@ -42,7 +42,7 @@ public final class BackupArchive {
     public static final int FORMAT_VERSION = 1;
 
     /** Paths relative to {@code getFilesDir()}; directories end in {@code /}. */
-    public static final String[] INCLUDED_PATHS = {
+    private static final String[] INCLUDED_PATHS = {
             "catalog.json", "routes/", "climb_attempts.json", "incomplete_climb_attempts.json",
             "attempt_photos/", "collections.json", "planned_climbs.json", "rides.json",
             "tire_pressure_log.json", "maintenance.json", "wet_ride_checks.json",

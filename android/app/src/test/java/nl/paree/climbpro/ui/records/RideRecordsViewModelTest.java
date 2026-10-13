@@ -93,7 +93,7 @@ public class RideRecordsViewModelTest {
     public void noRides_everythingEmpty() throws Exception {
         RideRecordsViewModel.State s = load();
         assertTrue(s.records.isEmpty());
-        assertEquals(RideStreamAnalyzer.EFFORT_DISTANCES_M.length, s.fastest.size());
+        assertEquals(RideStreamAnalyzer.effortDistancesM().length, s.fastest.size());
         assertTrue(FastestDistanceCalculator.isEmpty(s.fastest));
         assertTrue(s.sprints.isEmpty());
         assertEquals(0, s.ridesAwaitingAnalysis);

@@ -89,10 +89,11 @@ public final class RouteElevationProfile {
         for (int i = 0; i < n; i++) {
             double ele = route.elevations[i];
             if (Double.isNaN(ele) || Double.isInfinite(ele) || ele == 0.0) continue;
-            if (Double.isNaN(dist[i])) continue;
-            d[count] = dist[i];
-            e[count] = ele;
-            count++;
+            if (!Double.isNaN(dist[i])) {
+                d[count] = dist[i];
+                e[count] = ele;
+                count++;
+            }
         }
         if (count < 2) return EMPTY;
 

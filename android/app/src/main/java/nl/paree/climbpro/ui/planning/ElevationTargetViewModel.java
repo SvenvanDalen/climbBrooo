@@ -193,22 +193,23 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
             } catch (Exception e) {
                 continue;
             }
-            if (route.climbs == null) continue;
-            List<KnownClimb> known = KnownClimbs.fromRoute(route);
-            String routeName = routeName(entry);
-            for (int i = 0; i < route.climbs.size(); i++) {
-                StoredClimb c = route.climbs.get(i);
-                double endLat = Double.NaN;
-                double endLon = Double.NaN;
-                if (known.size() == route.climbs.size()) {
-                    endLat = known.get(i).endLat;
-                    endLon = known.get(i).endLon;
+            if (route.climbs != null) {
+                List<KnownClimb> known = KnownClimbs.fromRoute(route);
+                String routeName = routeName(entry);
+                for (int i = 0; i < route.climbs.size(); i++) {
+                    StoredClimb c = route.climbs.get(i);
+                    double endLat = Double.NaN;
+                    double endLon = Double.NaN;
+                    if (known.size() == route.climbs.size()) {
+                        endLat = known.get(i).endLat;
+                        endLon = known.get(i).endLon;
+                    }
+                    String name = candidateName(c, i, routeName);
+                    out.add(new ElevationTargetPlanner.Candidate(
+                            ClimbIdentity.of(c), entry.routeId, i, name,
+                            c.startLat, c.startLon, endLat, endLon,
+                            c.elevationGain, ClimbIdentity.effectiveLength(c)));
                 }
-                String name = candidateName(c, i, routeName);
-                out.add(new ElevationTargetPlanner.Candidate(
-                        ClimbIdentity.of(c), entry.routeId, i, name,
-                        c.startLat, c.startLon, endLat, endLon,
-                        c.elevationGain, ClimbIdentity.effectiveLength(c)));
             }
         }
         return out;

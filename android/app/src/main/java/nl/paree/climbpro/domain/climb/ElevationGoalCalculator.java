@@ -79,8 +79,9 @@ public final class ElevationGoalCalculator {
             if (day.isBefore(start) || !day.isBefore(endExclusive)) continue;
 
             Integer gain = climbIdToElevationGainM.get(a.climbId);
-            if (gain == null) continue;
-            total += gain;
+            if (gain != null) {
+                total += gain;
+            }
         }
         return total;
     }
