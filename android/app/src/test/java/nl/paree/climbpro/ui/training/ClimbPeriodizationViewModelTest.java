@@ -59,10 +59,10 @@ public class ClimbPeriodizationViewModelTest {
         vm.onCleared();
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        UiTestEnv.waitFor(() -> !(live.getValue() == before), 3000);
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 

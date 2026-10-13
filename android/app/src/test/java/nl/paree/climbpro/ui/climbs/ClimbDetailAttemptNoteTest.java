@@ -215,7 +215,7 @@ public class ClimbDetailAttemptNoteTest {
 
     private interface Condition { boolean met(); }
 
-    private static void idleUntil(Condition condition) throws InterruptedException {
+    private static void idleUntil(Condition condition) {
         // Generous deadline: CI runners can be slow enough under load that the background
         // save/rollback executor hasn't finished within a tighter window, which previously
         // made this test flaky in CI without ever failing locally.

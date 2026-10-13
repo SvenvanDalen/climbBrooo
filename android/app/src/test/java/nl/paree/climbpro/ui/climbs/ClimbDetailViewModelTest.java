@@ -67,7 +67,7 @@ public class ClimbDetailViewModelTest {
         // In Robolectric the main looper is PAUSED. postValue() enqueues a Runnable on
         // the main looper. Repeatedly drain the looper until the observer fires (or
         // 2 s wall-clock timeout).
-        UiTestEnv.waitFor(() -> !(received[0] == null), 2000);
+        UiTestEnv.waitFor(() -> received[0] != null, 2000);
 
         assertNotNull(received[0]);
         assertEquals("r1", received[0].routeId);
@@ -126,7 +126,7 @@ public class ClimbDetailViewModelTest {
         org.junit.Assert.assertNotEquals(autoTotal, autoEstimate[0].totalSeconds);
     }
 
-    private static void waitFor(java.util.function.BooleanSupplier condition) throws InterruptedException {
+    private static void waitFor(java.util.function.BooleanSupplier condition) {
         UiTestEnv.waitFor(() -> condition.getAsBoolean(), 2000);
     }
 }

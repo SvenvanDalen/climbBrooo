@@ -47,10 +47,10 @@ public class ZoneDistributionViewModelTest {
         now = System.currentTimeMillis() / 1000L;
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        UiTestEnv.waitFor(() -> !(live.getValue() == before), 3000);
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
@@ -93,7 +93,7 @@ public class ZoneDistributionViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private ZoneDistributionViewModel loaded() throws InterruptedException {
+    private ZoneDistributionViewModel loaded() {
         ZoneDistributionViewModel vm = new ZoneDistributionViewModel(app);
         assertNull(vm.state().getValue());
         assertNotNull(awaitValue(vm.state(), vm::load));

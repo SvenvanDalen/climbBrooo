@@ -369,7 +369,7 @@ public class SettingsViewModelTest {
 
     private interface Condition { boolean isMet(); }
 
-    private static void drainUntil(Condition condition) throws InterruptedException {
+    private static void drainUntil(Condition condition) {
         UiTestEnv.waitFor(() -> condition.isMet(), 3000);
     }
 }

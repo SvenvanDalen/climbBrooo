@@ -67,7 +67,7 @@ public class ClimbHygieneViewModelTest {
         new ObjectMapper().writeValue(new File(dir, routeId + ".json"), route);
     }
 
-    private void idleUntil(java.util.function.BooleanSupplier condition) throws InterruptedException {
+    private void idleUntil(java.util.function.BooleanSupplier condition) {
         UiTestEnv.waitFor(() -> condition.getAsBoolean(), 2000);
     }
 

@@ -40,10 +40,10 @@ public class HeartRateDriftViewModelTest {
         now = System.currentTimeMillis() / 1000L;
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        UiTestEnv.waitFor(() -> !(live.getValue() == before), 3000);
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
@@ -73,7 +73,7 @@ public class HeartRateDriftViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private HeartRateDriftViewModel.State load() throws InterruptedException {
+    private HeartRateDriftViewModel.State load() {
         HeartRateDriftViewModel vm = new HeartRateDriftViewModel(app);
         assertNull(vm.state().getValue());
         HeartRateDriftViewModel.State s = awaitValue(vm.state(), vm::load);

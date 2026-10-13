@@ -72,7 +72,7 @@ public class ClimbLogbookViewModelTest {
         // In Robolectric the main looper is PAUSED. postValue() enqueues a Runnable on
         // the main looper. Repeatedly drain the looper until the observer fires (or
         // 2 s wall-clock timeout).
-        UiTestEnv.waitFor(() -> !(got[0] == null), 2000);
+        UiTestEnv.waitFor(() -> got[0] != null, 2000);
 
         assertNotNull(got[0]);
         assertEquals(1, got[0].size());

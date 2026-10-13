@@ -44,14 +44,14 @@ public class PowerCurveViewModelTest {
         now = System.currentTimeMillis() / 1000L;
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        UiTestEnv.waitFor(() -> !(live.getValue() == before), 3000);
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
-    private static void settle() throws InterruptedException {
+    private static void settle() {
         UiTestEnv.idleFor(300);
     }
 
@@ -79,7 +79,7 @@ public class PowerCurveViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private PowerCurveViewModel loaded() throws InterruptedException {
+    private PowerCurveViewModel loaded() {
         PowerCurveViewModel vm = new PowerCurveViewModel(app);
         assertNotNull(awaitValue(vm.state(), vm::load));
         return vm;

@@ -19,7 +19,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import nl.paree.climbpro.R;
@@ -30,6 +29,7 @@ import nl.paree.climbpro.domain.bike.EuroAmount;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * "Fietskosten" (issue #233): per bike the purchase and part costs, the km (ride archive in a
@@ -176,10 +176,10 @@ public final class BikeCostActivity extends AppCompatActivity {
         sinceButton.setText("Ritten tellen vanaf: " + adapter.formatDate(since[0]));
         sinceButton.setOnClickListener(v -> {
             ZoneId zone = ZoneId.systemDefault();
-            LocalDate base = Instant.ofEpochSecond(since[0]).atZone(zone).toLocalDate();
+            LocalDate base = PickerDates.dayOf(since[0], zone);
             DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
                 // local start of day: that day's rides count
-                since[0] = LocalDate.of(y, m + 1, d).atStartOfDay(zone).toEpochSecond();
+                since[0] = PickerDates.startOfDay(PickerDates.pickedDay(y, m, d), zone);
                 sinceButton.setText("Ritten tellen vanaf: " + adapter.formatDate(since[0]));
             }, base.getYear(), base.getMonthValue() - 1, base.getDayOfMonth());
             dp.getDatePicker().setMaxDate(System.currentTimeMillis());
@@ -212,7 +212,7 @@ public final class BikeCostActivity extends AppCompatActivity {
 
     private static long startOfTodayEpochSec() {
         ZoneId zone = ZoneId.systemDefault();
-        return LocalDate.now(zone).atStartOfDay(zone).toEpochSecond();
+        return PickerDates.startOfDay(LocalDate.now(zone), zone);
     }
 
     /** Empty or invalid input counts as 0. */
