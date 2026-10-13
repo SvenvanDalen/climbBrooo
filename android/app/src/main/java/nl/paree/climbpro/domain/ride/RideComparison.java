@@ -71,6 +71,10 @@ public final class RideComparison {
             this.cadenceA = cadenceA;
             this.cadenceB = cadenceB;
         }
+
+        private static double speedKmh(double lengthM, int sec) {
+            return sec > 0 ? lengthM / sec * 3.6 : 0;
+        }
     }
 
     /**
@@ -208,7 +212,4 @@ public final class RideComparison {
         return n > 0 ? sum / n : Double.NaN;
     }
 
-    private static double speedKmh(double lengthM, int sec) {
-        return sec > 0 ? lengthM / sec * 3.6 : 0;
-    }
 }

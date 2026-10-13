@@ -145,6 +145,11 @@ public final class RideBuddyProfileBuilder {
             int part = daypartIndex(t.getHour());
             if (part >= 0) partCounts[part]++;
         }
+
+        private static double speedKmh(StoredRide r) {
+            if (r.avgSpeedMps > 0) return r.avgSpeedMps * 3.6;
+            return r.distanceM / r.movingTimeSec * 3.6;
+        }
     }
 
     static boolean isUsable(StoredRide r) {
@@ -168,11 +173,6 @@ public final class RideBuddyProfileBuilder {
         if (hour >= 12 && hour < 17) return 1;
         if (hour >= 17 && hour < 23) return 2;
         return -1;
-    }
-
-    private static double speedKmh(StoredRide r) {
-        if (r.avgSpeedMps > 0) return r.avgSpeedMps * 3.6;
-        return r.distanceM / r.movingTimeSec * 3.6;
     }
 
     private static int vam(List<StoredClimbAttempt> attempts, Map<String, Integer> gains, long from) {

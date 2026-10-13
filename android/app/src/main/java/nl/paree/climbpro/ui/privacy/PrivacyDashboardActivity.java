@@ -73,15 +73,6 @@ public final class PrivacyDashboardActivity extends AppCompatActivity {
         viewModel.load();
     }
 
-    private void confirmDelete(PrivacyCategory c) {
-        new AlertDialog.Builder(this)
-                .setTitle(c.label + " verwijderen?")
-                .setMessage(deleteWarning(c))
-                .setPositiveButton("Verwijder", (d, w) -> viewModel.delete(c))
-                .setNegativeButton("Annuleren", null)
-                .show();
-    }
-
     private static String deleteWarning(PrivacyCategory c) {
         switch (c) {
             case ROUTES:
@@ -153,6 +144,15 @@ public final class PrivacyDashboardActivity extends AppCompatActivity {
                 view = v.findViewById(R.id.btn_view);
                 delete = v.findViewById(R.id.btn_delete);
             }
+        }
+
+        private void confirmDelete(PrivacyCategory c) {
+            new AlertDialog.Builder(PrivacyDashboardActivity.this)
+                    .setTitle(c.label + " verwijderen?")
+                    .setMessage(deleteWarning(c))
+                    .setPositiveButton("Verwijder", (d, w) -> viewModel.delete(c))
+                    .setNegativeButton("Annuleren", null)
+                    .show();
         }
     }
 }

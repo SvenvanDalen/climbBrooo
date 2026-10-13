@@ -21,10 +21,6 @@ public final class GpxParser {
 
     private GpxParser() {}
 
-    private static boolean isPointTag(String tag) {
-        return "trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag);
-    }
-
     /** Collects track/route points and waypoints while the pull parser walks the file. */
     private static final class PointCollector {
         final List<RoutePoint> points = new ArrayList<>();
@@ -73,6 +69,20 @@ public final class GpxParser {
                 inEle = false;
             }
         }
+
+        private static double parseAttr(XmlPullParser xpp, String name) {
+            String v = xpp.getAttributeValue(null, name);
+            if (v == null) return Double.NaN;
+            try {
+                return Double.parseDouble(v.trim());
+            } catch (NumberFormatException e) {
+                return Double.NaN;
+            }
+        }
+
+        private static boolean isPointTag(String tag) {
+            return "trkpt".equals(tag) || "rtept".equals(tag) || "wpt".equals(tag);
+        }
     }
 
     public static List<RoutePoint> parse(InputStream in) throws GpxParseException {
@@ -114,13 +124,4 @@ public final class GpxParser {
         }
     }
 
-    private static double parseAttr(XmlPullParser xpp, String name) {
-        String v = xpp.getAttributeValue(null, name);
-        if (v == null) return Double.NaN;
-        try {
-            return Double.parseDouble(v.trim());
-        } catch (NumberFormatException e) {
-            return Double.NaN;
-        }
-    }
 }

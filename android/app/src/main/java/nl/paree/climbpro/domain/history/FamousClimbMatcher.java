@@ -122,6 +122,10 @@ public final class FamousClimbMatcher {
                 best = new Match(fc, Kind.START_AND_TOP, side.label);
             }
         }
+
+        private static double clamp(double v, double lo, double hi) {
+            return Math.max(lo, Math.min(hi, v));
+        }
     }
 
     private static Match matchByName(List<FamousClimb> dataset,
@@ -190,7 +194,4 @@ public final class FamousClimbMatcher {
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 
-    private static double clamp(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
-    }
 }

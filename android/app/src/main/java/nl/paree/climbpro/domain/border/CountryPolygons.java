@@ -49,6 +49,23 @@ public final class CountryPolygons {
             }
             return inside;
         }
+
+        /** Ray casting; ring is implicitly closed. */
+        private static boolean ringContains(float[] ring, double lat, double lon) {
+            boolean inside = false;
+            int n = ring.length / 2;
+            for (int i = 0, j = n - 1; i < n; j = i++) {
+                double xi = ring[i * 2];
+                double yi = ring[i * 2 + 1];
+                double xj = ring[j * 2];
+                double yj = ring[j * 2 + 1];
+                if ((yi > lat) != (yj > lat)
+                        && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
     }
 
     private final List<Country> countries;
@@ -126,20 +143,4 @@ public final class CountryPolygons {
         return ring;
     }
 
-    /** Ray casting; ring is implicitly closed. */
-    private static boolean ringContains(float[] ring, double lat, double lon) {
-        boolean inside = false;
-        int n = ring.length / 2;
-        for (int i = 0, j = n - 1; i < n; j = i++) {
-            double xi = ring[i * 2];
-            double yi = ring[i * 2 + 1];
-            double xj = ring[j * 2];
-            double yj = ring[j * 2 + 1];
-            if ((yi > lat) != (yj > lat)
-                    && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
-                inside = !inside;
-            }
-        }
-        return inside;
-    }
 }
