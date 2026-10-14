@@ -372,4 +372,78 @@ public class MyWhooshFeaturesTest {
         assertEquals(280, seasons.get(0).best20MinWatts);
         assertEquals("2024/25", seasons.get(1).label());
     }
+
+    // --- PowerDecoupling (#399) ---------------------------------------------------------
+
+    private static StoredRideStreamStats drift(long id, double pct, String basis) {
+        StoredRideStreamStats s = stats(id);
+        s.hrDriftPct = pct;
+        s.hrDriftBasis = basis;
+        s.hrDriftMinutes = 50;
+        return s;
+    }
+
+    @Test
+    public void decouplingOnlyForLongPowerRidesWithVerdict() {
+        StoredRide good = myWhoosh(1, "A", JAN_1_2026);
+        StoredRide poor = myWhoosh(2, "B", JAN_1_2026);
+        StoredRide shortRide = myWhoosh(3, "C", JAN_1_2026);
+        shortRide.movingTimeSec = 40 * 60;
+        StoredRide speedBasis = myWhoosh(4, "D", JAN_1_2026);
+        Map<Long, StoredRideStreamStats> st = new HashMap<>();
+        st.put(1L, drift(1, 3.2, "power"));
+        st.put(2L, drift(2, 12.0, "power"));
+        st.put(3L, drift(3, 1.0, "power"));
+        st.put(4L, drift(4, 1.0, "speed"));
+        List<PowerDecoupling.Entry> out = PowerDecoupling.compute(
+                Arrays.asList(good, poor, shortRide, speedBasis), st, 10);
+        assertEquals(2, out.size());
+        assertEquals(PowerDecoupling.Rating.GOOD, out.get(0).rating);
+        assertEquals(PowerDecoupling.Rating.POOR, out.get(1).rating);
+        assertEquals(PowerDecoupling.Rating.FAIR, PowerDecoupling.rate(7));
+        assertEquals(1, PowerDecoupling.compute(Arrays.asList(good, poor), st, 1).size());
+    }
+
+    // --- RaceDetector (#407) ------------------------------------------------------------
+
+    @Test
+    public void racesAreRecognisedByNameOrStartSprintAtRaceIntensity() {
+        StoredRide named = myWhoosh(1, "UCI Race Series", JAN_1_2026);
+        named.avgWatts = 240f;
+        named.elapsedTimeSec = 3700;
+        StoredRide hard = myWhoosh(2, "Hautacam", JAN_1_2026);
+        StoredRide hardLateSprint = myWhoosh(3, "Hautacam", JAN_1_2026);
+        StoredRide easy = myWhoosh(4, "Hautacam", JAN_1_2026);
+        Map<Long, StoredRideStreamStats> st = new HashMap<>();
+        StoredRideStreamStats n = stats(1);
+        n.powerCurve = new int[]{900, 400, 300, 0, 0};
+        st.put(1L, n);
+        for (long id = 2; id <= 4; id++) {
+            StoredRideStreamStats s = stats(id);
+            s.normalizedPower = id == 4 ? 180 : 260;
+            s.sprint5sAtSec = id == 3 ? 1500 : 30;
+            st.put(id, s);
+        }
+        List<RaceDetector.Race> races = RaceDetector.detect(
+                Arrays.asList(named, hard, hardLateSprint, easy), st, 270, W80);
+        assertEquals(2, races.size());
+        RaceDetector.Race r = races.get(0);
+        assertSame(named, r.ride);
+        assertEquals(RaceDetector.Reason.NAME, r.reason);
+        assertEquals(3.0, r.avgWattsPerKg, 1e-9);
+        assertEquals(Integer.valueOf(400), r.peak1MinWatts);
+        assertEquals(Integer.valueOf(300), r.peak5MinWatts);
+        assertEquals(3700, r.timeSec);
+        assertSame(hard, races.get(1).ride);
+        assertEquals(RaceDetector.Reason.INTENSITY, races.get(1).reason);
+        assertNull(races.get(1).avgWattsPerKg);
+        // Without an FTP only the name counts.
+        assertEquals(1, RaceDetector.detect(Arrays.asList(named, hard), st, 0, W80).size());
+    }
+
+    @Test
+    public void raceNameMatchesWholeWordsOnly() {
+        assertNull(RaceDetector.reason(myWhoosh(1, "Eventide Loop", 0), null, 0));
+        assertEquals(RaceDetector.Reason.NAME, RaceDetector.reason(myWhoosh(1, "Crit City", 0), null, 0));
+    }
 }

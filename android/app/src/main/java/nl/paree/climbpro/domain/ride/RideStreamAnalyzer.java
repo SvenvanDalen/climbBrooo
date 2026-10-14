@@ -7,7 +7,8 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
  * (issue #224), heart-rate drift (issue #222), the power curve (issue #219), time per
  * heart rate and power level (issue #218), normalized power (issue #391), cadence per
  * gradient class (issue #403), heart rate per gradient class (issue #24) and heart-rate
- * recovery after intervals (issue #402). Runs once per ride on the phone during the
+ * recovery after intervals (issue #402), intervals (issue #400) and mechanical work
+ * (issue #404). Runs once per ride on the phone during the
  * ride-archive sync; only the result is stored.
  */
 public final class RideStreamAnalyzer {
@@ -15,7 +16,7 @@ public final class RideStreamAnalyzer {
     private RideStreamAnalyzer() {}
 
     /** Bump when the analysis changes, so stored stats from an older version are redone. */
-    public static final int VERSION = 7;
+    public static final int VERSION = 8;
 
     /** Sprint windows (issue #224): peak power over 5 and 15 s, peak speed over 10 s. */
     public static final int SPRINT_POWER_SHORT_SEC = 5;
@@ -75,6 +76,8 @@ public final class RideStreamAnalyzer {
             st.hrGradeBeats = hrGrade.beats;
         }
         st.hrRecoveryDrops = HeartRateRecoveryAnalyzer.drops(streams);
+        st.intervals = IntervalAnalyzer.detect(streams);
+        st.workKj = IntervalAnalyzer.workKj(streams);
         return st;
     }
 
