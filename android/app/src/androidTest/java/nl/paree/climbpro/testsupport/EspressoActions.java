@@ -1,11 +1,14 @@
 package nl.paree.climbpro.testsupport;
 
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anyOf;
 
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
@@ -58,6 +61,24 @@ public final class EspressoActions {
                 throw last;
             }
         };
+    }
+
+    /**
+     * Scrolls the matched view into view and clicks it, retrying briefly when content still
+     * laying out above it (async loads) moves it between the scroll and the click.
+     */
+    public static void scrollToAndClick(Matcher<View> view) {
+        PerformException last = null;
+        for (int attempt = 0; attempt < SCROLL_ATTEMPTS; attempt++) {
+            try {
+                onView(view).perform(scrollIntoView(), click());
+                return;
+            } catch (PerformException e) {
+                last = e;
+                SystemClock.sleep(200);
+            }
+        }
+        throw last;
     }
 
     /**
