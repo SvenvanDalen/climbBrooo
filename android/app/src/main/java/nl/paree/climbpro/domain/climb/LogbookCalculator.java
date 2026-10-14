@@ -76,6 +76,9 @@ public final class LogbookCalculator {
          */
         public final String companions;
 
+        /** Peak power inside the pass (issue #389), see {@code StoredClimbAttempt.peakWatts}. */
+        public int[] peakWatts;
+
         public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
                           boolean routeDeviation, boolean bestOfYear) {
             this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
@@ -186,6 +189,7 @@ public final class LogbookCalculator {
                     a.routeDeviation, bestOfYear,
                     a.activityId, a.passIndex, a.note, a.photoFileName, a.avgTempC,
                     a.companions));
+            rows.get(rows.size() - 1).peakWatts = a.peakWatts;
         }
         return rows;
     }

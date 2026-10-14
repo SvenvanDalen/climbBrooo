@@ -396,7 +396,15 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   0.90 with the hardest 5 s in the first 3 min) with average W/kg, 1/5 min peak and time — and
   kept out of the training rows —, a table of detected intervals per ride (duration, average
   power, max heart rate, recovery), and Pw:HR aerobic decoupling for rides of 45 min or longer
-  (under 5 % = good). Phone-only.
+  (under 5 % = good). Also an Efficiency Factor trend (NP / average heart rate per week over 12
+  weeks) and the MyWhoosh power curve against the outdoor one over 90 days ("indoor 20 min:
+  -6 %"). Tap a ride for its profile: elevation as a backdrop with power, heart rate and
+  cadence over it, each switchable, scrolling together (streams fetched from Strava on
+  demand). Phone-only.
+- **Alles / Buiten / MyWhoosh filter** on the power curve, zone time, Klim Wrapped and the
+  elevation goals; one shared choice, overriding the virtual-hm switch when not "Alles".
+- **Peak power on a climb**: each new climb attempt stores its best 30 s, 1, 5 and 20 min
+  power; the climb detail history shows them per attempt.
 - **intervals.icu** — Settings → "intervals.icu koppelen": paste your personal API key
   (intervals.icu → Settings → Developer Settings) and athlete id (0 = your own), with a
   connection test. Climb detail → "Exporteer als indoor-workout" → "Naar intervals.icu" (or

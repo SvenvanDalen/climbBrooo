@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.mywhoosh.RideSourceSelector;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Progress;
 
 import java.util.Locale;
@@ -49,6 +50,8 @@ public final class ElevationGoalActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
+        // #392: Alles / Buiten / MyWhoosh.
+        RideSourceSelector.attach(this, R.id.toolbar, () -> viewModel.load());
 
         weekProgressText = findViewById(R.id.weekProgressText);
         monthProgressText = findViewById(R.id.monthProgressText);

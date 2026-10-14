@@ -17,6 +17,8 @@ import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.domain.mywhoosh.CadenceByGrade;
+import nl.paree.climbpro.domain.mywhoosh.EfficiencyFactorTrend;
+import nl.paree.climbpro.domain.mywhoosh.IndoorOutdoorPowerCurve;
 import nl.paree.climbpro.domain.mywhoosh.HeartRateRecoveryTrend;
 import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
 import nl.paree.climbpro.domain.mywhoosh.IndoorSeasonSummary;
@@ -25,6 +27,7 @@ import nl.paree.climbpro.domain.mywhoosh.PowerDecoupling;
 import nl.paree.climbpro.domain.mywhoosh.RaceDetector;
 import nl.paree.climbpro.domain.mywhoosh.RideIntensity;
 import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.ride.PowerCurveCalculator;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 import nl.paree.climbpro.domain.rider.WeightHistory;
 
@@ -41,7 +44,7 @@ import java.util.concurrent.Executors;
 /**
  * Everything on the MyWhoosh screen, computed off the main thread from the ride archive, the
  * stream analysis and the climb logbook (issues #391, #399, #400, #402, #403, #404, #406,
- * #407, #409). Phone-only.
+ * #407, #409) and the EF trend and indoor/outdoor power curve (issues #398, #394). Phone-only.
  */
 public final class MyWhooshViewModel extends AndroidViewModel {
 
@@ -91,13 +94,16 @@ public final class MyWhooshViewModel extends AndroidViewModel {
         public final List<RaceDetector.Race> races;
         public final List<IntervalRide> intervalRides;
         public final List<PowerDecoupling.Entry> decoupling;
+        public final EfficiencyFactorTrend.Result efficiency;
+        public final IndoorOutdoorPowerCurve.Result indoorOutdoor;
 
         @SuppressWarnings("java:S107") // one immutable snapshot of the whole screen
         State(int myWhooshRides, int awaitingAnalysis, int ftpWatts,
               List<IndoorSeasonSummary.Season> seasons, List<MyWhooshRouteCatalog.Entry> catalog,
               Map<String, String> routeIds, List<RideRow> rides, CadenceByGrade.Result cadence,
               HeartRateRecoveryTrend.Result recovery, List<RaceDetector.Race> races,
-              List<IntervalRide> intervalRides, List<PowerDecoupling.Entry> decoupling) {
+              List<IntervalRide> intervalRides, List<PowerDecoupling.Entry> decoupling,
+              EfficiencyFactorTrend.Result efficiency, IndoorOutdoorPowerCurve.Result indoorOutdoor) {
             this.myWhooshRides = myWhooshRides;
             this.awaitingAnalysis = awaitingAnalysis;
             this.ftpWatts = ftpWatts;
@@ -110,6 +116,8 @@ public final class MyWhooshViewModel extends AndroidViewModel {
             this.races = races;
             this.intervalRides = intervalRides;
             this.decoupling = decoupling;
+            this.efficiency = efficiency;
+            this.indoorOutdoor = indoorOutdoor;
         }
     }
 
@@ -167,7 +175,10 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                     MyWhooshRouteCatalog.compute(rides), routeIds(app), rows,
                     CadenceByGrade.compute(rides, stats, true),
                     HeartRateRecoveryTrend.compute(rides, stats, now, true), races,
-                    intervalRides, PowerDecoupling.compute(training, stats, MAX_DECOUPLING_ROWS)));
+                    intervalRides, PowerDecoupling.compute(training, stats, MAX_DECOUPLING_ROWS),
+                    EfficiencyFactorTrend.compute(training, stats, now, ZoneId.systemDefault()),
+                    IndoorOutdoorPowerCurve.compute(rides, new ArrayList<>(stats.values()),
+                            PowerCurveCalculator.Period.DAYS_90, now)));
         });
     }
 

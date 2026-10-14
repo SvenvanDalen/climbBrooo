@@ -25,6 +25,8 @@ import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.domain.mywhoosh.CadenceByGrade;
+import nl.paree.climbpro.domain.mywhoosh.EfficiencyFactorTrend;
+import nl.paree.climbpro.domain.mywhoosh.IndoorOutdoorPowerCurve;
 import nl.paree.climbpro.domain.mywhoosh.HeartRateRecoveryTrend;
 import nl.paree.climbpro.domain.mywhoosh.IndoorSeasonSummary;
 import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
@@ -32,13 +34,16 @@ import nl.paree.climbpro.domain.mywhoosh.MyWhooshRouteCatalog;
 import nl.paree.climbpro.domain.mywhoosh.PowerDecoupling;
 import nl.paree.climbpro.domain.mywhoosh.RaceDetector;
 import nl.paree.climbpro.domain.mywhoosh.VirtualElevation;
+import nl.paree.climbpro.domain.ride.PowerCurveAnalyzer;
 import nl.paree.climbpro.service.MyWhooshPrNotifier;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 import nl.paree.climbpro.ui.rides.RideCompareActivity;
 import nl.paree.climbpro.ui.routes.RouteDetailActivity;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -46,7 +51,8 @@ import java.util.Locale;
  * "MyWhoosh-analyse": the indoor season against the previous one (issue #409), the catalog of
  * ridden MyWhoosh routes with a ride comparer per route (issues #406, #405), NP/IF/TSS per
  * ride with its work in kJ (issues #391, #404), races apart (issue #407), intervals per ride
- * (issue #400), Pw:HR decoupling (issue #399), cadence per gradient (issue #403), heart-rate
+ * (issue #400), Pw:HR decoupling (issue #399), the Efficiency Factor trend (issue #398), the
+ * indoor vs outdoor power curve (issue #394), cadence per gradient (issue #403), heart-rate
  * recovery after intervals (issue #402), the weight log (issue #408) and the indoor settings
  * (issues #388, #393).
  * Everything comes from the ride archive and its stream analysis; phone-only.
@@ -98,6 +104,8 @@ public final class MyWhooshActivity extends AppCompatActivity {
         renderRaces(rows, st.races);
         renderIntervals(rows, st.intervalRides);
         renderDecoupling(rows, st.decoupling);
+        renderEfficiency(rows, st.efficiency);
+        renderIndoorOutdoor(rows, st.indoorOutdoor);
         renderCadence(rows, st.cadence);
         renderRecovery(rows, st.recovery);
         renderSettings(rows);
@@ -219,20 +227,30 @@ public final class MyWhooshActivity extends AppCompatActivity {
         if (st.rides.isEmpty()) return;
         addText(rows, "TSS = uren × IF² × 100. Deze ritten tellen ook mee in de "
                 + "belastingkalender en de fitheidsgrafiek. kJ is de geleverde arbeid uit je "
-                + "vermogen, ongeveer gelijk aan de verbrande kcal.");
+                + "vermogen, ongeveer gelijk aan de verbrande kcal. Tik op een rit voor het "
+                + "profiel met vermogen, hartslag en cadans.");
         for (MyWhooshViewModel.RideRow row : st.rides) {
             String title = date(row.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(row.ride);
             String work = row.workKj != null ? ", " + row.workKj + " kJ" : "";
+            long activityId = row.ride.activityId;
             if (row.intensity == null) {
                 addRow(rows, title, "–", duration(row.ride.movingTimeSec) + work
-                        + (st.ftpWatts > 0 && row.workKj == null ? ", geen vermogen" : ""));
+                        + (st.ftpWatts > 0 && row.workKj == null ? ", geen vermogen" : ""))
+                        .setOnClickListener(v -> openProfile(activityId));
                 continue;
             }
-            addRow(rows, title, String.format(Locale.getDefault(), "%.0f TSS", row.intensity.tss),
+            View v = addRow(rows, title, String.format(Locale.getDefault(), "%.0f TSS", row.intensity.tss),
                     String.format(Locale.getDefault(), "NP %d W, IF %.2f, %s%s",
                             row.intensity.normalizedPower, row.intensity.intensityFactor,
                             duration(row.ride.movingTimeSec), work));
+            v.setOnClickListener(x -> openProfile(activityId));
         }
+    }
+
+    // --- #390 -----------------------------------------------------------------------------
+
+    private void openProfile(long activityId) {
+        startActivity(RideProfileActivity.intentFor(this, activityId));
     }
 
     // --- #407 -----------------------------------------------------------------------------
@@ -356,6 +374,65 @@ public final class MyWhooshActivity extends AppCompatActivity {
                     String.format(Locale.getDefault(), "%.0f slagen", e.avgDropBpm),
                     e.intervals + " interval(len)");
         }
+    }
+
+    // --- #398 -----------------------------------------------------------------------------
+
+    private void renderEfficiency(ViewGroup rows, EfficiencyFactorTrend.Result r) {
+        addHeader(rows, "Efficiency Factor (NP / hartslag)");
+        if (r.isEmpty()) {
+            addText(rows, "Nog geen MyWhoosh-rit van minstens 20 minuten met vermogen en "
+                    + "hartslag in de laatste " + EfficiencyFactorTrend.WEEKS + " weken.");
+            return;
+        }
+        String trend = r.change == null ? "Nog te weinig weken om een trend te zien."
+                : String.format(Locale.getDefault(), "%+.2f t.o.v. de %d weken daarvoor (%s).",
+                        r.change, EfficiencyFactorTrend.WEEKS / 2,
+                        r.change >= 0 ? "meer watt per hartslag" : "minder watt per hartslag");
+        addText(rows, "Gemiddeld per week. Hoger is beter: meer watt bij dezelfde hartslag. " + trend);
+        List<Double> values = new ArrayList<>();
+        for (EfficiencyFactorTrend.Week w : r.weeks) values.add(w.ef);
+        SimpleLineChartView chart = new SimpleLineChartView(this);
+        List<SimpleLineChartView.Series> series = new ArrayList<>();
+        series.add(new SimpleLineChartView.Series(values,
+                ContextCompat.getColor(this, R.color.color_accent), "EF", false,
+                new HashSet<>(), v -> String.format(Locale.getDefault(), "%.2f", v)));
+        chart.setSeries(series, false);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        chart.setPadding(pad, pad, pad, 0);
+        rows.addView(chart);
+        EfficiencyFactorTrend.Week last = r.weeks.get(r.weeks.size() - 1);
+        addRow(rows, "Week van " + last.monday.getDayOfMonth() + "/" + last.monday.getMonthValue(),
+                String.format(Locale.getDefault(), "%.2f", last.ef), last.rides + " rit(ten)");
+    }
+
+    // --- #394 -----------------------------------------------------------------------------
+
+    private void renderIndoorOutdoor(ViewGroup rows, IndoorOutdoorPowerCurve.Result r) {
+        addHeader(rows, "Vermogenscurve indoor vs buiten (90 dagen)");
+        if (!r.isComparable()) {
+            addText(rows, "Nodig: zowel MyWhoosh-ritten als buitenritten met vermogen in de "
+                    + "laatste 90 dagen.");
+            return;
+        }
+        addText(rows, String.format(Locale.getDefault(), "Beste vermogen per duur uit %d "
+                + "MyWhoosh- en %d buitenrit(ten). Negatief = indoor lager.", r.indoorRides,
+                r.outdoorRides));
+        for (int k = 0; k < PowerCurveAnalyzer.DURATIONS_SEC.length; k++) {
+            Double diff = r.differencePct(k);
+            addRow(rows, curveLabel(PowerCurveAnalyzer.DURATIONS_SEC[k]),
+                    diff != null ? String.format(Locale.getDefault(), "%+.0f %%", diff) : "–",
+                    String.format(Locale.getDefault(), "indoor %s, buiten %s",
+                            watts(r.indoorWatts[k]), watts(r.outdoorWatts[k])));
+        }
+    }
+
+    private static String curveLabel(int sec) {
+        return sec < 60 ? sec + " s" : sec / 60 + " min";
+    }
+
+    private static String watts(int w) {
+        return w > 0 ? w + " W" : "–";
     }
 
     private static String verdict(PowerDecoupling.Rating rating) {

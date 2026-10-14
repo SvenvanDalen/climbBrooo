@@ -17,6 +17,8 @@ import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.WrappedCalculator;
 import nl.paree.climbpro.domain.climb.WrappedCalculator.ClimbInfo;
 import nl.paree.climbpro.domain.climb.WrappedCalculator.Summary;
+import nl.paree.climbpro.domain.mywhoosh.RideSource;
+import nl.paree.climbpro.ui.mywhoosh.RideSourceSelector;
 
 import java.time.ZoneOffset;
 import java.util.HashMap;
@@ -57,7 +59,12 @@ public final class ClimbWrappedViewModel extends AndroidViewModel {
             boolean countVirtual = androidx.preference.PreferenceManager
                     .getDefaultSharedPreferences(getApplication())
                     .getBoolean(nl.paree.climbpro.domain.mywhoosh.VirtualElevation.PREF_COUNT_VIRTUAL, true);
-            if (!countVirtual) {
+            // #392: a chosen source overrides the virtual-hm switch.
+            RideSource source = RideSourceSelector.current(getApplication());
+            if (source != RideSource.ALL) {
+                attempts = source.filterAttempts(attempts,
+                        new nl.paree.climbpro.data.ride.RideRepository(getApplication()).loadAll());
+            } else if (!countVirtual) {
                 attempts = nl.paree.climbpro.domain.mywhoosh.VirtualElevation.countedAttempts(
                         attempts, nl.paree.climbpro.domain.mywhoosh.IndoorRides.indoorIds(
                                 new nl.paree.climbpro.data.ride.RideRepository(getApplication())
