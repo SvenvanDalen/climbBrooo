@@ -71,15 +71,19 @@ public final class ZoneCalculator {
         if (rides == null) return entries;
         for (StoredRide r : rides) {
             StoredRideStreamStats s = r != null ? byId.get(r.activityId) : null;
-            if (s == null) continue;
-            int[] hr = heartRateZones(s.hrSecondsPerBpm, maxHr);
-            int[] power = RideRecordsCalculator.isEBike(r.type)
-                    ? new int[0] : powerZones(s.powerSecondsPer10W, ftp);
-            if (hr.length > 0 || power.length > 0) {
-                entries.add(new Entry(r, hr.length > 0 ? hr : null, power.length > 0 ? power : null));
-            }
+            Entry e = s != null ? entry(r, s, maxHr, ftp) : null;
+            if (e != null) entries.add(e);
         }
         return entries;
+    }
+
+    /** The ride's zone times, or null when it has neither heart-rate nor power zones. */
+    private static Entry entry(StoredRide r, StoredRideStreamStats s, int maxHr, int ftp) {
+        int[] hr = heartRateZones(s.hrSecondsPerBpm, maxHr);
+        int[] power = RideRecordsCalculator.isEBike(r.type)
+                ? new int[0] : powerZones(s.powerSecondsPer10W, ftp);
+        if (hr.length == 0 && power.length == 0) return null;
+        return new Entry(r, hr.length > 0 ? hr : null, power.length > 0 ? power : null);
     }
 
     /**

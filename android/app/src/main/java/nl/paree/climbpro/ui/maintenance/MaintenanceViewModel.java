@@ -84,15 +84,15 @@ public final class MaintenanceViewModel extends AndroidViewModel {
 
     /** Arguments of {@link #saveComponent}. */
     public static final class ComponentForm {
-        private String id;
-        private String name;
-        private int intervalKm;
-        private int intervalMonths;
-        private boolean includeVirtualRides;
-        private long correctedLastServicedEpochSec;
-        private long warrantyPurchaseEpochSec;
-        private int warrantyMonths;
-        private String bikeId;
+        String id;
+        String name;
+        int intervalKm;
+        int intervalMonths;
+        boolean includeVirtualRides;
+        long correctedLastServicedEpochSec;
+        long warrantyPurchaseEpochSec;
+        int warrantyMonths;
+        String bikeId;
 
         public ComponentForm id(String id) {
             this.id = id;

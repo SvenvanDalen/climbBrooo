@@ -405,14 +405,14 @@ public final class LoopGenerator {
 
     /** Arguments of {@link #addOutAndBack}. */
     public static final class OutAndBackLeg {
-        private List<Suggestion> out;
-        private Source s;
-        private List<RoutePoint> pts;
-        private int k;
-        private double approach;
-        private double lat;
-        private double lon;
-        private double targetM;
+        List<Suggestion> out;
+        Source s;
+        List<RoutePoint> pts;
+        int k;
+        double approach;
+        double lat;
+        double lon;
+        double targetM;
 
         public OutAndBackLeg out(List<Suggestion> out) {
             this.out = out;

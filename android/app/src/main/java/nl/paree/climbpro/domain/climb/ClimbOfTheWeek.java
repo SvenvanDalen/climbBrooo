@@ -64,105 +64,33 @@ public final class ClimbOfTheWeek {
     /** Overall weather outlook for the week, from its best day. */
     public enum Outlook { GOOD, MIXED, POOR }
 
-    /** A known climb that may be suggested. Coordinates in degrees. */
-    public static final class Candidate {
-        /** Route-independent identity ({@link ClimbIdentity}); used for dedupe and pinning. */
-        public final String climbId;
-        public final String routeId;
-        public final int    climbIndex;
-        public final String name;
-        public final double startLat;
-        public final double startLon;
-        public final int    elevationGainM;
-        /** Average gradient as a fraction (0.072 = 7.2 %). */
-        public final double avgGradient;
-        public final int    lengthM;
+    /** A known climb that may be suggested. */
+    public static final class Candidate extends ClimbCandidate {
         /** Local epoch day of the last attempt; null when never ridden. */
-        public final Long   lastRiddenEpochDay;
+        public final Long lastRiddenEpochDay;
 
         private Candidate(Builder b) {
-            this.climbId            = b.climbId;
-            this.routeId            = b.routeId;
-            this.climbIndex         = b.climbIndex;
-            this.name               = b.name;
-            this.startLat           = b.startLat;
-            this.startLon           = b.startLon;
-            this.elevationGainM     = b.elevationGainM;
-            this.avgGradient        = b.avgGradient;
-            this.lengthM            = b.lengthM;
+            super(b);
             this.lastRiddenEpochDay = b.lastRiddenEpochDay;
         }
 
         /** Builds a {@link Candidate}; every value defaults to Java's default for its type. */
-        public static final class Builder {
-            private String climbId;
-            private String routeId;
-            private int climbIndex;
-            private String name;
-            private double startLat;
-            private double startLon;
-            private int elevationGainM;
-            private double avgGradient;
-            private int lengthM;
+        public static final class Builder extends ClimbCandidate.Builder<Builder> {
             private Long lastRiddenEpochDay;
-
-            public Builder climbId(String climbId) {
-                this.climbId = climbId;
-                return this;
-            }
-
-            public Builder routeId(String routeId) {
-                this.routeId = routeId;
-                return this;
-            }
-
-            public Builder climbIndex(int climbIndex) {
-                this.climbIndex = climbIndex;
-                return this;
-            }
-
-            public Builder name(String name) {
-                this.name = name;
-                return this;
-            }
-
-            public Builder startLat(double startLat) {
-                this.startLat = startLat;
-                return this;
-            }
-
-            public Builder startLon(double startLon) {
-                this.startLon = startLon;
-                return this;
-            }
-
-            public Builder elevationGainM(int elevationGainM) {
-                this.elevationGainM = elevationGainM;
-                return this;
-            }
-
-            public Builder avgGradient(double avgGradient) {
-                this.avgGradient = avgGradient;
-                return this;
-            }
-
-            public Builder lengthM(int lengthM) {
-                this.lengthM = lengthM;
-                return this;
-            }
 
             public Builder lastRiddenEpochDay(Long lastRiddenEpochDay) {
                 this.lastRiddenEpochDay = lastRiddenEpochDay;
                 return this;
             }
 
+            @Override
+            protected Builder self() {
+                return this;
+            }
+
             public Candidate build() {
                 return new Candidate(this);
             }
-        }
-
-        String key() {
-            return climbId != null ? climbId : ("route:" + routeId + "#" + climbIndex);
         }
     }
 

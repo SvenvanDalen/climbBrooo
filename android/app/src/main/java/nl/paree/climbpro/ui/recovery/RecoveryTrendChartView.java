@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Point;
+import nl.paree.climbpro.ui.ChartArea;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,14 +83,7 @@ public final class RecoveryTrendChartView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = (int) (width * 0.5f);
-        int mode = MeasureSpec.getMode(heightMeasureSpec);
-        if (mode == MeasureSpec.EXACTLY) {
-            height = MeasureSpec.getSize(heightMeasureSpec);
-        } else if (mode == MeasureSpec.AT_MOST) {
-            height = Math.min(height, MeasureSpec.getSize(heightMeasureSpec));
-        }
-        setMeasuredDimension(width, height);
+        setMeasuredDimension(width, ChartArea.measuredHeight(width, heightMeasureSpec, 0.5f));
     }
 
     @Override
@@ -102,6 +96,7 @@ public final class RecoveryTrendChartView extends View {
         float right = getWidth() - PAD_RIGHT * density;
         float top = PAD_TOP * density;
         float bottom = getHeight() - PAD_BOTTOM * density;
+        ChartArea area = new ChartArea(left, top, right, bottom);
 
         for (int v = 0; v <= (int) AXIS_MAX; v += 5) {
             float yy = y((float) v, top, bottom);
@@ -110,98 +105,31 @@ public final class RecoveryTrendChartView extends View {
                     yy + labelPaint.getTextSize() / 3, labelPaint);
         }
 
-        drawSeries(new SeriesStyle()
-                .canvas(canvas)
-                .rpe(true)
-                .color(COLOR_RPE)
-                .left(left)
-                .right(right)
-                .top(top)
-                .bottom(bottom)
-                .density(density));
-        drawSeries(new SeriesStyle()
-                .canvas(canvas)
-                .rpe(false)
-                .color(COLOR_SLEEP)
-                .left(left)
-                .right(right)
-                .top(top)
-                .bottom(bottom)
-                .density(density));
+        drawSeries(canvas, true, COLOR_RPE, area, density);
+        drawSeries(canvas, false, COLOR_SLEEP, area, density);
     }
 
-    private void drawSeries(SeriesStyle in) {
+    private void drawSeries(Canvas canvas, boolean rpe, int color, ChartArea area,
+                            float density) {
         path.reset();
         int n = points.size();
-        float step = n > 1 ? (in.right - in.left) / (n - 1) : 0f;
-        float scale = AXIS_MAX / (in.rpe ? RecoveryTrendAnalyzer.MAX_RPE
+        float step = n > 1 ? (area.right - area.left) / (n - 1) : 0f;
+        float scale = AXIS_MAX / (rpe ? RecoveryTrendAnalyzer.MAX_RPE
                 : RecoveryTrendAnalyzer.MAX_SLEEP);
-        linePaint.setColor(in.color);
-        dotPaint.setColor(in.color);
+        linePaint.setColor(color);
+        dotPaint.setColor(color);
         for (int i = 0; i < n; i++) {
             Point p = points.get(i);
-            float x = n > 1 ? in.left + i * step : (in.left + in.right) / 2f;
-            float yy = y((in.rpe ? p.rpe : p.sleepQuality) * scale, in.top, in.bottom);
+            float x = n > 1 ? area.left + i * step : (area.left + area.right) / 2f;
+            float yy = y((rpe ? p.rpe : p.sleepQuality) * scale, area.top, area.bottom);
             if (i == 0) path.moveTo(x, yy);
             else path.lineTo(x, yy);
-            in.canvas.drawCircle(x, yy, 3f * in.density, dotPaint);
+            canvas.drawCircle(x, yy, 3f * density, dotPaint);
         }
-        if (n > 1) in.canvas.drawPath(path, linePaint);
+        if (n > 1) canvas.drawPath(path, linePaint);
     }
 
     private static float y(float v, float top, float bottom) {
         return bottom - v / AXIS_MAX * (bottom - top);
-    }
-
-    /** Arguments of {@link #drawSeries}. */
-    public static final class SeriesStyle {
-        private Canvas canvas;
-        private boolean rpe;
-        private int color;
-        private float left;
-        private float right;
-        private float top;
-        private float bottom;
-        private float density;
-
-        public SeriesStyle canvas(Canvas canvas) {
-            this.canvas = canvas;
-            return this;
-        }
-
-        public SeriesStyle rpe(boolean rpe) {
-            this.rpe = rpe;
-            return this;
-        }
-
-        public SeriesStyle color(int color) {
-            this.color = color;
-            return this;
-        }
-
-        public SeriesStyle left(float left) {
-            this.left = left;
-            return this;
-        }
-
-        public SeriesStyle right(float right) {
-            this.right = right;
-            return this;
-        }
-
-        public SeriesStyle top(float top) {
-            this.top = top;
-            return this;
-        }
-
-        public SeriesStyle bottom(float bottom) {
-            this.bottom = bottom;
-            return this;
-        }
-
-        public SeriesStyle density(float density) {
-            this.density = density;
-            return this;
-        }
     }
 }

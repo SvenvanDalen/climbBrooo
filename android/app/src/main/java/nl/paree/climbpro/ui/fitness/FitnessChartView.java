@@ -12,6 +12,7 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 import nl.paree.climbpro.domain.training.FitnessCalculator.Day;
+import nl.paree.climbpro.ui.ChartArea;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -86,14 +87,7 @@ public final class FitnessChartView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = (int) (width * 0.6f);
-        int mode = MeasureSpec.getMode(heightMeasureSpec);
-        if (mode == MeasureSpec.EXACTLY) {
-            height = MeasureSpec.getSize(heightMeasureSpec);
-        } else if (mode == MeasureSpec.AT_MOST) {
-            height = Math.min(height, MeasureSpec.getSize(heightMeasureSpec));
-        }
-        setMeasuredDimension(width, height);
+        setMeasuredDimension(width, ChartArea.measuredHeight(width, heightMeasureSpec, 0.6f));
     }
 
     @Override
@@ -115,6 +109,7 @@ public final class FitnessChartView extends View {
         float right = getWidth() - PAD_RIGHT * density;
         float top = PAD_TOP * density;
         float bottom = getHeight() - PAD_BOTTOM * density;
+        ChartArea area = new ChartArea(left, top, right, bottom);
 
         canvas.drawLine(left, top, left, bottom, axisPaint);
         canvas.drawLine(left, bottom, right, bottom, axisPaint);
@@ -133,114 +128,30 @@ public final class FitnessChartView extends View {
         canvas.drawText(monthDay.format(days.get(days.size() - 1).date), right,
                 getHeight() - 4 * density, labelPaint);
 
-        drawSeries(new SeriesStyle()
-                .canvas(canvas)
-                .which(0)
-                .color(COLOR_FITNESS)
-                .min(min)
-                .max(max)
-                .left(left)
-                .right(right)
-                .top(top)
-                .bottom(bottom));
-        drawSeries(new SeriesStyle()
-                .canvas(canvas)
-                .which(1)
-                .color(COLOR_FATIGUE)
-                .min(min)
-                .max(max)
-                .left(left)
-                .right(right)
-                .top(top)
-                .bottom(bottom));
-        drawSeries(new SeriesStyle()
-                .canvas(canvas)
-                .which(2)
-                .color(COLOR_FORM)
-                .min(min)
-                .max(max)
-                .left(left)
-                .right(right)
-                .top(top)
-                .bottom(bottom));
+        drawSeries(canvas, 0, COLOR_FITNESS, area, min, max);
+        drawSeries(canvas, 1, COLOR_FATIGUE, area, min, max);
+        drawSeries(canvas, 2, COLOR_FORM, area, min, max);
     }
 
-    private void drawSeries(SeriesStyle in) {
+    private void drawSeries(Canvas canvas, int which, int color, ChartArea area,
+                            double min, double max) {
         path.reset();
-        float step = (in.right - in.left) / (days.size() - 1);
+        float step = (area.right - area.left) / (days.size() - 1);
         for (int i = 0; i < days.size(); i++) {
             Day d = days.get(i);
             double v = d.tsb;
-            if (in.which == 0) v = d.ctl;
-            else if (in.which == 1) v = d.atl;
-            float x = in.left + i * step;
-            float yy = y(v, in.min, in.max, in.top, in.bottom);
+            if (which == 0) v = d.ctl;
+            else if (which == 1) v = d.atl;
+            float x = area.left + i * step;
+            float yy = y(v, min, max, area.top, area.bottom);
             if (i == 0) path.moveTo(x, yy);
             else path.lineTo(x, yy);
         }
-        linePaint.setColor(in.color);
-        in.canvas.drawPath(path, linePaint);
+        linePaint.setColor(color);
+        canvas.drawPath(path, linePaint);
     }
 
     private static float y(double v, double min, double max, float top, float bottom) {
         return (float) (bottom - (v - min) / (max - min) * (bottom - top));
-    }
-
-    /** Arguments of {@link #drawSeries}. */
-    public static final class SeriesStyle {
-        private Canvas canvas;
-        private int which;
-        private int color;
-        private double min;
-        private double max;
-        private float left;
-        private float right;
-        private float top;
-        private float bottom;
-
-        public SeriesStyle canvas(Canvas canvas) {
-            this.canvas = canvas;
-            return this;
-        }
-
-        public SeriesStyle which(int which) {
-            this.which = which;
-            return this;
-        }
-
-        public SeriesStyle color(int color) {
-            this.color = color;
-            return this;
-        }
-
-        public SeriesStyle min(double min) {
-            this.min = min;
-            return this;
-        }
-
-        public SeriesStyle max(double max) {
-            this.max = max;
-            return this;
-        }
-
-        public SeriesStyle left(float left) {
-            this.left = left;
-            return this;
-        }
-
-        public SeriesStyle right(float right) {
-            this.right = right;
-            return this;
-        }
-
-        public SeriesStyle top(float top) {
-            this.top = top;
-            return this;
-        }
-
-        public SeriesStyle bottom(float bottom) {
-            this.bottom = bottom;
-            return this;
-        }
     }
 }
