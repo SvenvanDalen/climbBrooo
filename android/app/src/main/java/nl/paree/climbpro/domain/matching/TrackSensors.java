@@ -49,6 +49,14 @@ public final class TrackSensors {
         return hasCadence ? average(cadence, from, to, false) : null;
     }
 
+    /**
+     * Best 30 s / 1 / 5 / 20 min power over samples {@code from..to} (issue #389), see
+     * {@link ClimbPeakPower}; null without power data.
+     */
+    public int[] peakWatts(long[] timeSec, int from, int to) {
+        return hasWatts ? ClimbPeakPower.compute(timeSec, watts, from, to) : null;
+    }
+
     static Integer average(List<Double> values, int from, int to, boolean includeZero) {
         if (from < 0 || to < from) return null;
         double sum = 0;
