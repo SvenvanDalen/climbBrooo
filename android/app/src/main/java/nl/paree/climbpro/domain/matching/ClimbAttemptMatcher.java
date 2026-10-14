@@ -86,14 +86,14 @@ public final class ClimbAttemptMatcher {
                                       double startLat, double startLon,
                                       double endLat, double endLon,
                                       int climbLengthM, int[] segLengthsM) {
-        if (segLengthsM == null || segLengthsM.length == 0) return null;
-        if (track == null || track.size() < 2 || climbLengthM <= 0) return null;
+        if (segLengthsM == null || segLengthsM.length == 0) return new int[0];
+        if (track == null || track.size() < 2 || climbLengthM <= 0) return new int[0];
 
         int entryIdx = firstWithin(track, startLat, startLon, 0);
-        if (entryIdx < 0) return null;
+        if (entryIdx < 0) return new int[0];
 
         int exitIdx = firstWithin(track, endLat, endLon, entryIdx + 1);
-        if (exitIdx < 0 || exitIdx <= entryIdx) return null;
+        if (exitIdx < 0 || exitIdx <= entryIdx) return new int[0];
 
         double covered = 0;
         for (int i = entryIdx; i < exitIdx; i++) {
@@ -102,11 +102,11 @@ public final class ClimbAttemptMatcher {
             covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
         }
         double tol = LENGTH_TOLERANCE * climbLengthM;
-        if (Math.abs(covered - climbLengthM) > tol) return null;
+        if (Math.abs(covered - climbLengthM) > tol) return new int[0];
 
         long entryTime = track.get(entryIdx).timeSec;
         long exitTime  = track.get(exitIdx).timeSec;
-        if (exitTime - entryTime <= 0) return null;
+        if (exitTime - entryTime <= 0) return new int[0];
 
         return splitSegments(track, entryIdx, exitIdx, segLengthsM);
     }

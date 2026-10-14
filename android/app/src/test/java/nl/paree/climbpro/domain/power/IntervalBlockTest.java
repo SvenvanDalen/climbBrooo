@@ -55,7 +55,7 @@ public class IntervalBlockTest {
 
     @Test
     public void wireWattsNullWithoutFtp() {
-        assertNull(IntervalBlock.of(IntervalBlock.Preset.TEMPO).wireWatts(0));
+        assertEquals(0, IntervalBlock.of(IntervalBlock.Preset.TEMPO).wireWatts(0).length);
     }
 
     @Test

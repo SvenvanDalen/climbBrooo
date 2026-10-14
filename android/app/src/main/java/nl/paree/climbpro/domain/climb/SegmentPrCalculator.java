@@ -30,7 +30,7 @@ public final class SegmentPrCalculator {
      *         attempt for this climb has a matching-length segSplitSec.
      */
     public static int[] bestSplits(String climbId, int segCount, List<StoredClimbAttempt> attempts) {
-        if (climbId == null || segCount <= 0 || attempts == null) return null;
+        if (climbId == null || segCount <= 0 || attempts == null) return new int[0];
         int[] best = null;
         for (StoredClimbAttempt a : attempts) {
             if (!hasCleanSplits(a, climbId, segCount)) continue;
@@ -40,7 +40,7 @@ public final class SegmentPrCalculator {
                 keepFastest(best, a.segSplitSec);
             }
         }
-        return best;
+        return best != null ? best : new int[0];
     }
 
     private static boolean hasCleanSplits(StoredClimbAttempt a, String climbId, int segCount) {

@@ -202,20 +202,22 @@ public final class ClimbPayloadBuilder {
      * least one is known (positive); otherwise that key is left out.
      */
     public ClimbPayloadBuilder withGradeHabits(int[] cadenceByGrade, int[] hrZoneByGrade) {
+        int[] cg = gradeClasses(cadenceByGrade, 250);
+        int[] hg = gradeClasses(hrZoneByGrade, 5);
         return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
-                riddenClimbIds, gradeClasses(cadenceByGrade, 250), gradeClasses(hrZoneByGrade, 5));
+                riddenClimbIds, cg.length > 0 ? cg : null, hg.length > 0 ? hg : null);
     }
 
     /** A copy clamped to 0..max, or null unless six values with at least one known. */
     static int[] gradeClasses(int[] values, int max) {
-        if (values == null || values.length != 6) return null;
+        if (values == null || values.length != 6) return new int[0];
         int[] out = new int[6];
         boolean any = false;
         for (int i = 0; i < 6; i++) {
             out[i] = Math.max(0, Math.min(max, values[i]));
             if (out[i] > 0) any = true;
         }
-        return any ? out : null;
+        return any ? out : new int[0];
     }
 
     /** Adds 'cg' / 'hg' when known. */
@@ -390,7 +392,7 @@ public final class ClimbPayloadBuilder {
             }
         }
         int[] hz = RouteHazards.pack(hazards);
-        if (hz != null) payload.put(KEY_HAZARDS, hz);
+        if (hz.length > 0) payload.put(KEY_HAZARDS, hz);
     }
 
     /** Route-mode only: total route length (m), from the last cumulative distance. */
@@ -551,18 +553,18 @@ public final class ClimbPayloadBuilder {
             c.put("calib", buildCalib(sc.calibrationPoints));
         }
         int[] surf = buildSurf(sc.segments);
-        if (surf != null) c.put("surf", surf);
+        if (surf.length > 0) c.put("surf", surf);
         int[] vam = buildVam(sc.segments);
-        if (vam != null) c.put("vam", vam);
+        if (vam.length > 0) c.put("vam", vam);
         nl.paree.climbpro.domain.power.IntervalBlock block =
                 nl.paree.climbpro.domain.power.IntervalBlock.fromStored(sc.intervalBlock);
-        int[] ib = block != null ? block.wireWatts(ftpWatts) : null;
-        if (ib != null) c.put("ib", ib);
+        int[] ib = block != null ? block.wireWatts(ftpWatts) : new int[0];
+        if (ib.length > 0) c.put("ib", ib);
         int[] ev = nl.paree.climbpro.domain.climb.EverestingPlan.wire(sc);
-        if (ev != null) c.put("ev", ev);
+        if (ev.length > 0) c.put("ev", ev);
         if (zoneProfile != null) {
             int[] zc = SegmentIntensityZones.colorIndices(sc.segments, zoneProfile);
-            if (zc != null) c.put(KEY_ZONE_COLORS, zc);
+            if (zc.length > 0) c.put(KEY_ZONE_COLORS, zc);
         }
     }
 
@@ -665,7 +667,7 @@ public final class ClimbPayloadBuilder {
     }
 
     private static int[] buildSurf(List<StoredSegment> segs) {
-        if (segs == null || segs.isEmpty()) return null;
+        if (segs == null || segs.isEmpty()) return new int[0];
         boolean allUnknown = true;
         for (StoredSegment s : segs) {
             if (s.surfaceType != nl.paree.climbpro.domain.segment.SurfaceType.UNKNOWN) {
@@ -673,7 +675,7 @@ public final class ClimbPayloadBuilder {
                 break;
             }
         }
-        if (allUnknown) return null;
+        if (allUnknown) return new int[0];
         int[] arr = new int[segs.size()];
         for (int i = 0; i < segs.size(); i++) {
             arr[i] = nl.paree.climbpro.domain.segment.SurfaceType.fromInt(segs.get(i).surfaceType);
@@ -688,9 +690,9 @@ public final class ClimbPayloadBuilder {
      * 'vam' rather than partial/sentinel data.
      */
     private static int[] buildVam(List<StoredSegment> segs) {
-        if (segs == null || segs.isEmpty()) return null;
+        if (segs == null || segs.isEmpty()) return new int[0];
         for (StoredSegment s : segs) {
-            if (s.avgVamMPerH < 0 || s.peakVamMPerH < 0) return null;
+            if (s.avgVamMPerH < 0 || s.peakVamMPerH < 0) return new int[0];
         }
         int[] arr = new int[segs.size() * 2];
         for (int i = 0; i < segs.size(); i++) {

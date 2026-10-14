@@ -226,7 +226,7 @@ public final class RouteSyncWorker extends Worker {
      * must change the hash too. Empty without a profile, so existing sync states stay valid.
      */
     static String routeGhostSignature(int[] routeGhost) {
-        return routeGhost == null ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
+        return routeGhost == null || routeGhost.length == 0 ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
     }
 
     /**
@@ -234,7 +234,7 @@ public final class RouteSyncWorker extends Worker {
      * starts at the collection's first climb.
      */
     static double[] dayTripStart(SharedPreferences prefs) {
-        if (!prefs.contains(PREF_DAYTRIP_LAT) || !prefs.contains(PREF_DAYTRIP_LON)) return null;
+        if (!prefs.contains(PREF_DAYTRIP_LAT) || !prefs.contains(PREF_DAYTRIP_LON)) return new double[0];
         return new double[] {
                 prefs.getFloat(PREF_DAYTRIP_LAT, 0f), prefs.getFloat(PREF_DAYTRIP_LON, 0f)};
     }
@@ -296,7 +296,7 @@ public final class RouteSyncWorker extends Worker {
                                 .get(prefs.getString(PREF_DAYTRIP_ID, ""));
                 if (trip == null) {
                     Log.w(TAG, "Day-trip collection is gone — nothing to send");
-                    return null;
+                    return new byte[0];
                 }
                 return new DayTripAssembler(routeRepo, payloadBuilder)
                         .assemble(trip, dayTripStart(prefs));
@@ -313,10 +313,10 @@ public final class RouteSyncWorker extends Worker {
                 // Never search around 0,0 (issue #310): without a known position
                 // there is nothing sensible to send.
                 double[] position = RadiusLocation.current(getApplicationContext(), prefs);
-                if (position == null) {
+                if (position.length == 0) {
                     Log.w(TAG, "Radius mode without a known location — nothing to send");
                     radiusWithoutLocation = true;
-                    return null;
+                    return new byte[0];
                 }
                 double lat = position[0];
                 double lon = position[1];
@@ -362,14 +362,14 @@ public final class RouteSyncWorker extends Worker {
                 String routeId = prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId == null) {
                     Log.i(TAG, "No active route selected — nothing to send");
-                    return null;
+                    return new byte[0];
                 }
                 if (!routeRepo.hasRoute(routeId)) {
                     // The active route was deleted. That is permanent, not a transient
                     // failure: retrying would fail forever and block every later sync.
                     Log.w(TAG, "Active route " + routeId + " no longer exists — clearing it");
                     prefs.edit().remove(PREF_ROUTE_ID).apply();
-                    return null;
+                    return new byte[0];
                 }
                 SyncState state = syncStateRepo.get(routeId);
                 StoredRoute route = routeRepo.loadRoute(routeId);
@@ -379,7 +379,7 @@ public final class RouteSyncWorker extends Worker {
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
                     Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
-                    return null;
+                    return new byte[0];
                 }
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
@@ -388,7 +388,7 @@ public final class RouteSyncWorker extends Worker {
                 byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
-                    return null;
+                    return new byte[0];
                 }
                 return payload;
             }

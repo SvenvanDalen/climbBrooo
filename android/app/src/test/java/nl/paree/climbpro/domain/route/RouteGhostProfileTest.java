@@ -124,9 +124,9 @@ public class RouteGhostProfileTest {
     @Test
     public void wire_prefixesStep() {
         assertArrayEquals(new int[]{250, 10, 20}, RouteGhostProfile.wire(250, new int[]{10, 20}));
-        assertNull(RouteGhostProfile.wire(0, new int[]{10}));
-        assertNull(RouteGhostProfile.wire(250, new int[0]));
-        assertNull(RouteGhostProfile.wire(250, new int[]{10, -1}));
+        assertEquals(0, RouteGhostProfile.wire(0, new int[]{10}).length);
+        assertEquals(0, RouteGhostProfile.wire(250, new int[0]).length);
+        assertEquals(0, RouteGhostProfile.wire(250, new int[]{10, -1}).length);
     }
 
     @Test

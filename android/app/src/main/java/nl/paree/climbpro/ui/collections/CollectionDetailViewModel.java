@@ -64,7 +64,7 @@ public final class CollectionDetailViewModel extends AndroidViewModel {
                     .putString(nl.paree.climbpro.service.RouteSyncWorker.PREF_MODE,
                             nl.paree.climbpro.service.RouteSyncWorker.MODE_DAYTRIP)
                     .putString(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_ID, collectionId);
-            if (here != null) {
+            if (here.length > 0) {
                 e.putFloat(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LAT, (float) here[0])
                  .putFloat(nl.paree.climbpro.service.RouteSyncWorker.PREF_DAYTRIP_LON, (float) here[1]);
             } else {

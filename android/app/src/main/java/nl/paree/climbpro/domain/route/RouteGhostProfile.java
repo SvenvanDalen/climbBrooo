@@ -131,11 +131,11 @@ public final class RouteGhostProfile {
 
     /** {@code [stepM, s1..sn]} for the wire, or null when the profile is unusable. */
     public static int[] wire(int stepM, int[] stepSec) {
-        if (stepM <= 0 || stepSec == null || stepSec.length == 0) return null;
+        if (stepM <= 0 || stepSec == null || stepSec.length == 0) return new int[0];
         int[] out = new int[stepSec.length + 1];
         out[0] = stepM;
         for (int i = 0; i < stepSec.length; i++) {
-            if (stepSec[i] < 0) return null;
+            if (stepSec[i] < 0) return new int[0];
             out[i + 1] = stepSec[i];
         }
         return out;

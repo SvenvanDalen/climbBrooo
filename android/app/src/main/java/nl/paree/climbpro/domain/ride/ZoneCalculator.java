@@ -74,8 +74,10 @@ public final class ZoneCalculator {
             if (s == null) continue;
             int[] hr = heartRateZones(s.hrSecondsPerBpm, maxHr);
             int[] power = RideRecordsCalculator.isEBike(r.type)
-                    ? null : powerZones(s.powerSecondsPer10W, ftp);
-            if (hr != null || power != null) entries.add(new Entry(r, hr, power));
+                    ? new int[0] : powerZones(s.powerSecondsPer10W, ftp);
+            if (hr.length > 0 || power.length > 0) {
+                entries.add(new Entry(r, hr.length > 0 ? hr : null, power.length > 0 ? power : null));
+            }
         }
         return entries;
     }
@@ -102,13 +104,13 @@ public final class ZoneCalculator {
 
     /** Seconds per heart-rate zone, or null without a histogram, max heart rate or any time. */
     public static int[] heartRateZones(int[] secondsPerBpm, int maxHr) {
-        if (secondsPerBpm == null || maxHr <= 0) return null;
+        if (secondsPerBpm == null || maxHr <= 0) return new int[0];
         int[] zones = new int[HR_ZONE_UPPER.length + 1];
         for (int i = 0; i < secondsPerBpm.length; i++) {
             int bpm = ZoneHistogramAnalyzer.HR_MIN_BPM + i;
             zones[zoneOf(bpm / (double) maxHr, HR_ZONE_UPPER)] += secondsPerBpm[i];
         }
-        return total(zones) > 0 ? zones : null;
+        return total(zones) > 0 ? zones : new int[0];
     }
 
     /**
@@ -116,14 +118,14 @@ public final class ZoneCalculator {
      * placed by its middle, so a zone boundary is off by at most 5 W.
      */
     public static int[] powerZones(int[] secondsPer10W, int ftp) {
-        if (secondsPer10W == null || ftp <= 0) return null;
+        if (secondsPer10W == null || ftp <= 0) return new int[0];
         int[] zones = new int[POWER_ZONE_UPPER.length + 1];
         for (int i = 0; i < secondsPer10W.length; i++) {
             double watts = i * ZoneHistogramAnalyzer.POWER_BIN_WATTS
                     + ZoneHistogramAnalyzer.POWER_BIN_WATTS / 2.0;
             zones[zoneOf(watts / ftp, POWER_ZONE_UPPER)] += secondsPer10W[i];
         }
-        return total(zones) > 0 ? zones : null;
+        return total(zones) > 0 ? zones : new int[0];
     }
 
     /**

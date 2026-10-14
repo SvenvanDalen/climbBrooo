@@ -161,7 +161,7 @@ public final class RouteHazards {
      * Keeps at most {@link #MAX_WIRE_HAZARDS} (the first ones along the route).
      */
     public static int[] pack(List<Hazard> hazards) {
-        if (hazards == null || hazards.isEmpty()) return null;
+        if (hazards == null || hazards.isEmpty()) return new int[0];
         List<Hazard> sorted = new ArrayList<>(hazards);
         Collections.sort(sorted, (a, b) -> a.startM != b.startM
                 ? Integer.compare(a.startM, b.startM) : Integer.compare(a.type, b.type));

@@ -139,7 +139,7 @@ public class IndoorStreamAnalysisTest {
 
     @Test
     public void noRecoveryWithoutHeartRate() {
-        assertNull(HeartRateRecoveryAnalyzer.drops(ride(constant(1800, 200), null, null, null)));
+        assertEquals(0, HeartRateRecoveryAnalyzer.drops(ride(constant(1800, 200), null, null, null)).length);
     }
 
     @Test

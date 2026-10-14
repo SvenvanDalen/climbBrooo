@@ -38,10 +38,10 @@ public final class SegmentIntensityZones {
                 || distances.length == 0
                 || gradients.length != distances.length
                 || surfaces.length != distances.length) {
-            return null;
+            return new int[0];
         }
         ClimbWorkoutWriter.Plan plan = ClimbWorkoutWriter.plan(distances, gradients, surfaces, profile);
-        if (plan == null || plan.steps.size() != distances.length) return null;
+        if (plan == null || plan.steps.size() != distances.length) return new int[0];
         int[] out = new int[distances.length];
         for (int i = 0; i < out.length; i++) {
             out[i] = ZoneCalculator.powerZoneIndex(plan.steps.get(i).ftpFraction);
@@ -51,14 +51,14 @@ public final class SegmentIntensityZones {
 
     /** {@link #zones(int[], double[], int[], RiderProfile)} for stored segments. */
     public static int[] zones(List<StoredSegment> segments, RiderProfile profile) {
-        if (segments == null || segments.isEmpty()) return null;
+        if (segments == null || segments.isEmpty()) return new int[0];
         int n = segments.size();
         int[] dist = new int[n];
         double[] grad = new double[n];
         int[] surface = new int[n];
         for (int i = 0; i < n; i++) {
             StoredSegment s = segments.get(i);
-            if (s == null) return null;
+            if (s == null) return new int[0];
             dist[i] = s.distance;
             grad[i] = s.gradient;
             surface[i] = s.surfaceType;
@@ -72,7 +72,6 @@ public final class SegmentIntensityZones {
      */
     public static int[] colorIndices(List<StoredSegment> segments, RiderProfile profile) {
         int[] zones = zones(segments, profile);
-        if (zones == null) return null;
         int[] out = new int[zones.length];
         for (int i = 0; i < zones.length; i++) out[i] = GradientColor.forPowerZone(zones[i]);
         return out;

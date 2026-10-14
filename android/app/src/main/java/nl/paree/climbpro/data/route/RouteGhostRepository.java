@@ -72,9 +72,9 @@ public final class RouteGhostRepository {
     public static int[] wireFor(StoredRoute route, StoredRouteGhost ghost) {
         if (route == null || ghost == null || route.distances == null
                 || route.distances.length == 0) {
-            return null;
+            return new int[0];
         }
-        if (!ghost.fits(route.distances[route.distances.length - 1])) return null;
+        if (!ghost.fits(route.distances[route.distances.length - 1])) return new int[0];
         return RouteGhostProfile.wire(ghost.stepM, ghost.stepSec);
     }
 

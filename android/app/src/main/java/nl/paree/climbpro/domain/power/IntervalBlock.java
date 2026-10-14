@@ -103,7 +103,7 @@ public final class IntervalBlock {
      * FTP is unknown (the watch then shows nothing rather than a band around 0 W).
      */
     public int[] wireWatts(int ftpWatts) {
-        if (ftpWatts <= 0) return null;
+        if (ftpWatts <= 0) return new int[0];
         return new int[]{
                 (int) Math.round(ftpWatts * targetFraction()),
                 (int) Math.round(ftpWatts * lowPct / 100.0),

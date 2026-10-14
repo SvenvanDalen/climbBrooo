@@ -1,7 +1,7 @@
 package nl.paree.climbpro.service;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
 
 import android.app.Application;
 import android.content.Context;
@@ -29,7 +29,7 @@ public class RadiusLocationTest {
 
     @Test
     public void noFixAndNothingStored_isNullNotZeroZero() {
-        assertNull(RadiusLocation.resolve(null, prefs));
+        assertEquals(0, RadiusLocation.resolve(null, prefs).length);
     }
 
     @Test

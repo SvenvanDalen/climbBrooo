@@ -122,7 +122,7 @@ public class RouteStoresEdgeTest {
         assertTrue(repo.loadAll().isEmpty());
         assertNull(repo.find("r1"));
         assertNull(repo.find(null));
-        assertNull(repo.wireFor((StoredRoute) null));
+        assertEquals(0, repo.wireFor((StoredRoute) null).length);
     }
 
     @Test

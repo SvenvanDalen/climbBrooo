@@ -41,7 +41,8 @@ public final class RouteRefTimePlanner {
             }
             int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
             String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
-            result[ci] = SegmentPrCalculator.bestSplits(climbId, segCount, attempts);
+            int[] splits = SegmentPrCalculator.bestSplits(climbId, segCount, attempts);
+            result[ci] = splits.length > 0 ? splits : null;
         }
         return result;
     }

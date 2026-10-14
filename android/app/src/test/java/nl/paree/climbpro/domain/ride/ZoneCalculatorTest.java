@@ -65,9 +65,9 @@ public class ZoneCalculatorTest {
 
     @Test
     public void unknownThresholdsGiveNoZones() {
-        assertNull(ZoneCalculator.heartRateZones(hr(60, 150), 0));
-        assertNull(ZoneCalculator.powerZones(power(60, 200), 0));
-        assertNull(ZoneCalculator.powerZones(null, 250));
+        assertEquals(0, ZoneCalculator.heartRateZones(hr(60, 150), 0).length);
+        assertEquals(0, ZoneCalculator.powerZones(power(60, 200), 0).length);
+        assertEquals(0, ZoneCalculator.powerZones(null, 250).length);
     }
 
     @Test

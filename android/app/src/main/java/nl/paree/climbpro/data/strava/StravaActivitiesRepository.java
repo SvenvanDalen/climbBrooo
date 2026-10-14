@@ -1294,13 +1294,20 @@ public final class StravaActivitiesRepository {
             t[i] = lastT;
             d[i] = last;
         }
-        return new RideStreams(t, d, toNaNGaps(s.watts, t.length),
-                toAltitude(s.altitude, t.length), toNaNGaps(s.heartrate, t.length),
-                toNaNGaps(s.cadence, t.length));
+        int n = t.length;
+        return new RideStreams(t, d,
+                fits(s.watts, n) ? toNaNGaps(s.watts, n) : null,
+                fits(s.altitude, n) ? toAltitude(s.altitude, n) : null,
+                fits(s.heartrate, n) ? toNaNGaps(s.heartrate, n) : null,
+                fits(s.cadence, n) ? toNaNGaps(s.cadence, n) : null);
+    }
+
+    /** A stream with exactly one value per time sample. */
+    private static boolean fits(StravaStreamsDto.NumberStream s, int n) {
+        return s != null && s.data != null && s.data.size() == n;
     }
 
     private static double[] toNaNGaps(StravaStreamsDto.NumberStream s, int n) {
-        if (s == null || s.data == null || s.data.size() != n) return null;
         double[] w = new double[n];
         for (int i = 0; i < n; i++) {
             Double v = s.data.get(i);
@@ -1310,7 +1317,6 @@ public final class StravaActivitiesRepository {
     }
 
     private static double[] toAltitude(StravaStreamsDto.NumberStream s, int n) {
-        if (s == null || s.data == null || s.data.size() != n) return null;
         double[] a = new double[n];
         Double last = null;
         for (int i = 0; i < n; i++) {

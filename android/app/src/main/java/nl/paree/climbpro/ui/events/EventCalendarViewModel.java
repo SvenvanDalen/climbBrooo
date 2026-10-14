@@ -189,7 +189,8 @@ public final class EventCalendarViewModel extends AndroidViewModel {
 
     private void publish(EventCalendar c, boolean loading) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplication());
-        double[] home = RadiusLocation.current(getApplication(), prefs);
+        double[] known = RadiusLocation.current(getApplication(), prefs);
+        double[] home = known.length > 0 ? known : null;
         EventLevel.Capacity cap = EventLevel.capacity(
                 new RideRepository(getApplication()).loadAll(), System.currentTimeMillis() / 1000);
         List<CyclingEvent> all = new ArrayList<>(c.manualEvents);

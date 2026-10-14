@@ -1239,7 +1239,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder(
                 getString(R.string.climb_detail_interval_text, block.label()));
         int[] watts = block.wireWatts(viewModel.ftpWatts());
-        if (watts != null) {
+        if (watts.length > 0) {
             sb.append(" · ").append(watts[1]).append("–").append(watts[2]).append(" W");
         } else {
             sb.append(" · ").append(getString(R.string.climb_detail_interval_no_ftp));
@@ -1344,7 +1344,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             return;
         }
         String text = "Everesting " + plan.targetM + " m: " + everestingSummary(plan);
-        if (EverestingPlan.wire(loadedClimb) == null) {
+        if (EverestingPlan.wire(loadedClimb).length == 0) {
             text += " · horloge telt niet mee (klim zonder GPS-punten)";
         }
         binding.climbEveresting.setText(text);
