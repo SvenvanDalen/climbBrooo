@@ -52,21 +52,92 @@ public final class WrappedCalculator {
         public final String biggestImprovementClimbName;
         public final int    biggestImprovementSec; // earliest attempt elapsed - fastest attempt elapsed
 
-        Summary(int year, int totalAttempts, int distinctClimbCount, long totalElevationGainM,
-                long totalClimbingTimeSec, String favoriteClimbId, String favoriteClimbName,
-                int favoriteClimbAttemptCount, String biggestImprovementClimbId,
-                String biggestImprovementClimbName, int biggestImprovementSec) {
-            this.year = year;
-            this.totalAttempts = totalAttempts;
-            this.distinctClimbCount = distinctClimbCount;
-            this.totalElevationGainM = totalElevationGainM;
-            this.totalClimbingTimeSec = totalClimbingTimeSec;
-            this.favoriteClimbId = favoriteClimbId;
-            this.favoriteClimbName = favoriteClimbName;
-            this.favoriteClimbAttemptCount = favoriteClimbAttemptCount;
-            this.biggestImprovementClimbId = biggestImprovementClimbId;
-            this.biggestImprovementClimbName = biggestImprovementClimbName;
-            this.biggestImprovementSec = biggestImprovementSec;
+        private Summary(Builder b) {
+            this.year = b.year;
+            this.totalAttempts = b.totalAttempts;
+            this.distinctClimbCount = b.distinctClimbCount;
+            this.totalElevationGainM = b.totalElevationGainM;
+            this.totalClimbingTimeSec = b.totalClimbingTimeSec;
+            this.favoriteClimbId = b.favoriteClimbId;
+            this.favoriteClimbName = b.favoriteClimbName;
+            this.favoriteClimbAttemptCount = b.favoriteClimbAttemptCount;
+            this.biggestImprovementClimbId = b.biggestImprovementClimbId;
+            this.biggestImprovementClimbName = b.biggestImprovementClimbName;
+            this.biggestImprovementSec = b.biggestImprovementSec;
+        }
+
+        /** Builds a {@link Summary}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int year;
+            private int totalAttempts;
+            private int distinctClimbCount;
+            private long totalElevationGainM;
+            private long totalClimbingTimeSec;
+            private String favoriteClimbId;
+            private String favoriteClimbName;
+            private int favoriteClimbAttemptCount;
+            private String biggestImprovementClimbId;
+            private String biggestImprovementClimbName;
+            private int biggestImprovementSec;
+
+            public Builder year(int year) {
+                this.year = year;
+                return this;
+            }
+
+            public Builder totalAttempts(int totalAttempts) {
+                this.totalAttempts = totalAttempts;
+                return this;
+            }
+
+            public Builder distinctClimbCount(int distinctClimbCount) {
+                this.distinctClimbCount = distinctClimbCount;
+                return this;
+            }
+
+            public Builder totalElevationGainM(long totalElevationGainM) {
+                this.totalElevationGainM = totalElevationGainM;
+                return this;
+            }
+
+            public Builder totalClimbingTimeSec(long totalClimbingTimeSec) {
+                this.totalClimbingTimeSec = totalClimbingTimeSec;
+                return this;
+            }
+
+            public Builder favoriteClimbId(String favoriteClimbId) {
+                this.favoriteClimbId = favoriteClimbId;
+                return this;
+            }
+
+            public Builder favoriteClimbName(String favoriteClimbName) {
+                this.favoriteClimbName = favoriteClimbName;
+                return this;
+            }
+
+            public Builder favoriteClimbAttemptCount(int favoriteClimbAttemptCount) {
+                this.favoriteClimbAttemptCount = favoriteClimbAttemptCount;
+                return this;
+            }
+
+            public Builder biggestImprovementClimbId(String biggestImprovementClimbId) {
+                this.biggestImprovementClimbId = biggestImprovementClimbId;
+                return this;
+            }
+
+            public Builder biggestImprovementClimbName(String biggestImprovementClimbName) {
+                this.biggestImprovementClimbName = biggestImprovementClimbName;
+                return this;
+            }
+
+            public Builder biggestImprovementSec(int biggestImprovementSec) {
+                this.biggestImprovementSec = biggestImprovementSec;
+                return this;
+            }
+
+            public Summary build() {
+                return new Summary(this);
+            }
         }
     }
 
@@ -175,10 +246,19 @@ public final class WrappedCalculator {
         String favoriteName = favoriteId != null ? nameOf(favoriteId, climbInfo) : null;
         String improvementName = improvementId != null ? nameOf(improvementId, climbInfo) : null;
 
-        return new Summary(
-                year, totalAttempts, byClimb.size(), totalElevationGainM, totalClimbingTimeSec,
-                favoriteId, favoriteName, favoriteId != null ? byClimb.get(favoriteId).attemptCount : 0,
-                improvementId, improvementName, improvementId != null ? improvementSec : 0);
+        return new Summary.Builder()
+                .year(year)
+                .totalAttempts(totalAttempts)
+                .distinctClimbCount(byClimb.size())
+                .totalElevationGainM(totalElevationGainM)
+                .totalClimbingTimeSec(totalClimbingTimeSec)
+                .favoriteClimbId(favoriteId)
+                .favoriteClimbName(favoriteName)
+                .favoriteClimbAttemptCount(favoriteId != null ? byClimb.get(favoriteId).attemptCount : 0)
+                .biggestImprovementClimbId(improvementId)
+                .biggestImprovementClimbName(improvementName)
+                .biggestImprovementSec(improvementId != null ? improvementSec : 0)
+                .build();
     }
 
     private static String nameOf(String climbId, Map<String, ClimbInfo> climbInfo) {

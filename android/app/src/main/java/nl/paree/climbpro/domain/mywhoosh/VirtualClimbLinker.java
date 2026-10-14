@@ -44,16 +44,71 @@ public final class VirtualClimbLinker {
         public final String routeId;
         public final int climbIndex;
 
-        public Candidate(String climbId, String name, String routeName, int lengthM,
-                         double avgGradient, boolean virtual, String routeId, int climbIndex) {
-            this.climbId = climbId;
-            this.name = name;
-            this.routeName = routeName;
-            this.lengthM = lengthM;
-            this.avgGradient = avgGradient;
-            this.virtual = virtual;
-            this.routeId = routeId;
-            this.climbIndex = climbIndex;
+        private Candidate(Builder b) {
+            this.climbId = b.climbId;
+            this.name = b.name;
+            this.routeName = b.routeName;
+            this.lengthM = b.lengthM;
+            this.avgGradient = b.avgGradient;
+            this.virtual = b.virtual;
+            this.routeId = b.routeId;
+            this.climbIndex = b.climbIndex;
+        }
+
+        /** Builds a {@link Candidate}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private String climbId;
+            private String name;
+            private String routeName;
+            private int lengthM;
+            private double avgGradient;
+            private boolean virtual;
+            private String routeId;
+            private int climbIndex;
+
+            public Builder climbId(String climbId) {
+                this.climbId = climbId;
+                return this;
+            }
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder routeName(String routeName) {
+                this.routeName = routeName;
+                return this;
+            }
+
+            public Builder lengthM(int lengthM) {
+                this.lengthM = lengthM;
+                return this;
+            }
+
+            public Builder avgGradient(double avgGradient) {
+                this.avgGradient = avgGradient;
+                return this;
+            }
+
+            public Builder virtual(boolean virtual) {
+                this.virtual = virtual;
+                return this;
+            }
+
+            public Builder routeId(String routeId) {
+                this.routeId = routeId;
+                return this;
+            }
+
+            public Builder climbIndex(int climbIndex) {
+                this.climbIndex = climbIndex;
+                return this;
+            }
+
+            public Candidate build() {
+                return new Candidate(this);
+            }
         }
     }
 

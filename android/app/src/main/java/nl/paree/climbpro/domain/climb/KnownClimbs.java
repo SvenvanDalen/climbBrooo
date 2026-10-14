@@ -24,14 +24,17 @@ public final class KnownClimbs {
             int endIdx = nearestIndex(route.distances, c.endDistance);
             boolean hasSegments = c.segments != null && !c.segments.isEmpty();
             boolean hasCalibration = c.calibrationPoints != null && !c.calibrationPoints.isEmpty();
-            out.add(new KnownClimb(
-                    ClimbIdentity.of(c),
-                    c.startLat, c.startLon,
-                    route.lats[endIdx], route.lons[endIdx],
-                    len,
-                    hasSegments ? segmentLengths(c) : null,
-                    hasCalibration ? calibLats(c) : null,
-                    hasCalibration ? calibLons(c) : null));
+            out.add(new KnownClimb.Builder()
+                    .climbId(ClimbIdentity.of(c))
+                    .startLat(c.startLat)
+                    .startLon(c.startLon)
+                    .endLat(route.lats[endIdx])
+                    .endLon(route.lons[endIdx])
+                    .lengthM(len)
+                    .segLengthsM(hasSegments ? segmentLengths(c) : null)
+                    .calibLats(hasCalibration ? calibLats(c) : null)
+                    .calibLons(hasCalibration ? calibLons(c) : null)
+                    .build());
         }
         return out;
     }

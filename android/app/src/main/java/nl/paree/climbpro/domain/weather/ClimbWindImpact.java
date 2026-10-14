@@ -37,7 +37,14 @@ public final class ClimbWindImpact {
             surface[i] = segs.get(i).surfaceType;
         }
         double[] bearings = ClimbSegmentBearings.compute(r, c);
-        return WindImpactEstimator.estimate(dist, grad, surface, bearings, totalMassKg, powerWatts,
-                forecast.windKmh[h], forecast.windDirDeg[h]);
+        return WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(dist)
+                .grad(grad)
+                .surface(surface)
+                .bearingsDeg(bearings)
+                .totalMassKg(totalMassKg)
+                .powerWatts(powerWatts)
+                .windKmh(forecast.windKmh[h])
+                .windFromDeg(forecast.windDirDeg[h]));
     }
 }

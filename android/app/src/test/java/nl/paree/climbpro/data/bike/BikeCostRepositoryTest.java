@@ -56,8 +56,15 @@ public class BikeCostRepositoryTest {
     @Test
     public void roundTripsBikeAndCosts() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        String id = repo.upsertBike(null, "  Racefiets ", 1_700_000_000L, true, false, 120,
-                false, 1_800_000_000L);
+        String id = repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name(" Racefiets ")
+                .sinceEpochSec(1_700_000_000L)
+                .countArchiveRides(true)
+                .includeVirtualRides(false)
+                .extraKm(120)
+                .retired(false)
+                .nowEpochSec(1_800_000_000L));
         String costId = repo.addCost(id, BikeCostEntry.KIND_PURCHASE, " Canyon ", 199_900,
                 1_750_000_000L);
         assertNotNull(costId);
@@ -81,9 +88,25 @@ public class BikeCostRepositoryTest {
     @Test
     public void editingABikeKeepsItsCosts() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        String id = repo.upsertBike(null, "A", 0, false, false, 0, false, 10);
+        String id = repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(false)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(false)
+                .nowEpochSec(10));
         repo.addCost(id, BikeCostEntry.KIND_PART, "Ketting", 3_995, 10);
-        repo.upsertBike(id, "B", 5, true, true, 7, false, 20);
+        repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(id)
+                .name("B")
+                .sinceEpochSec(5)
+                .countArchiveRides(true)
+                .includeVirtualRides(true)
+                .extraKm(7)
+                .retired(false)
+                .nowEpochSec(20));
         Bike b = repo.load().bikes.get(0);
         assertEquals("B", b.name);
         assertTrue(b.includeVirtualRides);
@@ -95,7 +118,15 @@ public class BikeCostRepositoryTest {
         BikeCostRepository repo = new BikeCostRepository(app);
         assertNull(repo.addCost("nope", BikeCostEntry.KIND_PART, "x", 100, 1));
         assertFalse(file.exists());
-        String id = repo.upsertBike(null, "A", 0, false, false, 0, false, 1);
+        String id = repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(false)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(false)
+                .nowEpochSec(1));
         assertNull(repo.addCost(id, BikeCostEntry.KIND_PART, "x", 0, 1));
         assertNull(repo.addCost(id, BikeCostEntry.KIND_PART, "x", -5, 1));
         assertNull(repo.addCost(id, BikeCostEntry.KIND_PART, "x", EuroAmount.MAX_CENTS + 1, 1));
@@ -105,7 +136,15 @@ public class BikeCostRepositoryTest {
     @Test
     public void blankDescriptionFallsBackToKindLabelAndUnknownKindIsPart() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        String id = repo.upsertBike(null, "A", 0, false, false, 0, false, 1);
+        String id = repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(false)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(false)
+                .nowEpochSec(1));
         repo.addCost(id, "WHATEVER", "  ", 500, 1);
         BikeCostEntry e = repo.load().bikes.get(0).costs.get(0);
         assertEquals(BikeCostEntry.KIND_PART, e.kind);
@@ -115,19 +154,59 @@ public class BikeCostRepositoryTest {
     @Test
     public void retiredKeepsFirstDateAndCanBeCleared() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        String id = repo.upsertBike(null, "A", 0, true, false, 0, true, 5_000);
+        String id = repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(true)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(true)
+                .nowEpochSec(5_000));
         assertEquals(5_000, repo.load().bikes.get(0).retiredEpochSec);
-        repo.upsertBike(id, "A", 0, true, false, 0, true, 9_000);
+        repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(id)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(true)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(true)
+                .nowEpochSec(9_000));
         assertEquals(5_000, repo.load().bikes.get(0).retiredEpochSec);
-        repo.upsertBike(id, "A", 0, true, false, 0, false, 9_000);
+        repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(id)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(true)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(false)
+                .nowEpochSec(9_000));
         assertEquals(0, repo.load().bikes.get(0).retiredEpochSec);
     }
 
     @Test
     public void extraKmIsClamped() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        repo.upsertBike(null, "A", 0, false, false, -10, false, 1);
-        repo.upsertBike(null, "B", 0, false, false, Integer.MAX_VALUE, false, 1);
+        repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(false)
+                .includeVirtualRides(false)
+                .extraKm(-10)
+                .retired(false)
+                .nowEpochSec(1));
+        repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("B")
+                .sinceEpochSec(0)
+                .countArchiveRides(false)
+                .includeVirtualRides(false)
+                .extraKm(Integer.MAX_VALUE)
+                .retired(false)
+                .nowEpochSec(1));
         BikeCostLog log = repo.load();
         assertEquals(0, log.bikes.get(0).extraKm);
         assertEquals(BikeCostRepository.MAX_EXTRA_KM, log.bikes.get(1).extraKm);
@@ -136,7 +215,15 @@ public class BikeCostRepositoryTest {
     @Test
     public void deletesCostAndBike() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        String id = repo.upsertBike(null, "A", 0, false, false, 0, false, 1);
+        String id = repo.upsertBike(new BikeCostRepository.CostBike()
+                .id(null)
+                .name("A")
+                .sinceEpochSec(0)
+                .countArchiveRides(false)
+                .includeVirtualRides(false)
+                .extraKm(0)
+                .retired(false)
+                .nowEpochSec(1));
         String c1 = repo.addCost(id, BikeCostEntry.KIND_PART, "x", 100, 1);
         repo.addCost(id, BikeCostEntry.KIND_PART, "y", 200, 2);
         repo.deleteCost(id, c1);
@@ -245,10 +332,28 @@ public class BikeCostRepositoryTest {
     public void garageBikeRoundTripsAndMirrorsActiveBike() throws Exception {
         prefs().edit().clear().commit();
         BikeCostRepository repo = new BikeCostRepository(app);
-        String road = repo.saveGarageBike(null, " Racefiets ", "road", 7.8, 28, "50/34",
-                "11-30", " b1 ", false, false);
-        String trainer = repo.saveGarageBike(null, "Trainer", "trainer", 9.0, 0, null, null,
-                null, false, true);
+        String road = repo.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name(" Racefiets ")
+                .type("road")
+                .weightKg(7.8)
+                .tyreWidthMm(28)
+                .chainrings("50/34")
+                .cassette("11-30")
+                .stravaGearId(" b1 ")
+                .active(false)
+                .indoor(false));
+        String trainer = repo.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Trainer")
+                .type("trainer")
+                .weightKg(9.0)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(false)
+                .indoor(true));
 
         BikeCostLog log = new BikeCostRepository(app).load();
         assertEquals(road, log.activeBikeId); // first bike becomes active by itself
@@ -279,8 +384,28 @@ public class BikeCostRepositoryTest {
     public void gearIdBelongsToOneBikeAndDeleteClearsLinks() throws Exception {
         prefs().edit().clear().commit();
         BikeCostRepository repo = new BikeCostRepository(app);
-        String a = repo.saveGarageBike(null, "A", "road", 0, 0, null, null, "b1", false, true);
-        String b = repo.saveGarageBike(null, "B", "gravel", 0, 0, null, null, "b1", true, false);
+        String a = repo.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("A")
+                .type("road")
+                .weightKg(0)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b1")
+                .active(false)
+                .indoor(true));
+        String b = repo.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("B")
+                .type("gravel")
+                .weightKg(0)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b1")
+                .active(true)
+                .indoor(false));
         BikeCostLog log = repo.load();
         assertNull(BikeGarage.find(log, a).stravaGearId);
         assertEquals("b1", BikeGarage.find(log, b).stravaGearId);

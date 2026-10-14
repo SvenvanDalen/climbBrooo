@@ -57,8 +57,15 @@ public final class MaintenanceRepository {
     public String upsertComponent(String id, String name, int intervalKm, int intervalMonths,
                                   boolean includeVirtualRides,
                                   long correctedLastServicedEpochSec) throws IOException {
-        return upsertComponent(id, name, intervalKm, intervalMonths, includeVirtualRides,
-                correctedLastServicedEpochSec, false, null);
+        return upsertComponent(new ComponentEdit()
+                .id(id)
+                .name(name)
+                .intervalKm(intervalKm)
+                .intervalMonths(intervalMonths)
+                .includeVirtualRides(includeVirtualRides)
+                .correctedLastServicedEpochSec(correctedLastServicedEpochSec)
+                .setBike(false)
+                .bikeId(null));
     }
 
     /**
@@ -69,32 +76,36 @@ public final class MaintenanceRepository {
                                   boolean includeVirtualRides,
                                   long correctedLastServicedEpochSec, String bikeId)
             throws IOException {
-        return upsertComponent(id, name, intervalKm, intervalMonths, includeVirtualRides,
-                correctedLastServicedEpochSec, true, bikeId);
+        return upsertComponent(new ComponentEdit()
+                .id(id)
+                .name(name)
+                .intervalKm(intervalKm)
+                .intervalMonths(intervalMonths)
+                .includeVirtualRides(includeVirtualRides)
+                .correctedLastServicedEpochSec(correctedLastServicedEpochSec)
+                .setBike(true)
+                .bikeId(bikeId));
     }
 
-    private String upsertComponent(String id, String name, int intervalKm, int intervalMonths,
-                                   boolean includeVirtualRides,
-                                   long correctedLastServicedEpochSec, boolean setBike,
-                                   String bikeId) throws IOException {
+    private String upsertComponent(ComponentEdit in) throws IOException {
         WRITE_LOCK.lock();
         try {
             MaintenanceLog log = load();
-            MaintenanceComponent c = id != null ? find(log, id) : null;
+            MaintenanceComponent c = in.id != null ? find(log, in.id) : null;
             if (c == null) {
                 c = new MaintenanceComponent();
-                c.id = id != null ? id : UUID.randomUUID().toString();
+                c.id = in.id != null ? in.id : UUID.randomUUID().toString();
                 log.components.add(c);
             }
-            c.name                = cleanName(name);
-            c.intervalKm          = Math.max(0, intervalKm);
-            c.intervalMonths      = Math.max(0, intervalMonths);
-            c.includeVirtualRides = includeVirtualRides;
-            if (setBike) {
-                c.bikeId = bikeId != null && !bikeId.trim().isEmpty() ? bikeId.trim() : null;
+            c.name                = cleanName(in.name);
+            c.intervalKm          = Math.max(0, in.intervalKm);
+            c.intervalMonths      = Math.max(0, in.intervalMonths);
+            c.includeVirtualRides = in.includeVirtualRides;
+            if (in.setBike) {
+                c.bikeId = in.bikeId != null && !in.bikeId.trim().isEmpty() ? in.bikeId.trim() : null;
             }
-            if (correctedLastServicedEpochSec > 0) {
-                MaintenanceCalculator.correctLastService(c, correctedLastServicedEpochSec);
+            if (in.correctedLastServicedEpochSec > 0) {
+                MaintenanceCalculator.correctLastService(c, in.correctedLastServicedEpochSec);
             }
             write(log);
             return c.id;
@@ -210,5 +221,57 @@ public final class MaintenanceRepository {
 
     private void write(MaintenanceLog log) throws IOException {
         AtomicFiles.write(file, mapper.writeValueAsBytes(log));
+    }
+
+    /** Arguments of {@link #upsertComponent}. */
+    public static final class ComponentEdit {
+        private String id;
+        private String name;
+        private int intervalKm;
+        private int intervalMonths;
+        private boolean includeVirtualRides;
+        private long correctedLastServicedEpochSec;
+        private boolean setBike;
+        private String bikeId;
+
+        public ComponentEdit id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public ComponentEdit name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public ComponentEdit intervalKm(int intervalKm) {
+            this.intervalKm = intervalKm;
+            return this;
+        }
+
+        public ComponentEdit intervalMonths(int intervalMonths) {
+            this.intervalMonths = intervalMonths;
+            return this;
+        }
+
+        public ComponentEdit includeVirtualRides(boolean includeVirtualRides) {
+            this.includeVirtualRides = includeVirtualRides;
+            return this;
+        }
+
+        public ComponentEdit correctedLastServicedEpochSec(long correctedLastServicedEpochSec) {
+            this.correctedLastServicedEpochSec = correctedLastServicedEpochSec;
+            return this;
+        }
+
+        public ComponentEdit setBike(boolean setBike) {
+            this.setBike = setBike;
+            return this;
+        }
+
+        public ComponentEdit bikeId(String bikeId) {
+            this.bikeId = bikeId;
+            return this;
+        }
     }
 }

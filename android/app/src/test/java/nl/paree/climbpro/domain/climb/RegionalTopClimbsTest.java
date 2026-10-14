@@ -22,8 +22,17 @@ public class RegionalTopClimbsTest {
     private static final double KM = 1.0 / 111.195;
 
     private static Candidate climb(String id, double northKm, int gain, double gradient) {
-        return new Candidate(id, "route-" + id, 0, "Klim " + id,
-                LAT0 + northKm * KM, LON0, gain, gradient, 5000);
+        return new Candidate.Builder()
+                .climbId(id)
+                .routeId("route-" + id)
+                .climbIndex(0)
+                .name("Klim " + id)
+                .startLat(LAT0 + northKm * KM)
+                .startLon(LON0)
+                .elevationGainM(gain)
+                .avgGradient(gradient)
+                .lengthM(5000)
+                .build();
     }
 
     private static List<String> ids(List<Ranked> ranked) {
@@ -73,10 +82,28 @@ public class RegionalTopClimbsTest {
 
     @Test
     public void sameClimbFromSeveralRoutesAppearsOnce() {
-        Candidate a = new Candidate("same", "route-1", 2, "Klim uit route 1",
-                LAT0 + KM, LON0, 400, 0.07, 5000);
-        Candidate b = new Candidate("same", "route-2", 0, "Klim uit route 2",
-                LAT0 + KM, LON0, 400, 0.07, 5000);
+        Candidate a = new Candidate.Builder()
+                .climbId("same")
+                .routeId("route-1")
+                .climbIndex(2)
+                .name("Klim uit route 1")
+                .startLat(LAT0 + KM)
+                .startLon(LON0)
+                .elevationGainM(400)
+                .avgGradient(0.07)
+                .lengthM(5000)
+                .build();
+        Candidate b = new Candidate.Builder()
+                .climbId("same")
+                .routeId("route-2")
+                .climbIndex(0)
+                .name("Klim uit route 2")
+                .startLat(LAT0 + KM)
+                .startLon(LON0)
+                .elevationGainM(400)
+                .avgGradient(0.07)
+                .lengthM(5000)
+                .build();
         List<Ranked> top = RegionalTopClimbs.top(LAT0, LON0, 50_000,
                 Arrays.asList(a, b, climb("other", 2, 100, 0.04)), 10);
         assertEquals(Arrays.asList("same", "other"), ids(top));
@@ -86,10 +113,28 @@ public class RegionalTopClimbsTest {
 
     @Test
     public void duplicateKeepsHardestVersion() {
-        Candidate weaker = new Candidate("same", "route-1", 0, "Oud", LAT0 + KM, LON0,
-                300, 0.06, 5000);
-        Candidate stronger = new Candidate("same", "route-2", 0, "Nieuw", LAT0 + KM, LON0,
-                320, 0.065, 5000);
+        Candidate weaker = new Candidate.Builder()
+                .climbId("same")
+                .routeId("route-1")
+                .climbIndex(0)
+                .name("Oud")
+                .startLat(LAT0 + KM)
+                .startLon(LON0)
+                .elevationGainM(300)
+                .avgGradient(0.06)
+                .lengthM(5000)
+                .build();
+        Candidate stronger = new Candidate.Builder()
+                .climbId("same")
+                .routeId("route-2")
+                .climbIndex(0)
+                .name("Nieuw")
+                .startLat(LAT0 + KM)
+                .startLon(LON0)
+                .elevationGainM(320)
+                .avgGradient(0.065)
+                .lengthM(5000)
+                .build();
         List<Ranked> top = RegionalTopClimbs.top(LAT0, LON0, 50_000,
                 Arrays.asList(weaker, stronger), 10);
         assertEquals(1, top.size());
@@ -98,8 +143,28 @@ public class RegionalTopClimbsTest {
 
     @Test
     public void nullClimbIdFallsBackToRouteAndIndex() {
-        Candidate a = new Candidate(null, "route-1", 0, "A", LAT0 + KM, LON0, 300, 0.06, 5000);
-        Candidate b = new Candidate(null, "route-1", 1, "B", LAT0 + KM, LON0, 300, 0.06, 5000);
+        Candidate a = new Candidate.Builder()
+                .climbId(null)
+                .routeId("route-1")
+                .climbIndex(0)
+                .name("A")
+                .startLat(LAT0 + KM)
+                .startLon(LON0)
+                .elevationGainM(300)
+                .avgGradient(0.06)
+                .lengthM(5000)
+                .build();
+        Candidate b = new Candidate.Builder()
+                .climbId(null)
+                .routeId("route-1")
+                .climbIndex(1)
+                .name("B")
+                .startLat(LAT0 + KM)
+                .startLon(LON0)
+                .elevationGainM(300)
+                .avgGradient(0.06)
+                .lengthM(5000)
+                .build();
         assertEquals(2, RegionalTopClimbs.top(LAT0, LON0, 50_000, Arrays.asList(a, b), 10).size());
     }
 
@@ -108,8 +173,28 @@ public class RegionalTopClimbsTest {
         List<Candidate> cands = Arrays.asList(
                 climb("far", 8, 200, 0.05),
                 climb("near", 2, 200, 0.05),
-                new Candidate("b", "r", 0, "B", LAT0 + 2 * KM, LON0, 200, 0.05, 5000),
-                new Candidate("a", "r", 1, "A", LAT0 + 2 * KM, LON0, 200, 0.05, 5000));
+                new Candidate.Builder()
+                        .climbId("b")
+                        .routeId("r")
+                        .climbIndex(0)
+                        .name("B")
+                        .startLat(LAT0 + 2 * KM)
+                        .startLon(LON0)
+                        .elevationGainM(200)
+                        .avgGradient(0.05)
+                        .lengthM(5000)
+                        .build(),
+                new Candidate.Builder()
+                        .climbId("a")
+                        .routeId("r")
+                        .climbIndex(1)
+                        .name("A")
+                        .startLat(LAT0 + 2 * KM)
+                        .startLon(LON0)
+                        .elevationGainM(200)
+                        .avgGradient(0.05)
+                        .lengthM(5000)
+                        .build());
         List<Ranked> top = RegionalTopClimbs.top(LAT0, LON0, 50_000, cands, 10);
         assertEquals(Arrays.asList("a", "b", "near", "far"), ids(top));
     }
@@ -125,8 +210,17 @@ public class RegionalTopClimbsTest {
 
     @Test
     public void skipsNullCandidatesAndInvalidCoordinates() {
-        Candidate broken = new Candidate("nan", "r", 0, "NaN", Double.NaN, LON0,
-                900, 0.1, 5000);
+        Candidate broken = new Candidate.Builder()
+                .climbId("nan")
+                .routeId("r")
+                .climbIndex(0)
+                .name("NaN")
+                .startLat(Double.NaN)
+                .startLon(LON0)
+                .elevationGainM(900)
+                .avgGradient(0.1)
+                .lengthM(5000)
+                .build();
         List<Candidate> cands = Arrays.asList(null, broken, climb("ok", 1, 100, 0.05));
         assertEquals(Collections.singletonList("ok"),
                 ids(RegionalTopClimbs.top(LAT0, LON0, 50_000, cands, 10)));

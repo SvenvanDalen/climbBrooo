@@ -60,19 +60,73 @@ public final class MaintenanceCalculator {
         public final boolean due;
         public final boolean soon;
 
-        Status(MaintenanceComponent component, boolean configured, double kmSince,
-               int monthsSince, double kmFraction, double timeFraction,
-               boolean dueByKm, boolean dueByTime) {
-            this.component    = component;
-            this.configured   = configured;
-            this.kmSince      = kmSince;
-            this.monthsSince  = monthsSince;
-            this.kmFraction   = kmFraction;
-            this.timeFraction = timeFraction;
-            this.dueByKm      = dueByKm;
-            this.dueByTime    = dueByTime;
-            this.due          = dueByKm || dueByTime;
-            this.soon         = !due && Math.max(kmFraction, timeFraction) >= SOON_FRACTION;
+        private Status(Builder b) {
+            this.component    = b.component;
+            this.configured   = b.configured;
+            this.kmSince      = b.kmSince;
+            this.monthsSince  = b.monthsSince;
+            this.kmFraction   = b.kmFraction;
+            this.timeFraction = b.timeFraction;
+            this.dueByKm      = b.dueByKm;
+            this.dueByTime    = b.dueByTime;
+            this.due          = b.dueByKm || b.dueByTime;
+            this.soon         = !due && Math.max(b.kmFraction, b.timeFraction) >= SOON_FRACTION;
+        }
+
+        /** Builds a {@link Status}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private MaintenanceComponent component;
+            private boolean configured;
+            private double kmSince;
+            private int monthsSince;
+            private double kmFraction;
+            private double timeFraction;
+            private boolean dueByKm;
+            private boolean dueByTime;
+
+            public Builder component(MaintenanceComponent component) {
+                this.component = component;
+                return this;
+            }
+
+            public Builder configured(boolean configured) {
+                this.configured = configured;
+                return this;
+            }
+
+            public Builder kmSince(double kmSince) {
+                this.kmSince = kmSince;
+                return this;
+            }
+
+            public Builder monthsSince(int monthsSince) {
+                this.monthsSince = monthsSince;
+                return this;
+            }
+
+            public Builder kmFraction(double kmFraction) {
+                this.kmFraction = kmFraction;
+                return this;
+            }
+
+            public Builder timeFraction(double timeFraction) {
+                this.timeFraction = timeFraction;
+                return this;
+            }
+
+            public Builder dueByKm(boolean dueByKm) {
+                this.dueByKm = dueByKm;
+                return this;
+            }
+
+            public Builder dueByTime(boolean dueByTime) {
+                this.dueByTime = dueByTime;
+                return this;
+            }
+
+            public Status build() {
+                return new Status(this);
+            }
         }
 
         /**
@@ -118,7 +172,16 @@ public final class MaintenanceCalculator {
     private static Status evaluate(MaintenanceComponent c, List<StoredRide> rides,
                                    boolean includeVirtual, long nowEpochSec, ZoneId zone) {
         if (c == null || c.lastServicedEpochSec <= 0) {
-            return new Status(c, false, 0, 0, 0, 0, false, false);
+            return new Status.Builder()
+                    .component(c)
+                    .configured(false)
+                    .kmSince(0)
+                    .monthsSince(0)
+                    .kmFraction(0)
+                    .timeFraction(0)
+                    .dueByKm(false)
+                    .dueByTime(false)
+                    .build();
         }
         long last = c.lastServicedEpochSec;
         double km = kmSince(rides, last, includeVirtual);
@@ -141,7 +204,16 @@ public final class MaintenanceCalculator {
             timeFraction = Math.max(0, (double) (nowEpochSec - last) / (dueAt - last));
             byTime = nowEpochSec >= dueAt;
         }
-        return new Status(c, true, km, months, kmFraction, timeFraction, byKm, byTime);
+        return new Status.Builder()
+                .component(c)
+                .configured(true)
+                .kmSince(km)
+                .monthsSince(months)
+                .kmFraction(kmFraction)
+                .timeFraction(timeFraction)
+                .dueByKm(byKm)
+                .dueByTime(byTime)
+                .build();
     }
 
     public static List<Status> evaluateAll(List<MaintenanceComponent> components,

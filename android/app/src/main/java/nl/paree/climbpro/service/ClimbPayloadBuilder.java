@@ -107,22 +107,81 @@ public final class ClimbPayloadBuilder {
     private final int[] hrZoneByGrade;
 
     public ClimbPayloadBuilder(ObjectMapper mapper) {
-        this(mapper, null, 0, GradientPalette.DEFAULT, 0, null, null, null, null);
+        this(new Builder().mapper(mapper).palette(GradientPalette.DEFAULT));
     }
 
-    private ClimbPayloadBuilder(ObjectMapper mapper, RiderProfile zoneProfile, int ftpWatts,
-                                int palette, int unitFlags,
-                                int[] fieldLayout, Set<String> riddenClimbIds,
-                                int[] cadenceByGrade, int[] hrZoneByGrade) {
-        this.mapper = mapper;
-        this.unitFlags = unitFlags;
-        this.zoneProfile = zoneProfile;
-        this.ftpWatts = ftpWatts;
-        this.palette = GradientPalette.normalize(palette);
-        this.fieldLayout = fieldLayout;
-        this.riddenClimbIds = riddenClimbIds;
-        this.cadenceByGrade = cadenceByGrade;
-        this.hrZoneByGrade = hrZoneByGrade;
+    private ClimbPayloadBuilder(Builder b) {
+        this.mapper = b.mapper;
+        this.unitFlags = b.unitFlags;
+        this.zoneProfile = b.zoneProfile;
+        this.ftpWatts = b.ftpWatts;
+        this.palette = GradientPalette.normalize(b.palette);
+        this.fieldLayout = b.fieldLayout;
+        this.riddenClimbIds = b.riddenClimbIds;
+        this.cadenceByGrade = b.cadenceByGrade;
+        this.hrZoneByGrade = b.hrZoneByGrade;
+    }
+
+    /** Builds a {@link ClimbPayloadBuilder}; every value defaults to Java's default for its type. */
+    public static final class Builder {
+        private ObjectMapper mapper;
+        private RiderProfile zoneProfile;
+        private int ftpWatts;
+        private int palette;
+        private int unitFlags;
+        private int[] fieldLayout;
+        private Set<String> riddenClimbIds;
+        private int[] cadenceByGrade;
+        private int[] hrZoneByGrade;
+
+        public Builder mapper(ObjectMapper mapper) {
+            this.mapper = mapper;
+            return this;
+        }
+
+        public Builder zoneProfile(RiderProfile zoneProfile) {
+            this.zoneProfile = zoneProfile;
+            return this;
+        }
+
+        public Builder ftpWatts(int ftpWatts) {
+            this.ftpWatts = ftpWatts;
+            return this;
+        }
+
+        public Builder palette(int palette) {
+            this.palette = palette;
+            return this;
+        }
+
+        public Builder unitFlags(int unitFlags) {
+            this.unitFlags = unitFlags;
+            return this;
+        }
+
+        public Builder fieldLayout(int[] fieldLayout) {
+            this.fieldLayout = fieldLayout;
+            return this;
+        }
+
+        public Builder riddenClimbIds(Set<String> riddenClimbIds) {
+            this.riddenClimbIds = riddenClimbIds;
+            return this;
+        }
+
+        public Builder cadenceByGrade(int[] cadenceByGrade) {
+            this.cadenceByGrade = cadenceByGrade;
+            return this;
+        }
+
+        public Builder hrZoneByGrade(int[] hrZoneByGrade) {
+            this.hrZoneByGrade = hrZoneByGrade;
+            return this;
+        }
+
+        public ClimbPayloadBuilder build() {
+            return new ClimbPayloadBuilder(this);
+        }
     }
 
     /**
@@ -133,8 +192,17 @@ public final class ClimbPayloadBuilder {
      * nice-to-have and must never cost a sync (radius mode: never cost a climb).
      */
     public ClimbPayloadBuilder withIntensityZones(RiderProfile profile) {
-        return new ClimbPayloadBuilder(mapper, profile, ftpWatts, palette, unitFlags, fieldLayout,
-                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(profile)
+                .ftpWatts(ftpWatts)
+                .palette(palette)
+                .unitFlags(unitFlags)
+                .fieldLayout(fieldLayout)
+                .riddenClimbIds(riddenClimbIds)
+                .cadenceByGrade(cadenceByGrade)
+                .hrZoneByGrade(hrZoneByGrade)
+                .build();
     }
 
     /**
@@ -142,8 +210,17 @@ public final class ClimbPayloadBuilder {
      * positive FTP no 'ib' is emitted, since the watch needs absolute watts.
      */
     public ClimbPayloadBuilder withFtpWatts(int ftpWatts) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, Math.max(0, ftpWatts), palette, unitFlags,
-                fieldLayout, riddenClimbIds, cadenceByGrade, hrZoneByGrade);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(zoneProfile)
+                .ftpWatts(Math.max(0, ftpWatts))
+                .palette(palette)
+                .unitFlags(unitFlags)
+                .fieldLayout(fieldLayout)
+                .riddenClimbIds(riddenClimbIds)
+                .cadenceByGrade(cadenceByGrade)
+                .hrZoneByGrade(hrZoneByGrade)
+                .build();
     }
 
     /**
@@ -152,8 +229,17 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withFieldLayout(WatchFieldLayout layout) {
         int[] lay = (layout == null || layout.isDefault()) ? null : layout.codes();
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, lay,
-                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(zoneProfile)
+                .ftpWatts(ftpWatts)
+                .palette(palette)
+                .unitFlags(unitFlags)
+                .fieldLayout(lay)
+                .riddenClimbIds(riddenClimbIds)
+                .cadenceByGrade(cadenceByGrade)
+                .hrZoneByGrade(hrZoneByGrade)
+                .build();
     }
 
     /**
@@ -163,8 +249,17 @@ public final class ClimbPayloadBuilder {
      * change on the watch: the colorIndex values in 'segs' and 'zc' are the same.
      */
     public ClimbPayloadBuilder withPalette(int palette) {
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
-                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(zoneProfile)
+                .ftpWatts(ftpWatts)
+                .palette(palette)
+                .unitFlags(unitFlags)
+                .fieldLayout(fieldLayout)
+                .riddenClimbIds(riddenClimbIds)
+                .cadenceByGrade(cadenceByGrade)
+                .hrZoneByGrade(hrZoneByGrade)
+                .build();
     }
 
     /** Adds {@code pal} when a non-default palette is selected. */
@@ -180,8 +275,17 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withUnits(UnitPreferences units) {
         int flags = units != null ? units.toWireFlags() : 0;
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, flags, fieldLayout,
-                riddenClimbIds, cadenceByGrade, hrZoneByGrade);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(zoneProfile)
+                .ftpWatts(ftpWatts)
+                .palette(palette)
+                .unitFlags(flags)
+                .fieldLayout(fieldLayout)
+                .riddenClimbIds(riddenClimbIds)
+                .cadenceByGrade(cadenceByGrade)
+                .hrZoneByGrade(hrZoneByGrade)
+                .build();
     }
 
     /**
@@ -192,8 +296,17 @@ public final class ClimbPayloadBuilder {
      */
     public ClimbPayloadBuilder withRiddenClimbIds(Set<String> riddenClimbIds) {
         Set<String> ids = (riddenClimbIds == null || riddenClimbIds.isEmpty()) ? null : riddenClimbIds;
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
-                ids, cadenceByGrade, hrZoneByGrade);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(zoneProfile)
+                .ftpWatts(ftpWatts)
+                .palette(palette)
+                .unitFlags(unitFlags)
+                .fieldLayout(fieldLayout)
+                .riddenClimbIds(ids)
+                .cadenceByGrade(cadenceByGrade)
+                .hrZoneByGrade(hrZoneByGrade)
+                .build();
     }
 
     /**
@@ -204,8 +317,17 @@ public final class ClimbPayloadBuilder {
     public ClimbPayloadBuilder withGradeHabits(int[] cadenceByGrade, int[] hrZoneByGrade) {
         int[] cg = gradeClasses(cadenceByGrade, 250);
         int[] hg = gradeClasses(hrZoneByGrade, 5);
-        return new ClimbPayloadBuilder(mapper, zoneProfile, ftpWatts, palette, unitFlags, fieldLayout,
-                riddenClimbIds, cg.length > 0 ? cg : null, hg.length > 0 ? hg : null);
+        return new ClimbPayloadBuilder.Builder()
+                .mapper(mapper)
+                .zoneProfile(zoneProfile)
+                .ftpWatts(ftpWatts)
+                .palette(palette)
+                .unitFlags(unitFlags)
+                .fieldLayout(fieldLayout)
+                .riddenClimbIds(riddenClimbIds)
+                .cadenceByGrade(cg.length > 0 ? cg : null)
+                .hrZoneByGrade(hg.length > 0 ? hg : null)
+                .build();
     }
 
     /** A copy clamped to 0..max, or empty unless six values with at least one known. */

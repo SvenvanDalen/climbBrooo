@@ -110,31 +110,98 @@ public final class RecoveryTrendChartView extends View {
                     yy + labelPaint.getTextSize() / 3, labelPaint);
         }
 
-        drawSeries(canvas, true, COLOR_RPE, left, right, top, bottom, density);
-        drawSeries(canvas, false, COLOR_SLEEP, left, right, top, bottom, density);
+        drawSeries(new SeriesStyle()
+                .canvas(canvas)
+                .rpe(true)
+                .color(COLOR_RPE)
+                .left(left)
+                .right(right)
+                .top(top)
+                .bottom(bottom)
+                .density(density));
+        drawSeries(new SeriesStyle()
+                .canvas(canvas)
+                .rpe(false)
+                .color(COLOR_SLEEP)
+                .left(left)
+                .right(right)
+                .top(top)
+                .bottom(bottom)
+                .density(density));
     }
 
-    private void drawSeries(Canvas canvas, boolean rpe, int color, float left, float right,
-                            float top, float bottom, float density) {
+    private void drawSeries(SeriesStyle in) {
         path.reset();
         int n = points.size();
-        float step = n > 1 ? (right - left) / (n - 1) : 0f;
-        float scale = AXIS_MAX / (rpe ? RecoveryTrendAnalyzer.MAX_RPE
+        float step = n > 1 ? (in.right - in.left) / (n - 1) : 0f;
+        float scale = AXIS_MAX / (in.rpe ? RecoveryTrendAnalyzer.MAX_RPE
                 : RecoveryTrendAnalyzer.MAX_SLEEP);
-        linePaint.setColor(color);
-        dotPaint.setColor(color);
+        linePaint.setColor(in.color);
+        dotPaint.setColor(in.color);
         for (int i = 0; i < n; i++) {
             Point p = points.get(i);
-            float x = n > 1 ? left + i * step : (left + right) / 2f;
-            float yy = y((rpe ? p.rpe : p.sleepQuality) * scale, top, bottom);
+            float x = n > 1 ? in.left + i * step : (in.left + in.right) / 2f;
+            float yy = y((in.rpe ? p.rpe : p.sleepQuality) * scale, in.top, in.bottom);
             if (i == 0) path.moveTo(x, yy);
             else path.lineTo(x, yy);
-            canvas.drawCircle(x, yy, 3f * density, dotPaint);
+            in.canvas.drawCircle(x, yy, 3f * in.density, dotPaint);
         }
-        if (n > 1) canvas.drawPath(path, linePaint);
+        if (n > 1) in.canvas.drawPath(path, linePaint);
     }
 
     private static float y(float v, float top, float bottom) {
         return bottom - v / AXIS_MAX * (bottom - top);
+    }
+
+    /** Arguments of {@link #drawSeries}. */
+    public static final class SeriesStyle {
+        private Canvas canvas;
+        private boolean rpe;
+        private int color;
+        private float left;
+        private float right;
+        private float top;
+        private float bottom;
+        private float density;
+
+        public SeriesStyle canvas(Canvas canvas) {
+            this.canvas = canvas;
+            return this;
+        }
+
+        public SeriesStyle rpe(boolean rpe) {
+            this.rpe = rpe;
+            return this;
+        }
+
+        public SeriesStyle color(int color) {
+            this.color = color;
+            return this;
+        }
+
+        public SeriesStyle left(float left) {
+            this.left = left;
+            return this;
+        }
+
+        public SeriesStyle right(float right) {
+            this.right = right;
+            return this;
+        }
+
+        public SeriesStyle top(float top) {
+            this.top = top;
+            return this;
+        }
+
+        public SeriesStyle bottom(float bottom) {
+            this.bottom = bottom;
+            return this;
+        }
+
+        public SeriesStyle density(float density) {
+            this.density = density;
+            return this;
+        }
     }
 }

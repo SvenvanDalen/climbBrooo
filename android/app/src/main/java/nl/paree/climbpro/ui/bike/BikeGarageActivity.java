@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.bike.Bike;
+import nl.paree.climbpro.data.bike.BikeCostRepository;
 import nl.paree.climbpro.domain.bike.BikeCostCalculator;
 import nl.paree.climbpro.domain.bike.BikeGarage;
 
@@ -160,14 +161,17 @@ public final class BikeGarageActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle(existing != null ? "Fiets bewerken" : "Fiets toevoegen")
                 .setView(view)
-                .setPositiveButton("Opslaan", (d, w) -> viewModel.saveBike(
-                        existing != null ? existing.id : null,
-                        name.getText().toString(),
-                        BikeGarage.types()[type.getSelectedItemPosition()],
-                        parseKg(weight), parseInt(tyre),
-                        chainrings.getText().toString(), cassette.getText().toString(),
-                        gearIds.get(Math.max(0, gear.getSelectedItemPosition())),
-                        active.isChecked(), indoor.isChecked()))
+                .setPositiveButton("Opslaan", (d, w) -> viewModel.saveBike(new BikeCostRepository.GarageBike()
+                        .id(existing != null ? existing.id : null)
+                        .name(name.getText().toString())
+                        .type(BikeGarage.types()[type.getSelectedItemPosition()])
+                        .weightKg(parseKg(weight))
+                        .tyreWidthMm(parseInt(tyre))
+                        .chainrings(chainrings.getText().toString())
+                        .cassette(cassette.getText().toString())
+                        .stravaGearId(gearIds.get(Math.max(0, gear.getSelectedItemPosition())))
+                        .active(active.isChecked())
+                        .indoor(indoor.isChecked())))
                 .setNegativeButton("Annuleren", null);
         if (existing != null) {
             builder.setNeutralButton("Verwijderen", (d, w) -> confirmDelete(existing));

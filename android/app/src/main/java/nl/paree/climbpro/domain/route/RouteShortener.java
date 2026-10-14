@@ -57,19 +57,85 @@ public final class RouteShortener {
         /** Indices of climbs that the shortcut cuts through partially. */
         public final List<Integer> partialClimbs;
 
-        Variant(int fromIndex, int toIndex, double fromDistanceM, double toDistanceM,
-                double connectorM, double newLengthM, double savedM, double savedGainM,
-                List<Integer> skippedClimbs, List<Integer> partialClimbs) {
-            this.fromIndex     = fromIndex;
-            this.toIndex       = toIndex;
-            this.fromDistanceM = fromDistanceM;
-            this.toDistanceM   = toDistanceM;
-            this.connectorM    = connectorM;
-            this.newLengthM    = newLengthM;
-            this.savedM        = savedM;
-            this.savedGainM    = savedGainM;
-            this.skippedClimbs = Collections.unmodifiableList(skippedClimbs);
-            this.partialClimbs = Collections.unmodifiableList(partialClimbs);
+        private Variant(Builder b) {
+            this.fromIndex     = b.fromIndex;
+            this.toIndex       = b.toIndex;
+            this.fromDistanceM = b.fromDistanceM;
+            this.toDistanceM   = b.toDistanceM;
+            this.connectorM    = b.connectorM;
+            this.newLengthM    = b.newLengthM;
+            this.savedM        = b.savedM;
+            this.savedGainM    = b.savedGainM;
+            this.skippedClimbs = Collections.unmodifiableList(b.skippedClimbs);
+            this.partialClimbs = Collections.unmodifiableList(b.partialClimbs);
+        }
+
+        /** Builds a {@link Variant}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int fromIndex;
+            private int toIndex;
+            private double fromDistanceM;
+            private double toDistanceM;
+            private double connectorM;
+            private double newLengthM;
+            private double savedM;
+            private double savedGainM;
+            private List<Integer> skippedClimbs;
+            private List<Integer> partialClimbs;
+
+            public Builder fromIndex(int fromIndex) {
+                this.fromIndex = fromIndex;
+                return this;
+            }
+
+            public Builder toIndex(int toIndex) {
+                this.toIndex = toIndex;
+                return this;
+            }
+
+            public Builder fromDistanceM(double fromDistanceM) {
+                this.fromDistanceM = fromDistanceM;
+                return this;
+            }
+
+            public Builder toDistanceM(double toDistanceM) {
+                this.toDistanceM = toDistanceM;
+                return this;
+            }
+
+            public Builder connectorM(double connectorM) {
+                this.connectorM = connectorM;
+                return this;
+            }
+
+            public Builder newLengthM(double newLengthM) {
+                this.newLengthM = newLengthM;
+                return this;
+            }
+
+            public Builder savedM(double savedM) {
+                this.savedM = savedM;
+                return this;
+            }
+
+            public Builder savedGainM(double savedGainM) {
+                this.savedGainM = savedGainM;
+                return this;
+            }
+
+            public Builder skippedClimbs(List<Integer> skippedClimbs) {
+                this.skippedClimbs = skippedClimbs;
+                return this;
+            }
+
+            public Builder partialClimbs(List<Integer> partialClimbs) {
+                this.partialClimbs = partialClimbs;
+                return this;
+            }
+
+            public Variant build() {
+                return new Variant(this);
+            }
         }
     }
 
@@ -234,8 +300,18 @@ public final class RouteShortener {
             classifyClimbs(climbRanges, distances[i], distances[j], skipped, partial);
         }
         double skippedM = distances[j] - distances[i];
-        return new Variant(i, j, distances[i], distances[j], connector,
-                total - skippedM + connector, skippedM - connector, gain, skipped, partial);
+        return new Variant.Builder()
+                .fromIndex(i)
+                .toIndex(j)
+                .fromDistanceM(distances[i])
+                .toDistanceM(distances[j])
+                .connectorM(connector)
+                .newLengthM(total - skippedM + connector)
+                .savedM(skippedM - connector)
+                .savedGainM(gain)
+                .skippedClimbs(skipped)
+                .partialClimbs(partial)
+                .build();
     }
 
 }

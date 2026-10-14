@@ -46,18 +46,78 @@ public final class RegionalTopClimbs {
         public final double avgGradient;
         public final int    lengthM;
 
-        public Candidate(String climbId, String routeId, int climbIndex, String name,
-                         double startLat, double startLon, int elevationGainM,
-                         double avgGradient, int lengthM) {
-            this.climbId        = climbId;
-            this.routeId        = routeId;
-            this.climbIndex     = climbIndex;
-            this.name           = name;
-            this.startLat       = startLat;
-            this.startLon       = startLon;
-            this.elevationGainM = elevationGainM;
-            this.avgGradient    = avgGradient;
-            this.lengthM        = lengthM;
+        private Candidate(Builder b) {
+            this.climbId        = b.climbId;
+            this.routeId        = b.routeId;
+            this.climbIndex     = b.climbIndex;
+            this.name           = b.name;
+            this.startLat       = b.startLat;
+            this.startLon       = b.startLon;
+            this.elevationGainM = b.elevationGainM;
+            this.avgGradient    = b.avgGradient;
+            this.lengthM        = b.lengthM;
+        }
+
+        /** Builds a {@link Candidate}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private String climbId;
+            private String routeId;
+            private int climbIndex;
+            private String name;
+            private double startLat;
+            private double startLon;
+            private int elevationGainM;
+            private double avgGradient;
+            private int lengthM;
+
+            public Builder climbId(String climbId) {
+                this.climbId = climbId;
+                return this;
+            }
+
+            public Builder routeId(String routeId) {
+                this.routeId = routeId;
+                return this;
+            }
+
+            public Builder climbIndex(int climbIndex) {
+                this.climbIndex = climbIndex;
+                return this;
+            }
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder startLat(double startLat) {
+                this.startLat = startLat;
+                return this;
+            }
+
+            public Builder startLon(double startLon) {
+                this.startLon = startLon;
+                return this;
+            }
+
+            public Builder elevationGainM(int elevationGainM) {
+                this.elevationGainM = elevationGainM;
+                return this;
+            }
+
+            public Builder avgGradient(double avgGradient) {
+                this.avgGradient = avgGradient;
+                return this;
+            }
+
+            public Builder lengthM(int lengthM) {
+                this.lengthM = lengthM;
+                return this;
+            }
+
+            public Candidate build() {
+                return new Candidate(this);
+            }
         }
 
         String dedupeKey() {

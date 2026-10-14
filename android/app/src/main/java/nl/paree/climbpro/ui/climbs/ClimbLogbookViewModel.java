@@ -41,16 +41,71 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
         public final int    climbIndex;  // -1 if unresolved
         public final Double rating;      // average rating, null = unrated (issue #244)
 
-        LogbookRow(String climbId, String displayName, int prSec, int attemptCount,
-                   long lastDateSec, String routeId, int climbIndex, Double rating) {
-            this.climbId = climbId;
-            this.displayName = displayName;
-            this.prSec = prSec;
-            this.attemptCount = attemptCount;
-            this.lastDateSec = lastDateSec;
-            this.routeId = routeId;
-            this.climbIndex = climbIndex;
-            this.rating = rating;
+        private LogbookRow(Builder b) {
+            this.climbId = b.climbId;
+            this.displayName = b.displayName;
+            this.prSec = b.prSec;
+            this.attemptCount = b.attemptCount;
+            this.lastDateSec = b.lastDateSec;
+            this.routeId = b.routeId;
+            this.climbIndex = b.climbIndex;
+            this.rating = b.rating;
+        }
+
+        /** Builds a {@link LogbookRow}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private String climbId;
+            private String displayName;
+            private int prSec;
+            private int attemptCount;
+            private long lastDateSec;
+            private String routeId;
+            private int climbIndex;
+            private Double rating;
+
+            public Builder climbId(String climbId) {
+                this.climbId = climbId;
+                return this;
+            }
+
+            public Builder displayName(String displayName) {
+                this.displayName = displayName;
+                return this;
+            }
+
+            public Builder prSec(int prSec) {
+                this.prSec = prSec;
+                return this;
+            }
+
+            public Builder attemptCount(int attemptCount) {
+                this.attemptCount = attemptCount;
+                return this;
+            }
+
+            public Builder lastDateSec(long lastDateSec) {
+                this.lastDateSec = lastDateSec;
+                return this;
+            }
+
+            public Builder routeId(String routeId) {
+                this.routeId = routeId;
+                return this;
+            }
+
+            public Builder climbIndex(int climbIndex) {
+                this.climbIndex = climbIndex;
+                return this;
+            }
+
+            public Builder rating(Double rating) {
+                this.rating = rating;
+                return this;
+            }
+
+            public LogbookRow build() {
+                return new LogbookRow(this);
+            }
         }
     }
 
@@ -100,13 +155,16 @@ public final class ClimbLogbookViewModel extends AndroidViewModel {
 
     /** A logbook row; a climb no longer in any route shows as "Klim" without a link. */
     private static LogbookRow logbookRow(Summary s, Location loc) {
-        return new LogbookRow(
-                s.climbId,
-                loc != null ? loc.displayName : "Klim",
-                s.prSec, s.attemptCount, s.lastDateSec,
-                loc != null ? loc.routeId : null,
-                loc != null ? loc.index : -1,
-                loc != null ? loc.rating : null);
+        return new LogbookRow.Builder()
+                .climbId(s.climbId)
+                .displayName(loc != null ? loc.displayName : "Klim")
+                .prSec(s.prSec)
+                .attemptCount(s.attemptCount)
+                .lastDateSec(s.lastDateSec)
+                .routeId(loc != null ? loc.routeId : null)
+                .climbIndex(loc != null ? loc.index : -1)
+                .rating(loc != null ? loc.rating : null)
+                .build();
     }
 
     public void loadLogbook() {

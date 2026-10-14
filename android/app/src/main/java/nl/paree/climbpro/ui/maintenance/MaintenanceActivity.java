@@ -161,12 +161,16 @@ public final class MaintenanceActivity extends AppCompatActivity {
                 .setView(view)
                 .setPositiveButton("Opslaan", (d, w) -> {
                     int warrantyTerm = parseNonNegative(warrantyMonths);
-                    viewModel.saveComponent(
-                            existing != null ? existing.id : null,
-                            name.getText().toString(),
-                            parseNonNegative(km), parseNonNegative(months),
-                            virtual.isChecked(), picked[0], purchase[0], warrantyTerm,
-                            BikePicker.selectedId(bikeSpinner, garage));
+                    viewModel.saveComponent(new MaintenanceViewModel.ComponentForm()
+                            .id(existing != null ? existing.id : null)
+                            .name(name.getText().toString())
+                            .intervalKm(parseNonNegative(km))
+                            .intervalMonths(parseNonNegative(months))
+                            .includeVirtualRides(virtual.isChecked())
+                            .correctedLastServicedEpochSec(picked[0])
+                            .warrantyPurchaseEpochSec(purchase[0])
+                            .warrantyMonths(warrantyTerm)
+                            .bikeId(BikePicker.selectedId(bikeSpinner, garage)));
                     if (purchase[0] > 0 && warrantyTerm > 0) ensureNotificationPermission();
                 })
                 .setNegativeButton(CANCEL, null);

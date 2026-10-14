@@ -10,7 +10,16 @@ import java.util.List;
 public class LogbookSortTest {
 
     private static ClimbLogbookViewModel.LogbookRow row(String id, long last, Double rating) {
-        return new ClimbLogbookViewModel.LogbookRow(id, id, 600, 1, last, "r", 0, rating);
+        return new ClimbLogbookViewModel.LogbookRow.Builder()
+                .climbId(id)
+                .displayName(id)
+                .prSec(600)
+                .attemptCount(1)
+                .lastDateSec(last)
+                .routeId("r")
+                .climbIndex(0)
+                .rating(rating)
+                .build();
     }
 
     private static String ids(List<ClimbLogbookViewModel.LogbookRow> rows) {

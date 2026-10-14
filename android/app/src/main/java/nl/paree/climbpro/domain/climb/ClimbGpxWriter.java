@@ -67,8 +67,16 @@ public final class ClimbGpxWriter {
         sb.append("<gpx version=\"1.1\" creator=\"ClimbPro\" "
                 + "xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
         // One builder for both: a single climb's waypoints already precede its track.
-        appendClimb(sb, sb, route, climb, climbIndex, bestSplitSec, bestElapsedSec, false,
-                privacyRadiusMeters);
+        appendClimb(new ClimbExport()
+                .wptOut(sb)
+                .trkOut(sb)
+                .route(route)
+                .climb(climb)
+                .climbIndex(climbIndex)
+                .bestSplitSec(bestSplitSec)
+                .bestElapsedSec(bestElapsedSec)
+                .prefixWaypointNames(false)
+                .privacyRadiusMeters(privacyRadiusMeters));
         sb.append("</gpx>\n");
         return sb.toString();
     }
@@ -81,48 +89,57 @@ public final class ClimbGpxWriter {
      * every {@code <wpt>} to precede every {@code <trk>}, so a batch must collect all
      * waypoints before writing any track. Nothing is appended if validation throws.
      *
-     * @param prefixWaypointNames prefix each waypoint name with the climb name ("Climb — Top")
-     *                            so waypoints stay distinguishable in a multi-climb file.
-     * @param privacyRadiusMeters home-climb privacy radius (issue #92), see {@link
-     *                            #toGpx(StoredRoute, StoredClimb, int, int[], Integer, double)}.
+     * <p>{@code in.prefixWaypointNames} prefixes each waypoint name with the climb name
+     * ("Climb — Top") so waypoints stay distinguishable in a multi-climb file;
+     * {@code in.privacyRadiusMeters} is the home-climb privacy radius (issue #92), see {@link
+     * #toGpx(StoredRoute, StoredClimb, int, int[], Integer, double)}.
+     *
      * @throws IllegalArgumentException if {@code route} has no usable geometry, {@code
      *         climb} is null, the climb's start/end distance don't map onto any point
      *         in {@code route} — the same validation {@link #toGpx} always performed — or a
      *         home climb has no usable privacy zone centre for a positive radius.
      */
-    static void appendClimb(StringBuilder wptOut, StringBuilder trkOut, StoredRoute route,
-            StoredClimb climb, int climbIndex, int[] bestSplitSec, Integer bestElapsedSec,
-            boolean prefixWaypointNames, double privacyRadiusMeters) {
-        requireGeometry(route, climb);
-        int[] range = climbRange(route, climb);
+    static void appendClimb(ClimbExport in) {
+        requireGeometry(in.route, in.climb);
+        int[] range = climbRange(in.route, in.climb);
         int startIdx = range[0];
         int endIdx = range[1];
 
         String name;
-        if (climb.userDisplayName != null) name = climb.userDisplayName;
-        else if (climb.name != null) name = climb.name;
-        else name = "Climb " + (climbIndex + 1);
+        if (in.climb.userDisplayName != null) name = in.climb.userDisplayName;
+        else if (in.climb.name != null) name = in.climb.name;
+        else name = "Climb " + (in.climbIndex + 1);
 
-        double[] zoneCentre = privacyZoneCentre(climb, privacyRadiusMeters);
+        double[] zoneCentre = privacyZoneCentre(in.climb, in.privacyRadiusMeters);
 
-        String wptPrefix = prefixWaypointNames ? name + " — " : "";
-        appendWaypoints(wptOut, route, climb, startIdx, endIdx, zoneCentre, privacyRadiusMeters,
-                bestSplitSec, bestElapsedSec, name, wptPrefix);
+        String wptPrefix = in.prefixWaypointNames ? name + " — " : "";
+        appendWaypoints(new WaypointSpec()
+                .sb(in.wptOut)
+                .route(in.route)
+                .climb(in.climb)
+                .startIdx(startIdx)
+                .endIdx(endIdx)
+                .zoneCentre(zoneCentre)
+                .privacyRadiusMeters(in.privacyRadiusMeters)
+                .bestSplitSec(in.bestSplitSec)
+                .bestElapsedSec(in.bestElapsedSec)
+                .climbName(name)
+                .wptPrefix(wptPrefix));
 
-        trkOut.append("  <trk>\n");
-        trkOut.append("    <name>").append(escape(name)).append("</name>\n");
-        trkOut.append("    <trkseg>\n");
+        in.trkOut.append("  <trk>\n");
+        in.trkOut.append("    <name>").append(escape(name)).append("</name>\n");
+        in.trkOut.append("    <trkseg>\n");
         if (zoneCentre.length > 0) {
-            // Elevation alone doesn't pinpoint a location, so the true value at the climb
+            // Elevation alone doesn't pinpoint a location, so the true value at the in.climb
             // start is kept — only lat/lon within the privacy zone are obscured/dropped.
-            appendTrackPoint(trkOut, zoneCentre[0], zoneCentre[1], elevationAt(route, startIdx));
+            appendTrackPoint(in.trkOut, zoneCentre[0], zoneCentre[1], elevationAt(in.route, startIdx));
         }
         for (int i = startIdx; i <= endIdx; i++) {
-            if (isHidden(route, i, zoneCentre, privacyRadiusMeters)) continue;
-            appendTrackPoint(trkOut, route.lats[i], route.lons[i], elevationAt(route, i));
+            if (isHidden(in.route, i, zoneCentre, in.privacyRadiusMeters)) continue;
+            appendTrackPoint(in.trkOut, in.route.lats[i], in.route.lons[i], elevationAt(in.route, i));
         }
-        trkOut.append("    </trkseg>\n");
-        trkOut.append("  </trk>\n");
+        in.trkOut.append("    </trkseg>\n");
+        in.trkOut.append("  </trk>\n");
     }
 
     private static void requireGeometry(StoredRoute route, StoredClimb climb) {
@@ -191,47 +208,50 @@ public final class ClimbGpxWriter {
                 && !Double.isNaN(route.elevations[idx]) ? route.elevations[idx] : null;
     }
 
-    private static void appendWaypoints(StringBuilder sb, StoredRoute route, StoredClimb climb,
-            int startIdx, int endIdx, double[] zoneCentre, double privacyRadiusMeters,
-            int[] bestSplitSec, Integer bestElapsedSec, String climbName, String wptPrefix) {
-        List<StoredSegment> segments = climb.segments;
+    private static void appendWaypoints(WaypointSpec in) {
+        List<StoredSegment> segments = in.climb.segments;
         if (segments == null || segments.isEmpty()) return;
 
-        if (bestElapsedSec != null && bestElapsedSec > 0) {
-            appendPrWaypoint(sb, route, climb, startIdx, endIdx, zoneCentre,
-                    climbName + " — personal record " + formatDuration(bestElapsedSec),
-                    wptPrefix);
+        if (in.bestElapsedSec != null && in.bestElapsedSec > 0) {
+            appendPrWaypoint(new PrWaypointSpec()
+                    .sb(in.sb)
+                    .route(in.route)
+                    .climb(in.climb)
+                    .startIdx(in.startIdx)
+                    .endIdx(in.endIdx)
+                    .zoneCentre(in.zoneCentre)
+                    .prDesc(in.climbName + " — personal record " + formatDuration(in.bestElapsedSec))
+                    .wptPrefix(in.wptPrefix));
         }
 
-        boolean havePr = bestSplitSec != null && bestSplitSec.length == segments.size();
-        double boundary = climb.startDistance;
+        boolean havePr = in.bestSplitSec != null && in.bestSplitSec.length == segments.size();
+        double boundary = in.climb.startDistance;
         int cumulativeSplitSec = 0;
         for (int i = 0; i < segments.size(); i++) {
             StoredSegment seg = segments.get(i);
             boundary += seg.distance;
-            if (havePr) cumulativeSplitSec += bestSplitSec[i];
-            int idx = nearestIndex(route, startIdx, endIdx, boundary);
+            if (havePr) cumulativeSplitSec += in.bestSplitSec[i];
+            int idx = nearestIndex(in.route, in.startIdx, in.endIdx, boundary);
             // Inside the trimmed privacy zone: skip rather than expose a precise point.
-            if (idx < 0 || isHidden(route, idx, zoneCentre, privacyRadiusMeters)) continue;
+            if (idx < 0 || isHidden(in.route, idx, in.zoneCentre, in.privacyRadiusMeters)) continue;
 
             boolean isTop = i == segments.size() - 1;
-            String wptName = wptPrefix + (isTop ? "Top" : "Segment " + (i + 1));
-            appendWaypoint(sb, route, idx, wptName,
+            String wptName = in.wptPrefix + (isTop ? "Top" : "Segment " + (i + 1));
+            appendWaypoint(in.sb, in.route, idx, wptName,
                     segmentDescription(seg, havePr, cumulativeSplitSec),
                     isTop ? "Summit" : "Flag, Blue");
         }
     }
 
     /** PR waypoint at the climb start, or at the privacy zone centre for a home climb. */
-    private static void appendPrWaypoint(StringBuilder sb, StoredRoute route, StoredClimb climb,
-            int startIdx, int endIdx, double[] zoneCentre, String prDesc, String wptPrefix) {
-        if (zoneCentre.length > 0) {
-            appendWaypoint(sb, zoneCentre[0], zoneCentre[1], elevationAt(route, startIdx),
-                    wptPrefix + "PR", prDesc, "Flag, Green");
+    private static void appendPrWaypoint(PrWaypointSpec in) {
+        if (in.zoneCentre.length > 0) {
+            appendWaypoint(in.sb, in.zoneCentre[0], in.zoneCentre[1], elevationAt(in.route, in.startIdx),
+                    in.wptPrefix + "PR", in.prDesc, "Flag, Green");
         } else {
-            appendWaypoint(sb, route,
-                    nearestIndex(route, startIdx, endIdx, climb.startDistance),
-                    wptPrefix + "PR", prDesc, "Flag, Green");
+            appendWaypoint(in.sb, in.route,
+                    nearestIndex(in.route, in.startIdx, in.endIdx, in.climb.startDistance),
+                    in.wptPrefix + "PR", in.prDesc, "Flag, Green");
         }
     }
 
@@ -305,5 +325,185 @@ public final class ClimbGpxWriter {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&apos;");
+    }
+
+    /** Arguments of {@link #appendClimb}. */
+    public static final class ClimbExport {
+        private StringBuilder wptOut;
+        private StringBuilder trkOut;
+        private StoredRoute route;
+        private StoredClimb climb;
+        private int climbIndex;
+        private int[] bestSplitSec;
+        private Integer bestElapsedSec;
+        private boolean prefixWaypointNames;
+        private double privacyRadiusMeters;
+
+        public ClimbExport wptOut(StringBuilder wptOut) {
+            this.wptOut = wptOut;
+            return this;
+        }
+
+        public ClimbExport trkOut(StringBuilder trkOut) {
+            this.trkOut = trkOut;
+            return this;
+        }
+
+        public ClimbExport route(StoredRoute route) {
+            this.route = route;
+            return this;
+        }
+
+        public ClimbExport climb(StoredClimb climb) {
+            this.climb = climb;
+            return this;
+        }
+
+        public ClimbExport climbIndex(int climbIndex) {
+            this.climbIndex = climbIndex;
+            return this;
+        }
+
+        public ClimbExport bestSplitSec(int[] bestSplitSec) {
+            this.bestSplitSec = bestSplitSec;
+            return this;
+        }
+
+        public ClimbExport bestElapsedSec(Integer bestElapsedSec) {
+            this.bestElapsedSec = bestElapsedSec;
+            return this;
+        }
+
+        public ClimbExport prefixWaypointNames(boolean prefixWaypointNames) {
+            this.prefixWaypointNames = prefixWaypointNames;
+            return this;
+        }
+
+        public ClimbExport privacyRadiusMeters(double privacyRadiusMeters) {
+            this.privacyRadiusMeters = privacyRadiusMeters;
+            return this;
+        }
+    }
+
+    /** Arguments of {@link #appendWaypoints}. */
+    public static final class WaypointSpec {
+        private StringBuilder sb;
+        private StoredRoute route;
+        private StoredClimb climb;
+        private int startIdx;
+        private int endIdx;
+        private double[] zoneCentre;
+        private double privacyRadiusMeters;
+        private int[] bestSplitSec;
+        private Integer bestElapsedSec;
+        private String climbName;
+        private String wptPrefix;
+
+        public WaypointSpec sb(StringBuilder sb) {
+            this.sb = sb;
+            return this;
+        }
+
+        public WaypointSpec route(StoredRoute route) {
+            this.route = route;
+            return this;
+        }
+
+        public WaypointSpec climb(StoredClimb climb) {
+            this.climb = climb;
+            return this;
+        }
+
+        public WaypointSpec startIdx(int startIdx) {
+            this.startIdx = startIdx;
+            return this;
+        }
+
+        public WaypointSpec endIdx(int endIdx) {
+            this.endIdx = endIdx;
+            return this;
+        }
+
+        public WaypointSpec zoneCentre(double[] zoneCentre) {
+            this.zoneCentre = zoneCentre;
+            return this;
+        }
+
+        public WaypointSpec privacyRadiusMeters(double privacyRadiusMeters) {
+            this.privacyRadiusMeters = privacyRadiusMeters;
+            return this;
+        }
+
+        public WaypointSpec bestSplitSec(int[] bestSplitSec) {
+            this.bestSplitSec = bestSplitSec;
+            return this;
+        }
+
+        public WaypointSpec bestElapsedSec(Integer bestElapsedSec) {
+            this.bestElapsedSec = bestElapsedSec;
+            return this;
+        }
+
+        public WaypointSpec climbName(String climbName) {
+            this.climbName = climbName;
+            return this;
+        }
+
+        public WaypointSpec wptPrefix(String wptPrefix) {
+            this.wptPrefix = wptPrefix;
+            return this;
+        }
+    }
+
+    /** Arguments of {@link #appendPrWaypoint}. */
+    public static final class PrWaypointSpec {
+        private StringBuilder sb;
+        private StoredRoute route;
+        private StoredClimb climb;
+        private int startIdx;
+        private int endIdx;
+        private double[] zoneCentre;
+        private String prDesc;
+        private String wptPrefix;
+
+        public PrWaypointSpec sb(StringBuilder sb) {
+            this.sb = sb;
+            return this;
+        }
+
+        public PrWaypointSpec route(StoredRoute route) {
+            this.route = route;
+            return this;
+        }
+
+        public PrWaypointSpec climb(StoredClimb climb) {
+            this.climb = climb;
+            return this;
+        }
+
+        public PrWaypointSpec startIdx(int startIdx) {
+            this.startIdx = startIdx;
+            return this;
+        }
+
+        public PrWaypointSpec endIdx(int endIdx) {
+            this.endIdx = endIdx;
+            return this;
+        }
+
+        public PrWaypointSpec zoneCentre(double[] zoneCentre) {
+            this.zoneCentre = zoneCentre;
+            return this;
+        }
+
+        public PrWaypointSpec prDesc(String prDesc) {
+            this.prDesc = prDesc;
+            return this;
+        }
+
+        public PrWaypointSpec wptPrefix(String wptPrefix) {
+            this.wptPrefix = wptPrefix;
+            return this;
+        }
     }
 }

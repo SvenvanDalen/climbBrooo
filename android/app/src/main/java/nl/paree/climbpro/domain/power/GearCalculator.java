@@ -91,34 +91,28 @@ public final class GearCalculator {
     private GearCalculator() {}
 
     /**
-     * @param chainrings        teeth, any order
-     * @param sprockets         teeth, any order
-     * @param steepestGradient  fraction (0.12 = 12 %)
-     * @param avgGradient       fraction
-     * @param powerWatts        sustainable pedal power on the climb
-     * @param crr               rolling resistance of the road surface
+     * Gear advice for a climb. In {@code in}: chainrings and sprockets are teeth in any order,
+     * gradients are fractions (0.12 = 12 %), power is the sustainable pedal power on the climb
+     * and crr the rolling resistance of the road surface.
      */
-    public static Result compute(int[] chainrings, int[] sprockets, int wheelCircumferenceMm,
-                                 int targetCadenceRpm, double steepestGradient,
-                                 double avgGradient, double powerWatts, double totalMassKg,
-                                 double crr) {
-        if (chainrings == null || chainrings.length == 0 || sprockets == null
-                || sprockets.length == 0) {
-            throw new IllegalArgumentException("chainrings and sprockets are required");
+    public static Result compute(GearSetup in) {
+        if (in.chainrings == null || in.chainrings.length == 0 || in.sprockets == null
+                || in.sprockets.length == 0) {
+            throw new IllegalArgumentException("in.chainrings and in.sprockets are required");
         }
-        if (wheelCircumferenceMm <= 0 || targetCadenceRpm <= 0) {
+        if (in.wheelCircumferenceMm <= 0 || in.targetCadenceRpm <= 0) {
             throw new IllegalArgumentException("circumference and cadence must be positive");
         }
         double vSteep = PowerSpeedSolver.speedMetersPerSecond(
-                powerWatts, totalMassKg, steepestGradient, crr);
+                in.powerWatts, in.totalMassKg, in.steepestGradient, in.crr);
         double vAvg = PowerSpeedSolver.speedMetersPerSecond(
-                powerWatts, totalMassKg, avgGradient, crr);
+                in.powerWatts, in.totalMassKg, in.avgGradient, in.crr);
 
         List<Gear> gears = new ArrayList<>();
-        for (int c : chainrings) {
-            for (int s : sprockets) {
-                gears.add(new Gear(c, s, cadence(vSteep, c, s, wheelCircumferenceMm),
-                        cadence(vAvg, c, s, wheelCircumferenceMm)));
+        for (int c : in.chainrings) {
+            for (int s : in.sprockets) {
+                gears.add(new Gear(c, s, cadence(vSteep, c, s, in.wheelCircumferenceMm),
+                        cadence(vAvg, c, s, in.wheelCircumferenceMm)));
             }
         }
         gears.sort((a, b) -> {
@@ -126,9 +120,9 @@ public final class GearCalculator {
             return byRatio != 0 ? byRatio : Integer.compare(a.chainring, b.chainring);
         });
 
-        int smallest = Arrays.stream(chainrings).min().getAsInt();
-        return new Result(steepestGradient, avgGradient, vSteep, vAvg, targetCadenceRpm, gears,
-                neededSprocket(vSteep, smallest, targetCadenceRpm, wheelCircumferenceMm));
+        int smallest = Arrays.stream(in.chainrings).min().getAsInt();
+        return new Result(in.steepestGradient, in.avgGradient, vSteep, vAvg, in.targetCadenceRpm, gears,
+                neededSprocket(vSteep, smallest, in.targetCadenceRpm, in.wheelCircumferenceMm));
     }
 
     /** Pedal cadence in rpm at {@code speedMps} in the given gear. */
@@ -233,5 +227,63 @@ public final class GearCalculator {
         }
         return base + "Voor " + r.targetCadenceRpm + " rpm is een veel kleiner kettingblad "
                 + "nodig; reken op een lage cadans of een stukje staan.";
+    }
+
+    /** Arguments of {@link #compute}. */
+    public static final class GearSetup {
+        private int[] chainrings;
+        private int[] sprockets;
+        private int wheelCircumferenceMm;
+        private int targetCadenceRpm;
+        private double steepestGradient;
+        private double avgGradient;
+        private double powerWatts;
+        private double totalMassKg;
+        private double crr;
+
+        public GearSetup chainrings(int[] chainrings) {
+            this.chainrings = chainrings;
+            return this;
+        }
+
+        public GearSetup sprockets(int[] sprockets) {
+            this.sprockets = sprockets;
+            return this;
+        }
+
+        public GearSetup wheelCircumferenceMm(int wheelCircumferenceMm) {
+            this.wheelCircumferenceMm = wheelCircumferenceMm;
+            return this;
+        }
+
+        public GearSetup targetCadenceRpm(int targetCadenceRpm) {
+            this.targetCadenceRpm = targetCadenceRpm;
+            return this;
+        }
+
+        public GearSetup steepestGradient(double steepestGradient) {
+            this.steepestGradient = steepestGradient;
+            return this;
+        }
+
+        public GearSetup avgGradient(double avgGradient) {
+            this.avgGradient = avgGradient;
+            return this;
+        }
+
+        public GearSetup powerWatts(double powerWatts) {
+            this.powerWatts = powerWatts;
+            return this;
+        }
+
+        public GearSetup totalMassKg(double totalMassKg) {
+            this.totalMassKg = totalMassKg;
+            return this;
+        }
+
+        public GearSetup crr(double crr) {
+            this.crr = crr;
+            return this;
+        }
     }
 }

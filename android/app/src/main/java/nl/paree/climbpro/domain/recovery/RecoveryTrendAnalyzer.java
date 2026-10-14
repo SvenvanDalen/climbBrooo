@@ -89,18 +89,72 @@ public final class RecoveryTrendAnalyzer {
         /** Rides feel harder while sleep got worse: time to plan some rest. */
         public final boolean recoveryWarning;
 
-        Trend(List<Point> points, int windowSize, double rpeAvgRecent, double sleepAvgRecent,
-              double rpeAvgPrevious, double sleepAvgPrevious,
-              Direction rpeDirection, Direction sleepDirection) {
-            this.points = points;
-            this.windowSize = windowSize;
-            this.rpeAvgRecent = rpeAvgRecent;
-            this.sleepAvgRecent = sleepAvgRecent;
-            this.rpeAvgPrevious = rpeAvgPrevious;
-            this.sleepAvgPrevious = sleepAvgPrevious;
-            this.rpeDirection = rpeDirection;
-            this.sleepDirection = sleepDirection;
-            this.recoveryWarning = rpeDirection == Direction.UP && sleepDirection == Direction.DOWN;
+        private Trend(Builder b) {
+            this.points = b.points;
+            this.windowSize = b.windowSize;
+            this.rpeAvgRecent = b.rpeAvgRecent;
+            this.sleepAvgRecent = b.sleepAvgRecent;
+            this.rpeAvgPrevious = b.rpeAvgPrevious;
+            this.sleepAvgPrevious = b.sleepAvgPrevious;
+            this.rpeDirection = b.rpeDirection;
+            this.sleepDirection = b.sleepDirection;
+            this.recoveryWarning = b.rpeDirection == Direction.UP && b.sleepDirection == Direction.DOWN;
+        }
+
+        /** Builds a {@link Trend}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private List<Point> points;
+            private int windowSize;
+            private double rpeAvgRecent;
+            private double sleepAvgRecent;
+            private double rpeAvgPrevious;
+            private double sleepAvgPrevious;
+            private Direction rpeDirection;
+            private Direction sleepDirection;
+
+            public Builder points(List<Point> points) {
+                this.points = points;
+                return this;
+            }
+
+            public Builder windowSize(int windowSize) {
+                this.windowSize = windowSize;
+                return this;
+            }
+
+            public Builder rpeAvgRecent(double rpeAvgRecent) {
+                this.rpeAvgRecent = rpeAvgRecent;
+                return this;
+            }
+
+            public Builder sleepAvgRecent(double sleepAvgRecent) {
+                this.sleepAvgRecent = sleepAvgRecent;
+                return this;
+            }
+
+            public Builder rpeAvgPrevious(double rpeAvgPrevious) {
+                this.rpeAvgPrevious = rpeAvgPrevious;
+                return this;
+            }
+
+            public Builder sleepAvgPrevious(double sleepAvgPrevious) {
+                this.sleepAvgPrevious = sleepAvgPrevious;
+                return this;
+            }
+
+            public Builder rpeDirection(Direction rpeDirection) {
+                this.rpeDirection = rpeDirection;
+                return this;
+            }
+
+            public Builder sleepDirection(Direction sleepDirection) {
+                this.sleepDirection = sleepDirection;
+                return this;
+            }
+
+            public Trend build() {
+                return new Trend(this);
+            }
         }
 
         public boolean hasComparison() { return windowSize > 0; }
@@ -161,17 +215,32 @@ public final class RecoveryTrendAnalyzer {
 
         int n = points.size();
         if (n < MIN_POINTS_FOR_COMPARISON) {
-            return new Trend(frozen, 0, avgRpe(points, 0, n), avgSleep(points, 0, n),
-                    Double.NaN, Double.NaN, Direction.NONE, Direction.NONE);
+            return new Trend.Builder()
+                    .points(frozen)
+                    .windowSize(0)
+                    .rpeAvgRecent(avgRpe(points, 0, n))
+                    .sleepAvgRecent(avgSleep(points, 0, n))
+                    .rpeAvgPrevious(Double.NaN)
+                    .sleepAvgPrevious(Double.NaN)
+                    .rpeDirection(Direction.NONE)
+                    .sleepDirection(Direction.NONE)
+                    .build();
         }
         int k = Math.min(MAX_WINDOW, n / 2);
         double rpeRecent = avgRpe(points, n - k, n);
         double rpePrev = avgRpe(points, n - 2 * k, n - k);
         double sleepRecent = avgSleep(points, n - k, n);
         double sleepPrev = avgSleep(points, n - 2 * k, n - k);
-        return new Trend(frozen, k, rpeRecent, sleepRecent, rpePrev, sleepPrev,
-                direction(rpeRecent - rpePrev, RPE_THRESHOLD),
-                direction(sleepRecent - sleepPrev, SLEEP_THRESHOLD));
+        return new Trend.Builder()
+                .points(frozen)
+                .windowSize(k)
+                .rpeAvgRecent(rpeRecent)
+                .sleepAvgRecent(sleepRecent)
+                .rpeAvgPrevious(rpePrev)
+                .sleepAvgPrevious(sleepPrev)
+                .rpeDirection(direction(rpeRecent - rpePrev, RPE_THRESHOLD))
+                .sleepDirection(direction(sleepRecent - sleepPrev, SLEEP_THRESHOLD))
+                .build();
     }
 
     private static Direction direction(double delta, double threshold) {

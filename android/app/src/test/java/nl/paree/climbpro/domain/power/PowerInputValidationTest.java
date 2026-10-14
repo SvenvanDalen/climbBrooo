@@ -30,28 +30,72 @@ public class PowerInputValidationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void gears_withoutChainrings_areRejected() {
-        GearCalculator.compute(new int[0], new int[]{11}, 2105, 80, 0.1, 0.05, 250, 80, CRR);
+        GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[0])
+                .sprockets(new int[]{11})
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(80)
+                .steepestGradient(0.1)
+                .avgGradient(0.05)
+                .powerWatts(250)
+                .totalMassKg(80)
+                .crr(CRR));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void gears_withoutSprockets_areRejected() {
-        GearCalculator.compute(new int[]{34}, null, 2105, 80, 0.1, 0.05, 250, 80, CRR);
+        GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{34})
+                .sprockets(null)
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(80)
+                .steepestGradient(0.1)
+                .avgGradient(0.05)
+                .powerWatts(250)
+                .totalMassKg(80)
+                .crr(CRR));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void gears_nonPositiveCadence_isRejected() {
-        GearCalculator.compute(new int[]{34}, new int[]{28}, 2105, 0, 0.1, 0.05, 250, 80, CRR);
+        GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{34})
+                .sprockets(new int[]{28})
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(0)
+                .steepestGradient(0.1)
+                .avgGradient(0.05)
+                .powerWatts(250)
+                .totalMassKg(80)
+                .crr(CRR));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void gears_nonPositiveCircumference_isRejected() {
-        GearCalculator.compute(new int[]{34}, new int[]{28}, -1, 80, 0.1, 0.05, 250, 80, CRR);
+        GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{34})
+                .sprockets(new int[]{28})
+                .wheelCircumferenceMm(-1)
+                .targetCadenceRpm(80)
+                .steepestGradient(0.1)
+                .avgGradient(0.05)
+                .powerWatts(250)
+                .totalMassKg(80)
+                .crr(CRR));
     }
 
     @Test
     public void verdict_wallClimb_needsAMuchSmallerChainring() {
-        GearCalculator.Result r = GearCalculator.compute(new int[]{53}, new int[]{11, 21}, 2105, 90,
-                0.25, 0.15, 150, 110, CRR);
+        GearCalculator.Result r = GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{53})
+                .sprockets(new int[]{11, 21})
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(90)
+                .steepestGradient(0.25)
+                .avgGradient(0.15)
+                .powerWatts(150)
+                .totalMassKg(110)
+                .crr(CRR));
         String v = GearCalculator.verdict(r);
         assertTrue(r.neededSprocket > GearCalculator.MAX_SUGGESTED_SPROCKET);
         assertTrue(v, v.endsWith("reken op een lage cadans of een stukje staan."));

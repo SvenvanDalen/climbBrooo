@@ -93,25 +93,105 @@ public final class LogbookCalculator {
                            boolean routeDeviation, boolean bestOfYear,
                            long activityId, int passIndex, String note, String photoFileName,
                            Double avgTempC) {
-            this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
-                    activityId, passIndex, note, photoFileName, avgTempC, null);
+            this(new Builder()
+                    .dateEpochSec(dateEpochSec)
+                    .elapsedSec(elapsedSec)
+                    .deltaToPrSec(deltaToPrSec)
+                    .routeDeviation(routeDeviation)
+                    .bestOfYear(bestOfYear)
+                    .activityId(activityId)
+                    .passIndex(passIndex)
+                    .note(note)
+                    .photoFileName(photoFileName)
+                    .avgTempC(avgTempC));
         }
 
-        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
-                           boolean routeDeviation, boolean bestOfYear,
-                           long activityId, int passIndex, String note, String photoFileName,
-                           Double avgTempC, String companions) {
-            this.dateEpochSec = dateEpochSec;
-            this.elapsedSec = elapsedSec;
-            this.deltaToPrSec = deltaToPrSec;
-            this.routeDeviation = routeDeviation;
-            this.bestOfYear = bestOfYear;
-            this.activityId = activityId;
-            this.passIndex = passIndex;
-            this.note = note;
-            this.photoFileName = photoFileName;
-            this.avgTempC = avgTempC;
-            this.companions = companions;
+        private HistoryRow(Builder b) {
+            this.dateEpochSec = b.dateEpochSec;
+            this.elapsedSec = b.elapsedSec;
+            this.deltaToPrSec = b.deltaToPrSec;
+            this.routeDeviation = b.routeDeviation;
+            this.bestOfYear = b.bestOfYear;
+            this.activityId = b.activityId;
+            this.passIndex = b.passIndex;
+            this.note = b.note;
+            this.photoFileName = b.photoFileName;
+            this.avgTempC = b.avgTempC;
+            this.companions = b.companions;
+        }
+
+        /** Builds a {@link HistoryRow}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private long dateEpochSec;
+            private int elapsedSec;
+            private int deltaToPrSec;
+            private boolean routeDeviation;
+            private boolean bestOfYear;
+            private long activityId;
+            private int passIndex;
+            private String note;
+            private String photoFileName;
+            private Double avgTempC;
+            private String companions;
+
+            public Builder dateEpochSec(long dateEpochSec) {
+                this.dateEpochSec = dateEpochSec;
+                return this;
+            }
+
+            public Builder elapsedSec(int elapsedSec) {
+                this.elapsedSec = elapsedSec;
+                return this;
+            }
+
+            public Builder deltaToPrSec(int deltaToPrSec) {
+                this.deltaToPrSec = deltaToPrSec;
+                return this;
+            }
+
+            public Builder routeDeviation(boolean routeDeviation) {
+                this.routeDeviation = routeDeviation;
+                return this;
+            }
+
+            public Builder bestOfYear(boolean bestOfYear) {
+                this.bestOfYear = bestOfYear;
+                return this;
+            }
+
+            public Builder activityId(long activityId) {
+                this.activityId = activityId;
+                return this;
+            }
+
+            public Builder passIndex(int passIndex) {
+                this.passIndex = passIndex;
+                return this;
+            }
+
+            public Builder note(String note) {
+                this.note = note;
+                return this;
+            }
+
+            public Builder photoFileName(String photoFileName) {
+                this.photoFileName = photoFileName;
+                return this;
+            }
+
+            public Builder avgTempC(Double avgTempC) {
+                this.avgTempC = avgTempC;
+                return this;
+            }
+
+            public Builder companions(String companions) {
+                this.companions = companions;
+                return this;
+            }
+
+            public HistoryRow build() {
+                return new HistoryRow(this);
+            }
         }
     }
 
@@ -182,10 +262,19 @@ public final class LogbookCalculator {
         for (int i = 0; i < mine.size(); i++) {
             StoredClimbAttempt a = mine.get(i);
             boolean bestOfYear = i == bestOfYearIndex;
-            rows.add(new HistoryRow(a.dateEpochSec, a.elapsedSec, a.elapsedSec - pr,
-                    a.routeDeviation, bestOfYear,
-                    a.activityId, a.passIndex, a.note, a.photoFileName, a.avgTempC,
-                    a.companions));
+            rows.add(new HistoryRow.Builder()
+                    .dateEpochSec(a.dateEpochSec)
+                    .elapsedSec(a.elapsedSec)
+                    .deltaToPrSec(a.elapsedSec - pr)
+                    .routeDeviation(a.routeDeviation)
+                    .bestOfYear(bestOfYear)
+                    .activityId(a.activityId)
+                    .passIndex(a.passIndex)
+                    .note(a.note)
+                    .photoFileName(a.photoFileName)
+                    .avgTempC(a.avgTempC)
+                    .companions(a.companions)
+                    .build());
         }
         return rows;
     }

@@ -75,16 +75,71 @@ public final class TrainingLoadCalendar {
         public final LocalDate busiestWeekStart;
         public final double busiestWeekLoad;
 
-        Result(LocalDate firstDay, int weeks, List<Day> days, int activeDays, double totalLoad,
-               int longestStreakDays, LocalDate busiestWeekStart, double busiestWeekLoad) {
-            this.firstDay = firstDay;
-            this.weeks = weeks;
-            this.days = days;
-            this.activeDays = activeDays;
-            this.totalLoad = totalLoad;
-            this.longestStreakDays = longestStreakDays;
-            this.busiestWeekStart = busiestWeekStart;
-            this.busiestWeekLoad = busiestWeekLoad;
+        private Result(Builder b) {
+            this.firstDay = b.firstDay;
+            this.weeks = b.weeks;
+            this.days = b.days;
+            this.activeDays = b.activeDays;
+            this.totalLoad = b.totalLoad;
+            this.longestStreakDays = b.longestStreakDays;
+            this.busiestWeekStart = b.busiestWeekStart;
+            this.busiestWeekLoad = b.busiestWeekLoad;
+        }
+
+        /** Builds a {@link Result}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private LocalDate firstDay;
+            private int weeks;
+            private List<Day> days;
+            private int activeDays;
+            private double totalLoad;
+            private int longestStreakDays;
+            private LocalDate busiestWeekStart;
+            private double busiestWeekLoad;
+
+            public Builder firstDay(LocalDate firstDay) {
+                this.firstDay = firstDay;
+                return this;
+            }
+
+            public Builder weeks(int weeks) {
+                this.weeks = weeks;
+                return this;
+            }
+
+            public Builder days(List<Day> days) {
+                this.days = days;
+                return this;
+            }
+
+            public Builder activeDays(int activeDays) {
+                this.activeDays = activeDays;
+                return this;
+            }
+
+            public Builder totalLoad(double totalLoad) {
+                this.totalLoad = totalLoad;
+                return this;
+            }
+
+            public Builder longestStreakDays(int longestStreakDays) {
+                this.longestStreakDays = longestStreakDays;
+                return this;
+            }
+
+            public Builder busiestWeekStart(LocalDate busiestWeekStart) {
+                this.busiestWeekStart = busiestWeekStart;
+                return this;
+            }
+
+            public Builder busiestWeekLoad(double busiestWeekLoad) {
+                this.busiestWeekLoad = busiestWeekLoad;
+                return this;
+            }
+
+            public Result build() {
+                return new Result(this);
+            }
         }
     }
 
@@ -181,7 +236,16 @@ public final class TrainingLoadCalendar {
                 busiest = d.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             }
         }
-        return new Result(first, w, days, active, total, longest, busiest, busiestLoad);
+        return new Result.Builder()
+                .firstDay(first)
+                .weeks(w)
+                .days(days)
+                .activeDays(active)
+                .totalLoad(total)
+                .longestStreakDays(longest)
+                .busiestWeekStart(busiest)
+                .busiestWeekLoad(busiestLoad)
+                .build();
     }
 
     private static LocalDate dayOf(long epochSec, ZoneId zone, LocalDate first, LocalDate today) {

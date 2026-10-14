@@ -133,30 +133,114 @@ public final class FitnessChartView extends View {
         canvas.drawText(monthDay.format(days.get(days.size() - 1).date), right,
                 getHeight() - 4 * density, labelPaint);
 
-        drawSeries(canvas, 0, COLOR_FITNESS, min, max, left, right, top, bottom);
-        drawSeries(canvas, 1, COLOR_FATIGUE, min, max, left, right, top, bottom);
-        drawSeries(canvas, 2, COLOR_FORM, min, max, left, right, top, bottom);
+        drawSeries(new SeriesStyle()
+                .canvas(canvas)
+                .which(0)
+                .color(COLOR_FITNESS)
+                .min(min)
+                .max(max)
+                .left(left)
+                .right(right)
+                .top(top)
+                .bottom(bottom));
+        drawSeries(new SeriesStyle()
+                .canvas(canvas)
+                .which(1)
+                .color(COLOR_FATIGUE)
+                .min(min)
+                .max(max)
+                .left(left)
+                .right(right)
+                .top(top)
+                .bottom(bottom));
+        drawSeries(new SeriesStyle()
+                .canvas(canvas)
+                .which(2)
+                .color(COLOR_FORM)
+                .min(min)
+                .max(max)
+                .left(left)
+                .right(right)
+                .top(top)
+                .bottom(bottom));
     }
 
-    private void drawSeries(Canvas canvas, int which, int color, double min, double max,
-                            float left, float right, float top, float bottom) {
+    private void drawSeries(SeriesStyle in) {
         path.reset();
-        float step = (right - left) / (days.size() - 1);
+        float step = (in.right - in.left) / (days.size() - 1);
         for (int i = 0; i < days.size(); i++) {
             Day d = days.get(i);
             double v = d.tsb;
-            if (which == 0) v = d.ctl;
-            else if (which == 1) v = d.atl;
-            float x = left + i * step;
-            float yy = y(v, min, max, top, bottom);
+            if (in.which == 0) v = d.ctl;
+            else if (in.which == 1) v = d.atl;
+            float x = in.left + i * step;
+            float yy = y(v, in.min, in.max, in.top, in.bottom);
             if (i == 0) path.moveTo(x, yy);
             else path.lineTo(x, yy);
         }
-        linePaint.setColor(color);
-        canvas.drawPath(path, linePaint);
+        linePaint.setColor(in.color);
+        in.canvas.drawPath(path, linePaint);
     }
 
     private static float y(double v, double min, double max, float top, float bottom) {
         return (float) (bottom - (v - min) / (max - min) * (bottom - top));
+    }
+
+    /** Arguments of {@link #drawSeries}. */
+    public static final class SeriesStyle {
+        private Canvas canvas;
+        private int which;
+        private int color;
+        private double min;
+        private double max;
+        private float left;
+        private float right;
+        private float top;
+        private float bottom;
+
+        public SeriesStyle canvas(Canvas canvas) {
+            this.canvas = canvas;
+            return this;
+        }
+
+        public SeriesStyle which(int which) {
+            this.which = which;
+            return this;
+        }
+
+        public SeriesStyle color(int color) {
+            this.color = color;
+            return this;
+        }
+
+        public SeriesStyle min(double min) {
+            this.min = min;
+            return this;
+        }
+
+        public SeriesStyle max(double max) {
+            this.max = max;
+            return this;
+        }
+
+        public SeriesStyle left(float left) {
+            this.left = left;
+            return this;
+        }
+
+        public SeriesStyle right(float right) {
+            this.right = right;
+            return this;
+        }
+
+        public SeriesStyle top(float top) {
+            this.top = top;
+            return this;
+        }
+
+        public SeriesStyle bottom(float bottom) {
+            this.bottom = bottom;
+            return this;
+        }
     }
 }
