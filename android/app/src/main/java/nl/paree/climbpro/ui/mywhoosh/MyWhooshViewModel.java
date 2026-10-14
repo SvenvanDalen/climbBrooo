@@ -63,19 +63,78 @@ public final class MyWhooshViewModel extends AndroidViewModel {
         public final CadenceByGrade.Result cadence;
         public final HeartRateRecoveryTrend.Result recovery;
 
-        State(int myWhooshRides, int awaitingAnalysis, int ftpWatts,
-              List<IndoorSeasonSummary.Season> seasons, List<MyWhooshRouteCatalog.Entry> catalog,
-              Map<String, String> routeIds, List<RideRow> rides, CadenceByGrade.Result cadence,
-              HeartRateRecoveryTrend.Result recovery) {
-            this.myWhooshRides = myWhooshRides;
-            this.awaitingAnalysis = awaitingAnalysis;
-            this.ftpWatts = ftpWatts;
-            this.seasons = seasons;
-            this.catalog = catalog;
-            this.routeIds = routeIds;
-            this.rides = rides;
-            this.cadence = cadence;
-            this.recovery = recovery;
+        private State(Builder b) {
+            this.myWhooshRides = b.myWhooshRides;
+            this.awaitingAnalysis = b.awaitingAnalysis;
+            this.ftpWatts = b.ftpWatts;
+            this.seasons = b.seasons;
+            this.catalog = b.catalog;
+            this.routeIds = b.routeIds;
+            this.rides = b.rides;
+            this.cadence = b.cadence;
+            this.recovery = b.recovery;
+        }
+
+        /** Builds a {@link State}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int myWhooshRides;
+            private int awaitingAnalysis;
+            private int ftpWatts;
+            private List<IndoorSeasonSummary.Season> seasons;
+            private List<MyWhooshRouteCatalog.Entry> catalog;
+            private Map<String, String> routeIds;
+            private List<RideRow> rides;
+            private CadenceByGrade.Result cadence;
+            private HeartRateRecoveryTrend.Result recovery;
+
+            public Builder myWhooshRides(int myWhooshRides) {
+                this.myWhooshRides = myWhooshRides;
+                return this;
+            }
+
+            public Builder awaitingAnalysis(int awaitingAnalysis) {
+                this.awaitingAnalysis = awaitingAnalysis;
+                return this;
+            }
+
+            public Builder ftpWatts(int ftpWatts) {
+                this.ftpWatts = ftpWatts;
+                return this;
+            }
+
+            public Builder seasons(List<IndoorSeasonSummary.Season> seasons) {
+                this.seasons = seasons;
+                return this;
+            }
+
+            public Builder catalog(List<MyWhooshRouteCatalog.Entry> catalog) {
+                this.catalog = catalog;
+                return this;
+            }
+
+            public Builder routeIds(Map<String, String> routeIds) {
+                this.routeIds = routeIds;
+                return this;
+            }
+
+            public Builder rides(List<RideRow> rides) {
+                this.rides = rides;
+                return this;
+            }
+
+            public Builder cadence(CadenceByGrade.Result cadence) {
+                this.cadence = cadence;
+                return this;
+            }
+
+            public Builder recovery(HeartRateRecoveryTrend.Result recovery) {
+                this.recovery = recovery;
+                return this;
+            }
+
+            public State build() {
+                return new State(this);
+            }
         }
     }
 
@@ -110,12 +169,18 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                 rows.add(new RideRow(r, RideIntensity.of(r, stats.get(r.activityId), ftp)));
             }
             long now = System.currentTimeMillis() / 1000L;
-            state.postValue(new State(myWhoosh.size(), awaiting, ftp,
-                    IndoorSeasonSummary.compute(rides, stats,
-                            new ClimbAttemptRepository(app).loadAll(), ftp, ZoneId.systemDefault()),
-                    MyWhooshRouteCatalog.compute(rides), routeIds(app), rows,
-                    CadenceByGrade.compute(rides, stats, true),
-                    HeartRateRecoveryTrend.compute(rides, stats, now, true)));
+            state.postValue(new State.Builder()
+                    .myWhooshRides(myWhoosh.size())
+                    .awaitingAnalysis(awaiting)
+                    .ftpWatts(ftp)
+                    .seasons(IndoorSeasonSummary.compute(rides, stats,
+                            new ClimbAttemptRepository(app).loadAll(), ftp, ZoneId.systemDefault()))
+                    .catalog(MyWhooshRouteCatalog.compute(rides))
+                    .routeIds(routeIds(app))
+                    .rides(rows)
+                    .cadence(CadenceByGrade.compute(rides, stats, true))
+                    .recovery(HeartRateRecoveryTrend.compute(rides, stats, now, true))
+                    .build());
         });
     }
 

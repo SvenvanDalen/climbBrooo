@@ -190,10 +190,18 @@ public final class ClimbOfTheWeekViewModel extends AndroidViewModel {
             StoredClimb c = climbs.get(i);
             if (c == null) continue;
             String id = ClimbIdentity.of(c);
-            out.add(new ClimbOfTheWeek.Candidate(id, entry.routeId, i,
-                    candidateName(c, i, routeName),
-                    c.startLat, c.startLon, c.elevationGain, c.avgGradient,
-                    ClimbIdentity.effectiveLength(c), lastRidden.get(id)));
+            out.add(new ClimbOfTheWeek.Candidate.Builder()
+                    .climbId(id)
+                    .routeId(entry.routeId)
+                    .climbIndex(i)
+                    .name(candidateName(c, i, routeName))
+                    .startLat(c.startLat)
+                    .startLon(c.startLon)
+                    .elevationGainM(c.elevationGain)
+                    .avgGradient(c.avgGradient)
+                    .lengthM(ClimbIdentity.effectiveLength(c))
+                    .lastRiddenEpochDay(lastRidden.get(id))
+                    .build());
         }
     }
 

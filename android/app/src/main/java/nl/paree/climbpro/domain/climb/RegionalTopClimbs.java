@@ -32,36 +32,22 @@ public final class RegionalTopClimbs {
 
     private RegionalTopClimbs() {}
 
-    /** A known climb that may be ranked. Coordinates in degrees, distances in metres. */
-    public static final class Candidate {
-        /** Route-independent identity ({@link ClimbIdentity}); used for dedupe. May be null. */
-        public final String climbId;
-        public final String routeId;
-        public final int    climbIndex;
-        public final String name;
-        public final double startLat;
-        public final double startLon;
-        public final int    elevationGainM;
-        /** Average gradient as a fraction (0.072 = 7.2 %). */
-        public final double avgGradient;
-        public final int    lengthM;
-
-        public Candidate(String climbId, String routeId, int climbIndex, String name,
-                         double startLat, double startLon, int elevationGainM,
-                         double avgGradient, int lengthM) {
-            this.climbId        = climbId;
-            this.routeId        = routeId;
-            this.climbIndex     = climbIndex;
-            this.name           = name;
-            this.startLat       = startLat;
-            this.startLon       = startLon;
-            this.elevationGainM = elevationGainM;
-            this.avgGradient    = avgGradient;
-            this.lengthM        = lengthM;
+    /** A known climb that may be ranked. */
+    public static final class Candidate extends ClimbCandidate {
+        private Candidate(Builder b) {
+            super(b);
         }
 
-        String dedupeKey() {
-            return climbId != null ? climbId : ("route:" + routeId + "#" + climbIndex);
+        /** Builds a {@link Candidate}; every value defaults to Java's default for its type. */
+        public static final class Builder extends ClimbCandidate.Builder<Builder> {
+            @Override
+            protected Builder self() {
+                return this;
+            }
+
+            public Candidate build() {
+                return new Candidate(this);
+            }
         }
     }
 
@@ -102,8 +88,8 @@ public final class RegionalTopClimbs {
             if (d <= radiusM) {
                 Ranked r = new Ranked(c,
                         DifficultyScoreCalculator.score(c.elevationGainM, c.avgGradient, 0), d);
-                Ranked existing = byKey.get(c.dedupeKey());
-                if (existing == null || r.score > existing.score) byKey.put(c.dedupeKey(), r);
+                Ranked existing = byKey.get(c.key());
+                if (existing == null || r.score > existing.score) byKey.put(c.key(), r);
             }
         }
 

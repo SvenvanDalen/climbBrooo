@@ -80,7 +80,7 @@ public final class RouteHazards {
                 || (grade <= BENDY_GRADIENT && turnSum >= BENDY_TURN_DEG);
     }
 
-    /** Route distance range {from, to} a tunnel way covers; null if it doesn't lie on the route. */
+    /** Route distance range {from, to} a tunnel way covers; empty if it doesn't lie on the route. */
     private static int[] tunnelRange(double[][] way, double[] lats, double[] lons,
                                      double[] distances, int n, double cosLat) {
         double lo = Double.MAX_VALUE;
@@ -95,7 +95,7 @@ public final class RouteHazards {
                 hi = Math.max(hi, along);
             }
         }
-        if (matched < 2 || hi <= lo) return null;
+        if (matched < 2 || hi <= lo) return new int[0];
         return new int[]{(int) Math.floor(lo), (int) Math.ceil(hi)};
     }
 
@@ -149,7 +149,7 @@ public final class RouteHazards {
         for (double[][] way : tunnelWays) {
             if (way == null) continue;
             int[] range = tunnelRange(way, lats, lons, distances, n, cosLat);
-            if (range != null) raw.add(range);
+            if (range.length > 0) raw.add(range);
         }
         List<Hazard> out = new ArrayList<>();
         for (int[] r : mergeRanges(raw)) out.add(new Hazard(r[0], r[1], TYPE_TUNNEL));
@@ -157,11 +157,11 @@ public final class RouteHazards {
     }
 
     /**
-     * Packs hazards into the wire {@code hz} array, sorted by start; null when there are none.
+     * Packs hazards into the wire {@code hz} array, sorted by start; empty when there are none.
      * Keeps at most {@link #MAX_WIRE_HAZARDS} (the first ones along the route).
      */
     public static int[] pack(List<Hazard> hazards) {
-        if (hazards == null || hazards.isEmpty()) return null;
+        if (hazards == null || hazards.isEmpty()) return new int[0];
         List<Hazard> sorted = new ArrayList<>(hazards);
         Collections.sort(sorted, (a, b) -> a.startM != b.startM
                 ? Integer.compare(a.startM, b.startM) : Integer.compare(a.type, b.type));

@@ -64,17 +64,71 @@ public final class GoalEventProgress {
         public final List<Week> weeks;
         public final String advice;
 
-        Result(long daysLeft, Phase phase, double longestRideKm, double mostElevationM,
-               double distanceReadiness, double elevationReadiness, List<Week> weeks,
-               String advice) {
-            this.daysLeft = daysLeft;
-            this.phase = phase;
-            this.longestRideKm = longestRideKm;
-            this.mostElevationM = mostElevationM;
-            this.distanceReadiness = distanceReadiness;
-            this.elevationReadiness = elevationReadiness;
-            this.weeks = weeks;
-            this.advice = advice;
+        private Result(Builder b) {
+            this.daysLeft = b.daysLeft;
+            this.phase = b.phase;
+            this.longestRideKm = b.longestRideKm;
+            this.mostElevationM = b.mostElevationM;
+            this.distanceReadiness = b.distanceReadiness;
+            this.elevationReadiness = b.elevationReadiness;
+            this.weeks = b.weeks;
+            this.advice = b.advice;
+        }
+
+        /** Builds a {@link Result}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private long daysLeft;
+            private Phase phase;
+            private double longestRideKm;
+            private double mostElevationM;
+            private double distanceReadiness;
+            private double elevationReadiness;
+            private List<Week> weeks;
+            private String advice;
+
+            public Builder daysLeft(long daysLeft) {
+                this.daysLeft = daysLeft;
+                return this;
+            }
+
+            public Builder phase(Phase phase) {
+                this.phase = phase;
+                return this;
+            }
+
+            public Builder longestRideKm(double longestRideKm) {
+                this.longestRideKm = longestRideKm;
+                return this;
+            }
+
+            public Builder mostElevationM(double mostElevationM) {
+                this.mostElevationM = mostElevationM;
+                return this;
+            }
+
+            public Builder distanceReadiness(double distanceReadiness) {
+                this.distanceReadiness = distanceReadiness;
+                return this;
+            }
+
+            public Builder elevationReadiness(double elevationReadiness) {
+                this.elevationReadiness = elevationReadiness;
+                return this;
+            }
+
+            public Builder weeks(List<Week> weeks) {
+                this.weeks = weeks;
+                return this;
+            }
+
+            public Builder advice(String advice) {
+                this.advice = advice;
+                return this;
+            }
+
+            public Result build() {
+                return new Result(this);
+            }
         }
     }
 
@@ -129,9 +183,16 @@ public final class GoalEventProgress {
         }
         double distReady = ratio(longestKm, event.distanceKm);
         double hmReady = ratio(mostHm, event.elevationM);
-        return new Result(daysLeft, phase, longestKm, mostHm, distReady, hmReady,
-                Collections.unmodifiableList(weeks),
-                advice(phase, event, distReady, hmReady));
+        return new Result.Builder()
+                .daysLeft(daysLeft)
+                .phase(phase)
+                .longestRideKm(longestKm)
+                .mostElevationM(mostHm)
+                .distanceReadiness(distReady)
+                .elevationReadiness(hmReady)
+                .weeks(Collections.unmodifiableList(weeks))
+                .advice(advice(phase, event, distReady, hmReady))
+                .build();
     }
 
     private static String advice(Phase phase, GoalEvent e, double distReady, double hmReady) {

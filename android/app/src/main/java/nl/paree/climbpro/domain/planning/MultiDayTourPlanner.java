@@ -333,8 +333,16 @@ public final class MultiDayTourPlanner {
             }
         }
         boolean exceeds = request.maxElevationPerDayM > 0 && hm > request.maxElevationPerDayM;
-        return new TourDay(dayNumber, stops, hm, length, (int) Math.round(transfer),
-                seconds, timeComplete, exceeds);
+        return new TourDay.Builder()
+                .dayNumber(dayNumber)
+                .stops(stops)
+                .elevationGainM(hm)
+                .climbLengthM(length)
+                .transferMetersHemelsbreed((int) Math.round(transfer))
+                .climbSeconds(seconds)
+                .climbTimeComplete(timeComplete)
+                .exceedsMaxElevation(exceeds)
+                .build();
     }
 
     private static boolean allHaveTime(List<TourStop> stops) {

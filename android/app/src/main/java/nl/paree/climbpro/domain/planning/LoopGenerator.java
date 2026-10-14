@@ -70,17 +70,71 @@ public final class LoopGenerator {
         final double score;
         private final Supplier<List<RoutePoint>> geometry;
 
-        Suggestion(Kind kind, List<String> routeIds, List<String> routeNames, double lengthM,
-                   double approachM, double targetM, double penalty,
-                   Supplier<List<RoutePoint>> geometry) {
-            this.kind = kind;
-            this.routeIds = Collections.unmodifiableList(routeIds);
-            this.routeNames = Collections.unmodifiableList(routeNames);
-            this.lengthM = lengthM;
-            this.approachM = approachM;
-            this.deviation = Math.abs(lengthM - targetM) / targetM;
-            this.score = deviation + penalty;
-            this.geometry = geometry;
+        private Suggestion(Builder b) {
+            this.kind = b.kind;
+            this.routeIds = Collections.unmodifiableList(b.routeIds);
+            this.routeNames = Collections.unmodifiableList(b.routeNames);
+            this.lengthM = b.lengthM;
+            this.approachM = b.approachM;
+            this.deviation = Math.abs(b.lengthM - b.targetM) / b.targetM;
+            this.score = deviation + b.penalty;
+            this.geometry = b.geometry;
+        }
+
+        /** Builds a {@link Suggestion}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private Kind kind;
+            private List<String> routeIds;
+            private List<String> routeNames;
+            private double lengthM;
+            private double approachM;
+            private double targetM;
+            private double penalty;
+            private Supplier<List<RoutePoint>> geometry;
+
+            public Builder kind(Kind kind) {
+                this.kind = kind;
+                return this;
+            }
+
+            public Builder routeIds(List<String> routeIds) {
+                this.routeIds = routeIds;
+                return this;
+            }
+
+            public Builder routeNames(List<String> routeNames) {
+                this.routeNames = routeNames;
+                return this;
+            }
+
+            public Builder lengthM(double lengthM) {
+                this.lengthM = lengthM;
+                return this;
+            }
+
+            public Builder approachM(double approachM) {
+                this.approachM = approachM;
+                return this;
+            }
+
+            public Builder targetM(double targetM) {
+                this.targetM = targetM;
+                return this;
+            }
+
+            public Builder penalty(double penalty) {
+                this.penalty = penalty;
+                return this;
+            }
+
+            public Builder geometry(Supplier<List<RoutePoint>> geometry) {
+                this.geometry = geometry;
+                return this;
+            }
+
+            public Suggestion build() {
+                return new Suggestion(this);
+            }
         }
 
         /** Geometry from the start point round to the start point, distances recomputed. */
@@ -129,14 +183,30 @@ public final class LoopGenerator {
         boolean loop = CumulativeDistance.haversine(first.lat, first.lon, last.lat, last.lon)
                 <= LOOP_CLOSE_M;
         if (!loop) {
-            addOutAndBack(all, s, s.points, k, approach, startLat, startLon, targetM);
+            addOutAndBack(new OutAndBackLeg()
+                    .out(all)
+                    .s(s)
+                    .pts(s.points)
+                    .k(k)
+                    .approach(approach)
+                    .lat(startLat)
+                    .lon(startLon)
+                    .targetM(targetM));
             return null;
         }
         List<RoutePoint> rotated = rotate(s.points, k);
         Anchored a = new Anchored(s, rotated, approach);
         addLoop(all, a, startLat, startLon, targetM);
         addShortened(all, a, startLat, startLon, targetM);
-        addOutAndBack(all, s, rotated, 0, approach, startLat, startLon, targetM);
+        addOutAndBack(new OutAndBackLeg()
+                .out(all)
+                .s(s)
+                .pts(rotated)
+                .k(0)
+                .approach(approach)
+                .lat(startLat)
+                .lon(startLon)
+                .targetM(targetM));
         return a;
     }
 
@@ -175,9 +245,16 @@ public final class LoopGenerator {
 
     private static void addLoop(List<Suggestion> out, Anchored a, double lat, double lon,
                                 double targetM) {
-        out.add(new Suggestion(Kind.LOOP, list(a.source.routeId), list(a.source.name),
-                a.lengthM + 2 * a.approachM, 2 * a.approachM, targetM, 0,
-                () -> wrap(lat, lon, a.rotated)));
+        out.add(new Suggestion.Builder()
+                .kind(Kind.LOOP)
+                .routeIds(list(a.source.routeId))
+                .routeNames(list(a.source.name))
+                .lengthM(a.lengthM + 2 * a.approachM)
+                .approachM(2 * a.approachM)
+                .targetM(targetM)
+                .penalty(0)
+                .geometry(() -> wrap(lat, lon, a.rotated))
+                .build());
     }
 
     private static void addShortened(List<Suggestion> out, Anchored a, double lat, double lon,
@@ -205,63 +282,83 @@ public final class LoopGenerator {
         }
         if (best == null) return;
         final RouteShortener.Variant chosen = best;
-        out.add(new Suggestion(Kind.SHORTENED_LOOP, list(a.source.routeId), list(a.source.name),
-                chosen.newLengthM + 2 * a.approachM, 2 * a.approachM, targetM, SHORTENED_PENALTY,
-                () -> wrap(lat, lon,
-                        RouteShortener.apply(a.rotated, chosen.fromIndex, chosen.toIndex))));
+        out.add(new Suggestion.Builder()
+                .kind(Kind.SHORTENED_LOOP)
+                .routeIds(list(a.source.routeId))
+                .routeNames(list(a.source.name))
+                .lengthM(chosen.newLengthM + 2 * a.approachM)
+                .approachM(2 * a.approachM)
+                .targetM(targetM)
+                .penalty(SHORTENED_PENALTY)
+                .geometry(() -> wrap(lat, lon, RouteShortener.apply(a.rotated, chosen.fromIndex, chosen.toIndex)))
+                .build());
     }
 
     private static void addCombined(List<Suggestion> out, Anchored a, Anchored b, double lat,
                                     double lon, double targetM) {
         if (a.source.routeId.equals(b.source.routeId)) return;
         double approach = 2 * a.approachM + 2 * b.approachM;
-        out.add(new Suggestion(Kind.COMBINED, list(a.source.routeId, b.source.routeId),
-                list(a.source.name, b.source.name), a.lengthM + b.lengthM + approach, approach,
-                targetM, COMBINED_PENALTY, () -> {
+        out.add(new Suggestion.Builder()
+                .kind(Kind.COMBINED)
+                .routeIds(list(a.source.routeId, b.source.routeId))
+                .routeNames(list(a.source.name, b.source.name))
+                .lengthM(a.lengthM + b.lengthM + approach)
+                .approachM(approach)
+                .targetM(targetM)
+                .penalty(COMBINED_PENALTY)
+                .geometry(() -> {
                     List<RoutePoint> joined = new ArrayList<>(wrap(lat, lon, a.rotated));
                     List<RoutePoint> second = wrap(lat, lon, b.rotated);
                     joined.addAll(second.subList(1, second.size())); // shared start point
                     return CumulativeDistance.compute(joined);
-                }));
+                })
+                .build());
     }
 
     /**
      * Out-and-back from index {@code k}: forward when the route has enough length ahead of
      * {@code k}, otherwise backward, turning at half of what's left after the approach.
      */
-    private static void addOutAndBack(List<Suggestion> out, Source s, List<RoutePoint> pts, int k,
-                                      double approach, double lat, double lon, double targetM) {
-        double leg = (targetM - 2 * approach) / 2;
+    private static void addOutAndBack(OutAndBackLeg in) {
+        double leg = (in.targetM - 2 * in.approach) / 2;
         if (leg < MIN_LEG_M) return;
-        double total = pts.get(pts.size() - 1).distance;
-        double startDist = pts.get(k).distance;
+        double total = in.pts.get(in.pts.size() - 1).distance;
+        double startDist = in.pts.get(in.k).distance;
         List<RoutePoint> path;
         if (total - startDist >= leg) {
-            int m = k;
-            while (m < pts.size() - 1 && pts.get(m).distance - startDist < leg) m++;
-            path = new ArrayList<>(pts.subList(k, m + 1));
+            int m = in.k;
+            while (m < in.pts.size() - 1 && in.pts.get(m).distance - startDist < leg) m++;
+            path = new ArrayList<>(in.pts.subList(in.k, m + 1));
         } else if (startDist >= leg) {
-            int m = k;
-            while (m > 0 && startDist - pts.get(m).distance < leg) m--;
-            path = new ArrayList<>(pts.subList(m, k + 1));
+            int m = in.k;
+            while (m > 0 && startDist - in.pts.get(m).distance < leg) m--;
+            path = new ArrayList<>(in.pts.subList(m, in.k + 1));
             Collections.reverse(path);
         } else {
             // Route too short either way: ride the longer side to its end and back.
             path = total - startDist >= startDist
-                    ? new ArrayList<>(pts.subList(k, pts.size()))
-                    : reversed(pts.subList(0, k + 1));
+                    ? new ArrayList<>(in.pts.subList(in.k, in.pts.size()))
+                    : reversed(in.pts.subList(0, in.k + 1));
         }
         List<RoutePoint> there = CumulativeDistance.compute(path);
         double legM = there.get(there.size() - 1).distance;
         if (legM < MIN_LEG_M) return;
         final List<RoutePoint> outLeg = path;
-        out.add(new Suggestion(Kind.OUT_AND_BACK, list(s.routeId), list(s.name),
-                2 * legM + 2 * approach, 2 * approach, targetM, OUT_AND_BACK_PENALTY, () -> {
+        in.out.add(new Suggestion.Builder()
+                .kind(Kind.OUT_AND_BACK)
+                .routeIds(list(in.s.routeId))
+                .routeNames(list(in.s.name))
+                .lengthM(2 * legM + 2 * in.approach)
+                .approachM(2 * in.approach)
+                .targetM(in.targetM)
+                .penalty(OUT_AND_BACK_PENALTY)
+                .geometry(() -> {
                     List<RoutePoint> both = new ArrayList<>(outLeg);
                     List<RoutePoint> back = reversed(outLeg);
                     both.addAll(back.subList(1, back.size()));
-                    return wrap(lat, lon, both);
-                }));
+                    return wrap(in.lat, in.lon, both);
+                })
+                .build());
     }
 
     /** Loop {@code pts} restarted at index {@code k}; the duplicate closing point is dropped. */
@@ -304,5 +401,57 @@ public final class LoopGenerator {
         List<String> l = new ArrayList<>();
         Collections.addAll(l, items);
         return l;
+    }
+
+    /** Arguments of {@link #addOutAndBack}. */
+    public static final class OutAndBackLeg {
+        List<Suggestion> out;
+        Source s;
+        List<RoutePoint> pts;
+        int k;
+        double approach;
+        double lat;
+        double lon;
+        double targetM;
+
+        public OutAndBackLeg out(List<Suggestion> out) {
+            this.out = out;
+            return this;
+        }
+
+        public OutAndBackLeg s(Source s) {
+            this.s = s;
+            return this;
+        }
+
+        public OutAndBackLeg pts(List<RoutePoint> pts) {
+            this.pts = pts;
+            return this;
+        }
+
+        public OutAndBackLeg k(int k) {
+            this.k = k;
+            return this;
+        }
+
+        public OutAndBackLeg approach(double approach) {
+            this.approach = approach;
+            return this;
+        }
+
+        public OutAndBackLeg lat(double lat) {
+            this.lat = lat;
+            return this;
+        }
+
+        public OutAndBackLeg lon(double lon) {
+            this.lon = lon;
+            return this;
+        }
+
+        public OutAndBackLeg targetM(double targetM) {
+            this.targetM = targetM;
+            return this;
+        }
     }
 }

@@ -40,24 +40,19 @@ public final class CombinedRefTimePlanner {
         int[][] manual = ManualRefTimePlanner.plan(route);
         int[][] ownPr = RouteRefTimePlanner.plan(route, attempts);
         int[][] ghost = TargetSpeedRefTimePlanner.plan(route, ghostTarget);
-        if (manual == null && ownPr == null && ghost == null) return null;
+        if (manual.length == 0 && ownPr.length == 0 && ghost.length == 0) return new int[0][];
 
-        int n = firstNonNull(manual, ownPr, ghost).length;
+        int n = Math.max(manual.length, Math.max(ownPr.length, ghost.length));
         int[][] merged = new int[n][];
         for (int i = 0; i < n; i++) {
-            if (manual != null && manual[i] != null) {
+            if (i < manual.length && manual[i] != null) {
                 merged[i] = manual[i];
-            } else if (ownPr != null && ownPr[i] != null) {
+            } else if (i < ownPr.length && ownPr[i] != null) {
                 merged[i] = ownPr[i];
-            } else if (ghost != null) {
+            } else if (i < ghost.length) {
                 merged[i] = ghost[i];
             }
         }
         return merged;
-    }
-
-    private static int[][] firstNonNull(int[][] a, int[][] b, int[][] c) {
-        if (a != null) return a;
-        return b != null ? b : c;
     }
 }

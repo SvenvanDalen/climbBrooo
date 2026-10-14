@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Point;
+import nl.paree.climbpro.ui.ChartArea;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,14 +83,7 @@ public final class RecoveryTrendChartView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = (int) (width * 0.5f);
-        int mode = MeasureSpec.getMode(heightMeasureSpec);
-        if (mode == MeasureSpec.EXACTLY) {
-            height = MeasureSpec.getSize(heightMeasureSpec);
-        } else if (mode == MeasureSpec.AT_MOST) {
-            height = Math.min(height, MeasureSpec.getSize(heightMeasureSpec));
-        }
-        setMeasuredDimension(width, height);
+        setMeasuredDimension(width, ChartArea.measuredHeight(width, heightMeasureSpec, 0.5f));
     }
 
     @Override
@@ -102,6 +96,7 @@ public final class RecoveryTrendChartView extends View {
         float right = getWidth() - PAD_RIGHT * density;
         float top = PAD_TOP * density;
         float bottom = getHeight() - PAD_BOTTOM * density;
+        ChartArea area = new ChartArea(left, top, right, bottom);
 
         for (int v = 0; v <= (int) AXIS_MAX; v += 5) {
             float yy = y((float) v, top, bottom);
@@ -110,23 +105,23 @@ public final class RecoveryTrendChartView extends View {
                     yy + labelPaint.getTextSize() / 3, labelPaint);
         }
 
-        drawSeries(canvas, true, COLOR_RPE, left, right, top, bottom, density);
-        drawSeries(canvas, false, COLOR_SLEEP, left, right, top, bottom, density);
+        drawSeries(canvas, true, COLOR_RPE, area, density);
+        drawSeries(canvas, false, COLOR_SLEEP, area, density);
     }
 
-    private void drawSeries(Canvas canvas, boolean rpe, int color, float left, float right,
-                            float top, float bottom, float density) {
+    private void drawSeries(Canvas canvas, boolean rpe, int color, ChartArea area,
+                            float density) {
         path.reset();
         int n = points.size();
-        float step = n > 1 ? (right - left) / (n - 1) : 0f;
+        float step = n > 1 ? (area.right - area.left) / (n - 1) : 0f;
         float scale = AXIS_MAX / (rpe ? RecoveryTrendAnalyzer.MAX_RPE
                 : RecoveryTrendAnalyzer.MAX_SLEEP);
         linePaint.setColor(color);
         dotPaint.setColor(color);
         for (int i = 0; i < n; i++) {
             Point p = points.get(i);
-            float x = n > 1 ? left + i * step : (left + right) / 2f;
-            float yy = y((rpe ? p.rpe : p.sleepQuality) * scale, top, bottom);
+            float x = n > 1 ? area.left + i * step : (area.left + area.right) / 2f;
+            float yy = y((rpe ? p.rpe : p.sleepQuality) * scale, area.top, area.bottom);
             if (i == 0) path.moveTo(x, yy);
             else path.lineTo(x, yy);
             canvas.drawCircle(x, yy, 3f * density, dotPaint);

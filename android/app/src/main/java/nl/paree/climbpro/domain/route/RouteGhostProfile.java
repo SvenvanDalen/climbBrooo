@@ -101,7 +101,7 @@ public final class RouteGhostProfile {
     }
 
     /**
-     * Seconds the ride spent on every step of the route, or null when the track does not ride
+     * Seconds the ride spent on every step of the route, or empty when the track does not ride
      * the whole route in order. Each separate pass of the route start (up to
      * {@link #MAX_START_PASSES}) is tried as the start, so a loop ridden twice or a ride that
      * passes the start before beginning the route still yields its fastest full lap.
@@ -117,7 +117,7 @@ public final class RouteGhostProfile {
             int passEnd = endOfPass(track, line.lats[0], line.lons[0], first);
             int start = closestInPass(track, line.lats[0], line.lons[0], first, passEnd);
             int[] secs = follow(line, track, start);
-            if (secs != null) {
+            if (secs.length > 0) {
                 long total = sum(secs);
                 if (total < bestTotal) {
                     best = secs;
@@ -129,13 +129,13 @@ public final class RouteGhostProfile {
         return best;
     }
 
-    /** {@code [stepM, s1..sn]} for the wire, or null when the profile is unusable. */
+    /** {@code [stepM, s1..sn]} for the wire, or empty when the profile is unusable. */
     public static int[] wire(int stepM, int[] stepSec) {
-        if (stepM <= 0 || stepSec == null || stepSec.length == 0) return null;
+        if (stepM <= 0 || stepSec == null || stepSec.length == 0) return new int[0];
         int[] out = new int[stepSec.length + 1];
         out[0] = stepM;
         for (int i = 0; i < stepSec.length; i++) {
-            if (stepSec[i] < 0) return null;
+            if (stepSec[i] < 0) return new int[0];
             out[i + 1] = stepSec[i];
         }
         return out;
@@ -163,13 +163,13 @@ public final class RouteGhostProfile {
         int prev = start;
         for (int k = 1; k <= steps; k++) {
             int hit = firstWithin(track, line.lats[k], line.lons[k], prev + 1);
-            if (hit < 0) return null;
+            if (hit < 0) return new int[0];
             int end = endOfPass(track, line.lats[k], line.lons[k], hit);
             int idx = closestInPass(track, line.lats[k], line.lons[k], hit, end);
             secs[k - 1] = movingSeconds(track, prev, idx);
             prev = idx;
         }
-        return sum(secs) > 0 ? secs : null;
+        return sum(secs) > 0 ? secs : new int[0];
     }
 
     /** Timer seconds between two samples; recorder pauses (long gaps) count as zero. */

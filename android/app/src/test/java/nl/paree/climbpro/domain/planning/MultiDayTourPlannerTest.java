@@ -28,7 +28,17 @@ public class MultiDayTourPlannerTest {
     }
 
     private static TourStop at(String key, double lon, int hm, Integer seconds) {
-        return new TourStop(key, "Klim " + key, LAT, lon, LAT, lon, hm, 5000, seconds);
+        return new TourStop.Builder()
+                .key(key)
+                .name("Klim " + key)
+                .startLat(LAT)
+                .startLon(lon)
+                .endLat(LAT)
+                .endLon(lon)
+                .elevationGainM(hm)
+                .lengthM(5000)
+                .climbSeconds(seconds)
+                .build();
     }
 
     private static Request req(int days) {
@@ -165,9 +175,39 @@ public class MultiDayTourPlannerTest {
     public void ordering_respectsClimbDirection() {
         // Chain: z runs 6.00→6.10, y runs 6.10→6.20, x runs 6.20→6.30. Keys sort x,y,z so the
         // canonical order is reversed; asymmetric top→foot costs must still yield z, y, x.
-        TourStop x = new TourStop("x", "x", LAT, 6.20, LAT, 6.30, 500, 8000, null);
-        TourStop y = new TourStop("y", "y", LAT, 6.10, LAT, 6.20, 500, 8000, null);
-        TourStop z = new TourStop("z", "z", LAT, 6.00, LAT, 6.10, 500, 8000, null);
+        TourStop x = new TourStop.Builder()
+                .key("x")
+                .name("x")
+                .startLat(LAT)
+                .startLon(6.20)
+                .endLat(LAT)
+                .endLon(6.30)
+                .elevationGainM(500)
+                .lengthM(8000)
+                .climbSeconds(null)
+                .build();
+        TourStop y = new TourStop.Builder()
+                .key("y")
+                .name("y")
+                .startLat(LAT)
+                .startLon(6.10)
+                .endLat(LAT)
+                .endLon(6.20)
+                .elevationGainM(500)
+                .lengthM(8000)
+                .climbSeconds(null)
+                .build();
+        TourStop z = new TourStop.Builder()
+                .key("z")
+                .name("z")
+                .startLat(LAT)
+                .startLon(6.00)
+                .endLat(LAT)
+                .endLon(6.10)
+                .elevationGainM(500)
+                .lengthM(8000)
+                .climbSeconds(null)
+                .build();
         MultiDayTourPlan plan = MultiDayTourPlanner.plan(Arrays.asList(x, y, z), req(1));
         assertEquals(Arrays.asList("z", "y", "x"), keys(plan));
         assertEquals(0, plan.days.get(0).transferMetersHemelsbreed);
@@ -180,8 +220,17 @@ public class MultiDayTourPlannerTest {
         for (int i = 0; i < 12; i++) {
             double lat = 45 + rnd.nextDouble() * 0.5;
             double lon = 6 + rnd.nextDouble() * 0.5;
-            stops.add(new TourStop("s" + i, "s" + i, lat, lon, lat + 0.01, lon + 0.01,
-                    200 + rnd.nextInt(1200), 6000, null));
+            stops.add(new TourStop.Builder()
+                    .key("s" + i)
+                    .name("s" + i)
+                    .startLat(lat)
+                    .startLon(lon)
+                    .endLat(lat + 0.01)
+                    .endLon(lon + 0.01)
+                    .elevationGainM(200 + rnd.nextInt(1200))
+                    .lengthM(6000)
+                    .climbSeconds(null)
+                    .build());
         }
         MultiDayTourPlan reference = MultiDayTourPlanner.plan(stops, req(4));
         for (int seed = 0; seed < 10; seed++) {

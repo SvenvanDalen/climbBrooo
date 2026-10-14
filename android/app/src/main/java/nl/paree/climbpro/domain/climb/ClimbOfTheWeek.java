@@ -64,39 +64,33 @@ public final class ClimbOfTheWeek {
     /** Overall weather outlook for the week, from its best day. */
     public enum Outlook { GOOD, MIXED, POOR }
 
-    /** A known climb that may be suggested. Coordinates in degrees. */
-    public static final class Candidate {
-        /** Route-independent identity ({@link ClimbIdentity}); used for dedupe and pinning. */
-        public final String climbId;
-        public final String routeId;
-        public final int    climbIndex;
-        public final String name;
-        public final double startLat;
-        public final double startLon;
-        public final int    elevationGainM;
-        /** Average gradient as a fraction (0.072 = 7.2 %). */
-        public final double avgGradient;
-        public final int    lengthM;
+    /** A known climb that may be suggested. */
+    public static final class Candidate extends ClimbCandidate {
         /** Local epoch day of the last attempt; null when never ridden. */
-        public final Long   lastRiddenEpochDay;
+        public final Long lastRiddenEpochDay;
 
-        public Candidate(String climbId, String routeId, int climbIndex, String name,
-                         double startLat, double startLon, int elevationGainM,
-                         double avgGradient, int lengthM, Long lastRiddenEpochDay) {
-            this.climbId            = climbId;
-            this.routeId            = routeId;
-            this.climbIndex         = climbIndex;
-            this.name               = name;
-            this.startLat           = startLat;
-            this.startLon           = startLon;
-            this.elevationGainM     = elevationGainM;
-            this.avgGradient        = avgGradient;
-            this.lengthM            = lengthM;
-            this.lastRiddenEpochDay = lastRiddenEpochDay;
+        private Candidate(Builder b) {
+            super(b);
+            this.lastRiddenEpochDay = b.lastRiddenEpochDay;
         }
 
-        String key() {
-            return climbId != null ? climbId : ("route:" + routeId + "#" + climbIndex);
+        /** Builds a {@link Candidate}; every value defaults to Java's default for its type. */
+        public static final class Builder extends ClimbCandidate.Builder<Builder> {
+            private Long lastRiddenEpochDay;
+
+            public Builder lastRiddenEpochDay(Long lastRiddenEpochDay) {
+                this.lastRiddenEpochDay = lastRiddenEpochDay;
+                return this;
+            }
+
+            @Override
+            protected Builder self() {
+                return this;
+            }
+
+            public Candidate build() {
+                return new Candidate(this);
+            }
         }
     }
 
@@ -119,19 +113,85 @@ public final class ClimbOfTheWeek {
         /** Pinned climb that was ridden on or after this week's Monday. */
         public final boolean   completedThisWeek;
 
-        Suggestion(Candidate candidate, double score, double distanceM, boolean distanceUsed,
-                   Integer daysSinceRidden, boolean weatherUsed, DailyForecast.Day bestDay,
-                   Outlook outlook, boolean pinned, boolean completedThisWeek) {
-            this.candidate         = candidate;
-            this.score             = score;
-            this.distanceM         = distanceM;
-            this.distanceUsed      = distanceUsed;
-            this.daysSinceRidden   = daysSinceRidden;
-            this.weatherUsed       = weatherUsed;
-            this.bestDay           = bestDay;
-            this.outlook           = outlook;
-            this.pinned            = pinned;
-            this.completedThisWeek = completedThisWeek;
+        private Suggestion(Builder b) {
+            this.candidate         = b.candidate;
+            this.score             = b.score;
+            this.distanceM         = b.distanceM;
+            this.distanceUsed      = b.distanceUsed;
+            this.daysSinceRidden   = b.daysSinceRidden;
+            this.weatherUsed       = b.weatherUsed;
+            this.bestDay           = b.bestDay;
+            this.outlook           = b.outlook;
+            this.pinned            = b.pinned;
+            this.completedThisWeek = b.completedThisWeek;
+        }
+
+        /** Builds a {@link Suggestion}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private Candidate candidate;
+            private double score;
+            private double distanceM;
+            private boolean distanceUsed;
+            private Integer daysSinceRidden;
+            private boolean weatherUsed;
+            private DailyForecast.Day bestDay;
+            private Outlook outlook;
+            private boolean pinned;
+            private boolean completedThisWeek;
+
+            public Builder candidate(Candidate candidate) {
+                this.candidate = candidate;
+                return this;
+            }
+
+            public Builder score(double score) {
+                this.score = score;
+                return this;
+            }
+
+            public Builder distanceM(double distanceM) {
+                this.distanceM = distanceM;
+                return this;
+            }
+
+            public Builder distanceUsed(boolean distanceUsed) {
+                this.distanceUsed = distanceUsed;
+                return this;
+            }
+
+            public Builder daysSinceRidden(Integer daysSinceRidden) {
+                this.daysSinceRidden = daysSinceRidden;
+                return this;
+            }
+
+            public Builder weatherUsed(boolean weatherUsed) {
+                this.weatherUsed = weatherUsed;
+                return this;
+            }
+
+            public Builder bestDay(DailyForecast.Day bestDay) {
+                this.bestDay = bestDay;
+                return this;
+            }
+
+            public Builder outlook(Outlook outlook) {
+                this.outlook = outlook;
+                return this;
+            }
+
+            public Builder pinned(boolean pinned) {
+                this.pinned = pinned;
+                return this;
+            }
+
+            public Builder completedThisWeek(boolean completedThisWeek) {
+                this.completedThisWeek = completedThisWeek;
+                return this;
+            }
+
+            public Suggestion build() {
+                return new Suggestion(this);
+            }
         }
     }
 
@@ -181,41 +241,68 @@ public final class ClimbOfTheWeek {
         List<Suggestion> out = new ArrayList<>();
         for (Candidate c : pool) {
             if (c == pinned) continue;
-            out.add(score(c, originLat, originLon, haveOrigin, today, best, outlook,
-                    maxDifficulty, week, false, false));
+            out.add(score(new ScoreInput()
+                    .c(c)
+                    .originLat(originLat)
+                    .originLon(originLon)
+                    .haveOrigin(haveOrigin)
+                    .today(today)
+                    .best(best)
+                    .outlook(outlook)
+                    .maxDifficulty(maxDifficulty)
+                    .week(week)
+                    .pinned(false)
+                    .done(false)));
         }
         Collections.sort(out, ORDER);
         if (pinned != null) {
             boolean done = pinned.lastRiddenEpochDay != null
                     && pinned.lastRiddenEpochDay >= monday.toEpochDay();
-            out.add(0, score(pinned, originLat, originLon, haveOrigin, today, best, outlook,
-                    maxDifficulty, week, true, done));
+            out.add(0, score(new ScoreInput()
+                    .c(pinned)
+                    .originLat(originLat)
+                    .originLon(originLon)
+                    .haveOrigin(haveOrigin)
+                    .today(today)
+                    .best(best)
+                    .outlook(outlook)
+                    .maxDifficulty(maxDifficulty)
+                    .week(week)
+                    .pinned(true)
+                    .done(done)));
         }
         return out;
     }
 
-    private static Suggestion score(Candidate c, double originLat, double originLon,
-                                    boolean haveOrigin, LocalDate today, DailyForecast.Day best,
-                                    Outlook outlook, double maxDifficulty, String week,
-                                    boolean pinned, boolean done) {
-        Integer days = daysSince(c, today);
+    private static Suggestion score(ScoreInput in) {
+        Integer days = daysSince(in.c, in.today);
         double sum = W_FRESHNESS * freshness(days);
         double weights = W_FRESHNESS;
 
         double d = Double.NaN;
-        if (haveOrigin) {
-            d = distance(originLat, originLon, c);
+        if (in.haveOrigin) {
+            d = distance(in.originLat, in.originLon, in.c);
             sum += W_DISTANCE * (1.0 / (1.0 + d / DISTANCE_HALF_M));
             weights += W_DISTANCE;
         }
-        if (outlook != null) {
-            double norm = maxDifficulty > 0 ? difficulty(c) / maxDifficulty : 0.5;
-            sum += W_WEATHER * weatherFit(outlook, norm);
+        if (in.outlook != null) {
+            double norm = in.maxDifficulty > 0 ? difficulty(in.c) / in.maxDifficulty : 0.5;
+            sum += W_WEATHER * weatherFit(in.outlook, norm);
             weights += W_WEATHER;
         }
-        double score = sum / weights + JITTER_WEIGHT * jitter(week, c.key());
-        return new Suggestion(c, score, d, haveOrigin, days, outlook != null, best, outlook,
-                pinned, done);
+        double score = sum / weights + JITTER_WEIGHT * jitter(in.week, in.c.key());
+        return new Suggestion.Builder()
+                .candidate(in.c)
+                .score(score)
+                .distanceM(d)
+                .distanceUsed(in.haveOrigin)
+                .daysSinceRidden(days)
+                .weatherUsed(in.outlook != null)
+                .bestDay(in.best)
+                .outlook(in.outlook)
+                .pinned(in.pinned)
+                .completedThisWeek(in.done)
+                .build();
     }
 
     static double freshness(Integer daysSince) {
@@ -356,4 +443,74 @@ public final class ClimbOfTheWeek {
         c = an.compareToIgnoreCase(bn);
         return c != 0 ? c : a.candidate.key().compareTo(b.candidate.key());
     };
+
+    /** Arguments of {@link #score}. */
+    public static final class ScoreInput {
+        private Candidate c;
+        private double originLat;
+        private double originLon;
+        private boolean haveOrigin;
+        private LocalDate today;
+        private DailyForecast.Day best;
+        private Outlook outlook;
+        private double maxDifficulty;
+        private String week;
+        private boolean pinned;
+        private boolean done;
+
+        public ScoreInput c(Candidate c) {
+            this.c = c;
+            return this;
+        }
+
+        public ScoreInput originLat(double originLat) {
+            this.originLat = originLat;
+            return this;
+        }
+
+        public ScoreInput originLon(double originLon) {
+            this.originLon = originLon;
+            return this;
+        }
+
+        public ScoreInput haveOrigin(boolean haveOrigin) {
+            this.haveOrigin = haveOrigin;
+            return this;
+        }
+
+        public ScoreInput today(LocalDate today) {
+            this.today = today;
+            return this;
+        }
+
+        public ScoreInput best(DailyForecast.Day best) {
+            this.best = best;
+            return this;
+        }
+
+        public ScoreInput outlook(Outlook outlook) {
+            this.outlook = outlook;
+            return this;
+        }
+
+        public ScoreInput maxDifficulty(double maxDifficulty) {
+            this.maxDifficulty = maxDifficulty;
+            return this;
+        }
+
+        public ScoreInput week(String week) {
+            this.week = week;
+            return this;
+        }
+
+        public ScoreInput pinned(boolean pinned) {
+            this.pinned = pinned;
+            return this;
+        }
+
+        public ScoreInput done(boolean done) {
+            this.done = done;
+            return this;
+        }
+    }
 }

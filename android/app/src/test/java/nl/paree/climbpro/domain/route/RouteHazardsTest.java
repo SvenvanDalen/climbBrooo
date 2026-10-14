@@ -9,7 +9,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /** Issue #203: technical descents from geometry, OSM tunnels projected onto the route. */
@@ -118,7 +117,7 @@ public class RouteHazardsTest {
         h.add(new RouteHazards.Hazard(5000, 6000, RouteHazards.TYPE_DESCENT));
         h.add(new RouteHazards.Hazard(1200, 1450, RouteHazards.TYPE_TUNNEL));
         assertArrayEquals(new int[]{1200, 1450, 0, 5000, 6000, 1}, RouteHazards.pack(h));
-        assertNull(RouteHazards.pack(new ArrayList<>()));
+        assertEquals(0, RouteHazards.pack(new ArrayList<>()).length);
 
         List<RouteHazards.Hazard> many = new ArrayList<>();
         for (int i = 0; i < 40; i++) many.add(new RouteHazards.Hazard(i * 1000, i * 1000 + 100, 0));

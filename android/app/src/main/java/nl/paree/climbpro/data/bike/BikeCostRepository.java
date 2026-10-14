@@ -107,26 +107,24 @@ public final class BikeCostRepository {
      * rides go to, unticking clears that when it was this bike. A Strava gear id can belong to
      * one bike only: another bike holding it loses it.
      */
-    public String saveGarageBike(String id, String name, String type, double weightKg,
-                                 int tyreWidthMm, String chainrings, String cassette,
-                                 String stravaGearId, boolean active, boolean indoor)
+    public String saveGarageBike(GarageBike in)
             throws IOException {
         WRITE_LOCK.lock();
         try {
             BikeCostLog log = load();
-            Bike b = id != null ? findBike(log, id) : null;
+            Bike b = in.id != null ? findBike(log, in.id) : null;
             if (b == null) {
                 b = new Bike();
-                b.id = id != null ? id : UUID.randomUUID().toString();
+                b.id = in.id != null ? in.id : UUID.randomUUID().toString();
                 log.bikes.add(b);
             }
-            b.name         = cleanName(name);
-            b.type         = BikeGarage.cleanType(type);
-            b.weightKg     = cleanWeight(weightKg);
-            b.tyreWidthMm  = cleanTyreWidth(tyreWidthMm);
-            b.chainrings   = cleanText(chainrings);
-            b.cassette     = cleanText(cassette);
-            b.stravaGearId = cleanText(stravaGearId);
+            b.name         = cleanName(in.name);
+            b.type         = BikeGarage.cleanType(in.type);
+            b.weightKg     = cleanWeight(in.weightKg);
+            b.tyreWidthMm  = cleanTyreWidth(in.tyreWidthMm);
+            b.chainrings   = cleanText(in.chainrings);
+            b.cassette     = cleanText(in.cassette);
+            b.stravaGearId = cleanText(in.stravaGearId);
             if (b.stravaGearId != null) {
                 for (Bike other : log.bikes) {
                     if (other != b && b.stravaGearId.equals(other.stravaGearId)) {
@@ -134,8 +132,8 @@ public final class BikeCostRepository {
                     }
                 }
             }
-            if (active || BikeGarage.find(log, log.activeBikeId) == null) log.activeBikeId = b.id;
-            if (indoor) {
+            if (in.active || BikeGarage.find(log, log.activeBikeId) == null) log.activeBikeId = b.id;
+            if (in.indoor) {
                 log.indoorBikeId = b.id;
             } else if (b.id.equals(log.indoorBikeId)) {
                 log.indoorBikeId = null;
@@ -184,27 +182,25 @@ public final class BikeCostRepository {
      * {@code retired} marks the bike out of use from {@code nowEpochSec} (an existing retired
      * date is kept); {@code !retired} puts it back in use.
      */
-    public String upsertBike(String id, String name, long sinceEpochSec,
-                             boolean countArchiveRides, boolean includeVirtualRides,
-                             int extraKm, boolean retired, long nowEpochSec) throws IOException {
+    public String upsertBike(CostBike in) throws IOException {
         WRITE_LOCK.lock();
         try {
             BikeCostLog log = load();
-            Bike b = id != null ? findBike(log, id) : null;
+            Bike b = in.id != null ? findBike(log, in.id) : null;
             if (b == null) {
                 b = new Bike();
-                b.id = id != null ? id : UUID.randomUUID().toString();
+                b.id = in.id != null ? in.id : UUID.randomUUID().toString();
                 log.bikes.add(b);
             }
-            b.name                = cleanName(name);
-            b.sinceEpochSec       = Math.max(0, sinceEpochSec);
-            b.countArchiveRides   = countArchiveRides;
-            b.includeVirtualRides = includeVirtualRides;
-            b.extraKm             = clampKm(extraKm);
-            if (!retired) {
+            b.name                = cleanName(in.name);
+            b.sinceEpochSec       = Math.max(0, in.sinceEpochSec);
+            b.countArchiveRides   = in.countArchiveRides;
+            b.includeVirtualRides = in.includeVirtualRides;
+            b.extraKm             = clampKm(in.extraKm);
+            if (!in.retired) {
                 b.retiredEpochSec = 0;
             } else if (b.retiredEpochSec <= 0) {
-                b.retiredEpochSec = Math.max(0, nowEpochSec);
+                b.retiredEpochSec = Math.max(0, in.nowEpochSec);
             }
             write(log);
             return b.id;
@@ -366,5 +362,121 @@ public final class BikeCostRepository {
         if (active.chainrings != null) ed.putString(PREF_GEAR_CHAINRINGS, active.chainrings);
         if (active.cassette != null) ed.putString(PREF_GEAR_CASSETTE, active.cassette);
         ed.apply();
+    }
+
+    /** Arguments of {@link #saveGarageBike}. */
+    public static final class GarageBike {
+        private String id;
+        private String name;
+        private String type;
+        private double weightKg;
+        private int tyreWidthMm;
+        private String chainrings;
+        private String cassette;
+        private String stravaGearId;
+        private boolean active;
+        private boolean indoor;
+
+        public GarageBike id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public GarageBike name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public GarageBike type(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public GarageBike weightKg(double weightKg) {
+            this.weightKg = weightKg;
+            return this;
+        }
+
+        public GarageBike tyreWidthMm(int tyreWidthMm) {
+            this.tyreWidthMm = tyreWidthMm;
+            return this;
+        }
+
+        public GarageBike chainrings(String chainrings) {
+            this.chainrings = chainrings;
+            return this;
+        }
+
+        public GarageBike cassette(String cassette) {
+            this.cassette = cassette;
+            return this;
+        }
+
+        public GarageBike stravaGearId(String stravaGearId) {
+            this.stravaGearId = stravaGearId;
+            return this;
+        }
+
+        public GarageBike active(boolean active) {
+            this.active = active;
+            return this;
+        }
+
+        public GarageBike indoor(boolean indoor) {
+            this.indoor = indoor;
+            return this;
+        }
+    }
+
+    /** Arguments of {@link #upsertBike}. */
+    public static final class CostBike {
+        private String id;
+        private String name;
+        private long sinceEpochSec;
+        private boolean countArchiveRides;
+        private boolean includeVirtualRides;
+        private int extraKm;
+        private boolean retired;
+        private long nowEpochSec;
+
+        public CostBike id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public CostBike name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public CostBike sinceEpochSec(long sinceEpochSec) {
+            this.sinceEpochSec = sinceEpochSec;
+            return this;
+        }
+
+        public CostBike countArchiveRides(boolean countArchiveRides) {
+            this.countArchiveRides = countArchiveRides;
+            return this;
+        }
+
+        public CostBike includeVirtualRides(boolean includeVirtualRides) {
+            this.includeVirtualRides = includeVirtualRides;
+            return this;
+        }
+
+        public CostBike extraKm(int extraKm) {
+            this.extraKm = extraKm;
+            return this;
+        }
+
+        public CostBike retired(boolean retired) {
+            this.retired = retired;
+            return this;
+        }
+
+        public CostBike nowEpochSec(long nowEpochSec) {
+            this.nowEpochSec = nowEpochSec;
+            return this;
+        }
     }
 }

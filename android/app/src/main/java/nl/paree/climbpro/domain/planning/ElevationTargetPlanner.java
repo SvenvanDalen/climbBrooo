@@ -79,19 +79,85 @@ public final class ElevationTargetPlanner {
         public final int    elevationGainM;
         public final int    lengthM;
 
-        public Candidate(String climbId, String routeId, int climbIndex, String name,
-                         double startLat, double startLon, double endLat, double endLon,
-                         int elevationGainM, int lengthM) {
-            this.climbId        = climbId;
-            this.routeId        = routeId;
-            this.climbIndex     = climbIndex;
-            this.name           = name;
-            this.startLat       = startLat;
-            this.startLon       = startLon;
-            this.endLat         = endLat;
-            this.endLon         = endLon;
-            this.elevationGainM = elevationGainM;
-            this.lengthM        = lengthM;
+        private Candidate(Builder b) {
+            this.climbId        = b.climbId;
+            this.routeId        = b.routeId;
+            this.climbIndex     = b.climbIndex;
+            this.name           = b.name;
+            this.startLat       = b.startLat;
+            this.startLon       = b.startLon;
+            this.endLat         = b.endLat;
+            this.endLon         = b.endLon;
+            this.elevationGainM = b.elevationGainM;
+            this.lengthM        = b.lengthM;
+        }
+
+        /** Builds a {@link Candidate}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private String climbId;
+            private String routeId;
+            private int climbIndex;
+            private String name;
+            private double startLat;
+            private double startLon;
+            private double endLat;
+            private double endLon;
+            private int elevationGainM;
+            private int lengthM;
+
+            public Builder climbId(String climbId) {
+                this.climbId = climbId;
+                return this;
+            }
+
+            public Builder routeId(String routeId) {
+                this.routeId = routeId;
+                return this;
+            }
+
+            public Builder climbIndex(int climbIndex) {
+                this.climbIndex = climbIndex;
+                return this;
+            }
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder startLat(double startLat) {
+                this.startLat = startLat;
+                return this;
+            }
+
+            public Builder startLon(double startLon) {
+                this.startLon = startLon;
+                return this;
+            }
+
+            public Builder endLat(double endLat) {
+                this.endLat = endLat;
+                return this;
+            }
+
+            public Builder endLon(double endLon) {
+                this.endLon = endLon;
+                return this;
+            }
+
+            public Builder elevationGainM(int elevationGainM) {
+                this.elevationGainM = elevationGainM;
+                return this;
+            }
+
+            public Builder lengthM(int lengthM) {
+                this.lengthM = lengthM;
+                return this;
+            }
+
+            public Candidate build() {
+                return new Candidate(this);
+            }
         }
 
         double exitLat() { return Double.isNaN(endLat) || Double.isNaN(endLon) ? startLat : endLat; }

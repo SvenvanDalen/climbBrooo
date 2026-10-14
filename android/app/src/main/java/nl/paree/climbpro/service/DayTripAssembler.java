@@ -58,12 +58,12 @@ public final class DayTripAssembler {
 
     /**
      * @param startLatLon the rider's position, or null when unknown
-     * @return the payload, or null when the collection has no climb with a start coordinate
+     * @return the payload, or empty when the collection has no climb with a start coordinate
      */
     public byte[] assemble(RouteCollection collection, double[] startLatLon) throws IOException {
         truncated = false;
         List<StoredClimb> trip = DayTripPlanner.order(climbsOf(collection), startLatLon);
-        if (trip.isEmpty()) return null;
+        if (trip.isEmpty()) return new byte[0];
         byte[] payload = builder.buildRadiusPayload(trip, true);
         while (payload.length > PayloadBudget.MAX_BYTES && trip.size() > 1) {
             trip.remove(trip.size() - 1);
@@ -71,7 +71,7 @@ public final class DayTripAssembler {
             payload = builder.buildRadiusPayload(trip, true);
         }
         if (truncated) Log.w(TAG, "Day trip over budget — sent the first " + trip.size() + " climbs");
-        return payload.length <= PayloadBudget.MAX_BYTES ? payload : null;
+        return payload.length <= PayloadBudget.MAX_BYTES ? payload : new byte[0];
     }
 
     private StoredRoute load(String routeId) {

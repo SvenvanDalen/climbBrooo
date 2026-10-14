@@ -160,7 +160,7 @@ public class RadiusModeAssemblerTest {
     public void dayTripWithoutClimbsSendsNothing() throws Exception {
         DayTripAssembler assembler =
                 new DayTripAssembler(repo, new ClimbPayloadBuilder(new ObjectMapper()));
-        assertEquals(null, assembler.assemble(new nl.paree.climbpro.data.route.RouteCollection(), null));
-        assertEquals(null, assembler.assemble(null, null));
+        assertEquals(0, assembler.assemble(new nl.paree.climbpro.data.route.RouteCollection(), null).length);
+        assertEquals(0, assembler.assemble(null, null).length);
     }
 }

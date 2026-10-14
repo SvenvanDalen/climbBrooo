@@ -32,18 +32,19 @@ public final class TargetSpeedRefTimePlanner {
     private TargetSpeedRefTimePlanner() {}
 
     /**
-     * @return null when the route has no climbs or the target is unset; otherwise an array
+     * @return an empty table when the route has no climbs or the target is unset; otherwise an array
      *         indexed by climb position, each entry the per-segment seconds (or null when
      *         the climb has no segments / no usable data for the target).
      */
     public static int[][] plan(StoredRoute route, GhostTarget target) {
         if (route == null || route.climbs == null || route.climbs.isEmpty()
                 || target == null || !target.isSet()) {
-            return null;
+            return new int[0][];
         }
         int[][] result = new int[route.climbs.size()][];
         for (int ci = 0; ci < route.climbs.size(); ci++) {
-            result[ci] = segmentSeconds(route.climbs.get(ci), target);
+            int[] secs = segmentSeconds(route.climbs.get(ci), target);
+            result[ci] = secs.length > 0 ? secs : null;
         }
         return result;
     }
@@ -58,11 +59,11 @@ public final class TargetSpeedRefTimePlanner {
         return vamImpliedMps > 0 ? dist / vamImpliedMps : 0;
     }
 
-    /** Per-segment reference seconds for one climb, or null when not computable. */
+    /** Per-segment reference seconds for one climb, or empty when not computable. */
     public static int[] segmentSeconds(StoredClimb climb, GhostTarget target) {
-        if (climb == null || target == null || !target.isSet()) return null;
+        if (climb == null || target == null || !target.isSet()) return new int[0];
         List<StoredSegment> segs = climb.segments;
-        if (segs == null || segs.isEmpty()) return null;
+        if (segs == null || segs.isEmpty()) return new int[0];
 
         int n = segs.size();
         double[] gains = new double[n];
@@ -74,14 +75,14 @@ public final class TargetSpeedRefTimePlanner {
             totalLen += Math.max(0, s.distance);
             totalGain += gains[i];
         }
-        if (totalLen <= 0) return null;
+        if (totalLen <= 0) return new int[0];
 
         double speedMps = target.hasSpeed() ? target.speedKmh / 3.6 : 0;
         double vamMps = target.hasVam() ? target.vamMPerH / 3600.0 : 0;
         // Speed implied by the VAM at the climb's average gradient, for flat segments.
         double vamImpliedMps = 0;
         if (target.hasVam() && !target.hasSpeed()) {
-            if (totalGain <= 0) return null;
+            if (totalGain <= 0) return new int[0];
             vamImpliedMps = vamMps / (totalGain / totalLen);
         }
 

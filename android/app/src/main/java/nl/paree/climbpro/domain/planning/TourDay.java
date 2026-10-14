@@ -24,16 +24,70 @@ public final class TourDay {
     /** True when a max-hm-per-day limit is set and this day exceeds it. */
     public final boolean exceedsMaxElevation;
 
-    TourDay(int dayNumber, List<TourStop> stops, int elevationGainM, int climbLengthM,
-            int transferMetersHemelsbreed, int climbSeconds, boolean climbTimeComplete,
-            boolean exceedsMaxElevation) {
-        this.dayNumber = dayNumber;
-        this.stops = Collections.unmodifiableList(stops);
-        this.elevationGainM = elevationGainM;
-        this.climbLengthM = climbLengthM;
-        this.transferMetersHemelsbreed = transferMetersHemelsbreed;
-        this.climbSeconds = climbSeconds;
-        this.climbTimeComplete = climbTimeComplete;
-        this.exceedsMaxElevation = exceedsMaxElevation;
+    private TourDay(Builder b) {
+        this.dayNumber = b.dayNumber;
+        this.stops = Collections.unmodifiableList(b.stops);
+        this.elevationGainM = b.elevationGainM;
+        this.climbLengthM = b.climbLengthM;
+        this.transferMetersHemelsbreed = b.transferMetersHemelsbreed;
+        this.climbSeconds = b.climbSeconds;
+        this.climbTimeComplete = b.climbTimeComplete;
+        this.exceedsMaxElevation = b.exceedsMaxElevation;
+    }
+
+    /** Builds a {@link TourDay}; every value defaults to Java's default for its type. */
+    public static final class Builder {
+        private int dayNumber;
+        private List<TourStop> stops;
+        private int elevationGainM;
+        private int climbLengthM;
+        private int transferMetersHemelsbreed;
+        private int climbSeconds;
+        private boolean climbTimeComplete;
+        private boolean exceedsMaxElevation;
+
+        public Builder dayNumber(int dayNumber) {
+            this.dayNumber = dayNumber;
+            return this;
+        }
+
+        public Builder stops(List<TourStop> stops) {
+            this.stops = stops;
+            return this;
+        }
+
+        public Builder elevationGainM(int elevationGainM) {
+            this.elevationGainM = elevationGainM;
+            return this;
+        }
+
+        public Builder climbLengthM(int climbLengthM) {
+            this.climbLengthM = climbLengthM;
+            return this;
+        }
+
+        public Builder transferMetersHemelsbreed(int transferMetersHemelsbreed) {
+            this.transferMetersHemelsbreed = transferMetersHemelsbreed;
+            return this;
+        }
+
+        public Builder climbSeconds(int climbSeconds) {
+            this.climbSeconds = climbSeconds;
+            return this;
+        }
+
+        public Builder climbTimeComplete(boolean climbTimeComplete) {
+            this.climbTimeComplete = climbTimeComplete;
+            return this;
+        }
+
+        public Builder exceedsMaxElevation(boolean exceedsMaxElevation) {
+            this.exceedsMaxElevation = exceedsMaxElevation;
+            return this;
+        }
+
+        public TourDay build() {
+            return new TourDay(this);
+        }
     }
 }

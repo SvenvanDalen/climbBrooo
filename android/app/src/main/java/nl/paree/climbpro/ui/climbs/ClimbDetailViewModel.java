@@ -592,7 +592,8 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
                 String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
 
-                int[] bestSplitSec = SegmentPrCalculator.bestSplits(climbId, segCount, attempts);
+                int[] splits = SegmentPrCalculator.bestSplits(climbId, segCount, attempts);
+                int[] bestSplitSec = splits.length > 0 ? splits : null;
                 Integer bestElapsedSec = null;
                 Map<String, LogbookCalculator.Summary> summaries = LogbookCalculator.summaries(attempts);
                 LogbookCalculator.Summary summary = summaries.get(climbId);
@@ -755,7 +756,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 ? profile.totalMassKg() : ClimbPacingAdvisor.DEFAULT_MASS_KG;
         int[] best = SegmentPrCalculator.bestSplits(climbId, n, attempts);
         ClimbPacingAdvisor.Advice advice = ClimbPacingAdvisor.analyze(
-                dist, grad, surface, latest.segSplitSec, best, mass);
+                dist, grad, surface, latest.segSplitSec, best.length > 0 ? best : null, mass);
         return advice == null ? null : new TrainingAdvice(latest.dateEpochSec, advice);
     }
 
@@ -767,32 +768,17 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
         }
         RiderProfile profile = riderRepo.load();
         // Same zones the watch shows in its FTP-zone color mode (sent as 'zc').
-        segmentZones.postValue(
-                nl.paree.climbpro.domain.power.SegmentIntensityZones.zones(c.segments, profile));
+        int[] zones = nl.paree.climbpro.domain.power.SegmentIntensityZones.zones(c.segments, profile);
+        segmentZones.postValue(zones.length > 0 ? zones : null);
 
         // Preferred path: whole-route, fatigue-aware estimate.
         StoredRoute r = lastRoute.get();
-        ClimbTimeEstimate estimate = null;
-        if (r != null) {
-            List<RouteTile> tiles = RouteEffortProfileBuilder.build(r);
-            if (tiles != null) {
-                estimate = RouteAwareClimbEstimator.estimate(tiles, lastClimbIndex, profile);
-            }
-        }
+        ClimbTimeEstimate estimate = r != null ? routeAwareEstimate(r, profile) : null;
 
         // Fallback: fresh per-climb estimate when the route can't be profiled
         // (e.g. missing elevation/distance arrays) but the profile is usable.
         if (estimate == null && profile.isComplete()) {
-            List<StoredSegment> segs = c.segments;
-            int[] dist = new int[segs.size()];
-            double[] grad = new double[segs.size()];
-            int[] surface = new int[segs.size()];
-            for (int i = 0; i < segs.size(); i++) {
-                dist[i] = segs.get(i).distance;
-                grad[i] = segs.get(i).gradient;
-                surface[i] = segs.get(i).surfaceType;
-            }
-            estimate = ClimbTimeEstimator.estimate(dist, grad, surface, profile);
+            estimate = perClimbEstimate(c.segments, profile);
         }
 
         // Apply any per-segment manual overrides (issue #23) so the header total shown here
@@ -810,6 +796,26 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
 
         timeEstimate.postValue(estimate);
         updateWindImpact(r, c, estimate, profile);
+    }
+
+    /** Whole-route, fatigue-aware estimate of the selected climb; null when not profilable. */
+    private ClimbTimeEstimate routeAwareEstimate(StoredRoute r, RiderProfile profile) {
+        List<RouteTile> tiles = RouteEffortProfileBuilder.build(r);
+        return tiles != null
+                ? RouteAwareClimbEstimator.estimate(tiles, lastClimbIndex, profile) : null;
+    }
+
+    private static ClimbTimeEstimate perClimbEstimate(List<StoredSegment> segs,
+                                                      RiderProfile profile) {
+        int[] dist = new int[segs.size()];
+        double[] grad = new double[segs.size()];
+        int[] surface = new int[segs.size()];
+        for (int i = 0; i < segs.size(); i++) {
+            dist[i] = segs.get(i).distance;
+            grad[i] = segs.get(i).gradient;
+            surface[i] = segs.get(i).surfaceType;
+        }
+        return ClimbTimeEstimator.estimate(dist, grad, surface, profile);
     }
 
     /**

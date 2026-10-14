@@ -44,8 +44,15 @@ public final class BikeCostViewModel extends AndroidViewModel {
                          boolean includeVirtualRides, int extraKm, boolean retired) {
         executor.execute(() -> {
             try {
-                repo.upsertBike(id, name, sinceEpochSec, countArchiveRides, includeVirtualRides,
-                        extraKm, retired, System.currentTimeMillis() / 1000L);
+                repo.upsertBike(new BikeCostRepository.CostBike()
+                        .id(id)
+                        .name(name)
+                        .sinceEpochSec(sinceEpochSec)
+                        .countArchiveRides(countArchiveRides)
+                        .includeVirtualRides(includeVirtualRides)
+                        .extraKm(extraKm)
+                        .retired(retired)
+                        .nowEpochSec(System.currentTimeMillis() / 1000L));
             } catch (Exception e) {
                 message.postValue("Opslaan mislukt: " + e.getMessage());
             }

@@ -79,21 +79,21 @@ public final class ClimbAttemptMatcher {
      * (boundary[-1] = entry time).
      *
      * @param segLengthsM per-segment length (m) in climb order, summing to ~climbLengthM.
-     * @return per-segment elapsed seconds (length == segLengthsM.length), or null if no
+     * @return per-segment elapsed seconds (length == segLengthsM.length), or empty if no
      *         valid attempt is found (mirrors {@link #match} returning -1).
      */
     public static int[] matchSegments(List<TrackSample> track,
                                       double startLat, double startLon,
                                       double endLat, double endLon,
                                       int climbLengthM, int[] segLengthsM) {
-        if (segLengthsM == null || segLengthsM.length == 0) return null;
-        if (track == null || track.size() < 2 || climbLengthM <= 0) return null;
+        if (segLengthsM == null || segLengthsM.length == 0) return new int[0];
+        if (track == null || track.size() < 2 || climbLengthM <= 0) return new int[0];
 
         int entryIdx = firstWithin(track, startLat, startLon, 0);
-        if (entryIdx < 0) return null;
+        if (entryIdx < 0) return new int[0];
 
         int exitIdx = firstWithin(track, endLat, endLon, entryIdx + 1);
-        if (exitIdx < 0 || exitIdx <= entryIdx) return null;
+        if (exitIdx < 0 || exitIdx <= entryIdx) return new int[0];
 
         double covered = 0;
         for (int i = entryIdx; i < exitIdx; i++) {
@@ -102,11 +102,11 @@ public final class ClimbAttemptMatcher {
             covered += CumulativeDistance.haversine(a.lat, a.lon, b.lat, b.lon);
         }
         double tol = LENGTH_TOLERANCE * climbLengthM;
-        if (Math.abs(covered - climbLengthM) > tol) return null;
+        if (Math.abs(covered - climbLengthM) > tol) return new int[0];
 
         long entryTime = track.get(entryIdx).timeSec;
         long exitTime  = track.get(exitIdx).timeSec;
-        if (exitTime - entryTime <= 0) return null;
+        if (exitTime - entryTime <= 0) return new int[0];
 
         return splitSegments(track, entryIdx, exitIdx, segLengthsM);
     }

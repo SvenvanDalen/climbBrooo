@@ -68,20 +68,92 @@ public final class ComebackPlanner {
         public final double actualKm;
         public final int actualRides;
 
-        Week(int number, long startEpochSec, double pct, double targetHours, double targetKm,
-             int targetRides, double maxRideKm, String intensity, double actualHours,
-             double actualKm, int actualRides) {
-            this.number = number;
-            this.startEpochSec = startEpochSec;
-            this.pct = pct;
-            this.targetHours = targetHours;
-            this.targetKm = targetKm;
-            this.targetRides = targetRides;
-            this.maxRideKm = maxRideKm;
-            this.intensity = intensity;
-            this.actualHours = actualHours;
-            this.actualKm = actualKm;
-            this.actualRides = actualRides;
+        private Week(Builder b) {
+            this.number = b.number;
+            this.startEpochSec = b.startEpochSec;
+            this.pct = b.pct;
+            this.targetHours = b.targetHours;
+            this.targetKm = b.targetKm;
+            this.targetRides = b.targetRides;
+            this.maxRideKm = b.maxRideKm;
+            this.intensity = b.intensity;
+            this.actualHours = b.actualHours;
+            this.actualKm = b.actualKm;
+            this.actualRides = b.actualRides;
+        }
+
+        /** Builds a {@link Week}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int number;
+            private long startEpochSec;
+            private double pct;
+            private double targetHours;
+            private double targetKm;
+            private int targetRides;
+            private double maxRideKm;
+            private String intensity;
+            private double actualHours;
+            private double actualKm;
+            private int actualRides;
+
+            public Builder number(int number) {
+                this.number = number;
+                return this;
+            }
+
+            public Builder startEpochSec(long startEpochSec) {
+                this.startEpochSec = startEpochSec;
+                return this;
+            }
+
+            public Builder pct(double pct) {
+                this.pct = pct;
+                return this;
+            }
+
+            public Builder targetHours(double targetHours) {
+                this.targetHours = targetHours;
+                return this;
+            }
+
+            public Builder targetKm(double targetKm) {
+                this.targetKm = targetKm;
+                return this;
+            }
+
+            public Builder targetRides(int targetRides) {
+                this.targetRides = targetRides;
+                return this;
+            }
+
+            public Builder maxRideKm(double maxRideKm) {
+                this.maxRideKm = maxRideKm;
+                return this;
+            }
+
+            public Builder intensity(String intensity) {
+                this.intensity = intensity;
+                return this;
+            }
+
+            public Builder actualHours(double actualHours) {
+                this.actualHours = actualHours;
+                return this;
+            }
+
+            public Builder actualKm(double actualKm) {
+                this.actualKm = actualKm;
+                return this;
+            }
+
+            public Builder actualRides(int actualRides) {
+                this.actualRides = actualRides;
+                return this;
+            }
+
+            public Week build() {
+                return new Week(this);
+            }
         }
 
         public boolean overloaded() {
@@ -198,9 +270,19 @@ public final class ComebackPlanner {
             double pct = start + (1 - start) * i / n;
             long ws = planStart + i * WEEK;
             double[] actual = actual(rides, ws, ws + WEEK);
-            weeks.add(new Week(i + 1, ws, pct, base.weeklyHours * pct, base.weeklyKm * pct,
-                    base.ridesPerWeek, Math.max(MIN_LONGEST_KM, base.longestKm * pct),
-                    intensity(pct), actual[0], actual[1], (int) actual[2]));
+            weeks.add(new Week.Builder()
+                    .number(i + 1)
+                    .startEpochSec(ws)
+                    .pct(pct)
+                    .targetHours(base.weeklyHours * pct)
+                    .targetKm(base.weeklyKm * pct)
+                    .targetRides(base.ridesPerWeek)
+                    .maxRideKm(Math.max(MIN_LONGEST_KM, base.longestKm * pct))
+                    .intensity(intensity(pct))
+                    .actualHours(actual[0])
+                    .actualKm(actual[1])
+                    .actualRides((int) actual[2])
+                    .build());
         }
         return new Plan(breakDays, injury, base, weeks);
     }

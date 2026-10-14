@@ -18,11 +18,11 @@ public final class HeartRateByGrade {
     public static final int MIN_CLASS_SEC = 120;
 
     /**
-     * Zone 1-5 per class (index 0-5), 0 = too little data; null without a max heart rate or
+     * Zone 1-5 per class (index 0-5), 0 = too little data; empty without a max heart rate or
      * when no class has enough data.
      */
     public static int[] zones(Collection<StoredRideStreamStats> stats, int maxHr) {
-        if (stats == null || maxHr <= 0) return null;
+        if (stats == null || maxHr <= 0) return new int[0];
         int n = CadenceByGradeAnalyzer.CLASSES;
         long[] secs = new long[n];
         long[] beats = new long[n];
@@ -44,6 +44,6 @@ public final class HeartRateByGrade {
             out[c] = ZoneCalculator.heartRateZoneIndex(bpm / maxHr) + 1;
             any = true;
         }
-        return any ? out : null;
+        return any ? out : new int[0];
     }
 }

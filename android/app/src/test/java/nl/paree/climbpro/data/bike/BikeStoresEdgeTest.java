@@ -142,11 +142,30 @@ public class BikeStoresEdgeTest {
     @Test
     public void garage_savingIndoorBikeAsOutdoor_clearsIndoorLink() throws Exception {
         BikeCostRepository repo = new BikeCostRepository(app);
-        String trainer = repo.saveGarageBike(null, "Trainer", "trainer", 9.0, 0, null, null,
-                null, false, true);
+        String trainer = repo.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Trainer")
+                .type("trainer")
+                .weightKg(9.0)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(false)
+                .indoor(true));
         assertEquals(trainer, repo.load().indoorBikeId);
 
-        repo.saveGarageBike(trainer, "Trainer", "road", 9.0, 25, null, null, null, false, false);
+        repo.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(trainer)
+                .name("Trainer")
+                .type("road")
+                .weightKg(9.0)
+                .tyreWidthMm(25)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(false)
+                .indoor(false));
 
         assertNull(repo.load().indoorBikeId);
     }
@@ -156,8 +175,17 @@ public class BikeStoresEdgeTest {
         File file = new File(app.getFilesDir(), BikeCostRepository.FILE_NAME);
         block(file);
         try {
-            new BikeCostRepository(app).saveGarageBike(null, "Fiets", "road", 8, 25, null, null,
-                    null, true, false);
+            new BikeCostRepository(app).saveGarageBike(new BikeCostRepository.GarageBike()
+                    .id(null)
+                    .name("Fiets")
+                    .type("road")
+                    .weightKg(8)
+                    .tyreWidthMm(25)
+                    .chainrings(null)
+                    .cassette(null)
+                    .stravaGearId(null)
+                    .active(true)
+                    .indoor(false));
             fail("expected IOException");
         } catch (IOException expected) {
             // expected: the call under test must fail

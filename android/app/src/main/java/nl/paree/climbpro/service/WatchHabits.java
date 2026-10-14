@@ -62,10 +62,12 @@ public final class WatchHabits {
         int[] hrZones = null;
         if (stats != null && !stats.isEmpty()) {
             CadenceByGrade.Result c = CadenceByGrade.compute(rides, stats, false);
-            cadence = ClimbPayloadBuilder.gradeClasses(c.avgRpm, 250);
+            int[] cg = ClimbPayloadBuilder.gradeClasses(c.avgRpm, 250);
+            cadence = cg.length > 0 ? cg : null;
             List<StoredRideStreamStats> all = new ArrayList<>(stats.values());
             int maxHr = setMaxHr > 0 ? setMaxHr : ZoneCalculator.observedMaxHr(all);
-            hrZones = HeartRateByGrade.zones(all, maxHr);
+            int[] hg = HeartRateByGrade.zones(all, maxHr);
+            hrZones = hg.length > 0 ? hg : null;
         }
         return new WatchHabits(ridden, cadence, hrZones);
     }

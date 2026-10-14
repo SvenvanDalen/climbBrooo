@@ -65,9 +65,13 @@ public final class RideStreamAnalyzer {
             st.hrDriftBasis = drift.basis;
             st.hrDriftMinutes = drift.minutes;
         }
-        st.powerCurve = PowerCurveAnalyzer.bestPowers(streams);
-        st.hrSecondsPerBpm = ZoneHistogramAnalyzer.heartRateSeconds(streams);
-        st.powerSecondsPer10W = ZoneHistogramAnalyzer.powerSeconds(streams);
+        // Stored stats keep null for "not available" (left out of the JSON).
+        int[] curve = PowerCurveAnalyzer.bestPowers(streams);
+        st.powerCurve = curve.length > 0 ? curve : null;
+        int[] hrBins = ZoneHistogramAnalyzer.heartRateSeconds(streams);
+        st.hrSecondsPerBpm = hrBins.length > 0 ? hrBins : null;
+        int[] powerBins = ZoneHistogramAnalyzer.powerSeconds(streams);
+        st.powerSecondsPer10W = powerBins.length > 0 ? powerBins : null;
         st.normalizedPower = NormalizedPowerAnalyzer.normalizedPower(streams);
         CadenceByGradeAnalyzer.Result cadence = CadenceByGradeAnalyzer.analyze(streams);
         if (cadence != null) {
@@ -79,7 +83,8 @@ public final class RideStreamAnalyzer {
             st.hrGradeSec = hrGrade.seconds;
             st.hrGradeBeats = hrGrade.beats;
         }
-        st.hrRecoveryDrops = HeartRateRecoveryAnalyzer.drops(streams);
+        int[] drops = HeartRateRecoveryAnalyzer.drops(streams);
+        st.hrRecoveryDrops = drops.length > 0 ? drops : null;
         return st;
     }
 

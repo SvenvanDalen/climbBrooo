@@ -21,23 +21,112 @@ public final class FuelPlan {
     /** True when no temperature was given and the default was used. */
     public final boolean temperatureAssumed;
 
-    public FuelPlan(int durationSeconds, int kcal, int carbsPerHour, int totalCarbsGrams,
-                    int gels, int bars, int fluidMlPerHour, int totalFluidMl, int bottleMl,
-                    int bottles, int refills, boolean electrolytesAdvised,
-                    double temperatureC, boolean temperatureAssumed) {
-        this.durationSeconds = durationSeconds;
-        this.kcal = kcal;
-        this.carbsPerHour = carbsPerHour;
-        this.totalCarbsGrams = totalCarbsGrams;
-        this.gels = gels;
-        this.bars = bars;
-        this.fluidMlPerHour = fluidMlPerHour;
-        this.totalFluidMl = totalFluidMl;
-        this.bottleMl = bottleMl;
-        this.bottles = bottles;
-        this.refills = refills;
-        this.electrolytesAdvised = electrolytesAdvised;
-        this.temperatureC = temperatureC;
-        this.temperatureAssumed = temperatureAssumed;
+    private FuelPlan(Builder b) {
+        this.durationSeconds = b.durationSeconds;
+        this.kcal = b.kcal;
+        this.carbsPerHour = b.carbsPerHour;
+        this.totalCarbsGrams = b.totalCarbsGrams;
+        this.gels = b.gels;
+        this.bars = b.bars;
+        this.fluidMlPerHour = b.fluidMlPerHour;
+        this.totalFluidMl = b.totalFluidMl;
+        this.bottleMl = b.bottleMl;
+        this.bottles = b.bottles;
+        this.refills = b.refills;
+        this.electrolytesAdvised = b.electrolytesAdvised;
+        this.temperatureC = b.temperatureC;
+        this.temperatureAssumed = b.temperatureAssumed;
+    }
+
+    /** Builds a {@link FuelPlan}; every value defaults to Java's default for its type. */
+    public static final class Builder {
+        private int durationSeconds;
+        private int kcal;
+        private int carbsPerHour;
+        private int totalCarbsGrams;
+        private int gels;
+        private int bars;
+        private int fluidMlPerHour;
+        private int totalFluidMl;
+        private int bottleMl;
+        private int bottles;
+        private int refills;
+        private boolean electrolytesAdvised;
+        private double temperatureC;
+        private boolean temperatureAssumed;
+
+        public Builder durationSeconds(int durationSeconds) {
+            this.durationSeconds = durationSeconds;
+            return this;
+        }
+
+        public Builder kcal(int kcal) {
+            this.kcal = kcal;
+            return this;
+        }
+
+        public Builder carbsPerHour(int carbsPerHour) {
+            this.carbsPerHour = carbsPerHour;
+            return this;
+        }
+
+        public Builder totalCarbsGrams(int totalCarbsGrams) {
+            this.totalCarbsGrams = totalCarbsGrams;
+            return this;
+        }
+
+        public Builder gels(int gels) {
+            this.gels = gels;
+            return this;
+        }
+
+        public Builder bars(int bars) {
+            this.bars = bars;
+            return this;
+        }
+
+        public Builder fluidMlPerHour(int fluidMlPerHour) {
+            this.fluidMlPerHour = fluidMlPerHour;
+            return this;
+        }
+
+        public Builder totalFluidMl(int totalFluidMl) {
+            this.totalFluidMl = totalFluidMl;
+            return this;
+        }
+
+        public Builder bottleMl(int bottleMl) {
+            this.bottleMl = bottleMl;
+            return this;
+        }
+
+        public Builder bottles(int bottles) {
+            this.bottles = bottles;
+            return this;
+        }
+
+        public Builder refills(int refills) {
+            this.refills = refills;
+            return this;
+        }
+
+        public Builder electrolytesAdvised(boolean electrolytesAdvised) {
+            this.electrolytesAdvised = electrolytesAdvised;
+            return this;
+        }
+
+        public Builder temperatureC(double temperatureC) {
+            this.temperatureC = temperatureC;
+            return this;
+        }
+
+        public Builder temperatureAssumed(boolean temperatureAssumed) {
+            this.temperatureAssumed = temperatureAssumed;
+            return this;
+        }
+
+        public FuelPlan build() {
+            return new FuelPlan(this);
+        }
     }
 }

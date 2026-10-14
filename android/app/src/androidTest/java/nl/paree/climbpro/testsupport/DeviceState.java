@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.preference.PreferenceManager;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 
@@ -51,7 +52,11 @@ public final class DeviceState {
             UiObject2 wait = device.findObject(By.res("android", "aerr_wait"));
             if (wait == null) wait = device.findObject(By.text(Pattern.compile("(?i)wait|wachten")).pkg("android"));
             if (wait == null) return;
-            wait.click();
+            try {
+                wait.click();
+            } catch (StaleObjectException gone) {
+                // the dialog closed between find and click; check again
+            }
             device.waitForIdle();
         }
     }

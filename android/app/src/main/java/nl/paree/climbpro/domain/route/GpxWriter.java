@@ -75,10 +75,10 @@ public final class GpxWriter {
             String desc = String.format(Locale.US, "%.1f km, %.1f%%, %d hm",
                     length / 1000.0, c.avgGradient * 100, c.elevationGain);
             double[] start = positionAt(route, n, c.startDistance);
-            if (start == null) start = new double[]{c.startLat, c.startLon};
+            if (start.length == 0) start = new double[]{c.startLat, c.startLon};
             appendWpt(sb, start, "Start " + name, desc, "Summit");
             double[] top = positionAt(route, n, c.endDistance);
-            if (top != null) appendWpt(sb, top, "Top " + name, desc, "Summit");
+            if (top.length > 0) appendWpt(sb, top, "Top " + name, desc, "Summit");
         }
     }
 
@@ -92,10 +92,10 @@ public final class GpxWriter {
         sb.append("  </wpt>\n");
     }
 
-    /** Route position at {@code distance} m, linearly interpolated; null without distances. */
+    /** Route position at {@code distance} m, linearly interpolated; empty without distances. */
     private static double[] positionAt(StoredRoute route, int n, double distance) {
         double[] d = route.distances;
-        if (d == null || d.length < n || n == 0) return null;
+        if (d == null || d.length < n || n == 0) return new double[0];
         if (distance <= d[0]) return new double[]{route.lats[0], route.lons[0]};
         for (int i = 1; i < n; i++) {
             if (d[i] >= distance) {

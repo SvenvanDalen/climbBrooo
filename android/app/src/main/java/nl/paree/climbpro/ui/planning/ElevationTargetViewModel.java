@@ -205,10 +205,18 @@ public final class ElevationTargetViewModel extends AndroidViewModel {
                         endLon = known.get(i).endLon;
                     }
                     String name = candidateName(c, i, routeName);
-                    out.add(new ElevationTargetPlanner.Candidate(
-                            ClimbIdentity.of(c), entry.routeId, i, name,
-                            c.startLat, c.startLon, endLat, endLon,
-                            c.elevationGain, ClimbIdentity.effectiveLength(c)));
+                    out.add(new ElevationTargetPlanner.Candidate.Builder()
+                            .climbId(ClimbIdentity.of(c))
+                            .routeId(entry.routeId)
+                            .climbIndex(i)
+                            .name(name)
+                            .startLat(c.startLat)
+                            .startLon(c.startLon)
+                            .endLat(endLat)
+                            .endLon(endLon)
+                            .elevationGainM(c.elevationGain)
+                            .lengthM(ClimbIdentity.effectiveLength(c))
+                            .build());
                 }
             }
         }

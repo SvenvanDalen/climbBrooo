@@ -77,21 +77,92 @@ public final class ClimbIndoorViewModel extends AndroidViewModel {
         public final double weightKg;
         public final String predictionHint;
 
-        State(String climbName, boolean virtual, List<ClimbProgress.Point> progress,
-              VirtualClimbLinker.Candidate counterpart, Side self, Side other,
-              String predictedClimbName, IndoorClimbPredictor.Basis basis,
-              ClimbTimeEstimate prediction, double weightKg, String predictionHint) {
-            this.climbName = climbName;
-            this.virtual = virtual;
-            this.progress = progress;
-            this.counterpart = counterpart;
-            this.self = self;
-            this.other = other;
-            this.predictedClimbName = predictedClimbName;
-            this.basis = basis;
-            this.prediction = prediction;
-            this.weightKg = weightKg;
-            this.predictionHint = predictionHint;
+        private State(Builder b) {
+            this.climbName = b.climbName;
+            this.virtual = b.virtual;
+            this.progress = b.progress;
+            this.counterpart = b.counterpart;
+            this.self = b.self;
+            this.other = b.other;
+            this.predictedClimbName = b.predictedClimbName;
+            this.basis = b.basis;
+            this.prediction = b.prediction;
+            this.weightKg = b.weightKg;
+            this.predictionHint = b.predictionHint;
+        }
+
+        /** Builds a {@link State}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private String climbName;
+            private boolean virtual;
+            private List<ClimbProgress.Point> progress;
+            private VirtualClimbLinker.Candidate counterpart;
+            private Side self;
+            private Side other;
+            private String predictedClimbName;
+            private IndoorClimbPredictor.Basis basis;
+            private ClimbTimeEstimate prediction;
+            private double weightKg;
+            private String predictionHint;
+
+            public Builder climbName(String climbName) {
+                this.climbName = climbName;
+                return this;
+            }
+
+            public Builder virtual(boolean virtual) {
+                this.virtual = virtual;
+                return this;
+            }
+
+            public Builder progress(List<ClimbProgress.Point> progress) {
+                this.progress = progress;
+                return this;
+            }
+
+            public Builder counterpart(VirtualClimbLinker.Candidate counterpart) {
+                this.counterpart = counterpart;
+                return this;
+            }
+
+            public Builder self(Side self) {
+                this.self = self;
+                return this;
+            }
+
+            public Builder other(Side other) {
+                this.other = other;
+                return this;
+            }
+
+            public Builder predictedClimbName(String predictedClimbName) {
+                this.predictedClimbName = predictedClimbName;
+                return this;
+            }
+
+            public Builder basis(IndoorClimbPredictor.Basis basis) {
+                this.basis = basis;
+                return this;
+            }
+
+            public Builder prediction(ClimbTimeEstimate prediction) {
+                this.prediction = prediction;
+                return this;
+            }
+
+            public Builder weightKg(double weightKg) {
+                this.weightKg = weightKg;
+                return this;
+            }
+
+            public Builder predictionHint(String predictionHint) {
+                this.predictionHint = predictionHint;
+                return this;
+            }
+
+            public State build() {
+                return new State(this);
+            }
         }
     }
 
@@ -162,8 +233,19 @@ public final class ClimbIndoorViewModel extends AndroidViewModel {
         String hint = predictionHint(target, basis, weightKg, profile.bikeWeightKg);
         ClimbTimeEstimate prediction = hint == null
                 ? predict(target.segments, basis, weightKg, profile.bikeWeightKg) : null;
-        return new State(climbName, virtual, progress, counterpart, selfSide, otherSide,
-                targetName, basis, prediction, weightKg, hint);
+        return new State.Builder()
+                .climbName(climbName)
+                .virtual(virtual)
+                .progress(progress)
+                .counterpart(counterpart)
+                .self(selfSide)
+                .other(otherSide)
+                .predictedClimbName(targetName)
+                .basis(basis)
+                .prediction(prediction)
+                .weightKg(weightKg)
+                .predictionHint(hint)
+                .build();
     }
 
     private static String sideLabel(boolean virtual) {
@@ -200,9 +282,16 @@ public final class ClimbIndoorViewModel extends AndroidViewModel {
         VirtualClimbLinker.Candidate self = null;
         for (int i = 0; i < r.climbs.size(); i++) {
             StoredClimb c = r.climbs.get(i);
-            VirtualClimbLinker.Candidate cand = new VirtualClimbLinker.Candidate(
-                    climbId(c), name(c, i), stripMyWhoosh(routeName), length(c),
-                    c.avgGradient, v, routeId, i);
+            VirtualClimbLinker.Candidate cand = new VirtualClimbLinker.Candidate.Builder()
+                    .climbId(climbId(c))
+                    .name(name(c, i))
+                    .routeName(stripMyWhoosh(routeName))
+                    .lengthM(length(c))
+                    .avgGradient(c.avgGradient)
+                    .virtual(v)
+                    .routeId(routeId)
+                    .climbIndex(i)
+                    .build();
             if (i == selfIndex) self = cand;
             all.add(cand);
         }

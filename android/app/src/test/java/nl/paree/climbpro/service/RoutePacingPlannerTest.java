@@ -45,7 +45,7 @@ public class RoutePacingPlannerTest {
 
     @Test
     public void incompleteProfileReturnsNull() {
-        assertNull(RoutePacingPlanner.plan(routeWithOneClimb(), new RiderProfile(0, 72, 8)));
+        assertEquals(0, RoutePacingPlanner.plan(routeWithOneClimb(), new RiderProfile(0, 72, 8)).length);
     }
 
     @Test

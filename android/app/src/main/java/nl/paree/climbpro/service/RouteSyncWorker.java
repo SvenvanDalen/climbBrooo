@@ -134,9 +134,18 @@ public final class RouteSyncWorker extends Worker {
             }
         };
 
-        SyncOrchestrator.PayloadJob job = buildPayloadJob(
-                prefs, routeRepo, syncStateRepo, payloadBuilder, profile, ghost, attemptRepo,
-                palette, units, fieldLayout, habits);
+        SyncOrchestrator.PayloadJob job = buildPayloadJob(new PayloadJobContext()
+                .prefs(prefs)
+                .routeRepo(routeRepo)
+                .syncStateRepo(syncStateRepo)
+                .payloadBuilder(payloadBuilder)
+                .profile(profile)
+                .ghost(ghost)
+                .attemptRepo(attemptRepo)
+                .palette(palette)
+                .units(units)
+                .fieldLayout(fieldLayout)
+                .habits(habits));
 
         SyncOrchestrator orchestrator = new SyncOrchestrator(
                 authorised, pull, sender, job,
@@ -226,15 +235,15 @@ public final class RouteSyncWorker extends Worker {
      * must change the hash too. Empty without a profile, so existing sync states stay valid.
      */
     static String routeGhostSignature(int[] routeGhost) {
-        return routeGhost == null ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
+        return routeGhost == null || routeGhost.length == 0 ? "" : "|gh" + java.util.Arrays.hashCode(routeGhost);
     }
 
     /**
-     * Position saved when the day trip was chosen (issue #9); null without one, then the trip
+     * Position saved when the day trip was chosen (issue #9); empty without one, then the trip
      * starts at the collection's first climb.
      */
     static double[] dayTripStart(SharedPreferences prefs) {
-        if (!prefs.contains(PREF_DAYTRIP_LAT) || !prefs.contains(PREF_DAYTRIP_LON)) return null;
+        if (!prefs.contains(PREF_DAYTRIP_LAT) || !prefs.contains(PREF_DAYTRIP_LON)) return new double[0];
         return new double[] {
                 prefs.getFloat(PREF_DAYTRIP_LAT, 0f), prefs.getFloat(PREF_DAYTRIP_LON, 0f)};
     }
@@ -296,7 +305,7 @@ public final class RouteSyncWorker extends Worker {
                                 .get(prefs.getString(PREF_DAYTRIP_ID, ""));
                 if (trip == null) {
                     Log.w(TAG, "Day-trip collection is gone — nothing to send");
-                    return null;
+                    return new byte[0];
                 }
                 return new DayTripAssembler(routeRepo, payloadBuilder)
                         .assemble(trip, dayTripStart(prefs));
@@ -313,10 +322,10 @@ public final class RouteSyncWorker extends Worker {
                 // Never search around 0,0 (issue #310): without a known position
                 // there is nothing sensible to send.
                 double[] position = RadiusLocation.current(getApplicationContext(), prefs);
-                if (position == null) {
+                if (position.length == 0) {
                     Log.w(TAG, "Radius mode without a known location — nothing to send");
                     radiusWithoutLocation = true;
-                    return null;
+                    return new byte[0];
                 }
                 double lat = position[0];
                 double lon = position[1];
@@ -341,66 +350,129 @@ public final class RouteSyncWorker extends Worker {
      * {@link SyncOrchestrator.PayloadJob#build()} returns {@code null} when there is
      * nothing to send (no route selected, or unchanged).
      */
-    private SyncOrchestrator.PayloadJob buildPayloadJob(
-            SharedPreferences prefs, RouteRepository routeRepo,
-            SyncStateRepository syncStateRepo, ClimbPayloadBuilder payloadBuilder,
-            nl.paree.climbpro.domain.power.RiderProfile profile,
-            nl.paree.climbpro.domain.power.GhostTarget ghost,
-            ClimbAttemptRepository attemptRepo, int palette,
-            nl.paree.climbpro.domain.units.UnitPreferences units,
-            WatchFieldLayout fieldLayout, WatchHabits habits) {
+    private SyncOrchestrator.PayloadJob buildPayloadJob(PayloadJobContext in) {
         nl.paree.climbpro.data.route.RouteGhostRepository ghostRepo =
                 new nl.paree.climbpro.data.route.RouteGhostRepository(getApplicationContext());
 
-        String mode = prefs.getString(PREF_MODE, MODE_ROUTE);
+        String mode = in.prefs.getString(PREF_MODE, MODE_ROUTE);
 
-        if (MODE_DAYTRIP.equals(mode)) return dayTripJob(prefs, routeRepo, payloadBuilder);
-        if (MODE_RADIUS.equals(mode)) return radiusJob(prefs, routeRepo, payloadBuilder);
+        if (MODE_DAYTRIP.equals(mode)) return dayTripJob(in.prefs, in.routeRepo, in.payloadBuilder);
+        if (MODE_RADIUS.equals(mode)) return radiusJob(in.prefs, in.routeRepo, in.payloadBuilder);
 
         return new SyncOrchestrator.PayloadJob() {
             @Override public byte[] build() throws IOException {
-                String routeId = prefs.getString(PREF_ROUTE_ID, null);
+                String routeId = in.prefs.getString(PREF_ROUTE_ID, null);
                 if (routeId == null) {
                     Log.i(TAG, "No active route selected — nothing to send");
-                    return null;
+                    return new byte[0];
                 }
-                if (!routeRepo.hasRoute(routeId)) {
+                if (!in.routeRepo.hasRoute(routeId)) {
                     // The active route was deleted. That is permanent, not a transient
                     // failure: retrying would fail forever and block every later sync.
                     Log.w(TAG, "Active route " + routeId + " no longer exists — clearing it");
-                    prefs.edit().remove(PREF_ROUTE_ID).apply();
-                    return null;
+                    in.prefs.edit().remove(PREF_ROUTE_ID).apply();
+                    return new byte[0];
                 }
-                SyncState state = syncStateRepo.get(routeId);
-                StoredRoute route = routeRepo.loadRoute(routeId);
+                SyncState state = in.syncStateRepo.get(routeId);
+                StoredRoute route = in.routeRepo.loadRoute(routeId);
                 int[] routeGhost = ghostRepo.wireFor(route);
-                String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout)
-                        + routeGhostSignature(routeGhost) + habits.signature();
+                String wantHash = wantHash(route, in.profile, in.ghost, in.palette, in.units, in.fieldLayout)
+                        + routeGhostSignature(routeGhost) + in.habits.signature();
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
-                    Log.i(TAG, "Route " + routeId + " unchanged (incl. profile), no re-sync needed");
-                    return null;
+                    Log.i(TAG, "Route " + routeId + " unchanged (incl. in.profile), no re-sync needed");
+                    return new byte[0];
                 }
-                int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
+                int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, in.profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
-                        route, attemptRepo.loadAll(), ghost);
-                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
+                        route, in.attemptRepo.loadAll(), in.ghost);
+                byte[] payload = in.payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
-                    return null;
+                    return new byte[0];
                 }
                 return payload;
             }
             @Override public void onSent() throws IOException {
-                String routeId = prefs.getString(PREF_ROUTE_ID, null);
+                String routeId = in.prefs.getString(PREF_ROUTE_ID, null);
                 // Deleted between build() and the send: nothing left to mark synced.
-                if (routeRepo.hasRoute(routeId)) {
-                    StoredRoute route = routeRepo.loadRoute(routeId);
-                    syncStateRepo.markSynced(routeId, wantHash(route, profile, ghost, palette, units, fieldLayout)
-                            + routeGhostSignature(ghostRepo.wireFor(route)) + habits.signature());
+                if (in.routeRepo.hasRoute(routeId)) {
+                    StoredRoute route = in.routeRepo.loadRoute(routeId);
+                    in.syncStateRepo.markSynced(routeId, wantHash(route, in.profile, in.ghost, in.palette, in.units, in.fieldLayout)
+                            + routeGhostSignature(ghostRepo.wireFor(route)) + in.habits.signature());
                 }
             }
         };
+    }
+
+    /** Arguments of {@link #buildPayloadJob}. */
+    public static final class PayloadJobContext {
+        private SharedPreferences prefs;
+        private RouteRepository routeRepo;
+        private SyncStateRepository syncStateRepo;
+        private ClimbPayloadBuilder payloadBuilder;
+        private nl.paree.climbpro.domain.power.RiderProfile profile;
+        private nl.paree.climbpro.domain.power.GhostTarget ghost;
+        private ClimbAttemptRepository attemptRepo;
+        private int palette;
+        private nl.paree.climbpro.domain.units.UnitPreferences units;
+        private WatchFieldLayout fieldLayout;
+        private WatchHabits habits;
+
+        public PayloadJobContext prefs(SharedPreferences prefs) {
+            this.prefs = prefs;
+            return this;
+        }
+
+        public PayloadJobContext routeRepo(RouteRepository routeRepo) {
+            this.routeRepo = routeRepo;
+            return this;
+        }
+
+        public PayloadJobContext syncStateRepo(SyncStateRepository syncStateRepo) {
+            this.syncStateRepo = syncStateRepo;
+            return this;
+        }
+
+        public PayloadJobContext payloadBuilder(ClimbPayloadBuilder payloadBuilder) {
+            this.payloadBuilder = payloadBuilder;
+            return this;
+        }
+
+        public PayloadJobContext profile(nl.paree.climbpro.domain.power.RiderProfile profile) {
+            this.profile = profile;
+            return this;
+        }
+
+        public PayloadJobContext ghost(nl.paree.climbpro.domain.power.GhostTarget ghost) {
+            this.ghost = ghost;
+            return this;
+        }
+
+        public PayloadJobContext attemptRepo(ClimbAttemptRepository attemptRepo) {
+            this.attemptRepo = attemptRepo;
+            return this;
+        }
+
+        public PayloadJobContext palette(int palette) {
+            this.palette = palette;
+            return this;
+        }
+
+        public PayloadJobContext units(nl.paree.climbpro.domain.units.UnitPreferences units) {
+            this.units = units;
+            return this;
+        }
+
+        public PayloadJobContext fieldLayout(WatchFieldLayout fieldLayout) {
+            this.fieldLayout = fieldLayout;
+            return this;
+        }
+
+        public PayloadJobContext habits(WatchHabits habits) {
+            this.habits = habits;
+            return this;
+        }
     }
 }

@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 
@@ -84,7 +85,7 @@ public class RouteRefTimePlannerTest {
     public void plan_emptyRoute_returnsNull() {
         StoredRoute route = new StoredRoute();
         route.climbs = new ArrayList<>();
-        assertNull(RouteRefTimePlanner.plan(route, Collections.emptyList()));
-        assertNull(RouteRefTimePlanner.plan(null, Collections.emptyList()));
+        assertEquals(0, RouteRefTimePlanner.plan(route, Collections.emptyList()).length);
+        assertEquals(0, RouteRefTimePlanner.plan(null, Collections.emptyList()).length);
     }
 }

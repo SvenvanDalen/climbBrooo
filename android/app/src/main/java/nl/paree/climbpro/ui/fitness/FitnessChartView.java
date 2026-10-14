@@ -12,6 +12,7 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 import nl.paree.climbpro.domain.training.FitnessCalculator.Day;
+import nl.paree.climbpro.ui.ChartArea;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -86,14 +87,7 @@ public final class FitnessChartView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = (int) (width * 0.6f);
-        int mode = MeasureSpec.getMode(heightMeasureSpec);
-        if (mode == MeasureSpec.EXACTLY) {
-            height = MeasureSpec.getSize(heightMeasureSpec);
-        } else if (mode == MeasureSpec.AT_MOST) {
-            height = Math.min(height, MeasureSpec.getSize(heightMeasureSpec));
-        }
-        setMeasuredDimension(width, height);
+        setMeasuredDimension(width, ChartArea.measuredHeight(width, heightMeasureSpec, 0.6f));
     }
 
     @Override
@@ -115,6 +109,7 @@ public final class FitnessChartView extends View {
         float right = getWidth() - PAD_RIGHT * density;
         float top = PAD_TOP * density;
         float bottom = getHeight() - PAD_BOTTOM * density;
+        ChartArea area = new ChartArea(left, top, right, bottom);
 
         canvas.drawLine(left, top, left, bottom, axisPaint);
         canvas.drawLine(left, bottom, right, bottom, axisPaint);
@@ -133,22 +128,22 @@ public final class FitnessChartView extends View {
         canvas.drawText(monthDay.format(days.get(days.size() - 1).date), right,
                 getHeight() - 4 * density, labelPaint);
 
-        drawSeries(canvas, 0, COLOR_FITNESS, min, max, left, right, top, bottom);
-        drawSeries(canvas, 1, COLOR_FATIGUE, min, max, left, right, top, bottom);
-        drawSeries(canvas, 2, COLOR_FORM, min, max, left, right, top, bottom);
+        drawSeries(canvas, 0, COLOR_FITNESS, area, min, max);
+        drawSeries(canvas, 1, COLOR_FATIGUE, area, min, max);
+        drawSeries(canvas, 2, COLOR_FORM, area, min, max);
     }
 
-    private void drawSeries(Canvas canvas, int which, int color, double min, double max,
-                            float left, float right, float top, float bottom) {
+    private void drawSeries(Canvas canvas, int which, int color, ChartArea area,
+                            double min, double max) {
         path.reset();
-        float step = (right - left) / (days.size() - 1);
+        float step = (area.right - area.left) / (days.size() - 1);
         for (int i = 0; i < days.size(); i++) {
             Day d = days.get(i);
             double v = d.tsb;
             if (which == 0) v = d.ctl;
             else if (which == 1) v = d.atl;
-            float x = left + i * step;
-            float yy = y(v, min, max, top, bottom);
+            float x = area.left + i * step;
+            float yy = y(v, min, max, area.top, area.bottom);
             if (i == 0) path.moveTo(x, yy);
             else path.lineTo(x, yy);
         }

@@ -69,7 +69,22 @@ public final class FuelPlanner {
         double weight = in.bodyWeightKg > 0 ? in.bodyWeightKg : DEFAULT_WEIGHT_KG;
         int bottleMl = in.bottleMl > 0 ? in.bottleMl : 750;
         if (seconds == 0) {
-            return new FuelPlan(0, 0, 0, 0, 0, 0, 0, 0, bottleMl, 0, 0, false, temp, tempAssumed);
+            return new FuelPlan.Builder()
+                    .durationSeconds(0)
+                    .kcal(0)
+                    .carbsPerHour(0)
+                    .totalCarbsGrams(0)
+                    .gels(0)
+                    .bars(0)
+                    .fluidMlPerHour(0)
+                    .totalFluidMl(0)
+                    .bottleMl(bottleMl)
+                    .bottles(0)
+                    .refills(0)
+                    .electrolytesAdvised(false)
+                    .temperatureC(temp)
+                    .temperatureAssumed(tempAssumed)
+                    .build();
         }
         boolean hilly = in.ascentMeters / hours >= HILLY_ASCENT_PER_HOUR;
 
@@ -89,9 +104,22 @@ public final class FuelPlanner {
         int refills = Math.max(0, bottles - BOTTLE_CAGES);
 
         boolean electrolytes = temp >= ELECTROLYTE_TEMP_C || seconds >= ELECTROLYTE_SECONDS;
-        return new FuelPlan(seconds, kcal, carbsPerHour, totalCarbs, gels, bars,
-                fluidPerHour, totalFluid, bottleMl, bottles, refills, electrolytes,
-                temp, tempAssumed);
+        return new FuelPlan.Builder()
+                .durationSeconds(seconds)
+                .kcal(kcal)
+                .carbsPerHour(carbsPerHour)
+                .totalCarbsGrams(totalCarbs)
+                .gels(gels)
+                .bars(bars)
+                .fluidMlPerHour(fluidPerHour)
+                .totalFluidMl(totalFluid)
+                .bottleMl(bottleMl)
+                .bottles(bottles)
+                .refills(refills)
+                .electrolytesAdvised(electrolytes)
+                .temperatureC(temp)
+                .temperatureAssumed(tempAssumed)
+                .build();
     }
 
     static int carbsPerHour(int seconds, boolean hilly) {

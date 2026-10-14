@@ -94,20 +94,35 @@ public final class ClimbCompareProfileView extends View {
         canvas.drawLine(left, baseline, right, baseline, axisPaint);
         canvas.drawText(String.format(java.util.Locale.getDefault(), "%.1f km · %.0f m",
                 maxDist / 1000.0, maxHeight), left, baseline + 16f * density, labelPaint);
-        drawProfile(canvas, secondDist, secondHeight, left, baseline, sx, sy, secondPaint);
-        drawProfile(canvas, firstDist, firstHeight, left, baseline, sx, sy, firstPaint);
+        drawProfile(new ProfileStroke()
+                .canvas(canvas)
+                .dist(secondDist)
+                .height(secondHeight)
+                .left(left)
+                .baseline(baseline)
+                .sx(sx)
+                .sy(sy)
+                .paint(secondPaint));
+        drawProfile(new ProfileStroke()
+                .canvas(canvas)
+                .dist(firstDist)
+                .height(firstHeight)
+                .left(left)
+                .baseline(baseline)
+                .sx(sx)
+                .sy(sy)
+                .paint(firstPaint));
     }
 
-    private void drawProfile(Canvas canvas, double[] dist, double[] height, float left,
-                             float baseline, float sx, float sy, Paint paint) {
-        if (dist == null || height == null || dist.length < 2) return;
+    private void drawProfile(ProfileStroke in) {
+        if (in.dist == null || in.height == null || in.dist.length < 2) return;
         path.reset();
-        for (int i = 0; i < dist.length && i < height.length; i++) {
-            float x = left + (float) dist[i] * sx;
-            float y = baseline - (float) height[i] * sy;
+        for (int i = 0; i < in.dist.length && i < in.height.length; i++) {
+            float x = in.left + (float) in.dist[i] * in.sx;
+            float y = in.baseline - (float) in.height[i] * in.sy;
             if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
         }
-        canvas.drawPath(path, paint);
+        in.canvas.drawPath(path, in.paint);
     }
 
     private static double last(double[] a) {
@@ -118,5 +133,57 @@ public final class ClimbCompareProfileView extends View {
         double m = 0;
         if (a != null) for (double v : a) m = Math.max(m, v);
         return m;
+    }
+
+    /** Arguments of {@link #drawProfile}. */
+    public static final class ProfileStroke {
+        private Canvas canvas;
+        private double[] dist;
+        private double[] height;
+        private float left;
+        private float baseline;
+        private float sx;
+        private float sy;
+        private Paint paint;
+
+        public ProfileStroke canvas(Canvas canvas) {
+            this.canvas = canvas;
+            return this;
+        }
+
+        public ProfileStroke dist(double[] dist) {
+            this.dist = dist;
+            return this;
+        }
+
+        public ProfileStroke height(double[] height) {
+            this.height = height;
+            return this;
+        }
+
+        public ProfileStroke left(float left) {
+            this.left = left;
+            return this;
+        }
+
+        public ProfileStroke baseline(float baseline) {
+            this.baseline = baseline;
+            return this;
+        }
+
+        public ProfileStroke sx(float sx) {
+            this.sx = sx;
+            return this;
+        }
+
+        public ProfileStroke sy(float sy) {
+            this.sy = sy;
+            return this;
+        }
+
+        public ProfileStroke paint(Paint paint) {
+            this.paint = paint;
+            return this;
+        }
     }
 }

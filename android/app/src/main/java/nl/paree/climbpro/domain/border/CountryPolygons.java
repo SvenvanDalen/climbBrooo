@@ -85,8 +85,8 @@ public final class CountryPolygons {
         String line;
         while ((line = br.readLine()) != null) {
             String[] parts = dataParts(line);
-            float[] ring = parts.length > 0 ? parseRing(parts) : null;
-            if (ring == null) continue;
+            float[] ring = parts.length > 0 ? parseRing(parts) : new float[0];
+            if (ring.length == 0) continue;
             String code = parts[0];
             Country c = byCode.get(code);
             if (c == null) {
@@ -138,12 +138,12 @@ public final class CountryPolygons {
         try {
             for (int i = 1; i < parts.length; i++) {
                 int comma = parts[i].indexOf(',');
-                if (comma < 0) return null;
+                if (comma < 0) return new float[0];
                 ring[(i - 1) * 2] = Float.parseFloat(parts[i].substring(0, comma));
                 ring[(i - 1) * 2 + 1] = Float.parseFloat(parts[i].substring(comma + 1));
             }
         } catch (NumberFormatException e) {
-            return null;
+            return new float[0];
         }
         return ring;
     }

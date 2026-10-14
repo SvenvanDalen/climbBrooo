@@ -42,11 +42,11 @@ public final class PowerCurveAnalyzer {
      * so a pause inside a window lowers it instead of being skipped.
      */
     public static int[] bestPowers(RideStreams s) {
-        if (s == null || !s.isUsable() || s.watts == null) return null;
+        if (s == null || !s.isUsable() || s.watts == null) return new int[0];
         int end = s.time[s.time.length - 1];
-        if (end <= 0 || end > MAX_RESAMPLE_SEC) return null;
+        if (end <= 0 || end > MAX_RESAMPLE_SEC) return new int[0];
         double[] perSecond = perSecondWatts(s, end);
-        if (perSecond == null) return null;
+        if (perSecond == null) return new int[0];
         double[] prefix = new double[perSecond.length + 1];
         for (int i = 0; i < perSecond.length; i++) prefix[i + 1] = prefix[i] + perSecond[i];
 

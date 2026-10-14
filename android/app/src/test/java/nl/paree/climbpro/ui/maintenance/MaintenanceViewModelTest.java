@@ -91,7 +91,16 @@ public class MaintenanceViewModelTest {
     public void saveComponent_newOverdueComponent_isDueWithBannerAndWarranty() {
         long serviced = now() - 400 * DAY;
         long purchase = now() - 30 * DAY;
-        vm.saveComponent(null, "  Zadelpen ", 0, 12, true, serviced, purchase, 24, " bike-1 ");
+        vm.saveComponent(new MaintenanceViewModel.ComponentForm()
+                .id(null)
+                .name(" Zadelpen ")
+                .intervalKm(0)
+                .intervalMonths(12)
+                .includeVirtualRides(true)
+                .correctedLastServicedEpochSec(serviced)
+                .warrantyPurchaseEpochSec(purchase)
+                .warrantyMonths(24)
+                .bikeId(" bike-1 "));
         MaintenanceStatusLoader.Snapshot s = await(vm.snapshot(),
                 x -> statusOf(x, "Zadelpen") != null);
         assertEquals(5, s.statuses.size());
@@ -120,7 +129,16 @@ public class MaintenanceViewModelTest {
 
     @Test
     public void saveComponent_editExisting_keepsCountAndClearsWarranty() {
-        vm.saveComponent("chain", "Ketting 12v", -100, -3, false, 0, now(), 12, null);
+        vm.saveComponent(new MaintenanceViewModel.ComponentForm()
+                .id("chain")
+                .name("Ketting 12v")
+                .intervalKm(-100)
+                .intervalMonths(-3)
+                .includeVirtualRides(false)
+                .correctedLastServicedEpochSec(0)
+                .warrantyPurchaseEpochSec(now())
+                .warrantyMonths(12)
+                .bikeId(null));
         MaintenanceStatusLoader.Snapshot s = await(vm.snapshot(),
                 x -> statusById(x, "chain").component.name.equals("Ketting 12v"));
         assertEquals(4, s.log.components.size());
@@ -131,7 +149,16 @@ public class MaintenanceViewModelTest {
         assertNull(c.bikeId);
         assertFalse(statusById(s, "chain").configured);
 
-        vm.saveComponent("chain", "  ", 3000, 0, false, 0, 0, 0, "");
+        vm.saveComponent(new MaintenanceViewModel.ComponentForm()
+                .id("chain")
+                .name(" ")
+                .intervalKm(3000)
+                .intervalMonths(0)
+                .includeVirtualRides(false)
+                .correctedLastServicedEpochSec(0)
+                .warrantyPurchaseEpochSec(0)
+                .warrantyMonths(0)
+                .bikeId(""));
         MaintenanceStatusLoader.Snapshot s2 = await(vm.snapshot(),
                 x -> statusById(x, "chain").component.warrantyMonths == 0);
         MaintenanceComponent c2 = statusById(s2, "chain").component;
@@ -184,7 +211,16 @@ public class MaintenanceViewModelTest {
     @Test
     public void saveComponent_writeFailure_reportsSaveFailure() {
         breakWrites();
-        vm.saveComponent(null, "Zadelpen", 0, 12, false, 0, 0, 0, null);
+        vm.saveComponent(new MaintenanceViewModel.ComponentForm()
+                .id(null)
+                .name("Zadelpen")
+                .intervalKm(0)
+                .intervalMonths(12)
+                .includeVirtualRides(false)
+                .correctedLastServicedEpochSec(0)
+                .warrantyPurchaseEpochSec(0)
+                .warrantyMonths(0)
+                .bikeId(null));
         await(vm.message(), m -> m.startsWith("Opslaan mislukt: "));
         assertEquals(4, await(vm.snapshot(), x -> true).statuses.size());
     }

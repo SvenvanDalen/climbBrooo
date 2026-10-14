@@ -203,8 +203,17 @@ public class BikeViewModelsTest {
         assertFalse(empty.gears.isEmpty()); // seeded rides carry gear b123
 
         int before = empty.garage.bikes.size();
-        vm.saveBike(null, "Tarmac", Bike.TYPE_ROAD, 7.4, 28, "50/34", "11-30", "b123", true,
-                false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Tarmac")
+                .type(Bike.TYPE_ROAD)
+                .weightKg(7.4)
+                .tyreWidthMm(28)
+                .chainrings("50/34")
+                .cassette("11-30")
+                .stravaGearId("b123")
+                .active(true)
+                .indoor(false));
         BikeGarageViewModel.State s = awaitMatching(vm.state(),
                 x -> x.garage.bikes.size() == before + 1);
         Bike b = null;

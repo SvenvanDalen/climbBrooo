@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
 
 public class SegmentPrCalculatorTest {
 
@@ -59,17 +59,17 @@ public class SegmentPrCalculatorTest {
     @Test
     public void bestSplits_noMatchingAttempt_returnsNull() {
         List<StoredClimbAttempt> attempts = new ArrayList<>();
-        assertNull(SegmentPrCalculator.bestSplits("c1", 3, attempts));
+        assertEquals(0, SegmentPrCalculator.bestSplits("c1", 3, attempts).length);
 
         attempts.add(attempt("c1", null)); // no split data captured
-        assertNull(SegmentPrCalculator.bestSplits("c1", 3, attempts));
+        assertEquals(0, SegmentPrCalculator.bestSplits("c1", 3, attempts).length);
     }
 
     @Test
     public void bestSplits_nullClimbIdOrEmptySegCount_returnsNull() {
         List<StoredClimbAttempt> attempts = Arrays.asList(attempt("c1", new int[]{1, 2}));
-        assertNull(SegmentPrCalculator.bestSplits(null, 2, attempts));
-        assertNull(SegmentPrCalculator.bestSplits("c1", 0, attempts));
+        assertEquals(0, SegmentPrCalculator.bestSplits(null, 2, attempts).length);
+        assertEquals(0, SegmentPrCalculator.bestSplits("c1", 0, attempts).length);
     }
 
     @Test
@@ -92,6 +92,6 @@ public class SegmentPrCalculatorTest {
         deviated.routeDeviation = true;
         List<StoredClimbAttempt> attempts = Arrays.asList(deviated);
 
-        assertNull(SegmentPrCalculator.bestSplits("c1", 2, attempts));
+        assertEquals(0, SegmentPrCalculator.bestSplits("c1", 2, attempts).length);
     }
 }

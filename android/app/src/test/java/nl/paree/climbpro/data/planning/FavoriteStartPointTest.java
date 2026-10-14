@@ -1,8 +1,8 @@
 package nl.paree.climbpro.data.planning;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -39,13 +39,13 @@ public class FavoriteStartPointTest {
 
     @Test
     public void rejectsGarbageAndOutOfRange() {
-        assertNull(FavoriteStartPoint.parseCoordinates(null));
-        assertNull(FavoriteStartPoint.parseCoordinates(""));
-        assertNull(FavoriteStartPoint.parseCoordinates("Thuis"));
-        assertNull(FavoriteStartPoint.parseCoordinates("50.85"));
-        assertNull(FavoriteStartPoint.parseCoordinates("50.85, 5.69, 3"));
-        assertNull(FavoriteStartPoint.parseCoordinates("95.0, 5.0"));
-        assertNull(FavoriteStartPoint.parseCoordinates("50.0, 200.0"));
-        assertNull(FavoriteStartPoint.parseCoordinates("NaN, 5.0"));
+        assertEquals(0, FavoriteStartPoint.parseCoordinates(null).length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("Thuis").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("50.85").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("50.85, 5.69, 3").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("95.0, 5.0").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("50.0, 200.0").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("NaN, 5.0").length);
     }
 }

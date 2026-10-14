@@ -70,14 +70,12 @@ public final class WindImpactEstimator {
      * any segment, empty or mismatched arrays, or a non-positive power. Segments with an
      * unknown (NaN) bearing are ridden windless.
      */
-    public static Result estimate(int[] dist, double[] grad, int[] surface, double[] bearingsDeg,
-                                  double totalMassKg, double powerWatts,
-                                  double windKmh, double windFromDeg) {
-        int n = dist.length;
-        if (n == 0 || grad.length != n || surface.length != n || bearingsDeg.length != n) {
+    public static Result estimate(WindInput in) {
+        int n = in.dist.length;
+        if (n == 0 || in.grad.length != n || in.surface.length != n || in.bearingsDeg.length != n) {
             return null;
         }
-        if (Double.isNaN(windKmh) || Double.isNaN(windFromDeg) || !(powerWatts > 0)) {
+        if (Double.isNaN(in.windKmh) || Double.isNaN(in.windFromDeg) || !(in.powerWatts > 0)) {
             return null;
         }
         int windless = 0;
@@ -85,24 +83,24 @@ public final class WindImpactEstimator {
         double weightedHead = 0;
         double knownDistance = 0;
         for (int i = 0; i < n; i++) {
-            double crr = SurfaceRollingResistance.crr(surface[i]);
-            double headKmh = headwindComponentKmh(windKmh, windFromDeg, bearingsDeg[i]);
+            double crr = SurfaceRollingResistance.crr(in.surface[i]);
+            double headKmh = headwindComponentKmh(in.windKmh, in.windFromDeg, in.bearingsDeg[i]);
             double headMps = headKmh / 3.6 * WIND_HEIGHT_FACTOR;
             double vStill = PowerSpeedSolver.speedMetersPerSecond(
-                    powerWatts, totalMassKg, grad[i], crr);
+                    in.powerWatts, in.totalMassKg, in.grad[i], crr);
             double vWind = PowerSpeedSolver.speedMetersPerSecond(
-                    powerWatts, totalMassKg, grad[i], crr, headMps);
-            windless += (int) Math.round(dist[i] / vStill);
-            windy += (int) Math.round(dist[i] / vWind);
-            if (!Double.isNaN(bearingsDeg[i])) {
-                weightedHead += headKmh * dist[i];
-                knownDistance += dist[i];
+                    in.powerWatts, in.totalMassKg, in.grad[i], crr, headMps);
+            windless += (int) Math.round(in.dist[i] / vStill);
+            windy += (int) Math.round(in.dist[i] / vWind);
+            if (!Double.isNaN(in.bearingsDeg[i])) {
+                weightedHead += headKmh * in.dist[i];
+                knownDistance += in.dist[i];
             }
         }
         if (knownDistance <= 0) {
             return null;
         }
-        return new Result(windless, windy, weightedHead / knownDistance, windKmh, windFromDeg);
+        return new Result(windless, windy, weightedHead / knownDistance, in.windKmh, in.windFromDeg);
     }
 
     /** 8-point compass sector for a direction: 0 = N, 1 = NE, ... 7 = NW. */
@@ -115,5 +113,57 @@ public final class WindImpactEstimator {
         if (deltaSeconds >= NEGLIGIBLE_SECONDS) return Verdict.HEADWIND;
         if (deltaSeconds <= -NEGLIGIBLE_SECONDS) return Verdict.TAILWIND;
         return Verdict.NEGLIGIBLE;
+    }
+
+    /** Arguments of {@link #estimate}. */
+    public static final class WindInput {
+        private int[] dist;
+        private double[] grad;
+        private int[] surface;
+        private double[] bearingsDeg;
+        private double totalMassKg;
+        private double powerWatts;
+        private double windKmh;
+        private double windFromDeg;
+
+        public WindInput dist(int[] dist) {
+            this.dist = dist;
+            return this;
+        }
+
+        public WindInput grad(double[] grad) {
+            this.grad = grad;
+            return this;
+        }
+
+        public WindInput surface(int[] surface) {
+            this.surface = surface;
+            return this;
+        }
+
+        public WindInput bearingsDeg(double[] bearingsDeg) {
+            this.bearingsDeg = bearingsDeg;
+            return this;
+        }
+
+        public WindInput totalMassKg(double totalMassKg) {
+            this.totalMassKg = totalMassKg;
+            return this;
+        }
+
+        public WindInput powerWatts(double powerWatts) {
+            this.powerWatts = powerWatts;
+            return this;
+        }
+
+        public WindInput windKmh(double windKmh) {
+            this.windKmh = windKmh;
+            return this;
+        }
+
+        public WindInput windFromDeg(double windFromDeg) {
+            this.windFromDeg = windFromDeg;
+            return this;
+        }
     }
 }

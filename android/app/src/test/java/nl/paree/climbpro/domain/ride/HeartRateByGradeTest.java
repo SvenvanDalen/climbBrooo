@@ -88,7 +88,7 @@ public class HeartRateByGradeTest {
     @Test
     public void zones_nullWithoutMaxHrOrData() {
         StoredRideStreamStats s = stats(new int[]{300, 0, 0, 0, 0, 0}, new int[]{750, 0, 0, 0, 0, 0});
-        assertNull(HeartRateByGrade.zones(Collections.singletonList(s), 0));
-        assertNull(HeartRateByGrade.zones(Collections.singletonList(new StoredRideStreamStats()), 200));
+        assertEquals(0, HeartRateByGrade.zones(Collections.singletonList(s), 0).length);
+        assertEquals(0, HeartRateByGrade.zones(Collections.singletonList(new StoredRideStreamStats()), 200).length);
     }
 }

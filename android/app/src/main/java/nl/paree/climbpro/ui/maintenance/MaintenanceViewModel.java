@@ -50,15 +50,12 @@ public final class MaintenanceViewModel extends AndroidViewModel {
      * Creates ({@code id == null}) or edits a component, then stores its warranty (issue #239;
      * {@code warrantyMonths == 0} = none). See the repository for the corrected service date.
      */
-    public void saveComponent(String id, String name, int intervalKm, int intervalMonths,
-                              boolean includeVirtualRides, long correctedLastServicedEpochSec,
-                              long warrantyPurchaseEpochSec, int warrantyMonths,
-                              String bikeId) {
+    public void saveComponent(ComponentForm in) {
         executor.execute(() -> {
             try {
-                String savedId = repo.upsertComponent(id, name, intervalKm, intervalMonths,
-                        includeVirtualRides, correctedLastServicedEpochSec, bikeId);
-                repo.setWarranty(savedId, warrantyPurchaseEpochSec, warrantyMonths);
+                String savedId = repo.upsertComponent(in.id, in.name, in.intervalKm, in.intervalMonths,
+                        in.includeVirtualRides, in.correctedLastServicedEpochSec, in.bikeId);
+                repo.setWarranty(savedId, in.warrantyPurchaseEpochSec, in.warrantyMonths);
             } catch (Exception e) {
                 message.postValue("Opslaan mislukt: " + e.getMessage());
             }
@@ -84,4 +81,62 @@ public final class MaintenanceViewModel extends AndroidViewModel {
 
     @Override
     protected void onCleared() { executor.shutdown(); }
+
+    /** Arguments of {@link #saveComponent}. */
+    public static final class ComponentForm {
+        String id;
+        String name;
+        int intervalKm;
+        int intervalMonths;
+        boolean includeVirtualRides;
+        long correctedLastServicedEpochSec;
+        long warrantyPurchaseEpochSec;
+        int warrantyMonths;
+        String bikeId;
+
+        public ComponentForm id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public ComponentForm name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public ComponentForm intervalKm(int intervalKm) {
+            this.intervalKm = intervalKm;
+            return this;
+        }
+
+        public ComponentForm intervalMonths(int intervalMonths) {
+            this.intervalMonths = intervalMonths;
+            return this;
+        }
+
+        public ComponentForm includeVirtualRides(boolean includeVirtualRides) {
+            this.includeVirtualRides = includeVirtualRides;
+            return this;
+        }
+
+        public ComponentForm correctedLastServicedEpochSec(long correctedLastServicedEpochSec) {
+            this.correctedLastServicedEpochSec = correctedLastServicedEpochSec;
+            return this;
+        }
+
+        public ComponentForm warrantyPurchaseEpochSec(long warrantyPurchaseEpochSec) {
+            this.warrantyPurchaseEpochSec = warrantyPurchaseEpochSec;
+            return this;
+        }
+
+        public ComponentForm warrantyMonths(int warrantyMonths) {
+            this.warrantyMonths = warrantyMonths;
+            return this;
+        }
+
+        public ComponentForm bikeId(String bikeId) {
+            this.bikeId = bikeId;
+            return this;
+        }
+    }
 }

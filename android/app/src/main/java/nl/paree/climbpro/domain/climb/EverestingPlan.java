@@ -79,9 +79,9 @@ public final class EverestingPlan {
     public static int[] wire(StoredClimb climb) {
         EverestingPlan plan = fromClimb(climb);
         if (plan == null || climb.calibrationPoints == null || climb.calibrationPoints.isEmpty()) {
-            return null;
+            return new int[0];
         }
-        if (climb.startLat == 0.0 && climb.startLon == 0.0) return null;
+        if (climb.startLat == 0.0 && climb.startLon == 0.0) return new int[0];
         StoredCalibrationPoint top = climb.calibrationPoints.get(climb.calibrationPoints.size() - 1);
         return new int[] {
                 plan.targetM, plan.repeats,

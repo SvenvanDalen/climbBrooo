@@ -247,8 +247,15 @@ public final class StravaActivitiesRepository {
 
         List<StoredClimbAttempt> created = new ArrayList<>();
         List<StoredIncompleteClimbAttempt> incompleteCreated = new ArrayList<>();
-        boolean paginationComplete = fetchActivityPages(token, after, nowSec, climbs, known,
-                titles, created, incompleteCreated);
+        boolean paginationComplete = fetchActivityPages(new ActivityPageFetch()
+                .token(token)
+                .after(after)
+                .nowSec(nowSec)
+                .climbs(climbs)
+                .known(known)
+                .titles(titles)
+                .created(created)
+                .incompleteCreated(incompleteCreated));
 
         storeNewAttempts(created, incompleteCreated);
         if (paginationComplete) {
@@ -347,15 +354,12 @@ public final class StravaActivitiesRepository {
      *
      * @return true when the last page was reached cleanly (false = aborted, keep the cursor)
      */
-    private boolean fetchActivityPages(String token, long after, long nowSec,
-                                       List<KnownClimb> climbs, Set<Long> known,
-                                       TitleInputs titles, List<StoredClimbAttempt> created,
-                                       List<StoredIncompleteClimbAttempt> incompleteCreated)
+    private boolean fetchActivityPages(ActivityPageFetch in)
             throws IOException {
         int page = 1;
         while (true) {
             Response<List<StravaActivityDto>> resp =
-                    api.listActivities(token, after, page, 50).execute();
+                    api.listActivities(in.token, in.after, page, 50).execute();
             if (!resp.isSuccessful()) {
                 Log.w(TAG, "Activity page " + page + FAILED_HTTP
                         + resp.code() + "); keeping sync cursor for retry");
@@ -365,10 +369,10 @@ public final class StravaActivitiesRepository {
                 return true; // reached the end cleanly
             }
             for (StravaActivityDto act : resp.body()) {
-                if (known.contains(act.id)) continue;
-                List<StoredClimbAttempt> matched = matchActivity(token, act, climbs, incompleteCreated);
-                created.addAll(matched);
-                maybeUpdateTitle(token, act, matched, titles, nowSec);
+                if (in.known.contains(act.id)) continue;
+                List<StoredClimbAttempt> matched = matchActivity(in.token, act, in.climbs, in.incompleteCreated);
+                in.created.addAll(matched);
+                maybeUpdateTitle(in.token, act, matched, in.titles, in.nowSec);
             }
             page++;
         }
@@ -1294,13 +1298,20 @@ public final class StravaActivitiesRepository {
             t[i] = lastT;
             d[i] = last;
         }
-        return new RideStreams(t, d, toNaNGaps(s.watts, t.length),
-                toAltitude(s.altitude, t.length), toNaNGaps(s.heartrate, t.length),
-                toNaNGaps(s.cadence, t.length));
+        int n = t.length;
+        return new RideStreams(t, d,
+                fits(s.watts, n) ? toNaNGaps(s.watts, n) : null,
+                fits(s.altitude, n) ? toAltitude(s.altitude, n) : null,
+                fits(s.heartrate, n) ? toNaNGaps(s.heartrate, n) : null,
+                fits(s.cadence, n) ? toNaNGaps(s.cadence, n) : null);
+    }
+
+    /** A stream with exactly one value per time sample. */
+    private static boolean fits(StravaStreamsDto.NumberStream s, int n) {
+        return s != null && s.data != null && s.data.size() == n;
     }
 
     private static double[] toNaNGaps(StravaStreamsDto.NumberStream s, int n) {
-        if (s == null || s.data == null || s.data.size() != n) return null;
         double[] w = new double[n];
         for (int i = 0; i < n; i++) {
             Double v = s.data.get(i);
@@ -1310,7 +1321,6 @@ public final class StravaActivitiesRepository {
     }
 
     private static double[] toAltitude(StravaStreamsDto.NumberStream s, int n) {
-        if (s == null || s.data == null || s.data.size() != n) return null;
         double[] a = new double[n];
         Double last = null;
         for (int i = 0; i < n; i++) {
@@ -1377,5 +1387,57 @@ public final class StravaActivitiesRepository {
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create())
                 .build();
+    }
+
+    /** Arguments of {@link #fetchActivityPages}. */
+    public static final class ActivityPageFetch {
+        private String token;
+        private long after;
+        private long nowSec;
+        private List<KnownClimb> climbs;
+        private Set<Long> known;
+        private TitleInputs titles;
+        private List<StoredClimbAttempt> created;
+        private List<StoredIncompleteClimbAttempt> incompleteCreated;
+
+        public ActivityPageFetch token(String token) {
+            this.token = token;
+            return this;
+        }
+
+        public ActivityPageFetch after(long after) {
+            this.after = after;
+            return this;
+        }
+
+        public ActivityPageFetch nowSec(long nowSec) {
+            this.nowSec = nowSec;
+            return this;
+        }
+
+        public ActivityPageFetch climbs(List<KnownClimb> climbs) {
+            this.climbs = climbs;
+            return this;
+        }
+
+        public ActivityPageFetch known(Set<Long> known) {
+            this.known = known;
+            return this;
+        }
+
+        public ActivityPageFetch titles(TitleInputs titles) {
+            this.titles = titles;
+            return this;
+        }
+
+        public ActivityPageFetch created(List<StoredClimbAttempt> created) {
+            this.created = created;
+            return this;
+        }
+
+        public ActivityPageFetch incompleteCreated(List<StoredIncompleteClimbAttempt> incompleteCreated) {
+            this.incompleteCreated = incompleteCreated;
+            return this;
+        }
     }
 }

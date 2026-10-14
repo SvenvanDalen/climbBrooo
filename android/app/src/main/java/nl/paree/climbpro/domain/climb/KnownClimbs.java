@@ -22,34 +22,37 @@ public final class KnownClimbs {
         for (StoredClimb c : route.climbs) {
             int len = ClimbIdentity.effectiveLength(c);
             int endIdx = nearestIndex(route.distances, c.endDistance);
-            double[] calibLats = calibLats(c);
-            double[] calibLons = calibLons(c);
-            out.add(new KnownClimb(
-                    ClimbIdentity.of(c),
-                    c.startLat, c.startLon,
-                    route.lats[endIdx], route.lons[endIdx],
-                    len, segmentLengths(c), calibLats, calibLons));
+            boolean hasSegments = c.segments != null && !c.segments.isEmpty();
+            boolean hasCalibration = c.calibrationPoints != null && !c.calibrationPoints.isEmpty();
+            out.add(new KnownClimb.Builder()
+                    .climbId(ClimbIdentity.of(c))
+                    .startLat(c.startLat)
+                    .startLon(c.startLon)
+                    .endLat(route.lats[endIdx])
+                    .endLon(route.lons[endIdx])
+                    .lengthM(len)
+                    .segLengthsM(hasSegments ? segmentLengths(c) : null)
+                    .calibLats(hasCalibration ? calibLats(c) : null)
+                    .calibLons(hasCalibration ? calibLons(c) : null)
+                    .build());
         }
         return out;
     }
 
-    /** Per-segment length (m) in climb order, or null when the climb has no segments. */
+    /** Per-segment length (m) in climb order; the climb must have segments. */
     private static int[] segmentLengths(StoredClimb c) {
-        if (c.segments == null || c.segments.isEmpty()) return null;
         int[] out = new int[c.segments.size()];
         for (int i = 0; i < out.length; i++) out[i] = c.segments.get(i).distance;
         return out;
     }
 
     private static double[] calibLats(StoredClimb c) {
-        if (c.calibrationPoints == null || c.calibrationPoints.isEmpty()) return null;
         double[] out = new double[c.calibrationPoints.size()];
         for (int i = 0; i < out.length; i++) out[i] = c.calibrationPoints.get(i).lat;
         return out;
     }
 
     private static double[] calibLons(StoredClimb c) {
-        if (c.calibrationPoints == null || c.calibrationPoints.isEmpty()) return null;
         double[] out = new double[c.calibrationPoints.size()];
         for (int i = 0; i < out.length; i++) out[i] = c.calibrationPoints.get(i).lon;
         return out;

@@ -61,7 +61,7 @@ public final class RideCompareViewModel extends AndroidViewModel {
         started = true;
         executor.execute(() -> {
             StoredRide[] pair = findRides(activityIdA, activityIdB);
-            if (pair == null) {
+            if (pair.length == 0) {
                 error.postValue("Rit niet gevonden in het archief");
                 return;
             }
@@ -74,7 +74,7 @@ public final class RideCompareViewModel extends AndroidViewModel {
         });
     }
 
-    /** Both rides from the archive, oldest first; null when either is missing. */
+    /** Both rides from the archive, oldest first; empty when either is missing. */
     private StoredRide[] findRides(long activityIdA, long activityIdB) {
         StoredRide a = null;
         StoredRide b = null;
@@ -82,7 +82,7 @@ public final class RideCompareViewModel extends AndroidViewModel {
             if (r.activityId == activityIdA) a = r;
             if (r.activityId == activityIdB) b = r;
         }
-        if (a == null || b == null) return null;
+        if (a == null || b == null) return new StoredRide[0];
         return b.startEpochSec < a.startEpochSec ? new StoredRide[]{b, a} : new StoredRide[]{a, b};
     }
 

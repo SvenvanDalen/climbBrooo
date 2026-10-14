@@ -52,19 +52,85 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
         /** Average device temperature over the pass (°C), null when unknown (issue #80). */
         public final Double avgTempC;
 
-        TimelineRow(long dateEpochSec, long activityId, int elapsedSec, String displayName,
-                    int lengthM, double avgGradient, String routeId, int climbIndex,
-                    boolean routeDeviation, Double avgTempC) {
-            this.dateEpochSec = dateEpochSec;
-            this.activityId = activityId;
-            this.elapsedSec = elapsedSec;
-            this.displayName = displayName;
-            this.lengthM = lengthM;
-            this.avgGradient = avgGradient;
-            this.routeId = routeId;
-            this.climbIndex = climbIndex;
-            this.routeDeviation = routeDeviation;
-            this.avgTempC = avgTempC;
+        private TimelineRow(Builder b) {
+            this.dateEpochSec = b.dateEpochSec;
+            this.activityId = b.activityId;
+            this.elapsedSec = b.elapsedSec;
+            this.displayName = b.displayName;
+            this.lengthM = b.lengthM;
+            this.avgGradient = b.avgGradient;
+            this.routeId = b.routeId;
+            this.climbIndex = b.climbIndex;
+            this.routeDeviation = b.routeDeviation;
+            this.avgTempC = b.avgTempC;
+        }
+
+        /** Builds a {@link TimelineRow}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private long dateEpochSec;
+            private long activityId;
+            private int elapsedSec;
+            private String displayName;
+            private int lengthM;
+            private double avgGradient;
+            private String routeId;
+            private int climbIndex;
+            private boolean routeDeviation;
+            private Double avgTempC;
+
+            public Builder dateEpochSec(long dateEpochSec) {
+                this.dateEpochSec = dateEpochSec;
+                return this;
+            }
+
+            public Builder activityId(long activityId) {
+                this.activityId = activityId;
+                return this;
+            }
+
+            public Builder elapsedSec(int elapsedSec) {
+                this.elapsedSec = elapsedSec;
+                return this;
+            }
+
+            public Builder displayName(String displayName) {
+                this.displayName = displayName;
+                return this;
+            }
+
+            public Builder lengthM(int lengthM) {
+                this.lengthM = lengthM;
+                return this;
+            }
+
+            public Builder avgGradient(double avgGradient) {
+                this.avgGradient = avgGradient;
+                return this;
+            }
+
+            public Builder routeId(String routeId) {
+                this.routeId = routeId;
+                return this;
+            }
+
+            public Builder climbIndex(int climbIndex) {
+                this.climbIndex = climbIndex;
+                return this;
+            }
+
+            public Builder routeDeviation(boolean routeDeviation) {
+                this.routeDeviation = routeDeviation;
+                return this;
+            }
+
+            public Builder avgTempC(Double avgTempC) {
+                this.avgTempC = avgTempC;
+                return this;
+            }
+
+            public TimelineRow build() {
+                return new TimelineRow(this);
+            }
         }
     }
 
@@ -115,17 +181,18 @@ public final class ClimbTimelineViewModel extends AndroidViewModel {
 
     /** A timeline row; a climb no longer in any route shows as "Klim" without a link. */
     private static TimelineRow timelineRow(StoredClimbAttempt a, ClimbInfo info) {
-        return new TimelineRow(
-                a.dateEpochSec,
-                a.activityId,
-                a.elapsedSec,
-                info != null ? info.displayName : "Klim",
-                info != null ? info.lengthM : 0,
-                info != null ? info.avgGradient : 0,
-                info != null ? info.routeId : null,
-                info != null ? info.index : -1,
-                a.routeDeviation,
-                a.avgTempC);
+        return new TimelineRow.Builder()
+                .dateEpochSec(a.dateEpochSec)
+                .activityId(a.activityId)
+                .elapsedSec(a.elapsedSec)
+                .displayName(info != null ? info.displayName : "Klim")
+                .lengthM(info != null ? info.lengthM : 0)
+                .avgGradient(info != null ? info.avgGradient : 0)
+                .routeId(info != null ? info.routeId : null)
+                .climbIndex(info != null ? info.index : -1)
+                .routeDeviation(a.routeDeviation)
+                .avgTempC(a.avgTempC)
+                .build();
     }
 
     /** Maps each wanted climbId to the first route+index that contains it. */

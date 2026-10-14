@@ -127,7 +127,7 @@ public final class ClimateNormals {
         for (int i = 0; i < time.size(); i++) {
             String t = time.get(i).asText();
             int[] monthHour = monthAndHour(t);
-            if (monthHour == null) continue;
+            if (monthHour.length == 0) continue;
             int month = monthHour[0];
             DayPart part = DayPart.ofHour(monthHour[1]);
             if (part != null && month >= 1 && month <= 12) {
@@ -139,14 +139,14 @@ public final class ClimateNormals {
         return new ClimateNormals(sums.cells());
     }
 
-    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); null if unparseable. */
+    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); empty if unparseable. */
     private static int[] monthAndHour(String t) {
-        if (t.length() < 13) return null;
+        if (t.length() < 13) return new int[0];
         try {
             return new int[] {Integer.parseInt(t.substring(5, 7)),
                     Integer.parseInt(t.substring(11, 13))};
         } catch (NumberFormatException e) {
-            return null;
+            return new int[0];
         }
     }
 
