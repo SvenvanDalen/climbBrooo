@@ -152,9 +152,7 @@ public final class ClimbAttemptMatcher {
         int searchFrom = 0;
         while (true) {
             int entryIdx = firstWithin(track, startLat, startLon, searchFrom);
-            if (entryIdx < 0) break;
-
-            int exitIdx = firstWithin(track, endLat, endLon, entryIdx + 1);
+            int exitIdx = entryIdx < 0 ? -1 : firstWithin(track, endLat, endLon, entryIdx + 1);
             if (exitIdx < 0 || exitIdx <= entryIdx) break;
 
             double covered = 0;

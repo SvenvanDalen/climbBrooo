@@ -77,10 +77,12 @@ public final class ClimbShareExtractor {
         int first = -1;
         int last = -1;
         for (int i = 0; i < d.length; i++) {
-            if (d[i] < from) continue;
-            if (d[i] > to) break;
-            if (first < 0) first = i;
-            last = i;
+            boolean beforeClimb = d[i] < from;
+            if (!beforeClimb && d[i] > to) break;
+            if (!beforeClimb) {
+                if (first < 0) first = i;
+                last = i;
+            }
         }
         // Include the point just outside each end, so the climb itself is fully covered.
         if (first > 0) first--;

@@ -85,16 +85,23 @@ public final class RoutePoiLocator {
         double[] cum = cumulative(lats, lons);
         Set<String> seenRefs = new HashSet<>();
         for (PoiCandidate c : candidates) {
-            if (c == null || c.type == null || !seenRefs.add(c.osmRef)) continue;
-            double[] pr = project(lats, lons, cum, c.lat, c.lon);
-            if (pr.length == 0 || pr[1] > maxOffsetM) continue;
-            placed.add(new RoutePoi(c.osmRef, c.name, c.type, c.lat, c.lon, pr[0], pr[1]));
+            RoutePoi p = c != null && c.type != null && seenRefs.add(c.osmRef)
+                    ? place(c, lats, lons, cum, maxOffsetM) : null;
+            if (p != null) placed.add(p);
         }
         List<RoutePoi> unique = dedupe(placed);
         Collections.sort(unique, Comparator
                 .comparingDouble((RoutePoi p) -> p.distanceAlongM)
                 .thenComparingDouble(p -> p.offsetM));
         return unique;
+    }
+
+    /** The candidate projected onto the route, or null when it lies too far from it. */
+    private static RoutePoi place(PoiCandidate c, double[] lats, double[] lons, double[] cum,
+                                  double maxOffsetM) {
+        double[] pr = project(lats, lons, cum, c.lat, c.lon);
+        if (pr.length == 0 || pr[1] > maxOffsetM) return null;
+        return new RoutePoi(c.osmRef, c.name, c.type, c.lat, c.lon, pr[0], pr[1]);
     }
 
     /** Keeps, per cluster of duplicates, the one closest to the route. */

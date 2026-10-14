@@ -796,7 +796,7 @@ public final class StravaActivitiesRepository {
         if (routes == null) return out;
         for (GhostRoute r : routes) {
             int[] secs = RouteGhostProfile.match(r.line, track);
-            if (secs != null) {
+            if (secs.length > 0) {
                 out.add(new StoredRouteGhost(r.routeId, activityId, startEpochSec,
                         r.line.lengthM, r.line.stepM, secs));
             }
@@ -941,19 +941,20 @@ public final class StravaActivitiesRepository {
 
         List<StoredRide> rides = new ArrayList<>();
         boolean complete = false;
-        for (int page = 1; ; page++) {
+        boolean more = true;
+        for (int page = 1; more; page++) {
             Response<List<StravaActivityDto>> resp =
                     api.listActivities(token, after, page, 50).execute();
             if (!resp.isSuccessful()) {
                 Log.w(TAG, "Ride archive page " + page + FAILED_HTTP + resp.code() + ")");
-                break;
-            }
-            if (resp.body() == null || resp.body().isEmpty()) {
+                more = false;
+            } else if (resp.body() == null || resp.body().isEmpty()) {
                 complete = true;
-                break;
-            }
-            for (StravaActivityDto act : resp.body()) {
-                if (isCycling(act.type)) rides.add(toStoredRide(act));
+                more = false;
+            } else {
+                for (StravaActivityDto act : resp.body()) {
+                    if (isCycling(act.type)) rides.add(toStoredRide(act));
+                }
             }
         }
         // Rides gathered before an aborted page are still valid; upsert is idempotent.
@@ -992,8 +993,10 @@ public final class StravaActivitiesRepository {
         Map<Long, RideTrack> tracks = new LinkedHashMap<>();
         try {
             for (StoredRide r : todo) {
-                if (out.size() >= MAX_STREAM_ANALYSES_PER_RUN) break;
-                if (!analyzeRide(token, r, explored, out, tracks)) break;
+                if (out.size() >= MAX_STREAM_ANALYSES_PER_RUN
+                        || !analyzeRide(token, r, explored, out, tracks)) {
+                    break;
+                }
             }
         } catch (IOException e) {
             Log.w(TAG, "Ride stream fetch failed; keeping " + out.size() + " analyzed ride(s)", e);
@@ -1045,6 +1048,25 @@ public final class StravaActivitiesRepository {
     }
 
     /**
+     * Fetches one ride's GPS track into {@code tracks}. Returns false when the run must pause
+     * (rate limit or auth error); a transient failure is left for the next run.
+     */
+    private boolean fetchExploreTrack(String token, StoredRide r, Map<Long, RideTrack> tracks)
+            throws IOException {
+        Response<StravaStreamsDto> resp =
+                api.getStreams(token, r.activityId, EXPLORE_STREAM_KEYS).execute();
+        if (resp.code() == 404) {
+            tracks.put(r.activityId, null); // deleted or manual entry: don't ask again
+        } else if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
+            Log.w(TAG, "Explore track fetch paused (HTTP " + resp.code() + ")");
+            return false;
+        } else if (resp.isSuccessful()) {
+            tracks.put(r.activityId, toRideTrack(resp.body()));
+        }
+        return true;
+    }
+
+    /**
      * Explore-map backfill (issue #194): fetches only the GPS track of archived outdoor rides
      * that are not on the map yet, newest first, at most {@link #MAX_EXPLORE_TRACKS_PER_RUN}
      * per run, and folds them into the map. Stops early on rate limiting, an auth error or a
@@ -1059,19 +1081,10 @@ public final class StravaActivitiesRepository {
         Map<Long, RideTrack> tracks = new LinkedHashMap<>();
         try {
             for (StoredRide r : todo) {
-                if (tracks.size() >= MAX_EXPLORE_TRACKS_PER_RUN) break;
-                Response<StravaStreamsDto> resp =
-                        api.getStreams(token, r.activityId, EXPLORE_STREAM_KEYS).execute();
-                if (resp.code() == 404) {
-                    tracks.put(r.activityId, null); // deleted or manual entry: don't ask again
-                    continue;
-                }
-                if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
-                    Log.w(TAG, "Explore track fetch paused (HTTP " + resp.code() + ")");
+                if (tracks.size() >= MAX_EXPLORE_TRACKS_PER_RUN
+                        || !fetchExploreTrack(token, r, tracks)) {
                     break;
                 }
-                if (!resp.isSuccessful()) continue; // transient; retried next run
-                tracks.put(r.activityId, toRideTrack(resp.body()));
             }
         } catch (IOException e) {
             Log.w(TAG, "Explore track fetch failed; keeping " + tracks.size() + " ride(s)", e);
@@ -1119,22 +1132,21 @@ public final class StravaActivitiesRepository {
         if (todo.isEmpty()) return 0;
 
         MyWhooshRouteStore store = new MyWhooshRouteStore(context);
-        int fetched = 0;
         int saved = 0;
         try {
-            for (StoredRide r : todo) {
-                if (fetched >= MAX_MYWHOOSH_IMPORTS_PER_RUN) break;
-                fetched++;
+            int n = Math.min(todo.size(), MAX_MYWHOOSH_IMPORTS_PER_RUN);
+            for (StoredRide r : todo.subList(0, n)) {
                 Response<StravaStreamsDto> resp =
                         api.getStreams(token, r.activityId, MYWHOOSH_STREAM_KEYS).execute();
                 if (resp.code() == 429 || resp.code() == 401 || resp.code() == 403) {
                     Log.w(TAG, "MyWhoosh import paused (HTTP " + resp.code() + ")");
                     break;
                 }
-                if (resp.code() >= 500) continue; // transient; retried next run
-                String id = String.valueOf(r.activityId);
-                if (resp.isSuccessful() && saveMyWhooshRide(store, r, resp.body())) saved++;
-                done.add(id); // saved, no new climbs, or unusable (404, no altitude): never again
+                if (resp.code() < 500) { // 5xx is transient; retried next run
+                    if (resp.isSuccessful() && saveMyWhooshRide(store, r, resp.body())) saved++;
+                    // saved, no new climbs, or unusable (404, no altitude): never again
+                    done.add(String.valueOf(r.activityId));
+                }
             }
         } catch (IOException e) {
             Log.w(TAG, "MyWhoosh stream fetch failed; " + saved + " route(s) imported", e);

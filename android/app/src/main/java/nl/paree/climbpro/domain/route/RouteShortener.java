@@ -230,14 +230,22 @@ public final class RouteShortener {
             if (cell == null) return;
             for (int j : cell) {
                 if (j <= i || (best >= 0 && distances[j] <= distances[best])) continue;
-                double gap = CumulativeDistance.haversine(lats[i], lons[i], lats[j], lons[j]);
-                if (gap > JOIN_RADIUS_M) continue;
-                double saved = distances[j] - distances[i] - gap;
-                double remaining = total - (distances[j] - distances[i]) + gap;
-                if (saved < MIN_SAVING_M || remaining < MIN_REMAINING_M) continue;
-                best = j;
-                bestConnector = gap;
+                double gap = shortcutGap(i, j);
+                if (!Double.isNaN(gap)) {
+                    best = j;
+                    bestConnector = gap;
+                }
             }
+        }
+
+        /** Connector length for a shortcut from i to j, or NaN when it is not worth taking. */
+        private double shortcutGap(int i, int j) {
+            double gap = CumulativeDistance.haversine(lats[i], lons[i], lats[j], lons[j]);
+            if (gap > JOIN_RADIUS_M) return Double.NaN;
+            double saved = distances[j] - distances[i] - gap;
+            double remaining = total - (distances[j] - distances[i]) + gap;
+            if (saved < MIN_SAVING_M || remaining < MIN_REMAINING_M) return Double.NaN;
+            return gap;
         }
 
         private static long cellX(double lon, double mPerDegLon) {

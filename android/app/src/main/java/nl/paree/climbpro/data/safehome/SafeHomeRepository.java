@@ -83,7 +83,7 @@ public final class SafeHomeRepository {
         WRITE_LOCK.lock();
         try {
             SafeHomeSettings s = load();
-            if (s.reportedActivityIds.contains(activityId)) return;
+            if (s.reportedActivityIds.contains(Long.valueOf(activityId))) return;
             s.reportedActivityIds.add(activityId);
             while (s.reportedActivityIds.size() > MAX_REPORTED_IDS) s.reportedActivityIds.remove(0);
             write(s);

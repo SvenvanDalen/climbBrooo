@@ -30,7 +30,7 @@ public final class RideComparison {
     /** One kilometre (or the trailing part of one) of the comparison. */
     public static final class Km {
         /** 1-based kilometre number. */
-        public final int km;
+        public final int number;
         public final double lengthM;
         public final int secA;
         public final int secB;
@@ -51,7 +51,7 @@ public final class RideComparison {
         Km(int km, double lengthM, int secA, int secB, double hrA, double hrB,
            int cumulativeDeltaSec) {
             this(new Builder()
-                    .km(km)
+                    .number(km)
                     .lengthM(lengthM)
                     .secA(secA)
                     .secB(secB)
@@ -65,7 +65,7 @@ public final class RideComparison {
         }
 
         private Km(Builder b) {
-            this.km = b.km;
+            this.number = b.number;
             this.lengthM = b.lengthM;
             this.secA = b.secA;
             this.secB = b.secB;
@@ -82,7 +82,7 @@ public final class RideComparison {
 
         /** Builds a {@link Km}; every value defaults to Java's default for its type. */
         public static final class Builder {
-            private int km;
+            private int number;
             private double lengthM;
             private int secA;
             private int secB;
@@ -94,8 +94,8 @@ public final class RideComparison {
             private double cadenceA;
             private double cadenceB;
 
-            public Builder km(int km) {
-                this.km = km;
+            public Builder number(int number) {
+                this.number = number;
                 return this;
             }
 
@@ -183,7 +183,7 @@ public final class RideComparison {
             int secA = (int) Math.round(tA - prevA);
             int secB = (int) Math.round(tB - prevB);
             out.add(new Km.Builder()
-                    .km(k + 1)
+                    .number(k + 1)
                     .lengthM(to - from)
                     .secA(secA)
                     .secB(secB)

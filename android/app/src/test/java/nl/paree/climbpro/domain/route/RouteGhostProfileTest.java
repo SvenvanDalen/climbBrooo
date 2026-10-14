@@ -85,12 +85,12 @@ public class RouteGhostProfileTest {
 
     @Test
     public void match_rideStopsHalfway_null() {
-        assertNull(RouteGhostProfile.match(line(1000), track(0, 600, 5, 0)));
+        assertEquals(0, RouteGhostProfile.match(line(1000), track(0, 600, 5, 0)).length);
     }
 
     @Test
     public void match_rideNeverAtStart_null() {
-        assertNull(RouteGhostProfile.match(line(1000), track(300, 1000, 5, 0)));
+        assertEquals(0, RouteGhostProfile.match(line(1000), track(300, 1000, 5, 0)).length);
     }
 
     @Test

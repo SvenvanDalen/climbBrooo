@@ -66,15 +66,10 @@ public final class RouteEffortProfileBuilder {
         for (int i = 0; i + 1 < d.length; i++) {
             double a = Math.max(d[i], gapStart);
             double b = Math.min(d[i + 1], gapEnd);
-            if (b <= a) {
-                continue; // this point-pair is outside the gap
-            }
             double pairLen = d[i + 1] - d[i];
-            if (pairLen <= 0) {
-                continue;
-            }
             int tileLen = (int) Math.round(b - a);
-            if (tileLen <= 0) {
+            // Skip point-pairs outside the gap and empty pairs or tiles.
+            if (b <= a || pairLen <= 0 || tileLen <= 0) {
                 continue;
             }
             // Gradient is taken from the enclosing point-pair (the route arrays carry

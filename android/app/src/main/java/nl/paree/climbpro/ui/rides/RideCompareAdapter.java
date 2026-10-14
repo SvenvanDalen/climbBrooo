@@ -38,8 +38,8 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
     public void onBindViewHolder(@NonNull KmVH h, int position) {
         RideComparison.Km k = rows.get(position);
         h.km.setText(k.lengthM < 999
-                ? String.format(Locale.getDefault(), "%d (%.1f)", k.km, k.lengthM / 1000)
-                : String.valueOf(k.km));
+                ? String.format(Locale.getDefault(), "%d (%.1f)", k.number, k.lengthM / 1000)
+                : String.valueOf(k.number));
         h.time.setText(duration(k.secA) + " / " + duration(k.secB));
         h.speed.setText(String.format(Locale.getDefault(), "%.1f / %.1f", k.speedA, k.speedB));
         h.hr.setText(bpm(k.hrA) + " / " + bpm(k.hrB));

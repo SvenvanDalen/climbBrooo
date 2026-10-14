@@ -44,12 +44,13 @@ public final class HeartRateByGradeAnalyzer {
                 j++;
             }
             double run = s.distance[i] - s.distance[j];
-            if (run < CadenceByGradeAnalyzer.GRADE_WINDOW_M) continue;
-            double grade = (s.altitude[i] - s.altitude[j]) / run;
-            if (Double.isNaN(grade) || grade < CadenceByGradeAnalyzer.MIN_GRADE) continue;
-            int cls = GradientColor.forGradient(grade);
-            secs[cls] += dt;
-            beats[cls] += hr * dt / 60.0;
+            double grade = run >= CadenceByGradeAnalyzer.GRADE_WINDOW_M
+                    ? (s.altitude[i] - s.altitude[j]) / run : Double.NaN;
+            if (!Double.isNaN(grade) && grade >= CadenceByGradeAnalyzer.MIN_GRADE) {
+                int cls = GradientColor.forGradient(grade);
+                secs[cls] += dt;
+                beats[cls] += hr * dt / 60.0;
+            }
         }
         return toResult(secs, beats);
     }

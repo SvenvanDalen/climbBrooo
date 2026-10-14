@@ -95,19 +95,6 @@ public final class ActivityFileReader {
         return out;
     }
 
-    private static String strip(String qName) {
-        int i = qName.indexOf(':');
-        return i >= 0 ? qName.substring(i + 1) : qName;
-    }
-
-    private static double parse(String v) {
-        try {
-            return v != null ? Double.parseDouble(v) : Double.NaN;
-        } catch (NumberFormatException e) {
-            return Double.NaN;
-        }
-    }
-
     static Long parseTime(String s) {
         try {
             return Instant.parse(s).getEpochSecond();
@@ -176,6 +163,19 @@ public final class ActivityFileReader {
 
         GpxTrackHandler(List<TrackSample> out) {
             this.out = out;
+        }
+
+        private static String strip(String qName) {
+            int i = qName.indexOf(':');
+            return i >= 0 ? qName.substring(i + 1) : qName;
+        }
+
+        private static double parse(String v) {
+            try {
+                return v != null ? Double.parseDouble(v) : Double.NaN;
+            } catch (NumberFormatException e) {
+                return Double.NaN;
+            }
         }
     }
 }

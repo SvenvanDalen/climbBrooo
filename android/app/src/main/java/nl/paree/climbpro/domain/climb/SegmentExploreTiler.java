@@ -55,7 +55,6 @@ public final class SegmentExploreTiler {
                 if (p.distance >= end) break;
             }
             i = Math.min(j, route.size() - 1);
-            if (minLat > maxLat) continue;
             double padLat = PAD_M / METERS_PER_DEG_LAT;
             double midLat = Math.toRadians((minLat + maxLat) / 2);
             double padLon = PAD_M / (METERS_PER_DEG_LAT * Math.max(0.01, Math.cos(midLat)));

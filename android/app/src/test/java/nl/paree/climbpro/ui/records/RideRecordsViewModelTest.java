@@ -90,7 +90,7 @@ public class RideRecordsViewModelTest {
     }
 
     @Test
-    public void noRides_everythingEmpty() throws Exception {
+    public void noRides_everythingEmpty() {
         RideRecordsViewModel.State s = load();
         assertTrue(s.records.isEmpty());
         assertEquals(RideStreamAnalyzer.effortDistancesM().length, s.fastest.size());
