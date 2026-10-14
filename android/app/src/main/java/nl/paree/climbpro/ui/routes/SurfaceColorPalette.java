@@ -10,7 +10,7 @@ import nl.paree.climbpro.domain.segment.SurfaceType;
 public final class SurfaceColorPalette {
 
     /** index = SurfaceType-constante. */
-    public static final int[] COLORS = {
+    private static final int[] COLORS = {
         0xFF616161, // 0 Asfalt    - donkergrijs
         0xFFA1887F, // 1 Gravel    - zandbruin
         0xFF795548, // 2 Onverhard - donkerbruin

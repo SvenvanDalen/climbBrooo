@@ -103,8 +103,8 @@ public final class ClimbPacingAdvisor {
         if (climbId == null || attempts == null || segCount <= 0) return null;
         StoredClimbAttempt best = null;
         for (StoredClimbAttempt a : attempts) {
-            if (a == null || !climbId.equals(a.climbId) || a.routeDeviation) continue;
-            if (a.segSplitSec == null || a.segSplitSec.length != segCount) continue;
+            if ((a == null || !climbId.equals(a.climbId) || a.routeDeviation)
+                    || (a.segSplitSec == null || a.segSplitSec.length != segCount)) continue;
             if (best == null
                     || a.dateEpochSec > best.dateEpochSec
                     || (a.dateEpochSec == best.dateEpochSec && a.passIndex > best.passIndex)) {

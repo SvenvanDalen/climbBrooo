@@ -128,6 +128,11 @@ public final class AirQualityAdvisor {
                 maxPollen[p.ordinal()] = max(maxPollen[p.ordinal()], f.pollen[p.ordinal()][i]);
             }
         }
+
+        private static double max(double acc, double v) {
+            if (Double.isNaN(v)) return acc;
+            return Double.isNaN(acc) || v > acc ? v : acc;
+        }
     }
 
     static Level aqiLevel(double aqi) {
@@ -211,11 +216,6 @@ public final class AirQualityAdvisor {
         if (aqi < 80) return "slechte";
         if (aqi < 100) return "zeer slechte";
         return "extreem slechte";
-    }
-
-    private static double max(double acc, double v) {
-        if (Double.isNaN(v)) return acc;
-        return Double.isNaN(acc) || v > acc ? v : acc;
     }
 
     private static String fmt(double v) {

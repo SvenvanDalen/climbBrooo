@@ -246,9 +246,8 @@ public final class StravaRoutesRepository {
         if (segments.isEmpty()) return Collections.emptyList();
         List<Climb> result = new ArrayList<>();
         for (StravaSegmentDto seg : segments) {
-            if (seg == null) continue;
-            if (seg.averageGrade / 100.0 < ClimbConstants.MIN_AVG_GRADIENT) continue;
-            if (seg.startLatlng == null || seg.startLatlng.length < 2
+            if (seg == null || seg.averageGrade / 100.0 < ClimbConstants.MIN_AVG_GRADIENT
+                    || seg.startLatlng == null || seg.startLatlng.length < 2
                     || seg.endLatlng == null || seg.endLatlng.length < 2) continue;
 
             Climb c = StarredSegmentLocator.locate(
@@ -267,14 +266,28 @@ public final class StravaRoutesRepository {
      * and is too flat to be a climb (avg gradient < {@link ClimbConstants#MIN_AVG_GRADIENT}).
      * Pure CPU; returns an empty list (never null) when nothing qualifies.
      */
+    private static StoredStarredSegment starredSegment(StravaSegmentDto seg,
+                                                       StarredSegmentLocator.Span span) {
+        StoredStarredSegment s = new StoredStarredSegment();
+        s.stravaId = seg.id;
+        s.startDistance = span.startDistance;
+        s.endDistance = span.endDistance;
+        s.length = span.length;
+        s.startLat = span.startLat; s.startLon = span.startLon;
+        s.endLat = span.endLat;     s.endLon = span.endLon;
+        s.avgGradient = span.avgGradient;
+        s.name = seg.name;
+        return s;
+    }
+
     private static List<StoredStarredSegment> matchStarredFlatSegments(
             List<RoutePoint> route, List<StravaSegmentDto> starredSegments) {
         if (starredSegments.isEmpty()) return Collections.emptyList();
         List<StoredStarredSegment> result = new ArrayList<>();
         for (StravaSegmentDto seg : starredSegments) {
-            if (seg == null) continue;
-            if (seg.averageGrade / 100.0 >= ClimbConstants.MIN_AVG_GRADIENT) continue; // climbs handled separately
-            if (seg.startLatlng == null || seg.startLatlng.length < 2
+            // climbs are handled separately
+            if (seg == null || seg.averageGrade / 100.0 >= ClimbConstants.MIN_AVG_GRADIENT
+                    || seg.startLatlng == null || seg.startLatlng.length < 2
                     || seg.endLatlng == null || seg.endLatlng.length < 2) continue;
 
             StarredSegmentLocator.Span span = StarredSegmentLocator.locateSpan(
@@ -282,18 +295,9 @@ public final class StravaRoutesRepository {
                     seg.startLatlng[0], seg.startLatlng[1],
                     seg.endLatlng[0], seg.endLatlng[1],
                     ClimbConstants.STARRED_SEGMENT_MATCH_MAX_M);
-            if (span == null) continue;
-
-            StoredStarredSegment s = new StoredStarredSegment();
-            s.stravaId = seg.id;
-            s.startDistance = span.startDistance;
-            s.endDistance = span.endDistance;
-            s.length = span.length;
-            s.startLat = span.startLat; s.startLon = span.startLon;
-            s.endLat = span.endLat;     s.endLon = span.endLon;
-            s.avgGradient = span.avgGradient;
-            s.name = seg.name;
-            result.add(s);
+            if (span != null) {
+                result.add(starredSegment(seg, span));
+            }
         }
         return result;
     }

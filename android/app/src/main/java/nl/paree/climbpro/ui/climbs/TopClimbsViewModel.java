@@ -166,13 +166,8 @@ public final class TopClimbsViewModel extends AndroidViewModel {
     private List<RegionalTopClimbs.Candidate> loadCandidates(StartPoint from, double radiusM) {
         List<RegionalTopClimbs.Candidate> out = new ArrayList<>();
         for (RouteCatalogEntry entry : routeRepo.findNearby(from.lat, from.lon, radiusM)) {
-            StoredRoute route;
-            try {
-                route = routeRepo.loadRoute(entry.routeId);
-            } catch (Exception e) {
-                continue;
-            }
-            if (route.climbs == null) continue;
+            StoredRoute route = loadOrNull(entry.routeId);
+            if (route == null || route.climbs == null) continue;
             String routeName = routeName(entry);
             for (int i = 0; i < route.climbs.size(); i++) {
                 StoredClimb c = route.climbs.get(i);
@@ -194,4 +189,13 @@ public final class TopClimbsViewModel extends AndroidViewModel {
 
     @Override
     protected void onCleared() { executor.shutdown(); }
+
+    /** The stored route, or null when it is missing or unreadable. */
+    private StoredRoute loadOrNull(String routeId) {
+        try {
+            return routeRepo.loadRoute(routeId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

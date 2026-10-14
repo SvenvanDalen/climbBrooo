@@ -36,8 +36,9 @@ public final class FtpEffortJoiner {
         for (StoredClimbAttempt attempt : attempts) {
             if (attempt.climbId == null || attempt.elapsedSec <= 0) continue;
             StoredClimb climb = byClimbId.get(attempt.climbId);
-            if (climb == null || climb.segments == null || climb.segments.isEmpty()) continue;
-            out.add(effortFor(climb.segments, attempt.elapsedSec));
+            if (climb != null && climb.segments != null && !climb.segments.isEmpty()) {
+                out.add(effortFor(climb.segments, attempt.elapsedSec));
+            }
         }
         return out;
     }
@@ -53,8 +54,9 @@ public final class FtpEffortJoiner {
             } catch (Exception e) {
                 continue; // corrupted/missing route file — skip, don't fail the whole join
             }
-            if (route == null || route.climbs == null) continue;
-            addSegmentedClimbs(byClimbId, route.climbs);
+            if (route != null && route.climbs != null) {
+                addSegmentedClimbs(byClimbId, route.climbs);
+            }
         }
         return byClimbId;
     }
@@ -64,11 +66,12 @@ public final class FtpEffortJoiner {
         for (StoredClimb climb : climbs) {
             if (climb.segments == null || climb.segments.isEmpty()) continue;
             int len = climb.length > 0 ? climb.length : (climb.endDistance - climb.startDistance);
-            if (len <= 0) continue;
-            String climbId = ClimbIdentity.of(climb.startLat, climb.startLon, len);
-            // Keep the first match; duplicates across routes describe the same
-            // physical climb closely enough for an FTP estimate.
-            byClimbId.putIfAbsent(climbId, climb);
+            if (len > 0) {
+                String climbId = ClimbIdentity.of(climb.startLat, climb.startLon, len);
+                // Keep the first match; duplicates across routes describe the same
+                // physical climb closely enough for an FTP estimate.
+                byClimbId.putIfAbsent(climbId, climb);
+            }
         }
     }
 

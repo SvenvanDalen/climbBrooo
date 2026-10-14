@@ -112,11 +112,12 @@ public final class TrainingLoadCalendar {
             if (r == null) continue;
             archived.add(r.activityId);
             LocalDate day = dayOf(r.startEpochSec, zone, first, today);
-            if (day == null) continue;
-            Acc a = accFor(acc, day);
-            a.load += TrainingLoad.of(r, ftpWatts).tss;
-            a.rides++;
-            a.elevation += Math.max(0, r.elevationGainM);
+            if (day != null) {
+                Acc a = accFor(acc, day);
+                a.load += TrainingLoad.of(r, ftpWatts).tss;
+                a.rides++;
+                a.elevation += Math.max(0, r.elevationGainM);
+            }
         }
         return archived;
     }
@@ -128,12 +129,13 @@ public final class TrainingLoadCalendar {
         for (StoredClimbAttempt at : attemptList) {
             if (at == null) continue;
             LocalDate day = dayOf(at.dateEpochSec, zone, first, today);
-            if (day == null) continue;
-            Acc a = accFor(acc, day);
-            a.climbs++;
-            if (!archived.contains(at.activityId)) {
-                double hours = Math.max(0, at.elapsedSec) / 3600.0;
-                a.load += hours * CLIMB_INTENSITY * CLIMB_INTENSITY * 100;
+            if (day != null) {
+                Acc a = accFor(acc, day);
+                a.climbs++;
+                if (!archived.contains(at.activityId)) {
+                    double hours = Math.max(0, at.elapsedSec) / 3600.0;
+                    a.load += hours * CLIMB_INTENSITY * CLIMB_INTENSITY * 100;
+                }
             }
         }
     }

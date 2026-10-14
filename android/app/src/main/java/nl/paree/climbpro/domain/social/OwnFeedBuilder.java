@@ -74,9 +74,10 @@ public final class OwnFeedBuilder {
         for (StoredClimbAttempt a : first.values()) {
             if (a.dateEpochSec <= 0 || a.dateEpochSec < from || a.dateEpochSec > to) continue;
             ClimbInfo c = climbsById.get(a.climbId);
-            if (c == null || c.isHome || c.name == null || c.name.trim().isEmpty()) continue;
-            milestones.add(new FriendFeedEntry(FriendFeedEntry.KIND_MILESTONE, a.dateEpochSec,
-                    FIRST_ASCENT_PREFIX + c.name.trim(), 0, Math.max(0, c.gainM), 0));
+            if (c != null && !c.isHome && c.name != null && !c.name.trim().isEmpty()) {
+                milestones.add(new FriendFeedEntry(FriendFeedEntry.KIND_MILESTONE, a.dateEpochSec,
+                        FIRST_ASCENT_PREFIX + c.name.trim(), 0, Math.max(0, c.gainM), 0));
+            }
         }
         return milestones;
     }

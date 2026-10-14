@@ -50,6 +50,11 @@ public final class NextClimbFinder {
             return "De volgende klim is " + name + " over " + distance(metresToGo) + ", "
                     + details + ".";
         }
+
+        private static String name(StoredClimb c) {
+            if (c.userDisplayName != null && !c.userDisplayName.isEmpty()) return c.userDisplayName;
+            return c.name != null && !c.name.isEmpty() ? c.name : "een naamloze klim";
+        }
     }
 
     private NextClimbFinder() {}
@@ -126,11 +131,6 @@ public final class NextClimbFinder {
         double x = Math.toRadians(lon2 - lon1) * Math.cos(Math.toRadians((lat1 + lat2) / 2));
         double y = Math.toRadians(lat2 - lat1);
         return Math.sqrt(x * x + y * y) * EARTH_RADIUS_M;
-    }
-
-    private static String name(StoredClimb c) {
-        if (c.userDisplayName != null && !c.userDisplayName.isEmpty()) return c.userDisplayName;
-        return c.name != null && !c.name.isEmpty() ? c.name : "een naamloze klim";
     }
 
     /** "850 meter" below 1 km, else "3,4 kilometer" — written out for text-to-speech. */

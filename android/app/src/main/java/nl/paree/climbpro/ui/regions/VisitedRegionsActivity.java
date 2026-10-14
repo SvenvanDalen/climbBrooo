@@ -117,8 +117,11 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
             double[] p = startById.get(a.climbId);
             if (p == null || (p[0] == 0 && p[1] == 0)) continue; // no usable start coordinate
             RegionCache.Region r = regionOf(a.climbId, p, byClimb, resolver);
-            if (r == null) { unresolved++; continue; }
-            visits.add(new VisitedRegions.Visit(r.countryCode, r.country, r.province, p[0], p[1]));
+            if (r == null) {
+                unresolved++;
+            } else {
+                visits.add(new VisitedRegions.Visit(r.countryCode, r.country, r.province, p[0], p[1]));
+            }
         }
         boolean hadAttempts = attempts > 0;
         try { cache.save(); } catch (Exception ignored) { /* cache only */ }

@@ -79,8 +79,8 @@ public final class BikeGarageActivity extends AppCompatActivity {
     private static int typeIndexOf(Bike existing) {
         if (existing == null) return 0;
         int typeIndex = 0;
-        for (int i = 0; i < BikeGarage.TYPES.length; i++) {
-            if (BikeGarage.TYPES[i].equals(existing.type)) typeIndex = i;
+        for (int i = 0; i < BikeGarage.types().length; i++) {
+            if (BikeGarage.types()[i].equals(existing.type)) typeIndex = i;
         }
         return typeIndex;
     }
@@ -128,9 +128,9 @@ public final class BikeGarageActivity extends AppCompatActivity {
         CheckBox active = view.findViewById(R.id.check_active);
         CheckBox indoor = view.findViewById(R.id.check_indoor);
 
-        String[] typeLabels = new String[BikeGarage.TYPES.length];
-        for (int i = 0; i < BikeGarage.TYPES.length; i++) {
-            typeLabels[i] = BikeGarage.typeLabel(BikeGarage.TYPES[i]);
+        String[] typeLabels = new String[BikeGarage.types().length];
+        for (int i = 0; i < BikeGarage.types().length; i++) {
+            typeLabels[i] = BikeGarage.typeLabel(BikeGarage.types()[i]);
         }
         type.setAdapter(spinnerAdapter(typeLabels));
         type.setSelection(typeIndexOf(existing));
@@ -163,7 +163,7 @@ public final class BikeGarageActivity extends AppCompatActivity {
                 .setPositiveButton("Opslaan", (d, w) -> viewModel.saveBike(
                         existing != null ? existing.id : null,
                         name.getText().toString(),
-                        BikeGarage.TYPES[type.getSelectedItemPosition()],
+                        BikeGarage.types()[type.getSelectedItemPosition()],
                         parseKg(weight), parseInt(tyre),
                         chainrings.getText().toString(), cassette.getText().toString(),
                         gearIds.get(Math.max(0, gear.getSelectedItemPosition())),

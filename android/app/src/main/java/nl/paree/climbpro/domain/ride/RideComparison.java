@@ -71,6 +71,10 @@ public final class RideComparison {
             this.cadenceA = cadenceA;
             this.cadenceB = cadenceB;
         }
+
+        private static double speedKmh(double lengthM, int sec) {
+            return sec > 0 ? lengthM / sec * 3.6 : 0;
+        }
     }
 
     /**
@@ -117,11 +121,11 @@ public final class RideComparison {
         if (IndoorRides.isMyWhoosh(base)) return sameMyWhooshRoute(base, all);
         if (base.distanceM <= 0) return out;
         for (StoredRide r : all) {
-            if (r == null || r.activityId == base.activityId) continue;
-            if (Math.abs(r.distanceM - base.distanceM)
-                    > base.distanceM * SAME_ROUTE_DISTANCE_TOLERANCE) continue;
-            if (!near(base.startLat, base.startLon, r.startLat, r.startLon)) continue;
-            if (!near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
+            if ((r == null || r.activityId == base.activityId)
+                    || Math.abs(r.distanceM - base.distanceM)
+                    > base.distanceM * SAME_ROUTE_DISTANCE_TOLERANCE
+                    || !near(base.startLat, base.startLon, r.startLat, r.startLon)
+                    || !near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
             out.add(r);
         }
         out.sort((x, y) -> Long.compare(y.startEpochSec, x.startEpochSec));
@@ -187,9 +191,10 @@ public final class RideComparison {
         for (int i = 0; i < s.distance.length; i++) {
             if (s.distance[i] < from || s.distance[i] > to) continue;
             double v = values[i];
-            if (Double.isNaN(v) || v < 0 || (v == 0 && !includeZero)) continue;
-            sum += v;
-            n++;
+            if (v > 0 || (v == 0 && includeZero)) {
+                sum += v;
+                n++;
+            }
         }
         return n > 0 ? sum / n : Double.NaN;
     }
@@ -201,14 +206,12 @@ public final class RideComparison {
         for (int i = 0; i < s.distance.length; i++) {
             if (s.distance[i] < from || s.distance[i] > to) continue;
             double hr = s.heartrate[i];
-            if (Double.isNaN(hr) || hr <= 0) continue;
-            sum += hr;
-            n++;
+            if (hr > 0) {
+                sum += hr;
+                n++;
+            }
         }
         return n > 0 ? sum / n : Double.NaN;
     }
 
-    private static double speedKmh(double lengthM, int sec) {
-        return sec > 0 ? lengthM / sec * 3.6 : 0;
-    }
 }

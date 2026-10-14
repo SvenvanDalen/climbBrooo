@@ -149,10 +149,11 @@ public final class MonthlyChallengeCalculator {
         double sum = 0;
         for (StoredRide r : rides) {
             if (r == null || r.startEpochSec <= 0) continue;
-            if (!inMonth(r.startEpochSec, month, zone)) continue;
-            if (type == Type.ELEVATION_M) sum += Math.max(0, r.elevationGainM);
-            else if (type == Type.DISTANCE_KM) sum += Math.max(0, r.distanceM) / 1000.0;
-            else sum += 1;
+            if (inMonth(r.startEpochSec, month, zone)) {
+                if (type == Type.ELEVATION_M) sum += Math.max(0, r.elevationGainM);
+                else if (type == Type.DISTANCE_KM) sum += Math.max(0, r.distanceM) / 1000.0;
+                else sum += 1;
+            }
         }
         // Floored: never claim a metre or kilometre that hasn't been ridden yet.
         return (int) Math.floor(sum);

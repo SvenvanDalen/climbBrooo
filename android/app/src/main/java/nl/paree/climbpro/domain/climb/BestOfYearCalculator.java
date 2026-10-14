@@ -44,9 +44,9 @@ public final class BestOfYearCalculator {
         int bestElapsedThisYear = Integer.MAX_VALUE;
 
         for (StoredClimbAttempt a : attempts) {
-            if (!climbId.equals(a.climbId)) continue;
-            if (a.routeDeviation) continue;
-            if (yearOf(a.dateEpochSec, zone) != currentYear) continue;
+            if (!climbId.equals(a.climbId)
+                    || a.routeDeviation
+                    || yearOf(a.dateEpochSec, zone) != currentYear) continue;
 
             if (a.elapsedSec < bestElapsedThisYear) bestElapsedThisYear = a.elapsedSec;
             if (mostRecentThisYear == null || a.dateEpochSec > mostRecentThisYear.dateEpochSec) {

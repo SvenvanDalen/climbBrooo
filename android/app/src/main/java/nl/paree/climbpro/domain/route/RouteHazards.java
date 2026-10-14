@@ -89,10 +89,11 @@ public final class RouteHazards {
         for (double[] node : way) {
             if (node == null || node.length < 2) continue;
             double along = project(lats, lons, distances, n, cosLat, node[0], node[1]);
-            if (Double.isNaN(along)) continue;
-            matched++;
-            lo = Math.min(lo, along);
-            hi = Math.max(hi, along);
+            if (!Double.isNaN(along)) {
+                matched++;
+                lo = Math.min(lo, along);
+                hi = Math.max(hi, along);
+            }
         }
         if (matched < 2 || hi <= lo) return null;
         return new int[]{(int) Math.floor(lo), (int) Math.ceil(hi)};

@@ -122,6 +122,10 @@ public final class FamousClimbMatcher {
                 best = new Match(fc, Kind.START_AND_TOP, side.label);
             }
         }
+
+        private static double clamp(double v, double lo, double hi) {
+            return Math.max(lo, Math.min(hi, v));
+        }
     }
 
     private static Match matchByName(List<FamousClimb> dataset,
@@ -132,9 +136,8 @@ public final class FamousClimbMatcher {
         Match best = null;
         int bestLen = 0;
         for (String raw : names) {
-            if (raw == null) continue;
+            if (raw == null || normalize(raw).trim().isEmpty()) continue;
             String padded = " " + normalize(raw) + " ";
-            if (padded.trim().isEmpty()) continue;
             for (FamousClimb fc : dataset) {
                 if (!withinNameRange(fc, hasStart, startLat, startLon, hasTop, topLat, topLon)) {
                     continue;
@@ -190,7 +193,4 @@ public final class FamousClimbMatcher {
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 
-    private static double clamp(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
-    }
 }

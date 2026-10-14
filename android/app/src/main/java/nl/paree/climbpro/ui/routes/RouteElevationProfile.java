@@ -89,10 +89,11 @@ public final class RouteElevationProfile {
         for (int i = 0; i < n; i++) {
             double ele = route.elevations[i];
             if (Double.isNaN(ele) || Double.isInfinite(ele) || ele == 0.0) continue;
-            if (Double.isNaN(dist[i])) continue;
-            d[count] = dist[i];
-            e[count] = ele;
-            count++;
+            if (!Double.isNaN(dist[i])) {
+                d[count] = dist[i];
+                e[count] = ele;
+                count++;
+            }
         }
         if (count < 2) return EMPTY;
 
@@ -191,17 +192,22 @@ public final class RouteElevationProfile {
             if (c.segments == null || c.segments.isEmpty()) {
                 addBand(bands, c.startDistance, c.endDistance,
                         GradientColor.forGradient(c.avgGradient), ci, start, end);
-                continue;
-            }
-            double segStart = c.startDistance;
-            for (StoredSegment s : c.segments) {
-                if (s == null) continue;
-                double segEnd = segStart + Math.max(0, s.distance);
-                addBand(bands, segStart, segEnd, s.colorIndex, ci, start, end);
-                segStart = segEnd;
+            } else {
+                addSegmentBands(bands, c, ci, start, end);
             }
         }
         return bands;
+    }
+
+    private static void addSegmentBands(List<Band> bands, StoredClimb c, int ci,
+                                        double start, double end) {
+        double segStart = c.startDistance;
+        for (StoredSegment s : c.segments) {
+            if (s == null) continue;
+            double segEnd = segStart + Math.max(0, s.distance);
+            addBand(bands, segStart, segEnd, s.colorIndex, ci, start, end);
+            segStart = segEnd;
+        }
     }
 
     private static void addBand(List<Band> out, double from, double to, int colorIndex,

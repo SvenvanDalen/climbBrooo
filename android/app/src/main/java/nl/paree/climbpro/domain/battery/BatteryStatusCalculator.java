@@ -47,8 +47,8 @@ public final class BatteryStatusCalculator {
         List<BatteryDevice> out = new ArrayList<>();
         if (devices == null) return out;
         for (BatteryDevice d : devices) {
-            if (d == null || !isDue(d, nowEpochSec)) continue;
-            if (d.reminderSentForChargeEpochSec == d.lastChargedEpochSec) continue;
+            if ((d == null || !isDue(d, nowEpochSec))
+                    || d.reminderSentForChargeEpochSec == d.lastChargedEpochSec) continue;
             out.add(d);
         }
         return out;

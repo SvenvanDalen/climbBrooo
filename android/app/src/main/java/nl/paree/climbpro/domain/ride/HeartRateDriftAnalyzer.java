@@ -87,13 +87,14 @@ public final class HeartRateDriftAnalyzer {
             Samples m = new Samples(t.length);
             for (int i = 1; i < t.length; i++) {
                 if (!isMovingSample(s, i) || t[i] - t[0] < WARMUP_SEC) continue;
-                if (power && !isPlausibleWatts(s.watts[i])) continue;
-                m.use[i] = true;
-                m.dt[i] = (double) t[i] - t[i - 1];
-                m.out[i] = power ? s.watts[i] : (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
-                m.total += m.dt[i];
-                m.distM += d[i] - d[i - 1];
-                m.climbM += riseAt(s.altitude, i);
+                if (!power || isPlausibleWatts(s.watts[i])) {
+                    m.use[i] = true;
+                    m.dt[i] = (double) t[i] - t[i - 1];
+                    m.out[i] = power ? s.watts[i] : (d[i] - d[i - 1]) / (t[i] - t[i - 1]);
+                    m.total += m.dt[i];
+                    m.distM += d[i] - d[i - 1];
+                    m.climbM += riseAt(s.altitude, i);
+                }
             }
             return m;
         }
@@ -112,17 +113,17 @@ public final class HeartRateDriftAnalyzer {
             }
             return h;
         }
-    }
 
-    private static boolean isPlausibleWatts(double o) {
-        return !Double.isNaN(o) && o >= 0 && o <= SprintAnalyzer.MAX_PLAUSIBLE_WATTS;
-    }
+        private static boolean isPlausibleWatts(double o) {
+            return !Double.isNaN(o) && o >= 0 && o <= SprintAnalyzer.MAX_PLAUSIBLE_WATTS;
+        }
 
-    /** Altitude gained since the previous sample (0 when descending or without altitude). */
-    private static double riseAt(double[] altitude, int i) {
-        if (altitude == null) return 0;
-        double rise = altitude[i] - altitude[i - 1];
-        return rise > 0 ? rise : 0;
+        /** Altitude gained since the previous sample (0 when descending or without altitude). */
+        private static double riseAt(double[] altitude, int i) {
+            if (altitude == null) return 0;
+            double rise = altitude[i] - altitude[i - 1];
+            return rise > 0 ? rise : 0;
+        }
     }
 
     /** Time-weighted average heart rate while moving, or null without heart-rate data. */

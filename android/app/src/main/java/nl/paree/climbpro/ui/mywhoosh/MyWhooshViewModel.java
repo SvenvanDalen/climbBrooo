@@ -125,8 +125,9 @@ public final class MyWhooshViewModel extends AndroidViewModel {
         for (RouteCatalogEntry e : new RouteRepository(app).loadCatalog()) {
             if (e.name == null) continue;
             String title = e.name.replaceFirst("(?i)^mywhoosh\\s*[–-]\\s*", "");
-            if (title.equals(e.name)) continue;
-            out.putIfAbsent(MyWhooshRouteCatalog.key(title), e.routeId);
+            if (!title.equals(e.name)) {
+                out.putIfAbsent(MyWhooshRouteCatalog.key(title), e.routeId);
+            }
         }
         return out;
     }

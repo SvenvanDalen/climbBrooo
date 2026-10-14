@@ -117,13 +117,13 @@ public class StringTranslationCompletenessTest {
             configured.add(((Element) locales.item(i)).getAttributeNS(
                     "http://schemas.android.com/apk/res/android", "name"));
         }
-        TreeSet<String> picker = new TreeSet<>(Arrays.asList(AppLanguage.TAGS));
+        TreeSet<String> picker = new TreeSet<>(Arrays.asList(AppLanguage.tags()));
         picker.remove("");
         assertEquals(configured, picker);
         TreeSet<String> expected = new TreeSet<>(TRANSLATIONS);
         expected.add("nl");
         assertEquals(expected, configured);
-        assertEquals(AppLanguage.TAGS.length, AppLanguage.ENDONYMS.length);
+        assertEquals(AppLanguage.tags().length, AppLanguage.endonyms().length);
     }
 
     @Test

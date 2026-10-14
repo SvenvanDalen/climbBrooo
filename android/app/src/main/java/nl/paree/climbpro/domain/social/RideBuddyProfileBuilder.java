@@ -145,6 +145,11 @@ public final class RideBuddyProfileBuilder {
             int part = daypartIndex(t.getHour());
             if (part >= 0) partCounts[part]++;
         }
+
+        private static double speedKmh(StoredRide r) {
+            if (r.avgSpeedMps > 0) return r.avgSpeedMps * 3.6;
+            return r.distanceM / r.movingTimeSec * 3.6;
+        }
     }
 
     static boolean isUsable(StoredRide r) {
@@ -170,20 +175,16 @@ public final class RideBuddyProfileBuilder {
         return -1;
     }
 
-    private static double speedKmh(StoredRide r) {
-        if (r.avgSpeedMps > 0) return r.avgSpeedMps * 3.6;
-        return r.distanceM / r.movingTimeSec * 3.6;
-    }
-
     private static int vam(List<StoredClimbAttempt> attempts, Map<String, Integer> gains, long from) {
         if (attempts == null || gains == null) return 0;
         List<Double> vams = new ArrayList<>();
         for (StoredClimbAttempt a : attempts) {
             if (a == null || a.climbId == null || a.dateEpochSec < from) continue;
             Integer gain = gains.get(a.climbId);
-            if (gain == null || gain < MIN_VAM_GAIN_M || a.elapsedSec < MIN_VAM_SEC) continue;
-            double v = gain * 3600.0 / a.elapsedSec;
-            if (v >= MIN_VAM && v <= MAX_VAM) vams.add(v);
+            if (gain != null && gain >= MIN_VAM_GAIN_M && a.elapsedSec >= MIN_VAM_SEC) {
+                double v = gain * 3600.0 / a.elapsedSec;
+                if (v >= MIN_VAM && v <= MAX_VAM) vams.add(v);
+            }
         }
         return vams.isEmpty() ? 0 : (int) Math.round(median(vams));
     }

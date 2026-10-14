@@ -10,9 +10,15 @@ public class SurfaceTypeDetectorTest {
     // ---- GPX detection ----
 
     @Test
-    public void detectsGarminRoadCycling() {
-        byte[] gpx = "<trk><type>road_cycling</type></trk>".getBytes();
-        assertEquals(SurfaceType.ASPHALT, SurfaceTypeDetector.detectFromGpxBytes(gpx));
+    public void detectsRoadSportsAsAsphalt() {
+        String[] samples = {
+                "<trk><type>road_cycling</type></trk>",
+                "<komoot:meta sport=\"racebike\"/>",
+                "<komoot:meta sport=\"touringbicycle\"/>",
+        };
+        for (String gpx : samples) {
+            assertEquals(gpx, SurfaceType.ASPHALT, SurfaceTypeDetector.detectFromGpxBytes(gpx.getBytes()));
+        }
     }
 
     @Test
@@ -31,18 +37,6 @@ public class SurfaceTypeDetectorTest {
     public void detectsKomootMtb() {
         byte[] gpx = "<komoot:meta sport=\"mtb\"/>".getBytes();
         assertEquals(SurfaceType.DIRT, SurfaceTypeDetector.detectFromGpxBytes(gpx));
-    }
-
-    @Test
-    public void detectsKomootRacebike() {
-        byte[] gpx = "<komoot:meta sport=\"racebike\"/>".getBytes();
-        assertEquals(SurfaceType.ASPHALT, SurfaceTypeDetector.detectFromGpxBytes(gpx));
-    }
-
-    @Test
-    public void detectsKomootTouringbicycle() {
-        byte[] gpx = "<komoot:meta sport=\"touringbicycle\"/>".getBytes();
-        assertEquals(SurfaceType.ASPHALT, SurfaceTypeDetector.detectFromGpxBytes(gpx));
     }
 
     @Test

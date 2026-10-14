@@ -130,9 +130,10 @@ public final class ClimateNormals {
             if (monthHour == null) continue;
             int month = monthHour[0];
             DayPart part = DayPart.ofHour(monthHour[1]);
-            if (part == null || month < 1 || month > 12) continue;
-            sums.add(month - 1, part, t, number(temp, i), number(speed, i), number(dir, i),
-                    number(precip, i));
+            if (part != null && month >= 1 && month <= 12) {
+                sums.add(month - 1, part, t, number(temp, i), number(speed, i), number(dir, i),
+                        number(precip, i));
+            }
         }
         sums.countRainBlocks();
         return new ClimateNormals(sums.cells());

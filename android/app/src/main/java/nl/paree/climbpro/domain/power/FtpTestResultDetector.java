@@ -147,7 +147,7 @@ public final class FtpTestResultDetector {
     }
 
     private static int twentyMinuteIndex() {
-        int[] d = PowerCurveAnalyzer.DURATIONS_SEC;
+        int[] d = PowerCurveAnalyzer.durationsSec();
         for (int i = 0; i < d.length; i++) {
             if (d[i] == 20 * 60) return i;
         }

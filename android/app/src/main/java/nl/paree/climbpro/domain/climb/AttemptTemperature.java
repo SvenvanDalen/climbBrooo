@@ -46,9 +46,10 @@ public final class AttemptTemperature {
             Number t = temps.get(i);
             if (t == null) continue;
             double v = t.doubleValue();
-            if (Double.isNaN(v) || Double.isInfinite(v)) continue;
-            sum += v;
-            n++;
+            if (Double.isFinite(v)) {
+                sum += v;
+                n++;
+            }
         }
         if (n == 0) return null;
         return Math.round(sum / n * 10.0) / 10.0;

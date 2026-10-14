@@ -13,16 +13,16 @@ import java.io.StringReader;
 
 public class CountryPolygonsTest {
 
+    // The second AA ring is a hole in AA, filled by the small enclave CC.
     private static final String TWO_SQUARES =
             """
                     # comment line
 
                     AA 0,0 10,0 10,10 0,10
                     BB 10,0 20,0 20,10 10,10
-                    """
-            // a hole in AA, filled by the small enclave CC
-            + "AA 4,4 6,4 6,6 4,6\n"
-            + "CC 4,4 6,4 6,6 4,6\n";
+                    AA 4,4 6,4 6,6 4,6
+                    CC 4,4 6,4 6,6 4,6
+                    """;
 
     @Test
     public void pointInPolygonPerCountry() throws Exception {
@@ -31,6 +31,13 @@ public class CountryPolygonsTest {
         assertEquals("BB", p.countryAt(5, 15));
         assertNull(p.countryAt(50, 50));
         assertEquals(3, p.countryCount());
+    }
+
+    @Test
+    public void fieldsMaySeparateWithAnyWhitespace() throws Exception {
+        CountryPolygons p = CountryPolygons.parse(new StringReader("AA\t0,0  10,0\t10,10 0,10\n"));
+        assertEquals("AA", p.countryAt(2, 2));
+        assertEquals(1, p.countryCount());
     }
 
     @Test

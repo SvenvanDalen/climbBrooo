@@ -343,15 +343,15 @@ public final class SettingsActivity extends AppCompatActivity {
     private void renderLanguageButton() {
         int index = AppLanguage.currentIndex();
         String name = index == 0
-                ? getString(R.string.settings_language_system) : AppLanguage.ENDONYMS[index];
+                ? getString(R.string.settings_language_system) : AppLanguage.endonyms()[index];
         binding.btnLanguage.setText(getString(R.string.settings_language_button, name));
     }
 
     /** Issue #261: per-app language; AppCompat recreates the activity in the new language. */
     private void showLanguageDialog() {
-        String[] labels = new String[AppLanguage.TAGS.length];
+        String[] labels = new String[AppLanguage.tags().length];
         labels[0] = getString(R.string.settings_language_system);
-        System.arraycopy(AppLanguage.ENDONYMS, 1, labels, 1, labels.length - 1);
+        System.arraycopy(AppLanguage.endonyms(), 1, labels, 1, labels.length - 1);
         new AlertDialog.Builder(this)
                 .setTitle(R.string.settings_language_dialog_title)
                 .setSingleChoiceItems(labels, AppLanguage.currentIndex(), (d, which) -> {

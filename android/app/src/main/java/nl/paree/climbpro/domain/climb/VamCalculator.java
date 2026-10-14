@@ -72,12 +72,11 @@ public final class VamCalculator {
                 continue;
             }
             double eleDelta = windowPoints.get(right).elevation - windowPoints.get(left).elevation;
-            if (Double.isNaN(eleDelta)) {
-                continue;
-            }
-            int vam = averageVam(eleDelta / dist);
-            if (vam > peak) {
-                peak = vam;
+            if (!Double.isNaN(eleDelta)) {
+                int vam = averageVam(eleDelta / dist);
+                if (vam > peak) {
+                    peak = vam;
+                }
             }
         }
         return peak;

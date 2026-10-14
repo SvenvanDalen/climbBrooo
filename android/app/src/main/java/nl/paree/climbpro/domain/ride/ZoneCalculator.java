@@ -19,9 +19,9 @@ public final class ZoneCalculator {
     private ZoneCalculator() {}
 
     /** Upper bounds of heart-rate zones 1-4 as a fraction of max heart rate; zone 5 is above. */
-    public static final double[] HR_ZONE_UPPER = {0.60, 0.70, 0.80, 0.90};
+    private static final double[] HR_ZONE_UPPER = {0.60, 0.70, 0.80, 0.90};
     /** Upper bounds of Coggan power zones 1-6 as a fraction of FTP; zone 7 is above. */
-    public static final double[] POWER_ZONE_UPPER = {0.55, 0.75, 0.90, 1.05, 1.20, 1.50};
+    private static final double[] POWER_ZONE_UPPER = {0.55, 0.75, 0.90, 1.05, 1.20, 1.50};
 
     public static final int TOTAL_WINDOW_DAYS = 28;
 

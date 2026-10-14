@@ -173,6 +173,18 @@ public final class RouteShortener {
                 bestConnector = gap;
             }
         }
+
+        private static long cellX(double lon, double mPerDegLon) {
+            return (long) Math.floor(lon * mPerDegLon / JOIN_RADIUS_M);
+        }
+
+        private static long cellY(double lat) {
+            return (long) Math.floor(lat * M_PER_DEG_LAT / JOIN_RADIUS_M);
+        }
+
+        private static long cellKey(long x, long y) {
+            return (x << 32) ^ (y & 0xffffffffL);
+        }
     }
 
     /**
@@ -226,15 +238,4 @@ public final class RouteShortener {
                 total - skippedM + connector, skippedM - connector, gain, skipped, partial);
     }
 
-    private static long cellX(double lon, double mPerDegLon) {
-        return (long) Math.floor(lon * mPerDegLon / JOIN_RADIUS_M);
-    }
-
-    private static long cellY(double lat) {
-        return (long) Math.floor(lat * M_PER_DEG_LAT / JOIN_RADIUS_M);
-    }
-
-    private static long cellKey(long x, long y) {
-        return (x << 32) ^ (y & 0xffffffffL);
-    }
 }

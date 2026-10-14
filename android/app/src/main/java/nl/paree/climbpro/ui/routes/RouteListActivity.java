@@ -303,18 +303,19 @@ public final class RouteListActivity extends AppCompatActivity {
     /** Reports whether the quick-start sync reached the watch, once its work has finished. */
     private void reportQuickStart(List<androidx.work.WorkInfo> infos) {
         for (androidx.work.WorkInfo w : infos) {
-            if (!quickStartWorkId.equals(w.getId()) || !w.getState().isFinished()) continue;
-            quickStartWorkId = null;
-            // Cancelled = replaced by a newer sync, which reports for itself.
-            if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
-                boolean sent = w.getOutputData().getBoolean(
-                        nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
-                Toast.makeText(this, sent
-                                ? R.string.route_list_quick_start_sent
-                                : R.string.route_list_quick_start_not_sent,
-                        Toast.LENGTH_LONG).show();
+            if (quickStartWorkId.equals(w.getId()) && w.getState().isFinished()) {
+                quickStartWorkId = null;
+                // Cancelled = replaced by a newer sync, which reports for itself.
+                if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
+                    boolean sent = w.getOutputData().getBoolean(
+                            nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
+                    Toast.makeText(this, sent
+                                    ? R.string.route_list_quick_start_sent
+                                    : R.string.route_list_quick_start_not_sent,
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
             }
-            break;
         }
     }
 

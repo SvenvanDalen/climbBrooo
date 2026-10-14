@@ -49,6 +49,23 @@ public final class CountryPolygons {
             }
             return inside;
         }
+
+        /** Ray casting; ring is implicitly closed. */
+        private static boolean ringContains(float[] ring, double lat, double lon) {
+            boolean inside = false;
+            int n = ring.length / 2;
+            for (int i = 0, j = n - 1; i < n; j = i++) {
+                double xi = ring[i * 2];
+                double yi = ring[i * 2 + 1];
+                double xj = ring[j * 2];
+                double yj = ring[j * 2 + 1];
+                if ((yi > lat) != (yj > lat)
+                        && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
     }
 
     private final List<Country> countries;
@@ -67,11 +84,8 @@ public final class CountryPolygons {
                 ? (BufferedReader) reader : new BufferedReader(reader);
         String line;
         while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) continue;
-            String[] parts = line.split("\\s+");
-            if (parts.length < 4) continue;
-            float[] ring = parseRing(parts);
+            String[] parts = dataParts(line);
+            float[] ring = parts.length > 0 ? parseRing(parts) : null;
             if (ring == null) continue;
             String code = parts[0];
             Country c = byCode.get(code);
@@ -110,6 +124,14 @@ public final class CountryPolygons {
         return countries.size();
     }
 
+    /** The whitespace-separated fields of a data line; empty for blank, comment or short lines. */
+    private static String[] dataParts(String line) {
+        String t = line.trim();
+        if (t.isEmpty() || t.startsWith("#")) return new String[0];
+        String[] parts = t.split("\\s+");
+        return parts.length < 4 ? new String[0] : parts;
+    }
+
     /** Null when any coordinate is malformed. */
     private static float[] parseRing(String[] parts) {
         float[] ring = new float[(parts.length - 1) * 2];
@@ -126,20 +148,4 @@ public final class CountryPolygons {
         return ring;
     }
 
-    /** Ray casting; ring is implicitly closed. */
-    private static boolean ringContains(float[] ring, double lat, double lon) {
-        boolean inside = false;
-        int n = ring.length / 2;
-        for (int i = 0, j = n - 1; i < n; j = i++) {
-            double xi = ring[i * 2];
-            double yi = ring[i * 2 + 1];
-            double xj = ring[j * 2];
-            double yj = ring[j * 2 + 1];
-            if ((yi > lat) != (yj > lat)
-                    && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
-                inside = !inside;
-            }
-        }
-        return inside;
-    }
 }

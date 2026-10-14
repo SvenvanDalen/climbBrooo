@@ -666,8 +666,10 @@ public final class RouteRepository {
             if (ClimbRating.isRated(c) || c.ratingNote != null) continue;
             String identity = ClimbIdentity.of(c);
             for (RouteCatalogEntry entry : catalog) {
-                if (entry.routeId == null || entry.routeId.equals(route.routeId)) continue;
-                if (inheritRatingFrom(entry.routeId, identity, c)) break;
+                if (entry.routeId != null && !entry.routeId.equals(route.routeId)
+                        && inheritRatingFrom(entry.routeId, identity, c)) {
+                    break;
+                }
             }
         }
     }

@@ -34,7 +34,7 @@ public final class TrainingLoadHeatmapView extends View {
     }
 
     /** Empty, light, moderate, hard, very hard. */
-    public static final int[] LEVEL_COLORS = {
+    static final int[] LEVEL_COLORS = {
             Color.parseColor("#2A2F35"),
             Color.parseColor("#0E4429"),
             Color.parseColor("#006D32"),

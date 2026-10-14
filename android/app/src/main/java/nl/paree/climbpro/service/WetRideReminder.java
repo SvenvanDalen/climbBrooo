@@ -40,8 +40,8 @@ public final class WetRideReminder {
 
         List<StoredRide> due = new ArrayList<>();
         for (StoredRide r : rides) {
-            if (!WetRideDetector.isCandidate(r, nowSec)) continue;
-            if (alreadyChecked != null && alreadyChecked.contains(r.activityId)) continue;
+            if (!WetRideDetector.isCandidate(r, nowSec)
+                    || (alreadyChecked != null && alreadyChecked.contains(r.activityId))) continue;
             due.add(r);
         }
         Collections.sort(due, (a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));

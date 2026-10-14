@@ -56,9 +56,10 @@ public final class TrackSensors {
         for (int i = from; i <= to && i < values.size(); i++) {
             Double v = values.get(i);
             if (v == null || Double.isNaN(v) || v < 0) continue;
-            if (v == 0 && !includeZero) continue;
-            sum += v;
-            n++;
+            if (v != 0 || includeZero) {
+                sum += v;
+                n++;
+            }
         }
         return n > 0 ? (int) Math.round(sum / n) : null;
     }
