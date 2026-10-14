@@ -23,10 +23,14 @@ import androidx.preference.PreferenceManager;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.ride.StoredRide;
+import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.domain.mywhoosh.CadenceByGrade;
 import nl.paree.climbpro.domain.mywhoosh.HeartRateRecoveryTrend;
 import nl.paree.climbpro.domain.mywhoosh.IndoorSeasonSummary;
+import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
 import nl.paree.climbpro.domain.mywhoosh.MyWhooshRouteCatalog;
+import nl.paree.climbpro.domain.mywhoosh.PowerDecoupling;
+import nl.paree.climbpro.domain.mywhoosh.RaceDetector;
 import nl.paree.climbpro.domain.mywhoosh.VirtualElevation;
 import nl.paree.climbpro.service.MyWhooshPrNotifier;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
@@ -41,8 +45,10 @@ import java.util.Locale;
 /**
  * "MyWhoosh-analyse": the indoor season against the previous one (issue #409), the catalog of
  * ridden MyWhoosh routes with a ride comparer per route (issues #406, #405), NP/IF/TSS per
- * ride (issue #391), cadence per gradient (issue #403), heart-rate recovery after intervals
- * (issue #402), the weight log (issue #408) and the indoor settings (issues #388, #393).
+ * ride with its work in kJ (issues #391, #404), races apart (issue #407), intervals per ride
+ * (issue #400), Pw:HR decoupling (issue #399), cadence per gradient (issue #403), heart-rate
+ * recovery after intervals (issue #402), the weight log (issue #408) and the indoor settings
+ * (issues #388, #393).
  * Everything comes from the ride archive and its stream analysis; phone-only.
  */
 public final class MyWhooshActivity extends AppCompatActivity {
@@ -89,6 +95,9 @@ public final class MyWhooshActivity extends AppCompatActivity {
         renderSeasons(rows, st.seasons);
         renderCatalog(rows, st);
         renderIntensity(rows, st);
+        renderRaces(rows, st.races);
+        renderIntervals(rows, st.intervalRides);
+        renderDecoupling(rows, st.decoupling);
         renderCadence(rows, st.cadence);
         renderRecovery(rows, st.recovery);
         renderSettings(rows);
@@ -209,19 +218,85 @@ public final class MyWhooshActivity extends AppCompatActivity {
         }
         if (st.rides.isEmpty()) return;
         addText(rows, "TSS = uren × IF² × 100. Deze ritten tellen ook mee in de "
-                + "belastingkalender en de fitheidsgrafiek.");
+                + "belastingkalender en de fitheidsgrafiek. kJ is de geleverde arbeid uit je "
+                + "vermogen, ongeveer gelijk aan de verbrande kcal.");
         for (MyWhooshViewModel.RideRow row : st.rides) {
-            String title = date(row.ride.startEpochSec) + "  •  "
-                    + nl.paree.climbpro.domain.mywhoosh.IndoorRides.routeTitle(row.ride);
+            String title = date(row.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(row.ride);
+            String work = row.workKj != null ? ", " + row.workKj + " kJ" : "";
             if (row.intensity == null) {
-                addRow(rows, title, "–", duration(row.ride.movingTimeSec)
-                        + (st.ftpWatts > 0 ? ", geen vermogen" : ""));
+                addRow(rows, title, "–", duration(row.ride.movingTimeSec) + work
+                        + (st.ftpWatts > 0 && row.workKj == null ? ", geen vermogen" : ""));
                 continue;
             }
             addRow(rows, title, String.format(Locale.getDefault(), "%.0f TSS", row.intensity.tss),
-                    String.format(Locale.getDefault(), "NP %d W, IF %.2f, %s",
+                    String.format(Locale.getDefault(), "NP %d W, IF %.2f, %s%s",
                             row.intensity.normalizedPower, row.intensity.intensityFactor,
-                            duration(row.ride.movingTimeSec)));
+                            duration(row.ride.movingTimeSec), work));
+        }
+    }
+
+    // --- #407 -----------------------------------------------------------------------------
+
+    private void renderRaces(ViewGroup rows, List<RaceDetector.Race> races) {
+        if (races.isEmpty()) return;
+        addHeader(rows, "Wedstrijden");
+        addText(rows, "Ritten met \"race\" of \"event\" in de naam, of op wedstrijdintensiteit "
+                + "(IF ≥ 0,90) met je hardste sprint bij de start. Ze staan niet tussen de "
+                + "trainingsritten hierboven.");
+        for (RaceDetector.Race r : races) {
+            String wkg = r.avgWattsPerKg != null
+                    ? String.format(Locale.getDefault(), "%.2f W/kg", r.avgWattsPerKg) : "–";
+            StringBuilder detail = new StringBuilder(duration(r.timeSec));
+            if (r.peak1MinWatts != null) detail.append(", piek 1 min ").append(r.peak1MinWatts).append(" W");
+            if (r.peak5MinWatts != null) detail.append(", 5 min ").append(r.peak5MinWatts).append(" W");
+            if (r.reason == RaceDetector.Reason.INTENSITY) detail.append("\nHerkend aan de intensiteit");
+            addRow(rows, date(r.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(r.ride),
+                    wkg, detail.toString());
+        }
+    }
+
+    // --- #400 -----------------------------------------------------------------------------
+
+    private void renderIntervals(ViewGroup rows, List<MyWhooshViewModel.IntervalRide> rides) {
+        addHeader(rows, "Intervallen");
+        if (rides.isEmpty()) {
+            addText(rows, "Nog geen MyWhoosh-rit met herkende intervallen geanalyseerd. Een "
+                    + "interval is minstens een minuut ruim boven je genormaliseerde vermogen "
+                    + "van die rit.");
+            return;
+        }
+        for (MyWhooshViewModel.IntervalRide ir : rides) {
+            addText(rows, date(ir.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(ir.ride)
+                    + " (" + ir.intervals.size() + " interval(len))");
+            for (int i = 0; i < ir.intervals.size(); i++) {
+                StoredRideStreamStats.Interval iv = ir.intervals.get(i);
+                StringBuilder detail = new StringBuilder("start na ")
+                        .append(duration(iv.startSec));
+                if (iv.maxHr != null) detail.append(", max ").append(iv.maxHr).append(" bpm");
+                if (iv.recoveryBpm != null) {
+                    detail.append(", herstel ").append(iv.recoveryBpm).append(" slagen");
+                }
+                addRow(rows, "#" + (i + 1) + "  " + duration(iv.durationSec),
+                        iv.avgWatts + " W", detail.toString());
+            }
+        }
+    }
+
+    // --- #399 -----------------------------------------------------------------------------
+
+    private void renderDecoupling(ViewGroup rows, List<PowerDecoupling.Entry> entries) {
+        addHeader(rows, "Aerobe ontkoppeling (Pw:HR)");
+        if (entries.isEmpty()) {
+            addText(rows, "Nog geen MyWhoosh-rit van minstens 45 minuten met vermogen en "
+                    + "hartslag geanalyseerd.");
+            return;
+        }
+        addText(rows, "Hoeveel je hartslag ten opzichte van je vermogen opliep in de tweede "
+                + "helft. Onder 5 % betekent dat je duurvermogen het volhield.");
+        for (PowerDecoupling.Entry e : entries) {
+            addRow(rows, date(e.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(e.ride),
+                    String.format(Locale.getDefault(), "%.1f %%", e.percent),
+                    verdict(e.rating) + ", over " + e.minutes + " min");
         }
     }
 
@@ -277,10 +352,16 @@ public final class MyWhooshActivity extends AppCompatActivity {
         for (int i = 0; i < r.entries.size() && i < MAX_RECOVERY_ROWS; i++) {
             HeartRateRecoveryTrend.Entry e = r.entries.get(i);
             addRow(rows, date(e.ride.startEpochSec) + "  •  "
-                            + nl.paree.climbpro.domain.mywhoosh.IndoorRides.routeTitle(e.ride),
+                            + IndoorRides.routeTitle(e.ride),
                     String.format(Locale.getDefault(), "%.0f slagen", e.avgDropBpm),
                     e.intervals + " interval(len)");
         }
+    }
+
+    private static String verdict(PowerDecoupling.Rating rating) {
+        if (rating == PowerDecoupling.Rating.GOOD) return "goed";
+        if (rating == PowerDecoupling.Rating.FAIR) return "matig";
+        return "zwak";
     }
 
     // --- #408 / #388 / #393 ---------------------------------------------------------------

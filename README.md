@@ -391,6 +391,12 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   all attempts with PRs marked, the linked real/MyWhoosh climb side by side, and the outdoor
   time predicted from recent indoor power. Climb attempts now store average power, heart rate
   and cadence. Phone-only.
+- **MyWhoosh ride analysis** (same screen): work in kJ per ride from the power stream (≈ kcal
+  burned), races/events in their own results list (name says "race"/"event"/"crit", or IF ≥
+  0.90 with the hardest 5 s in the first 3 min) with average W/kg, 1/5 min peak and time — and
+  kept out of the training rows —, a table of detected intervals per ride (duration, average
+  power, max heart rate, recovery), and Pw:HR aerobic decoupling for rides of 45 min or longer
+  (under 5 % = good). Phone-only.
 - **intervals.icu** — Settings → "intervals.icu koppelen": paste your personal API key
   (intervals.icu → Settings → Developer Settings) and athlete id (0 = your own), with a
   connection test. Climb detail → "Exporteer als indoor-workout" → "Naar intervals.icu" (or
