@@ -35,7 +35,7 @@ public final class FavoriteStartPoint {
 
     /**
      * Parses a typed "lat, lon" pair. Accepts {@code 50.85, 5.69}, {@code 50.85 5.69} and the
-     * Dutch decimal-comma form {@code 50,85; 5,69}. Returns {@code {lat, lon}}, or null when
+     * Dutch decimal-comma form {@code 50,85; 5,69}. Returns {@code {lat, lon}}, or empty when
      * the text is not exactly two numbers or lies outside the valid range.
      */
     public static double[] parseCoordinates(String text) {

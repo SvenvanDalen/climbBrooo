@@ -139,7 +139,7 @@ public final class ClimateNormals {
         return new ClimateNormals(sums.cells());
     }
 
-    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); null if unparseable. */
+    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); empty if unparseable. */
     private static int[] monthAndHour(String t) {
         if (t.length() < 13) return new int[0];
         try {

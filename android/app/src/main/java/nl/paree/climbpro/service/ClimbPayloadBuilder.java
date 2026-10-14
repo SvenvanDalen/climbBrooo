@@ -208,7 +208,7 @@ public final class ClimbPayloadBuilder {
                 riddenClimbIds, cg.length > 0 ? cg : null, hg.length > 0 ? hg : null);
     }
 
-    /** A copy clamped to 0..max, or null unless six values with at least one known. */
+    /** A copy clamped to 0..max, or empty unless six values with at least one known. */
     static int[] gradeClasses(int[] values, int max) {
         if (values == null || values.length != 6) return new int[0];
         int[] out = new int[6];
@@ -685,7 +685,7 @@ public final class ClimbPayloadBuilder {
 
     /**
      * Packs 'vam' as [avgVamMPerH, peakVamMPerH, ...] one pair per segment, parallel to 'segs'.
-     * Returns null (field omitted) unless every segment has a computed VAM — a resynced climb
+     * Returns an empty array (field omitted) unless every segment has a computed VAM — a resynced climb
      * whose stored segments predate VAM support (avgVamMPerH/peakVamMPerH == -1) is sent without
      * 'vam' rather than partial/sentinel data.
      */

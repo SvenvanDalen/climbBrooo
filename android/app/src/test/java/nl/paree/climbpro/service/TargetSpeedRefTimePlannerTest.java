@@ -85,7 +85,7 @@ public class TargetSpeedRefTimePlannerTest {
     @Test
     public void vamOnly_climbWithoutAnyGainYieldsNull() {
         StoredClimb c = climb(seg(500, 0), seg(500, 0));
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(0, 900)));
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(0, 900)).length);
     }
 
     @Test
@@ -111,17 +111,17 @@ public class TargetSpeedRefTimePlannerTest {
     @Test
     public void unsetTarget_isNull() {
         StoredClimb c = climb(seg(500, 20));
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(c, GhostTarget.NONE));
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(c, null));
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(c, GhostTarget.NONE).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(c, null).length);
     }
 
     @Test
     public void climbWithoutSegments_isNull() {
         StoredClimb c = new StoredClimb();
         c.length = 1000;
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(15, 0)));
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(15, 0)).length);
         c.segments = Collections.emptyList();
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(15, 0)));
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(c, new GhostTarget(15, 0)).length);
     }
 
     @Test
@@ -139,9 +139,9 @@ public class TargetSpeedRefTimePlannerTest {
     @Test
     public void plan_nullWhenRouteHasNoClimbsOrTargetUnset() {
         StoredRoute route = new StoredRoute();
-        assertNull(TargetSpeedRefTimePlanner.plan(route, new GhostTarget(18, 0)));
-        assertNull(TargetSpeedRefTimePlanner.plan(null, new GhostTarget(18, 0)));
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(route, new GhostTarget(18, 0)).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(null, new GhostTarget(18, 0)).length);
         route.climbs = new ArrayList<>(Arrays.asList(climb(seg(500, 20))));
-        assertNull(TargetSpeedRefTimePlanner.plan(route, GhostTarget.NONE));
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(route, GhostTarget.NONE).length);
     }
 }

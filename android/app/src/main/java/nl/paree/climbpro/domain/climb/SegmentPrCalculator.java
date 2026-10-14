@@ -26,7 +26,7 @@ public final class SegmentPrCalculator {
      *                 {@link StoredClimbAttempt#routeDeviation} are excluded — see
      *                 {@link nl.paree.climbpro.domain.matching.ClimbRouteDeviationDetector}
      *                 (issue #77).
-     * @return per-segment fastest-ever split (length == segCount), or null when no
+     * @return per-segment fastest-ever split (length == segCount), or empty when no
      *         attempt for this climb has a matching-length segSplitSec.
      */
     public static int[] bestSplits(String climbId, int segCount, List<StoredClimbAttempt> attempts) {

@@ -102,7 +102,7 @@ public final class ZoneCalculator {
         return new Result(entries, hrSum, powerSum);
     }
 
-    /** Seconds per heart-rate zone, or null without a histogram, max heart rate or any time. */
+    /** Seconds per heart-rate zone, or empty without a histogram, max heart rate or any time. */
     public static int[] heartRateZones(int[] secondsPerBpm, int maxHr) {
         if (secondsPerBpm == null || maxHr <= 0) return new int[0];
         int[] zones = new int[HR_ZONE_UPPER.length + 1];
@@ -114,7 +114,7 @@ public final class ZoneCalculator {
     }
 
     /**
-     * Seconds per power zone, or null without a histogram, FTP or any time. Each 10 W bin is
+     * Seconds per power zone, or empty without a histogram, FTP or any time. Each 10 W bin is
      * placed by its middle, so a zone boundary is off by at most 5 W.
      */
     public static int[] powerZones(int[] secondsPer10W, int ftp) {

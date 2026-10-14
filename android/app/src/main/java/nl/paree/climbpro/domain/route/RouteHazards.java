@@ -80,7 +80,7 @@ public final class RouteHazards {
                 || (grade <= BENDY_GRADIENT && turnSum >= BENDY_TURN_DEG);
     }
 
-    /** Route distance range {from, to} a tunnel way covers; null if it doesn't lie on the route. */
+    /** Route distance range {from, to} a tunnel way covers; empty if it doesn't lie on the route. */
     private static int[] tunnelRange(double[][] way, double[] lats, double[] lons,
                                      double[] distances, int n, double cosLat) {
         double lo = Double.MAX_VALUE;
@@ -157,7 +157,7 @@ public final class RouteHazards {
     }
 
     /**
-     * Packs hazards into the wire {@code hz} array, sorted by start; null when there are none.
+     * Packs hazards into the wire {@code hz} array, sorted by start; empty when there are none.
      * Keeps at most {@link #MAX_WIRE_HAZARDS} (the first ones along the route).
      */
     public static int[] pack(List<Hazard> hazards) {

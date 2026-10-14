@@ -61,7 +61,7 @@ public final class RouteGhostRepository {
     }
 
     /**
-     * The wire profile ('gh') for this route, or null when there is no stored ride or it no
+     * The wire profile ('gh') for this route, or empty when there is no stored ride or it no
      * longer fits the route's current length.
      */
     public int[] wireFor(StoredRoute route) {

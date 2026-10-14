@@ -230,7 +230,7 @@ public final class RouteSyncWorker extends Worker {
     }
 
     /**
-     * Position saved when the day trip was chosen (issue #9); null without one, then the trip
+     * Position saved when the day trip was chosen (issue #9); empty without one, then the trip
      * starts at the collection's first climb.
      */
     static double[] dayTripStart(SharedPreferences prefs) {

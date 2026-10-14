@@ -92,7 +92,7 @@ public final class GpxWriter {
         sb.append("  </wpt>\n");
     }
 
-    /** Route position at {@code distance} m, linearly interpolated; null without distances. */
+    /** Route position at {@code distance} m, linearly interpolated; empty without distances. */
     private static double[] positionAt(StoredRoute route, int n, double distance) {
         double[] d = route.distances;
         if (d == null || d.length < n || n == 0) return new double[0];

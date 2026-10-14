@@ -23,7 +23,7 @@ public final class ZoneHistogramAnalyzer {
      */
     static final int MAX_GAP_SEC = 10;
 
-    /** Seconds per bpm from {@link #HR_MIN_BPM}, trimmed after the last non-zero bin; or null. */
+    /** Seconds per bpm from {@link #HR_MIN_BPM}, trimmed after the last non-zero bin; or empty. */
     public static int[] heartRateSeconds(RideStreams s) {
         if (s == null || !s.isUsable() || s.heartrate == null) return new int[0];
         int[] bins = new int[HR_MAX_BPM - HR_MIN_BPM + 1];
@@ -40,7 +40,7 @@ public final class ZoneHistogramAnalyzer {
     }
 
     /**
-     * Seconds per {@link #POWER_BIN_WATTS} W bin, trimmed after the last non-zero bin; or null.
+     * Seconds per {@link #POWER_BIN_WATTS} W bin, trimmed after the last non-zero bin; or empty.
      * Coasting at 0 W counts (bin 0), as in any zone analysis; glitches above
      * {@link SprintAnalyzer#MAX_PLAUSIBLE_WATTS} are skipped.
      */

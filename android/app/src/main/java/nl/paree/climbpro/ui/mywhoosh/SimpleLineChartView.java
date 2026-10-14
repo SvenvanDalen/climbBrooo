@@ -112,7 +112,7 @@ public final class SimpleLineChartView extends View {
         if (si < 2 && s.format != null) drawRangeLabels(canvas, si, s, min, max);
     }
 
-    /** {min, max} of the series (with the zero line and a minimum span); null without values. */
+    /** {min, max} of the series (with the zero line and a minimum span); empty without values. */
     private double[] valueRange(Series s) {
         double min = Double.MAX_VALUE;
         double max = -Double.MAX_VALUE;

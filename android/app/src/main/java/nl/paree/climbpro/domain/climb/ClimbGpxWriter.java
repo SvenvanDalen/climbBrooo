@@ -160,7 +160,7 @@ public final class ClimbGpxWriter {
      * is hidden too) and centred on the stored random centre, not on the real start, so
      * the edge where the visible track begins doesn't point back at the start either.
      *
-     * @return the zone centre {lat, lon}, or null when no privacy zone applies
+     * @return the zone centre {lat, lon}, or empty when no privacy zone applies
      */
     private static double[] privacyZoneCentre(StoredClimb climb, double privacyRadiusMeters) {
         if (!climb.isHome || privacyRadiusMeters <= 0) return new double[0];

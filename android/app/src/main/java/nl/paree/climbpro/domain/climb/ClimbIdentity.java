@@ -80,7 +80,7 @@ public final class ClimbIdentity {
     /**
      * Approximate start coordinate ({@code {lat, lon}}, the bucket centre, i.e. within about
      * half a {@code COORD_BUCKET_DEG} of the real start) encoded in a key built by {@link #of},
-     * or null when {@code climbId} is not in that format. Lets callers place logbook climbs on
+     * or empty when {@code climbId} is not in that format. Lets callers place logbook climbs on
      * the map without loading every stored route.
      */
     public static double[] approxStart(String climbId) {

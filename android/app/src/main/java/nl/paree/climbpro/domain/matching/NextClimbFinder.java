@@ -94,7 +94,7 @@ public final class NextClimbFinder {
 
     /**
      * @return [lateral distance m, distance along route m] of the nearest route point, or
-     *         null when the route has no usable geometry.
+     *         empty when the route has no usable geometry.
      */
     static double[] project(StoredRoute r, double lat, double lon) {
         if (r.lats == null || r.lons == null || r.distances == null) return new double[0];

@@ -88,7 +88,7 @@ public final class StarredSegmentLocator {
                 .build();
     }
 
-    /** Shared start/end index match with direction guard; null if not on route or reversed. */
+    /** Shared start/end index match with direction guard; empty if not on route or reversed. */
     private static int[] matchIndices(List<RoutePoint> route,
                                       double startLat, double startLon,
                                       double endLat, double endLon, double maxMatchM) {

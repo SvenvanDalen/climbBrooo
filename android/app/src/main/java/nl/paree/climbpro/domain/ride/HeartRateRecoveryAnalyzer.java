@@ -74,7 +74,7 @@ public final class HeartRateRecoveryAnalyzer {
     }
 
     /**
-     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); null
+     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); empty
      * without power and heart rate, or an empty array when the ride has no qualifying interval.
      */
     public static int[] drops(RideStreams s) {

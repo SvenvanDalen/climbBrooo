@@ -79,7 +79,7 @@ public final class ClimbAttemptMatcher {
      * (boundary[-1] = entry time).
      *
      * @param segLengthsM per-segment length (m) in climb order, summing to ~climbLengthM.
-     * @return per-segment elapsed seconds (length == segLengthsM.length), or null if no
+     * @return per-segment elapsed seconds (length == segLengthsM.length), or empty if no
      *         valid attempt is found (mirrors {@link #match} returning -1).
      */
     public static int[] matchSegments(List<TrackSample> track,

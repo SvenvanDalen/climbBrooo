@@ -33,7 +33,7 @@ public final class RoutePoiLocator {
 
     private RoutePoiLocator() {}
 
-    /** Closest point on the route to (lat, lon): {distanceAlongM, offsetM}, or null. */
+    /** Closest point on the route to (lat, lon): {distanceAlongM, offsetM}, or empty. */
     public static double[] project(double[] lats, double[] lons, double[] cumulative,
                                    double lat, double lon) {
         int n = lats.length;

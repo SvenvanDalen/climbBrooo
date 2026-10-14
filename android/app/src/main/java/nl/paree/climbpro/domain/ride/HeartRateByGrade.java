@@ -18,7 +18,7 @@ public final class HeartRateByGrade {
     public static final int MIN_CLASS_SEC = 120;
 
     /**
-     * Zone 1-5 per class (index 0-5), 0 = too little data; null without a max heart rate or
+     * Zone 1-5 per class (index 0-5), 0 = too little data; empty without a max heart rate or
      * when no class has enough data.
      */
     public static int[] zones(Collection<StoredRideStreamStats> stats, int maxHr) {

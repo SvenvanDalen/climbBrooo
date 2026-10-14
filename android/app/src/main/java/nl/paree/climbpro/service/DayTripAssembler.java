@@ -58,7 +58,7 @@ public final class DayTripAssembler {
 
     /**
      * @param startLatLon the rider's position, or null when unknown
-     * @return the payload, or null when the collection has no climb with a start coordinate
+     * @return the payload, or empty when the collection has no climb with a start coordinate
      */
     public byte[] assemble(RouteCollection collection, double[] startLatLon) throws IOException {
         truncated = false;

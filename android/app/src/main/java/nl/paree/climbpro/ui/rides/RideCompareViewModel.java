@@ -74,7 +74,7 @@ public final class RideCompareViewModel extends AndroidViewModel {
         });
     }
 
-    /** Both rides from the archive, oldest first; null when either is missing. */
+    /** Both rides from the archive, oldest first; empty when either is missing. */
     private StoredRide[] findRides(long activityIdA, long activityIdB) {
         StoredRide a = null;
         StoredRide b = null;

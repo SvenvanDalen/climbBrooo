@@ -101,7 +101,7 @@ public final class RouteGhostProfile {
     }
 
     /**
-     * Seconds the ride spent on every step of the route, or null when the track does not ride
+     * Seconds the ride spent on every step of the route, or empty when the track does not ride
      * the whole route in order. Each separate pass of the route start (up to
      * {@link #MAX_START_PASSES}) is tried as the start, so a loop ridden twice or a ride that
      * passes the start before beginning the route still yields its fastest full lap.
@@ -129,7 +129,7 @@ public final class RouteGhostProfile {
         return best;
     }
 
-    /** {@code [stepM, s1..sn]} for the wire, or null when the profile is unusable. */
+    /** {@code [stepM, s1..sn]} for the wire, or empty when the profile is unusable. */
     public static int[] wire(int stepM, int[] stepSec) {
         if (stepM <= 0 || stepSec == null || stepSec.length == 0) return new int[0];
         int[] out = new int[stepSec.length + 1];

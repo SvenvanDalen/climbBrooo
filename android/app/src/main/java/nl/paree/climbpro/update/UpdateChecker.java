@@ -180,7 +180,7 @@ public final class UpdateChecker {
 
     /**
      * Parses "v1.4.0" -> {1, 4, 0}, "1.0.0-dev" -> {1, 0, 0}, legacy "v42" -> {0, 0, 42};
-     * returns null if the tag doesn't match the expected shape.
+     * returns an empty array if the tag doesn't match the expected shape.
      */
     static int[] parseVersion(String tagName) {
         if (tagName == null) return new int[0];

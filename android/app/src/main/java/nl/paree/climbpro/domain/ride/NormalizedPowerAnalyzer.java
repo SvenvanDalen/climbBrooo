@@ -23,7 +23,7 @@ public final class NormalizedPowerAnalyzer {
 
     /**
      * Per-second power with pauses removed (the recording is joined up), invalid readings as
-     * 0 W; null without a power stream or with less than {@link #MIN_SECONDS}.
+     * 0 W; empty without a power stream or with less than {@link #MIN_SECONDS}.
      */
     static double[] powerPerSecond(RideStreams s) {
         if (s == null) return new double[0];

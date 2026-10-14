@@ -23,13 +23,13 @@ public final class RouteRefTimePlanner {
     private RouteRefTimePlanner() {}
 
     /**
-     * @return null when the route has no climbs; otherwise an array indexed by climb
+     * @return an empty table when the route has no climbs; otherwise an array indexed by climb
      *         position, each entry the per-segment PR seconds array (or null when no
      *         stored attempt has a matching segment count for that climb).
      */
     public static int[][] plan(StoredRoute route, List<StoredClimbAttempt> attempts) {
         if (route == null || route.climbs == null || route.climbs.isEmpty()) {
-            return null;
+            return new int[0][];
         }
         int[][] result = new int[route.climbs.size()][];
         for (int ci = 0; ci < route.climbs.size(); ci++) {

@@ -29,7 +29,7 @@ public final class EuroAmount {
         return toCents(parts[0], parts[1]);
     }
 
-    /** {@code "1.234,5"} → {"1234", "5"}; null for a second comma or bad grouping. */
+    /** {@code "1.234,5"} → {"1234", "5"}; empty for a second comma or bad grouping. */
     private static String[] splitAtComma(String s) {
         int comma = s.indexOf(',');
         if (s.indexOf(',', comma + 1) >= 0) return new String[0];

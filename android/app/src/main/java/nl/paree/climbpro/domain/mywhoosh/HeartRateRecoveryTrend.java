@@ -69,7 +69,7 @@ public final class HeartRateRecoveryTrend {
                 w.prevN > 0 ? w.prevSum / w.prevN : null, w.recentN, w.prevN);
     }
 
-    /** The ride's heart-rate recovery drops; null when it doesn't qualify or has none. */
+    /** The ride's heart-rate recovery drops; empty when it doesn't qualify or has none. */
     private static int[] recoveryDrops(StoredRide r, Map<Long, StoredRideStreamStats> stats,
                                        boolean indoorOnly) {
         if (r == null || (indoorOnly && !IndoorRides.isIndoor(r))) return new int[0];

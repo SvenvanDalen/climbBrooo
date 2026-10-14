@@ -29,7 +29,7 @@ public final class SegmentIntensityZones {
     private SegmentIntensityZones() {}
 
     /**
-     * 0-based Coggan zone (0 = Z1 ... 6 = Z7) per segment, or null when the profile is
+     * 0-based Coggan zone (0 = Z1 ... 6 = Z7) per segment, or empty when the profile is
      * incomplete, the input is empty or inconsistent, or no estimate can be made.
      */
     public static int[] zones(int[] distances, double[] gradients, int[] surfaces,
@@ -68,7 +68,7 @@ public final class SegmentIntensityZones {
 
     /**
      * Color index (0–5, protocol/colors.md) per segment from its intensity zone — the wire
-     * array {@code zc}. Null exactly when {@link #zones(List, RiderProfile)} is null.
+     * array {@code zc}. Empty exactly when {@link #zones(List, RiderProfile)} is empty.
      */
     public static int[] colorIndices(List<StoredSegment> segments, RiderProfile profile) {
         int[] zones = zones(segments, profile);
