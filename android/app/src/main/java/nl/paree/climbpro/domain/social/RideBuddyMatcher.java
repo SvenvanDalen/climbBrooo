@@ -182,11 +182,11 @@ public final class RideBuddyMatcher {
         private static double linear(double diff, double zero) {
             return Math.max(0, 1 - diff / zero);
         }
-    }
 
-    private static double jaccard(int a, int b) {
-        int union = Integer.bitCount(a | b);
-        return union == 0 ? 0 : (double) Integer.bitCount(a & b) / union;
+        private static double jaccard(int a, int b) {
+            int union = Integer.bitCount(a | b);
+            return union == 0 ? 0 : (double) Integer.bitCount(a & b) / union;
+        }
     }
 
     static double haversineKm(double lat1, double lon1, double lat2, double lon2) {

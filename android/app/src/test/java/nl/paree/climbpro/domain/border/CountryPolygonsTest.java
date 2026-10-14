@@ -34,6 +34,13 @@ public class CountryPolygonsTest {
     }
 
     @Test
+    public void fieldsMaySeparateWithAnyWhitespace() throws Exception {
+        CountryPolygons p = CountryPolygons.parse(new StringReader("AA\t0,0  10,0\t10,10 0,10\n"));
+        assertEquals("AA", p.countryAt(2, 2));
+        assertEquals(1, p.countryCount());
+    }
+
+    @Test
     public void holeIsExcludedAndEnclaveWins() throws Exception {
         CountryPolygons p = CountryPolygons.parse(new StringReader(TWO_SQUARES));
         assertEquals("CC", p.countryAt(5, 5));

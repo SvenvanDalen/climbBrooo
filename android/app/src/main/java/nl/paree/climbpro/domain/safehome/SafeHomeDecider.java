@@ -42,7 +42,7 @@ public final class SafeHomeDecider {
         long earliestEnd = Math.max(s.armedSinceEpochSec, nowEpochSec - MAX_AGE_SEC);
         for (StoredRide r : rides) {
             if (r == null || r.startEpochSec <= 0 || VIRTUAL_RIDE_TYPE.equalsIgnoreCase(r.type)
-                    || (s.reportedActivityIds != null && s.reportedActivityIds.contains(r.activityId))) {
+                    || (s.reportedActivityIds != null && s.reportedActivityIds.contains(Long.valueOf(r.activityId)))) {
                 continue;
             }
             long end = endEpochSec(r);
