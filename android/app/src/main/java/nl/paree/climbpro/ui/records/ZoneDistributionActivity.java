@@ -15,12 +15,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.ride.ZoneCalculator;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Zonetijd" screen (issue #218): time per heart-rate and power zone for the last four weeks,
@@ -36,8 +36,8 @@ public final class ZoneDistributionActivity extends AppCompatActivity {
     private static final int MIN_MAX_HR = 120;
     private static final int MAX_MAX_HR = 230;
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
 
     private ZoneDistributionViewModel viewModel;
 
@@ -113,7 +113,7 @@ public final class ZoneDistributionActivity extends AppCompatActivity {
 
     private void addRideRow(LinearLayout rows, ZoneCalculator.Entry e) {
         String date = e.ride.startEpochSec > 0
-                ? dateFormat.format(new Date(e.ride.startEpochSec * 1000L))
+                ? EpochDates.format(dateFormat, e.ride.startEpochSec)
                 : "onbekende datum";
         String name = e.ride.name != null && !e.ride.name.isEmpty() ? e.ride.name : "Rit";
         addRow(rows, date, name, e.hrZones, e.powerZones);

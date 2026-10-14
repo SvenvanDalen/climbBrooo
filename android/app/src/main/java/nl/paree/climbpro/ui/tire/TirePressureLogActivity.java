@@ -20,16 +20,18 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.bike.BikeCostLog;
 import nl.paree.climbpro.data.tire.TirePressureLog;
+import nl.paree.climbpro.ui.PickerDates;
 import nl.paree.climbpro.ui.bike.BikePicker;
 import nl.paree.climbpro.data.tire.TirePressureLogEntry;
 import nl.paree.climbpro.domain.tire.TirePressureReminderCalculator;
 import nl.paree.climbpro.domain.tire.TirePressureReminderCalculator.Status;
 import nl.paree.climbpro.domain.tire.TirePressureUnits;
 
-import java.util.Calendar;
 import java.util.Locale;
 
 /**
@@ -131,7 +133,7 @@ public final class TirePressureLogActivity extends AppCompatActivity {
         if (latest != null) prefillPressures(latest, front, rear, psi);
 
         // null = "now"; otherwise the picked day at noon (local time).
-        final Calendar[] picked = {null};
+        final LocalDate[] picked = {null};
         dateButton.setText("Datum: vandaag");
         dateButton.setOnClickListener(v -> pickCheckDate(dateButton, picked));
 
@@ -151,12 +153,16 @@ public final class TirePressureLogActivity extends AppCompatActivity {
                                 + pressureRange(psi), Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    long ts = picked[0] != null ? picked[0].getTimeInMillis() / 1000L
+                    long ts = picked[0] != null ? noonEpochSec(picked[0])
                                                 : System.currentTimeMillis() / 1000L;
                     viewModel.addEntry(ts, f, r, note.getText().toString());
                     dialog.dismiss();
                 }));
         dialog.show();
+    }
+
+    private static long noonEpochSec(LocalDate day) {
+        return PickerDates.noon(day, ZoneId.systemDefault());
     }
 
     private static void prefillPressures(TirePressureLogEntry latest, EditText front,
@@ -171,22 +177,19 @@ public final class TirePressureLogActivity extends AppCompatActivity {
     }
 
     /** Picking today again means "now"; any other day lands at noon (local time). */
-    private void pickCheckDate(Button dateButton, Calendar[] picked) {
-        Calendar base = picked[0] != null ? picked[0] : Calendar.getInstance();
+    private void pickCheckDate(Button dateButton, LocalDate[] picked) {
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        LocalDate base = picked[0] != null ? picked[0] : today;
         DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-            Calendar today = Calendar.getInstance();
-            if (y == today.get(Calendar.YEAR) && m == today.get(Calendar.MONTH)
-                    && d == today.get(Calendar.DAY_OF_MONTH)) {
+            LocalDate day = PickerDates.pickedDay(y, m, d);
+            if (day.equals(LocalDate.now(ZoneId.systemDefault()))) {
                 picked[0] = null;
                 dateButton.setText("Datum: vandaag");
             } else {
-                Calendar c = Calendar.getInstance();
-                c.clear();
-                c.set(y, m, d, 12, 0, 0);
-                picked[0] = c;
-                dateButton.setText("Datum: " + adapter.formatDate(c.getTimeInMillis() / 1000L));
+                picked[0] = day;
+                dateButton.setText("Datum: " + adapter.formatDate(noonEpochSec(day)));
             }
-        }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
+        }, base.getYear(), base.getMonthValue() - 1, base.getDayOfMonth());
         dp.getDatePicker().setMaxDate(System.currentTimeMillis());
         dp.show();
     }

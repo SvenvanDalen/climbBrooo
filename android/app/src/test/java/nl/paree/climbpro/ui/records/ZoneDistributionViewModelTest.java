@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.records;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 import androidx.preference.PreferenceManager;
@@ -16,11 +15,11 @@ import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 import nl.paree.climbpro.domain.ride.ZoneCalculator;
 import nl.paree.climbpro.domain.ride.ZoneHistogramAnalyzer;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,14 +47,10 @@ public class ZoneDistributionViewModelTest {
         now = System.currentTimeMillis() / 1000L;
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        long deadline = System.currentTimeMillis() + 3000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
@@ -98,7 +93,7 @@ public class ZoneDistributionViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private ZoneDistributionViewModel loaded() throws InterruptedException {
+    private ZoneDistributionViewModel loaded() {
         ZoneDistributionViewModel vm = new ZoneDistributionViewModel(app);
         assertNull(vm.state().getValue());
         assertNotNull(awaitValue(vm.state(), vm::load));

@@ -1,12 +1,13 @@
 package nl.paree.climbpro.domain.climb;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.TreeSet;
 
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -107,13 +108,9 @@ public final class SeasonClimbFilter {
      * in {@code zone} — pass the rider's local zone so a New Year's Eve/Day ride lands in the
      * year the rider experienced it in, not the UTC one.
      */
-    public static long[] yearRange(int year, TimeZone zone) {
-        Calendar cal = Calendar.getInstance(zone);
-        cal.clear();
-        cal.set(year, Calendar.JANUARY, 1, 0, 0, 0);
-        long from = cal.getTimeInMillis() / 1000L;
-        cal.set(year + 1, Calendar.JANUARY, 1, 0, 0, 0);
-        long to = cal.getTimeInMillis() / 1000L;
+    public static long[] yearRange(int year, ZoneId zone) {
+        long from = LocalDate.of(year, 1, 1).atStartOfDay(zone).toEpochSecond();
+        long to = LocalDate.of(year + 1, 1, 1).atStartOfDay(zone).toEpochSecond();
         return new long[] {from, to};
     }
 
@@ -123,14 +120,12 @@ public final class SeasonClimbFilter {
      * years that actually have data.
      */
     public static List<Integer> yearsWithAttempts(List<StoredClimbAttempt> attempts,
-            TimeZone zone) {
+            ZoneId zone) {
         if (attempts == null || attempts.isEmpty()) return Collections.emptyList();
         TreeSet<Integer> years = new TreeSet<>(Collections.reverseOrder());
-        Calendar cal = Calendar.getInstance(zone);
         for (StoredClimbAttempt a : attempts) {
             if (a == null || a.dateEpochSec <= 0) continue;
-            cal.setTimeInMillis(a.dateEpochSec * 1000L);
-            years.add(cal.get(Calendar.YEAR));
+            years.add(Instant.ofEpochSecond(a.dateEpochSec).atZone(zone).getYear());
         }
         return new ArrayList<>(years);
     }

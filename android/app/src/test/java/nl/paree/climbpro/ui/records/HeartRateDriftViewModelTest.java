@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.records;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 import androidx.test.core.app.ApplicationProvider;
@@ -13,11 +12,11 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.domain.ride.HeartRateDriftCalculator;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,14 +40,10 @@ public class HeartRateDriftViewModelTest {
         now = System.currentTimeMillis() / 1000L;
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        long deadline = System.currentTimeMillis() + 3000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
@@ -78,7 +73,7 @@ public class HeartRateDriftViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private HeartRateDriftViewModel.State load() throws InterruptedException {
+    private HeartRateDriftViewModel.State load() {
         HeartRateDriftViewModel vm = new HeartRateDriftViewModel(app);
         assertNull(vm.state().getValue());
         HeartRateDriftViewModel.State s = awaitValue(vm.state(), vm::load);

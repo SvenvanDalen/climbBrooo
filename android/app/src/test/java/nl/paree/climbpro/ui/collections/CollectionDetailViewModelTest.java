@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.collections;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
@@ -11,10 +10,10 @@ import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.route.RoutePoint;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,11 +31,7 @@ public class CollectionDetailViewModelTest {
             throws InterruptedException {
         T before = live.getValue();
         trigger.run();
-        long deadline = System.currentTimeMillis() + 2000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> live.getValue() != before, 2000);
         return live.getValue();
     }
 

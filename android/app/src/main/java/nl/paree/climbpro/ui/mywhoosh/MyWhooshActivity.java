@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.mywhoosh.CadenceByGrade;
@@ -29,12 +30,11 @@ import nl.paree.climbpro.domain.mywhoosh.IndoorSeasonSummary;
 import nl.paree.climbpro.domain.mywhoosh.MyWhooshRouteCatalog;
 import nl.paree.climbpro.domain.mywhoosh.VirtualElevation;
 import nl.paree.climbpro.service.MyWhooshPrNotifier;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 import nl.paree.climbpro.ui.rides.RideCompareActivity;
 import nl.paree.climbpro.ui.routes.RouteDetailActivity;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,7 +50,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
     private static final String[] GRADE_LABELS = {"0–2 %", "2–4 %", "4–6 %", "6–8 %", "8–10 %", "10 %+"};
     private static final int MAX_RECOVERY_ROWS = 10;
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
     private MyWhooshViewModel viewModel;
 
     public static Intent intentFor(Context context) {
@@ -268,9 +268,9 @@ public final class MyWhooshActivity extends AppCompatActivity {
                     + "laatste %d weken; nog niets om mee te vergelijken.", r.recentIntervals, weeks);
         } else {
             double diff = r.recentAvg - r.previousAvg;
+            String change = recoveryChange(diff);
             trend = String.format(Locale.getDefault(), "%s dan de %d weken daarvoor (%.0f slagen).",
-                    Math.abs(diff) < 1 ? "Ongeveer gelijk" : diff > 0 ? "Sneller herstel" : "Trager herstel",
-                    weeks, r.previousAvg);
+                    change, weeks, r.previousAvg);
         }
         addRow(rows, "Daling 60 s na een interval",
                 r.recentAvg != null ? String.format(Locale.getDefault(), "%.0f slagen", r.recentAvg) : "–",
@@ -349,7 +349,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
     }
 
     private String date(long epochSec) {
-        return epochSec > 0 ? dateFormat.format(new Date(epochSec * 1000L)) : "?";
+        return epochSec > 0 ? EpochDates.format(dateFormat, epochSec) : "?";
     }
 
     static String duration(int sec) {
@@ -360,5 +360,12 @@ public final class MyWhooshActivity extends AppCompatActivity {
 
     private static String hours(int sec) {
         return String.format(Locale.getDefault(), "%.1f u", sec / 3600.0);
+    }
+
+    /** Wording for a change in heart-rate recovery; under one beat counts as no change. */
+    static String recoveryChange(double diff) {
+        String change = diff > 0 ? "Sneller herstel" : "Trager herstel";
+        if (Math.abs(diff) < 1) change = "Ongeveer gelijk";
+        return change;
     }
 }

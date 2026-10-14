@@ -7,6 +7,10 @@ import androidx.test.uiautomator.UiObject2;
 
 import org.junit.rules.ExternalResource;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Keeps the Connect IQ SDK's "Additional App Required" (Garmin Connect Mobile) prompt out of
  * the way on devices without Garmin Connect, such as emulators. The client currently re-shows
@@ -15,36 +19,33 @@ import org.junit.rules.ExternalResource;
  */
 public final class GarminPromptDismisser extends ExternalResource {
 
-    private volatile boolean running;
-    private Thread thread;
+    private ScheduledExecutorService scheduler;
 
     @Override
     protected void before() {
         UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        running = true;
-        thread = new Thread(() -> {
-            while (running) {
-                try {
-                    if (device.hasObject(By.text("Additional App Required"))) {
-                        UiObject2 cancel = device.findObject(By.res("android", "button2"));
-                        if (cancel != null) cancel.click();
-                    }
-                    DeviceState.dismissAnrDialogs();
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    return;
-                } catch (RuntimeException ignored) {
-                    // the window went away between find and click
-                }
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "garmin-prompt-dismisser");
+            t.setDaemon(true);
+            return t;
+        });
+        scheduler.scheduleWithFixedDelay(() -> dismissOnce(device), 0, 300, TimeUnit.MILLISECONDS);
+    }
+
+    private static void dismissOnce(UiDevice device) {
+        try {
+            if (device.hasObject(By.text("Additional App Required"))) {
+                UiObject2 cancel = device.findObject(By.res("android", "button2"));
+                if (cancel != null) cancel.click();
             }
-        }, "garmin-prompt-dismisser");
-        thread.setDaemon(true);
-        thread.start();
+            DeviceState.dismissAnrDialogs();
+        } catch (RuntimeException ignored) {
+            // the window went away between find and click
+        }
     }
 
     @Override
     protected void after() {
-        running = false;
-        if (thread != null) thread.interrupt();
+        if (scheduler != null) scheduler.shutdownNow();
     }
 }

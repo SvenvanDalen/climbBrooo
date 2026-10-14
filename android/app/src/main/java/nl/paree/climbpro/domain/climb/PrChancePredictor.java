@@ -220,8 +220,10 @@ public final class PrChancePredictor {
         Collections.sort(reasons, (x, y) -> Integer.compare(Math.abs(y.points), Math.abs(x.points)));
         int score = 0;
         for (Reason r : reasons) score += r.points;
-        Chance chance = score >= GOOD_SCORE ? Chance.GOOD
-                : score >= 0 ? Chance.MODERATE : Chance.UNLIKELY;
+        Chance chance;
+        if (score >= GOOD_SCORE) chance = Chance.GOOD;
+        else if (score >= 0) chance = Chance.MODERATE;
+        else chance = Chance.UNLIKELY;
         return new Prediction(chance, score, false, pr.elapsedSec,
                 Math.max(0L, pr.dateEpochSec), pool.size(), reasons);
     }

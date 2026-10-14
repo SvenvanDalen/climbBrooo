@@ -19,15 +19,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.hydration.SweatLossEntry;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.hydration.SweatLossCalculator;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,8 +43,8 @@ public final class SweatLossActivity extends AppCompatActivity {
     private TextView summary;
     private TextView empty;
     private List<SweatLossViewModel.Row> currentRows = new ArrayList<>();
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
 
     public static Intent intentFor(Context context) {
         return new Intent(context, SweatLossActivity.class);
@@ -129,7 +129,7 @@ public final class SweatLossActivity extends AppCompatActivity {
     }
 
     private String formatDate(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 
     private void showAddDialog() {

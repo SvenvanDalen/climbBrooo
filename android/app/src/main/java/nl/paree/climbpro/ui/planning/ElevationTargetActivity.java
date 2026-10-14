@@ -23,15 +23,18 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.domain.planning.ElevationTargetPlanner;
 import nl.paree.climbpro.service.RouteSyncWorker;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * "Hoogtemeter-doel" screen (issue #68): the rider enters a target elevation gain for the
@@ -229,8 +232,9 @@ public final class ElevationTargetActivity extends AppCompatActivity {
             return;
         }
 
-        String delta = s.deltaM == 0 ? "precies op doel"
-                : (s.deltaM > 0 ? s.deltaM + " hm boven doel" : (-s.deltaM) + " hm onder doel");
+        String delta = "precies op doel";
+        if (s.deltaM > 0) delta = s.deltaM + " hm boven doel";
+        else if (s.deltaM < 0) delta = (-s.deltaM) + " hm onder doel";
         summary.setText(String.format(Locale.getDefault(),
                 "%d klimmen · %d hm (doel %d hm, %s)\nKlimmen samen %.1f km · verbindingen ≈ %.0f km hemelsbreed (incl. terug naar start)\n%d bekende klimmen binnen de straal",
                 s.climbs.size(), s.totalGainM, s.targetGainM, delta,
@@ -264,17 +268,12 @@ public final class ElevationTargetActivity extends AppCompatActivity {
     private void pickDateTimeAndAdd() {
         ElevationTargetPlanner.Suggestion s = viewModel.suggestion().getValue();
         if (s == null || s.climbs.isEmpty()) return;
-        Calendar now = Calendar.getInstance();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         new DatePickerDialog(this, (view, year, month, day) -> {
-            Calendar picked = Calendar.getInstance();
-            picked.set(year, month, day);
-            new TimePickerDialog(this, (tView, hour, minute) -> {
-                picked.set(Calendar.HOUR_OF_DAY, hour);
-                picked.set(Calendar.MINUTE, minute);
-                picked.set(Calendar.SECOND, 0);
-                picked.set(Calendar.MILLISECOND, 0);
-                viewModel.addToPlanning(s, picked.getTimeInMillis() / 1000L);
-            }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();
-        }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show();
+            LocalDate date = PickerDates.pickedDay(year, month, day);
+            new TimePickerDialog(this, (tView, hour, minute) ->
+                    viewModel.addToPlanning(s, PickerDates.at(date, hour, minute, ZoneId.systemDefault())),
+                    now.getHour(), now.getMinute(), true).show();
+        }, now.getYear(), now.getMonthValue() - 1, now.getDayOfMonth()).show();
     }
 }

@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.records;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 import androidx.test.core.app.ApplicationProvider;
@@ -15,11 +14,11 @@ import nl.paree.climbpro.domain.power.FtpTestPlan;
 import nl.paree.climbpro.domain.power.FtpTestResultDetector;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -51,27 +50,20 @@ public class FtpTestViewModelTest {
     }
 
     /** Waits until the LiveData holds a different object than {@code before}. */
-    private static <T> T awaitChange(LiveData<T> live, T before) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 3000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+    private static <T> T awaitChange(LiveData<T> live, T before) {
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
         return awaitChange(live, before);
     }
 
     /** Lets queued executor work finish and posts drain, for asserting "nothing changed". */
-    private static void settle() throws InterruptedException {
-        for (int i = 0; i < 30; i++) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+    private static void settle() {
+        UiTestEnv.idleFor(300);
     }
 
     private static StoredRide ride(long id, String name, String type, long start) {
@@ -100,7 +92,7 @@ public class FtpTestViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private FtpTestViewModel loaded() throws InterruptedException {
+    private FtpTestViewModel loaded() {
         FtpTestViewModel vm = new FtpTestViewModel(app);
         awaitValue(vm.state(), vm::load);
         return vm;

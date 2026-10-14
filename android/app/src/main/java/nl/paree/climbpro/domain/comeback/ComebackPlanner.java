@@ -130,12 +130,20 @@ public final class ComebackPlanner {
     }
 
     static int weeksFor(int breakDays, boolean injury) {
-        int w = breakDays < 21 ? 2 : breakDays < 42 ? 3 : breakDays < 84 ? 4 : 6;
+        int w;
+        if (breakDays < 21) w = 2;
+        else if (breakDays < 42) w = 3;
+        else if (breakDays < 84) w = 4;
+        else w = 6;
         return injury ? w + 1 : w;
     }
 
     static double startPct(int breakDays, boolean injury) {
-        double p = breakDays < 21 ? 0.6 : breakDays < 42 ? 0.5 : breakDays < 84 ? 0.4 : 0.3;
+        double p;
+        if (breakDays < 21) p = 0.6;
+        else if (breakDays < 42) p = 0.5;
+        else if (breakDays < 84) p = 0.4;
+        else p = 0.3;
         return injury ? Math.max(0.2, p - 0.1) : p;
     }
 

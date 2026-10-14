@@ -12,14 +12,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.ride.RideComparison;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * Ride comparer (issue #199): two rides of the same route side by side per kilometre —
@@ -92,7 +92,7 @@ public final class RideCompareActivity extends AppCompatActivity {
     }
 
     private static String summaryText(RideCompareViewModel.Result r) {
-        SimpleDateFormat fmt = new SimpleDateFormat("d MMM yyyy", Locale.getDefault());
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault());
         String a = "A: " + label(r.a, fmt);
         String b = "B: " + label(r.b, fmt);
         List<RideComparison.Km> rows = r.rows;
@@ -101,19 +101,23 @@ public final class RideCompareActivity extends AppCompatActivity {
                     + "beide ritten, dus vergelijken per kilometer lukt niet.";
         }
         int delta = rows.get(rows.size() - 1).cumulativeDeltaSec;
-        String verdict = delta < 0
-                ? "B was " + RideCompareAdapter.duration(-delta) + " sneller"
-                : delta > 0 ? "B was " + RideCompareAdapter.duration(delta) + " langzamer"
-                : "Precies even snel";
+        String verdict = verdict(delta);
         double km = 0;
         for (RideComparison.Km k : rows) km += k.lengthM;
         return a + "\n" + b + "\n\n" + verdict + String.format(Locale.getDefault(),
                 " over %.1f km (rijtijd, stilstaan telt niet mee).", km / 1000);
     }
 
-    private static String label(StoredRide r, SimpleDateFormat fmt) {
+    /** How ride B compares with ride A over the whole distance, from B's time minus A's. */
+    static String verdict(int delta) {
+        if (delta < 0) return "B was " + RideCompareAdapter.duration(-delta) + " sneller";
+        if (delta > 0) return "B was " + RideCompareAdapter.duration(delta) + " langzamer";
+        return "Precies even snel";
+    }
+
+    private static String label(StoredRide r, DateTimeFormatter fmt) {
         String name = r.name != null && !r.name.isEmpty() ? r.name : "Rit";
         return r.startEpochSec > 0
-                ? fmt.format(new Date(r.startEpochSec * 1000L)) + " – " + name : name;
+                ? EpochDates.format(fmt, r.startEpochSec) + " – " + name : name;
     }
 }

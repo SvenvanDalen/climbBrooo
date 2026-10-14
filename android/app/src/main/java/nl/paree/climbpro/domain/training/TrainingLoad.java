@@ -50,8 +50,9 @@ public final class TrainingLoad {
                 return load(hours, r.avgWatts / (double) ftpWatts, Source.ESTIMATED_POWER);
             }
         }
-        double intensity = ebike ? EBIKE_INTENSITY
-                : r.commute ? COMMUTE_INTENSITY : DEFAULT_INTENSITY;
+        double intensity = DEFAULT_INTENSITY;
+        if (ebike) intensity = EBIKE_INTENSITY;
+        else if (r.commute) intensity = COMMUTE_INTENSITY;
         return load(hours, intensity, Source.DURATION);
     }
 

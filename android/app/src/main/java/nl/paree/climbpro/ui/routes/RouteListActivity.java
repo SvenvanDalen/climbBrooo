@@ -612,7 +612,7 @@ public final class RouteListActivity extends AppCompatActivity {
             nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
                     new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
             List<Integer> years = nl.paree.climbpro.domain.climb.SeasonClimbFilter
-                    .yearsWithAttempts(attemptRepo.loadAll(), java.util.TimeZone.getDefault());
+                    .yearsWithAttempts(attemptRepo.loadAll(), java.time.ZoneId.systemDefault());
             runOnUiThread(() -> {
                 if (years.isEmpty()) {
                     Toast.makeText(this, R.string.route_list_season_none,
@@ -701,7 +701,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 List<nl.paree.climbpro.data.route.StoredClimbAttempt> attempts = attemptRepo.loadAll();
 
                 long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(
-                        year, java.util.TimeZone.getDefault());
+                        year, java.time.ZoneId.systemDefault());
                 List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches =
                         seasonMatches(repo, attempts, range);
 

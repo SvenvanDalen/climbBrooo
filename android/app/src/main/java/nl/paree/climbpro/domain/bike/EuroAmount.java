@@ -61,8 +61,11 @@ public final class EuroAmount {
         if (intPart.length() > 9) return INVALID; // way above MAX_CENTS, avoids overflow
 
         long euros = intPart.isEmpty() ? 0 : Long.parseLong(intPart);
-        long frac  = fracPart.isEmpty() ? 0
-                : Long.parseLong(fracPart) * (fracPart.length() == 1 ? 10 : 1);
+        long frac = 0;
+        if (!fracPart.isEmpty()) {
+            int scale = fracPart.length() == 1 ? 10 : 1;
+            frac = Long.parseLong(fracPart) * scale;
+        }
         long cents = euros * 100 + frac;
         if (cents <= 0 || cents > MAX_CENTS) return INVALID;
         return cents;

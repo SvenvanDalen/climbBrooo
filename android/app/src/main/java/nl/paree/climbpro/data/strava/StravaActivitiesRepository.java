@@ -700,6 +700,13 @@ public final class StravaActivitiesRepository {
     /** Why a stream fetch ended, so the backfill can tell "retry later" from "skip for good". */
     enum StreamOutcome { OK, SKIPPED, RATE_LIMITED, TRANSIENT_FAILURE }
 
+    /** Outcome of a failed stream request: rate limited (429), transient (5xx) or skipped. */
+    private static StreamOutcome failedStreamOutcome(int httpCode) {
+        if (httpCode == 429) return StreamOutcome.RATE_LIMITED;
+        if (httpCode >= 500) return StreamOutcome.TRANSIENT_FAILURE;
+        return StreamOutcome.SKIPPED;
+    }
+
     static final class MatchResult {
         final StreamOutcome outcome;
         final List<StoredClimbAttempt> attempts;
@@ -727,10 +734,7 @@ public final class StravaActivitiesRepository {
                     api.getStreams(token, act.id, STREAM_KEYS).execute();
             okhttp3.Headers headers = sresp.headers();
             if (!sresp.isSuccessful()) {
-                StreamOutcome o = sresp.code() == 429 ? StreamOutcome.RATE_LIMITED
-                        : sresp.code() >= 500 ? StreamOutcome.TRANSIENT_FAILURE
-                        : StreamOutcome.SKIPPED;
-                return new MatchResult(o, out, headers);
+                return new MatchResult(failedStreamOutcome(sresp.code()), out, headers);
             }
             StravaStreamsDto s = sresp.body();
             if (s == null || s.latlng == null || s.time == null

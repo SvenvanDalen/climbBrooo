@@ -19,15 +19,17 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.bike.Bike;
 import nl.paree.climbpro.data.bike.BikeCostEntry;
 import nl.paree.climbpro.domain.bike.EuroAmount;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * "Fietskosten" (issue #233): per bike the purchase and part costs, the km (ride archive in a
@@ -173,15 +175,13 @@ public final class BikeCostActivity extends AppCompatActivity {
                 ? existing.sinceEpochSec : startOfTodayEpochSec()};
         sinceButton.setText("Ritten tellen vanaf: " + adapter.formatDate(since[0]));
         sinceButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            base.setTimeInMillis(since[0] * 1000L);
+            ZoneId zone = ZoneId.systemDefault();
+            LocalDate base = PickerDates.dayOf(since[0], zone);
             DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar c = Calendar.getInstance();
-                c.clear();
-                c.set(y, m, d, 0, 0, 0); // local start of day: that day's rides count
-                since[0] = c.getTimeInMillis() / 1000L;
+                // local start of day: that day's rides count
+                since[0] = PickerDates.startOfDay(PickerDates.pickedDay(y, m, d), zone);
                 sinceButton.setText("Ritten tellen vanaf: " + adapter.formatDate(since[0]));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
+            }, base.getYear(), base.getMonthValue() - 1, base.getDayOfMonth());
             dp.getDatePicker().setMaxDate(System.currentTimeMillis());
             dp.show();
         });
@@ -211,12 +211,8 @@ public final class BikeCostActivity extends AppCompatActivity {
     }
 
     private static long startOfTodayEpochSec() {
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTimeInMillis() / 1000L;
+        ZoneId zone = ZoneId.systemDefault();
+        return PickerDates.startOfDay(LocalDate.now(zone), zone);
     }
 
     /** Empty or invalid input counts as 0. */

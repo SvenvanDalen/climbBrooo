@@ -107,9 +107,9 @@ public final class RideBuddyMatcher {
         void pace(RideBuddyProfile me, RideBuddyProfile other) {
             if (me.flatSpeedDkmh <= 0 || other.flatSpeedDkmh <= 0) return;
             double d = (other.flatSpeedDkmh - me.flatSpeedDkmh) / 10.0;
-            String reason = Math.abs(d) <= PACE_SIMILAR_KMH ? "vergelijkbaar tempo"
-                    : String.format(NL, "rijdt %.1f km/u %s", Math.abs(d),
-                            d > 0 ? "sneller" : "langzamer");
+            String reason = String.format(NL, "rijdt %.1f km/u %s", Math.abs(d),
+                    d > 0 ? "sneller" : "langzamer");
+            if (Math.abs(d) <= PACE_SIMILAR_KMH) reason = "vergelijkbaar tempo";
             add(W_PACE, linear(Math.abs(d), PACE_ZERO_KMH), reason);
         }
 

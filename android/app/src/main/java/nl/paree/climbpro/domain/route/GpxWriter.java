@@ -37,9 +37,10 @@ public final class GpxWriter {
         double[] eles = route.elevations;
         int n = Math.min(lats.length, lons.length);
 
-        String name = route.userDisplayName != null ? route.userDisplayName
-                : route.name != null ? route.name
-                : route.routeId != null ? route.routeId : "ClimbPro route";
+        String name = "ClimbPro route";
+        if (route.userDisplayName != null) name = route.userDisplayName;
+        else if (route.name != null) name = route.name;
+        else if (route.routeId != null) name = route.routeId;
 
         StringBuilder sb = new StringBuilder(256 + n * 64);
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -67,9 +68,9 @@ public final class GpxWriter {
         if (route.climbs == null) return;
         for (int ci = 0; ci < route.climbs.size(); ci++) {
             StoredClimb c = route.climbs.get(ci);
-            String name = c.userDisplayName != null && !c.userDisplayName.isEmpty()
-                    ? c.userDisplayName
-                    : c.name != null && !c.name.isEmpty() ? c.name : "Klim " + (ci + 1);
+            String name = "Klim " + (ci + 1);
+            if (c.userDisplayName != null && !c.userDisplayName.isEmpty()) name = c.userDisplayName;
+            else if (c.name != null && !c.name.isEmpty()) name = c.name;
             int length = c.length > 0 ? c.length : c.endDistance - c.startDistance;
             String desc = String.format(Locale.US, "%.1f km, %.1f%%, %d hm",
                     length / 1000.0, c.avgGradient * 100, c.elevationGain);

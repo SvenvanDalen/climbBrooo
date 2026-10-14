@@ -11,18 +11,18 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.maintenance.MaintenanceComponent;
 import nl.paree.climbpro.domain.maintenance.MaintenanceCalculator;
 import nl.paree.climbpro.domain.maintenance.MaintenanceCalculator.Status;
 import nl.paree.climbpro.domain.maintenance.WarrantyCalculator;
 
-import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /** One card per maintenance component: usage vs interval, wear bar and a "Gedaan" button. */
 public final class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAdapter.RowVH> {
@@ -34,8 +34,8 @@ public final class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAd
 
     private final List<Status> rows = new ArrayList<>();
     private final Listener listener;
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault());
 
     public MaintenanceAdapter(Listener listener) {
         this.listener = listener;
@@ -48,7 +48,7 @@ public final class MaintenanceAdapter extends RecyclerView.Adapter<MaintenanceAd
     }
 
     public String formatDate(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 
     @NonNull

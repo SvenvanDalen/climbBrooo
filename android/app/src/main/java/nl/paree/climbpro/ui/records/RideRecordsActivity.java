@@ -24,11 +24,10 @@ import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Records;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Streak;
 import nl.paree.climbpro.domain.ride.SprintCalculator;
 
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Records" screen (issue #156): longest ride, highest average speed, most elevation, longest
@@ -41,8 +40,8 @@ public final class RideRecordsActivity extends AppCompatActivity {
     private static final String KMH_FORMAT = "%.1f km/u";
     private static final String SEPARATOR = "  •  ";
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
     private final DateTimeFormatter dayFormat =
             DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
 
@@ -204,7 +203,7 @@ public final class RideRecordsActivity extends AppCompatActivity {
 
     private String rideLabel(StoredRide r) {
         String date = r.startEpochSec > 0
-                ? dateFormat.format(new Date(r.startEpochSec * 1000L)) : "onbekende datum";
+                ? EpochDates.format(dateFormat, r.startEpochSec) : "onbekende datum";
         String name = r.name != null && !r.name.isEmpty() ? r.name : "Rit";
         return date + SEPARATOR + name;
     }

@@ -8,7 +8,6 @@ import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -204,22 +203,9 @@ public class ScreenSmokeTest {
     }
 
     /** Lets background loads finish and their LiveData posts reach the main thread. */
-    static void settle() throws InterruptedException {
-        // Stop once the main looper has stayed empty for a few short rounds: background
-        // loads post their result within milliseconds, and a fixed wait made the run slow.
-        org.robolectric.shadows.ShadowLooper looper = shadowOf(Looper.getMainLooper());
-        int quiet = 0;
-        for (int i = 0; i < 100 && quiet < QUIET_ROUNDS; i++) {
-            boolean busy = !looper.isIdle();
-            looper.idle();
-            quiet = busy ? 0 : quiet + 1;
-            Thread.sleep(2);
-        }
-        looper.idle();
+    static void settle() {
+        UiTestEnv.settle();
     }
-
-    /** Empty rounds in a row before {@link #settle} returns. */
-    private static final int QUIET_ROUNDS = 6;
 
     /**
      * Clicks through a screen. A crash inside a click handler fails the test with the view that
@@ -314,7 +300,7 @@ public class ScreenSmokeTest {
          * A dialog that opened gets its first list item or its negative button, so the
          * listener code runs without starting destructive confirmations; then it is closed.
          */
-        static void handleDialogs(boolean confirm) throws InterruptedException {
+        static void handleDialogs(boolean confirm) {
             for (int round = 0; round < 4; round++) {
                 Dialog d = ShadowDialog.getLatestDialog();
                 if (d == null || !d.isShowing()) return;

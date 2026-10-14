@@ -8,14 +8,14 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.domain.ride.RideStory;
 import nl.paree.climbpro.domain.ride.RideTrack;
 import nl.paree.climbpro.domain.ride.RouteShape;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * Draws a {@link RideStory} as one shareable portrait image (issue #193): title and date,
@@ -75,8 +75,8 @@ final class RideStoryImageComposer {
 
         c.drawText(ellipsize(story.title, title, WIDTH - 2 * PAD), PAD, 130, title);
         if (story.startEpochSec > 0) {
-            String date = new SimpleDateFormat("EEEE d MMMM yyyy", new Locale("nl"))
-                    .format(new Date(story.startEpochSec * 1000L));
+            String date = EpochDates.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", new Locale("nl")),
+                    story.startEpochSec);
             c.drawText(date, PAD, 190, dim);
         }
         c.drawText(ellipsize(String.join("   ·   ", story.stats), stat, WIDTH - 2 * PAD),

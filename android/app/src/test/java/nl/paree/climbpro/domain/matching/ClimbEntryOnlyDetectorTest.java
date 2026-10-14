@@ -121,8 +121,8 @@ public class ClimbEntryOnlyDetectorTest {
     public void spuriousEarlyGateHit_thenGenuineLaterAttempt_detectsTheRealOne() {
         // Climb runs north from 45.000/6.000 to 45.009/6.000, length 1000 m.
         // Track: passes within GATE_M of the climb start early (an incidental junction hit),
-        // heads off in an unrelated direction for a while (never getting closer to the climb's
-        // end — so the spurious entry alone would not be flagged), returns to the start, and
+        // heads off in an unrelated direction for some time, never getting closer to the climb's
+        // end, so the spurious entry alone would not be flagged. It then returns to the start and
         // THEN genuinely climbs partway before the track ends. Without entry-gate retry, the
         // detector would lock onto the spurious first entry and report garbage/no progress.
         // With retry, it must find the genuine later attempt.

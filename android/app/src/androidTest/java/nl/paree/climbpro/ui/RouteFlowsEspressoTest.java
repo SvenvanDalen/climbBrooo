@@ -39,6 +39,7 @@ import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 
+import java.time.Duration;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -54,6 +55,7 @@ import nl.paree.climbpro.ui.routes.RouteDetailActivity;
 import nl.paree.climbpro.ui.routes.RouteListActivity;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
 
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -178,7 +180,8 @@ public class RouteFlowsEspressoTest {
     private void awaitRouteLoaded(ActivityScenario<RouteDetailActivity> s) throws Exception {
         assertTrue(DeviceState.waitFor(() -> "Testroute met twee klimmen".equals(notesText(s)), 10_000));
         // onCreate and onResume both load the route; let the second emission land too.
-        Thread.sleep(1_500);
+        Awaitility.await().during(Duration.ofMillis(1_500)).atMost(Duration.ofSeconds(5))
+                .until(() -> "Testroute met twee klimmen".equals(notesText(s)));
     }
 
     private static String notesText(ActivityScenario<RouteDetailActivity> s) {
@@ -209,7 +212,8 @@ public class RouteFlowsEspressoTest {
             // Leave and come back (e.g. a phone call or switching apps): onResume reloads.
             s.moveToState(androidx.lifecycle.Lifecycle.State.CREATED);
             s.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);
-            Thread.sleep(1_500);
+            Awaitility.await().during(Duration.ofMillis(1_500)).atMost(Duration.ofSeconds(5))
+                    .until(() -> "Nog niet opgeslagen".equals(notesText(s)));
             assertEquals("Nog niet opgeslagen", notesText(s));
         }
     }

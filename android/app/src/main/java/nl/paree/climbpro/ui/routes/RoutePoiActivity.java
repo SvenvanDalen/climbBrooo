@@ -17,6 +17,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.poi.OverpassClient;
 import nl.paree.climbpro.data.poi.RoutePoiCache;
@@ -26,9 +30,7 @@ import nl.paree.climbpro.domain.poi.OverpassQueryBuilder;
 import nl.paree.climbpro.domain.poi.RoutePoi;
 import nl.paree.climbpro.domain.poi.RoutePoiLocator;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -142,7 +144,8 @@ public final class RoutePoiActivity extends AppCompatActivity {
     }
 
     private String summary(int count, long fetchedAtMs) {
-        String when = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date(fetchedAtMs));
+        String when = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                .format(Instant.ofEpochMilli(fetchedAtMs).atZone(ZoneId.systemDefault()));
         return count == 0
                 ? getString(R.string.route_pois_none, MAX_OFFSET_M, when)
                 : getString(R.string.route_pois_summary, count, MAX_OFFSET_M, when);

@@ -65,10 +65,11 @@ public final class BikeGarageAdapter extends RecyclerView.Adapter<BikeGarageAdap
         h.spec.setText(BikeGarage.specLine(b));
 
         long[] t = state.totals.get(b.id);
-        String rides = t != null
-                ? t[0] + (t[0] == 1 ? " rit" : " ritten") + " · "
-                        + BikeCostCalculator.kmText(t[1])
-                : "Nog geen ritten";
+        String rides = "Nog geen ritten";
+        if (t != null) {
+            rides = t[0] + (t[0] == 1 ? " rit" : " ritten") + " · "
+                    + BikeCostCalculator.kmText(t[1]);
+        }
         rides += b.stravaGearId != null ? " · Strava-fiets " + b.stravaGearId
                                         : " · niet aan Strava gekoppeld";
         h.rides.setText(rides);

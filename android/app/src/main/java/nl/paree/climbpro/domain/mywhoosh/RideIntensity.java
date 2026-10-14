@@ -24,10 +24,12 @@ public final class RideIntensity {
     /** Null without power or without an FTP. */
     public static RideIntensity of(StoredRide ride, StoredRideStreamStats stats, int ftpWatts) {
         if (ride == null || ftpWatts <= 0) return null;
-        Integer np = stats != null && stats.normalizedPower != null && stats.normalizedPower > 0
-                ? stats.normalizedPower
-                : ride.weightedAvgWatts != null && ride.weightedAvgWatts > 0
-                        ? ride.weightedAvgWatts : null;
+        Integer np = null;
+        if (stats != null && stats.normalizedPower != null && stats.normalizedPower > 0) {
+            np = stats.normalizedPower;
+        } else if (ride.weightedAvgWatts != null && ride.weightedAvgWatts > 0) {
+            np = ride.weightedAvgWatts;
+        }
         if (np == null) return null;
         double intensity = np / (double) ftpWatts;
         double hours = Math.max(0, ride.movingTimeSec) / 3600.0;

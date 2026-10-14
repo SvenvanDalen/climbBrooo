@@ -66,9 +66,12 @@ public final class BikeComputerExport {
 
     /** File name that survives in the companion app's route list: the route name, sanitised. */
     public static String fileName(StoredRoute route) {
-        String name = route.userDisplayName != null && !route.userDisplayName.isEmpty()
-                ? route.userDisplayName
-                : route.name != null && !route.name.isEmpty() ? route.name : "ClimbPro route";
+        String name = "ClimbPro route";
+        if (route.userDisplayName != null && !route.userDisplayName.isEmpty()) {
+            name = route.userDisplayName;
+        } else if (route.name != null && !route.name.isEmpty()) {
+            name = route.name;
+        }
         name = name.replaceAll("(?i)\\.gpx$", "").replaceAll("[^\\p{L}\\p{N} ._-]", "_").trim();
         if (name.isEmpty()) name = "ClimbPro route";
         if (name.length() > 60) name = name.substring(0, 60).trim();

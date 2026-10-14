@@ -11,15 +11,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Direction;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Point;
 import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer.Trend;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Herstel-trend" (issue #183): post-ride RPE and sleep over time, next to each ride's
@@ -31,8 +31,8 @@ public final class RecoveryTrendActivity extends AppCompatActivity {
     /** Most recent checks drawn in the chart; the list below shows them all. */
     static final int CHART_POINTS = 30;
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
 
     public static Intent intentFor(Context context) {
         return new Intent(context, RecoveryTrendActivity.class);
@@ -102,7 +102,7 @@ public final class RecoveryTrendActivity extends AppCompatActivity {
         box.setPadding(0, (int) (8 * density), 0, (int) (8 * density));
 
         String date = p.startEpochSec > 0
-                ? dateFormat.format(new Date(p.startEpochSec * 1000L))
+                ? EpochDates.format(dateFormat, p.startEpochSec)
                 : getString(R.string.recovery_unknown_date);
         String name = p.rideName != null && !p.rideName.isEmpty()
                 ? p.rideName : getString(R.string.recovery_ride_default_name);

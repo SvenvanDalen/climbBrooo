@@ -89,9 +89,13 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
             java.time.LocalDate today = java.time.LocalDate.now(zone);
             int virtualMonth = ElevationGoalCalculator.cumulativeRideGainM(
                     VirtualElevation.virtualRides(allRides), Period.MONTH, zone, today);
-            virtualNote.postValue(virtualMonth <= 0 ? null : countVirtual
-                    ? "Waarvan " + virtualMonth + " m virtueel (MyWhoosh/indoor) deze maand"
-                    : virtualMonth + " m virtueel (MyWhoosh/indoor) niet meegeteld deze maand");
+            String note = null;
+            if (virtualMonth > 0 && countVirtual) {
+                note = "Waarvan " + virtualMonth + " m virtueel (MyWhoosh/indoor) deze maand";
+            } else if (virtualMonth > 0) {
+                note = virtualMonth + " m virtueel (MyWhoosh/indoor) niet meegeteld deze maand";
+            }
+            virtualNote.postValue(note);
             if (!allRides.isEmpty()) {
                 // The ride archive (#160) has each ride's total hm, not just its climbs.
                 weekGained = ElevationGoalCalculator.cumulativeRideGainM(

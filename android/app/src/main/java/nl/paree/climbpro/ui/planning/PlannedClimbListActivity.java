@@ -20,12 +20,15 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.planning.PlannedClimb;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * View/add/remove screen for planned climbs (issue #70 — Kalenderintegratie voor geplande
@@ -147,18 +150,13 @@ public final class PlannedClimbListActivity extends AppCompatActivity {
     }
 
     private void showDateTimePicker(PlannedClimbListViewModel.Pickable target) {
-        Calendar now = Calendar.getInstance();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         new DatePickerDialog(this, (view, year, month, day) -> {
-            Calendar picked = Calendar.getInstance();
-            picked.set(year, month, day);
-            new TimePickerDialog(this, (tView, hour, minute) -> {
-                picked.set(Calendar.HOUR_OF_DAY, hour);
-                picked.set(Calendar.MINUTE, minute);
-                picked.set(Calendar.SECOND, 0);
-                picked.set(Calendar.MILLISECOND, 0);
-                showCalendarOptInAndSave(target, picked.getTimeInMillis() / 1000L);
-            }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();
-        }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show();
+            LocalDate date = PickerDates.pickedDay(year, month, day);
+            new TimePickerDialog(this, (tView, hour, minute) ->
+                    showCalendarOptInAndSave(target, PickerDates.at(date, hour, minute, ZoneId.systemDefault())),
+                    now.getHour(), now.getMinute(), true).show();
+        }, now.getYear(), now.getMonthValue() - 1, now.getDayOfMonth()).show();
     }
 
     private long pendingPlannedAtEpochSec;

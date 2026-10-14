@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.recovery.RecoveryCheck;
 import nl.paree.climbpro.data.ride.StoredRide;
@@ -26,11 +27,10 @@ import nl.paree.climbpro.domain.recovery.RecoveryTrendAnalyzer;
 import nl.paree.climbpro.domain.ride.RideCategory;
 import nl.paree.climbpro.domain.ride.RideCategoryLabel;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Ritten" archive (issue #160): synced rides automatically classified as woon-werk,
@@ -138,12 +138,12 @@ public final class RideArchiveActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
             return;
         }
-        SimpleDateFormat fmt = new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
         String[] items = new String[candidates.size()];
         for (int i = 0; i < items.length; i++) {
             StoredRide r = candidates.get(i);
             items[i] = String.format(Locale.getDefault(), "%s  •  %.1f km  •  %.1f km/u",
-                    r.startEpochSec > 0 ? fmt.format(new Date(r.startEpochSec * 1000L)) : "?",
+                    r.startEpochSec > 0 ? EpochDates.format(fmt, r.startEpochSec) : "?",
                     r.distanceM / 1000f, r.avgSpeedMps * 3.6f);
         }
         new AlertDialog.Builder(this)

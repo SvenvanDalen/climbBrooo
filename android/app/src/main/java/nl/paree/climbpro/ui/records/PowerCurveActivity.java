@@ -14,12 +14,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.ride.PowerCurveCalculator;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Vermogenscurve" screen (issue #219): the best power over 5 s, 1, 5, 20 and 60 min for a
@@ -28,8 +28,8 @@ import java.util.Locale;
  */
 public final class PowerCurveActivity extends AppCompatActivity {
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
 
     private PowerCurveViewModel viewModel;
 
@@ -124,7 +124,7 @@ public final class PowerCurveActivity extends AppCompatActivity {
     private String rideLabel(PowerCurveCalculator.Best best) {
         String name = best.ride.name != null && !best.ride.name.isEmpty() ? best.ride.name : "Rit";
         String date = best.ride.startEpochSec > 0
-                ? dateFormat.format(new Date(best.ride.startEpochSec * 1000L)) : "onbekende datum";
+                ? EpochDates.format(dateFormat, best.ride.startEpochSec) : "onbekende datum";
         return name + ", " + date;
     }
 

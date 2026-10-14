@@ -98,9 +98,10 @@ public final class ClimbGpxWriter {
         int startIdx = range[0];
         int endIdx = range[1];
 
-        String name = climb.userDisplayName != null ? climb.userDisplayName
-                : climb.name != null ? climb.name
-                : "Climb " + (climbIndex + 1);
+        String name;
+        if (climb.userDisplayName != null) name = climb.userDisplayName;
+        else if (climb.name != null) name = climb.name;
+        else name = "Climb " + (climbIndex + 1);
 
         double[] zoneCentre = privacyZoneCentre(climb, privacyRadiusMeters);
 
