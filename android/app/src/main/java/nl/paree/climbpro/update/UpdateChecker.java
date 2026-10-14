@@ -94,14 +94,14 @@ public final class UpdateChecker {
 
                 GitHubReleaseDto release = resp.body();
                 int[] remoteVersion = parseVersion(release.tagName);
-                if (remoteVersion == null) {
+                if (remoteVersion.length == 0) {
                     postFailure(callback, new IllegalStateException(
                             "Unrecognised release tag: " + release.tagName));
                     return;
                 }
 
                 int[] localVersion = parseVersion(BuildConfig.VERSION_NAME);
-                if (localVersion != null && compareVersions(remoteVersion, localVersion) <= 0) {
+                if (localVersion.length > 0 && compareVersions(remoteVersion, localVersion) <= 0) {
                     mainHandler.post(callback::onUpToDate);
                     return;
                 }
@@ -183,15 +183,15 @@ public final class UpdateChecker {
      * returns null if the tag doesn't match the expected shape.
      */
     static int[] parseVersion(String tagName) {
-        if (tagName == null) return null;
+        if (tagName == null) return new int[0];
         Matcher m = TAG_VERSION.matcher(tagName.trim());
-        if (!m.matches()) return null;
+        if (!m.matches()) return new int[0];
         try {
             int major = m.group(1) != null ? Integer.parseInt(m.group(1)) : 0;
             int minor = m.group(2) != null ? Integer.parseInt(m.group(2)) : 0;
             return new int[] { major, minor, Integer.parseInt(m.group(3)) };
         } catch (NumberFormatException e) {
-            return null;
+            return new int[0];
         }
     }
 

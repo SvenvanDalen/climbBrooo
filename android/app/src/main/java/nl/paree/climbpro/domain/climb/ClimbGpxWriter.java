@@ -112,7 +112,7 @@ public final class ClimbGpxWriter {
         trkOut.append("  <trk>\n");
         trkOut.append("    <name>").append(escape(name)).append("</name>\n");
         trkOut.append("    <trkseg>\n");
-        if (zoneCentre != null) {
+        if (zoneCentre.length > 0) {
             // Elevation alone doesn't pinpoint a location, so the true value at the climb
             // start is kept — only lat/lon within the privacy zone are obscured/dropped.
             appendTrackPoint(trkOut, zoneCentre[0], zoneCentre[1], elevationAt(route, startIdx));
@@ -163,7 +163,7 @@ public final class ClimbGpxWriter {
      * @return the zone centre {lat, lon}, or null when no privacy zone applies
      */
     private static double[] privacyZoneCentre(StoredClimb climb, double privacyRadiusMeters) {
-        if (!climb.isHome || privacyRadiusMeters <= 0) return null;
+        if (!climb.isHome || privacyRadiusMeters <= 0) return new double[0];
         // Fail closed: exporting a home climb without a usable centre would either leak
         // the start or need a centre derived from it (reversible). Callers persist a
         // SecureRandom centre first (see ClimbDetailViewModel#exportGpx).
@@ -225,7 +225,7 @@ public final class ClimbGpxWriter {
     /** PR waypoint at the climb start, or at the privacy zone centre for a home climb. */
     private static void appendPrWaypoint(StringBuilder sb, StoredRoute route, StoredClimb climb,
             int startIdx, int endIdx, double[] zoneCentre, String prDesc, String wptPrefix) {
-        if (zoneCentre != null) {
+        if (zoneCentre.length > 0) {
             appendWaypoint(sb, zoneCentre[0], zoneCentre[1], elevationAt(route, startIdx),
                     wptPrefix + "PR", prDesc, "Flag, Green");
         } else {
@@ -248,7 +248,7 @@ public final class ClimbGpxWriter {
     /** True when route point {@code i} lies inside the privacy zone (none when centre is null). */
     private static boolean isHidden(StoredRoute route, int i, double[] zoneCentre,
             double radiusMeters) {
-        return zoneCentre != null && CoordinateFuzzer.isInZone(
+        return zoneCentre.length > 0 && CoordinateFuzzer.isInZone(
                 route.lats[i], route.lons[i], zoneCentre[0], zoneCentre[1], radiusMeters);
     }
 

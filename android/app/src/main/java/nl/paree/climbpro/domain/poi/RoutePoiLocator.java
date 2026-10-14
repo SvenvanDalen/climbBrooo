@@ -37,7 +37,7 @@ public final class RoutePoiLocator {
     public static double[] project(double[] lats, double[] lons, double[] cumulative,
                                    double lat, double lon) {
         int n = lats.length;
-        if (n == 0) return null;
+        if (n == 0) return new double[0];
         if (n == 1) {
             return new double[]{0, CumulativeDistance.haversine(lats[0], lons[0], lat, lon)};
         }
@@ -87,7 +87,7 @@ public final class RoutePoiLocator {
         for (PoiCandidate c : candidates) {
             if (c == null || c.type == null || !seenRefs.add(c.osmRef)) continue;
             double[] pr = project(lats, lons, cum, c.lat, c.lon);
-            if (pr == null || pr[1] > maxOffsetM) continue;
+            if (pr.length == 0 || pr[1] > maxOffsetM) continue;
             placed.add(new RoutePoi(c.osmRef, c.name, c.type, c.lat, c.lon, pr[0], pr[1]));
         }
         List<RoutePoi> unique = dedupe(placed);

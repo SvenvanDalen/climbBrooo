@@ -39,9 +39,9 @@ public final class FavoriteStartPoint {
      * the text is not exactly two numbers or lies outside the valid range.
      */
     public static double[] parseCoordinates(String text) {
-        if (text == null) return null;
+        if (text == null) return new double[0];
         String t = text.trim();
-        if (t.isEmpty()) return null;
+        if (t.isEmpty()) return new double[0];
         String[] parts;
         if (t.contains(";")) {
             // the parts are trimmed below, so plain separators avoid backtracking regexes
@@ -51,15 +51,15 @@ public final class FavoriteStartPoint {
         } else {
             parts = t.split("\\s+");
         }
-        if (parts.length != 2) return null;
+        if (parts.length != 2) return new double[0];
         double lat;
         double lon;
         try {
             lat = Double.parseDouble(parts[0].trim());
             lon = Double.parseDouble(parts[1].trim());
         } catch (NumberFormatException e) {
-            return null;
+            return new double[0];
         }
-        return isValidCoordinate(lat, lon) ? new double[]{lat, lon} : null;
+        return isValidCoordinate(lat, lon) ? new double[]{lat, lon} : new double[0];
     }
 }

@@ -16,7 +16,7 @@ public final class NormalizedPowerAnalyzer {
     /** Rounded NP in watts, or null without (enough) power data. */
     public static Integer normalizedPower(RideStreams s) {
         double[] perSecond = powerPerSecond(s);
-        if (perSecond == null) return null;
+        if (perSecond.length == 0) return null;
         double np = normalizedPower(perSecond);
         return np > 0 ? (int) Math.round(np) : null;
     }
@@ -26,9 +26,9 @@ public final class NormalizedPowerAnalyzer {
      * 0 W; null without a power stream or with less than {@link #MIN_SECONDS}.
      */
     static double[] powerPerSecond(RideStreams s) {
-        if (s == null) return null;
+        if (s == null) return new double[0];
         double[] raw = PerSecondSeries.of(s, s.watts);
-        if (raw == null) return null;
+        if (raw.length == 0) return new double[0];
         double[] joined = new double[raw.length];
         int n = 0;
         boolean any = false;
@@ -38,7 +38,7 @@ public final class NormalizedPowerAnalyzer {
             if (v > 0) any = true;
             joined[n++] = v;
         }
-        if (!any || n < MIN_SECONDS) return null;
+        if (!any || n < MIN_SECONDS) return new double[0];
         return java.util.Arrays.copyOf(joined, n);
     }
 

@@ -66,8 +66,8 @@ public final class NextClimbFinder {
     public static Answer find(StoredRoute route, Double lat, Double lon) {
         double along = 0;
         boolean onRoute = false;
-        double[] proj = lat != null && lon != null ? project(route, lat, lon) : null;
-        if (proj != null && proj[0] <= OFF_ROUTE_M) {
+        double[] proj = lat != null && lon != null ? project(route, lat, lon) : new double[0];
+        if (proj.length > 0 && proj[0] <= OFF_ROUTE_M) {
             along = proj[1];
             onRoute = true;
         }
@@ -97,9 +97,9 @@ public final class NextClimbFinder {
      *         null when the route has no usable geometry.
      */
     static double[] project(StoredRoute r, double lat, double lon) {
-        if (r.lats == null || r.lons == null || r.distances == null) return null;
+        if (r.lats == null || r.lons == null || r.distances == null) return new double[0];
         int n = Math.min(r.lats.length, Math.min(r.lons.length, r.distances.length));
-        if (n == 0) return null;
+        if (n == 0) return new double[0];
         if (n == 1) return new double[]{metres(lat, lon, r.lats[0], r.lons[0]), r.distances[0]};
 
         double cosLat = Math.cos(Math.toRadians(lat));

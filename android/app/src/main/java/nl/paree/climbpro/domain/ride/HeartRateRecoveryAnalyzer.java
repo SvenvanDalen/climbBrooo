@@ -83,7 +83,7 @@ public final class HeartRateRecoveryAnalyzer {
         if (np == null || np < MIN_NP_WATTS) return null;
         double[] watts = PerSecondSeries.of(s, s.watts);
         double[] hr = PerSecondSeries.of(s, s.heartrate);
-        if (watts == null || hr == null) return null;
+        if (watts.length == 0 || hr.length == 0) return null;
 
         int n = watts.length;
         double threshold = INTERVAL_FACTOR * np;

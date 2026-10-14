@@ -43,7 +43,7 @@ public final class StarredSegmentLocator {
                                   double startLat, double startLon,
                                   double endLat, double endLon, double maxMatchM) {
         int[] idx = matchIndices(route, startLat, startLon, endLat, endLon, maxMatchM);
-        if (idx == null) return null;
+        if (idx.length == 0) return null;
         RoutePoint first = route.get(idx[0]);
         RoutePoint last  = route.get(idx[1]);
         double length = last.distance - first.distance;
@@ -60,7 +60,7 @@ public final class StarredSegmentLocator {
                                double endLat, double endLon,
                                String name, double maxMatchM) {
         int[] idx = matchIndices(route, startLat, startLon, endLat, endLon, maxMatchM);
-        if (idx == null) return null;
+        if (idx.length == 0) return null;
 
         List<RoutePoint> climbPoints = route.subList(idx[0], idx[1] + 1);
         RoutePoint first = climbPoints.get(0);
@@ -92,11 +92,11 @@ public final class StarredSegmentLocator {
     private static int[] matchIndices(List<RoutePoint> route,
                                       double startLat, double startLon,
                                       double endLat, double endLon, double maxMatchM) {
-        if (route == null || route.size() < 2) return null;
+        if (route == null || route.size() < 2) return new int[0];
         int startIdx = nearestIndex(route, startLat, startLon, maxMatchM);
         int endIdx   = nearestIndex(route, endLat, endLon, maxMatchM);
-        if (startIdx < 0 || endIdx < 0) return null;
-        if (endIdx <= startIdx) return null;
+        if (startIdx < 0 || endIdx < 0) return new int[0];
+        if (endIdx <= startIdx) return new int[0];
         return new int[]{startIdx, endIdx};
     }
 

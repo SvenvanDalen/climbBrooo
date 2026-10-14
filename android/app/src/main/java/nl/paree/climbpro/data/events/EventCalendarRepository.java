@@ -130,23 +130,23 @@ public final class EventCalendarRepository {
             hit = forwardGeocode(e.location);
             cache.put(e.location, hit);
         }
-        if (hit != null) {
+        if (hit != null && hit.length > 0) {
             e.lat = hit[0];
             e.lon = hit[1];
         }
     }
 
     private double[] forwardGeocode(String text) {
-        if (!Geocoder.isPresent()) return null;
+        if (!Geocoder.isPresent()) return new double[0];
         try {
             @SuppressWarnings("deprecation") // sync overload; the caller is off the main thread
             List<Address> r = new Geocoder(app, Locale.getDefault()).getFromLocationName(text, 1);
-            if (r == null || r.isEmpty()) return null;
+            if (r == null || r.isEmpty()) return new double[0];
             return new double[]{r.get(0).getLatitude(), r.get(0).getLongitude()};
         } catch (Exception e) {
             // IOException (no network/backend) or a geocoder implementation quirk.
             Log.w(TAG, "Geocoding failed for an event location", e);
-            return null;
+            return new double[0];
         }
     }
 

@@ -57,7 +57,7 @@ public final class HeartRateRecoveryTrend {
         if (rides != null && stats != null) {
             for (StoredRide r : rides) {
                 int[] drops = recoveryDrops(r, stats, indoorOnly);
-                if (drops == null) continue;
+                if (drops.length == 0) continue;
                 double sum = 0;
                 for (int d : drops) sum += d;
                 entries.add(new Entry(r, sum / drops.length, drops.length));
@@ -72,9 +72,9 @@ public final class HeartRateRecoveryTrend {
     /** The ride's heart-rate recovery drops; null when it doesn't qualify or has none. */
     private static int[] recoveryDrops(StoredRide r, Map<Long, StoredRideStreamStats> stats,
                                        boolean indoorOnly) {
-        if (r == null || (indoorOnly && !IndoorRides.isIndoor(r))) return null;
+        if (r == null || (indoorOnly && !IndoorRides.isIndoor(r))) return new int[0];
         StoredRideStreamStats s = stats.get(r.activityId);
-        if (s == null || s.hrRecoveryDrops == null || s.hrRecoveryDrops.length == 0) return null;
+        if (s == null || s.hrRecoveryDrops == null || s.hrRecoveryDrops.length == 0) return new int[0];
         return s.hrRecoveryDrops;
     }
 

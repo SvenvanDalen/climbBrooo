@@ -25,16 +25,16 @@ public final class EuroAmount {
         if (s.isEmpty()) return INVALID;
 
         String[] parts = s.indexOf(',') >= 0 ? splitAtComma(s) : splitWithoutComma(s);
-        if (parts == null) return INVALID;
+        if (parts.length == 0) return INVALID;
         return toCents(parts[0], parts[1]);
     }
 
     /** {@code "1.234,5"} → {"1234", "5"}; null for a second comma or bad grouping. */
     private static String[] splitAtComma(String s) {
         int comma = s.indexOf(',');
-        if (s.indexOf(',', comma + 1) >= 0) return null;
+        if (s.indexOf(',', comma + 1) >= 0) return new String[0];
         String intPart = s.substring(0, comma);
-        if (!validThousands(intPart)) return null;
+        if (!validThousands(intPart)) return new String[0];
         return new String[]{intPart.replace(".", ""), s.substring(comma + 1)};
     }
 
@@ -51,7 +51,7 @@ public final class EuroAmount {
         if (dots == 1 && s.length() - lastDot - 1 <= 2) {
             return new String[]{s.substring(0, lastDot), s.substring(lastDot + 1)};
         }
-        if (!validThousands(s)) return null;
+        if (!validThousands(s)) return new String[0];
         return new String[]{s.replace(".", ""), ""};
     }
 

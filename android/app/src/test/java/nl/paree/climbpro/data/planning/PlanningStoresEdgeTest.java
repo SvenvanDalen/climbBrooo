@@ -1,5 +1,6 @@
 package nl.paree.climbpro.data.planning;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -114,9 +115,9 @@ public class PlanningStoresEdgeTest {
 
     @Test
     public void parseCoordinates_nonNumericOrOutOfRange_isNull() {
-        assertNull(FavoriteStartPoint.parseCoordinates("abc, def"));
-        assertNull(FavoriteStartPoint.parseCoordinates("50,x; 5,6"));
-        assertNull(FavoriteStartPoint.parseCoordinates("91, 5"));
-        assertNull(FavoriteStartPoint.parseCoordinates("50, 181"));
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("abc, def").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("50,x; 5,6").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("91, 5").length);
+        assertEquals(0, FavoriteStartPoint.parseCoordinates("50, 181").length);
     }
 }

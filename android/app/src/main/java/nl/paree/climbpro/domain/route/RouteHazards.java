@@ -95,7 +95,7 @@ public final class RouteHazards {
                 hi = Math.max(hi, along);
             }
         }
-        if (matched < 2 || hi <= lo) return null;
+        if (matched < 2 || hi <= lo) return new int[0];
         return new int[]{(int) Math.floor(lo), (int) Math.ceil(hi)};
     }
 
@@ -149,7 +149,7 @@ public final class RouteHazards {
         for (double[][] way : tunnelWays) {
             if (way == null) continue;
             int[] range = tunnelRange(way, lats, lons, distances, n, cosLat);
-            if (range != null) raw.add(range);
+            if (range.length > 0) raw.add(range);
         }
         List<Hazard> out = new ArrayList<>();
         for (int[] r : mergeRanges(raw)) out.add(new Hazard(r[0], r[1], TYPE_TUNNEL));

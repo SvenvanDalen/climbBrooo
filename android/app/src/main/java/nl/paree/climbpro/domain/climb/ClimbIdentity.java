@@ -84,15 +84,15 @@ public final class ClimbIdentity {
      * the map without loading every stored route.
      */
     public static double[] approxStart(String climbId) {
-        if (climbId == null) return null;
+        if (climbId == null) return new double[0];
         String[] parts = climbId.split(":");
-        if (parts.length != 3) return null;
+        if (parts.length != 3) return new double[0];
         try {
             return new double[] {
                     Long.parseLong(parts[0]) * COORD_BUCKET_DEG,
                     Long.parseLong(parts[1]) * COORD_BUCKET_DEG};
         } catch (NumberFormatException e) {
-            return null;
+            return new double[0];
         }
     }
 }

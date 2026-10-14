@@ -117,7 +117,7 @@ public final class RouteGhostProfile {
             int passEnd = endOfPass(track, line.lats[0], line.lons[0], first);
             int start = closestInPass(track, line.lats[0], line.lons[0], first, passEnd);
             int[] secs = follow(line, track, start);
-            if (secs != null) {
+            if (secs.length > 0) {
                 long total = sum(secs);
                 if (total < bestTotal) {
                     best = secs;
@@ -163,13 +163,13 @@ public final class RouteGhostProfile {
         int prev = start;
         for (int k = 1; k <= steps; k++) {
             int hit = firstWithin(track, line.lats[k], line.lons[k], prev + 1);
-            if (hit < 0) return null;
+            if (hit < 0) return new int[0];
             int end = endOfPass(track, line.lats[k], line.lons[k], hit);
             int idx = closestInPass(track, line.lats[k], line.lons[k], hit, end);
             secs[k - 1] = movingSeconds(track, prev, idx);
             prev = idx;
         }
-        return sum(secs) > 0 ? secs : null;
+        return sum(secs) > 0 ? secs : new int[0];
     }
 
     /** Timer seconds between two samples; recorder pauses (long gaps) count as zero. */

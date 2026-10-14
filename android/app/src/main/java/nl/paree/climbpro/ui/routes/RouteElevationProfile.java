@@ -79,7 +79,7 @@ public final class RouteElevationProfile {
     public static RouteElevationProfile from(StoredRoute route, int maxBuckets) {
         if (route == null || route.elevations == null) return EMPTY;
         double[] dist = resolveDistances(route);
-        if (dist == null || dist.length != route.elevations.length) return EMPTY;
+        if (dist.length == 0 || dist.length != route.elevations.length) return EMPTY;
 
         // Keep only usable samples.
         int n = dist.length;
@@ -116,7 +116,7 @@ public final class RouteElevationProfile {
     private static double[] resolveDistances(StoredRoute route) {
         if (route.distances != null) return route.distances;
         if (route.lats == null || route.lons == null || route.lats.length != route.lons.length) {
-            return null;
+            return new double[0];
         }
         double[] out = new double[route.lats.length];
         for (int i = 1; i < out.length; i++) {

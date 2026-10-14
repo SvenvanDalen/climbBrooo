@@ -192,7 +192,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
                     double[] latLon = fixed;
                     if (latLon == null) {
                         latLon = FavoriteStartPoint.parseCoordinates(coords.getText().toString());
-                        if (latLon == null) {
+                        if (latLon.length == 0) {
                             coords.setError(getString(R.string.fav_start_coordinates_invalid));
                             return;
                         }

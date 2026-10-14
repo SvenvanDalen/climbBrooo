@@ -56,7 +56,7 @@ public final class ClimbFactsParser {
         if (sidesNode == null || !sidesNode.isArray()) return sides;
         for (JsonNode s : sidesNode) {
             double[] start = latLon(s.get("start"));
-            if (start == null) continue;
+            if (start.length == 0) continue;
             String label = text(s, "label");
             sides.add(new FamousClimb.Side(label, start[0], start[1]));
         }
@@ -66,7 +66,7 @@ public final class ClimbFactsParser {
     private static FamousClimb parseClimb(JsonNode c) {
         String name = text(c, "name");
         double[] top = latLon(c.get("top"));
-        if (name == null || top == null) return null;
+        if (name == null || top.length == 0) return null;
 
         List<String> facts = facts(c.get("facts"));
         if (facts.isEmpty()) return null;
@@ -89,10 +89,10 @@ public final class ClimbFactsParser {
 
     private static double[] latLon(JsonNode node) {
         if (node == null || !node.isArray() || node.size() != 2
-                || !node.get(0).isNumber() || !node.get(1).isNumber()) return null;
+                || !node.get(0).isNumber() || !node.get(1).isNumber()) return new double[0];
         double lat = node.get(0).asDouble();
         double lon = node.get(1).asDouble();
-        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return new double[0];
         return new double[] {lat, lon};
     }
 }

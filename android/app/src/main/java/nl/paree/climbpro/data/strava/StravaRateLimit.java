@@ -31,18 +31,18 @@ public final class StravaRateLimit {
     static boolean nearLimit(String limitHeader, String usageHeader) {
         int[] limit = parse(limitHeader);
         int[] usage = parse(usageHeader);
-        if (limit == null || usage == null) return false;
+        if (limit.length == 0 || usage.length == 0) return false;
         return usage[0] >= limit[0] - RESERVE_15MIN || usage[1] >= limit[1] - RESERVE_DAILY;
     }
 
     private static int[] parse(String header) {
-        if (header == null) return null;
+        if (header == null) return new int[0];
         String[] parts = header.split(",");
-        if (parts.length < 2) return null;
+        if (parts.length < 2) return new int[0];
         try {
             return new int[]{Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())};
         } catch (NumberFormatException e) {
-            return null;
+            return new int[0];
         }
     }
 }
