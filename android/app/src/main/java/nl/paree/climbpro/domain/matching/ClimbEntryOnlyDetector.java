@@ -64,12 +64,13 @@ public final class ClimbEntryOnlyDetector {
                                          double distToEndAtEntry) {
         WindowScan scan = new WindowScan(distToEndAtEntry);
         double covered = 0;
-        for (int i = entryIdx; i < track.size() - 1; i++) {
+        boolean pastCutoff = false;
+        for (int i = entryIdx; i < track.size() - 1 && scan.exitIdx < 0 && !pastCutoff; i++) {
             TrackSample a = track.get(i);
             double distToEnd = CumulativeDistance.haversine(endLat, endLon, a.lat, a.lon);
             if (distToEnd <= ClimbAttemptMatcher.GATE_M) {
-                scan.exitIdx = i;
-                break; // reached the exit gate — this window is a completed pass
+                scan.exitIdx = i; // reached the exit gate — this window is a completed pass
+                continue;
             }
             if (distToEnd < scan.minDistToEnd) scan.minDistToEnd = distToEnd;
             TrackSample b = track.get(i + 1);
@@ -84,11 +85,10 @@ public final class ClimbEntryOnlyDetector {
             double bDistToEnd = CumulativeDistance.haversine(endLat, endLon, b.lat, b.lon);
             if (bDistToEnd <= ClimbAttemptMatcher.GATE_M) {
                 scan.exitIdx = i + 1;
-                break;
-            }
-            if (bDistToEnd < scan.minDistToEnd) scan.minDistToEnd = bDistToEnd;
-            if (covered >= cutoff) {
-                break; // rode well past the climb without exiting; stop scanning this window
+            } else {
+                if (bDistToEnd < scan.minDistToEnd) scan.minDistToEnd = bDistToEnd;
+                // rode well past the climb without exiting; stop scanning this window
+                pastCutoff = covered >= cutoff;
             }
         }
         return scan;
@@ -127,41 +127,30 @@ public final class ClimbEntryOnlyDetector {
         double cutoff = CUTOFF_LENGTH_MULTIPLIER * climbLengthM;
         int best = -1;
         int searchFrom = 0;
-        while (true) {
-            int entryIdx = firstWithin(track, startLat, startLon, searchFrom);
-            if (entryIdx < 0) break; // no more candidate entries
-
+        // Stops when there are no more candidate entries.
+        for (int entryIdx = firstWithin(track, startLat, startLon, searchFrom); entryIdx >= 0;
+                entryIdx = firstWithin(track, startLat, startLon, searchFrom)) {
             TrackSample entry = track.get(entryIdx);
             double distToEndAtEntry = CumulativeDistance.haversine(endLat, endLon, entry.lat, entry.lon);
-            if (distToEndAtEntry <= ClimbAttemptMatcher.GATE_M) {
-                // entry point itself is already within the exit gate — not a valid candidate;
-                // retry from the next sample so a later, genuine entry is still found.
-                searchFrom = entryIdx + 1;
-                continue;
-            }
+            // Retry from the next sample after this entry so a spurious/implausible early
+            // gate hit doesn't block a later genuine attempt from being found. This also
+            // covers an entry point already within the exit gate: not a valid candidate.
+            searchFrom = entryIdx + 1;
+            if (distToEndAtEntry <= ClimbAttemptMatcher.GATE_M) continue;
 
             WindowScan scan = scanWindow(track, entryIdx, endLat, endLon, cutoff,
                     distToEndAtEntry);
-            int exitIdx = scan.exitIdx;
-            double minDistToEnd = scan.minDistToEnd;
-
-            if (exitIdx >= 0) {
+            if (scan.exitIdx >= 0) {
                 // A completed pass — not incomplete. Resume searching after its exit for a
                 // later, separate incomplete attempt in the rest of the track.
-                searchFrom = exitIdx + 1;
-                continue;
+                searchFrom = scan.exitIdx + 1;
+            } else if (madeProgressTowardEnd(distToEndAtEntry, scan.minDistToEnd)) {
+                // Track ran out, or hit the cutoff, without ever reaching the exit gate in
+                // this window — only flag if the track was plausibly heading toward the
+                // climb's end, not just accumulating distance in some unrelated direction
+                // after an incidental entry-gate pass.
+                best = (int) Math.round(Math.max(0.0, climbLengthM - scan.minDistToEnd));
             }
-
-            // Track ran out, or hit the cutoff, without ever reaching the exit gate in this
-            // window — only flag if the track was plausibly heading toward the climb's end,
-            // not just accumulating distance in some unrelated direction after an incidental
-            // entry-gate pass.
-            if (madeProgressTowardEnd(distToEndAtEntry, minDistToEnd)) {
-                best = (int) Math.round(Math.max(0.0, climbLengthM - minDistToEnd));
-            }
-            // Retry from the next sample after this entry so a spurious/implausible early
-            // gate hit doesn't block a later genuine attempt from being found.
-            searchFrom = entryIdx + 1;
         }
         return best;
     }

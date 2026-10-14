@@ -160,9 +160,10 @@ public final class LoopGenerator {
         all.sort((a, b) -> Double.compare(a.score, b.score));
         List<Suggestion> out = new ArrayList<>();
         for (Suggestion s : all) {
-            if (s.deviation > MAX_DEVIATION || isDuplicate(out, s)) continue;
-            out.add(s);
-            if (out.size() >= max) break;
+            if (s.deviation <= MAX_DEVIATION && !isDuplicate(out, s)) {
+                out.add(s);
+                if (out.size() >= max) break;
+            }
         }
         return out;
     }

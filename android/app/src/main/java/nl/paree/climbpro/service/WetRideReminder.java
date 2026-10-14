@@ -46,26 +46,26 @@ public final class WetRideReminder {
         }
         Collections.sort(due, (a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
 
-        int fetches = 0;
-        for (StoredRide r : due) {
-            if (fetches >= MAX_FETCHES_PER_RUN) break;
+        for (StoredRide r : due.subList(0, Math.min(due.size(), MAX_FETCHES_PER_RUN))) {
             HourlyPrecipitation weather;
             try {
-                fetches++;
                 weather = source.fetch(r.startLat, r.startLon);
             } catch (IOException e) {
                 break;
             }
             WetRideDetector.Verdict v = WetRideDetector.judge(r, weather);
-            if (v == null) continue;
-            WetRideCheck c = new WetRideCheck();
-            c.activityId = r.activityId;
-            c.checkedAtSec = nowSec;
-            c.precipitationMm = v.mm;
-            c.wet = v.wet;
-            c.offroad = v.offroad;
-            out.add(c);
+            if (v != null) out.add(check(r, v, nowSec));
         }
         return out;
+    }
+
+    private static WetRideCheck check(StoredRide r, WetRideDetector.Verdict v, long nowSec) {
+        WetRideCheck c = new WetRideCheck();
+        c.activityId = r.activityId;
+        c.checkedAtSec = nowSec;
+        c.precipitationMm = v.mm;
+        c.wet = v.wet;
+        c.offroad = v.offroad;
+        return c;
     }
 }

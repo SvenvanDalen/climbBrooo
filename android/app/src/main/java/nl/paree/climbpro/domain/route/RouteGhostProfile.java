@@ -107,8 +107,8 @@ public final class RouteGhostProfile {
      * passes the start before beginning the route still yields its fastest full lap.
      */
     public static int[] match(Line line, List<TrackSample> track) {
-        if (line == null || track == null || track.size() < 2) return null;
-        int[] best = null;
+        if (line == null || track == null || track.size() < 2) return new int[0];
+        int[] best = new int[0];
         long bestTotal = Long.MAX_VALUE;
         int from = 0;
         for (int pass = 0; pass < MAX_START_PASSES; pass++) {

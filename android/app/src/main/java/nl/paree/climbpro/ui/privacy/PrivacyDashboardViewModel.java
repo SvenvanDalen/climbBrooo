@@ -339,7 +339,7 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     // --- deletion -------------------------------------------------------------------------
 
     /** Returns the number of files that could not be deleted. */
-    private int erase(PrivacyCategory c) throws Exception {
+    private int erase(PrivacyCategory c) throws java.io.IOException {
         Context app = getApplication();
         SharedPreferences prefs = defaultPrefs();
         switch (c) {

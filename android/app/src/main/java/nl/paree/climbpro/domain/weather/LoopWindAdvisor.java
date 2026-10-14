@@ -105,11 +105,10 @@ public final class LoopWindAdvisor {
             // Overlap of this segment with the home half [half, length].
             double lo = Math.max(sa, half);
             double hi = Math.min(sb, length);
-            if (!(hi > lo)) continue;
-            if (lats[a] == lats[b] && lons[a] == lons[b]) continue; // no heading
-            // Integral of the linear ramp (s - half) / half over [lo, hi].
-            double w = (hi - lo) * (((lo + hi) / 2) - half) / half;
-            if (!(w > 0)) continue;
+            boolean noHeading = lats[a] == lats[b] && lons[a] == lons[b];
+            // Integral of the linear ramp (s - half) / half over [lo, hi]; none when they don't overlap.
+            double w = hi > lo ? (hi - lo) * (((lo + hi) / 2) - half) / half : 0;
+            if (noHeading || Double.isNaN(w) || w <= 0) continue;
             double heading = bearing(lats[a], lons[a], lats[b], lons[b]);
             double headwind = windKmh * Math.cos(Math.toRadians(heading - windFromDeg));
             weighted += w * headwind;

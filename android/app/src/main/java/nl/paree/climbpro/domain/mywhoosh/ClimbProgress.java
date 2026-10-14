@@ -96,7 +96,7 @@ public final class ClimbProgress {
         for (int i = 0; i < mine.size(); i++) {
             StoredClimbAttempt a = mine.get(i);
             out.add(new Point(a.dateEpochSec, a.elapsedSec, a.avgWatts, wkg[i],
-                    indoorActivityIds != null && indoorActivityIds.contains(a.activityId),
+                    indoorActivityIds != null && indoorActivityIds.contains(Long.valueOf(a.activityId)),
                     a == fastest, a == strongest));
         }
         return out;

@@ -76,36 +76,6 @@ public final class LogbookCalculator {
          */
         public final String companions;
 
-        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
-                          boolean routeDeviation, boolean bestOfYear) {
-            this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
-                    0L, 0, null, null);
-        }
-
-        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
-                           boolean routeDeviation, boolean bestOfYear,
-                           long activityId, int passIndex, String note, String photoFileName) {
-            this(dateEpochSec, elapsedSec, deltaToPrSec, routeDeviation, bestOfYear,
-                    activityId, passIndex, note, photoFileName, null);
-        }
-
-        public HistoryRow(long dateEpochSec, int elapsedSec, int deltaToPrSec,
-                           boolean routeDeviation, boolean bestOfYear,
-                           long activityId, int passIndex, String note, String photoFileName,
-                           Double avgTempC) {
-            this(new Builder()
-                    .dateEpochSec(dateEpochSec)
-                    .elapsedSec(elapsedSec)
-                    .deltaToPrSec(deltaToPrSec)
-                    .routeDeviation(routeDeviation)
-                    .bestOfYear(bestOfYear)
-                    .activityId(activityId)
-                    .passIndex(passIndex)
-                    .note(note)
-                    .photoFileName(photoFileName)
-                    .avgTempC(avgTempC));
-        }
-
         private HistoryRow(Builder b) {
             this.dateEpochSec = b.dateEpochSec;
             this.elapsedSec = b.elapsedSec;

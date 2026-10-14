@@ -129,14 +129,13 @@ public final class OfflinePackageReport {
         sb.append('\n').append(label).append(" (").append(count).append(')');
         int shown = 0;
         for (OfflinePackage.Poi p : pkg.pois) {
-            if (!type.equals(p.type)) continue;
-            if (shown++ == MAX_POIS_PER_TYPE) {
-                sb.append("\n  … en ").append(count - MAX_POIS_PER_TYPE).append(" meer");
-                break;
-            }
+            if (!type.equals(p.type) || shown++ >= MAX_POIS_PER_TYPE) continue;
             sb.append(String.format(Locale.US, "\n  km %.1f", p.distanceM / 1000.0));
             if (p.name != null && !p.name.isEmpty()) sb.append(" · ").append(p.name);
             if (p.offsetM >= 50) sb.append(String.format(Locale.US, " (%.0f m van route)", p.offsetM));
+        }
+        if (count > MAX_POIS_PER_TYPE) {
+            sb.append("\n  … en ").append(count - MAX_POIS_PER_TYPE).append(" meer");
         }
     }
 }

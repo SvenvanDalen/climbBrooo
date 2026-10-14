@@ -77,7 +77,6 @@ public final class MedicalIdActivity extends AppCompatActivity {
         contactPhone = findViewById(R.id.input_contact_phone);
         notes = findViewById(R.id.input_notes);
         lockscreen = findViewById(R.id.switch_lockscreen);
-        TextView watchStatus = findViewById(R.id.watch_status);
         findViewById(R.id.btn_save).setOnClickListener(v -> save());
 
         io.execute(() -> {

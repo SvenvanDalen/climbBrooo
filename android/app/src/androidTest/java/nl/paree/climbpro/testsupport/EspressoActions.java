@@ -1,16 +1,20 @@
 package nl.paree.climbpro.testsupport;
 
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anyOf;
 
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 
 import androidx.core.widget.NestedScrollView;
+import androidx.test.espresso.PerformException;
 import androidx.test.espresso.UiController;
 import androidx.test.espresso.ViewAction;
 import androidx.test.espresso.action.GeneralClickAction;
@@ -23,6 +27,8 @@ import org.hamcrest.Matcher;
 
 /** Espresso actions the stock set lacks. */
 public final class EspressoActions {
+
+    private static final int SCROLL_ATTEMPTS = 5;
 
     private EspressoActions() {}
 
@@ -40,9 +46,39 @@ public final class EspressoActions {
             }
 
             @Override public void perform(UiController ui, View view) {
-                new ScrollToAction().perform(ui, view);
+                // Content above the view may still be laying out (async loads), which can
+                // leave it short of fully visible after one scroll; retry briefly.
+                PerformException last = null;
+                for (int attempt = 0; attempt < SCROLL_ATTEMPTS; attempt++) {
+                    try {
+                        new ScrollToAction().perform(ui, view);
+                        return;
+                    } catch (PerformException e) {
+                        last = e;
+                        ui.loopMainThreadForAtLeast(200);
+                    }
+                }
+                throw last;
             }
         };
+    }
+
+    /**
+     * Scrolls the matched view into view and clicks it, retrying briefly when content still
+     * laying out above it (async loads) moves it between the scroll and the click.
+     */
+    public static void scrollToAndClick(Matcher<View> view) {
+        PerformException last = null;
+        for (int attempt = 0; attempt < SCROLL_ATTEMPTS; attempt++) {
+            try {
+                onView(view).perform(scrollIntoView(), click());
+                return;
+            } catch (PerformException e) {
+                last = e;
+                SystemClock.sleep(200);
+            }
+        }
+        throw last;
     }
 
     /**

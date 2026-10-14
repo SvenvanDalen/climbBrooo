@@ -188,14 +188,16 @@ public class ClimbGpxWriterTest {
 
     @Test
     public void nullRouteThrows() {
+        StoredClimb c = climb();
         assertThrows(IllegalArgumentException.class,
-                () -> ClimbGpxWriter.toGpx(null, climb(), 0, null, null));
+                () -> ClimbGpxWriter.toGpx(null, c, 0, null, null));
     }
 
     @Test
     public void nullClimbThrows() {
+        StoredRoute r = route();
         assertThrows(IllegalArgumentException.class,
-                () -> ClimbGpxWriter.toGpx(route(), null, 0, null, null));
+                () -> ClimbGpxWriter.toGpx(r, null, 0, null, null));
     }
 
     @Test
@@ -204,8 +206,9 @@ public class ClimbGpxWriterTest {
         r.lats = new double[0];
         r.lons = new double[0];
         r.distances = new double[0];
+        StoredClimb c = climb();
         assertThrows(IllegalArgumentException.class,
-                () -> ClimbGpxWriter.toGpx(r, climb(), 0, null, null));
+                () -> ClimbGpxWriter.toGpx(r, c, 0, null, null));
     }
 
     @Test
@@ -308,8 +311,9 @@ public class ClimbGpxWriterTest {
     public void homeClimb_withoutStoredCentre_failsClosed() {
         StoredClimb c = climb();
         c.isHome = true; // no centre stored yet
+        StoredRoute r = route();
         assertThrows(IllegalArgumentException.class,
-                () -> ClimbGpxWriter.toGpx(route(), c, 0, null, null, 300));
+                () -> ClimbGpxWriter.toGpx(r, c, 0, null, null, 300));
     }
 
     @Test
@@ -318,8 +322,9 @@ public class ClimbGpxWriterTest {
         c.isHome = true;
         c.privacyCentreLat = 50.002; // ~264 m away: fine for 2000 m, not for 250 m
         c.privacyCentreLon = 5.002;
+        StoredRoute r = route();
         assertThrows(IllegalArgumentException.class,
-                () -> ClimbGpxWriter.toGpx(route(), c, 0, null, null, 250));
+                () -> ClimbGpxWriter.toGpx(r, c, 0, null, null, 250));
     }
 
     @Test

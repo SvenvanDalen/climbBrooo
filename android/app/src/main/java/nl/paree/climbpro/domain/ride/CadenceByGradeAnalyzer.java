@@ -51,17 +51,17 @@ public final class CadenceByGradeAnalyzer {
         int j = 0;
         for (int i = 1; i < s.time.length; i++) {
             int dt = s.time[i] - s.time[i - 1];
-            if (dt <= 0 || dt > MAX_GAP_SEC) continue;
             double cad = s.cadence[i];
-            if (!isPlausibleCadence(cad)) continue;
+            if (dt <= 0 || dt > MAX_GAP_SEC || !isPlausibleCadence(cad)) continue;
             while (j + 1 < i && s.distance[i] - s.distance[j + 1] >= GRADE_WINDOW_M) j++;
             double run = s.distance[i] - s.distance[j];
-            if (run < GRADE_WINDOW_M) continue;
-            double grade = (s.altitude[i] - s.altitude[j]) / run;
-            if (!isClimbingGrade(grade)) continue;
-            int cls = GradientColor.forGradient(grade);
-            secs[cls] += dt;
-            revs[cls] += cad * dt / 60.0;
+            double grade = run >= GRADE_WINDOW_M
+                    ? (s.altitude[i] - s.altitude[j]) / run : Double.NaN;
+            if (isClimbingGrade(grade)) {
+                int cls = GradientColor.forGradient(grade);
+                secs[cls] += dt;
+                revs[cls] += cad * dt / 60.0;
+            }
         }
         return toResult(secs, revs);
     }

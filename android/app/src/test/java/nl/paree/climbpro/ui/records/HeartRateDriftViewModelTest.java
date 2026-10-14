@@ -82,7 +82,7 @@ public class HeartRateDriftViewModelTest {
     }
 
     @Test
-    public void noRides_emptyResult() throws Exception {
+    public void noRides_emptyResult() {
         HeartRateDriftViewModel.State s = load();
         assertTrue(s.result.entries.isEmpty());
         assertNull(s.result.recentAvg);

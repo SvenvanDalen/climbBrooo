@@ -108,10 +108,12 @@ public final class RideStreamAnalyzer {
                 continue;
             }
             if (start < firstClean) start = firstClean;
-            if (d[j] - d[firstClean] < targetM) continue;
-            start = latestWindowStart(d, start, j, targetM);
-            double elapsed = windowElapsed(t, d, start, j, targetM);
-            if (elapsed > 0 && elapsed < best) best = elapsed;
+            boolean shortWindow = d[j] - d[firstClean] < targetM;
+            if (!shortWindow) {
+                start = latestWindowStart(d, start, j, targetM);
+                double elapsed = windowElapsed(t, d, start, j, targetM);
+                if (elapsed > 0 && elapsed < best) best = elapsed;
+            }
         }
         return best == Double.POSITIVE_INFINITY ? null : (int) Math.round(best);
     }

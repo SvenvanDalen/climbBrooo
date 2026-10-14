@@ -198,11 +198,10 @@ public final class FtpEstimator {
     private static BucketBests collectBuckets(List<Effort> efforts, double massKg) {
         BucketBests buckets = new BucketBests();
         for (Effort e : efforts) {
-            if (e == null || e.elapsedSec <= 0 || e.segDistMeters.length == 0) continue;
-            Bucket bucket = bucketFor(e.elapsedSec);
-            if (bucket == null) continue;
-            double ftp = solvableFtp(e, massKg);
-            if (Double.isNaN(ftp)) continue;
+            Bucket bucket = e == null || e.elapsedSec <= 0 || e.segDistMeters.length == 0
+                    ? null : bucketFor(e.elapsedSec);
+            double ftp = bucket != null ? solvableFtp(e, massKg) : Double.NaN;
+            if (bucket == null || Double.isNaN(ftp)) continue;
             // This effort was genuinely solvable (not saturated) and produced a positive
             // FTP, so it counts as qualifying data and populates its duration bucket for the
             // minimum-data gates, regardless of whether it turns out to be plausible.
@@ -217,8 +216,9 @@ public final class FtpEstimator {
             // Excluding it here (per bucket) rather than only on the final overall value
             // means one implausible bucket can no longer wipe out a good suggestion from
             // another bucket.
-            if (ftp > MAX_PLAUSIBLE_FTP_WATTS) continue;
-            buckets.best[b] = buckets.best[b] == null ? ftp : Math.max(buckets.best[b], ftp);
+            if (ftp <= MAX_PLAUSIBLE_FTP_WATTS) {
+                buckets.best[b] = buckets.best[b] == null ? ftp : Math.max(buckets.best[b], ftp);
+            }
         }
         return buckets;
     }

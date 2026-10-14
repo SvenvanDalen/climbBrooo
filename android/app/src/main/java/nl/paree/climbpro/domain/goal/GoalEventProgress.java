@@ -140,6 +140,12 @@ public final class GoalEventProgress {
         return Phase.BASE;
     }
 
+    /** Local day of a ride that counts as training, else null. */
+    private static LocalDate trainingDay(StoredRide r, ZoneId zone) {
+        return isTrainingRide(r)
+                ? Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate() : null;
+    }
+
     /** A dated ride on a non-e-bike: the rides that count towards the event preparation. */
     private static boolean isTrainingRide(StoredRide r) {
         return r != null && r.startEpochSec > 0 && !isEBike(r.type);
@@ -161,9 +167,8 @@ public final class GoalEventProgress {
         double mostHm = 0;
         List<StoredRide> all = rides != null ? rides : Collections.<StoredRide>emptyList();
         for (StoredRide r : all) {
-            if (!isTrainingRide(r)) continue;
-            LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
-            if (day.isAfter(today)) continue;
+            LocalDate day = trainingDay(r, zone);
+            if (day == null || day.isAfter(today)) continue;
             double km = r.distanceM / 1000.0;
             long weeksAgo = ChronoUnit.WEEKS.between(
                     day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)), thisWeek);
