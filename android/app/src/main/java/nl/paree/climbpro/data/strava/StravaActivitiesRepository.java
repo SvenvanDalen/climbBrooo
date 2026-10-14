@@ -933,6 +933,20 @@ public final class StravaActivitiesRepository {
         return syncRideArchive(BEARER_PREFIX + auth.getAccessToken());
     }
 
+    /** Adds one archive page's rides; false when paging stops (failed request or empty page). */
+    private boolean addArchivePage(Response<List<StravaActivityDto>> resp, int page,
+                                   List<StoredRide> rides) {
+        if (!resp.isSuccessful()) {
+            Log.w(TAG, "Ride archive page " + page + FAILED_HTTP + resp.code() + ")");
+            return false;
+        }
+        if (resp.body() == null || resp.body().isEmpty()) return false;
+        for (StravaActivityDto act : resp.body()) {
+            if (isCycling(act.type)) rides.add(toStoredRide(act));
+        }
+        return true;
+    }
+
     private int syncRideArchive(String token) throws IOException {
         long nowSec = System.currentTimeMillis() / 1000L;
         long last   = prefs.getInt(PREF_RIDES_SCHEMA, 1) < RIDES_SCHEMA_VERSION
@@ -945,17 +959,9 @@ public final class StravaActivitiesRepository {
         for (int page = 1; more; page++) {
             Response<List<StravaActivityDto>> resp =
                     api.listActivities(token, after, page, 50).execute();
-            if (!resp.isSuccessful()) {
-                Log.w(TAG, "Ride archive page " + page + FAILED_HTTP + resp.code() + ")");
-                more = false;
-            } else if (resp.body() == null || resp.body().isEmpty()) {
-                complete = true;
-                more = false;
-            } else {
-                for (StravaActivityDto act : resp.body()) {
-                    if (isCycling(act.type)) rides.add(toStoredRide(act));
-                }
-            }
+            more = addArchivePage(resp, page, rides);
+            // Paging ends cleanly on an empty page; a failed request leaves it incomplete.
+            complete = !more && resp.isSuccessful();
         }
         // Rides gathered before an aborted page are still valid; upsert is idempotent.
         rideRepo.upsertAll(rides);

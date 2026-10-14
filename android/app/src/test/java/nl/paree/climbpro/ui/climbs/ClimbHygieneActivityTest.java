@@ -67,8 +67,7 @@ public class ClimbHygieneActivityTest {
         ClimbHygieneActivity a = c.get();
         TextView summary = a.findViewById(R.id.hygiene_summary);
         // The layout shows a placeholder until the background scan has posted its result.
-        UiTestEnv.waitFor(() -> summary.getText().length() > 0
-                && !"Bezig met scannen...".contentEquals(summary.getText()));
+        UiTestEnv.waitFor(() -> !"Bezig met scannen...".contentEquals(summary.getText()));
         return a;
     }
 

@@ -66,14 +66,8 @@ public final class ClimbShareExtractor {
         return members;
     }
 
-    /** The climb with its margin, or null for a home climb or a route without geometry. */
-    public static SharedClimb extract(StoredRoute route, int climbIndex) {
-        StoredClimb c = climbAt(route, climbIndex);
-        if (c == null || c.isHome) return null;
-        if (!hasAlignedGeometry(route)) return null;
-        double[] d = route.distances;
-        double from = (double) c.startDistance - MARGIN_M;
-        double to = (double) c.endDistance + MARGIN_M;
+    /** First and last index with a distance in [from, to]; -1 each when there is none. */
+    private static int[] indexRange(double[] d, double from, double to) {
         int first = -1;
         int last = -1;
         for (int i = 0; i < d.length; i++) {
@@ -84,6 +78,20 @@ public final class ClimbShareExtractor {
                 last = i;
             }
         }
+        return new int[]{first, last};
+    }
+
+    /** The climb with its margin, or null for a home climb or a route without geometry. */
+    public static SharedClimb extract(StoredRoute route, int climbIndex) {
+        StoredClimb c = climbAt(route, climbIndex);
+        if (c == null || c.isHome) return null;
+        if (!hasAlignedGeometry(route)) return null;
+        double[] d = route.distances;
+        double from = (double) c.startDistance - MARGIN_M;
+        double to = (double) c.endDistance + MARGIN_M;
+        int[] range = indexRange(d, from, to);
+        int first = range[0];
+        int last = range[1];
         // Include the point just outside each end, so the climb itself is fully covered.
         if (first > 0) first--;
         if (last >= 0 && last < d.length - 1) last++;

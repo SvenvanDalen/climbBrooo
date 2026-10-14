@@ -140,13 +140,13 @@ public final class GoalEventProgress {
         return Phase.BASE;
     }
 
-    /** A dated ride on a non-e-bike: the rides that count towards the event preparation. */
     /** Local day of a ride that counts as training, else null. */
     private static LocalDate trainingDay(StoredRide r, ZoneId zone) {
         return isTrainingRide(r)
                 ? Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate() : null;
     }
 
+    /** A dated ride on a non-e-bike: the rides that count towards the event preparation. */
     private static boolean isTrainingRide(StoredRide r) {
         return r != null && r.startEpochSec > 0 && !isEBike(r.type);
     }
