@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 public final class StravaTitleTemplateRenderer {
 
     /** Placeholder keys this renderer understands, for the settings-screen reference list. */
-    private static final String[] KNOWN_PLACEHOLDERS = {"climb", "time", "delta", "vam"};
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{(\\w+)\\}");
 

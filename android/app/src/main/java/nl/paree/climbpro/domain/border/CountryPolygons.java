@@ -85,7 +85,7 @@ public final class CountryPolygons {
         String line;
         while ((line = br.readLine()) != null) {
             String[] parts = dataParts(line);
-            float[] ring = parts != null ? parseRing(parts) : new float[0];
+            float[] ring = parts.length > 0 ? parseRing(parts) : new float[0];
             if (ring.length == 0) continue;
             String code = parts[0];
             Country c = byCode.get(code);
@@ -124,15 +124,15 @@ public final class CountryPolygons {
         return countries.size();
     }
 
-    /** Null when any coordinate is malformed. */
-    /** The whitespace-separated fields of a data line; null for blank, comment or short lines. */
+    /** The whitespace-separated fields of a data line; empty for blank, comment or short lines. */
     private static String[] dataParts(String line) {
         String t = line.trim();
-        if (t.isEmpty() || t.startsWith("#")) return null;
-        String[] parts = t.split("\s+");
-        return parts.length < 4 ? null : parts;
+        if (t.isEmpty() || t.startsWith("#")) return new String[0];
+        String[] parts = t.split("\\s+");
+        return parts.length < 4 ? new String[0] : parts;
     }
 
+    /** Null when any coordinate is malformed. */
     private static float[] parseRing(String[] parts) {
         float[] ring = new float[(parts.length - 1) * 2];
         try {
