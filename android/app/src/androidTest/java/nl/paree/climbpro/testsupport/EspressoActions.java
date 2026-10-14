@@ -11,6 +11,7 @@ import android.widget.ScrollView;
 import android.widget.SeekBar;
 
 import androidx.core.widget.NestedScrollView;
+import androidx.test.espresso.PerformException;
 import androidx.test.espresso.UiController;
 import androidx.test.espresso.ViewAction;
 import androidx.test.espresso.action.GeneralClickAction;
@@ -23,6 +24,8 @@ import org.hamcrest.Matcher;
 
 /** Espresso actions the stock set lacks. */
 public final class EspressoActions {
+
+    private static final int SCROLL_ATTEMPTS = 5;
 
     private EspressoActions() {}
 
@@ -40,7 +43,19 @@ public final class EspressoActions {
             }
 
             @Override public void perform(UiController ui, View view) {
-                new ScrollToAction().perform(ui, view);
+                // Content above the view may still be laying out (async loads), which can
+                // leave it short of fully visible after one scroll; retry briefly.
+                PerformException last = null;
+                for (int attempt = 0; attempt < SCROLL_ATTEMPTS; attempt++) {
+                    try {
+                        new ScrollToAction().perform(ui, view);
+                        return;
+                    } catch (PerformException e) {
+                        last = e;
+                        ui.loopMainThreadForAtLeast(200);
+                    }
+                }
+                throw last;
             }
         };
     }
