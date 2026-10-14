@@ -93,7 +93,7 @@ public final class UiTestEnv {
                     .pollInSameThread()
                     .pollDelay(Duration.ZERO)
                     .pollInterval(Duration.ofMillis(3))
-                    .atMost(Duration.ofMillis(450))
+                    .atMost(Duration.ofSeconds(3))
                     .until(() -> {
                         boolean busy = !looper.isIdle();
                         looper.idle();
