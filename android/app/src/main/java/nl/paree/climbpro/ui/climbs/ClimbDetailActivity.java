@@ -335,7 +335,21 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         }
     }
 
-    private android.view.View historyRowView(
+    /** "Piek 30 s 410 W · 1 min 380 W · 5 min 310 W" (issue #389); null without power. */
+    static String peakPowerLabel(int[] peakWatts) {
+        if (peakWatts == null) return null;
+        int[] durations = nl.paree.climbpro.domain.matching.ClimbPeakPower.DURATIONS_SEC;
+        StringBuilder sb = new StringBuilder();
+        for (int k = 0; k < durations.length && k < peakWatts.length; k++) {
+            if (peakWatts[k] <= 0) continue;
+            sb.append(sb.length() == 0 ? "⚡ Piek " : " · ")
+                    .append(durations[k] < 60 ? durations[k] + " s" : durations[k] / 60 + " min")
+                    .append(' ').append(peakWatts[k]).append(" W");
+        }
+        return sb.length() == 0 ? null : sb.toString();
+    }
+
+        private android.view.View historyRowView(
             nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row,
             java.text.SimpleDateFormat fmt) {
         android.widget.LinearLayout rowLayout = new android.widget.LinearLayout(this);
@@ -348,6 +362,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         String tempNote = nl.paree.climbpro.domain.climb.AttemptTemperature.label(row.avgTempC);
         if (tempNote != null) addHistoryDetail(rowLayout, tempNote);
+        String peaks = peakPowerLabel(row.peakWatts);
+        if (peaks != null) addHistoryDetail(rowLayout, peaks);
         if (row.note != null && !row.note.isEmpty()) {
             addHistoryDetail(rowLayout, "“" + row.note + "”");
         }

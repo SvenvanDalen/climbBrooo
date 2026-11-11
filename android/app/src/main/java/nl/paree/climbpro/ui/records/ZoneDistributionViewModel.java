@@ -14,6 +14,7 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 import nl.paree.climbpro.domain.ride.ZoneCalculator;
+import nl.paree.climbpro.ui.mywhoosh.RideSourceSelector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +69,9 @@ public final class ZoneDistributionViewModel extends AndroidViewModel {
 
     public void load() {
         executor.execute(() -> {
-            List<StoredRide> rides = rideRepo.loadAll();
+            // #392: only the rides of the chosen source.
+            List<StoredRide> rides = RideSourceSelector.current(getApplication())
+                    .filter(rideRepo.loadAll());
             Map<Long, StoredRideStreamStats> byId = statsRepo.loadById();
             int awaiting = 0;
             for (StoredRide r : rides) {

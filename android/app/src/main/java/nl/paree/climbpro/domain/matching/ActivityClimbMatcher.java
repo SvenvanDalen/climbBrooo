@@ -54,6 +54,7 @@ public final class ActivityClimbMatcher {
                                                  List<StoredIncompleteClimbAttempt> incompleteOut) {
         List<StoredClimbAttempt> out = new ArrayList<>();
         if (track == null || track.size() < 2) return out;
+        long[] times = sensors != null ? times(track) : null;
         for (KnownClimb k : climbs) {
             // matchAllPasses finds every valid ascent in the track, not just the first —
             // an out-and-back or loop route can pass over the same climb more than
@@ -81,6 +82,7 @@ public final class ActivityClimbMatcher {
                     a.avgWatts = sensors.avgWatts(p.entryIdx, p.exitIdx);
                     a.avgHeartrate = sensors.avgHeartrate(p.entryIdx, p.exitIdx);
                     a.avgCadence = sensors.avgCadence(p.entryIdx, p.exitIdx);
+                    a.peakWatts = sensors.peakWatts(times, p.entryIdx, p.exitIdx);
                 }
                 out.add(a);
             }
@@ -102,5 +104,11 @@ public final class ActivityClimbMatcher {
             }
         }
         return out;
+    }
+
+    private static long[] times(List<TrackSample> track) {
+        long[] t = new long[track.size()];
+        for (int i = 0; i < t.length; i++) t[i] = track.get(i).timeSec;
+        return t;
     }
 }

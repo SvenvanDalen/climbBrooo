@@ -223,6 +223,10 @@
             android:exported="false"
             android:parentActivityName=".ui.mywhoosh.MyWhooshActivity" />
         <activity
+            android:name=".ui.mywhoosh.RideProfileActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.mywhoosh.MyWhooshActivity" />
+        <activity
             android:name=".ui.mywhoosh.ClimbIndoorActivity"
             android:exported="false"
             android:parentActivityName=".ui.climbs.ClimbDetailActivity" />

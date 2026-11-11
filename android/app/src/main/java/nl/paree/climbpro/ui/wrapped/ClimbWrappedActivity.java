@@ -12,6 +12,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.mywhoosh.RideSourceSelector;
 import nl.paree.climbpro.domain.climb.ElevationComparisons;
 import nl.paree.climbpro.domain.climb.WrappedCalculator.Summary;
 
@@ -38,6 +39,8 @@ public final class ClimbWrappedActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         toolbar.setNavigationOnClickListener(v -> finish());
+        // #392: Alles / Buiten / MyWhoosh.
+        RideSourceSelector.attach(this, R.id.toolbar, this::loadYear);
 
         container = findViewById(R.id.wrappedContainer);
         empty = findViewById(R.id.empty);
