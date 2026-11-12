@@ -120,6 +120,7 @@ class ClimbProView extends Ui.DataField {
     // Eat/drink reminder (issue #184): time/ascent triggers, shortened when it is hot.
     // fuelTempC is refreshed once a minute; the banner shows until fuelBannerUntilMs.
     hidden var fuel = new FuelReminder();
+    hidden var lowPower = new LowPowerMode();   // issue #50
     hidden var fuelTempC = null;
     hidden var fuelNextTempMs = 0;
     hidden var fuelBannerUntilMs = -1;
@@ -150,6 +151,8 @@ class ClimbProView extends Ui.DataField {
         checkHeatIndex();
         // Eat/drink reminder (issue #184): needs only the activity timer, so no route either.
         checkFuelReminder(info);
+        // Low power mode (issue #50): drop the profile drawing below the battery threshold.
+        lowPower.update(Sys.getSystemStats().battery, readNumberSetting("lowPowerPct"));
         checkCadence(info);
 
         var data = App.getApp().climbData;
@@ -757,7 +760,9 @@ class ClimbProView extends Ui.DataField {
         var profileTop = (h * 0.30).toNumber();
         var profileHeight = (h * 0.35).toNumber();
         var profileBottom = profileTop + profileHeight;
-        drawProfile(dc, data, ci, 8, profileTop, w - 16, profileHeight);
+        if (!lowPower.active) {
+            drawProfile(dc, data, ci, 8, profileTop, w - 16, profileHeight);
+        }
 
         // Surface bar: 5px tall, 2px below the profile (skipped if all segments are UNKNOWN)
         drawSurfaceBar(dc, data, ci, 8, profileBottom + 2, w - 16);
@@ -1163,7 +1168,9 @@ class ClimbProView extends Ui.DataField {
         // Mini profile
         var profileTop = (h * 0.30).toNumber();
         var profileHeight = (h * 0.35).toNumber();
-        drawProfile(dc, data, ni, 8, profileTop, w - 16, profileHeight);
+        if (!lowPower.active) {
+            drawProfile(dc, data, ni, 8, profileTop, w - 16, profileHeight);
+        }
 
         // Stats
         var statsY = (h * 0.72).toNumber();
