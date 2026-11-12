@@ -150,7 +150,8 @@ public final class WatchRequestHandler {
                 ? attemptRepo.loadAll() : Collections.emptyList();
         nl.paree.climbpro.domain.power.GhostTarget ghost = riderRepo != null
                 ? riderRepo.loadGhostTarget() : null;
-        return CombinedRefTimePlanner.plan(route, attempts, ghost);
+        return CombinedRefTimePlanner.plan(route, attempts, ghost,
+                riderRepo != null && riderRepo.loadRefVsLast());
     }
 
     /** Per-segment target watts from the rider's best powered attempt (issue #397, 'tw'). */

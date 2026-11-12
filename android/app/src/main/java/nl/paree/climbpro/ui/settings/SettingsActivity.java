@@ -336,6 +336,9 @@ public final class SettingsActivity extends AppCompatActivity {
             SegmentColorPalette.setActive(GradientPalette.fromEnabled(on));
             triggerImmediateSync();
         });
+        // Compare against the last ride instead of the PR (issue #144); next sync.
+        bindPrefSwitch(binding.switchRefVsLast, nl.paree.climbpro.data.rider.RiderProfileRepository.PREF_REF_VS_LAST,
+                on -> triggerImmediateSync());
         // Radius mode weather filter (issue #12): needs a connection at sync time; without one
         // the full set is sent. Applied from the next sync, so kick one off.
         bindPrefSwitch(binding.switchRadiusDryOnly, RouteSyncWorker.PREF_RADIUS_DRY_ONLY,

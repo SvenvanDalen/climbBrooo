@@ -856,6 +856,14 @@ sentinel) is sent without `vam` rather than partial data. The climb datafield
 parses it and shows the active segment's avg/peak VAM next to the gradient
 stat on the active-climb page.
 
+### Compare with last ride (issue #144)
+
+`refsec` normally carries the per-segment PR. With the `ref_vs_last_ride` pref
+(Settings switch) `RouteRefTimePlanner` / `CombinedRefTimePlanner` instead source
+`SegmentPrCalculator.lastSplits` — the most recent clean attempt with matching segment
+count — so the existing watch delta reads "x s faster than last time". No wire change;
+the pref is folded into the sync hash so toggling it re-syncs.
+
 ### Target power per segment (issue #397)
 
 `RouteTargetPowerPlanner` picks, per climb, the fastest clean attempt that recorded

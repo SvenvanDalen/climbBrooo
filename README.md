@@ -161,6 +161,7 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
   target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
   virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
+- **Compare with last ride** — Settings → "Vergelijk met vorige rit": the ahead/behind delta on the watch uses your most recent ride on the climb instead of your per-segment PR (`refsec` source switch, no wire change).
 - **Target power per segment** — the watts from your fastest powered attempt on each climb are sent as `tw`; the datafield's power stat shows `live/target W` for the active segment.
 - **Interval block per climb** — climb detail → "Intervalblok koppelen": pick Drempel,
   Sweet spot, VO2max, Tempo or your own % FTP; the block lasts from the foot to the top.
