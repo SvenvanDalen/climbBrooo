@@ -50,6 +50,15 @@
             <listEntry value="39">@Strings.HeatIndex39</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.lowPowerPct" title="@Strings.SettingsLowPowerTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FuelOff</listEntry>
+            <listEntry value="10">@Strings.LowPower10</listEntry>
+            <listEntry value="15">@Strings.LowPower15</listEntry>
+            <listEntry value="20">@Strings.LowPower20</listEntry>
+            <listEntry value="30">@Strings.LowPower30</listEntry>
+        </settingConfig>
+    </setting>
     <setting propertyKey="@Properties.fuelIntervalMin" title="@Strings.SettingsFuelIntervalTitle">
         <settingConfig type="list">
             <listEntry value="0">@Strings.FuelOff</listEntry>

@@ -10,7 +10,12 @@ import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 
 import org.junit.Test;
 
-/** Normalized power, cadence per gradient and heart-rate recovery (issues #391, #402, #403). */
+import java.util.List;
+
+/**
+ * Normalized power, cadence per gradient, heart-rate recovery, intervals and work (issues #391,
+ * #400, #402, #403, #404).
+ */
 public class IndoorStreamAnalysisTest {
 
     /** 1 Hz ride at 10 m/s with the given per-second power, heart rate, altitude and cadence. */
@@ -148,5 +153,55 @@ public class IndoorStreamAnalysisTest {
         assertNotNull(st.normalizedPower);
         assertEquals(3, st.hrRecoveryDrops.length);
         assertNull(st.cadenceGradeSec);
+    }
+
+    // --- intervals (#400) ---------------------------------------------------------------
+
+    @Test
+    public void intervalsHaveRealBoundsPowerAndHeartRate() {
+        List<StoredRideStreamStats.Interval> ivs = IntervalAnalyzer.detect(intervals());
+        assertNotNull(ivs);
+        assertEquals(3, ivs.size());
+        for (int k = 0; k < 3; k++) {
+            StoredRideStreamStats.Interval iv = ivs.get(k);
+            assertEquals(1200 + k * 360, iv.startSec);
+            assertEquals(120, iv.durationSec);
+            assertEquals(350, iv.avgWatts);
+            assertEquals(Integer.valueOf(170), iv.maxHr);
+            assertEquals(Integer.valueOf(30), iv.recoveryBpm);
+        }
+    }
+
+    @Test
+    public void intervalsWithoutHeartRateStillCount() {
+        RideStreams s = intervals();
+        List<StoredRideStreamStats.Interval> ivs = IntervalAnalyzer.detect(
+                new RideStreams(s.time, s.distance, s.watts, null, null, null));
+        assertEquals(3, ivs.size());
+        assertNull(ivs.get(0).maxHr);
+        assertNull(ivs.get(0).recoveryBpm);
+    }
+
+    @Test
+    public void steadyOrPowerlessRideHasNoIntervalBlocks() {
+        assertEquals(0, IntervalAnalyzer.detect(ride(constant(1800, 200), null, null, null)).size());
+        assertNull(IntervalAnalyzer.detect(ride(null, null, constant(1800, 0), null)));
+    }
+
+    // --- work in kJ (#404) --------------------------------------------------------------
+
+    @Test
+    public void workIsPowerSummedOverTime() {
+        // 1200 s at 200 W = 240 000 J.
+        assertEquals(Integer.valueOf(240), IntervalAnalyzer.workKj(ride(constant(1200, 200), null, null, null)));
+        assertNull(IntervalAnalyzer.workKj(ride(null, null, constant(1200, 0), null)));
+    }
+
+    @Test
+    public void analyzerStoresIntervalsAndWork() {
+        StoredRideStreamStats st = RideStreamAnalyzer.analyze(1L, intervals());
+        assertEquals(3, st.intervals.size());
+        assertNotNull(st.workKj);
+        assertTrue(st.workKj > 0);
     }
 }

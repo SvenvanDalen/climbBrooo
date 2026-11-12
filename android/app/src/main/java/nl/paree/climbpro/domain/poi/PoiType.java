@@ -14,12 +14,15 @@ public enum PoiType {
     MEMORIAL(OsmKey.HISTORIC, "memorial", "Gedenkteken"),
     VIEWPOINT(OsmKey.TOURISM, "viewpoint", "Uitzichtpunt"),
     ARTWORK(OsmKey.TOURISM, "artwork", "Kunstwerk"),
-    ATTRACTION(OsmKey.TOURISM, "attraction", "Attractie");
+    ATTRACTION(OsmKey.TOURISM, "attraction", "Attractie"),
+    /** Public taps and fountains to refill a bottle (issue #175). */
+    DRINKING_WATER(OsmKey.AMENITY, "drinking_water", "Drinkwater");
 
     /** OSM tag keys; a holder class because enum constants can't use the enum's own statics. */
     private static final class OsmKey {
         static final String HISTORIC = "historic";
         static final String TOURISM = "tourism";
+        static final String AMENITY = "amenity";
     }
 
     public final String osmKey;

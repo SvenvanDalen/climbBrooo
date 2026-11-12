@@ -377,6 +377,7 @@ public final class RouteSyncWorker extends Worker {
                 StoredRoute route = in.routeRepo.loadRoute(routeId);
                 int[] routeGhost = ghostRepo.wireFor(route);
                 String wantHash = wantHash(route, in.profile, in.ghost, in.palette, in.units, in.fieldLayout)
+                        + (in.prefs.getBoolean(nl.paree.climbpro.data.rider.RiderProfileRepository.PREF_REF_VS_LAST, false) ? "L" : "")
                         + routeGhostSignature(routeGhost) + in.habits.signature();
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
@@ -386,8 +387,11 @@ public final class RouteSyncWorker extends Worker {
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, in.profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
-                        route, in.attemptRepo.loadAll(), in.ghost);
-                byte[] payload = in.payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
+                        route, in.attemptRepo.loadAll(), in.ghost,
+                        in.prefs.getBoolean(nl.paree.climbpro.data.rider.RiderProfileRepository.PREF_REF_VS_LAST, false));
+                byte[] payload = in.payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost,
+                        nl.paree.climbpro.service.RouteTargetPowerPlanner.plan(route,
+                                in.attemptRepo.loadAll(), 100));
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return new byte[0];

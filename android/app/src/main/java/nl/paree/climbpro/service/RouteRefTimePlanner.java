@@ -28,6 +28,15 @@ public final class RouteRefTimePlanner {
      *         stored attempt has a matching segment count for that climb).
      */
     public static int[][] plan(StoredRoute route, List<StoredClimbAttempt> attempts) {
+        return plan(route, attempts, false);
+    }
+
+    /**
+     * @param vsLastRide true to compare against the most recent ride on each climb instead
+     *                   of the per-segment personal best (issue #144)
+     */
+    public static int[][] plan(StoredRoute route, List<StoredClimbAttempt> attempts,
+                               boolean vsLastRide) {
         if (route == null || route.climbs == null || route.climbs.isEmpty()) {
             return new int[0][];
         }
@@ -41,8 +50,10 @@ public final class RouteRefTimePlanner {
             }
             int len = c.length > 0 ? c.length : (c.endDistance - c.startDistance);
             String climbId = ClimbIdentity.of(c.startLat, c.startLon, len);
-            int[] splits = SegmentPrCalculator.bestSplits(climbId, segCount, attempts);
-            result[ci] = splits.length > 0 ? splits : null;
+            int[] splits = vsLastRide
+                    ? SegmentPrCalculator.lastSplits(climbId, segCount, attempts)
+                    : SegmentPrCalculator.bestSplits(climbId, segCount, attempts);
+            result[ci] = splits != null && splits.length > 0 ? splits : null;
         }
         return result;
     }

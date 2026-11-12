@@ -84,4 +84,20 @@ public final class StoredClimbAttempt {
     public Integer avgWatts;
     public Integer avgHeartrate;
     public Integer avgCadence;
+    /**
+     * Best average power over 30 s, 1, 5 and 20 min inside this pass (issue #389), aligned with
+     * {@code ClimbPeakPower.DURATIONS_SEC}; 0 where the pass is shorter. Null without power or
+     * for attempts matched before this field existed.
+     */
+    public int[] peakWatts;
+
+    /** Normalized power over the pass (issue #384); null for a short pass or without power. */
+    public Integer normalizedPower;
+    /**
+     * Average power, heart rate and cadence per climb segment, aligned with {@link #segSplitSec}
+     * (issue #385); null when the stream is absent.
+     */
+    public int[] segWatts;
+    public int[] segHeartrate;
+    public int[] segCadence;
 }

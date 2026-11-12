@@ -24,6 +24,12 @@ public final class TrackSensors {
         this.hasCadence = hasCadence;
     }
 
+    public boolean hasWatts() { return hasWatts; }
+
+    public boolean hasHeartrate() { return hasHeartrate; }
+
+    public boolean hasCadence() { return hasCadence; }
+
     /** Appends one track sample's readings; null for a missing value. */
     public void add(Double w, Double hr, Double cad) {
         watts.add(w);
@@ -47,6 +53,14 @@ public final class TrackSensors {
     /** Average cadence while pedalling (zeros skipped, like a bike computer); null without. */
     public Integer avgCadence(int from, int to) {
         return hasCadence ? average(cadence, from, to, false) : null;
+    }
+
+    /**
+     * Best 30 s / 1 / 5 / 20 min power over samples {@code from..to} (issue #389), see
+     * {@link ClimbPeakPower}; null without power data.
+     */
+    public int[] peakWatts(long[] timeSec, int from, int to) {
+        return hasWatts ? ClimbPeakPower.compute(timeSec, watts, from, to) : null;
     }
 
     static Integer average(List<Double> values, int from, int to, boolean includeZero) {

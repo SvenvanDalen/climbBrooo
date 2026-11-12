@@ -76,6 +76,14 @@ public final class LogbookCalculator {
          */
         public final String companions;
 
+        /** Peak power inside the pass (issue #389), see {@code StoredClimbAttempt.peakWatts}. */
+        public int[] peakWatts;
+
+        /** The stored attempt behind this row (power detail, issues #384-#386); may be null. */
+        public StoredClimbAttempt attempt;
+        /** Average watts per kg of rider weight, null when weight or power is unknown. */
+        public Double wattsPerKg;
+
         private HistoryRow(Builder b) {
             this.dateEpochSec = b.dateEpochSec;
             this.elapsedSec = b.elapsedSec;
@@ -245,6 +253,9 @@ public final class LogbookCalculator {
                     .avgTempC(a.avgTempC)
                     .companions(a.companions)
                     .build());
+            HistoryRow added = rows.get(rows.size() - 1);
+            added.peakWatts = a.peakWatts;
+            added.attempt = a;
         }
         return rows;
     }

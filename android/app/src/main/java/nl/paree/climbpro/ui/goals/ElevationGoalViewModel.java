@@ -22,6 +22,8 @@ import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Period;
 import nl.paree.climbpro.domain.climb.ElevationGoalCalculator.Progress;
 import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
 import nl.paree.climbpro.domain.mywhoosh.VirtualElevation;
+import nl.paree.climbpro.domain.mywhoosh.RideSource;
+import nl.paree.climbpro.ui.mywhoosh.RideSourceSelector;
 
 import java.util.HashMap;
 import java.util.List;
@@ -84,15 +86,19 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
             // Issue #393: MyWhoosh / indoor hm count unless the rider switched them off.
             boolean countVirtual = PreferenceManager.getDefaultSharedPreferences(getApplication())
                     .getBoolean(VirtualElevation.PREF_COUNT_VIRTUAL, true);
-            List<StoredRide> rides = VirtualElevation.countedRides(allRides, countVirtual);
+            // #392: a chosen source overrides the virtual-hm switch.
+            RideSource source = RideSourceSelector.current(getApplication());
+            List<StoredRide> rides = source == RideSource.ALL
+                    ? VirtualElevation.countedRides(allRides, countVirtual)
+                    : source.filter(allRides);
             java.time.ZoneId zone = java.time.ZoneId.systemDefault();
             java.time.LocalDate today = java.time.LocalDate.now(zone);
             int virtualMonth = ElevationGoalCalculator.cumulativeRideGainM(
                     VirtualElevation.virtualRides(allRides), Period.MONTH, zone, today);
             String note = null;
-            if (virtualMonth > 0 && countVirtual) {
+            if (virtualMonth > 0 && source == RideSource.ALL && countVirtual) {
                 note = "Waarvan " + virtualMonth + " m virtueel (MyWhoosh/indoor) deze maand";
-            } else if (virtualMonth > 0) {
+            } else if (virtualMonth > 0 && source == RideSource.ALL) {
                 note = virtualMonth + " m virtueel (MyWhoosh/indoor) niet meegeteld deze maand";
             }
             virtualNote.postValue(note);
@@ -104,8 +110,10 @@ public final class ElevationGoalViewModel extends AndroidViewModel {
                         rides, Period.MONTH, zone, today);
             } else {
                 // No archive yet (no Strava link, or only file imports): climb hm only.
-                List<StoredClimbAttempt> attempts = VirtualElevation.countedAttempts(
-                        attemptRepo.loadAll(), IndoorRides.indoorIds(allRides), countVirtual);
+                List<StoredClimbAttempt> attempts = source == RideSource.ALL
+                        ? VirtualElevation.countedAttempts(attemptRepo.loadAll(),
+                                IndoorRides.indoorIds(allRides), countVirtual)
+                        : source.filterAttempts(attemptRepo.loadAll(), allRides);
                 Map<String, Integer> elevationByClimbId = resolveElevationGains();
                 weekGained = ElevationGoalCalculator.cumulativeGainM(
                         attempts, elevationByClimbId, Period.WEEK);

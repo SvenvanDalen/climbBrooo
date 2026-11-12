@@ -26,7 +26,7 @@ public final class HeartRateRecoveryAnalyzer {
     static final double MAX_PLAUSIBLE_BPM = 230;
 
     /** Seconds whose rolling 30 s average power (over a full window) reaches the threshold. */
-    private static boolean[] hardSeconds(double[] watts, double threshold) {
+    static boolean[] hardSeconds(double[] watts, double threshold) {
         int n = watts.length;
         boolean[] hard = new boolean[n];
         double window = 0;
@@ -51,7 +51,7 @@ public final class HeartRateRecoveryAnalyzer {
      * rate {@link #RECOVERY_SEC} later. Null when the interval is too short, the recovery is
      * interrupted or runs past the ride, or the heart rate isn't plausible.
      */
-    private static Integer dropAfterInterval(double[] watts, double[] hr, boolean[] hard,
+    static Integer dropAfterInterval(double[] watts, double[] hr, boolean[] hard,
                                              int start, int stop, double threshold) {
         // The 30 s average lags: the effort really ended at the last hard second itself.
         int end = stop - 1;
@@ -111,7 +111,7 @@ public final class HeartRateRecoveryAnalyzer {
         return false;
     }
 
-    private static boolean plausible(double bpm) {
+    static boolean plausible(double bpm) {
         return !Double.isNaN(bpm) && bpm >= MIN_PLAUSIBLE_BPM && bpm <= MAX_PLAUSIBLE_BPM;
     }
 }

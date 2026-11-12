@@ -28,6 +28,9 @@ public final class FitTrackDecoder {
     private static final int FIELD_LON = 1;
     private static final int FIELD_ALTITUDE = 2;
     private static final int FIELD_DISTANCE = 5;
+    private static final int FIELD_HEART_RATE = 3;
+    private static final int FIELD_CADENCE = 4;
+    private static final int FIELD_POWER = 7;
     private static final int FIELD_ENHANCED_ALTITUDE = 78;
     private static final int FIELD_TIMESTAMP = 253;
     private static final int INVALID_SINT32 = 0x7FFFFFFF;
@@ -42,8 +45,20 @@ public final class FitTrackDecoder {
         public final double altitudeM;
         public final double distanceM;
         public final long timeSec;
+        /** Watts, bpm and rpm (issue #381); NaN when the record has no such reading. */
+        public final double watts;
+        public final double heartrate;
+        public final double cadence;
 
         Record(double lat, double lon, double altitudeM, double distanceM, long timeSec) {
+            this(lat, lon, altitudeM, distanceM, timeSec, Double.NaN, Double.NaN, Double.NaN);
+        }
+
+        Record(double lat, double lon, double altitudeM, double distanceM, long timeSec,
+               double watts, double heartrate, double cadence) {
+            this.watts = watts;
+            this.heartrate = heartrate;
+            this.cadence = cadence;
             this.lat = lat;
             this.lon = lon;
             this.altitudeM = altitudeM;
@@ -194,6 +209,15 @@ public final class FitTrackDecoder {
                                         RecordFields f) {
         if (size == 4) {
             readRecordField32(num, u32(d, q, bigEndian), f);
+        } else if (num == FIELD_POWER && size == 2) {
+            long v = u16(d, q, bigEndian);
+            if (v != 0xFFFFL) f.watts = v;
+        } else if (num == FIELD_HEART_RATE && size == 1) {
+            int v = d[q] & 0xFF;
+            if (v != 0xFF && v > 0) f.heartrate = v;
+        } else if (num == FIELD_CADENCE && size == 1) {
+            int v = d[q] & 0xFF;
+            if (v != 0xFF) f.cadence = v;
         } else if (num == FIELD_ALTITUDE && size == 2) {
             long v = u16(d, q, bigEndian);
             if (v != 0xFFFFL) f.altitude = v / 5.0 - 500.0;
@@ -227,6 +251,9 @@ public final class FitTrackDecoder {
         double altitude = Double.NaN;
         double enhancedAltitude = Double.NaN;
         double distance = Double.NaN;
+        double watts = Double.NaN;
+        double heartrate = Double.NaN;
+        double cadence = Double.NaN;
 
         RecordFields(long knownTs) {
             this.ts = knownTs;
@@ -239,7 +266,8 @@ public final class FitTrackDecoder {
                     positioned ? lon * SEMICIRCLE_TO_DEG : Double.NaN,
                     Double.isNaN(enhancedAltitude) ? altitude : enhancedAltitude,
                     distance,
-                    ts >= 0 ? ts + FIT_EPOCH_OFFSET : -1);
+                    ts >= 0 ? ts + FIT_EPOCH_OFFSET : -1,
+                    watts, heartrate, cadence);
         }
     }
 

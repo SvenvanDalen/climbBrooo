@@ -161,6 +161,9 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
 - **Ghost at a target speed for new climbs** — Settings → "Ghost voor nieuwe klimmen": set a
   target speed (km/u) and/or VAM (m/u); climbs with no PR and no manual reference time get a
   virtual constant-pace ghost on the watch instead. Phone-only, reuses the existing `refsec`.
+- **Compare with last ride** — Settings → "Vergelijk met vorige rit": the ahead/behind delta on the watch uses your most recent ride on the climb instead of your per-segment PR (`refsec` source switch, no wire change).
+- **Barometer drift correction** — every calibration point of a route climb carries its known elevation (`ce`); the watch compares its altitude there and learns the sensor offset (running mean, outliers ignored).
+- **Target power per segment** — the watts from your fastest powered attempt on each climb are sent as `tw`; the datafield's power stat shows `live/target W` for the active segment.
 - **Interval block per climb** — climb detail → "Intervalblok koppelen": pick Drempel,
   Sweet spot, VO2max, Tempo or your own % FTP; the block lasts from the foot to the top.
   Outdoors the datafield starts it at the climb-start alert, shows the target band (and
@@ -367,6 +370,8 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   the link from the Komoot/RideWithGPS app to "Route importeren (ClimbPro)" works too. The route
   is fetched without API keys and runs through the normal GPX import. Private routes give a
   clear error (use a Komoot link with `share_token` or make the route public). Phone-only.
+- **Workout vs plan** — the ride profile lists, per climb with an interval block (#180), the planned power band against the ridden average and duration, with compliance in % of target. Phone-only; needs an FTP and a power meter.
+- **Configurable climb threshold** — Settings → "Climb threshold" sets the minimum length (300–2000 m) and average gradient (1–8 %) used when detecting climbs; defaults stay 800 m / 3 %. Phone-only: applies to newly imported or re-detected routes, the watch just receives the resulting climbs.
 - **MyWhoosh import** — "Route toevoegen" → "MyWhoosh-rit importeren (FIT)" reads a ride
   exported from MyWhoosh (or Strava / Garmin Connect "export original"), runs the normal climb
   detection and files the route under the collection "MyWhoosh". Rides without GPS positions
@@ -391,6 +396,20 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   all attempts with PRs marked, the linked real/MyWhoosh climb side by side, and the outdoor
   time predicted from recent indoor power. Climb attempts now store average power, heart rate
   and cadence. Phone-only.
+- **MyWhoosh ride analysis** (same screen): work in kJ per ride from the power stream (≈ kcal
+  burned), races/events in their own results list (name says "race"/"event"/"crit", or IF ≥
+  0.90 with the hardest 5 s in the first 3 min) with average W/kg, 1/5 min peak and time — and
+  kept out of the training rows —, a table of detected intervals per ride (duration, average
+  power, max heart rate, recovery), and Pw:HR aerobic decoupling for rides of 45 min or longer
+  (under 5 % = good). Also an Efficiency Factor trend (NP / average heart rate per week over 12
+  weeks) and the MyWhoosh power curve against the outdoor one over 90 days ("indoor 20 min:
+  -6 %"). Tap a ride for its profile: elevation as a backdrop with power, heart rate and
+  cadence over it, each switchable, scrolling together (streams fetched from Strava on
+  demand). Phone-only.
+- **Alles / Buiten / MyWhoosh filter** on the power curve, zone time, Klim Wrapped and the
+  elevation goals; one shared choice, overriding the virtual-hm switch when not "Alles".
+- **Peak power on a climb**: each new climb attempt stores its best 30 s, 1, 5 and 20 min
+  power; the climb detail history shows them per attempt.
 - **intervals.icu** — Settings → "intervals.icu koppelen": paste your personal API key
   (intervals.icu → Settings → Developer Settings) and athlete id (0 = your own), with a
   connection test. Climb detail → "Exporteer als indoor-workout" → "Naar intervals.icu" (or

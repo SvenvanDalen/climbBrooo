@@ -2,6 +2,8 @@ package nl.paree.climbpro.data.ride;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.util.List;
+
 /**
  * What {@code RideStreamAnalyzer} derived from one ride's Strava streams, persisted in
  * {@code ride_stream_stats.json} so the streams themselves never have to be stored or fetched
@@ -68,4 +70,23 @@ public final class StoredRideStreamStats {
      * power and heart rate, empty when the ride had no interval.
      */
     public int[]   hrRecoveryDrops;
+    /** Mechanical work in kJ from the power stream (issue #404); null without power. */
+    public Integer workKj;
+    /**
+     * Intervals in ride order (issue #400); null without power, empty for a steady ride.
+     */
+    public List<Interval> intervals;
+
+    /** One hard block of a ride (issue #400). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class Interval {
+        /** Seconds after the activity start. */
+        public int     startSec;
+        public int     durationSec;
+        public int     avgWatts;
+        /** Highest heart rate during the block; null without heart rate. */
+        public Integer maxHr;
+        /** Heart-rate drop 60 s after the block; null when unmeasurable (see #402). */
+        public Integer recoveryBpm;
+    }
 }

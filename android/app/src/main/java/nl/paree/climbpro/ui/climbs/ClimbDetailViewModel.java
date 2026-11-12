@@ -200,7 +200,16 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                     }
                     String climbId = ClimbIdentity.of(loaded.startLat, loaded.startLon, len);
                     List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-                    history.postValue(LogbookCalculator.historyFor(climbId, attempts));
+                    List<LogbookCalculator.HistoryRow> historyRows =
+                            LogbookCalculator.historyFor(climbId, attempts);
+                    double riderKg = riderRepo.load().riderWeightKg;
+                    for (LogbookCalculator.HistoryRow hr : historyRows) {
+                        if (riderKg > 0 && hr.attempt != null && hr.attempt.avgWatts != null
+                                && hr.attempt.avgWatts > 0) {
+                            hr.wattsPerKg = hr.attempt.avgWatts / riderKg;
+                        }
+                    }
+                    history.postValue(historyRows);
                     seasonalComparison.postValue(
                             SeasonalComparisonCalculator.compare(climbId, attempts));
                     trainingAdvice.postValue(computeTrainingAdvice(loaded, climbId, attempts));

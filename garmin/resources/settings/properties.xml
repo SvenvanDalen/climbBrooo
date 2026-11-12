@@ -40,6 +40,9 @@
          fuelHotC = from this air temperature (°C) both are shortened to 75 %, from 8 °C
          above it to 50 % (0 = no correction). -->
     <property id="fuelIntervalMin" type="number">30</property>
+    <!-- Issue #50: low power mode. Below this battery % the elevation profile is not drawn
+         (0 = off). -->
+    <property id="lowPowerPct" type="number">15</property>
     <property id="fuelClimbM" type="number">0</property>
     <property id="fuelHotC" type="number">25</property>
     <!-- Issue #179: cadence coach. Opt-in nudge when the cadence stays 30 s below

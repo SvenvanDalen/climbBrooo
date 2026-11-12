@@ -403,4 +403,8 @@
     <string name="strava_auth_explanation">Verbinde dein Strava-Konto, um deine Routen automatisch zu importieren und Anstiege zu erkennen.</string>
     <string name="strava_auth_button">Mit Strava anmelden</string>
     <string name="strava_auth_completing">Anmeldung wird abgeschlossen…</string>
+    <string name="settings_climb_threshold">Anstiegsschwelle</string>
+    <string name="settings_climb_threshold_explanation">Mindestlänge und durchschnittliche Steigung, ab der ein Abschnitt als Anstieg zählt. Standard 800 m und 3 %. Gilt für neu importierte Routen.</string>
+    <string name="settings_climb_threshold_length">Mindestlänge: %1$d m</string>
+    <string name="settings_climb_threshold_gradient">Mindestdurchschnitt: %1$s%%</string>
 </resources>

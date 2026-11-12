@@ -12,42 +12,71 @@ import nl.paree.climbpro.data.ride.RideStreamStatsRepository;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.ride.StoredRideStreamStats;
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
+import nl.paree.climbpro.data.rider.WeightLogStore;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.domain.mywhoosh.CadenceByGrade;
+import nl.paree.climbpro.domain.mywhoosh.EfficiencyFactorTrend;
+import nl.paree.climbpro.domain.mywhoosh.IndoorOutdoorPowerCurve;
 import nl.paree.climbpro.domain.mywhoosh.HeartRateRecoveryTrend;
 import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
 import nl.paree.climbpro.domain.mywhoosh.IndoorSeasonSummary;
 import nl.paree.climbpro.domain.mywhoosh.MyWhooshRouteCatalog;
+import nl.paree.climbpro.domain.mywhoosh.PowerDecoupling;
+import nl.paree.climbpro.domain.mywhoosh.RaceDetector;
 import nl.paree.climbpro.domain.mywhoosh.RideIntensity;
+import nl.paree.climbpro.domain.power.RiderProfile;
+import nl.paree.climbpro.domain.ride.PowerCurveCalculator;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
+import nl.paree.climbpro.domain.rider.WeightHistory;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Everything on the MyWhoosh screen, computed off the main thread from the ride archive, the
- * stream analysis and the climb logbook (issues #391, #402, #403, #406, #409). Phone-only.
+ * stream analysis and the climb logbook (issues #391, #399, #400, #402, #403, #404, #406,
+ * #407, #409) and the EF trend and indoor/outdoor power curve (issues #398, #394). Phone-only.
  */
 public final class MyWhooshViewModel extends AndroidViewModel {
 
     /** Rides with NP/IF/TSS shown. */
     static final int MAX_INTENSITY_ROWS = 20;
+    /** Most recent rides whose intervals are listed (#400). */
+    static final int MAX_INTERVAL_RIDES = 5;
+    /** Rides with a Pw:HR decoupling verdict (#399). */
+    static final int MAX_DECOUPLING_ROWS = 10;
 
     public static final class RideRow {
         public final StoredRide ride;
         /** Null without power or FTP. */
         public final RideIntensity intensity;
+        /** Mechanical work from the power stream (#404); null without power. */
+        public final Integer workKj;
 
-        RideRow(StoredRide ride, RideIntensity intensity) {
+        RideRow(StoredRide ride, RideIntensity intensity, Integer workKj) {
             this.ride = ride;
             this.intensity = intensity;
+            this.workKj = workKj;
+        }
+    }
+
+    /** A ride and its intervals (#400). */
+    public static final class IntervalRide {
+        public final StoredRide ride;
+        public final List<StoredRideStreamStats.Interval> intervals;
+
+        IntervalRide(StoredRide ride, List<StoredRideStreamStats.Interval> intervals) {
+            this.ride = ride;
+            this.intervals = intervals;
         }
     }
 
@@ -62,6 +91,11 @@ public final class MyWhooshViewModel extends AndroidViewModel {
         public final List<RideRow> rides;
         public final CadenceByGrade.Result cadence;
         public final HeartRateRecoveryTrend.Result recovery;
+        public final List<RaceDetector.Race> races;
+        public final List<IntervalRide> intervalRides;
+        public final List<PowerDecoupling.Entry> decoupling;
+        public final EfficiencyFactorTrend.Result efficiency;
+        public final IndoorOutdoorPowerCurve.Result indoorOutdoor;
 
         private State(Builder b) {
             this.myWhooshRides = b.myWhooshRides;
@@ -73,6 +107,11 @@ public final class MyWhooshViewModel extends AndroidViewModel {
             this.rides = b.rides;
             this.cadence = b.cadence;
             this.recovery = b.recovery;
+            this.races = b.races;
+            this.intervalRides = b.intervalRides;
+            this.decoupling = b.decoupling;
+            this.efficiency = b.efficiency;
+            this.indoorOutdoor = b.indoorOutdoor;
         }
 
         /** Builds a {@link State}; every value defaults to Java's default for its type. */
@@ -86,6 +125,11 @@ public final class MyWhooshViewModel extends AndroidViewModel {
             private List<RideRow> rides;
             private CadenceByGrade.Result cadence;
             private HeartRateRecoveryTrend.Result recovery;
+            private List<RaceDetector.Race> races;
+            private List<IntervalRide> intervalRides;
+            private List<PowerDecoupling.Entry> decoupling;
+            private EfficiencyFactorTrend.Result efficiency;
+            private IndoorOutdoorPowerCurve.Result indoorOutdoor;
 
             public Builder myWhooshRides(int myWhooshRides) {
                 this.myWhooshRides = myWhooshRides;
@@ -132,6 +176,31 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                 return this;
             }
 
+            public Builder races(List<RaceDetector.Race> races) {
+                this.races = races;
+                return this;
+            }
+
+            public Builder intervalRides(List<IntervalRide> intervalRides) {
+                this.intervalRides = intervalRides;
+                return this;
+            }
+
+            public Builder decoupling(List<PowerDecoupling.Entry> decoupling) {
+                this.decoupling = decoupling;
+                return this;
+            }
+
+            public Builder efficiency(EfficiencyFactorTrend.Result efficiency) {
+                this.efficiency = efficiency;
+                return this;
+            }
+
+            public Builder indoorOutdoor(IndoorOutdoorPowerCurve.Result indoorOutdoor) {
+                this.indoorOutdoor = indoorOutdoor;
+                return this;
+            }
+
             public State build() {
                 return new State(this);
             }
@@ -152,7 +221,10 @@ public final class MyWhooshViewModel extends AndroidViewModel {
             Application app = getApplication();
             List<StoredRide> rides = new RideRepository(app).loadAll();
             Map<Long, StoredRideStreamStats> stats = new RideStreamStatsRepository(app).loadById();
-            int ftp = new RiderProfileRepository(app).load().ftpWatts;
+            RiderProfile profile = new RiderProfileRepository(app).load();
+            int ftp = profile.ftpWatts;
+            WeightHistory weights = WeightLogStore.of(app).history(profile.riderWeightKg,
+                    ZoneId.systemDefault());
 
             List<StoredRide> myWhoosh = new ArrayList<>();
             int awaiting = 0;
@@ -163,10 +235,24 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                 if (s == null || s.version < RideStreamAnalyzer.VERSION) awaiting++;
             }
             myWhoosh.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
+            // #407: races get their own list and stay out of the training rows.
+            List<RaceDetector.Race> races = RaceDetector.detect(myWhoosh, stats, ftp, weights);
+            Set<Long> raceIds = new HashSet<>();
+            for (RaceDetector.Race race : races) raceIds.add(race.ride.activityId);
+            List<StoredRide> training = new ArrayList<>();
+            for (StoredRide r : myWhoosh) if (!raceIds.contains(r.activityId)) training.add(r);
+
             List<RideRow> rows = new ArrayList<>();
-            for (int i = 0; i < myWhoosh.size() && i < MAX_INTENSITY_ROWS; i++) {
-                StoredRide r = myWhoosh.get(i);
-                rows.add(new RideRow(r, RideIntensity.of(r, stats.get(r.activityId), ftp)));
+            List<IntervalRide> intervalRides = new ArrayList<>();
+            for (StoredRide r : training) {
+                StoredRideStreamStats s = stats.get(r.activityId);
+                if (rows.size() < MAX_INTENSITY_ROWS) {
+                    rows.add(new RideRow(r, RideIntensity.of(r, s, ftp), s != null ? s.workKj : null));
+                }
+                if (intervalRides.size() < MAX_INTERVAL_RIDES && s != null && s.intervals != null
+                        && !s.intervals.isEmpty()) {
+                    intervalRides.add(new IntervalRide(r, s.intervals));
+                }
             }
             long now = System.currentTimeMillis() / 1000L;
             state.postValue(new State.Builder()
@@ -180,6 +266,12 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                     .rides(rows)
                     .cadence(CadenceByGrade.compute(rides, stats, true))
                     .recovery(HeartRateRecoveryTrend.compute(rides, stats, now, true))
+                    .races(races)
+                    .intervalRides(intervalRides)
+                    .decoupling(PowerDecoupling.compute(training, stats, MAX_DECOUPLING_ROWS))
+                    .efficiency(EfficiencyFactorTrend.compute(training, stats, now, ZoneId.systemDefault()))
+                    .indoorOutdoor(IndoorOutdoorPowerCurve.compute(rides, new ArrayList<>(stats.values()),
+                            PowerCurveCalculator.Period.DAYS_90, now))
                     .build());
         });
     }

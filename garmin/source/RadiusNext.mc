@@ -57,3 +57,14 @@ function radiusVisitedCount(visited, count) {
     }
     return n;
 }
+
+// Issue #56: "unexplored climbs" counter in radius mode -- how many known climbs within the
+// radius the rider has not reached yet on this ride. Header text, e.g. "NEXT CLIMB - 3 new".
+function radiusUnexploredCount(visited, count) {
+    return count - radiusVisitedCount(visited, count);
+}
+
+function radiusUnexploredHeader(visited, count) {
+    var n = radiusUnexploredCount(visited, count);
+    return (n > 0) ? "NEXT CLIMB - " + n + " new" : "NEXT CLIMB";
+}

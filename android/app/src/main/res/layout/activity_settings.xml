@@ -352,6 +352,67 @@
                     android:text="@string/settings_ghost_save"/>
             </LinearLayout>
 
+            <!-- Climb threshold (issue #69). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.ClimbPro.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_climb_threshold"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/color_text_secondary"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="10dp"
+                    android:text="@string/settings_climb_threshold_explanation"/>
+
+                <TextView
+                    android:id="@+id/climb_min_length_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:layout_marginBottom="4dp"/>
+
+                <SeekBar
+                    android:id="@+id/climb_min_length_seek_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="@color/color_accent"
+                    android:thumbTint="@color/color_accent"
+                    android:max="1700"/>
+
+                <TextView
+                    android:id="@+id/climb_min_gradient_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_accent"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/space_grotesk"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="4dp"/>
+
+                <SeekBar
+                    android:id="@+id/climb_min_gradient_seek_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="@color/color_accent"
+                    android:thumbTint="@color/color_accent"
+                    android:max="70"/>
+            </LinearLayout>
+
             <!-- Home-climb privacy zone (issue #92). -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -427,6 +488,30 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/color_text_primary"
                     android:text="Kleurenblind-vriendelijk palet"/>
+            </LinearLayout>
+
+            <!-- Compare with the last ride (issue #144). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="De voor- en achterstand op het horloge vergelijkt standaard met je persoonlijk record per stuk. Zet dit aan om te vergelijken met je vorige rit op dezelfde klim (&quot;20 s sneller dan vorige keer&quot;). Geldt na de volgende sync."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_ref_vs_last"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Vergelijk met vorige rit"/>
             </LinearLayout>
 
             <!-- Display units (issue #262). -->

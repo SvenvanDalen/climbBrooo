@@ -25,7 +25,12 @@ public final class ClimbDetector {
 
     private ClimbDetector() {}
 
+    /** Detects with the rider's configured thresholds ({@link ClimbThresholds}). */
     public static List<Climb> detect(List<RoutePoint> points) {
+        return detect(points, ClimbThresholds.minLengthM(), ClimbThresholds.minGradient());
+    }
+
+    public static List<Climb> detect(List<RoutePoint> points, int minLengthM, double minGradient) {
         List<Climb> climbs = new ArrayList<>();
         int n = points.size();
         if (n < 2) return climbs;
@@ -33,13 +38,13 @@ public final class ClimbDetector {
         int i = 0;
         while (i < n - 1) {
             // Skip flat / downhill sections; otherwise extend the potential climb start.
-            boolean flat = getGradient(points, i, i + 1) < ClimbConstants.MIN_AVG_GRADIENT * 0.5;
+            boolean flat = getGradient(points, i, i + 1) < minGradient * 0.5;
             int endIdx = flat ? i : peakIndex(points, i);
             if (endIdx <= i) {
                 i++;
             } else {
-                if (meetsClimbRules(points.get(i), points.get(endIdx))) {
-                    climbs.add(buildTrimmedClimb(points, i, endIdx));
+                if (meetsClimbRules(points.get(i), points.get(endIdx), minLengthM, minGradient)) {
+                    climbs.add(buildTrimmedClimb(points, i, endIdx, minLengthM));
                 }
                 // Advance past the ORIGINAL (untrimmed) end so a trailing flat is not rescanned.
                 i = endIdx + 1;
@@ -73,11 +78,12 @@ public final class ClimbDetector {
      * Untrimmed metrics — used only for the climb-validity checks; the emitted Climb is rebuilt
      * from the trimmed points by {@link #buildTrimmedClimb}.
      */
-    private static boolean meetsClimbRules(RoutePoint start, RoutePoint end) {
+    private static boolean meetsClimbRules(RoutePoint start, RoutePoint end,
+                                            int minLengthM, double minGradient) {
         double length  = end.distance - start.distance;
         double eleGain = end.elevation - start.elevation;
-        if (length < ClimbConstants.MIN_CLIMB_LENGTH_M || eleGain <= 0) return false;
-        return eleGain / length >= ClimbConstants.MIN_AVG_GRADIENT;
+        if (length < minLengthM || eleGain <= 0) return false;
+        return eleGain / length >= minGradient;
     }
 
     /**
@@ -87,8 +93,9 @@ public final class ClimbDetector {
      * No re-validation after trimming: the trimmer only removes sub-2% ends and never
      * drops below MIN_CLIMB_LENGTH_M, so a climb that passed >=800 m / >=3% still passes.
      */
-    private static Climb buildTrimmedClimb(List<RoutePoint> points, int startIdx, int endIdx) {
-        List<RoutePoint> climbPoints = ClimbTrimmer.trim(points.subList(startIdx, endIdx + 1));
+    private static Climb buildTrimmedClimb(List<RoutePoint> points, int startIdx, int endIdx,
+                                          int minLengthM) {
+        List<RoutePoint> climbPoints = ClimbTrimmer.trim(points.subList(startIdx, endIdx + 1), minLengthM);
         RoutePoint trimmedStart = climbPoints.get(0);
         RoutePoint trimmedEnd   = climbPoints.get(climbPoints.size() - 1);
         double trimmedLength   = trimmedEnd.distance - trimmedStart.distance;
