@@ -29,6 +29,16 @@ public final class ClimbProApplication extends Application {
         // Colorblind-friendly palette choice (issue #258): phone screens read it process-wide.
         nl.paree.climbpro.ui.climbs.SegmentColorPalette.init(this);
 
+        // Rider-configured climb thresholds (issue #69); defaults are the product definition.
+        android.content.SharedPreferences climbPrefs =
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        nl.paree.climbpro.domain.climb.ClimbThresholds.set(
+                climbPrefs.getInt(nl.paree.climbpro.domain.climb.ClimbThresholds.PREF_MIN_LENGTH_M,
+                        nl.paree.climbpro.domain.climb.ClimbThresholds.DEFAULT_LENGTH_M),
+                climbPrefs.getInt(
+                        nl.paree.climbpro.domain.climb.ClimbThresholds.PREF_MIN_GRADIENT_PCT10,
+                        nl.paree.climbpro.domain.climb.ClimbThresholds.DEFAULT_GRADIENT_PCT10));
+
         RouteRepository routeRepo = new RouteRepository(this);
         ciqClient = new ConnectIqClient(this);
         WatchRequestHandler watchRequests = new WatchRequestHandler(

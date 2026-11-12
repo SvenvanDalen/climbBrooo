@@ -367,6 +367,7 @@ to fresh UUIDs** (change the manifest and `ConnectIqAppId` together).
   the link from the Komoot/RideWithGPS app to "Route importeren (ClimbPro)" works too. The route
   is fetched without API keys and runs through the normal GPX import. Private routes give a
   clear error (use a Komoot link with `share_token` or make the route public). Phone-only.
+- **Configurable climb threshold** — Settings → "Climb threshold" sets the minimum length (300–2000 m) and average gradient (1–8 %) used when detecting climbs; defaults stay 800 m / 3 %. Phone-only: applies to newly imported or re-detected routes, the watch just receives the resulting climbs.
 - **MyWhoosh import** — "Route toevoegen" → "MyWhoosh-rit importeren (FIT)" reads a ride
   exported from MyWhoosh (or Strava / Garmin Connect "export original"), runs the normal climb
   detection and files the route under the collection "MyWhoosh". Rides without GPS positions

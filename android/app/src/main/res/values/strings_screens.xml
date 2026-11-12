@@ -428,4 +428,8 @@
     <string name="strava_auth_explanation">Koppel je Strava-account om je routes automatisch te importeren en klimmen te detecteren.</string>
     <string name="strava_auth_button">Inloggen met Strava</string>
     <string name="strava_auth_completing">Inloggen afronden…</string>
+    <string name="settings_climb_threshold">Klimdrempel</string>
+    <string name="settings_climb_threshold_explanation">Minimale lengte en gemiddeld stijgingspercentage waarmee een stuk als klim telt. Standaard 800 m en 3%. Geldt voor nieuw geïmporteerde routes.</string>
+    <string name="settings_climb_threshold_length">Minimale lengte: %1$d m</string>
+    <string name="settings_climb_threshold_gradient">Minimaal gemiddeld: %1$s%%</string>
 </resources>

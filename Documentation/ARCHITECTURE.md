@@ -1502,6 +1502,10 @@ A fourth watch module, **datafield** type (added to an activity's data screens, 
 
 ---
 
+## Configurable climb threshold (phone-only, #69)
+
+`domain/climb/ClimbThresholds` holds the user-chosen minimum climb length and gradient (prefs `climb_min_length_m`, `climb_min_gradient_pct10`; clamped to 300–2000 m and 1.0–8.0 %), loaded in `ClimbProApplication`. `ClimbDetector.detect(points)` and `ClimbTrimmer.trim` read them; the overloads taking explicit values keep tests deterministic. Defaults equal the `ClimbConstants` product rule (800 m / 3 %). No wire change: only already-detected climbs are synced, and existing stored climbs are not recomputed until a route is re-imported.
+
 ## Resolved decisions
 
 Decisions taken from the original open-questions list. These are now load-bearing — change them only with a deliberate revisit, and update this section when you do.

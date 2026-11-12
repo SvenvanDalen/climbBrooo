@@ -31,6 +31,11 @@ public final class ClimbTrimmer {
     private ClimbTrimmer() {}
 
     public static List<RoutePoint> trim(List<RoutePoint> pts) {
+        return trim(pts, ClimbConstants.MIN_CLIMB_LENGTH_M);
+    }
+
+    /** As {@link #trim(List)}, never trimming below {@code minLengthM}. */
+    public static List<RoutePoint> trim(List<RoutePoint> pts, int minLengthM) {
         int n = pts.size();
         if (n < 3) return pts;
 
@@ -49,7 +54,7 @@ public final class ClimbTrimmer {
         double remainingAfterLead = pts.get(end).distance - pts.get(s).distance;
         if (s > start
                 && trimmedLeadIn >= ClimbConstants.FALSE_FLAT_MIN_LENGTH_M
-                && remainingAfterLead >= ClimbConstants.MIN_CLIMB_LENGTH_M) {
+                && remainingAfterLead >= minLengthM) {
             start = s;
         }
 
@@ -64,7 +69,7 @@ public final class ClimbTrimmer {
         double remainingAfterTail = pts.get(e).distance - pts.get(start).distance;
         if (e < end
                 && trimmedLeadOut >= ClimbConstants.FALSE_FLAT_MIN_LENGTH_M
-                && remainingAfterTail >= ClimbConstants.MIN_CLIMB_LENGTH_M) {
+                && remainingAfterTail >= minLengthM) {
             end = e;
         }
 

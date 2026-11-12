@@ -403,4 +403,8 @@
     <string name="strava_auth_explanation">Collega il tuo account Strava per importare automaticamente i tuoi percorsi e rilevare le salite.</string>
     <string name="strava_auth_button">Accedi con Strava</string>
     <string name="strava_auth_completing">Completamento dell\'accesso…</string>
+    <string name="settings_climb_threshold">Soglia di salita</string>
+    <string name="settings_climb_threshold_explanation">Lunghezza minima e pendenza media perché un tratto conti come salita. Predefinito 800 m e 3%. Vale per i percorsi importati dopo.</string>
+    <string name="settings_climb_threshold_length">Lunghezza minima: %1$d m</string>
+    <string name="settings_climb_threshold_gradient">Media minima: %1$s%%</string>
 </resources>
