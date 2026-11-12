@@ -150,7 +150,7 @@ final class AttemptPowerViews {
                             StoredClimb climb, float density) {
         LinearLayout bar = new LinearLayout(activity);
         bar.setOrientation(LinearLayout.HORIZONTAL);
-        int[] splits = row.attempt.segSplitSec;
+        int[] splits = row.attempt.segSplitSec == null ? new int[0] : row.attempt.segSplitSec;
         for (int k = 0; k < splits.length; k++) {
             View block = new View(activity);
             StoredSegment seg = segment(climb, k, splits.length);

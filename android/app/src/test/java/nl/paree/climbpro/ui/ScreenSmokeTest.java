@@ -70,6 +70,7 @@ public class ScreenSmokeTest {
                 "ui.climbs.UnfinishedClimbsActivity", "ui.rides.RideArchiveActivity",
                 "ui.recovery.RecoveryTrendActivity", "ui.rides.RideCompareActivity",
                 "ui.rides.RideStoryActivity", "ui.mywhoosh.RideProfileActivity",
+                "ui.mywhoosh.MyWhooshDashboardActivity", "ui.mywhoosh.MyWhooshActivity",
                 "ui.records.RideRecordsActivity",
                 "ui.records.HeartRateDriftActivity", "ui.records.PowerCurveActivity",
                 "ui.records.FtpTestActivity", "ui.records.ZoneDistributionActivity",
