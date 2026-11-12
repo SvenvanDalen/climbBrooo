@@ -111,8 +111,8 @@ public class RouteReverserTest {
         Climb c = backward.get(0);
         assertEquals(0.05, c.avgGradient, 0.005);
         // The original descent sits 1 km from the end → ~1 km from the new start.
-        assertEquals(1000, c.startDistance, 60);
-        assertEquals(1500, c.length, 100);
+        assertEquals(1000, (float) c.startDistance, 60);
+        assertEquals(1500, (float) c.length, 100);
         assertTrue(c.segments.size() >= 12);
     }
 

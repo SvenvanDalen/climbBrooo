@@ -46,6 +46,7 @@ public class ComebackPlanStoreEdgeTest {
             write.run();
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse("temp file cleaned up", file(name + ".tmp").exists());
     }

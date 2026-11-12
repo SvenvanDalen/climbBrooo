@@ -31,6 +31,7 @@ import java.util.function.Consumer;
  * Phone-only — see {@link PackingListViewModel}.
  */
 public final class PackingListActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private PackingListViewModel viewModel;
     private Spinner spinner;
@@ -66,7 +67,7 @@ public final class PackingListActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) { }
+            public void onNothingSelected(AdapterView<?> parent) { /* not needed */ }
         });
 
         findViewById(R.id.addItemButton).setOnClickListener(v -> {
@@ -132,9 +133,12 @@ public final class PackingListActivity extends AppCompatActivity {
             progress.setText("Nog geen paklijsten. Maak er een via het menu.");
             return;
         }
-        progress.setText(l.items.isEmpty() ? "Deze lijst is nog leeg."
-                : l.checkedCount() + " van " + l.items.size() + " ingepakt"
-                        + (l.checkedCount() == l.items.size() ? " — klaar om te gaan!" : ""));
+        String status = "Deze lijst is nog leeg.";
+        if (!l.items.isEmpty()) {
+            status = l.checkedCount() + " van " + l.items.size() + " ingepakt"
+                    + (l.checkedCount() == l.items.size() ? " — klaar om te gaan!" : "");
+        }
+        progress.setText(status);
         int pad = Math.round(8 * getResources().getDisplayMetrics().density);
         for (PackingList.Item item : l.items) {
             CheckBox box = new CheckBox(this);
@@ -148,7 +152,7 @@ public final class PackingListActivity extends AppCompatActivity {
                         .setTitle("\"" + item.text + "\" verwijderen?")
                         .setPositiveButton("Verwijderen",
                                 (d, w) -> viewModel.removeItem(l.id, item.id))
-                        .setNegativeButton("Annuleren", null)
+                        .setNegativeButton(CANCEL, null)
                         .show();
                 return true;
             });
@@ -169,7 +173,7 @@ public final class PackingListActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Lijst \"" + l.name + "\" verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteList(l.id))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -185,7 +189,7 @@ public final class PackingListActivity extends AppCompatActivity {
                     String text = input.getText().toString().trim();
                     if (!text.isEmpty()) onOk.accept(text);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

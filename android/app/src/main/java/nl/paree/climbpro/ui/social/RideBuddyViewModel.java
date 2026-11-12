@@ -19,6 +19,7 @@ import nl.paree.climbpro.domain.social.RideBuddyProfile;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Ride-buddy matcher (issue #242): derives your own profile, imports other riders' profile codes
@@ -29,9 +30,12 @@ import java.util.concurrent.Executors;
 public final class RideBuddyViewModel extends AndroidViewModel {
 
     private static final String TAG = "RideBuddyViewModel";
-    static final String SHARE_INTRO = "Mijn rijdersprofiel in ClimbPro — kijk of we samen kunnen "
-            + "fietsen. Open ClimbPro → Ritmaatjes → Code plakken, of deel dit bericht met "
-            + "ClimbPro.\n\n";
+    static final String SHARE_INTRO = """
+            Mijn rijdersprofiel in ClimbPro — kijk of we samen kunnen \
+            fietsen. Open ClimbPro → Ritmaatjes → Code plakken, of deel dit bericht met \
+            ClimbPro.
+
+            """;
 
     /** The exact code about to be shared plus its decoded contents, for the confirm dialog. */
     public static final class Preview {
@@ -46,7 +50,7 @@ public final class RideBuddyViewModel extends AndroidViewModel {
 
     private final RideBuddyRepository repo;
     /** Your own profile as last built on the executor (LiveData lags behind postValue). */
-    private volatile RideBuddyProfile ownProfile;
+    private final AtomicReference<RideBuddyProfile> ownProfile = new AtomicReference<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final MutableLiveData<RideBuddyProfile> own = new MutableLiveData<>();
     private final MutableLiveData<List<RideBuddyMatcher.Match>> matches = new MutableLiveData<>();
@@ -74,7 +78,7 @@ public final class RideBuddyViewModel extends AndroidViewModel {
         executor.execute(() -> {
             try {
                 RideBuddyProfile me = buildOwn();
-                ownProfile = me;
+                ownProfile.set(me);
                 own.postValue(me);
                 matches.postValue(RideBuddyMatcher.rank(me, repo.loadAll()));
             } catch (Exception e) {
@@ -88,7 +92,7 @@ public final class RideBuddyViewModel extends AndroidViewModel {
     public void prepareShare(String name, int fields) {
         FriendShareIdentity.setName(prefs(), name);
         executor.execute(() -> {
-            RideBuddyProfile me = ownProfile;
+            RideBuddyProfile me = ownProfile.get();
             if (me == null) return;
             RideBuddyProfile p = me.restrictTo(fields);
             p.name = name;
@@ -120,7 +124,7 @@ public final class RideBuddyViewModel extends AndroidViewModel {
                 boolean isNew = repo.upsert(p);
                 message.postValue(isNew ? p.name + " toegevoegd"
                         : "Profiel van " + p.name + " bijgewerkt");
-                matches.postValue(RideBuddyMatcher.rank(ownProfile, repo.loadAll()));
+                matches.postValue(RideBuddyMatcher.rank(ownProfile.get(), repo.loadAll()));
             } catch (RideBuddyCode.InvalidCodeException e) {
                 message.postValue(e.getMessage());
             } catch (Exception e) {
@@ -138,7 +142,7 @@ public final class RideBuddyViewModel extends AndroidViewModel {
                 Log.e(TAG, "Remove failed", e);
                 message.postValue("Verwijderen mislukt.");
             }
-            matches.postValue(RideBuddyMatcher.rank(ownProfile, repo.loadAll()));
+            matches.postValue(RideBuddyMatcher.rank(ownProfile.get(), repo.loadAll()));
         });
     }
 

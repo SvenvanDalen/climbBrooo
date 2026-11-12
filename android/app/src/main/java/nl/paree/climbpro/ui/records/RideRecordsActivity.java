@@ -24,11 +24,10 @@ import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Records;
 import nl.paree.climbpro.domain.ride.RideRecordsCalculator.Streak;
 import nl.paree.climbpro.domain.ride.SprintCalculator;
 
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Records" screen (issue #156): longest ride, highest average speed, most elevation, longest
@@ -38,9 +37,11 @@ import java.util.Locale;
  * analysis. Phone-only.
  */
 public final class RideRecordsActivity extends AppCompatActivity {
+    private static final String KMH_FORMAT = "%.1f km/u";
+    private static final String SEPARATOR = "  •  ";
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
     private final DateTimeFormatter dayFormat =
             DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
 
@@ -91,7 +92,7 @@ public final class RideRecordsActivity extends AppCompatActivity {
             addRideRecord(container, String.format(Locale.getDefault(),
                     "Hoogste gemiddelde snelheid (ritten vanaf %d km, geen indoor)",
                     Math.round(RideRecordsCalculator.SPEED_MIN_DISTANCE_M / 1000)),
-                    String.format(Locale.getDefault(), "%.1f km/u",
+                    String.format(Locale.getDefault(), KMH_FORMAT,
                             rec.fastestAvgSpeed.avgSpeedMps * 3.6f),
                     rec.fastestAvgSpeed);
         }
@@ -142,7 +143,7 @@ public final class RideRecordsActivity extends AppCompatActivity {
             for (int i = 1; i < d.efforts.size(); i++) {
                 FastestDistanceCalculator.Effort e = d.efforts.get(i);
                 detail.append(System.lineSeparator()).append(i + 1).append(". ")
-                        .append(DurationFormat.format(e.seconds)).append("  •  ")
+                        .append(DurationFormat.format(e.seconds)).append(SEPARATOR)
                         .append(rideLabel(e.ride));
             }
             addRow(container, title, String.format(Locale.getDefault(), "%s  (%.1f km/u)",
@@ -176,11 +177,11 @@ public final class RideRecordsActivity extends AppCompatActivity {
             for (int i = 1; i < sprints.bySpeed.size(); i++) {
                 SprintCalculator.SpeedSprint s = sprints.bySpeed.get(i);
                 detail.append(nl).append(i + 1).append(". ")
-                        .append(String.format(Locale.getDefault(), "%.1f km/u", s.speedMps * 3.6))
-                        .append("  •  ").append(sprintLabel(s.ride, s.atSec));
+                        .append(String.format(Locale.getDefault(), KMH_FORMAT, s.speedMps * 3.6))
+                        .append(SEPARATOR).append(sprintLabel(s.ride, s.atSec));
             }
             addRow(container, "Hoogste snelheid over 10 s (vlak of bergop)",
-                    String.format(Locale.getDefault(), "%.1f km/u", best.speedMps * 3.6),
+                    String.format(Locale.getDefault(), KMH_FORMAT, best.speedMps * 3.6),
                     detail.toString());
         }
     }
@@ -202,9 +203,9 @@ public final class RideRecordsActivity extends AppCompatActivity {
 
     private String rideLabel(StoredRide r) {
         String date = r.startEpochSec > 0
-                ? dateFormat.format(new Date(r.startEpochSec * 1000L)) : "onbekende datum";
+                ? EpochDates.format(dateFormat, r.startEpochSec) : "onbekende datum";
         String name = r.name != null && !r.name.isEmpty() ? r.name : "Rit";
-        return date + "  •  " + name;
+        return date + SEPARATOR + name;
     }
 
     private void addRideRecord(LinearLayout container, String title, String value, StoredRide r) {

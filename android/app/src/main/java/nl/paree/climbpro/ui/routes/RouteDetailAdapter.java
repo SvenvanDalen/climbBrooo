@@ -132,16 +132,16 @@ public final class RouteDetailAdapter
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        if (holder instanceof FlatViewHolder) {
-            bindFlat((FlatViewHolder) holder, (StoredFlatSegment) items.get(position));
+        if (holder instanceof FlatViewHolder flat) {
+            bindFlat(flat, (StoredFlatSegment) items.get(position));
             return;
         }
-        if (holder instanceof StarredViewHolder) {
-            bindStarred((StarredViewHolder) holder, (StoredStarredSegment) items.get(position));
+        if (holder instanceof StarredViewHolder starred) {
+            bindStarred(starred, (StoredStarredSegment) items.get(position));
             return;
         }
-        if (holder instanceof SurfaceViewHolder) {
-            bindSurface((SurfaceViewHolder) holder, (StoredSurfaceSection) items.get(position));
+        if (holder instanceof SurfaceViewHolder surface) {
+            bindSurface(surface, (StoredSurfaceSection) items.get(position));
             return;
         }
         bindClimb((ClimbViewHolder) holder, position);

@@ -85,12 +85,12 @@ public class RouteGhostProfileTest {
 
     @Test
     public void match_rideStopsHalfway_null() {
-        assertNull(RouteGhostProfile.match(line(1000), track(0, 600, 5, 0)));
+        assertEquals(0, RouteGhostProfile.match(line(1000), track(0, 600, 5, 0)).length);
     }
 
     @Test
     public void match_rideNeverAtStart_null() {
-        assertNull(RouteGhostProfile.match(line(1000), track(300, 1000, 5, 0)));
+        assertEquals(0, RouteGhostProfile.match(line(1000), track(300, 1000, 5, 0)).length);
     }
 
     @Test
@@ -118,15 +118,15 @@ public class RouteGhostProfileTest {
         for (TrackSample s : track(0, 1000, 8, t1 + 1)) t.add(s);   // 125 s
         int[] secs = RouteGhostProfile.match(line(1000), t);
         assertNotNull(secs);
-        assertEquals(125, RouteGhostProfile.sum(secs), 1);
+        assertEquals(125, (float) RouteGhostProfile.sum(secs), 1);
     }
 
     @Test
     public void wire_prefixesStep() {
         assertArrayEquals(new int[]{250, 10, 20}, RouteGhostProfile.wire(250, new int[]{10, 20}));
-        assertNull(RouteGhostProfile.wire(0, new int[]{10}));
-        assertNull(RouteGhostProfile.wire(250, new int[0]));
-        assertNull(RouteGhostProfile.wire(250, new int[]{10, -1}));
+        assertEquals(0, RouteGhostProfile.wire(0, new int[]{10}).length);
+        assertEquals(0, RouteGhostProfile.wire(250, new int[0]).length);
+        assertEquals(0, RouteGhostProfile.wire(250, new int[]{10, -1}).length);
     }
 
     @Test

@@ -31,9 +31,8 @@ public final class EventFilter {
             LocalDate d = eventDate(e);
             if (d == null || d.isBefore(today) || d.isAfter(last)) continue;
             double km = distanceKm(e, home);
-            if (km >= 0 && km > radiusKm) continue;
-            if (!seen.add(dedupeKey(e))) continue;
-            out.add(e);
+            boolean outsideRadius = km >= 0 && km > radiusKm;
+            if (!outsideRadius && seen.add(dedupeKey(e))) out.add(e);
         }
         out.sort(Comparator.comparing((CyclingEvent e) -> e.date)
                 .thenComparing(e -> e.lat == null ? 1 : 0));

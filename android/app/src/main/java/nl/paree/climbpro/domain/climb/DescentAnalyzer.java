@@ -60,8 +60,9 @@ public final class DescentAnalyzer {
             this.turnDegPerKm = turnDegPerKm;
             this.hairpins = hairpins;
             this.end = end;
-            this.twistiness = turnDegPerKm >= VERY_TWISTY_DEG_PER_KM ? Twistiness.VERY_TWISTY
-                    : turnDegPerKm >= TWISTY_DEG_PER_KM ? Twistiness.TWISTY : Twistiness.STRAIGHT;
+            if (turnDegPerKm >= VERY_TWISTY_DEG_PER_KM) this.twistiness = Twistiness.VERY_TWISTY;
+            else if (turnDegPerKm >= TWISTY_DEG_PER_KM) this.twistiness = Twistiness.TWISTY;
+            else this.twistiness = Twistiness.STRAIGHT;
         }
     }
 
@@ -195,7 +196,7 @@ public final class DescentAnalyzer {
     static double[] turnStats(double[] d, double[] lat, double[] lon, int start, int stop) {
         double total = 0;
         int hairpins = 0;
-        ArrayDeque<double[]> window = new ArrayDeque<>(); // {distance, signed turn}
+        ArrayDeque<double[]> window = new ArrayDeque<>(); // entries: distance and signed turn
         double windowSum = 0;
         double prevBearing = Double.NaN;
         for (int i = start; i < stop; i++) {

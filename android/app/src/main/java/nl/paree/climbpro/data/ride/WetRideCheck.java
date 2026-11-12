@@ -19,5 +19,5 @@ public final class WetRideCheck {
     /** Gravel/MTB ride — judged with the "modder" rule. */
     public boolean offroad;
 
-    public WetRideCheck() {}
+    public WetRideCheck() { /* for JSON deserialization */ }
 }

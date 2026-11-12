@@ -61,12 +61,12 @@ public final class ZoneBarView extends View {
         for (int s : seconds) total += s;
         if (total <= 0) return;
         float x = 0;
-        float width = getWidth();
+        float width = (float) getWidth();
         for (int k = 0; k < seconds.length && k < colors.length; k++) {
             float w = width * seconds[k] / total;
             if (w <= 0) continue;
             paint.setColor(colors[k]);
-            canvas.drawRect(x, 0, x + w, getHeight(), paint);
+            canvas.drawRect(x, 0, x + w, (float) getHeight(), paint);
             x += w;
         }
     }

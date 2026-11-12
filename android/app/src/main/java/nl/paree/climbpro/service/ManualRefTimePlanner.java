@@ -28,27 +28,25 @@ public final class ManualRefTimePlanner {
     private ManualRefTimePlanner() {}
 
     /**
-     * @return null when the route has no climbs; otherwise an array indexed by climb
+     * @return an empty table when the route has no climbs; otherwise an array indexed by climb
      *         position, each entry the distributed per-segment seconds array, or null
      *         when that climb has no manual reference set or no segments.
      */
     public static int[][] plan(StoredRoute route) {
         if (route == null || route.climbs == null || route.climbs.isEmpty()) {
-            return null;
+            return new int[0][];
         }
         int[][] result = new int[route.climbs.size()][];
         for (int ci = 0; ci < route.climbs.size(); ci++) {
-            result[ci] = distribute(route.climbs.get(ci));
+            StoredClimb c = route.climbs.get(ci);
+            result[ci] = hasManualTarget(c) ? distribute(c.manualRefSec, c.segments) : null;
         }
         return result;
     }
 
-    private static int[] distribute(StoredClimb c) {
-        if (c.manualRefSec == null || c.manualRefSec <= 0
-                || c.segments == null || c.segments.isEmpty()) {
-            return null;
-        }
-        return distribute(c.manualRefSec, c.segments);
+    private static boolean hasManualTarget(StoredClimb c) {
+        return c.manualRefSec != null && c.manualRefSec > 0
+                && c.segments != null && !c.segments.isEmpty();
     }
 
     /**

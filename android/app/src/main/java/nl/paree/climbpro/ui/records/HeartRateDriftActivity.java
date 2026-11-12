@@ -13,13 +13,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.ride.HeartRateDriftAnalyzer;
 import nl.paree.climbpro.domain.ride.HeartRateDriftCalculator;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Hartslag-drift" screen (issue #222): the six-week trend of aerobic decoupling, then every
@@ -30,8 +30,8 @@ public final class HeartRateDriftActivity extends AppCompatActivity {
     /** Rows shown; older rides still count towards the trend. */
     private static final int MAX_ROWS = 40;
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
 
     private HeartRateDriftViewModel viewModel;
 
@@ -94,8 +94,8 @@ public final class HeartRateDriftActivity extends AppCompatActivity {
                             + "vergelijken.", r.recentCount, weeks);
         } else {
             double diff = r.recentAvg - r.previousAvg;
-            String direction = Math.abs(diff) < 0.5 ? "ongeveer gelijk aan"
-                    : diff < 0 ? "lager dan (beter)" : "hoger dan";
+            String direction = diff < 0 ? "lager dan (beter)" : "hoger dan";
+            if (Math.abs(diff) < 0.5) direction = "ongeveer gelijk aan";
             detail = String.format(Locale.getDefault(),
                     "Gemiddeld over %d rit(ten) in de laatste %d weken, %s de %d weken daarvoor "
                             + "(%s over %d rit(ten)).", r.recentCount, weeks, direction, weeks,
@@ -106,7 +106,7 @@ public final class HeartRateDriftActivity extends AppCompatActivity {
 
     private void renderEntry(ViewGroup rows, HeartRateDriftCalculator.Entry e) {
         String date = e.ride.startEpochSec > 0
-                ? dateFormat.format(new Date(e.ride.startEpochSec * 1000L)) : "onbekende datum";
+                ? EpochDates.format(dateFormat, e.ride.startEpochSec) : "onbekende datum";
         String name = e.ride.name != null && !e.ride.name.isEmpty() ? e.ride.name : "Rit";
         String basis = HeartRateDriftAnalyzer.BASIS_SPEED.equals(e.basis)
                 ? "t.o.v. snelheid" : "t.o.v. vermogen";

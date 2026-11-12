@@ -145,8 +145,10 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     private Row stravaRow(PrivacyCategory c) {
         boolean linked = new StravaAuthRepository(getApplication()).isAuthorised();
         boolean syncState = !stravaPrefs().getAll().isEmpty();
-        return new Row(c, linked ? "Gekoppeld" : (syncState ? "Niet gekoppeld, sync-status bewaard"
-                : "Niet gekoppeld"), linked || syncState);
+        String status = "Niet gekoppeld";
+        if (linked) status = "Gekoppeld";
+        else if (syncState) status = "Niet gekoppeld, sync-status bewaard";
+        return new Row(c, status, linked || syncState);
     }
 
     /**
@@ -158,9 +160,10 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         PrivacyInventory.Usage u = inventory.usage(c);
         boolean hasName = !FriendShareIdentity.name(prefs).isEmpty();
         boolean has = u.fileCount > 0 || hasName;
-        String summary = u.fileCount > 0
-                ? u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes)
-                : (hasName ? "Geen feed, deelnaam bewaard" : "Leeg");
+        String summary = hasName ? "Geen feed, deelnaam bewaard" : "Leeg";
+        if (u.fileCount > 0) {
+            summary = u.fileCount + " bestand(en) · " + PrivacyInventory.formatBytes(u.bytes);
+        }
         return new Row(c, summary, has);
     }
 
@@ -223,7 +226,8 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     private void appendAttempts(StringBuilder sb) {
         List<StoredClimbAttempt> attempts = new ClimbAttemptRepository(getApplication()).loadAll();
         Set<String> climbs = new HashSet<>();
-        long first = Long.MAX_VALUE, last = 0;
+        long first = Long.MAX_VALUE;
+        long last = 0;
         int notes = 0;
         for (StoredClimbAttempt a : attempts) {
             climbs.add(a.climbId);
@@ -309,8 +313,11 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
         boolean linked = icu.isConfigured();
         sb.append("Gekoppeld: ").append(linked ? "ja" : "nee");
         if (linked) sb.append("\nAtleet-id: ").append(icu.athleteId());
-        sb.append("\n\nVerwijderen wist de API-sleutel; workouts op je intervals.icu-"
-                + "kalender blijven staan.");
+        sb.append("""
+
+
+                Verwijderen wist de API-sleutel; workouts op je intervals.icu-\
+                kalender blijven staan.""");
         return sb.toString();
     }
 
@@ -332,7 +339,7 @@ public final class PrivacyDashboardViewModel extends AndroidViewModel {
     // --- deletion -------------------------------------------------------------------------
 
     /** Returns the number of files that could not be deleted. */
-    private int erase(PrivacyCategory c) throws Exception {
+    private int erase(PrivacyCategory c) throws java.io.IOException {
         Context app = getApplication();
         SharedPreferences prefs = defaultPrefs();
         switch (c) {

@@ -451,7 +451,10 @@ public final class RouteDetailViewModel extends AndroidViewModel {
 
         List<Object> result = new ArrayList<>(
                 flats.size() + climbs.size() + starred.size() + surfsec.size());
-        int fi = 0, ci = 0, si = 0, ui = 0;
+        int fi = 0;
+        int ci = 0;
+        int si = 0;
+        int ui = 0;
         while (fi < flats.size() || ci < climbs.size() || si < starred.size() || ui < surfsec.size()) {
             int flatPos    = startAt(flats, fi, f -> f.startDistance);
             int climbPos   = startAt(climbs, ci, c -> c.startDistance);

@@ -3,7 +3,6 @@ package nl.paree.climbpro.domain.power;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import nl.paree.climbpro.data.route.StoredSegment;
@@ -57,37 +56,37 @@ public class SegmentIntensityZonesTest {
     // ---- missing input ----------------------------------------------------
 
     @Test public void nullWithoutFtp() {
-        assertNull(SegmentIntensityZones.zones(climb(2000, 0.06), new RiderProfile(0, 75, 8)));
+        assertEquals(0, SegmentIntensityZones.zones(climb(2000, 0.06), new RiderProfile(0, 75, 8)).length);
     }
 
     @Test public void nullWithoutWeights() {
-        assertNull(SegmentIntensityZones.zones(climb(2000, 0.06), new RiderProfile(250, 0, 8)));
-        assertNull(SegmentIntensityZones.zones(climb(2000, 0.06), new RiderProfile(250, 75, 0)));
+        assertEquals(0, SegmentIntensityZones.zones(climb(2000, 0.06), new RiderProfile(250, 0, 8)).length);
+        assertEquals(0, SegmentIntensityZones.zones(climb(2000, 0.06), new RiderProfile(250, 75, 0)).length);
     }
 
     @Test public void nullWithoutProfile() {
-        assertNull(SegmentIntensityZones.zones(climb(2000, 0.06), null));
-        assertNull(SegmentIntensityZones.colorIndices(climb(2000, 0.06), null));
+        assertEquals(0, SegmentIntensityZones.zones(climb(2000, 0.06), null).length);
+        assertEquals(0, SegmentIntensityZones.colorIndices(climb(2000, 0.06), null).length);
     }
 
     @Test public void nullWithoutSegments() {
-        assertNull(SegmentIntensityZones.zones((List<StoredSegment>) null, RIDER));
-        assertNull(SegmentIntensityZones.zones(Collections.<StoredSegment>emptyList(), RIDER));
-        assertNull(SegmentIntensityZones.colorIndices(Collections.<StoredSegment>emptyList(), RIDER));
+        assertEquals(0, SegmentIntensityZones.zones((List<StoredSegment>) null, RIDER).length);
+        assertEquals(0, SegmentIntensityZones.zones(Collections.<StoredSegment>emptyList(), RIDER).length);
+        assertEquals(0, SegmentIntensityZones.colorIndices(Collections.<StoredSegment>emptyList(), RIDER).length);
     }
 
     @Test public void nullOnMismatchedArrays() {
-        assertNull(SegmentIntensityZones.zones(new int[]{100, 100}, new double[]{0.05},
-                new int[]{SurfaceType.UNKNOWN, SurfaceType.UNKNOWN}, RIDER));
-        assertNull(SegmentIntensityZones.zones(new int[]{100}, new double[]{0.05},
-                new int[]{}, RIDER));
-        assertNull(SegmentIntensityZones.zones(null, null, null, RIDER));
+        assertEquals(0, SegmentIntensityZones.zones(new int[]{100, 100}, new double[]{0.05},
+                new int[]{SurfaceType.UNKNOWN, SurfaceType.UNKNOWN}, RIDER).length);
+        assertEquals(0, SegmentIntensityZones.zones(new int[]{100}, new double[]{0.05},
+                new int[]{}, RIDER).length);
+        assertEquals(0, SegmentIntensityZones.zones(null, null, null, RIDER).length);
     }
 
     @Test public void nullSegmentEntryGivesNull() {
         List<StoredSegment> segs = climb(2000, 0.06);
         segs.set(1, null);
-        assertNull(SegmentIntensityZones.zones(segs, RIDER));
+        assertEquals(0, SegmentIntensityZones.zones(segs, RIDER).length);
     }
 
     // ---- the zones themselves ---------------------------------------------

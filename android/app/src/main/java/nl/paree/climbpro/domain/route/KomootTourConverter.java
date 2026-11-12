@@ -37,20 +37,26 @@ public final class KomootTourConverter {
         }
         List<RoutePoint> points = new ArrayList<>();
         for (JsonNode item : items) {
-            JsonNode lat = item.get("lat");
-            JsonNode lng = item.get("lng");
-            if (lat == null || lng == null || !lat.isNumber() || !lng.isNumber()) continue;
-            double la = lat.asDouble();
-            double lo = lng.asDouble();
-            if (la < -90 || la > 90 || lo < -180 || lo > 180) continue;
-            JsonNode alt = item.get("alt");
-            double ele = alt != null && alt.isNumber() ? alt.asDouble() : Double.NaN;
-            points.add(new RoutePoint(la, lo, ele, 0));
+            RoutePoint p = point(item);
+            if (p != null) points.add(p);
         }
         if (points.size() < 2) {
             throw new IOException("Komoot-tour bevat te weinig punten");
         }
         return points;
+    }
+
+    /** One coordinate item as a route point, or null when its position is missing or invalid. */
+    private static RoutePoint point(JsonNode item) {
+        JsonNode lat = item.get("lat");
+        JsonNode lng = item.get("lng");
+        if (lat == null || lng == null || !lat.isNumber() || !lng.isNumber()) return null;
+        double la = lat.asDouble();
+        double lo = lng.asDouble();
+        if (la < -90 || la > 90 || lo < -180 || lo > 180) return null;
+        JsonNode alt = item.get("alt");
+        double ele = alt != null && alt.isNumber() ? alt.asDouble() : Double.NaN;
+        return new RoutePoint(la, lo, ele, 0);
     }
 
     /** The {@code name} of a {@code /v007/tours/<id>} response, or null when absent/malformed. */

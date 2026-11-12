@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
@@ -20,10 +19,10 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.io.File;
 import java.util.Collections;
@@ -73,11 +72,7 @@ public class ClimbLogbookViewModelTest {
         // In Robolectric the main looper is PAUSED. postValue() enqueues a Runnable on
         // the main looper. Repeatedly drain the looper until the observer fires (or
         // 2 s wall-clock timeout).
-        long deadline = System.currentTimeMillis() + 2000;
-        while (got[0] == null && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> got[0] != null, 2000);
 
         assertNotNull(got[0]);
         assertEquals(1, got[0].size());

@@ -20,12 +20,11 @@ import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.RouteCollection;
 
 public final class CollectionDetailActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleer";
 
     private static final String EXTRA_COLLECTION_ID = "collection_id";
 
     private CollectionDetailViewModel viewModel;
-    private CollectionDetailAdapter   adapter;
-    private View                      emptyView;
     private Toolbar                   toolbar;
     private String                    collectionId;
     /** Builds share codes off the main thread (issue #216). */
@@ -49,10 +48,10 @@ public final class CollectionDetailActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        emptyView = findViewById(R.id.empty);
+        View emptyView = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CollectionDetailAdapter();
+        CollectionDetailAdapter adapter = new CollectionDetailAdapter();
         list.setAdapter(adapter);
         adapter.setListener(this::confirmRemoveMember);
         adapter.setClickListener(this::openMember);
@@ -122,7 +121,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Opslaan", (d, w) ->
                         viewModel.rename(collectionId, input.getText().toString()))
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -134,7 +133,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                     viewModel.delete(collectionId);
                     finish();
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -164,7 +163,7 @@ public final class CollectionDetailActivity extends AppCompatActivity {
                         viewModel.removeRoute(collectionId, member.routeId);
                     }
                 })
-                .setNegativeButton("Annuleer", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

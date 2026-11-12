@@ -95,7 +95,7 @@ public final class ClimbUsageClassifier {
         for (Map.Entry<String, Integer> e : ridesByClimbId.entrySet()) {
             if (e.getValue() < ClimbConstants.USAGE_TRAINING_MIN_ATTEMPTS) continue;
             double[] start = ClimbIdentity.approxStart(e.getKey());
-            if (start != null) frequentStarts.put(e.getKey(), start);
+            if (start.length > 0) frequentStarts.put(e.getKey(), start);
         }
 
         for (int i = 0; i < n; i++) {

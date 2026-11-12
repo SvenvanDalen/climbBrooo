@@ -37,9 +37,10 @@ public final class GpxWriter {
         double[] eles = route.elevations;
         int n = Math.min(lats.length, lons.length);
 
-        String name = route.userDisplayName != null ? route.userDisplayName
-                : route.name != null ? route.name
-                : route.routeId != null ? route.routeId : "ClimbPro route";
+        String name = "ClimbPro route";
+        if (route.userDisplayName != null) name = route.userDisplayName;
+        else if (route.name != null) name = route.name;
+        else if (route.routeId != null) name = route.routeId;
 
         StringBuilder sb = new StringBuilder(256 + n * 64);
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -67,17 +68,17 @@ public final class GpxWriter {
         if (route.climbs == null) return;
         for (int ci = 0; ci < route.climbs.size(); ci++) {
             StoredClimb c = route.climbs.get(ci);
-            String name = c.userDisplayName != null && !c.userDisplayName.isEmpty()
-                    ? c.userDisplayName
-                    : c.name != null && !c.name.isEmpty() ? c.name : "Klim " + (ci + 1);
+            String name = "Klim " + (ci + 1);
+            if (c.userDisplayName != null && !c.userDisplayName.isEmpty()) name = c.userDisplayName;
+            else if (c.name != null && !c.name.isEmpty()) name = c.name;
             int length = c.length > 0 ? c.length : c.endDistance - c.startDistance;
             String desc = String.format(Locale.US, "%.1f km, %.1f%%, %d hm",
                     length / 1000.0, c.avgGradient * 100, c.elevationGain);
             double[] start = positionAt(route, n, c.startDistance);
-            if (start == null) start = new double[]{c.startLat, c.startLon};
+            if (start.length == 0) start = new double[]{c.startLat, c.startLon};
             appendWpt(sb, start, "Start " + name, desc, "Summit");
             double[] top = positionAt(route, n, c.endDistance);
-            if (top != null) appendWpt(sb, top, "Top " + name, desc, "Summit");
+            if (top.length > 0) appendWpt(sb, top, "Top " + name, desc, "Summit");
         }
     }
 
@@ -91,10 +92,10 @@ public final class GpxWriter {
         sb.append("  </wpt>\n");
     }
 
-    /** Route position at {@code distance} m, linearly interpolated; null without distances. */
+    /** Route position at {@code distance} m, linearly interpolated; empty without distances. */
     private static double[] positionAt(StoredRoute route, int n, double distance) {
         double[] d = route.distances;
-        if (d == null || d.length < n || n == 0) return null;
+        if (d == null || d.length < n || n == 0) return new double[0];
         if (distance <= d[0]) return new double[]{route.lats[0], route.lons[0]};
         for (int i = 1; i < n; i++) {
             if (d[i] >= distance) {

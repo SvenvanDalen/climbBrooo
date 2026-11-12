@@ -166,22 +166,24 @@ public final class TopClimbsViewModel extends AndroidViewModel {
     private List<RegionalTopClimbs.Candidate> loadCandidates(StartPoint from, double radiusM) {
         List<RegionalTopClimbs.Candidate> out = new ArrayList<>();
         for (RouteCatalogEntry entry : routeRepo.findNearby(from.lat, from.lon, radiusM)) {
-            StoredRoute route;
-            try {
-                route = routeRepo.loadRoute(entry.routeId);
-            } catch (Exception e) {
-                continue;
-            }
-            if (route.climbs == null) continue;
+            StoredRoute route = loadOrNull(entry.routeId);
+            if (route == null || route.climbs == null) continue;
             String routeName = routeName(entry);
             for (int i = 0; i < route.climbs.size(); i++) {
                 StoredClimb c = route.climbs.get(i);
                 if (c == null) continue;
                 String name = candidateName(c, i, routeName);
-                out.add(new RegionalTopClimbs.Candidate(
-                        ClimbIdentity.of(c), entry.routeId, i, name,
-                        c.startLat, c.startLon, c.elevationGain, c.avgGradient,
-                        ClimbIdentity.effectiveLength(c)));
+                out.add(new RegionalTopClimbs.Candidate.Builder()
+                        .climbId(ClimbIdentity.of(c))
+                        .routeId(entry.routeId)
+                        .climbIndex(i)
+                        .name(name)
+                        .startLat(c.startLat)
+                        .startLon(c.startLon)
+                        .elevationGainM(c.elevationGain)
+                        .avgGradient(c.avgGradient)
+                        .lengthM(ClimbIdentity.effectiveLength(c))
+                        .build());
             }
         }
         return out;
@@ -194,4 +196,13 @@ public final class TopClimbsViewModel extends AndroidViewModel {
 
     @Override
     protected void onCleared() { executor.shutdown(); }
+
+    /** The stored route, or null when it is missing or unreadable. */
+    private StoredRoute loadOrNull(String routeId) {
+        try {
+            return routeRepo.loadRoute(routeId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

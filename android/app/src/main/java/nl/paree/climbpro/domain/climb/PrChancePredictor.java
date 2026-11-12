@@ -220,8 +220,10 @@ public final class PrChancePredictor {
         Collections.sort(reasons, (x, y) -> Integer.compare(Math.abs(y.points), Math.abs(x.points)));
         int score = 0;
         for (Reason r : reasons) score += r.points;
-        Chance chance = score >= GOOD_SCORE ? Chance.GOOD
-                : score >= 0 ? Chance.MODERATE : Chance.UNLIKELY;
+        Chance chance;
+        if (score >= GOOD_SCORE) chance = Chance.GOOD;
+        else if (score >= 0) chance = Chance.MODERATE;
+        else chance = Chance.UNLIKELY;
         return new Prediction(chance, score, false, pr.elapsedSec,
                 Math.max(0L, pr.dateEpochSec), pool.size(), reasons);
     }
@@ -282,8 +284,7 @@ public final class PrChancePredictor {
         }
         if (Double.isNaN(f.todayTsb)) return;
         switch (FitnessCalculator.formOf(f.todayTsb)) {
-            case VERY_FRESH:
-            case FRESH:
+            case VERY_FRESH, FRESH:
                 out.add(new Reason(Factor.FRESH, 1, f.todayTsb));
                 break;
             case NEUTRAL:
@@ -316,6 +317,6 @@ public final class PrChancePredictor {
     }
 
     private static double daysBetween(long fromEpochSec, long toEpochSec) {
-        return Math.max(0, (toEpochSec - fromEpochSec) / 86_400L);
+        return (double) (Math.max(0, (toEpochSec - fromEpochSec) / 86_400L));
     }
 }

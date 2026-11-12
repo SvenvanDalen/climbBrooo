@@ -79,8 +79,9 @@ public final class ElevationGoalCalculator {
             if (day.isBefore(start) || !day.isBefore(endExclusive)) continue;
 
             Integer gain = climbIdToElevationGainM.get(a.climbId);
-            if (gain == null) continue;
-            total += gain;
+            if (gain != null) {
+                total += gain;
+            }
         }
         return total;
     }
@@ -100,8 +101,9 @@ public final class ElevationGoalCalculator {
         for (StoredRide r : rides) {
             if (r == null || r.startEpochSec <= 0 || !(r.elevationGainM > 0)) continue;
             LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
-            if (day.isBefore(start) || !day.isBefore(endExclusive)) continue;
-            total += r.elevationGainM;
+            if (!day.isBefore(start) && day.isBefore(endExclusive)) {
+                total += r.elevationGainM;
+            }
         }
         return (int) Math.round(total);
     }

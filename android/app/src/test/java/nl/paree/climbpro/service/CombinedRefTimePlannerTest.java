@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 
@@ -110,8 +111,8 @@ public class CombinedRefTimePlannerTest {
     public void emptyRoute_returnsNull() {
         StoredRoute route = new StoredRoute();
         route.climbs = new ArrayList<>();
-        assertNull(CombinedRefTimePlanner.plan(route, Collections.emptyList()));
-        assertNull(CombinedRefTimePlanner.plan(null, Collections.emptyList()));
+        assertEquals(0, CombinedRefTimePlanner.plan(route, Collections.emptyList()).length);
+        assertEquals(0, CombinedRefTimePlanner.plan(null, Collections.emptyList()).length);
     }
     // --- Issue #31: virtual target-speed ghost is the last-resort fallback -----------------
 
@@ -201,6 +202,6 @@ public class CombinedRefTimePlannerTest {
     public void targetGhost_emptyRoute_returnsNull() {
         StoredRoute route = new StoredRoute();
         route.climbs = new ArrayList<>();
-        assertNull(CombinedRefTimePlanner.plan(route, Collections.emptyList(), GHOST_18_KMH));
+        assertEquals(0, CombinedRefTimePlanner.plan(route, Collections.emptyList(), GHOST_18_KMH).length);
     }
 }

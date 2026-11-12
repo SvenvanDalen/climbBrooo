@@ -2,7 +2,6 @@ package nl.paree.climbpro.domain.ride;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -74,9 +73,9 @@ public class PowerCurveAnalyzerTest {
 
     @Test
     public void noPowerStreamGivesNull() {
-        assertNull(PowerCurveAnalyzer.bestPowers(
-                new RideStreams(new int[]{0, 1, 2}, new double[]{0, 8, 16}, null, null)));
-        assertNull(PowerCurveAnalyzer.bestPowers(ride(constant(100, Double.NaN))));
-        assertNull(PowerCurveAnalyzer.bestPowers(null));
+        assertEquals(0, PowerCurveAnalyzer.bestPowers(
+                new RideStreams(new int[]{0, 1, 2}, new double[]{0, 8, 16}, null, null)).length);
+        assertEquals(0, PowerCurveAnalyzer.bestPowers(ride(constant(100, Double.NaN))).length);
+        assertEquals(0, PowerCurveAnalyzer.bestPowers(null).length);
     }
 }

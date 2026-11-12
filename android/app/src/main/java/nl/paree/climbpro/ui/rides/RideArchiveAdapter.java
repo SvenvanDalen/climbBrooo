@@ -11,18 +11,18 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.recovery.RecoveryCheck;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.data.route.AttemptPhotoStore;
 import nl.paree.climbpro.domain.ride.RideCategoryLabel;
 import nl.paree.climbpro.domain.ride.SummitGroupPhotos;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.rides.RideArchiveViewModel.Row;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -38,8 +38,8 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
 
     private final List<Row> rows = new ArrayList<>();
     private final Listener listener;
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
 
     /** Decodes group-photo thumbnails off the main thread. */
     private final ExecutorService thumbnailExecutor = Executors.newSingleThreadExecutor();
@@ -72,7 +72,7 @@ public final class RideArchiveAdapter extends RecyclerView.Adapter<RideArchiveAd
         holder.category.setText(RideCategoryLabel.forCategory(row.category));
 
         String date = r.startEpochSec > 0
-                ? dateFormat.format(new Date(r.startEpochSec * 1000L)) : "onbekende datum";
+                ? EpochDates.format(dateFormat, r.startEpochSec) : "onbekende datum";
         holder.stats.setText(String.format(Locale.getDefault(),
                 "%s  •  %.1f km  •  %d hm  •  %.1f km/u",
                 date, r.distanceM / 1000f, Math.round(r.elevationGainM), r.avgSpeedMps * 3.6f));

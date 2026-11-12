@@ -42,8 +42,10 @@ public final class SegmentExploreTiler {
         int i = 0;
         for (int t = 0; t < count; t++) {
             double end = t == count - 1 ? Double.MAX_VALUE : (t + 1) * tileLength;
-            double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
-            double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+            double minLat = Double.MAX_VALUE;
+            double maxLat = -Double.MAX_VALUE;
+            double minLon = Double.MAX_VALUE;
+            double maxLon = -Double.MAX_VALUE;
             // Each stretch shares its last point with the next one, so no gap opens between them.
             int j = i;
             for (; j < route.size(); j++) {
@@ -53,7 +55,6 @@ public final class SegmentExploreTiler {
                 if (p.distance >= end) break;
             }
             i = Math.min(j, route.size() - 1);
-            if (minLat > maxLat) continue;
             double padLat = PAD_M / METERS_PER_DEG_LAT;
             double midLat = Math.toRadians((minLat + maxLat) / 2);
             double padLon = PAD_M / (METERS_PER_DEG_LAT * Math.max(0.01, Math.cos(midLat)));

@@ -5,10 +5,15 @@ import android.content.Context;
 import androidx.preference.PreferenceManager;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
+
 import java.io.File;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -47,19 +52,27 @@ public final class DeviceState {
             UiObject2 wait = device.findObject(By.res("android", "aerr_wait"));
             if (wait == null) wait = device.findObject(By.text(Pattern.compile("(?i)wait|wachten")).pkg("android"));
             if (wait == null) return;
-            wait.click();
+            try {
+                wait.click();
+            } catch (StaleObjectException gone) {
+                // the dialog closed between find and click; check again
+            }
             device.waitForIdle();
         }
     }
 
     /** Polls {@code condition} until true or {@code timeoutMs} passes. */
     public static boolean waitFor(Callable<Boolean> condition, long timeoutMs) throws Exception {
-        long end = System.currentTimeMillis() + timeoutMs;
-        while (System.currentTimeMillis() < end) {
-            if (Boolean.TRUE.equals(condition.call())) return true;
-            Thread.sleep(100);
+        try {
+            Awaitility.await()
+                    .pollDelay(Duration.ZERO)
+                    .pollInterval(Duration.ofMillis(100))
+                    .atMost(Duration.ofMillis(timeoutMs))
+                    .until(() -> Boolean.TRUE.equals(condition.call()));
+            return true;
+        } catch (ConditionTimeoutException e) {
+            return Boolean.TRUE.equals(condition.call());
         }
-        return Boolean.TRUE.equals(condition.call());
     }
 
     private static void deleteRecursively(File f) {

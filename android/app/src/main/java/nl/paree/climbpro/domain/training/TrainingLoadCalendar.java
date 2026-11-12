@@ -75,16 +75,71 @@ public final class TrainingLoadCalendar {
         public final LocalDate busiestWeekStart;
         public final double busiestWeekLoad;
 
-        Result(LocalDate firstDay, int weeks, List<Day> days, int activeDays, double totalLoad,
-               int longestStreakDays, LocalDate busiestWeekStart, double busiestWeekLoad) {
-            this.firstDay = firstDay;
-            this.weeks = weeks;
-            this.days = days;
-            this.activeDays = activeDays;
-            this.totalLoad = totalLoad;
-            this.longestStreakDays = longestStreakDays;
-            this.busiestWeekStart = busiestWeekStart;
-            this.busiestWeekLoad = busiestWeekLoad;
+        private Result(Builder b) {
+            this.firstDay = b.firstDay;
+            this.weeks = b.weeks;
+            this.days = b.days;
+            this.activeDays = b.activeDays;
+            this.totalLoad = b.totalLoad;
+            this.longestStreakDays = b.longestStreakDays;
+            this.busiestWeekStart = b.busiestWeekStart;
+            this.busiestWeekLoad = b.busiestWeekLoad;
+        }
+
+        /** Builds a {@link Result}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private LocalDate firstDay;
+            private int weeks;
+            private List<Day> days;
+            private int activeDays;
+            private double totalLoad;
+            private int longestStreakDays;
+            private LocalDate busiestWeekStart;
+            private double busiestWeekLoad;
+
+            public Builder firstDay(LocalDate firstDay) {
+                this.firstDay = firstDay;
+                return this;
+            }
+
+            public Builder weeks(int weeks) {
+                this.weeks = weeks;
+                return this;
+            }
+
+            public Builder days(List<Day> days) {
+                this.days = days;
+                return this;
+            }
+
+            public Builder activeDays(int activeDays) {
+                this.activeDays = activeDays;
+                return this;
+            }
+
+            public Builder totalLoad(double totalLoad) {
+                this.totalLoad = totalLoad;
+                return this;
+            }
+
+            public Builder longestStreakDays(int longestStreakDays) {
+                this.longestStreakDays = longestStreakDays;
+                return this;
+            }
+
+            public Builder busiestWeekStart(LocalDate busiestWeekStart) {
+                this.busiestWeekStart = busiestWeekStart;
+                return this;
+            }
+
+            public Builder busiestWeekLoad(double busiestWeekLoad) {
+                this.busiestWeekLoad = busiestWeekLoad;
+                return this;
+            }
+
+            public Result build() {
+                return new Result(this);
+            }
         }
     }
 
@@ -112,11 +167,12 @@ public final class TrainingLoadCalendar {
             if (r == null) continue;
             archived.add(r.activityId);
             LocalDate day = dayOf(r.startEpochSec, zone, first, today);
-            if (day == null) continue;
-            Acc a = accFor(acc, day);
-            a.load += TrainingLoad.of(r, ftpWatts).tss;
-            a.rides++;
-            a.elevation += Math.max(0, r.elevationGainM);
+            if (day != null) {
+                Acc a = accFor(acc, day);
+                a.load += TrainingLoad.of(r, ftpWatts).tss;
+                a.rides++;
+                a.elevation += Math.max(0, r.elevationGainM);
+            }
         }
         return archived;
     }
@@ -128,12 +184,13 @@ public final class TrainingLoadCalendar {
         for (StoredClimbAttempt at : attemptList) {
             if (at == null) continue;
             LocalDate day = dayOf(at.dateEpochSec, zone, first, today);
-            if (day == null) continue;
-            Acc a = accFor(acc, day);
-            a.climbs++;
-            if (!archived.contains(at.activityId)) {
-                double hours = Math.max(0, at.elapsedSec) / 3600.0;
-                a.load += hours * CLIMB_INTENSITY * CLIMB_INTENSITY * 100;
+            if (day != null) {
+                Acc a = accFor(acc, day);
+                a.climbs++;
+                if (!archived.contains(at.activityId)) {
+                    double hours = Math.max(0, at.elapsedSec) / 3600.0;
+                    a.load += hours * CLIMB_INTENSITY * CLIMB_INTENSITY * 100;
+                }
             }
         }
     }
@@ -152,8 +209,12 @@ public final class TrainingLoadCalendar {
         addClimbs(acc, attemptList, archived, zone, first, today);
 
         List<Day> days = new ArrayList<>();
-        int active = 0, streak = 0, longest = 0;
-        double total = 0, weekLoad = 0, busiestLoad = 0;
+        int active = 0;
+        int streak = 0;
+        int longest = 0;
+        double total = 0;
+        double weekLoad = 0;
+        double busiestLoad = 0;
         LocalDate busiest = null;
         for (LocalDate d = first; !d.isAfter(today); d = d.plusDays(1)) {
             Acc a = acc.get(d);
@@ -175,7 +236,16 @@ public final class TrainingLoadCalendar {
                 busiest = d.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             }
         }
-        return new Result(first, w, days, active, total, longest, busiest, busiestLoad);
+        return new Result.Builder()
+                .firstDay(first)
+                .weeks(w)
+                .days(days)
+                .activeDays(active)
+                .totalLoad(total)
+                .longestStreakDays(longest)
+                .busiestWeekStart(busiest)
+                .busiestWeekLoad(busiestLoad)
+                .build();
     }
 
     private static LocalDate dayOf(long epochSec, ZoneId zone, LocalDate first, LocalDate today) {

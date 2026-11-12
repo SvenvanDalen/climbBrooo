@@ -76,7 +76,7 @@ public class IntervalsIcuSettingsViewModelTest {
         if (new IntervalsIcuRepository(app).isConfigured()) {
             // An empty key field keeps the stored key.
             vm.testConnection("", "i42");
-            assertTrue(status(vm, null) != null);
+            assertNotNull(status(vm, null));
         }
 
         vm.clear();

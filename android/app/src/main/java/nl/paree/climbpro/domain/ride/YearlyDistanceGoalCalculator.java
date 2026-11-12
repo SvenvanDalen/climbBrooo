@@ -128,10 +128,10 @@ public final class YearlyDistanceGoalCalculator {
                 return "Doel gehaald!";
             case ON_SCHEDULE: {
                 long ahead = Math.round(p.scheduleDeltaKm());
-                return ahead > 0 ? "Op schema (" + formatKm(ahead) + " km voor)" : "Op schema";
+                return ahead > 0 ? "Op schema (" + formatKm((double) ahead) + " km voor)" : "Op schema";
             }
             case BEHIND_SCHEDULE:
-                return formatKm(Math.round(-p.scheduleDeltaKm())) + " km achter op schema";
+                return formatKm((double) (Math.round(-p.scheduleDeltaKm()))) + " km achter op schema";
             case NO_GOAL:
             default:
                 return "";

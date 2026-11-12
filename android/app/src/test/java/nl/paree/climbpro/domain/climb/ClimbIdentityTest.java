@@ -89,7 +89,7 @@ public class ClimbIdentityTest {
         org.junit.Assert.assertNotNull(start);
         org.junit.Assert.assertEquals(45.12345, start[0], 0.0005);
         org.junit.Assert.assertEquals(6.54321, start[1], 0.0005);
-        org.junit.Assert.assertNull(ClimbIdentity.approxStart("not-a-climb-id"));
-        org.junit.Assert.assertNull(ClimbIdentity.approxStart(null));
+        org.junit.Assert.assertEquals(0, ClimbIdentity.approxStart("not-a-climb-id").length);
+        org.junit.Assert.assertEquals(0, ClimbIdentity.approxStart(null).length);
     }
 }

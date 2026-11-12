@@ -33,6 +33,7 @@ import java.util.Set;
  * the proposal travels through any chat app.
  */
 public final class GroupRidePlannerActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private static final Locale NL = new Locale("nl");
 
@@ -101,7 +102,7 @@ public final class GroupRidePlannerActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.group_ride_pick_route)
                 .setItems(names, (d, which) -> viewModel.selectRoute(r.get(which).routeId))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -122,7 +123,7 @@ public final class GroupRidePlannerActivity extends AppCompatActivity {
                     else selected.remove(cands.get(which).id);
                 })
                 .setPositiveButton("OK", (d, w) -> viewModel.setSelected(selected))
-                .setNegativeButton("Annuleren", null);
+                .setNegativeButton(CANCEL, null);
         if (cands.size() == 1) {
             Toast.makeText(this, "Importeer profielcodes onder Ritmaatjes om andere rijders "
                     + "te kiezen, of voeg ze met de hand toe.", Toast.LENGTH_LONG).show();
@@ -160,7 +161,7 @@ public final class GroupRidePlannerActivity extends AppCompatActivity {
                     }
                     viewModel.addManual(n, kmh);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -203,7 +204,7 @@ public final class GroupRidePlannerActivity extends AppCompatActivity {
                 t.setOnClickListener(v -> new AlertDialog.Builder(this)
                         .setMessage(r.name + " uit de planning halen?")
                         .setPositiveButton("Verwijderen", (d, w) -> viewModel.removeManual(manualIndex))
-                        .setNegativeButton("Annuleren", null)
+                        .setNegativeButton(CANCEL, null)
                         .show());
             }
             t.setText(sb.toString());

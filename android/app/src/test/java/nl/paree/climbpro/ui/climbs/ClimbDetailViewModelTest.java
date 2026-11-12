@@ -3,16 +3,15 @@ package nl.paree.climbpro.ui.climbs;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import nl.paree.climbpro.data.rider.RiderProfileRepository;
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -68,11 +67,7 @@ public class ClimbDetailViewModelTest {
         // In Robolectric the main looper is PAUSED. postValue() enqueues a Runnable on
         // the main looper. Repeatedly drain the looper until the observer fires (or
         // 2 s wall-clock timeout).
-        long deadline = System.currentTimeMillis() + 2000;
-        while (received[0] == null && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> received[0] != null, 2000);
 
         assertNotNull(received[0]);
         assertEquals("r1", received[0].routeId);
@@ -131,11 +126,7 @@ public class ClimbDetailViewModelTest {
         org.junit.Assert.assertNotEquals(autoTotal, autoEstimate[0].totalSeconds);
     }
 
-    private static void waitFor(java.util.function.BooleanSupplier condition) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 2000;
-        while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+    private static void waitFor(java.util.function.BooleanSupplier condition) {
+        UiTestEnv.waitFor(() -> condition.getAsBoolean(), 2000);
     }
 }

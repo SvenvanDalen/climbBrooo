@@ -28,12 +28,22 @@ import okhttp3.mockwebserver.MockWebServer;
 @RunWith(RobolectricTestRunner.class)
 public class EventCalendarRepositoryTest {
 
-    private static final String ICS = "BEGIN:VCALENDAR\r\n"
-            + "BEGIN:VEVENT\r\nUID:a\r\nSUMMARY:Tour de Limbourg\r\nDTSTART;VALUE=DATE:20270512\r\n"
-            + "LOCATION:Valkenburg\r\nEND:VEVENT\r\n"
-            + "BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Gran Fondo\r\nDTSTART:20270601T080000\r\n"
-            + "GEO:50.8;5.8\r\nEND:VEVENT\r\n"
-            + "END:VCALENDAR\r\n";
+    private static final String ICS = """
+            BEGIN:VCALENDAR\r
+            BEGIN:VEVENT\r
+            UID:a\r
+            SUMMARY:Tour de Limbourg\r
+            DTSTART;VALUE=DATE:20270512\r
+            LOCATION:Valkenburg\r
+            END:VEVENT\r
+            BEGIN:VEVENT\r
+            UID:b\r
+            SUMMARY:Gran Fondo\r
+            DTSTART:20270601T080000\r
+            GEO:50.8;5.8\r
+            END:VEVENT\r
+            END:VCALENDAR\r
+            """;
 
     private final Context app = ApplicationProvider.getApplicationContext();
     private MockWebServer server;

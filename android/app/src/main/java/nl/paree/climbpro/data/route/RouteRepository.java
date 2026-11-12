@@ -666,8 +666,10 @@ public final class RouteRepository {
             if (ClimbRating.isRated(c) || c.ratingNote != null) continue;
             String identity = ClimbIdentity.of(c);
             for (RouteCatalogEntry entry : catalog) {
-                if (entry.routeId == null || entry.routeId.equals(route.routeId)) continue;
-                if (inheritRatingFrom(entry.routeId, identity, c)) break;
+                if (entry.routeId != null && !entry.routeId.equals(route.routeId)
+                        && inheritRatingFrom(entry.routeId, identity, c)) {
+                    break;
+                }
             }
         }
     }
@@ -849,8 +851,10 @@ public final class RouteRepository {
     }
 
     private static void fillBoundingBox(RouteCatalogEntry e, List<RoutePoint> points) {
-        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
-        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        double minLat = Double.MAX_VALUE;
+        double maxLat = -Double.MAX_VALUE;
+        double minLon = Double.MAX_VALUE;
+        double maxLon = -Double.MAX_VALUE;
         for (RoutePoint p : points) {
             if (p.lat < minLat) minLat = p.lat;
             if (p.lat > maxLat) maxLat = p.lat;

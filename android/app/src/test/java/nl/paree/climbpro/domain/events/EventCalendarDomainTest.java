@@ -17,26 +17,28 @@ import static org.junit.Assert.*;
 /** Issue #241: iCal parsing, distance/elevation extraction, level fit and nearby filter. */
 public class EventCalendarDomainTest {
 
-    private static final String ICS = "BEGIN:VCALENDAR\r\n"
-            + "VERSION:2.0\r\n"
-            + "BEGIN:VEVENT\r\n"
-            + "UID:abc-1@club\r\n"
-            + "DTSTART;VALUE=DATE:20270614\r\n"
-            + "SUMMARY:Limburgse Heuvelentocht\r\n"
-            + "LOCATION:Valkenburg\\, Nederland\r\n"
-            + "DESCRIPTION:Toertocht met routes van 60/110/160 km. De langste heeft 2.150 hoogte\r\n"
-            + " meters.\\nInschrijven vooraf.\r\n"
-            + "GEO:50.865;5.831\r\n"
-            + "URL:https://example.org/heuvel\r\n"
-            + "END:VEVENT\r\n"
-            + "BEGIN:VEVENT\r\n"
-            + "DTSTART;TZID=Europe/Amsterdam:20270901T080000\r\n"
-            + "SUMMARY:Gran Fondo Ardennen 175 km 3200 hm\r\n"
-            + "END:VEVENT\r\n"
-            + "BEGIN:VEVENT\r\n"
-            + "SUMMARY:Zonder datum\r\n"
-            + "END:VEVENT\r\n"
-            + "END:VCALENDAR\r\n";
+    private static final String ICS = """
+            BEGIN:VCALENDAR\r
+            VERSION:2.0\r
+            BEGIN:VEVENT\r
+            UID:abc-1@club\r
+            DTSTART;VALUE=DATE:20270614\r
+            SUMMARY:Limburgse Heuvelentocht\r
+            LOCATION:Valkenburg\\, Nederland\r
+            DESCRIPTION:Toertocht met routes van 60/110/160 km. De langste heeft 2.150 hoogte\r
+             meters.\\nInschrijven vooraf.\r
+            GEO:50.865;5.831\r
+            URL:https://example.org/heuvel\r
+            END:VEVENT\r
+            BEGIN:VEVENT\r
+            DTSTART;TZID=Europe/Amsterdam:20270901T080000\r
+            SUMMARY:Gran Fondo Ardennen 175 km 3200 hm\r
+            END:VEVENT\r
+            BEGIN:VEVENT\r
+            SUMMARY:Zonder datum\r
+            END:VEVENT\r
+            END:VCALENDAR\r
+            """;
 
     // ------------------------------------------------------------------ parser
 

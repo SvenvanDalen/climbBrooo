@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /** Issue #205: a chosen shortcut becomes a new, re-detected route. */
@@ -87,7 +88,7 @@ public class RouteShortenServiceTest {
         for (RouteShortener.Variant v : RouteShortenService.suggest(original)) {
             if (v.skippedClimbs.contains(0)) { skipClimb = v; break; }
         }
-        assertTrue("expected a variant that skips the climb", skipClimb != null);
+        assertNotNull("expected a variant that skips the climb", skipClimb);
 
         RouteShortenService.Result res =
                 service.create("gpx_s", skipClimb.fromIndex, skipClimb.toIndex);

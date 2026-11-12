@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.climb;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -37,7 +38,7 @@ public class StarredSegmentLocatorTest {
         Climb c = StarredSegmentLocator.locate(
                 route, s.lat, s.lon, e.lat, e.lon, "Test Berg", 50.0);
 
-        assertTrue(c != null);
+        assertNotNull(c);
         assertEquals("Test Berg", c.name);
         assertEquals((int) Math.round(s.distance), c.startDistance);
         assertEquals((int) Math.round(e.distance), c.endDistance);
@@ -77,7 +78,7 @@ public class StarredSegmentLocatorTest {
         Climb c = StarredSegmentLocator.locate(
                 route, s.lat, s.lon, e.lat, e.lon, "Kort Klimmetje", 50.0);
 
-        assertTrue(c != null);
+        assertNotNull(c);
         assertFalse("span is intentionally short",
                 c.length >= ClimbConstants.MIN_CLIMB_LENGTH_M);
     }

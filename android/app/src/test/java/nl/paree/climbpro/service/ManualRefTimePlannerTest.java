@@ -110,7 +110,7 @@ public class ManualRefTimePlannerTest {
     public void plan_emptyRoute_returnsNull() {
         StoredRoute route = new StoredRoute();
         route.climbs = new ArrayList<>();
-        assertNull(ManualRefTimePlanner.plan(route));
-        assertNull(ManualRefTimePlanner.plan(null));
+        assertEquals(0, ManualRefTimePlanner.plan(route).length);
+        assertEquals(0, ManualRefTimePlanner.plan(null).length);
     }
 }

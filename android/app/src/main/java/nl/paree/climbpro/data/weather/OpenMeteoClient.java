@@ -24,6 +24,7 @@ import okhttp3.Response;
  * temperature from the grid height to the given elevation). Blocking — call off the main thread.
  */
 public final class OpenMeteoClient {
+    private static final String ELEVATION_PARAM = "&elevation=";
 
     private final OkHttpClient http;
 
@@ -43,7 +44,7 @@ public final class OpenMeteoClient {
                         + "&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,precipitation_probability,uv_index"
                         + "&wind_speed_unit=kmh&timezone=UTC&forecast_days=2", lat, lon);
         return Double.isNaN(elevationM) ? base
-                : base + "&elevation=" + Math.round(elevationM);
+                : base + ELEVATION_PARAM + Math.round(elevationM);
     }
 
     public HourlyForecast fetch(ClimbEndpoints.Point p) throws IOException {
@@ -114,7 +115,7 @@ public final class OpenMeteoClient {
             if (i > 0) elev.append(',');
             elev.append(Math.round(elevations[i]));
         }
-        return url + "&elevation=" + elev;
+        return url + ELEVATION_PARAM + elev;
     }
 
     public TemperatureGrid fetchTemperatures(List<RouteSampler.Sample> pts, double[] elevations)
@@ -182,7 +183,7 @@ public final class OpenMeteoClient {
                         + "&wind_speed_unit=kmh&timezone=auto",
                 lat, lon, currentYear - CLIMATE_YEARS, currentYear - 1);
         return Double.isNaN(elevationM) ? base
-                : base + "&elevation=" + Math.round(elevationM);
+                : base + ELEVATION_PARAM + Math.round(elevationM);
     }
 
     public ClimateNormals fetchClimate(double lat, double lon, double elevationM, int currentYear)

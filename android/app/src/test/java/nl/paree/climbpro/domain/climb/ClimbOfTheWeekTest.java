@@ -32,8 +32,18 @@ public class ClimbOfTheWeekTest {
     private static Candidate climb(String id, double northKm, int gain, double gradient,
                                    Integer daysAgo) {
         Long last = daysAgo == null ? null : TODAY.toEpochDay() - daysAgo;
-        return new Candidate(id, "route-" + id, 0, "Klim " + id,
-                LAT0 + northKm * KM, LON0, gain, gradient, 5000, last);
+        return new Candidate.Builder()
+                .climbId(id)
+                .routeId("route-" + id)
+                .climbIndex(0)
+                .name("Klim " + id)
+                .startLat(LAT0 + northKm * KM)
+                .startLon(LON0)
+                .elevationGainM(gain)
+                .avgGradient(gradient)
+                .lengthM(5000)
+                .lastRiddenEpochDay(last)
+                .build();
     }
 
     private static Candidate never(String id, double northKm) {
@@ -72,7 +82,18 @@ public class ClimbOfTheWeekTest {
 
     @Test
     public void skipsNullAndInvalidCandidates() {
-        Candidate bad = new Candidate("bad", "r", 0, "Bad", NO, LON0, 300, 0.06, 5000, null);
+        Candidate bad = new Candidate.Builder()
+                .climbId("bad")
+                .routeId("r")
+                .climbIndex(0)
+                .name("Bad")
+                .startLat(NO)
+                .startLon(LON0)
+                .elevationGainM(300)
+                .avgGradient(0.06)
+                .lengthM(5000)
+                .lastRiddenEpochDay(null)
+                .build();
         Candidate good = never("good", 2);
         List<Suggestion> r = ClimbOfTheWeek.rank(Arrays.asList(null, bad, good),
                 LAT0, LON0, TODAY, null, null);
@@ -82,8 +103,18 @@ public class ClimbOfTheWeekTest {
     @Test
     public void dedupesSameClimbId() {
         Candidate a = never("same", 2);
-        Candidate b = new Candidate("same", "other-route", 3, "Kopie", a.startLat, a.startLon,
-                300, 0.06, 5000, null);
+        Candidate b = new Candidate.Builder()
+                .climbId("same")
+                .routeId("other-route")
+                .climbIndex(3)
+                .name("Kopie")
+                .startLat(a.startLat)
+                .startLon(a.startLon)
+                .elevationGainM(300)
+                .avgGradient(0.06)
+                .lengthM(5000)
+                .lastRiddenEpochDay(null)
+                .build();
         assertEquals(1, ClimbOfTheWeek.rank(Arrays.asList(a, b), LAT0, LON0, TODAY, null, null)
                 .size());
     }

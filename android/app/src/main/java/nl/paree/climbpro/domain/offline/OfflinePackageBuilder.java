@@ -3,6 +3,7 @@ package nl.paree.climbpro.domain.offline;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.weather.RouteSampler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,13 +28,13 @@ public final class OfflinePackageBuilder {
 
     /** Raw hourly forecast JSON for a point. */
     public interface WeatherSource {
-        String forecast(double lat, double lon) throws Exception;
+        String forecast(double lat, double lon) throws IOException;
     }
 
     /** POIs near the route (positions only; projection happens here). */
     public interface PoiSource {
         List<OfflinePackage.Poi> pois(double[] lats, double[] lons, double[] distances)
-                throws Exception;
+                throws IOException;
     }
 
     private final WeatherSource weather;
@@ -100,14 +101,19 @@ public final class OfflinePackageBuilder {
 
     /** {along-route metres, offset metres} of the nearest point on the route line. */
     private static double[] project(StoredRoute r, int n, double cos, double lat, double lon) {
-        double px = lon * M_PER_DEG * cos, py = lat * M_PER_DEG;
-        double best = Double.MAX_VALUE, along = 0;
+        double px = lon * M_PER_DEG * cos;
+        double py = lat * M_PER_DEG;
+        double best = Double.MAX_VALUE;
+        double along = 0;
         for (int i = 0; i < n - 1; i++) {
-            double ax = r.lons[i] * M_PER_DEG * cos, ay = r.lats[i] * M_PER_DEG;
-            double dx = r.lons[i + 1] * M_PER_DEG * cos - ax, dy = r.lats[i + 1] * M_PER_DEG - ay;
+            double ax = r.lons[i] * M_PER_DEG * cos;
+            double ay = r.lats[i] * M_PER_DEG;
+            double dx = r.lons[i + 1] * M_PER_DEG * cos - ax;
+            double dy = r.lats[i + 1] * M_PER_DEG - ay;
             double len2 = dx * dx + dy * dy;
             double t = len2 == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
-            double qx = ax + t * dx - px, qy = ay + t * dy - py;
+            double qx = ax + t * dx - px;
+            double qy = ay + t * dy - py;
             double d = Math.sqrt(qx * qx + qy * qy);
             if (d < best) {
                 best = d;
@@ -118,7 +124,8 @@ public final class OfflinePackageBuilder {
     }
 
     private static double planar(double lat1, double lon1, double lat2, double lon2, double cos) {
-        double dx = (lon2 - lon1) * M_PER_DEG * cos, dy = (lat2 - lat1) * M_PER_DEG;
+        double dx = (lon2 - lon1) * M_PER_DEG * cos;
+        double dy = (lat2 - lat1) * M_PER_DEG;
         return Math.sqrt(dx * dx + dy * dy);
     }
 

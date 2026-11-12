@@ -47,7 +47,7 @@ public class VamCalculatorTest {
         int avg = VamCalculator.averageVam(0.05);
         int peak = VamCalculator.peakVam(pts, 0, 1000, 0.05);
         // Uniform gradient: any 100m window has (approximately) the same rate as the average.
-        assertEquals(avg, peak, 2);
+        assertEquals((float) avg, (float) peak, 2);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class VamCalculatorTest {
         assertTrue("peak (" + peak + ") should exceed the segment average (" + avg + ")",
                 peak > avg);
         int expectedBurstVam = VamCalculator.averageVam(0.15);
-        assertEquals(expectedBurstVam, peak, 5);
+        assertEquals((float) expectedBurstVam, (float) peak, 5);
     }
 
     @Test

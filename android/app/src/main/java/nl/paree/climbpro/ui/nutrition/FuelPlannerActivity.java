@@ -126,9 +126,9 @@ public final class FuelPlannerActivity extends AppCompatActivity {
     private void renderPlan(FuelPlan p) {
         if (p == null) return;
         StringBuilder sb = new StringBuilder();
-        sb.append(p.temperatureAssumed
-                ? getString(R.string.fuel_result_temp_assumed, p.temperatureC)
-                : getString(R.string.fuel_result_temp, p.temperatureC));
+        sb.append(getString(p.temperatureAssumed
+                ? R.string.fuel_result_temp_assumed
+                : R.string.fuel_result_temp, p.temperatureC));
         sb.append('\n').append(getString(R.string.fuel_result_kcal, p.kcal));
         if (p.totalCarbsGrams == 0) {
             sb.append('\n').append(getString(R.string.fuel_result_no_food));

@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNull;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
@@ -21,10 +20,10 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbConstants;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.io.File;
 import java.util.Arrays;
@@ -83,11 +82,7 @@ public class ClimbTimelineViewModelTest {
     private <T> T awaitLiveData(androidx.lifecycle.LiveData<T> live) throws Exception {
         final Object[] got = new Object[]{null};
         live.observeForever(v -> got[0] = v);
-        long deadline = System.currentTimeMillis() + 2000;
-        while (got[0] == null && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> got[0] != null, 2000);
         @SuppressWarnings("unchecked")
         T result = (T) got[0];
         return result;

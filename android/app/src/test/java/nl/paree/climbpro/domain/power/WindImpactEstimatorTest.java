@@ -49,8 +49,15 @@ public class WindImpactEstimatorTest {
     // --- whole-climb estimate ------------------------------------------------------------
 
     @Test public void headwindMakesTheClimbSlower() {
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 30, 0);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(0));
         assertNotNull(r);
         assertTrue("delta should be positive but was " + r.deltaSeconds, r.deltaSeconds > 0);
         assertEquals(r.windSeconds - r.windlessSeconds, r.deltaSeconds);
@@ -58,8 +65,15 @@ public class WindImpactEstimatorTest {
     }
 
     @Test public void tailwindMakesTheClimbFaster() {
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 30, 180);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(180));
         assertNotNull(r);
         assertTrue("delta should be negative but was " + r.deltaSeconds, r.deltaSeconds < 0);
         assertTrue(r.meanHeadwindKmh < 0);
@@ -67,34 +81,76 @@ public class WindImpactEstimatorTest {
 
     @Test public void headwindCostsMoreThanTheSameTailwindSaves() {
         // Drag grows with the square of air speed, so the effect is asymmetric.
-        WindImpactEstimator.Result head = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 30, 0);
-        WindImpactEstimator.Result tail = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 30, 180);
+        WindImpactEstimator.Result head = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(0));
+        WindImpactEstimator.Result tail = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(180));
         assertTrue(head.deltaSeconds > -tail.deltaSeconds);
     }
 
     @Test public void calmAirOrCrossWindHasNoDelta() {
-        assertEquals(0, WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 0, 0).deltaSeconds);
-        assertEquals(0, WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 25, 90).deltaSeconds);
+        assertEquals(0, WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(0)
+                .windFromDeg(0)).deltaSeconds);
+        assertEquals(0, WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(25)
+                .windFromDeg(90)).deltaSeconds);
     }
 
     @Test public void windlessTimeMatchesTheExistingFixedPowerModel() {
         double[] crr = new double[3];
         for (int i = 0; i < 3; i++) crr[i] = SurfaceRollingResistance.crr(SURF[i]);
         ClimbTimeEstimate base = ClimbTimeEstimator.estimateAtFixedPower(DIST, GRAD, crr, MASS, POWER);
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 20, 0);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(20)
+                .windFromDeg(0));
         assertEquals(base.totalSeconds, r.windlessSeconds);
     }
 
     @Test public void effectIsRealisticForAModerateHeadwind() {
         // 2.4 km at ~7% at 250 W takes ~11-12 min; 20 km/h at 10 m (~14 km/h at rider height)
         // straight on the nose should cost tens of seconds, not minutes or nothing.
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 20, 0);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(20)
+                .windFromDeg(0));
         assertTrue("delta was " + r.deltaSeconds, r.deltaSeconds >= 20 && r.deltaSeconds <= 120);
     }
 
@@ -103,7 +159,15 @@ public class WindImpactEstimatorTest {
         int[] d = {600, 600, 600, 600};
         double[] g = {0.07, 0.07, 0.07, 0.07};
         int[] s = {SurfaceType.UNKNOWN, SurfaceType.UNKNOWN, SurfaceType.UNKNOWN, SurfaceType.UNKNOWN};
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(d, g, s, zigzag, MASS, POWER, 20, 0);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(d)
+                .grad(g)
+                .surface(s)
+                .bearingsDeg(zigzag)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(20)
+                .windFromDeg(0));
         assertEquals(0, r.meanHeadwindKmh, 1e-9);
         // Asymmetry: net slower even though the mean headwind is zero.
         assertTrue(r.deltaSeconds >= 0);
@@ -111,30 +175,98 @@ public class WindImpactEstimatorTest {
 
     @Test public void unknownBearingSegmentsAreTreatedAsWindless() {
         double[] nan = {Double.NaN, Double.NaN, Double.NaN};
-        assertNull(WindImpactEstimator.estimate(DIST, GRAD, SURF, nan, MASS, POWER, 30, 0));
+        assertNull(WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(nan)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(0)));
         double[] partial = {0, Double.NaN, Double.NaN};
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, partial, MASS, POWER, 30, 0);
-        WindImpactEstimator.Result full = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 30, 0);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(partial)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(0));
+        WindImpactEstimator.Result full = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(30)
+                .windFromDeg(0));
         assertTrue(r.deltaSeconds > 0 && r.deltaSeconds < full.deltaSeconds);
     }
 
     @Test public void missingWindDataGivesNoResult() {
-        assertNull(WindImpactEstimator.estimate(DIST, GRAD, SURF, NORTH, MASS, POWER, Double.NaN, 0));
-        assertNull(WindImpactEstimator.estimate(DIST, GRAD, SURF, NORTH, MASS, POWER, 20, Double.NaN));
+        assertNull(WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(Double.NaN)
+                .windFromDeg(0)));
+        assertNull(WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(20)
+                .windFromDeg(Double.NaN)));
     }
 
     @Test public void emptyOrMismatchedInputGivesNoResult() {
-        assertNull(WindImpactEstimator.estimate(new int[0], new double[0], new int[0], new double[0],
-                MASS, POWER, 20, 0));
-        assertNull(WindImpactEstimator.estimate(DIST, GRAD, SURF, new double[]{0}, MASS, POWER, 20, 0));
-        assertNull(WindImpactEstimator.estimate(DIST, GRAD, SURF, NORTH, MASS, 0, 20, 0));
+        assertNull(WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(new int[0])
+                .grad(new double[0])
+                .surface(new int[0])
+                .bearingsDeg(new double[0])
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(20)
+                .windFromDeg(0)));
+        assertNull(WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(new double[]{0})
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(20)
+                .windFromDeg(0)));
+        assertNull(WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(0)
+                .windKmh(20)
+                .windFromDeg(0)));
     }
 
     @Test public void resultCarriesTheInputWind() {
-        WindImpactEstimator.Result r = WindImpactEstimator.estimate(
-                DIST, GRAD, SURF, NORTH, MASS, POWER, 18, 225);
+        WindImpactEstimator.Result r = WindImpactEstimator.estimate(new WindImpactEstimator.WindInput()
+                .dist(DIST)
+                .grad(GRAD)
+                .surface(SURF)
+                .bearingsDeg(NORTH)
+                .totalMassKg(MASS)
+                .powerWatts(POWER)
+                .windKmh(18)
+                .windFromDeg(225));
         assertEquals(18, r.windKmh, 1e-9);
         assertEquals(225, r.windFromDeg, 1e-9);
     }

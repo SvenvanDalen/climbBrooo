@@ -55,7 +55,7 @@ public class NextClimbFinderTest {
         assertSame(b, ans.climb);
         assertTrue(ans.onRoute);
         assertFalse(ans.onClimb);
-        assertEquals(2500, ans.metresToGo, 5);
+        assertEquals(2500, (float) ans.metresToGo, 5);
         assertEquals("De volgende klim is Camerig over 2,5 kilometer, 2,0 kilometer lang, "
                 + "gemiddeld 4,1 procent.", ans.toSpeech());
     }
@@ -67,7 +67,7 @@ public class NextClimbFinderTest {
         NextClimbFinder.Answer ans = NextClimbFinder.find(route(a), latAt(2600), 5.0);
 
         assertTrue(ans.onClimb);
-        assertEquals(400, ans.metresToGo, 5);
+        assertEquals(400, (float) ans.metresToGo, 5);
         assertEquals("Je zit op Cauberg Valkenburg. Nog 400 meter tot de top.", ans.toSpeech());
     }
 

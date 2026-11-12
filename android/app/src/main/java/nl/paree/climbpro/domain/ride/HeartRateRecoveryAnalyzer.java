@@ -74,16 +74,16 @@ public final class HeartRateRecoveryAnalyzer {
     }
 
     /**
-     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); null
+     * Heart-rate drop in bpm after each interval, in ride order (negative when it rose); empty
      * without power and heart rate, or an empty array when the ride has no qualifying interval.
      */
     public static int[] drops(RideStreams s) {
-        if (s == null || s.watts == null || s.heartrate == null) return null;
+        if (s == null || s.watts == null || s.heartrate == null) return new int[0];
         Integer np = NormalizedPowerAnalyzer.normalizedPower(s);
-        if (np == null || np < MIN_NP_WATTS) return null;
+        if (np == null || np < MIN_NP_WATTS) return new int[0];
         double[] watts = PerSecondSeries.of(s, s.watts);
         double[] hr = PerSecondSeries.of(s, s.heartrate);
-        if (watts == null || hr == null) return null;
+        if (watts.length == 0 || hr.length == 0) return new int[0];
 
         int n = watts.length;
         double threshold = INTERVAL_FACTOR * np;

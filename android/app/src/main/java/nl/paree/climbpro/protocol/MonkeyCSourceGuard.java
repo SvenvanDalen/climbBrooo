@@ -64,7 +64,8 @@ public final class MonkeyCSourceGuard {
     /** True when {} and () are balanced (ignoring comments/strings). */
     static boolean bracesBalanced(String src) {
         String s = stripCommentsAndStrings(src);
-        int curly = 0, paren = 0;
+        int curly = 0;
+        int paren = 0;
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (c == '{') { curly++; }

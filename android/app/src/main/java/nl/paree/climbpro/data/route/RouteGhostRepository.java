@@ -61,7 +61,7 @@ public final class RouteGhostRepository {
     }
 
     /**
-     * The wire profile ('gh') for this route, or null when there is no stored ride or it no
+     * The wire profile ('gh') for this route, or empty when there is no stored ride or it no
      * longer fits the route's current length.
      */
     public int[] wireFor(StoredRoute route) {
@@ -72,9 +72,9 @@ public final class RouteGhostRepository {
     public static int[] wireFor(StoredRoute route, StoredRouteGhost ghost) {
         if (route == null || ghost == null || route.distances == null
                 || route.distances.length == 0) {
-            return null;
+            return new int[0];
         }
-        if (!ghost.fits(route.distances[route.distances.length - 1])) return null;
+        if (!ghost.fits(route.distances[route.distances.length - 1])) return new int[0];
         return RouteGhostProfile.wire(ghost.stepM, ghost.stepSec);
     }
 

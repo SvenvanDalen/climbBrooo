@@ -99,11 +99,11 @@ public final class IntervalBlock {
     }
 
     /**
-     * Wire value 'ib': {@code [targetWatts, lowWatts, highWatts]} at this FTP, or null when the
+     * Wire value 'ib': {@code [targetWatts, lowWatts, highWatts]} at this FTP, or empty when the
      * FTP is unknown (the watch then shows nothing rather than a band around 0 W).
      */
     public int[] wireWatts(int ftpWatts) {
-        if (ftpWatts <= 0) return null;
+        if (ftpWatts <= 0) return new int[0];
         return new int[]{
                 (int) Math.round(ftpWatts * targetFraction()),
                 (int) Math.round(ftpWatts * lowPct / 100.0),

@@ -16,7 +16,17 @@ import nl.paree.climbpro.domain.planning.TourStop;
 public class MultiDayTourFormatterTest {
 
     private static TourStop at(String key, double lon, int hm) {
-        return new TourStop(key, "Klim " + key, 45.0, lon, 45.0, lon, hm, 5000, 900);
+        return new TourStop.Builder()
+                .key(key)
+                .name("Klim " + key)
+                .startLat(45.0)
+                .startLon(lon)
+                .endLat(45.0)
+                .endLon(lon)
+                .elevationGainM(hm)
+                .lengthM(5000)
+                .climbSeconds(900)
+                .build();
     }
 
     private static MultiDayTourPlan plan(int days, int maxHm, TourStop... stops) {
@@ -51,6 +61,6 @@ public class MultiDayTourFormatterTest {
         assertTrue(MultiDayTourFormatter.dayBody(overloaded.days.get(0), 1000)
                 .contains("boven je maximum van 1.000 hm"));
 
-        assertTrue(MultiDayTourFormatter.warnings(plan(2, 5000, at("a", 6.0, 800))).size() == 1);
+        assertEquals(1, MultiDayTourFormatter.warnings(plan(2, 5000, at("a", 6.0, 800))).size());
     }
 }

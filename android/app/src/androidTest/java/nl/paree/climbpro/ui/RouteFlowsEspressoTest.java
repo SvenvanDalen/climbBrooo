@@ -39,6 +39,7 @@ import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 
+import java.time.Duration;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
@@ -54,6 +55,7 @@ import nl.paree.climbpro.ui.routes.RouteDetailActivity;
 import nl.paree.climbpro.ui.routes.RouteListActivity;
 import nl.paree.climbpro.ui.settings.SettingsActivity;
 
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -165,7 +167,7 @@ public class RouteFlowsEspressoTest {
     @Test
     public void renameRoutePersists() throws Exception {
         try (ActivityScenario<RouteDetailActivity> s = openRoute()) {
-            onView(withId(R.id.btn_rename)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.btn_rename));
             onView(isAssignableFrom(EditText.class)).inRoot(isDialog())
                     .perform(replaceText("Zondagsrondje"), closeSoftKeyboard());
             onView(withText(s(R.string.action_save))).inRoot(isDialog()).perform(click());
@@ -178,7 +180,8 @@ public class RouteFlowsEspressoTest {
     private void awaitRouteLoaded(ActivityScenario<RouteDetailActivity> s) throws Exception {
         assertTrue(DeviceState.waitFor(() -> "Testroute met twee klimmen".equals(notesText(s)), 10_000));
         // onCreate and onResume both load the route; let the second emission land too.
-        Thread.sleep(1_500);
+        Awaitility.await().during(Duration.ofMillis(1_500)).atMost(Duration.ofSeconds(5))
+                .until(() -> "Testroute met twee klimmen".equals(notesText(s)));
     }
 
     private static String notesText(ActivityScenario<RouteDetailActivity> s) {
@@ -193,7 +196,7 @@ public class RouteFlowsEspressoTest {
             awaitRouteLoaded(s);
             onView(withId(R.id.notes_edit)).perform(EspressoActions.scrollIntoView(),
                     replaceText("Koffiestop in Stavelot #ardennen"), closeSoftKeyboard());
-            onView(withId(R.id.btn_save_notes)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.btn_save_notes));
             DeviceState.waitFor(() -> "Koffiestop in Stavelot #ardennen"
                     .equals(route(UiTestData.ROUTE_ID).notes), 5_000);
             assertEquals("Koffiestop in Stavelot #ardennen", route(UiTestData.ROUTE_ID).notes);
@@ -209,7 +212,8 @@ public class RouteFlowsEspressoTest {
             // Leave and come back (e.g. a phone call or switching apps): onResume reloads.
             s.moveToState(androidx.lifecycle.Lifecycle.State.CREATED);
             s.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);
-            Thread.sleep(1_500);
+            Awaitility.await().during(Duration.ofMillis(1_500)).atMost(Duration.ofSeconds(5))
+                    .until(() -> "Nog niet opgeslagen".equals(notesText(s)));
             assertEquals("Nog niet opgeslagen", notesText(s));
         }
     }
@@ -218,7 +222,7 @@ public class RouteFlowsEspressoTest {
     public void selectRouteMakesItTheActiveWatchRoute() throws Exception {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         try (ActivityScenario<RouteDetailActivity> s = openRoute()) {
-            onView(withId(R.id.btn_select_route)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.btn_select_route));
             onView(withText("Doorgaan")).inRoot(isDialog()).perform(click());
             assertTrue(DeviceState.waitFor(() -> UiTestData.ROUTE_ID.equals(
                     prefs.getString(RouteSyncWorker.PREF_ROUTE_ID, null)), 5_000));
@@ -231,7 +235,7 @@ public class RouteFlowsEspressoTest {
         intending(hasAction(Intent.ACTION_CHOOSER)).respondWith(
                 new Instrumentation.ActivityResult(Activity.RESULT_OK, null));
         try (ActivityScenario<RouteDetailActivity> s = openRoute()) {
-            onView(withId(R.id.btn_share_to_garmin)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.btn_share_to_garmin));
             onView(withText("Doorgaan")).inRoot(isDialog()).perform(click());
             intended(allOf(hasAction(Intent.ACTION_CHOOSER),
                     hasExtra(is(Intent.EXTRA_INTENT), allOf(
@@ -247,7 +251,7 @@ public class RouteFlowsEspressoTest {
     public void renameClimbPersistsAndSurvivesResync() throws Exception {
         try (ActivityScenario<ClimbDetailActivity> s = ActivityScenario.launch(
                 ClimbDetailActivity.intentFor(app, UiTestData.ROUTE_ID, 0))) {
-            onView(withId(R.id.btn_rename_climb)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.btn_rename_climb));
             onView(isAssignableFrom(EditText.class)).inRoot(isDialog())
                     .perform(replaceText("Col du Rosier"), closeSoftKeyboard());
             onView(withText(s(R.string.action_save))).inRoot(isDialog()).perform(click());
@@ -264,7 +268,7 @@ public class RouteFlowsEspressoTest {
     public void radiusModeAndRadiusArePersisted() throws Exception {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         try (ActivityScenario<SettingsActivity> s = ActivityScenario.launch(SettingsActivity.class)) {
-            onView(withId(R.id.radio_radius)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.radio_radius));
             assertTrue(DeviceState.waitFor(() -> RouteSyncWorker.MODE_RADIUS.equals(
                     prefs.getString(RouteSyncWorker.PREF_MODE, null)), 5_000));
             onView(withId(R.id.radius_container)).check(matches(isDisplayed()));
@@ -275,7 +279,7 @@ public class RouteFlowsEspressoTest {
                 return m >= 40_000 && m <= 60_000;
             }, 5_000));
 
-            onView(withId(R.id.radio_route)).perform(EspressoActions.scrollIntoView(), click());
+            EspressoActions.scrollToAndClick(withId(R.id.radio_route));
             assertTrue(DeviceState.waitFor(() -> RouteSyncWorker.MODE_ROUTE.equals(
                     prefs.getString(RouteSyncWorker.PREF_MODE, null)), 5_000));
         }

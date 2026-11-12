@@ -99,7 +99,7 @@ public final class SimpleLineChartView extends View {
 
     private void drawSeries(Canvas canvas, int si, Series s) {
         double[] range = valueRange(s);
-        if (range == null) return;
+        if (range.length == 0) return;
         double min = range[0];
         double max = range[1];
         line.setColor(s.color);
@@ -112,7 +112,7 @@ public final class SimpleLineChartView extends View {
         if (si < 2 && s.format != null) drawRangeLabels(canvas, si, s, min, max);
     }
 
-    /** {min, max} of the series (with the zero line and a minimum span); null without values. */
+    /** {min, max} of the series (with the zero line and a minimum span); empty without values. */
     private double[] valueRange(Series s) {
         double min = Double.MAX_VALUE;
         double max = -Double.MAX_VALUE;
@@ -121,7 +121,7 @@ public final class SimpleLineChartView extends View {
             min = Math.min(min, v);
             max = Math.max(max, v);
         }
-        if (min == Double.MAX_VALUE) return null;
+        if (min == Double.MAX_VALUE) return new double[0];
         if (zeroLine) {
             min = Math.min(min, 0);
             max = Math.max(max, 0);

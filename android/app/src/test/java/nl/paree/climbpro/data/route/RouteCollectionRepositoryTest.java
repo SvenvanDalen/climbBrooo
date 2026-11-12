@@ -12,6 +12,7 @@ import org.robolectric.RobolectricTestRunner;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -47,7 +48,7 @@ public class RouteCollectionRepositoryTest {
     public void createTwoCollectionsGetsDistinctIds() {
         RouteCollection a = repo.create("A");
         RouteCollection b = repo.create("B");
-        assertTrue(!a.id.equals(b.id));
+        assertNotEquals(a.id, b.id);
         assertEquals(2, repo.loadAll().size());
     }
 

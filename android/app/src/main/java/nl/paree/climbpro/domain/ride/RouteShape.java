@@ -24,8 +24,10 @@ public final class RouteShape {
         boolean lastIncluded = (lat.length - 1) % step == 0;
         if (!lastIncluded) n++;
 
-        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
-        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        double minLat = Double.MAX_VALUE;
+        double maxLat = -Double.MAX_VALUE;
+        double minLon = Double.MAX_VALUE;
+        double maxLon = -Double.MAX_VALUE;
         for (int i = 0; i < lat.length; i++) {
             minLat = Math.min(minLat, lat[i]);
             maxLat = Math.max(maxLat, lat[i]);

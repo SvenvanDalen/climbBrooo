@@ -47,7 +47,8 @@ public final class RideFatiguePointAdapter extends RecyclerView.Adapter<RideFati
     public int getItemCount() { return points.size(); }
 
     private static String formatTime(int sec) {
-        int m = sec / 60, s = sec % 60;
+        int m = sec / 60;
+        int s = sec % 60;
         return String.format(Locale.getDefault(), "%d:%02d", m, s);
     }
 

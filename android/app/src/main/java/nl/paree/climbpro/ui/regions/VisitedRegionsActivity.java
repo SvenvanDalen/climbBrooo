@@ -117,8 +117,11 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
             double[] p = startById.get(a.climbId);
             if (p == null || (p[0] == 0 && p[1] == 0)) continue; // no usable start coordinate
             RegionCache.Region r = regionOf(a.climbId, p, byClimb, resolver);
-            if (r == null) { unresolved++; continue; }
-            visits.add(new VisitedRegions.Visit(r.countryCode, r.country, r.province, p[0], p[1]));
+            if (r == null) {
+                unresolved++;
+            } else {
+                visits.add(new VisitedRegions.Visit(r.countryCode, r.country, r.province, p[0], p[1]));
+            }
         }
         boolean hadAttempts = attempts > 0;
         try { cache.save(); } catch (Exception ignored) { /* cache only */ }
@@ -135,11 +138,7 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
         LinearLayout list = findViewById(R.id.regions_list);
         list.removeAllViews();
         if (countries.isEmpty()) {
-            summary.setText(unresolved > 0
-                    ? "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw."
-                    : hadAttempts
-                            ? "Geen van je klimpogingen hoort bij een klim met een bekende locatie."
-                            : "Nog geen klimpogingen. Haal je ritten op in het logboek.");
+            summary.setText(emptySummary(unresolved, hadAttempts));
             return;
         }
         int provinceCount = 0;
@@ -174,7 +173,7 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
     private TextView row(String text, boolean country) {
         TextView t = new TextView(this);
         t.setText(text);
-        t.setTextSize(country ? 17 : 15);
+        t.setTextSize((float) (country ? 17 : 15));
         t.setTextColor(ContextCompat.getColor(this, R.color.color_text_primary));
         if (country) {
             t.setTypeface(Typeface.DEFAULT_BOLD);
@@ -188,4 +187,13 @@ public final class VisitedRegionsActivity extends AppCompatActivity {
     @Override protected void onPause() { super.onPause(); map.onPause(); }
 
     @Override protected void onDestroy() { super.onDestroy(); executor.shutdown(); }
+
+    /** Why the map is empty: lookups failed, attempts lack a location, or there are none. */
+    static String emptySummary(int unresolved, boolean hadAttempts) {
+        if (unresolved > 0) {
+            return "Regio's konden niet worden opgezocht. Controleer je verbinding en probeer het opnieuw.";
+        }
+        if (hadAttempts) return "Geen van je klimpogingen hoort bij een klim met een bekende locatie.";
+        return "Nog geen klimpogingen. Haal je ritten op in het logboek.";
+    }
 }

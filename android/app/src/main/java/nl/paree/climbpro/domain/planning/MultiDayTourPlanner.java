@@ -251,11 +251,12 @@ public final class MultiDayTourPlanner {
         for (int j = k - 1; j < i; j++) {
             if (sq[k - 1][j] == Long.MAX_VALUE) continue;
             long load = prefix[i] - prefix[j];
-            if (load > cap) continue;
-            long v = sq[k - 1][j] + load * load;
-            if (v < sq[k][i]) {
-                sq[k][i] = v;
-                from[k][i] = j;
+            if (load <= cap) {
+                long v = sq[k - 1][j] + load * load;
+                if (v < sq[k][i]) {
+                    sq[k][i] = v;
+                    from[k][i] = j;
+                }
             }
         }
     }
@@ -332,8 +333,16 @@ public final class MultiDayTourPlanner {
             }
         }
         boolean exceeds = request.maxElevationPerDayM > 0 && hm > request.maxElevationPerDayM;
-        return new TourDay(dayNumber, stops, hm, length, (int) Math.round(transfer),
-                seconds, timeComplete, exceeds);
+        return new TourDay.Builder()
+                .dayNumber(dayNumber)
+                .stops(stops)
+                .elevationGainM(hm)
+                .climbLengthM(length)
+                .transferMetersHemelsbreed((int) Math.round(transfer))
+                .climbSeconds(seconds)
+                .climbTimeComplete(timeComplete)
+                .exceedsMaxElevation(exceeds)
+                .build();
     }
 
     private static boolean allHaveTime(List<TourStop> stops) {

@@ -44,7 +44,8 @@ public final class RideEffortEstimator {
         for (RouteTile t : tiles) {
             if (t.distanceMeters <= 0) continue;
             boolean coast = t.gradient <= COAST_GRADIENT;
-            double power = coast ? 0.0 : (t.isClimb() ? climbPower : flatPower);
+            double power = 0.0;
+            if (!coast) power = t.isClimb() ? climbPower : flatPower;
             double v = PowerSpeedSolver.speedMetersPerSecond(
                     Math.max(power, 1.0), mass, t.gradient,
                     SurfaceRollingResistance.crr(t.surfaceType));

@@ -105,7 +105,7 @@ public final class SyncOrchestrator {
         } catch (IOException e) {
             return new Result(pullAttempted, pullSucceeded, changed, true, false, false, true);
         }
-        if (payload == null) {
+        if (payload == null || payload.length == 0) {
             return new Result(pullAttempted, pullSucceeded, changed, true, false, false, false);
         }
 

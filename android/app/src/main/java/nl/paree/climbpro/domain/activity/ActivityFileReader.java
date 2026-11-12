@@ -66,12 +66,13 @@ public final class ActivityFileReader {
             while ((e = zip.getNextEntry()) != null) {
                 if (e.isDirectory()) continue;
                 String entry = e.getName().toLowerCase(Locale.ROOT);
-                if (!entry.endsWith(".fit") && !entry.endsWith(".gpx")) continue;
-                byte[] bytes = readCapped(zip);
-                try {
-                    out.addAll(read(e.getName(), bytes));
-                } catch (IOException bad) {
-                    // One unreadable file in the export must not sink the others.
+                if (entry.endsWith(".fit") || entry.endsWith(".gpx")) {
+                    byte[] bytes = readCapped(zip);
+                    try {
+                        out.addAll(read(e.getName(), bytes));
+                    } catch (IOException bad) {
+                        // One unreadable file in the export must not sink the others.
+                    }
                 }
             }
         }
@@ -87,62 +88,11 @@ public final class ActivityFileReader {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(false);
-            factory.newSAXParser().parse(new ByteArrayInputStream(data), new DefaultHandler() {
-                double lat, lon;
-                boolean inPoint, inTime;
-                Long time;
-                final StringBuilder text = new StringBuilder();
-
-                @Override
-                public void startElement(String uri, String local, String qName, Attributes a) {
-                    String tag = strip(qName);
-                    if (tag.equals("trkpt") || tag.equals("rtept")) {
-                        inPoint = true;
-                        time = null;
-                        lat = parse(a.getValue("lat"));
-                        lon = parse(a.getValue("lon"));
-                    } else if (inPoint && tag.equals("time")) {
-                        inTime = true;
-                        text.setLength(0);
-                    }
-                }
-
-                @Override
-                public void characters(char[] ch, int start, int length) {
-                    if (inTime) text.append(ch, start, length);
-                }
-
-                @Override
-                public void endElement(String uri, String local, String qName) {
-                    String tag = strip(qName);
-                    if (tag.equals("time") && inTime) {
-                        inTime = false;
-                        time = parseTime(text.toString().trim());
-                    } else if (tag.equals("trkpt") || tag.equals("rtept")) {
-                        inPoint = false;
-                        if (time != null && !Double.isNaN(lat) && !Double.isNaN(lon)) {
-                            out.add(new TrackSample(lat, lon, time));
-                        }
-                    }
-                }
-            });
+            factory.newSAXParser().parse(new ByteArrayInputStream(data), new GpxTrackHandler(out));
         } catch (SAXException | javax.xml.parsers.ParserConfigurationException e) {
             throw new IOException("Geen geldig GPX-bestand", e);
         }
         return out;
-    }
-
-    private static String strip(String qName) {
-        int i = qName.indexOf(':');
-        return i >= 0 ? qName.substring(i + 1) : qName;
-    }
-
-    private static double parse(String v) {
-        try {
-            return v != null ? Double.parseDouble(v) : Double.NaN;
-        } catch (NumberFormatException e) {
-            return Double.NaN;
-        }
     }
 
     static Long parseTime(String s) {
@@ -166,5 +116,66 @@ public final class ActivityFileReader {
             if (buf.size() > MAX_ZIP_ENTRY_BYTES) throw new IOException("Bestand in zip is te groot");
         }
         return buf.toByteArray();
+    }
+
+    /** SAX handler collecting timed track/route points of a GPX file. */
+    private static final class GpxTrackHandler extends DefaultHandler {
+        private final List<TrackSample> out;
+        double lat;
+        double lon;
+        boolean inPoint;
+        boolean inTime;
+        Long time;
+        final StringBuilder text = new StringBuilder();
+
+        @Override
+        public void startElement(String uri, String local, String qName, Attributes a) {
+            String tag = strip(qName);
+            if (tag.equals("trkpt") || tag.equals("rtept")) {
+                inPoint = true;
+                time = null;
+                lat = parse(a.getValue("lat"));
+                lon = parse(a.getValue("lon"));
+            } else if (inPoint && tag.equals("time")) {
+                inTime = true;
+                text.setLength(0);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) {
+            if (inTime) text.append(ch, start, length);
+        }
+
+        @Override
+        public void endElement(String uri, String local, String qName) {
+            String tag = strip(qName);
+            if (tag.equals("time") && inTime) {
+                inTime = false;
+                time = parseTime(text.toString().trim());
+            } else if (tag.equals("trkpt") || tag.equals("rtept")) {
+                inPoint = false;
+                if (time != null && !Double.isNaN(lat) && !Double.isNaN(lon)) {
+                    out.add(new TrackSample(lat, lon, time));
+                }
+            }
+        }
+
+        GpxTrackHandler(List<TrackSample> out) {
+            this.out = out;
+        }
+
+        private static String strip(String qName) {
+            int i = qName.indexOf(':');
+            return i >= 0 ? qName.substring(i + 1) : qName;
+        }
+
+        private static double parse(String v) {
+            try {
+                return v != null ? Double.parseDouble(v) : Double.NaN;
+            } catch (NumberFormatException e) {
+                return Double.NaN;
+            }
+        }
     }
 }

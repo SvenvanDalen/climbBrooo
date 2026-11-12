@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /** Issue #202: loops of about X km from saved route geometry only. */
@@ -136,7 +137,7 @@ public class LoopGeneratorTest {
         for (LoopGenerator.Suggestion x : s) {
             if (x.kind == LoopGenerator.Kind.SHORTENED_LOOP) shortened = x;
         }
-        assertTrue(shortened != null);
+        assertNotNull(shortened);
         assertEquals(10_000, shortened.lengthM, 500);
         assertEquals(shortened.lengthM, length(shortened.points()), 5);
     }

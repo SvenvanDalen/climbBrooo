@@ -53,7 +53,7 @@ final class ExploredTilesOverlay extends Overlay {
             // At low zoom a cell is smaller than a pixel: keep it visible.
             int right = Math.max(bottomRight.x, topLeft.x + 2);
             int bottom = Math.max(bottomRight.y, topLeft.y + 2);
-            canvas.drawRect(topLeft.x, topLeft.y, right, bottom, paint);
+            canvas.drawRect((float) topLeft.x, (float) topLeft.y, (float) right, (float) bottom, paint);
         }
     }
 }

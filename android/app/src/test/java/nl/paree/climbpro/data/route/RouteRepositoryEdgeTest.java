@@ -121,6 +121,7 @@ public class RouteRepositoryEdgeTest {
             repo.saveRoute(r, points(), Collections.<Climb>emptyList());
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(new File(target.getParentFile(), "blocked.json.tmp").exists());
     }

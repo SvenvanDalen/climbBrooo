@@ -5,15 +5,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
 import nl.paree.climbpro.BuildConfig;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,12 +71,7 @@ public class UpdateCheckerNetworkTest {
     private Recorder check() throws Exception {
         Recorder r = new Recorder();
         new UpdateChecker(app, server.url("/").toString()).checkForUpdate(r);
-        long deadline = System.currentTimeMillis() + 10_000;
-        while (r.event == null) {
-            if (System.currentTimeMillis() > deadline) fail("no callback");
-            Thread.sleep(10);
-            shadowOf(Looper.getMainLooper()).idle();
-        }
+        if (!UiTestEnv.waitFor(() -> r.event != null, 10_000)) fail("no callback");
         return r;
     }
 

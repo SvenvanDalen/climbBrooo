@@ -21,9 +21,9 @@ final class PerSecondSeries {
      * is too long to resample.
      */
     static double[] of(RideStreams s, double[] values) {
-        if (s == null || !s.isUsable() || values == null) return null;
+        if (s == null || !s.isUsable() || values == null) return new double[0];
         int end = s.time[s.time.length - 1];
-        if (end <= 0 || end > MAX_RESAMPLE_SEC) return null;
+        if (end <= 0 || end > MAX_RESAMPLE_SEC) return new double[0];
         double[] out = new double[end + 1];
         java.util.Arrays.fill(out, Double.NaN);
         for (int i = 0; i < s.time.length; i++) {

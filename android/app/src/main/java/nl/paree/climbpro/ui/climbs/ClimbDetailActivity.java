@@ -54,6 +54,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class ClimbDetailActivity extends AppCompatActivity {
+    private static final String FILE_PROVIDER_SUFFIX = ".fileprovider";
 
     private static final String EXTRA_ROUTE_ID   = "route_id";
     private static final String EXTRA_CLIMB_INDEX = "climb_index";
@@ -231,6 +232,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         updateClimbFacts();
     }
 
+    /** User-given name, else the detected name, else "Klim N". */
+    private String displayName(StoredClimb climb, int index) {
+        if (climb.userDisplayName != null) return climb.userDisplayName;
+        if (climb.name != null) return climb.name;
+        return getString(R.string.climb_detail_default_name, index + 1);
+    }
+
     /** Length, gradient, gain and shape, then category and surface when known. */
     private String climbStatsText(StoredClimb climb) {
         if (climb == null) return "";
@@ -404,7 +412,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     /** "12 mei 2025   7:41   (+0:12)" plus best-of-year and deviation badges. */
     private String historyLine(nl.paree.climbpro.domain.climb.LogbookCalculator.HistoryRow row,
                                java.text.SimpleDateFormat fmt) {
-        int m = row.elapsedSec / 60, s = row.elapsedSec % 60;
+        int m = row.elapsedSec / 60;
+        int s = row.elapsedSec % 60;
         String date = fmt.format(new java.util.Date(row.dateEpochSec * 1000L));
         String delta = row.deltaToPrSec == 0
                 ? "PR" : "+" + (row.deltaToPrSec / 60) + ":"
@@ -476,9 +485,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         DateTimeFormatter hm = DateTimeFormatter.ofPattern("HH:mm");
         DateTimeFormatter dayHm =
                 DateTimeFormatter.ofPattern("EEE d MMM HH:mm", locale);
-        String name = c.userDisplayName != null ? c.userDisplayName
-                : (c.name != null ? c.name
-                        : getString(R.string.climb_detail_default_name, climbIndex + 1));
+        String name = displayName(c, climbIndex);
         String msg = getString(R.string.climb_detail_sunrise_message,
                 hm.format(sunrise.atZone(zone)),
                 hm.format(plan.arrivalTop.atZone(zone)),
@@ -676,16 +683,13 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.climb_detail_not_loaded, Toast.LENGTH_SHORT).show();
             return;
         }
-        String title = loadedClimb.userDisplayName != null
-                ? loadedClimb.userDisplayName
-                : (loadedClimb.name != null ? loadedClimb.name
-                        : getString(R.string.climb_detail_default_name, climbIndex + 1));
+        String title = displayName(loadedClimb, climbIndex);
         try {
             android.graphics.Bitmap bitmap = ClimbShareImageComposer.compose(
                     this, title, loadedClimb, lastTimeEstimateText);
             java.io.File file = ClimbShareHandoff.writeShareImage(this, bitmap);
             android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                    this, getPackageName() + ".fileprovider", file);
+                    this, getPackageName() + FILE_PROVIDER_SUFFIX, file);
             Intent share = ClimbShareHandoff.buildShareIntent(uri);
             startActivity(Intent.createChooser(share, getString(R.string.climb_detail_share_chooser)));
         } catch (java.io.IOException e) {
@@ -701,7 +705,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private void shareGpxFile(java.io.File file) {
         if (file == null) return;
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", file);
+                this, getPackageName() + FILE_PROVIDER_SUFFIX, file);
         Intent share = ClimbGpxExportHandoff.buildShareIntent(uri);
         startActivity(Intent.createChooser(share, getString(R.string.climb_detail_gpx_chooser)));
     }
@@ -799,7 +803,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
                     .show();
             return;
         }
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.systemDefault());
         android.app.DatePickerDialog picker = new android.app.DatePickerDialog(this,
                 (view, y, m, d) -> pickIntervalsType(repeats, recoverySec,
                         java.time.LocalDate.of(y, m + 1, d)),
@@ -835,7 +839,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     private void shareWorkout(ClimbDetailViewModel.WorkoutExport export) {
         if (export == null) return;
         android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                this, getPackageName() + ".fileprovider", export.file);
+                this, getPackageName() + FILE_PROVIDER_SUFFIX, export.file);
         Intent share = ClimbWorkoutExportHandoff.buildShareIntent(uri, export.mime);
         if (export.format != ClimbDetailViewModel.WorkoutFormat.MYWHOOSH) {
             startActivity(Intent.createChooser(share, getString(R.string.climb_detail_workout_share)));
@@ -1263,7 +1267,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
         StringBuilder sb = new StringBuilder(
                 getString(R.string.climb_detail_interval_text, block.label()));
         int[] watts = block.wireWatts(viewModel.ftpWatts());
-        if (watts != null) {
+        if (watts.length > 0) {
             sb.append(" · ").append(watts[1]).append("–").append(watts[2]).append(" W");
         } else {
             sb.append(" · ").append(getString(R.string.climb_detail_interval_no_ftp));
@@ -1298,8 +1302,8 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             preview.setText(p != null ? everestingSummary(p) : everestingRangeHint());
         };
         input.addTextChangedListener(new android.text.TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { /* not needed */ }
             @Override public void afterTextChanged(android.text.Editable s) { refresh.run(); }
         });
         refresh.run();
@@ -1368,7 +1372,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
             return;
         }
         String text = "Everesting " + plan.targetM + " m: " + everestingSummary(plan);
-        if (EverestingPlan.wire(loadedClimb) == null) {
+        if (EverestingPlan.wire(loadedClimb).length == 0) {
             text += " · horloge telt niet mee (klim zonder GPS-punten)";
         }
         binding.climbEveresting.setText(text);

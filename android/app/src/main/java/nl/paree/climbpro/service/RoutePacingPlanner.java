@@ -26,7 +26,7 @@ public final class RoutePacingPlanner {
 
     public static int[][] plan(StoredRoute route, RiderProfile profile) {
         if (profile == null || !profile.isComplete() || route == null) {
-            return null;
+            return new int[0][];
         }
         List<StoredClimb> climbs = route.climbs;
         if (climbs == null || climbs.isEmpty()) {

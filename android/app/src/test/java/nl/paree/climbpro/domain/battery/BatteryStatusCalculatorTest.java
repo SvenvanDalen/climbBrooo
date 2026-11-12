@@ -71,7 +71,7 @@ public class BatteryStatusCalculatorTest {
         BatteryDevice later = device("later", T0, 30);
         BatteryDevice overdue = device("overdue", T0 - 20 * DAY, 7);
         List<BatteryDevice> out = BatteryStatusCalculator.sortByUrgency(
-                Arrays.asList(never, off, later, soon, overdue), T0);
+                Arrays.asList(never, off, later, soon, overdue));
         assertEquals(Arrays.asList("overdue", "soon", "later", "a-off", "z-never"),
                 Arrays.asList(out.get(0).id, out.get(1).id, out.get(2).id, out.get(3).id,
                         out.get(4).id));
@@ -95,6 +95,6 @@ public class BatteryStatusCalculatorTest {
         assertEquals(BatteryKind.OTHER, BatteryKind.fromName("bogus"));
         assertEquals(BatteryKind.OTHER, BatteryKind.fromName(null));
         assertTrue(BatteryStatusCalculator.dueReminders(null, T0).isEmpty());
-        assertTrue(BatteryStatusCalculator.sortByUrgency(Collections.emptyList(), T0).isEmpty());
+        assertTrue(BatteryStatusCalculator.sortByUrgency(Collections.emptyList()).isEmpty());
     }
 }

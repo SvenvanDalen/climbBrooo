@@ -41,10 +41,8 @@ public final class TopClimbsActivity extends AppCompatActivity {
 
     private TopClimbsViewModel viewModel;
     private EditText radiusInput;
-    private TextView startLabel;
     private TextView summary;
     private LinearLayout resultList;
-    private View progress;
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
@@ -71,10 +69,10 @@ public final class TopClimbsActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         radiusInput = findViewById(R.id.radiusInput);
-        startLabel = findViewById(R.id.startLabel);
+        TextView startLabel = findViewById(R.id.startLabel);
         summary = findViewById(R.id.summary);
         resultList = findViewById(R.id.resultList);
-        progress = findViewById(R.id.progress);
+        View progress = findViewById(R.id.progress);
 
         if (savedInstanceState == null) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);

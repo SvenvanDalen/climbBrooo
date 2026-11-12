@@ -97,27 +97,113 @@ public final class MyWhooshViewModel extends AndroidViewModel {
         public final EfficiencyFactorTrend.Result efficiency;
         public final IndoorOutdoorPowerCurve.Result indoorOutdoor;
 
-        @SuppressWarnings("java:S107") // one immutable snapshot of the whole screen
-        State(int myWhooshRides, int awaitingAnalysis, int ftpWatts,
-              List<IndoorSeasonSummary.Season> seasons, List<MyWhooshRouteCatalog.Entry> catalog,
-              Map<String, String> routeIds, List<RideRow> rides, CadenceByGrade.Result cadence,
-              HeartRateRecoveryTrend.Result recovery, List<RaceDetector.Race> races,
-              List<IntervalRide> intervalRides, List<PowerDecoupling.Entry> decoupling,
-              EfficiencyFactorTrend.Result efficiency, IndoorOutdoorPowerCurve.Result indoorOutdoor) {
-            this.myWhooshRides = myWhooshRides;
-            this.awaitingAnalysis = awaitingAnalysis;
-            this.ftpWatts = ftpWatts;
-            this.seasons = seasons;
-            this.catalog = catalog;
-            this.routeIds = routeIds;
-            this.rides = rides;
-            this.cadence = cadence;
-            this.recovery = recovery;
-            this.races = races;
-            this.intervalRides = intervalRides;
-            this.decoupling = decoupling;
-            this.efficiency = efficiency;
-            this.indoorOutdoor = indoorOutdoor;
+        private State(Builder b) {
+            this.myWhooshRides = b.myWhooshRides;
+            this.awaitingAnalysis = b.awaitingAnalysis;
+            this.ftpWatts = b.ftpWatts;
+            this.seasons = b.seasons;
+            this.catalog = b.catalog;
+            this.routeIds = b.routeIds;
+            this.rides = b.rides;
+            this.cadence = b.cadence;
+            this.recovery = b.recovery;
+            this.races = b.races;
+            this.intervalRides = b.intervalRides;
+            this.decoupling = b.decoupling;
+            this.efficiency = b.efficiency;
+            this.indoorOutdoor = b.indoorOutdoor;
+        }
+
+        /** Builds a {@link State}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int myWhooshRides;
+            private int awaitingAnalysis;
+            private int ftpWatts;
+            private List<IndoorSeasonSummary.Season> seasons;
+            private List<MyWhooshRouteCatalog.Entry> catalog;
+            private Map<String, String> routeIds;
+            private List<RideRow> rides;
+            private CadenceByGrade.Result cadence;
+            private HeartRateRecoveryTrend.Result recovery;
+            private List<RaceDetector.Race> races;
+            private List<IntervalRide> intervalRides;
+            private List<PowerDecoupling.Entry> decoupling;
+            private EfficiencyFactorTrend.Result efficiency;
+            private IndoorOutdoorPowerCurve.Result indoorOutdoor;
+
+            public Builder myWhooshRides(int myWhooshRides) {
+                this.myWhooshRides = myWhooshRides;
+                return this;
+            }
+
+            public Builder awaitingAnalysis(int awaitingAnalysis) {
+                this.awaitingAnalysis = awaitingAnalysis;
+                return this;
+            }
+
+            public Builder ftpWatts(int ftpWatts) {
+                this.ftpWatts = ftpWatts;
+                return this;
+            }
+
+            public Builder seasons(List<IndoorSeasonSummary.Season> seasons) {
+                this.seasons = seasons;
+                return this;
+            }
+
+            public Builder catalog(List<MyWhooshRouteCatalog.Entry> catalog) {
+                this.catalog = catalog;
+                return this;
+            }
+
+            public Builder routeIds(Map<String, String> routeIds) {
+                this.routeIds = routeIds;
+                return this;
+            }
+
+            public Builder rides(List<RideRow> rides) {
+                this.rides = rides;
+                return this;
+            }
+
+            public Builder cadence(CadenceByGrade.Result cadence) {
+                this.cadence = cadence;
+                return this;
+            }
+
+            public Builder recovery(HeartRateRecoveryTrend.Result recovery) {
+                this.recovery = recovery;
+                return this;
+            }
+
+            public Builder races(List<RaceDetector.Race> races) {
+                this.races = races;
+                return this;
+            }
+
+            public Builder intervalRides(List<IntervalRide> intervalRides) {
+                this.intervalRides = intervalRides;
+                return this;
+            }
+
+            public Builder decoupling(List<PowerDecoupling.Entry> decoupling) {
+                this.decoupling = decoupling;
+                return this;
+            }
+
+            public Builder efficiency(EfficiencyFactorTrend.Result efficiency) {
+                this.efficiency = efficiency;
+                return this;
+            }
+
+            public Builder indoorOutdoor(IndoorOutdoorPowerCurve.Result indoorOutdoor) {
+                this.indoorOutdoor = indoorOutdoor;
+                return this;
+            }
+
+            public State build() {
+                return new State(this);
+            }
         }
     }
 
@@ -169,16 +255,24 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                 }
             }
             long now = System.currentTimeMillis() / 1000L;
-            state.postValue(new State(myWhoosh.size(), awaiting, ftp,
-                    IndoorSeasonSummary.compute(rides, stats,
-                            new ClimbAttemptRepository(app).loadAll(), ftp, ZoneId.systemDefault()),
-                    MyWhooshRouteCatalog.compute(rides), routeIds(app), rows,
-                    CadenceByGrade.compute(rides, stats, true),
-                    HeartRateRecoveryTrend.compute(rides, stats, now, true), races,
-                    intervalRides, PowerDecoupling.compute(training, stats, MAX_DECOUPLING_ROWS),
-                    EfficiencyFactorTrend.compute(training, stats, now, ZoneId.systemDefault()),
-                    IndoorOutdoorPowerCurve.compute(rides, new ArrayList<>(stats.values()),
-                            PowerCurveCalculator.Period.DAYS_90, now)));
+            state.postValue(new State.Builder()
+                    .myWhooshRides(myWhoosh.size())
+                    .awaitingAnalysis(awaiting)
+                    .ftpWatts(ftp)
+                    .seasons(IndoorSeasonSummary.compute(rides, stats,
+                            new ClimbAttemptRepository(app).loadAll(), ftp, ZoneId.systemDefault()))
+                    .catalog(MyWhooshRouteCatalog.compute(rides))
+                    .routeIds(routeIds(app))
+                    .rides(rows)
+                    .cadence(CadenceByGrade.compute(rides, stats, true))
+                    .recovery(HeartRateRecoveryTrend.compute(rides, stats, now, true))
+                    .races(races)
+                    .intervalRides(intervalRides)
+                    .decoupling(PowerDecoupling.compute(training, stats, MAX_DECOUPLING_ROWS))
+                    .efficiency(EfficiencyFactorTrend.compute(training, stats, now, ZoneId.systemDefault()))
+                    .indoorOutdoor(IndoorOutdoorPowerCurve.compute(rides, new ArrayList<>(stats.values()),
+                            PowerCurveCalculator.Period.DAYS_90, now))
+                    .build());
         });
     }
 
@@ -188,8 +282,9 @@ public final class MyWhooshViewModel extends AndroidViewModel {
         for (RouteCatalogEntry e : new RouteRepository(app).loadCatalog()) {
             if (e.name == null) continue;
             String title = e.name.replaceFirst("(?i)^mywhoosh\\s*[–-]\\s*", "");
-            if (title.equals(e.name)) continue;
-            out.putIfAbsent(MyWhooshRouteCatalog.key(title), e.routeId);
+            if (!title.equals(e.name)) {
+                out.putIfAbsent(MyWhooshRouteCatalog.key(title), e.routeId);
+            }
         }
         return out;
     }

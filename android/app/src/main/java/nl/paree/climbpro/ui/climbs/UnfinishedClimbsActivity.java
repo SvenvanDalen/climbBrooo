@@ -21,9 +21,6 @@ import nl.paree.climbpro.R;
  */
 public final class UnfinishedClimbsActivity extends AppCompatActivity {
 
-    private UnfinishedClimbsViewModel viewModel;
-    private UnfinishedClimbsAdapter adapter;
-    private TextView empty;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,13 +31,13 @@ public final class UnfinishedClimbsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        empty = findViewById(R.id.empty);
+        TextView empty = findViewById(R.id.empty);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new UnfinishedClimbsAdapter(this::openClimb);
+        UnfinishedClimbsAdapter adapter = new UnfinishedClimbsAdapter(this::openClimb);
         list.setAdapter(adapter);
 
-        viewModel = new ViewModelProvider(this).get(UnfinishedClimbsViewModel.class);
+        UnfinishedClimbsViewModel viewModel = new ViewModelProvider(this).get(UnfinishedClimbsViewModel.class);
         viewModel.rows().observe(this, rows -> {
             adapter.submit(rows);
             empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);

@@ -56,9 +56,10 @@ public final class HourlyPrecipitation {
             long end = hourEnds[i].getEpochSecond();
             long start = end - HOUR_SEC;
             if (end <= fromSec || start >= toSec) continue;
-            if (Double.isNaN(mm[i])) continue;
-            sum += mm[i];
-            any = true;
+            if (!Double.isNaN(mm[i])) {
+                sum += mm[i];
+                any = true;
+            }
         }
         return any ? sum : Double.NaN;
     }

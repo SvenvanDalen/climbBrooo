@@ -94,8 +94,10 @@ public final class HeartRateDriftCalculator {
         entries.sort((a, b) -> Long.compare(b.ride.startEpochSec, a.ride.startEpochSec));
 
         long window = TREND_WINDOW_DAYS * 86_400L;
-        double recentSum = 0, previousSum = 0;
-        int recent = 0, previous = 0;
+        double recentSum = 0;
+        double previousSum = 0;
+        int recent = 0;
+        int previous = 0;
         for (Entry e : entries) {
             long age = nowEpochSec - e.ride.startEpochSec;
             if (e.ride.startEpochSec <= 0 || age < 0) continue;

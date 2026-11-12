@@ -9,7 +9,6 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.Application;
 import android.appwidget.AppWidgetManager;
 import android.content.Intent;
-import android.os.Looper;
 import android.view.View;
 import android.widget.TextView;
 
@@ -21,6 +20,7 @@ import nl.paree.climbpro.data.planning.PlannedClimbRepository;
 import nl.paree.climbpro.data.route.RouteRepository;
 import nl.paree.climbpro.testsupport.UiTestData;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,21 +48,18 @@ public class WeekWidgetProviderTest {
     }
 
     private String textOf(int widgetId, int viewId, String notEqualTo) throws Exception {
-        long deadline = System.currentTimeMillis() + 10_000;
-        while (System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle();
+        String[] found = {null};
+        UiTestEnv.waitFor(() -> {
             View root = shadowOf(mgr).getViewFor(widgetId);
-            if (root != null) {
-                TextView tv = root.findViewById(viewId);
-                if (tv != null && tv.getText() != null && tv.getText().length() > 0
-                        && !tv.getText().toString().equals(notEqualTo)) {
-                    return tv.getText().toString();
-                }
+            TextView tv = root != null ? root.findViewById(viewId) : null;
+            if (tv != null && tv.getText() != null && tv.getText().length() > 0
+                    && !tv.getText().toString().equals(notEqualTo)) {
+                found[0] = tv.getText().toString();
             }
-            Thread.sleep(10);
-        }
-        fail("widget never rendered view " + viewId);
-        return null;
+            return found[0] != null;
+        }, 10_000);
+        if (found[0] == null) fail("widget never rendered view " + viewId);
+        return found[0];
     }
 
     @Test

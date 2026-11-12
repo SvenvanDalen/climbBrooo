@@ -175,14 +175,46 @@ public class MyWhooshFeaturesTest {
 
     @Test
     public void linksVirtualClimbToRealOneByNameAndProfile() {
-        VirtualClimbLinker.Candidate virtual = new VirtualClimbLinker.Candidate("v", "Klim 1",
-                "Hautacam Summit", 13_500, 0.078, true, "mw", 0);
-        VirtualClimbLinker.Candidate real = new VirtualClimbLinker.Candidate("r", "Hautacam",
-                "Pyreneeën dag 2", 13_600, 0.077, false, "pyr", 2);
-        VirtualClimbLinker.Candidate wrongProfile = new VirtualClimbLinker.Candidate("x",
-                "Hautacam (via Ayros)", "Pyreneeën", 6_000, 0.09, false, "pyr", 3);
-        VirtualClimbLinker.Candidate otherName = new VirtualClimbLinker.Candidate("y",
-                "Tourmalet", "Pyreneeën", 13_500, 0.078, false, "pyr", 1);
+        VirtualClimbLinker.Candidate virtual = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("v")
+                .name("Klim 1")
+                .routeName("Hautacam Summit")
+                .lengthM(13_500)
+                .avgGradient(0.078)
+                .virtual(true)
+                .routeId("mw")
+                .climbIndex(0)
+                .build();
+        VirtualClimbLinker.Candidate real = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("r")
+                .name("Hautacam")
+                .routeName("Pyreneeën dag 2")
+                .lengthM(13_600)
+                .avgGradient(0.077)
+                .virtual(false)
+                .routeId("pyr")
+                .climbIndex(2)
+                .build();
+        VirtualClimbLinker.Candidate wrongProfile = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("x")
+                .name("Hautacam (via Ayros)")
+                .routeName("Pyreneeën")
+                .lengthM(6_000)
+                .avgGradient(0.09)
+                .virtual(false)
+                .routeId("pyr")
+                .climbIndex(3)
+                .build();
+        VirtualClimbLinker.Candidate otherName = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("y")
+                .name("Tourmalet")
+                .routeName("Pyreneeën")
+                .lengthM(13_500)
+                .avgGradient(0.078)
+                .virtual(false)
+                .routeId("pyr")
+                .climbIndex(1)
+                .build();
         List<VirtualClimbLinker.Candidate> all =
                 Arrays.asList(virtual, real, wrongProfile, otherName);
 
@@ -193,12 +225,36 @@ public class MyWhooshFeaturesTest {
 
     @Test
     public void accentsAndStopWordsDontMatter() {
-        VirtualClimbLinker.Candidate v = new VirtualClimbLinker.Candidate("v", null,
-                "Alpe d'Huez Climb", 13_000, 0.081, true, "mw", 0);
-        VirtualClimbLinker.Candidate r = new VirtualClimbLinker.Candidate("r",
-                "L'Alpe-d’Huëz", null, 13_200, 0.080, false, "fr", 0);
-        VirtualClimbLinker.Candidate summitOnly = new VirtualClimbLinker.Candidate("s",
-                "Summit climb", null, 13_000, 0.081, false, "x", 0);
+        VirtualClimbLinker.Candidate v = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("v")
+                .name(null)
+                .routeName("Alpe d'Huez Climb")
+                .lengthM(13_000)
+                .avgGradient(0.081)
+                .virtual(true)
+                .routeId("mw")
+                .climbIndex(0)
+                .build();
+        VirtualClimbLinker.Candidate r = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("r")
+                .name("L'Alpe-d’Huëz")
+                .routeName(null)
+                .lengthM(13_200)
+                .avgGradient(0.080)
+                .virtual(false)
+                .routeId("fr")
+                .climbIndex(0)
+                .build();
+        VirtualClimbLinker.Candidate summitOnly = new VirtualClimbLinker.Candidate.Builder()
+                .climbId("s")
+                .name("Summit climb")
+                .routeName(null)
+                .lengthM(13_000)
+                .avgGradient(0.081)
+                .virtual(false)
+                .routeId("x")
+                .climbIndex(0)
+                .build();
         assertSame(r, VirtualClimbLinker.counterpart(v, Arrays.asList(v, summitOnly, r)));
     }
 

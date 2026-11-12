@@ -19,21 +19,25 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.bike.Bike;
 import nl.paree.climbpro.data.bike.BikeCostEntry;
 import nl.paree.climbpro.domain.bike.EuroAmount;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import nl.paree.climbpro.ui.PickerDates;
 
 /**
  * "Fietskosten" (issue #233): per bike the purchase and part costs, the km (ride archive in a
  * date window plus manual km) and the resulting cost per km. Phone-only and offline.
  */
 public final class BikeCostActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
+    private static final String DELETE = "Verwijderen";
 
     private BikeCostViewModel viewModel;
     private BikeCostAdapter adapter;
@@ -109,8 +113,8 @@ public final class BikeCostActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Kosten verwijderen?")
                 .setMessage(costLine(c))
-                .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteCost(bike.id, c.id))
-                .setNegativeButton("Annuleren", null)
+                .setPositiveButton(DELETE, (d, w) -> viewModel.deleteCost(bike.id, c.id))
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -142,7 +146,7 @@ public final class BikeCostActivity extends AppCompatActivity {
                                                  : BikeCostEntry.KIND_PART,
                             description.getText().toString(), cents);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -171,15 +175,13 @@ public final class BikeCostActivity extends AppCompatActivity {
                 ? existing.sinceEpochSec : startOfTodayEpochSec()};
         sinceButton.setText("Ritten tellen vanaf: " + adapter.formatDate(since[0]));
         sinceButton.setOnClickListener(v -> {
-            Calendar base = Calendar.getInstance();
-            base.setTimeInMillis(since[0] * 1000L);
+            ZoneId zone = ZoneId.systemDefault();
+            LocalDate base = PickerDates.dayOf(since[0], zone);
             DatePickerDialog dp = new DatePickerDialog(this, (dpv, y, m, d) -> {
-                Calendar c = Calendar.getInstance();
-                c.clear();
-                c.set(y, m, d, 0, 0, 0); // local start of day: that day's rides count
-                since[0] = c.getTimeInMillis() / 1000L;
+                // local start of day: that day's rides count
+                since[0] = PickerDates.startOfDay(PickerDates.pickedDay(y, m, d), zone);
                 sinceButton.setText("Ritten tellen vanaf: " + adapter.formatDate(since[0]));
-            }, base.get(Calendar.YEAR), base.get(Calendar.MONTH), base.get(Calendar.DAY_OF_MONTH));
+            }, base.getYear(), base.getMonthValue() - 1, base.getDayOfMonth());
             dp.getDatePicker().setMaxDate(System.currentTimeMillis());
             dp.show();
         });
@@ -192,9 +194,9 @@ public final class BikeCostActivity extends AppCompatActivity {
                         name.getText().toString(), since[0],
                         archive.isChecked(), virtual.isChecked(),
                         parseNonNegative(extraKm), retired.isChecked()))
-                .setNegativeButton("Annuleren", null);
+                .setNegativeButton(CANCEL, null);
         if (existing != null) {
-            builder.setNeutralButton("Verwijderen", (d, w) -> confirmDeleteBike(existing));
+            builder.setNeutralButton(DELETE, (d, w) -> confirmDeleteBike(existing));
         }
         builder.show();
     }
@@ -203,18 +205,14 @@ public final class BikeCostActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(bike.name + " verwijderen?")
                 .setMessage("De fiets en al zijn kosten worden verwijderd.")
-                .setPositiveButton("Verwijderen", (d, w) -> viewModel.deleteBike(bike.id))
-                .setNegativeButton("Annuleren", null)
+                .setPositiveButton(DELETE, (d, w) -> viewModel.deleteBike(bike.id))
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
     private static long startOfTodayEpochSec() {
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTimeInMillis() / 1000L;
+        ZoneId zone = ZoneId.systemDefault();
+        return PickerDates.startOfDay(LocalDate.now(zone), zone);
     }
 
     /** Empty or invalid input counts as 0. */

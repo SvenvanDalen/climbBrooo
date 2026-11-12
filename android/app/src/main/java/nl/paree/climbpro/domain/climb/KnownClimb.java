@@ -21,25 +21,98 @@ public final class KnownClimb {
 
     public KnownClimb(String climbId, double startLat, double startLon,
                       double endLat, double endLon, int lengthM) {
-        this(climbId, startLat, startLon, endLat, endLon, lengthM, null, null, null);
+        this(new Builder()
+                .climbId(climbId)
+                .startLat(startLat)
+                .startLon(startLon)
+                .endLat(endLat)
+                .endLon(endLon)
+                .lengthM(lengthM));
     }
 
     public KnownClimb(String climbId, double startLat, double startLon,
                       double endLat, double endLon, int lengthM, int[] segLengthsM) {
-        this(climbId, startLat, startLon, endLat, endLon, lengthM, segLengthsM, null, null);
+        this(new Builder()
+                .climbId(climbId)
+                .startLat(startLat)
+                .startLon(startLon)
+                .endLat(endLat)
+                .endLon(endLon)
+                .lengthM(lengthM)
+                .segLengthsM(segLengthsM));
     }
 
-    public KnownClimb(String climbId, double startLat, double startLon,
-                      double endLat, double endLon, int lengthM, int[] segLengthsM,
-                      double[] calibLats, double[] calibLons) {
-        this.climbId     = climbId;
-        this.startLat     = startLat;
-        this.startLon     = startLon;
-        this.endLat       = endLat;
-        this.endLon       = endLon;
-        this.lengthM      = lengthM;
-        this.segLengthsM  = segLengthsM;
-        this.calibLats    = calibLats;
-        this.calibLons    = calibLons;
+    private KnownClimb(Builder b) {
+        this.climbId     = b.climbId;
+        this.startLat     = b.startLat;
+        this.startLon     = b.startLon;
+        this.endLat       = b.endLat;
+        this.endLon       = b.endLon;
+        this.lengthM      = b.lengthM;
+        this.segLengthsM  = b.segLengthsM;
+        this.calibLats    = b.calibLats;
+        this.calibLons    = b.calibLons;
+    }
+
+    /** Builds a {@link KnownClimb}; every value defaults to Java's default for its type. */
+    public static final class Builder {
+        private String climbId;
+        private double startLat;
+        private double startLon;
+        private double endLat;
+        private double endLon;
+        private int lengthM;
+        private int[] segLengthsM;
+        private double[] calibLats;
+        private double[] calibLons;
+
+        public Builder climbId(String climbId) {
+            this.climbId = climbId;
+            return this;
+        }
+
+        public Builder startLat(double startLat) {
+            this.startLat = startLat;
+            return this;
+        }
+
+        public Builder startLon(double startLon) {
+            this.startLon = startLon;
+            return this;
+        }
+
+        public Builder endLat(double endLat) {
+            this.endLat = endLat;
+            return this;
+        }
+
+        public Builder endLon(double endLon) {
+            this.endLon = endLon;
+            return this;
+        }
+
+        public Builder lengthM(int lengthM) {
+            this.lengthM = lengthM;
+            return this;
+        }
+
+        public Builder segLengthsM(int[] segLengthsM) {
+            this.segLengthsM = segLengthsM;
+            return this;
+        }
+
+        public Builder calibLats(double[] calibLats) {
+            this.calibLats = calibLats;
+            return this;
+        }
+
+        public Builder calibLons(double[] calibLons) {
+            this.calibLons = calibLons;
+            return this;
+        }
+
+        public KnownClimb build() {
+            return new KnownClimb(this);
+        }
     }
 }

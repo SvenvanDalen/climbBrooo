@@ -92,20 +92,20 @@ public final class SharedClimbImporter {
             if (!p.isNew()) {
                 known++;
                 members.add(p.existing);
-                continue;
+            } else {
+                String routeId = ROUTE_ID_PREFIX
+                        + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+                StoredRoute stored = new StoredRoute();
+                stored.routeId = routeId;
+                stored.name = p.shared.name;
+                stored.importedAtMs = System.currentTimeMillis();
+                routes.saveRoute(stored, p.points, p.detected);
+                if (!p.shared.name.isEmpty()) {
+                    routes.renameClimb(routeId, p.climbIndex, p.shared.name);
+                }
+                members.add(new ClimbMembership(routeId, p.climbIndex));
+                imported++;
             }
-            String routeId = ROUTE_ID_PREFIX
-                    + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-            StoredRoute stored = new StoredRoute();
-            stored.routeId = routeId;
-            stored.name = p.shared.name;
-            stored.importedAtMs = System.currentTimeMillis();
-            routes.saveRoute(stored, p.points, p.detected);
-            if (!p.shared.name.isEmpty()) {
-                routes.renameClimb(routeId, p.climbIndex, p.shared.name);
-            }
-            members.add(new ClimbMembership(routeId, p.climbIndex));
-            imported++;
         }
         String collectionName = preview.payload.collectionName;
         if (collectionName != null && !members.isEmpty()) {

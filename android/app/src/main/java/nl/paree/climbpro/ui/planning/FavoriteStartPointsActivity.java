@@ -2,6 +2,7 @@ package nl.paree.climbpro.ui.planning;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -28,6 +29,7 @@ import nl.paree.climbpro.data.planning.FavoriteStartPoint;
 import nl.paree.climbpro.data.planning.FavoriteStartPointStore;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -180,7 +182,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
         }
         AlertDialog dialog = builder.create();
         EditText coords = coordInput;
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     String name = nameInput.getText().toString().trim();
                     if (name.isEmpty()) {
@@ -190,7 +192,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
                     double[] latLon = fixed;
                     if (latLon == null) {
                         latLon = FavoriteStartPoint.parseCoordinates(coords.getText().toString());
-                        if (latLon == null) {
+                        if (latLon.length == 0) {
                             coords.setError(getString(R.string.fav_start_coordinates_invalid));
                             return;
                         }
@@ -235,7 +237,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.fav_start_save, null)
                 .setNegativeButton(R.string.fav_start_cancel, null)
                 .create();
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        dialog.setOnShowListener(d -> dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 .setOnClickListener(v -> {
                     String name = input.getText().toString().trim();
                     if (name.isEmpty()) {
@@ -256,7 +258,7 @@ public final class FavoriteStartPointsActivity extends AppCompatActivity {
                 .show();
     }
 
-    private interface StoreAction { void run() throws Exception; }
+    private interface StoreAction { void run() throws IOException; }
 
     private void mutate(StoreAction action) {
         executor.execute(() -> {

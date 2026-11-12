@@ -113,8 +113,9 @@ public final class GearCalculatorViewModel extends AndroidViewModel {
         if (climb == null || climb.segments == null || climb.segments.isEmpty()) {
             return new State(null, null, 0, false, "Klim niet gevonden of nog niet gesegmenteerd.");
         }
-        String name = climb.userDisplayName != null ? climb.userDisplayName
-                : climb.name != null ? climb.name : "Klim " + (climbIndex + 1);
+        String name = "Klim " + (climbIndex + 1);
+        if (climb.userDisplayName != null) name = climb.userDisplayName;
+        else if (climb.name != null) name = climb.name;
         int[] chainrings;
         int[] sprockets;
         try {
@@ -149,9 +150,16 @@ public final class GearCalculatorViewModel extends AndroidViewModel {
         ClimbTimeEstimate estimate = ClimbTimeEstimator.estimate(dist, grad, surface, profile);
         double power = estimate != null ? estimate.assumedPowerWatts : profile.ftpWatts;
 
-        GearCalculator.Result result = GearCalculator.compute(chainrings, sprockets, in.wheelMm,
-                in.cadenceRpm, steepest.gradient, climb.avgGradient, power,
-                profile.totalMassKg(), SurfaceRollingResistance.crr(steepest.surfaceType));
+        GearCalculator.Result result = GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(chainrings)
+                .sprockets(sprockets)
+                .wheelCircumferenceMm(in.wheelMm)
+                .targetCadenceRpm(in.cadenceRpm)
+                .steepestGradient(steepest.gradient)
+                .avgGradient(climb.avgGradient)
+                .powerWatts(power)
+                .totalMassKg(profile.totalMassKg())
+                .crr(SurfaceRollingResistance.crr(steepest.surfaceType)));
         return new State(name, result, power, fallback, null);
     }
 

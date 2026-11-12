@@ -165,9 +165,9 @@ public class StravaActivitiesRepositoryEdgeTest {
             if (response == null) throw new IOException("offline");
             return response;
         }
-        @Override public void enqueue(retrofit2.Callback<T> callback) { }
+        @Override public void enqueue(retrofit2.Callback<T> callback) { /* not needed */ }
         @Override public boolean isExecuted() { return false; }
-        @Override public void cancel() { }
+        @Override public void cancel() { /* not needed */ }
         @Override public boolean isCanceled() { return false; }
         @Override public Call<T> clone() { return new FakeCall<>(response); }
         @Override public okhttp3.Request request() {

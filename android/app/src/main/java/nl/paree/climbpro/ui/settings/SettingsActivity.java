@@ -147,7 +147,7 @@ public final class SettingsActivity extends AppCompatActivity {
         viewModel.riderProfile().observe(this, this::renderRiderProfile);
 
         // Issue #20: suggested FTP re-estimate from repeated climb performances. Shown
-        // only when computable and meaningfully different (SettingsViewModel gates this);
+        // only when computable and meaningfully different (SettingsViewModel gates this), and
         // tapping it explicitly saves the suggestion — it is never applied automatically.
         viewModel.suggestedFtpWatts().observe(this, suggestion -> {
             if (suggestion == null) {
@@ -233,8 +233,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 binding.radiusLabel.setText(getString(R.string.unit_km_value, km));
                 if (user) viewModel.setRadiusKm(km);
             }
-            public void onStartTrackingTouch(SeekBar sb) {}
-            public void onStopTrackingTouch(SeekBar sb) {}
+            public void onStartTrackingTouch(SeekBar sb) { /* not needed */ }
+            public void onStopTrackingTouch(SeekBar sb) { /* not needed */ }
         });
 
         // SeekBar has no API-24-safe min, so progress is an offset above the minimum radius:
@@ -247,8 +247,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 binding.privacyRadiusLabel.setText(getString(R.string.unit_m_value, meters));
                 if (user) viewModel.setPrivacyRadiusM(meters);
             }
-            public void onStartTrackingTouch(SeekBar sb) {}
-            public void onStopTrackingTouch(SeekBar sb) {}
+            public void onStartTrackingTouch(SeekBar sb) { /* not needed */ }
+            public void onStopTrackingTouch(SeekBar sb) { /* not needed */ }
         });
 
         bindClimbThresholds();
@@ -381,15 +381,15 @@ public final class SettingsActivity extends AppCompatActivity {
     private void renderLanguageButton() {
         int index = AppLanguage.currentIndex();
         String name = index == 0
-                ? getString(R.string.settings_language_system) : AppLanguage.ENDONYMS[index];
+                ? getString(R.string.settings_language_system) : AppLanguage.endonyms()[index];
         binding.btnLanguage.setText(getString(R.string.settings_language_button, name));
     }
 
     /** Issue #261: per-app language; AppCompat recreates the activity in the new language. */
     private void showLanguageDialog() {
-        String[] labels = new String[AppLanguage.TAGS.length];
+        String[] labels = new String[AppLanguage.tags().length];
         labels[0] = getString(R.string.settings_language_system);
-        for (int i = 1; i < labels.length; i++) labels[i] = AppLanguage.ENDONYMS[i];
+        System.arraycopy(AppLanguage.endonyms(), 1, labels, 1, labels.length - 1);
         new AlertDialog.Builder(this)
                 .setTitle(R.string.settings_language_dialog_title)
                 .setSingleChoiceItems(labels, AppLanguage.currentIndex(), (d, which) -> {
@@ -543,8 +543,10 @@ public final class SettingsActivity extends AppCompatActivity {
             int granted = 0;
             for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
             return granted;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return -1;
         } catch (Exception e) {
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             return -1;
         }
     }

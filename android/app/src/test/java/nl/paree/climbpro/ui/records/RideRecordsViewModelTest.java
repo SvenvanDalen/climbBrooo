@@ -1,7 +1,6 @@
 package nl.paree.climbpro.ui.records;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.lifecycle.LiveData;
 import androidx.test.core.app.ApplicationProvider;
@@ -15,11 +14,11 @@ import nl.paree.climbpro.domain.ride.RideRecordsCalculator;
 import nl.paree.climbpro.domain.ride.RideStreamAnalyzer;
 import nl.paree.climbpro.domain.ride.SprintCalculator;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -28,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -42,14 +42,10 @@ public class RideRecordsViewModelTest {
         app = ApplicationProvider.getApplicationContext();
     }
 
-    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) throws InterruptedException {
+    private static <T> T awaitValue(LiveData<T> live, Runnable trigger) {
         T before = live.getValue();
         trigger.run();
-        long deadline = System.currentTimeMillis() + 3000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> live.getValue() != before, 3000);
         return live.getValue();
     }
 
@@ -85,7 +81,7 @@ public class RideRecordsViewModelTest {
         if (!stats.isEmpty()) new RideStreamStatsRepository(app).upsertAll(stats);
     }
 
-    private RideRecordsViewModel.State load() throws InterruptedException {
+    private RideRecordsViewModel.State load() {
         RideRecordsViewModel vm = new RideRecordsViewModel(app);
         assertNull(vm.state().getValue());
         RideRecordsViewModel.State s = awaitValue(vm.state(), vm::load);
@@ -94,10 +90,10 @@ public class RideRecordsViewModelTest {
     }
 
     @Test
-    public void noRides_everythingEmpty() throws Exception {
+    public void noRides_everythingEmpty() {
         RideRecordsViewModel.State s = load();
         assertTrue(s.records.isEmpty());
-        assertEquals(RideStreamAnalyzer.EFFORT_DISTANCES_M.length, s.fastest.size());
+        assertEquals(RideStreamAnalyzer.effortDistancesM().length, s.fastest.size());
         assertTrue(FastestDistanceCalculator.isEmpty(s.fastest));
         assertTrue(s.sprints.isEmpty());
         assertEquals(0, s.ridesAwaitingAnalysis);
@@ -241,7 +237,7 @@ public class RideRecordsViewModelTest {
         assertEquals(SprintCalculator.TOP_N, r.bySpeed.size());
         assertEquals(6L, r.bySpeed.get(0).ride.activityId);
         assertEquals(20.0, r.bySpeed.get(0).speedMps, 1e-9);
-        for (SprintCalculator.SpeedSprint sp : r.bySpeed) assertTrue(sp.ride.activityId != 7L);
+        for (SprintCalculator.SpeedSprint sp : r.bySpeed) assertNotEquals(7L, sp.ride.activityId);
     }
 
     @Test

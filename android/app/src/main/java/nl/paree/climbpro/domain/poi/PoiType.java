@@ -8,15 +8,22 @@ import java.util.Map;
  * better as "Kasteel" than as the generic "Attractie".
  */
 public enum PoiType {
-    CASTLE("historic", "castle", "Kasteel"),
-    RUINS("historic", "ruins", "Ruïne"),
-    MONUMENT("historic", "monument", "Monument"),
-    MEMORIAL("historic", "memorial", "Gedenkteken"),
-    VIEWPOINT("tourism", "viewpoint", "Uitzichtpunt"),
-    ARTWORK("tourism", "artwork", "Kunstwerk"),
-    ATTRACTION("tourism", "attraction", "Attractie"),
+    CASTLE(OsmKey.HISTORIC, "castle", "Kasteel"),
+    RUINS(OsmKey.HISTORIC, "ruins", "Ruïne"),
+    MONUMENT(OsmKey.HISTORIC, "monument", "Monument"),
+    MEMORIAL(OsmKey.HISTORIC, "memorial", "Gedenkteken"),
+    VIEWPOINT(OsmKey.TOURISM, "viewpoint", "Uitzichtpunt"),
+    ARTWORK(OsmKey.TOURISM, "artwork", "Kunstwerk"),
+    ATTRACTION(OsmKey.TOURISM, "attraction", "Attractie"),
     /** Public taps and fountains to refill a bottle (issue #175). */
-    DRINKING_WATER("amenity", "drinking_water", "Drinkwater");
+    DRINKING_WATER(OsmKey.AMENITY, "drinking_water", "Drinkwater");
+
+    /** OSM tag keys; a holder class because enum constants can't use the enum's own statics. */
+    private static final class OsmKey {
+        static final String HISTORIC = "historic";
+        static final String TOURISM = "tourism";
+        static final String AMENITY = "amenity";
+    }
 
     public final String osmKey;
     public final String osmValue;

@@ -13,6 +13,8 @@ import java.util.Map;
  * locals use (UK 999, Belarus 103) it is listed first.
  */
 public final class CountryInfo {
+    private static final String EMERGENCY_999_112 = "999 / 112";
+    private static final String GERMAN = "Duits";
 
     public static final String DEFAULT_EMERGENCY = "112";
     private static final Locale NL = new Locale("nl");
@@ -43,11 +45,11 @@ public final class CountryInfo {
     static {
         put("NL", "Nederland", "Nederlands");
         put("BE", "België", "Nederlands/Frans/Duits");
-        put("DE", "Duitsland", "Duits");
+        put("DE", "Duitsland", GERMAN);
         put("LU", "Luxemburg", "Luxemburgs/Frans/Duits");
         put("FR", "Frankrijk", "Frans");
         put("CH", "Zwitserland", "Duits/Frans/Italiaans/Reto-Romaans");
-        put("AT", "Oostenrijk", "Duits");
+        put("AT", "Oostenrijk", GERMAN);
         put("IT", "Italië", "Italiaans");
         put("ES", "Spanje", "Spaans/Catalaans/Baskisch/Galicisch");
         put("PT", "Portugal", "Portugees");
@@ -55,15 +57,15 @@ public final class CountryInfo {
         put("CZ", "Tsjechië", "Tsjechisch");
         put("PL", "Polen", "Pools");
         put("SI", "Slovenië", "Sloveens");
-        put("LI", "Liechtenstein", "Duits");
+        put("LI", "Liechtenstein", GERMAN);
         put("AD", "Andorra", "Catalaans");
         put("MC", "Monaco", "Frans");
         put("SM", "San Marino", "Italiaans");
         put("VA", "Vaticaanstad", "Italiaans/Latijn");
-        put("GB", "Verenigd Koninkrijk", "Engels/Welsh", "999 / 112");
-        put("JE", "Jersey", "Engels/Frans", "999 / 112");
-        put("GG", "Guernsey", "Engels/Frans", "999 / 112");
-        put("IM", "Isle of Man", "Engels", "999 / 112");
+        put("GB", "Verenigd Koninkrijk", "Engels/Welsh", EMERGENCY_999_112);
+        put("JE", "Jersey", "Engels/Frans", EMERGENCY_999_112);
+        put("GG", "Guernsey", "Engels/Frans", EMERGENCY_999_112);
+        put("IM", "Isle of Man", "Engels", EMERGENCY_999_112);
         put("IE", "Ierland", "Engels/Iers", "112 / 999");
         put("SK", "Slowakije", "Slowaaks");
         put("HU", "Hongarije", "Hongaars");

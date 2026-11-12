@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
+import java.time.ZoneId;
 
 import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
@@ -20,8 +21,8 @@ import nl.paree.climbpro.data.route.StoredRoute;
  */
 public class SeasonClimbFilterTest {
 
-    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-    private static final TimeZone AMSTERDAM = TimeZone.getTimeZone("Europe/Amsterdam");
+    private static final ZoneId UTC = ZoneId.of("UTC");
+    private static final ZoneId AMSTERDAM = ZoneId.of("Europe/Amsterdam");
 
     private static long epochSec(int year, int month, int day) {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));

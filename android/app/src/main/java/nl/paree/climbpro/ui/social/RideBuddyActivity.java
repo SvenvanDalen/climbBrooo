@@ -20,17 +20,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.social.RideBuddyCode;
 import nl.paree.climbpro.domain.social.RideBuddyMatcher;
 import nl.paree.climbpro.domain.social.RideBuddyProfile;
 import nl.paree.climbpro.domain.social.RideBuddyProfileBuilder;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Ritmaatjes" (issue #242): share your rider profile as a code, import other riders' codes and
@@ -39,11 +39,12 @@ import java.util.Locale;
  * ClimbPro" for text, always behind a confirmation dialog.
  */
 public final class RideBuddyActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private static final int PREFILL_MAX_CHARS = RideBuddyCode.MAX_CODE_CHARS + 500;
     private static final Locale NL = new Locale("nl");
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM yyyy", NL);
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", NL);
     private RideBuddyViewModel viewModel;
     private RideBuddyProfile own;
 
@@ -182,7 +183,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                     }
                     viewModel.prepareShare(n, fields);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -206,7 +207,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                 .setTitle("Controleer je code")
                 .setMessage(sb.toString())
                 .setPositiveButton("Delen", (d, w) -> viewModel.confirmShare(preview.code))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -225,7 +226,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Importeren",
                         (d, w) -> viewModel.importCode(input.getText().toString()))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -247,7 +248,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
             ((TextView) v.findViewById(R.id.title)).setText(m.score + "% match");
             ((TextView) v.findViewById(R.id.value)).setText(m.buddy.name);
             String when = m.buddy.createdEpochSec > 0
-                    ? "Profiel van " + dateFormat.format(new Date(m.buddy.createdEpochSec * 1000L))
+                    ? "Profiel van " + EpochDates.format(dateFormat, m.buddy.createdEpochSec)
                     : "Profiel";
             ((TextView) v.findViewById(R.id.detail)).setText(
                     m.explanation + "\n" + when + " · " + m.buddy.rideCount + " rit(ten)");
@@ -276,7 +277,7 @@ public final class RideBuddyActivity extends AppCompatActivity {
                 .setTitle("Rijder verwijderen")
                 .setMessage("Het profiel van " + p.name + " verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.remove(p.riderId))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

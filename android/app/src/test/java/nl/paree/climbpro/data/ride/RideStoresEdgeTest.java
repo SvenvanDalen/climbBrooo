@@ -58,6 +58,7 @@ public class RideStoresEdgeTest {
             write.run();
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(file(name + ".tmp").exists());
     }

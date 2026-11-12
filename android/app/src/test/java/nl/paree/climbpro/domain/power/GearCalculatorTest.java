@@ -33,8 +33,16 @@ public class GearCalculatorTest {
 
     @Test
     public void computeSortsEasiestFirstAndUsesPowerModel() {
-        Result r = GearCalculator.compute(new int[]{50, 34}, new int[]{11, 34, 28}, 2105, 80,
-                0.12, 0.07, 250, 80, CRR);
+        Result r = GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{50, 34})
+                .sprockets(new int[]{11, 34, 28})
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(80)
+                .steepestGradient(0.12)
+                .avgGradient(0.07)
+                .powerWatts(250)
+                .totalMassKg(80)
+                .crr(CRR));
         assertEquals(6, r.gears.size());
         Gear easiest = r.easiest();
         assertEquals(34, easiest.chainring);
@@ -52,14 +60,30 @@ public class GearCalculatorTest {
     @Test
     public void verdictEnoughVsTooHeavy() {
         // Strong light rider on a mild climb: plenty.
-        Result easy = GearCalculator.compute(new int[]{34}, new int[]{34}, 2105, 80,
-                0.06, 0.05, 300, 70, CRR);
+        Result easy = GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{34})
+                .sprockets(new int[]{34})
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(80)
+                .steepestGradient(0.06)
+                .avgGradient(0.05)
+                .powerWatts(300)
+                .totalMassKg(70)
+                .crr(CRR));
         assertTrue(easy.easiestIsEnough());
         assertTrue(GearCalculator.verdict(easy).contains("genoeg"));
 
         // Heavy rider, 39x25 on 15 %: far too heavy.
-        Result hard = GearCalculator.compute(new int[]{53, 39}, new int[]{11, 25}, 2105, 80,
-                0.15, 0.10, 180, 95, CRR);
+        Result hard = GearCalculator.compute(new GearCalculator.GearSetup()
+                .chainrings(new int[]{53, 39})
+                .sprockets(new int[]{11, 25})
+                .wheelCircumferenceMm(2105)
+                .targetCadenceRpm(80)
+                .steepestGradient(0.15)
+                .avgGradient(0.10)
+                .powerWatts(180)
+                .totalMassKg(95)
+                .crr(CRR));
         assertFalse(hard.easiestIsEnough());
         String v = GearCalculator.verdict(hard);
         assertTrue(v, v.startsWith("Je lichtste versnelling (39×25) geeft maar"));

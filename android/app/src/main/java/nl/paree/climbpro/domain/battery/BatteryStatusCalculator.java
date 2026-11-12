@@ -47,15 +47,15 @@ public final class BatteryStatusCalculator {
         List<BatteryDevice> out = new ArrayList<>();
         if (devices == null) return out;
         for (BatteryDevice d : devices) {
-            if (d == null || !isDue(d, nowEpochSec)) continue;
-            if (d.reminderSentForChargeEpochSec == d.lastChargedEpochSec) continue;
+            if ((d == null || !isDue(d, nowEpochSec))
+                    || d.reminderSentForChargeEpochSec == d.lastChargedEpochSec) continue;
             out.add(d);
         }
         return out;
     }
 
     /** Devices sorted most urgent first: due, then soonest due, then no reminder / never. */
-    public static List<BatteryDevice> sortByUrgency(List<BatteryDevice> devices, long nowEpochSec) {
+    public static List<BatteryDevice> sortByUrgency(List<BatteryDevice> devices) {
         List<BatteryDevice> out = new ArrayList<>();
         if (devices != null) for (BatteryDevice d : devices) if (d != null) out.add(d);
         out.sort((a, b) -> {

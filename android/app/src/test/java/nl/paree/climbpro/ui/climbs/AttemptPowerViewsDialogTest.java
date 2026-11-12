@@ -21,7 +21,7 @@ import java.util.ArrayList;
 public class AttemptPowerViewsDialogTest {
 
     private static LogbookCalculator.HistoryRow row(StoredClimbAttempt a) {
-        LogbookCalculator.HistoryRow r = new LogbookCalculator.HistoryRow(0, 600, 0, false, false);
+        LogbookCalculator.HistoryRow r = new LogbookCalculator.HistoryRow.Builder().elapsedSec(600).build();
         r.attempt = a;
         return r;
     }

@@ -53,13 +53,11 @@ public final class BikeGarageViewModel extends AndroidViewModel {
         executor.execute(this::loadNow);
     }
 
-    public void saveBike(String id, String name, String type, double weightKg, int tyreWidthMm,
-                         String chainrings, String cassette, String stravaGearId,
-                         boolean active, boolean indoor) {
+    /** Saves a garage bike (new when its id is null) off the main thread, then reloads. */
+    public void saveBike(BikeCostRepository.GarageBike bike) {
         executor.execute(() -> {
             try {
-                repo.saveGarageBike(id, name, type, weightKg, tyreWidthMm, chainrings, cassette,
-                        stravaGearId, active, indoor);
+                repo.saveGarageBike(bike);
             } catch (Exception e) {
                 message.postValue("Opslaan mislukt: " + e.getMessage());
             }

@@ -103,11 +103,10 @@ public final class RideRecordsCalculator {
         StoredRide best = null;
         double bestValue = 0;
         for (StoredRide r : rides) {
-            if (r == null) continue;
-            if (speedRecord && !qualifiesForSpeed(r)) continue;
+            if (r == null || (speedRecord && !qualifiesForSpeed(r))) continue;
             double v = value.applyAsDouble(r);
-            if (!(v > 0)) continue; // also rejects NaN
-            if (best == null || v > bestValue || (v == bestValue && isEarlier(r, best))) {
+            boolean better = best == null || v > bestValue || (v == bestValue && isEarlier(r, best));
+            if (v > 0 && better) { // v > 0 also rejects NaN
                 best = r;
                 bestValue = v;
             }

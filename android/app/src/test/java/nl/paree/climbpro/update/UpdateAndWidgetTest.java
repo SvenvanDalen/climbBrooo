@@ -17,6 +17,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.testsupport.UiTestData;
+import nl.paree.climbpro.ui.UiTestEnv;
 import nl.paree.climbpro.widget.WeekWidgetProvider;
 
 import org.junit.Test;
@@ -67,10 +68,7 @@ public class UpdateAndWidgetTest {
         UiTestData.seed(app);
         AppWidgetManager mgr = AppWidgetManager.getInstance(app);
         int id = shadowOf(mgr).createWidget(WeekWidgetProvider.class, R.layout.widget_week);
-        for (int i = 0; i < 40; i++) {
-            shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.idleFor(400);
         assertNotNull(shadowOf(mgr).getViewFor(id));
         WeekWidgetProvider.refresh(app);
         shadowOf(Looper.getMainLooper()).idle();

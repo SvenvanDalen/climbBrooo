@@ -47,6 +47,7 @@ public class SweatLossStoreEdgeTest {
             new SweatLossStore(file(SweatLossStore.FILE_NAME)).add(0, 100, 75.0, 74.5, 500, 60, null);
             fail("expected IOException");
         } catch (IOException expected) {
+            // expected: the call under test must fail
         }
         assertFalse(file(SweatLossStore.FILE_NAME).exists());
     }

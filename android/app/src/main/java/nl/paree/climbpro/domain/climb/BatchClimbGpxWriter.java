@@ -77,8 +77,16 @@ public final class BatchClimbGpxWriter {
         List<String> skipped = new ArrayList<>();
         for (Entry e : entries) {
             try {
-                ClimbGpxWriter.appendClimb(waypoints, tracks, e.route, e.climb, e.climbIndex,
-                        e.bestSplitSec, e.bestElapsedSec, true, privacyRadiusMeters);
+                ClimbGpxWriter.appendClimb(new ClimbGpxWriter.ClimbExport()
+                        .wptOut(waypoints)
+                        .trkOut(tracks)
+                        .route(e.route)
+                        .climb(e.climb)
+                        .climbIndex(e.climbIndex)
+                        .bestSplitSec(e.bestSplitSec)
+                        .bestElapsedSec(e.bestElapsedSec)
+                        .prefixWaypointNames(true)
+                        .privacyRadiusMeters(privacyRadiusMeters));
                 written++;
             } catch (IllegalArgumentException ex) {
                 skipped.add(ex.getMessage());

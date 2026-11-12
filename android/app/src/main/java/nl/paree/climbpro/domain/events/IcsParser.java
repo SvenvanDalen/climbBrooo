@@ -111,10 +111,11 @@ public final class IcsParser {
 
     static String unescape(String v) {
         StringBuilder sb = new StringBuilder(v.length());
-        for (int i = 0; i < v.length(); i++) {
-            char c = v.charAt(i);
-            if (c == '\\' && i + 1 < v.length()) {
-                char n = v.charAt(++i);
+        int i = 0;
+        while (i < v.length()) {
+            char c = v.charAt(i++);
+            if (c == '\\' && i < v.length()) {
+                char n = v.charAt(i++);
                 sb.append(n == 'n' || n == 'N' ? '\n' : n);
             } else {
                 sb.append(c);

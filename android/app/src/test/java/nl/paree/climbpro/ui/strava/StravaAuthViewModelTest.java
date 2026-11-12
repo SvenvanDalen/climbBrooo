@@ -1,8 +1,8 @@
 package nl.paree.climbpro.ui.strava;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
 
@@ -67,7 +67,7 @@ public class StravaAuthViewModelTest {
 
     @Test
     public void buildAuthRequest_usesFreshStatePerRequest() {
-        assertTrue(!vm.buildAuthRequest().state.equals(vm.buildAuthRequest().state));
+        assertNotEquals(vm.buildAuthRequest().state, vm.buildAuthRequest().state);
     }
 
     @Test

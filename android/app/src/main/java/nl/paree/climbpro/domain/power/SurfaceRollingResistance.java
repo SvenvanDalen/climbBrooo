@@ -25,8 +25,7 @@ public final class SurfaceRollingResistance {
             case SurfaceType.DIRT:        return CRR_DIRT;
             case SurfaceType.COBBLESTONE: return CRR_COBBLESTONE;
             case SurfaceType.MIXED:       return CRR_MIXED;
-            case SurfaceType.ASPHALT:
-            case SurfaceType.UNKNOWN:
+            case SurfaceType.ASPHALT, SurfaceType.UNKNOWN:
             default:                      return CRR_ASPHALT;
         }
     }

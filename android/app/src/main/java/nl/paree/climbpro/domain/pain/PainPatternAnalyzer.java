@@ -185,8 +185,11 @@ public final class PainPatternAnalyzer {
         }
         if (r.longRidePattern()) {
             sb.append(String.format(Locale.GERMANY,
-                    "\n\nKlachten vooral na lange ritten: gemiddeld %.0f km, tegen %.0f km "
-                            + "voor al je ritten.", r.complaintRideKm, r.allRideKm));
+                    """
+
+
+                            Klachten vooral na lange ritten: gemiddeld %.0f km, tegen %.0f km \
+                            voor al je ritten.""", r.complaintRideKm, r.allRideKm));
         }
         return sb.toString();
     }

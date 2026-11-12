@@ -41,7 +41,10 @@ public final class HourlyForecast {
         JsonNode time = hourly.get("time");
         int n = time.size();
         Instant[] times = new Instant[n];
-        double[] temp = new double[n], app = new double[n], wind = new double[n], uv = new double[n];
+        double[] temp = new double[n];
+        double[] app = new double[n];
+        double[] wind = new double[n];
+        double[] uv = new double[n];
         double[] windDir = new double[n];
         Integer[] rain = new Integer[n];
         for (int i = 0; i < n; i++) {

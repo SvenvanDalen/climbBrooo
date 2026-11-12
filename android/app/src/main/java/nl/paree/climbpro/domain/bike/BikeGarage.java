@@ -252,9 +252,10 @@ public final class BikeGarage {
         for (String raw : passportNames) {
             if (raw == null || raw.trim().isEmpty()) continue;
             String name = raw.trim();
-            if (!names.add(name.toLowerCase(Locale.ROOT))) continue;
-            log.bikes.add(newBike(MIGRATED_ID_PREFIX + "passport-" + index++, name));
-            changed = true;
+            if (names.add(name.toLowerCase(Locale.ROOT))) {
+                log.bikes.add(newBike(MIGRATED_ID_PREFIX + "passport-" + index++, name));
+                changed = true;
+            }
         }
         return changed;
     }
@@ -318,8 +319,13 @@ public final class BikeGarage {
     }
 
     /** The types in the order the UI offers them. */
-    public static final String[] TYPES = {
+    private static final String[] TYPES = {
             Bike.TYPE_ROAD, Bike.TYPE_GRAVEL, Bike.TYPE_MTB, Bike.TYPE_TRAINER};
+
+    /** The bike types in the order the UI offers them (a copy). */
+    public static String[] types() {
+        return TYPES.clone();
+    }
 
     public static String typeLabel(String type) {
         switch (cleanType(type)) {

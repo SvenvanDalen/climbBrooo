@@ -8,15 +8,15 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.pain.PainLogEntry;
 import nl.paree.climbpro.domain.pain.PainArea;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /** Logged complaints, newest first; long-press asks to delete. */
 public final class PainLogAdapter extends RecyclerView.Adapter<PainLogAdapter.EntryVH> {
@@ -26,8 +26,8 @@ public final class PainLogAdapter extends RecyclerView.Adapter<PainLogAdapter.En
     }
 
     private final List<PainLogEntry> entries = new ArrayList<>();
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
     private final OnEntryLongClickListener listener;
 
     public PainLogAdapter(OnEntryLongClickListener listener) {
@@ -41,7 +41,7 @@ public final class PainLogAdapter extends RecyclerView.Adapter<PainLogAdapter.En
     }
 
     String formatDate(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 
     static String areasText(List<String> areas) {

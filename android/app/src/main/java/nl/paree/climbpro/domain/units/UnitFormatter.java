@@ -11,6 +11,7 @@ import java.util.Locale;
  * {@code UnitPreferencesRepository#formatter(Context)}.
  */
 public final class UnitFormatter {
+    private static final String INT_WITH_UNIT = "%d %s";
 
     public static final double METERS_PER_MILE = 1609.344;
     public static final double FEET_PER_METER = 3.28084;
@@ -82,7 +83,7 @@ public final class UnitFormatter {
 
     /** Elevation, whole: "450 m" / "1476 ft". */
     public String elevation(double meters) {
-        return String.format(locale, "%d %s", Math.round(elevationValue(meters)), elevationUnit());
+        return String.format(locale, INT_WITH_UNIT, Math.round(elevationValue(meters)), elevationUnit());
     }
 
     /** Short length (a segment, a climb under a kilometre), whole: "850 m" / "2789 ft". */
@@ -105,7 +106,7 @@ public final class UnitFormatter {
 
     /** Speed, whole: "25 km/u" / "16 mph". */
     public String speed(double kmh) {
-        return String.format(locale, "%d %s", Math.round(speedValue(kmh)), speedUnit());
+        return String.format(locale, INT_WITH_UNIT, Math.round(speedValue(kmh)), speedUnit());
     }
 
     /** Tyre pressure: "4.5 bar" (one decimal) / "65 psi" (whole). */
@@ -118,7 +119,7 @@ public final class UnitFormatter {
 
     /** Temperature, whole: "12 °C" / "54 °F". */
     public String temperature(double celsius) {
-        return String.format(locale, "%d %s", Math.round(temperatureValue(celsius)),
+        return String.format(locale, INT_WITH_UNIT, Math.round(temperatureValue(celsius)),
                 temperatureUnit());
     }
 }

@@ -70,8 +70,8 @@ public final class SunscreenAdvisor {
         for (int i = 0; i < f.times.length; i++) {
             Instant hourStart = f.times[i];
             Instant hourEnd = hourStart.plusSeconds(3600);
-            if (!hourEnd.isAfter(start) || !hourStart.isBefore(end)) continue;
-            double uv = f.uvIndex[i];
+            boolean inRide = hourEnd.isAfter(start) && hourStart.isBefore(end);
+            double uv = inRide ? f.uvIndex[i] : Double.NaN;
             if (Double.isNaN(uv)) continue;
             if (Double.isNaN(peak) || uv > peak) peak = uv;
             if (uv >= PROTECT_FROM_UV) protectHours++;
@@ -135,8 +135,7 @@ public final class SunscreenAdvisor {
         switch (level) {
             case MODERATE: return "factor 30";
             case HIGH: return "factor 50";
-            case VERY_HIGH:
-            case EXTREME: return "factor 50+";
+            case VERY_HIGH, EXTREME: return "factor 50+";
             default: return null;
         }
     }

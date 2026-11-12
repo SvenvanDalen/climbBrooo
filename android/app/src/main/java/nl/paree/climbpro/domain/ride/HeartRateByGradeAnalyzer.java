@@ -37,26 +37,38 @@ public final class HeartRateByGradeAnalyzer {
         int j = 0;
         for (int i = 1; i < s.time.length; i++) {
             int dt = s.time[i] - s.time[i - 1];
-            if (dt <= 0 || dt > CadenceByGradeAnalyzer.MAX_GAP_SEC) continue;
-            if (!(s.distance[i] > s.distance[i - 1])) continue;   // standing still
+            if (!isRidingSample(s, i, dt)) continue;
             double hr = s.heartrate[i];
-            if (Double.isNaN(hr) || hr < MIN_PLAUSIBLE_BPM || hr > MAX_PLAUSIBLE_BPM) continue;
             while (j + 1 < i
                     && s.distance[i] - s.distance[j + 1] >= CadenceByGradeAnalyzer.GRADE_WINDOW_M) {
                 j++;
             }
             double run = s.distance[i] - s.distance[j];
-            if (run < CadenceByGradeAnalyzer.GRADE_WINDOW_M) continue;
-            double grade = (s.altitude[i] - s.altitude[j]) / run;
-            if (Double.isNaN(grade) || grade < CadenceByGradeAnalyzer.MIN_GRADE) continue;
-            int cls = GradientColor.forGradient(grade);
-            secs[cls] += dt;
-            beats[cls] += hr * dt / 60.0;
+            double grade = run >= CadenceByGradeAnalyzer.GRADE_WINDOW_M
+                    ? (s.altitude[i] - s.altitude[j]) / run : Double.NaN;
+            if (!Double.isNaN(grade) && grade >= CadenceByGradeAnalyzer.MIN_GRADE) {
+                int cls = GradientColor.forGradient(grade);
+                secs[cls] += dt;
+                beats[cls] += hr * dt / 60.0;
+            }
         }
+        return toResult(secs, beats);
+    }
+
+    /** A moving sample after a normal time step, with a plausible heart rate. */
+    private static boolean isRidingSample(RideStreams s, int i, int dt) {
+        if (dt <= 0 || dt > CadenceByGradeAnalyzer.MAX_GAP_SEC) return false;
+        if (!(s.distance[i] > s.distance[i - 1])) return false;   // standing still
+        double hr = s.heartrate[i];
+        return !Double.isNaN(hr) && hr >= MIN_PLAUSIBLE_BPM && hr <= MAX_PLAUSIBLE_BPM;
+    }
+
+    /** Rounded per-class totals, or null with too little riding overall. */
+    private static Result toResult(double[] secs, double[] beats) {
         int total = 0;
-        int[] seconds = new int[n];
-        int[] heartbeats = new int[n];
-        for (int c = 0; c < n; c++) {
+        int[] seconds = new int[secs.length];
+        int[] heartbeats = new int[secs.length];
+        for (int c = 0; c < secs.length; c++) {
             seconds[c] = (int) Math.round(secs[c]);
             heartbeats[c] = (int) Math.round(beats[c]);
             total += seconds[c];

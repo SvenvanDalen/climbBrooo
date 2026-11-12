@@ -18,10 +18,11 @@ public class SummitWeatherTest {
         String text = SummitWeather.describe(HourlyForecast.parse(FOOT),
                 HourlyForecast.parse(HourlyForecastTest.JSON),
                 Instant.parse("2026-09-24T10:15:00Z"), 125, 250);
-        assertEquals("Dal (125 m): 14,2 °C\n"
-                + "Top (250 m): 12,4 °C, voelt als 9,8 °C\n"
-                + "Wind op de top 22 km/u · regenkans 10%\n"
-                + "Tip: Arm- en beenstukken plus een windjack", text);
+        assertEquals("""
+                Dal (125 m): 14,2 °C
+                Top (250 m): 12,4 °C, voelt als 9,8 °C
+                Wind op de top 22 km/u · regenkans 10%
+                Tip: Arm- en beenstukken plus een windjack""", text);
     }
 
     @Test public void imperialUnits() throws IOException {
@@ -29,8 +30,10 @@ public class SummitWeatherTest {
                 HourlyForecast.parse(HourlyForecastTest.JSON),
                 Instant.parse("2026-09-24T10:15:00Z"), 125, 250,
                 new nl.paree.climbpro.domain.units.UnitPreferences(true, false, true));
-        org.junit.Assert.assertTrue(text, text.startsWith("Dal (410 ft): 57,6 °F\n"
-                + "Top (820 ft): 54,3 °F, voelt als 49,6 °F\n"));
+        org.junit.Assert.assertTrue(text, text.startsWith("""
+                Dal (410 ft): 57,6 °F
+                Top (820 ft): 54,3 °F, voelt als 49,6 °F
+                """));
         org.junit.Assert.assertTrue(text, text.contains(" mph · regenkans 10%"));
         // Clothing thresholds stay on the metric value.
         org.junit.Assert.assertTrue(text, text.endsWith("Tip: Arm- en beenstukken plus een windjack"));
@@ -44,9 +47,11 @@ public class SummitWeatherTest {
         String top = SummitWeather.describe(HourlyForecast.parse(HourlyForecastTest.JSON),
                 HourlyForecast.parse(HourlyForecastTest.JSON),
                 Instant.parse("2026-09-24T11:00:00Z"), Double.NaN, Double.NaN);
-        assertEquals("Dal: 13,0 °C\nTop: 13,0 °C, voelt als 10,5 °C\n"
-                + "Wind op de top 32 km/u · regenkans onbekend\n"
-                + "Tip: Neem een windvestje mee voor de afdaling. Let op: harde wind op de top", top);
+        assertEquals("""
+                Dal: 13,0 °C
+                Top: 13,0 °C, voelt als 10,5 °C
+                Wind op de top 32 km/u · regenkans onbekend
+                Tip: Neem een windvestje mee voor de afdaling. Let op: harde wind op de top""", top);
     }
 
     @Test public void missingValuesShowUnknownInsteadOfNaN() throws IOException {
@@ -55,9 +60,11 @@ public class SummitWeatherTest {
                 + "\"wind_speed_10m\":[null],\"precipitation_probability\":[null]}}";
         String text = SummitWeather.describe(HourlyForecast.parse(gaps), HourlyForecast.parse(gaps),
                 Instant.parse("2026-09-24T10:15:00Z"), Double.NaN, Double.NaN);
-        assertEquals("Dal: onbekend\nTop: onbekend, voelt als onbekend\n"
-                + "Wind op de top onbekend · regenkans onbekend\n"
-                + "Tip: Geen kledingadvies, gevoelstemperatuur onbekend", text);
+        assertEquals("""
+                Dal: onbekend
+                Top: onbekend, voelt als onbekend
+                Wind op de top onbekend · regenkans onbekend
+                Tip: Geen kledingadvies, gevoelstemperatuur onbekend""", text);
     }
 
     @Test public void clothingThresholds() {

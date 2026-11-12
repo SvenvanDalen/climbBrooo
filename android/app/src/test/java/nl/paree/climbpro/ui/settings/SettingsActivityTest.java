@@ -3,6 +3,7 @@ package nl.paree.climbpro.ui.settings;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -144,7 +145,7 @@ public class SettingsActivityTest {
     public void historyBackfill_requiresStravaLogin() {
         click(R.id.btn_strava_history_backfill);
         assertEquals(app.getString(R.string.settings_strava_login_first), UiTestEnv.latestToast());
-        assertTrue(ActivityTestSupport.showingDialog() == null);
+        assertNull(ActivityTestSupport.showingDialog());
     }
 
     @Test

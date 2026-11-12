@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.hydration;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -18,15 +19,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.PastDayPicker;
 import nl.paree.climbpro.data.hydration.SweatLossEntry;
 import nl.paree.climbpro.data.ride.StoredRide;
 import nl.paree.climbpro.domain.hydration.SweatLossCalculator;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,8 +43,8 @@ public final class SweatLossActivity extends AppCompatActivity {
     private TextView summary;
     private TextView empty;
     private List<SweatLossViewModel.Row> currentRows = new ArrayList<>();
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
 
     public static Intent intentFor(Context context) {
         return new Intent(context, SweatLossActivity.class);
@@ -128,7 +129,7 @@ public final class SweatLossActivity extends AppCompatActivity {
     }
 
     private String formatDate(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 
     private void showAddDialog() {
@@ -151,7 +152,7 @@ public final class SweatLossActivity extends AppCompatActivity {
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 onRidePicked(form, rides, pos);
             }
-            @Override public void onNothingSelected(AdapterView<?> p) { }
+            @Override public void onNothingSelected(AdapterView<?> p) { /* not needed */ }
         });
         if (!rides.isEmpty()) form.rideSpinner.setSelection(1);
 
@@ -169,7 +170,7 @@ public final class SweatLossActivity extends AppCompatActivity {
                 .setNegativeButton(R.string.sweat_cancel, null)
                 .show();
         // Validate before closing so a typo doesn't throw the whole form away.
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
             if (saveEntry(form, rides)) dialog.dismiss();
         });
     }

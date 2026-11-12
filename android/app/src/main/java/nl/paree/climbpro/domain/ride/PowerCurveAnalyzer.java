@@ -10,7 +10,12 @@ public final class PowerCurveAnalyzer {
     private PowerCurveAnalyzer() {}
 
     /** The standard durations: sprint, anaerobic, VO2max, threshold and one hour. */
-    public static final int[] DURATIONS_SEC = {5, 60, 300, 1200, 3600};
+    private static final int[] DURATIONS_SEC = {5, 60, 300, 1200, 3600};
+
+    /** Window lengths of the power curve, in seconds (a copy). */
+    public static int[] durationsSec() {
+        return DURATIONS_SEC.clone();
+    }
 
     /** Longer recordings are not resampled to 1 Hz (48 h), like {@link SprintAnalyzer}. */
     private static final int MAX_RESAMPLE_SEC = 48 * 3600;
@@ -37,11 +42,11 @@ public final class PowerCurveAnalyzer {
      * so a pause inside a window lowers it instead of being skipped.
      */
     public static int[] bestPowers(RideStreams s) {
-        if (s == null || !s.isUsable() || s.watts == null) return null;
+        if (s == null || !s.isUsable() || s.watts == null) return new int[0];
         int end = s.time[s.time.length - 1];
-        if (end <= 0 || end > MAX_RESAMPLE_SEC) return null;
+        if (end <= 0 || end > MAX_RESAMPLE_SEC) return new int[0];
         double[] perSecond = perSecondWatts(s, end);
-        if (perSecond == null) return null;
+        if (perSecond == null) return new int[0];
         double[] prefix = new double[perSecond.length + 1];
         for (int i = 0; i < perSecond.length; i++) prefix[i + 1] = prefix[i] + perSecond[i];
 

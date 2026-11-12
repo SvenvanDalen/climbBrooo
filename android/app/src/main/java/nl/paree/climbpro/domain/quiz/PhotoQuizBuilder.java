@@ -48,8 +48,9 @@ public final class PhotoQuizBuilder {
         for (StoredClimbAttempt a : attempts) {
             if (a.photoFileName == null || a.photoFileName.isEmpty()) continue;
             String name = namesByClimbId.get(a.climbId);
-            if (name == null || name.isEmpty()) continue;
-            photosByName.computeIfAbsent(name, k -> new ArrayList<>()).add(a.photoFileName);
+            if (name != null && !name.isEmpty()) {
+                photosByName.computeIfAbsent(name, k -> new ArrayList<>()).add(a.photoFileName);
+            }
         }
         return photosByName;
     }

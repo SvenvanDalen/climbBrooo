@@ -26,7 +26,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -108,7 +107,7 @@ public class ClimbPayloadBuilderHabitsTest {
         JsonNode r = json(b.buildRoutePayload(route(climb(50.85))));
         assertFalse(r.has("cg"));
         assertFalse(r.has("hg"));
-        assertNull(ClimbPayloadBuilder.gradeClasses(null, 5));
+        assertEquals(0, ClimbPayloadBuilder.gradeClasses(null, 5).length);
     }
 
     @Test

@@ -31,8 +31,18 @@ public class ElevationTargetPlannerTest {
         double lat = LAT0 + northKm * KM;
         double lon = LON0 + eastKm * KM / Math.cos(Math.toRadians(LAT0));
         // Short climbs whose top is ~500 m further north: keeps the tour geometry obvious.
-        return new Candidate(id, "route-" + id, 0, "Klim " + id,
-                lat, lon, lat + 0.5 * KM, lon, gain, 5000);
+        return new Candidate.Builder()
+                .climbId(id)
+                .routeId("route-" + id)
+                .climbIndex(0)
+                .name("Klim " + id)
+                .startLat(lat)
+                .startLon(lon)
+                .endLat(lat + 0.5 * KM)
+                .endLon(lon)
+                .elevationGainM(gain)
+                .lengthM(5000)
+                .build();
     }
 
     private static Request req(int target, double radiusKm, int maxClimbs) {
@@ -91,10 +101,30 @@ public class ElevationTargetPlannerTest {
 
     @Test
     public void sameClimbFromTwoRoutesIsUsedOnce() {
-        Candidate dupA = new Candidate("x", "route-1", 2, "Col X",
-                LAT0 + 3 * KM, LON0, LAT0 + 4 * KM, LON0, 750, 8000);
-        Candidate dupB = new Candidate("x", "route-2", 0, "Col X (andere route)",
-                LAT0 + 3 * KM, LON0, LAT0 + 4 * KM, LON0, 750, 8000);
+        Candidate dupA = new Candidate.Builder()
+                .climbId("x")
+                .routeId("route-1")
+                .climbIndex(2)
+                .name("Col X")
+                .startLat(LAT0 + 3 * KM)
+                .startLon(LON0)
+                .endLat(LAT0 + 4 * KM)
+                .endLon(LON0)
+                .elevationGainM(750)
+                .lengthM(8000)
+                .build();
+        Candidate dupB = new Candidate.Builder()
+                .climbId("x")
+                .routeId("route-2")
+                .climbIndex(0)
+                .name("Col X (andere route)")
+                .startLat(LAT0 + 3 * KM)
+                .startLon(LON0)
+                .endLat(LAT0 + 4 * KM)
+                .endLon(LON0)
+                .elevationGainM(750)
+                .lengthM(8000)
+                .build();
         Candidate other = climb("y", 6, 0, 700);
         Suggestion s = ElevationTargetPlanner.plan(req(1500, 30, 0), Arrays.asList(dupB, other, dupA));
         assertEquals(2, s.candidatesInRadius);

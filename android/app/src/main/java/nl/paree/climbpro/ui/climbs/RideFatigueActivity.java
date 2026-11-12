@@ -26,11 +26,6 @@ public final class RideFatigueActivity extends AppCompatActivity {
 
     private static final String EXTRA_ACTIVITY_ID = "activity_id";
 
-    private RideFatigueViewModel viewModel;
-    private RideFatiguePointAdapter adapter;
-    private RideFatigueChartView chart;
-    private View empty;
-    private View directionCaveat;
 
     public static Intent intentFor(Context ctx, long activityId) {
         Intent i = new Intent(ctx, RideFatigueActivity.class);
@@ -47,16 +42,16 @@ public final class RideFatigueActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        empty = findViewById(R.id.empty);
-        chart = findViewById(R.id.chart);
-        directionCaveat = findViewById(R.id.directionCaveat);
+        View empty = findViewById(R.id.empty);
+        RideFatigueChartView chart = findViewById(R.id.chart);
+        View directionCaveat = findViewById(R.id.directionCaveat);
 
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RideFatiguePointAdapter();
+        RideFatiguePointAdapter adapter = new RideFatiguePointAdapter();
         list.setAdapter(adapter);
 
-        viewModel = new ViewModelProvider(this).get(RideFatigueViewModel.class);
+        RideFatigueViewModel viewModel = new ViewModelProvider(this).get(RideFatigueViewModel.class);
         viewModel.curve().observe(this, points -> {
             boolean hasCurve = points != null && !points.isEmpty();
             empty.setVisibility(hasCurve ? View.GONE : View.VISIBLE);

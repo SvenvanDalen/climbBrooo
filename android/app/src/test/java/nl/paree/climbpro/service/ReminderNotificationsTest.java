@@ -2,6 +2,7 @@ package nl.paree.climbpro.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -326,7 +327,7 @@ public class ReminderNotificationsTest {
         assertEquals(1, posted().size());
         Notification n = posted().get(0);
         assertEquals("Medische ID", title(n));
-        assertTrue((n.flags & Notification.FLAG_ONGOING_EVENT) != 0);
+        assertNotEquals(0, n.flags & Notification.FLAG_ONGOING_EVENT);
         assertEquals(Notification.VISIBILITY_PUBLIC, n.visibility);
         assertNotNull(nm.getNotificationChannel(MedicalIdNotifier.CHANNEL_ID));
 

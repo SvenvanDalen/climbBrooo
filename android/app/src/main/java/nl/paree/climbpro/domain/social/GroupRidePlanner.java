@@ -69,18 +69,78 @@ public final class GroupRidePlanner {
         public final int unknownSpeedCount;
         public final boolean bigSpread;
 
-        Estimate(int groupFlatDkmh, int groupVamMph, int movingSec, int pauseSec,
-                 double avgSpeedKmh, int fastestSoloSec, String slowestName,
-                 int unknownSpeedCount, boolean bigSpread) {
-            this.groupFlatDkmh = groupFlatDkmh;
-            this.groupVamMph = groupVamMph;
-            this.movingSec = movingSec;
-            this.pauseSec = pauseSec;
-            this.avgSpeedKmh = avgSpeedKmh;
-            this.fastestSoloSec = fastestSoloSec;
-            this.slowestName = slowestName;
-            this.unknownSpeedCount = unknownSpeedCount;
-            this.bigSpread = bigSpread;
+        private Estimate(Builder b) {
+            this.groupFlatDkmh = b.groupFlatDkmh;
+            this.groupVamMph = b.groupVamMph;
+            this.movingSec = b.movingSec;
+            this.pauseSec = b.pauseSec;
+            this.avgSpeedKmh = b.avgSpeedKmh;
+            this.fastestSoloSec = b.fastestSoloSec;
+            this.slowestName = b.slowestName;
+            this.unknownSpeedCount = b.unknownSpeedCount;
+            this.bigSpread = b.bigSpread;
+        }
+
+        /** Builds a {@link Estimate}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int groupFlatDkmh;
+            private int groupVamMph;
+            private int movingSec;
+            private int pauseSec;
+            private double avgSpeedKmh;
+            private int fastestSoloSec;
+            private String slowestName;
+            private int unknownSpeedCount;
+            private boolean bigSpread;
+
+            public Builder groupFlatDkmh(int groupFlatDkmh) {
+                this.groupFlatDkmh = groupFlatDkmh;
+                return this;
+            }
+
+            public Builder groupVamMph(int groupVamMph) {
+                this.groupVamMph = groupVamMph;
+                return this;
+            }
+
+            public Builder movingSec(int movingSec) {
+                this.movingSec = movingSec;
+                return this;
+            }
+
+            public Builder pauseSec(int pauseSec) {
+                this.pauseSec = pauseSec;
+                return this;
+            }
+
+            public Builder avgSpeedKmh(double avgSpeedKmh) {
+                this.avgSpeedKmh = avgSpeedKmh;
+                return this;
+            }
+
+            public Builder fastestSoloSec(int fastestSoloSec) {
+                this.fastestSoloSec = fastestSoloSec;
+                return this;
+            }
+
+            public Builder slowestName(String slowestName) {
+                this.slowestName = slowestName;
+                return this;
+            }
+
+            public Builder unknownSpeedCount(int unknownSpeedCount) {
+                this.unknownSpeedCount = unknownSpeedCount;
+                return this;
+            }
+
+            public Builder bigSpread(boolean bigSpread) {
+                this.bigSpread = bigSpread;
+                return this;
+            }
+
+            public Estimate build() {
+                return new Estimate(this);
+            }
         }
 
         public int totalSec() {
@@ -131,8 +191,17 @@ public final class GroupRidePlanner {
             unknown = 0;
             slowestName = "";
         }
-        return new Estimate(groupFlat, minVam, moving, pause, avg, fastestSolo, slowestName,
-                unknown, spread);
+        return new Estimate.Builder()
+                .groupFlatDkmh(groupFlat)
+                .groupVamMph(minVam)
+                .movingSec(moving)
+                .pauseSec(pause)
+                .avgSpeedKmh(avg)
+                .fastestSoloSec(fastestSolo)
+                .slowestName(slowestName)
+                .unknownSpeedCount(unknown)
+                .bigSpread(spread)
+                .build();
     }
 
     /** Per-participant speeds (unknown ones at the defaults), slowest rider and best solo time. */

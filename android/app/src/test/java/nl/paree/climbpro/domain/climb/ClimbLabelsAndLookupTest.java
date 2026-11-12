@@ -82,9 +82,9 @@ public class ClimbLabelsAndLookupTest {
 
     @Test
     public void approxStart_rejectsMalformedIds() {
-        assertNull(ClimbIdentity.approxStart(null));
-        assertNull(ClimbIdentity.approxStart("a:b"));
-        assertNull(ClimbIdentity.approxStart("x:1:1000"));
+        assertEquals(0, ClimbIdentity.approxStart(null).length);
+        assertEquals(0, ClimbIdentity.approxStart("a:b").length);
+        assertEquals(0, ClimbIdentity.approxStart("x:1:1000").length);
         String id = ClimbIdentity.of(45.1234, 6.5678, 1000);
         double[] start = ClimbIdentity.approxStart(id);
         assertEquals(45.1234, start[0], 0.01);

@@ -27,10 +27,10 @@ public class UpdateCheckerTest {
 
     @Test
     public void parseVersion_unrecognisedTag_returnsNull() {
-        assertNull(UpdateChecker.parseVersion(null));
-        assertNull(UpdateChecker.parseVersion(""));
-        assertNull(UpdateChecker.parseVersion("v1.0"));
-        assertNull(UpdateChecker.parseVersion("release-97"));
+        assertEquals(0, UpdateChecker.parseVersion(null).length);
+        assertEquals(0, UpdateChecker.parseVersion("").length);
+        assertEquals(0, UpdateChecker.parseVersion("v1.0").length);
+        assertEquals(0, UpdateChecker.parseVersion("release-97").length);
     }
 
     /** The first minor-bump release must beat every old v1.0.<run_number> build. */

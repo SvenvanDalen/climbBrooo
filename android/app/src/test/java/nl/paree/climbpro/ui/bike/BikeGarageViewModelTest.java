@@ -91,7 +91,17 @@ public class BikeGarageViewModelTest {
 
     @Test
     public void saveBike_cleansFieldsAndPersists() {
-        vm.saveBike(null, "  ", "unicycle", 80, 200, "  ", " 11-34 ", "  ", false, false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name(" ")
+                .type("unicycle")
+                .weightKg(80)
+                .tyreWidthMm(200)
+                .chainrings(" ")
+                .cassette(" 11-34 ")
+                .stravaGearId(" ")
+                .active(false)
+                .indoor(false));
         BikeGarageViewModel.State s = await(vm.state(), x -> x.garage.bikes.size() == 1);
         Bike b = s.garage.bikes.get(0);
         assertEquals("Fiets", b.name);
@@ -112,13 +122,32 @@ public class BikeGarageViewModelTest {
 
     @Test
     public void saveBike_editExisting_updatesInPlaceAndTogglesIndoor() {
-        vm.saveBike(null, "Trainer", Bike.TYPE_TRAINER, 12, 0, null, null, null, true, true);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Trainer")
+                .type(Bike.TYPE_TRAINER)
+                .weightKg(12)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(true)
+                .indoor(true));
         BikeGarageViewModel.State s = await(vm.state(), x -> x.garage.bikes.size() == 1);
         String id = s.garage.bikes.get(0).id;
         assertEquals(id, s.garage.indoorBikeId);
 
-        vm.saveBike(id, "Smart trainer", Bike.TYPE_TRAINER, 12.5, 0, null, null, null, true,
-                false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(id)
+                .name("Smart trainer")
+                .type(Bike.TYPE_TRAINER)
+                .weightKg(12.5)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(true)
+                .indoor(false));
         BikeGarageViewModel.State edited = await(vm.state(),
                 x -> named(x.garage, "Smart trainer") != null);
         assertEquals(1, edited.garage.bikes.size());
@@ -129,9 +158,29 @@ public class BikeGarageViewModelTest {
 
     @Test
     public void saveBike_activeFlagMovesActiveBike_gearIdIsUniquePerBike() {
-        vm.saveBike(null, "Racefiets", Bike.TYPE_ROAD, 7.5, 28, null, null, "b1", true, false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Racefiets")
+                .type(Bike.TYPE_ROAD)
+                .weightKg(7.5)
+                .tyreWidthMm(28)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b1")
+                .active(true)
+                .indoor(false));
         await(vm.state(), x -> x.garage.bikes.size() == 1);
-        vm.saveBike(null, "Gravel", Bike.TYPE_GRAVEL, 9.4, 40, null, null, "b1", false, false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Gravel")
+                .type(Bike.TYPE_GRAVEL)
+                .weightKg(9.4)
+                .tyreWidthMm(40)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b1")
+                .active(false)
+                .indoor(false));
         BikeGarageViewModel.State s = await(vm.state(), x -> x.garage.bikes.size() == 2);
         Bike road = named(s.garage, "Racefiets");
         Bike gravel = named(s.garage, "Gravel");
@@ -139,8 +188,17 @@ public class BikeGarageViewModelTest {
         assertNull(road.stravaGearId);                // gear id moved to the gravel bike
         assertEquals("b1", gravel.stravaGearId);
 
-        vm.saveBike(gravel.id, "Gravel", Bike.TYPE_GRAVEL, 9.4, 40, null, null, "b1", true,
-                false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(gravel.id)
+                .name("Gravel")
+                .type(Bike.TYPE_GRAVEL)
+                .weightKg(9.4)
+                .tyreWidthMm(40)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b1")
+                .active(true)
+                .indoor(false));
         BikeGarageViewModel.State s2 = await(vm.state(),
                 x -> gravel.id.equals(x.garage.activeBikeId));
         assertEquals(2, s2.garage.bikes.size());
@@ -157,13 +215,41 @@ public class BikeGarageViewModelTest {
         rides.add(ride(6, "Ride", 10_000, "b-road"));
         new RideRepository(app).upsertAll(rides);
 
-        vm.saveBike(null, "Racefiets", Bike.TYPE_ROAD, 7.5, 28, null, null, "b-road", true,
-                false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Racefiets")
+                .type(Bike.TYPE_ROAD)
+                .weightKg(7.5)
+                .tyreWidthMm(28)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b-road")
+                .active(true)
+                .indoor(false));
         await(vm.state(), x -> x.garage.bikes.size() == 1);
-        vm.saveBike(null, "Gravel", Bike.TYPE_GRAVEL, 9.4, 40, null, null, "b-gravel", false,
-                false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Gravel")
+                .type(Bike.TYPE_GRAVEL)
+                .weightKg(9.4)
+                .tyreWidthMm(40)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b-gravel")
+                .active(false)
+                .indoor(false));
         await(vm.state(), x -> x.garage.bikes.size() == 2);
-        vm.saveBike(null, "Trainer", Bike.TYPE_TRAINER, 12, 0, null, null, null, false, true);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Trainer")
+                .type(Bike.TYPE_TRAINER)
+                .weightKg(12)
+                .tyreWidthMm(0)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(false)
+                .indoor(true));
         BikeGarageViewModel.State s = await(vm.state(), x -> x.garage.bikes.size() == 3);
 
         String road = named(s.garage, "Racefiets").id;
@@ -190,7 +276,17 @@ public class BikeGarageViewModelTest {
 
     @Test
     public void deleteBike_unknownOrNullId_isNoOp() {
-        vm.saveBike(null, "Racefiets", Bike.TYPE_ROAD, 7.5, 28, null, null, null, true, false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Racefiets")
+                .type(Bike.TYPE_ROAD)
+                .weightKg(7.5)
+                .tyreWidthMm(28)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(true)
+                .indoor(false));
         await(vm.state(), x -> x.garage.bikes.size() == 1);
         vm.deleteBike("unknown");
         vm.deleteBike(null);
@@ -202,15 +298,34 @@ public class BikeGarageViewModelTest {
     @Test
     public void saveBike_writeFailure_reportsSaveFailure() {
         breakWrites();
-        vm.saveBike(null, "Racefiets", Bike.TYPE_ROAD, 7.5, 28, null, null, null, true, false);
+        vm.saveBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Racefiets")
+                .type(Bike.TYPE_ROAD)
+                .weightKg(7.5)
+                .tyreWidthMm(28)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(true)
+                .indoor(false));
         await(vm.message(), m -> m.startsWith("Opslaan mislukt: "));
         assertTrue(await(vm.state(), x -> true).garage.bikes.isEmpty());
     }
 
     @Test
     public void deleteBike_writeFailure_reportsAndKeepsBike() throws Exception {
-        String id = new BikeCostRepository(app).saveGarageBike(null, "Racefiets",
-                Bike.TYPE_ROAD, 7.5, 28, null, null, null, true, false);
+        String id = new BikeCostRepository(app).saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Racefiets")
+                .type(Bike.TYPE_ROAD)
+                .weightKg(7.5)
+                .tyreWidthMm(28)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId(null)
+                .active(true)
+                .indoor(false));
         breakWrites();
         vm.deleteBike(id);
         await(vm.message(), m -> m.startsWith("Verwijderen mislukt: "));

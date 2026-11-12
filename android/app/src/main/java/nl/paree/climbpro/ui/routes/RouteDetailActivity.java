@@ -71,7 +71,6 @@ public final class RouteDetailActivity extends AppCompatActivity {
 
     private ActivityRouteDetailBinding binding;
     private RouteDetailViewModel        viewModel;
-    private RouteDetailAdapter          adapter;
     private String                      routeId;
 
     private static final String STATE_NOTES_BASELINE = "notes_baseline";
@@ -113,7 +112,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             notesBaseline = savedInstanceState.getString(STATE_NOTES_BASELINE);
         }
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
-        adapter   = new RouteDetailAdapter();
+        RouteDetailAdapter adapter   = new RouteDetailAdapter();
 
         binding.climbsRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.climbsRecycler.setAdapter(adapter);
@@ -139,11 +138,11 @@ public final class RouteDetailActivity extends AppCompatActivity {
         viewModel.rideStatus().observe(this, status ->
                 binding.btnRideStatus.setText(
                         getString(R.string.route_detail_status, RouteRideStatus.label(status))));
-        viewModel.climbTargetSeconds().observe(this, secs -> adapter.setClimbTargetSeconds(secs));
-        viewModel.climbUsageTypes().observe(this, types -> adapter.setClimbUsageTypes(types));
+        viewModel.climbTargetSeconds().observe(this, adapter::setClimbTargetSeconds);
+        viewModel.climbUsageTypes().observe(this, adapter::setClimbUsageTypes);
         viewModel.restSuggestions().observe(this, adapter::setRestSuggestions);
 
-        viewModel.routeItems().observe(this, items -> adapter.setItems(items));
+        viewModel.routeItems().observe(this, adapter::setItems);
         viewModel.elevationProfile().observe(this, this::showElevationProfile);
         viewModel.borderCrossings().observe(this, this::showBorderCrossings);
 
@@ -558,7 +557,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.route_detail_no_coordinates, Toast.LENGTH_SHORT).show();
             return;
         }
-        java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
+        java.time.ZonedDateTime now = java.time.ZonedDateTime.now(java.time.ZoneId.systemDefault());
         new android.app.TimePickerDialog(this,
                 (picker, hour, minute) -> loadTemperatureTrend(r, hour, minute),
                 now.getHour(), now.getMinute(),
@@ -811,8 +810,7 @@ public final class RouteDetailActivity extends AppCompatActivity {
         for (int idx : indices) {
             if (r.climbs == null || idx >= r.climbs.size()) continue;
             StoredClimb c = r.climbs.get(idx);
-            String name = c.userDisplayName != null ? c.userDisplayName
-                    : c.name != null ? c.name : "klim " + (idx + 1);
+            String name = climbLabel(c, idx);
             if (sb.length() > 0) sb.append(", ");
             sb.append(name);
         }
@@ -874,10 +872,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         layout.addView(nameInput);
 
         final android.widget.Spinner surface = new android.widget.Spinner(this);
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+        android.widget.ArrayAdapter<String> surfaceAdapter = new android.widget.ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, surfaceLabels());
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        surface.setAdapter(adapter);
+        surfaceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(surfaceAdapter);
         surface.setSelection(SurfaceType.fromInt(flat.surfaceType));
         layout.addView(surface);
 
@@ -1059,10 +1057,10 @@ public final class RouteDetailActivity extends AppCompatActivity {
         // Surface picker excludes "Onbekend" (index 0..4 only).
         final android.widget.Spinner surface = new android.widget.Spinner(this);
         String[] choices = java.util.Arrays.copyOf(surfaceLabels(), SurfaceType.MIXED + 1);
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+        android.widget.ArrayAdapter<String> surfaceAdapter = new android.widget.ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, choices);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        surface.setAdapter(adapter);
+        surfaceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        surface.setAdapter(surfaceAdapter);
         layout.addView(surface);
 
         new AlertDialog.Builder(this)
@@ -1152,5 +1150,12 @@ public final class RouteDetailActivity extends AppCompatActivity {
         } catch (java.io.IOException e) {
             Toast.makeText(this, R.string.route_detail_gpx_failed, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /** User-given name, else the detected name, else "klim N". */
+    static String climbLabel(StoredClimb c, int idx) {
+        if (c.userDisplayName != null) return c.userDisplayName;
+        if (c.name != null) return c.name;
+        return "klim " + (idx + 1);
     }
 }

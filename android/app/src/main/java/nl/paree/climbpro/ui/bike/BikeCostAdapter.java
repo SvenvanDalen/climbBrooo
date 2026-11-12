@@ -8,17 +8,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.bike.Bike;
 import nl.paree.climbpro.domain.bike.BikeCostCalculator;
 import nl.paree.climbpro.domain.bike.BikeCostCalculator.Summary;
 import nl.paree.climbpro.domain.bike.EuroAmount;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /** One card per bike: cost per km, km + total, purchase/parts split and the km source. */
 public final class BikeCostAdapter extends RecyclerView.Adapter<BikeCostAdapter.RowVH> {
@@ -29,8 +29,8 @@ public final class BikeCostAdapter extends RecyclerView.Adapter<BikeCostAdapter.
 
     private final List<Summary> rows = new ArrayList<>();
     private final Listener listener;
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("d MMM yyyy", new Locale("nl", "NL"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl", "NL"));
 
     public BikeCostAdapter(Listener listener) {
         this.listener = listener;
@@ -43,7 +43,7 @@ public final class BikeCostAdapter extends RecyclerView.Adapter<BikeCostAdapter.
     }
 
     public String formatDate(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 
     @NonNull

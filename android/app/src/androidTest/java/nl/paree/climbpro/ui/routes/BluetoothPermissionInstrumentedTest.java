@@ -1,7 +1,7 @@
 package nl.paree.climbpro.ui.routes;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assume.assumeTrue;
@@ -114,7 +114,7 @@ public class BluetoothPermissionInstrumentedTest {
         automation.grantRuntimePermission(app.getPackageName(), Manifest.permission.BLUETOOTH_SCAN);
         try (ActivityScenario<RouteListActivity> s = ActivityScenario.launch(RouteListActivity.class)) {
             assertNull(device.wait(Until.findObject(By.pkg(PERMISSION_UI)), 3_000));
-            assertFalse(s.getState() == Lifecycle.State.DESTROYED);
+            assertNotEquals(Lifecycle.State.DESTROYED, s.getState());
         }
     }
 }

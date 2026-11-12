@@ -63,7 +63,7 @@ public final class RideBuddyProfile {
     public Double areaLat;
     public Double areaLon;
 
-    public RideBuddyProfile() {}
+    public RideBuddyProfile() { /* for JSON deserialization */ }
 
     @JsonIgnore
     public boolean hasArea() {

@@ -1,7 +1,6 @@
 package nl.paree.climbpro.domain.ride;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -51,9 +50,9 @@ public class ZoneHistogramAnalyzerTest {
     @Test
     public void missingStreamsGiveNull() {
         int[] t = {0, 1, 2};
-        assertNull(ZoneHistogramAnalyzer.heartRateSeconds(ride(t, null, null)));
-        assertNull(ZoneHistogramAnalyzer.powerSeconds(ride(t, null, null)));
-        assertNull(ZoneHistogramAnalyzer.heartRateSeconds(
-                ride(t, null, new double[]{Double.NaN, Double.NaN, Double.NaN})));
+        assertEquals(0, ZoneHistogramAnalyzer.heartRateSeconds(ride(t, null, null)).length);
+        assertEquals(0, ZoneHistogramAnalyzer.powerSeconds(ride(t, null, null)).length);
+        assertEquals(0, ZoneHistogramAnalyzer.heartRateSeconds(
+                ride(t, null, new double[]{Double.NaN, Double.NaN, Double.NaN})).length);
     }
 }

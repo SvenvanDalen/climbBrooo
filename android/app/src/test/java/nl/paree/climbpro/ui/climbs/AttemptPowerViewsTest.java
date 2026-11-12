@@ -35,7 +35,7 @@ public class AttemptPowerViewsTest {
     }
 
     private static LogbookCalculator.HistoryRow row(StoredClimbAttempt a, Double wkg) {
-        LogbookCalculator.HistoryRow r = new LogbookCalculator.HistoryRow(0, 600, 0, false, false);
+        LogbookCalculator.HistoryRow r = new LogbookCalculator.HistoryRow.Builder().elapsedSec(600).build();
         r.attempt = a;
         r.wattsPerKg = wkg;
         return r;

@@ -71,8 +71,9 @@ public class BikePassportStoreTest {
 
     @Test
     public void blankNameIsRejected() throws Exception {
+        BikePassport blank = passport("  ");
         try {
-            store.save(passport("  "));
+            store.save(blank);
             fail();
         } catch (IllegalArgumentException expected) {
             // ok

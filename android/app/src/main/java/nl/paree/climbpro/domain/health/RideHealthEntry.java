@@ -40,18 +40,78 @@ public final class RideHealthEntry {
     /** Metabolic energy in kcal, or {@code null} when Strava has no work (kJ) figure. */
     public final Double kcal;
 
-    private RideHealthEntry(String clientRecordId, String title, Instant start, Instant end,
-                            ZoneOffset offset, boolean stationary, double distanceM,
-                            double elevationM, Double kcal) {
-        this.clientRecordId = clientRecordId;
-        this.title = title;
-        this.start = start;
-        this.end = end;
-        this.offset = offset;
-        this.stationary = stationary;
-        this.distanceM = distanceM;
-        this.elevationM = elevationM;
-        this.kcal = kcal;
+    private RideHealthEntry(Builder b) {
+        this.clientRecordId = b.clientRecordId;
+        this.title = b.title;
+        this.start = b.start;
+        this.end = b.end;
+        this.offset = b.offset;
+        this.stationary = b.stationary;
+        this.distanceM = b.distanceM;
+        this.elevationM = b.elevationM;
+        this.kcal = b.kcal;
+    }
+
+    /** Builds a {@link RideHealthEntry}; every value defaults to Java's default for its type. */
+    public static final class Builder {
+        private String clientRecordId;
+        private String title;
+        private Instant start;
+        private Instant end;
+        private ZoneOffset offset;
+        private boolean stationary;
+        private double distanceM;
+        private double elevationM;
+        private Double kcal;
+
+        public Builder clientRecordId(String clientRecordId) {
+            this.clientRecordId = clientRecordId;
+            return this;
+        }
+
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public Builder start(Instant start) {
+            this.start = start;
+            return this;
+        }
+
+        public Builder end(Instant end) {
+            this.end = end;
+            return this;
+        }
+
+        public Builder offset(ZoneOffset offset) {
+            this.offset = offset;
+            return this;
+        }
+
+        public Builder stationary(boolean stationary) {
+            this.stationary = stationary;
+            return this;
+        }
+
+        public Builder distanceM(double distanceM) {
+            this.distanceM = distanceM;
+            return this;
+        }
+
+        public Builder elevationM(double elevationM) {
+            this.elevationM = elevationM;
+            return this;
+        }
+
+        public Builder kcal(Double kcal) {
+            this.kcal = kcal;
+            return this;
+        }
+
+        public RideHealthEntry build() {
+            return new RideHealthEntry(this);
+        }
     }
 
     /**
@@ -84,8 +144,16 @@ public final class RideHealthEntry {
         // out almost exactly, which is why cycling apps report kJ ≈ kcal.
         Double kcal = a.kilojoules != null && a.kilojoules > 0 ? a.kilojoules : null;
         String title = a.name != null && !a.name.isEmpty() ? a.name : "Fietsrit";
-        return new RideHealthEntry("climbpro-strava-" + a.id, title, start,
-                start.plusSeconds(seconds), offset, "VirtualRide".equals(a.type),
-                Math.max(0, a.distance), Math.max(0, a.totalElevationGain), kcal);
+        return new RideHealthEntry.Builder()
+                .clientRecordId("climbpro-strava-" + a.id)
+                .title(title)
+                .start(start)
+                .end(start.plusSeconds(seconds))
+                .offset(offset)
+                .stationary("VirtualRide".equals(a.type))
+                .distanceM(Math.max(0, a.distance))
+                .elevationM(Math.max(0, a.totalElevationGain))
+                .kcal(kcal)
+                .build();
     }
 }

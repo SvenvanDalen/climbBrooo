@@ -138,8 +138,8 @@ public final class RideStory {
     static boolean isPr(StoredClimbAttempt a, List<StoredClimbAttempt> all) {
         if (a.routeDeviation || a.elapsedSec <= 0) return false;
         for (StoredClimbAttempt o : all) {
-            if (o == a || o.routeDeviation || o.elapsedSec <= 0) continue;
-            if (!a.climbId.equals(o.climbId) || !isEarlier(o, a)) continue;
+            if ((o == a || o.routeDeviation || o.elapsedSec <= 0)
+                    || (!a.climbId.equals(o.climbId) || !isEarlier(o, a))) continue;
             if (o.elapsedSec <= a.elapsedSec) return false;
         }
         return true;

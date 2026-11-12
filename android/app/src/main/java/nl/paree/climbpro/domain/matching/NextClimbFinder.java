@@ -50,6 +50,11 @@ public final class NextClimbFinder {
             return "De volgende klim is " + name + " over " + distance(metresToGo) + ", "
                     + details + ".";
         }
+
+        private static String name(StoredClimb c) {
+            if (c.userDisplayName != null && !c.userDisplayName.isEmpty()) return c.userDisplayName;
+            return c.name != null && !c.name.isEmpty() ? c.name : "een naamloze klim";
+        }
     }
 
     private NextClimbFinder() {}
@@ -61,8 +66,8 @@ public final class NextClimbFinder {
     public static Answer find(StoredRoute route, Double lat, Double lon) {
         double along = 0;
         boolean onRoute = false;
-        double[] proj = lat != null && lon != null ? project(route, lat, lon) : null;
-        if (proj != null && proj[0] <= OFF_ROUTE_M) {
+        double[] proj = lat != null && lon != null ? project(route, lat, lon) : new double[0];
+        if (proj.length > 0 && proj[0] <= OFF_ROUTE_M) {
             along = proj[1];
             onRoute = true;
         }
@@ -89,12 +94,12 @@ public final class NextClimbFinder {
 
     /**
      * @return [lateral distance m, distance along route m] of the nearest route point, or
-     *         null when the route has no usable geometry.
+     *         empty when the route has no usable geometry.
      */
     static double[] project(StoredRoute r, double lat, double lon) {
-        if (r.lats == null || r.lons == null || r.distances == null) return null;
+        if (r.lats == null || r.lons == null || r.distances == null) return new double[0];
         int n = Math.min(r.lats.length, Math.min(r.lons.length, r.distances.length));
-        if (n == 0) return null;
+        if (n == 0) return new double[0];
         if (n == 1) return new double[]{metres(lat, lon, r.lats[0], r.lons[0]), r.distances[0]};
 
         double cosLat = Math.cos(Math.toRadians(lat));
@@ -102,13 +107,17 @@ public final class NextClimbFinder {
         double bestAlong = 0;
         for (int i = 0; i < n - 1; i++) {
             // Local equirectangular plane around the query point, in metres.
-            double ax = (r.lons[i] - lon) * cosLat, ay = r.lats[i] - lat;
-            double bx = (r.lons[i + 1] - lon) * cosLat, by = r.lats[i + 1] - lat;
-            double dx = bx - ax, dy = by - ay;
+            double ax = (r.lons[i] - lon) * cosLat;
+            double ay = r.lats[i] - lat;
+            double bx = (r.lons[i + 1] - lon) * cosLat;
+            double by = r.lats[i + 1] - lat;
+            double dx = bx - ax;
+            double dy = by - ay;
             double lenSq = dx * dx + dy * dy;
             double t = lenSq > 0 ? -(ax * dx + ay * dy) / lenSq : 0;
             t = Math.max(0, Math.min(1, t));
-            double px = ax + t * dx, py = ay + t * dy;
+            double px = ax + t * dx;
+            double py = ay + t * dy;
             double d = Math.toRadians(Math.sqrt(px * px + py * py)) * EARTH_RADIUS_M;
             if (d < best) {
                 best = d;
@@ -122,11 +131,6 @@ public final class NextClimbFinder {
         double x = Math.toRadians(lon2 - lon1) * Math.cos(Math.toRadians((lat1 + lat2) / 2));
         double y = Math.toRadians(lat2 - lat1);
         return Math.sqrt(x * x + y * y) * EARTH_RADIUS_M;
-    }
-
-    private static String name(StoredClimb c) {
-        if (c.userDisplayName != null && !c.userDisplayName.isEmpty()) return c.userDisplayName;
-        return c.name != null && !c.name.isEmpty() ? c.name : "een naamloze klim";
     }
 
     /** "850 meter" below 1 km, else "3,4 kilometer" — written out for text-to-speech. */

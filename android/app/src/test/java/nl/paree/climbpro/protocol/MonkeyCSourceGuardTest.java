@@ -29,8 +29,12 @@ public class MonkeyCSourceGuardTest {
 
     @Test
     public void testsWithoutReturnTrue_flagsMissing() {
-        String bad = "(:test)\nfunction t1(l) { Test.assertEqual(1,1); }\n"
-                   + "(:test)\nfunction t2(l) { return true; }\n";
+        String bad = """
+                (:test)
+                function t1(l) { Test.assertEqual(1,1); }
+                (:test)
+                function t2(l) { return true; }
+                """;
         List<String> missing = MonkeyCSourceGuard.testsWithoutReturnTrue(bad);
         assertEquals(1, missing.size());
         assertTrue(missing.contains("t1"));

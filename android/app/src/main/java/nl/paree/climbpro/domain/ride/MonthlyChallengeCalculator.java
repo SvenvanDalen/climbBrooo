@@ -108,8 +108,10 @@ public final class MonthlyChallengeCalculator {
                                     List<StoredClimbAttempt> attempts, YearMonth month,
                                     LocalDate today, ZoneId zone) {
         int current = valueInMonth(type, rides, attempts, month, zone);
-        int day = YearMonth.from(today).equals(month) ? today.getDayOfMonth()
-                : (today.isBefore(month.atDay(1)) ? 0 : month.lengthOfMonth());
+        int day;
+        if (YearMonth.from(today).equals(month)) day = today.getDayOfMonth();
+        else if (today.isBefore(month.atDay(1))) day = 0;
+        else day = month.lengthOfMonth();
         double expected = target * (double) day / month.lengthOfMonth();
         int daysLeft = Math.max(0, month.lengthOfMonth() - day);
         return new Progress(type, month, target, current, expected, daysLeft);
@@ -122,9 +124,7 @@ public final class MonthlyChallengeCalculator {
         switch (type) {
             case DISTINCT_CLIMBS:
                 return distinctClimbsInMonth(attempts, month, zone);
-            case ELEVATION_M:
-            case DISTANCE_KM:
-            case RIDES:
+            case ELEVATION_M, DISTANCE_KM, RIDES:
                 return rideSumInMonth(type, rides, month, zone);
             default:
                 return 0;
@@ -149,10 +149,11 @@ public final class MonthlyChallengeCalculator {
         double sum = 0;
         for (StoredRide r : rides) {
             if (r == null || r.startEpochSec <= 0) continue;
-            if (!inMonth(r.startEpochSec, month, zone)) continue;
-            if (type == Type.ELEVATION_M) sum += Math.max(0, r.elevationGainM);
-            else if (type == Type.DISTANCE_KM) sum += Math.max(0, r.distanceM) / 1000.0;
-            else sum += 1;
+            if (inMonth(r.startEpochSec, month, zone)) {
+                if (type == Type.ELEVATION_M) sum += Math.max(0, r.elevationGainM);
+                else if (type == Type.DISTANCE_KM) sum += Math.max(0, r.distanceM) / 1000.0;
+                else sum += 1;
+            }
         }
         // Floored: never claim a metre or kilometre that hasn't been ridden yet.
         return (int) Math.floor(sum);

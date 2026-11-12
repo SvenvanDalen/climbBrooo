@@ -117,14 +117,14 @@ public class ClimbAttemptMatcherTest {
         List<TrackSample> track = straightNorthTrack(11, 48.000, 9.0, 0.001, 0, 60);
         int[] splits = ClimbAttemptMatcher.matchSegments(
                 track, 45.000, 6.0, 45.009, 6.0, 1000, new int[]{500, 500});
-        assertNull(splits);
+        assertEquals(0, splits.length);
     }
 
     @Test
     public void matchSegments_nullSegLengths_returnsNull() {
         List<TrackSample> track = straightNorthTrack(11, 45.000, 6.0, 0.001, 0, 60);
-        assertNull(ClimbAttemptMatcher.matchSegments(
-                track, 45.000, 6.0, 45.009, 6.0, 1000, null));
+        assertEquals(0, ClimbAttemptMatcher.matchSegments(
+                track, 45.000, 6.0, 45.009, 6.0, 1000, null).length);
     }
 
     // ---- matchAll / matchAllSegments (issue: climb ridden 2x in one activity) --------

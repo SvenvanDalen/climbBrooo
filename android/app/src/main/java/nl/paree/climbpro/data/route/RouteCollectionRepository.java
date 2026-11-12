@@ -84,11 +84,12 @@ public final class RouteCollectionRepository {
     public void addRoute(String collectionId, String routeId) {
         List<RouteCollection> all = loadAll();
         for (RouteCollection c : all) {
-            if (!c.id.equals(collectionId)) continue;
-            if (c.routeIds == null) c.routeIds = new ArrayList<>();
-            if (!c.routeIds.contains(routeId)) c.routeIds.add(routeId);
-            c.lastModifiedMs = System.currentTimeMillis();
-            break;
+            if (c.id.equals(collectionId)) {
+                if (c.routeIds == null) c.routeIds = new ArrayList<>();
+                if (!c.routeIds.contains(routeId)) c.routeIds.add(routeId);
+                c.lastModifiedMs = System.currentTimeMillis();
+                break;
+            }
         }
         saveAll(all);
     }
@@ -96,11 +97,12 @@ public final class RouteCollectionRepository {
     public void removeRoute(String collectionId, String routeId) {
         List<RouteCollection> all = loadAll();
         for (RouteCollection c : all) {
-            if (!c.id.equals(collectionId)) continue;
-            if (c.routeIds != null && c.routeIds.remove(routeId)) {
-                c.lastModifiedMs = System.currentTimeMillis();
+            if (c.id.equals(collectionId)) {
+                if (c.routeIds != null && c.routeIds.remove(routeId)) {
+                    c.lastModifiedMs = System.currentTimeMillis();
+                }
+                break;
             }
-            break;
         }
         saveAll(all);
     }
@@ -109,12 +111,13 @@ public final class RouteCollectionRepository {
     public void addClimb(String collectionId, String routeId, int climbIndex) {
         List<RouteCollection> all = loadAll();
         for (RouteCollection c : all) {
-            if (!c.id.equals(collectionId)) continue;
-            if (c.climbs == null) c.climbs = new ArrayList<>();
-            ClimbMembership m = new ClimbMembership(routeId, climbIndex);
-            if (!c.climbs.contains(m)) c.climbs.add(m);
-            c.lastModifiedMs = System.currentTimeMillis();
-            break;
+            if (c.id.equals(collectionId)) {
+                if (c.climbs == null) c.climbs = new ArrayList<>();
+                ClimbMembership m = new ClimbMembership(routeId, climbIndex);
+                if (!c.climbs.contains(m)) c.climbs.add(m);
+                c.lastModifiedMs = System.currentTimeMillis();
+                break;
+            }
         }
         saveAll(all);
     }
@@ -122,12 +125,13 @@ public final class RouteCollectionRepository {
     public void removeClimb(String collectionId, String routeId, int climbIndex) {
         List<RouteCollection> all = loadAll();
         for (RouteCollection c : all) {
-            if (!c.id.equals(collectionId)) continue;
-            if (c.climbs != null
-                    && c.climbs.remove(new ClimbMembership(routeId, climbIndex))) {
-                c.lastModifiedMs = System.currentTimeMillis();
+            if (c.id.equals(collectionId)) {
+                if (c.climbs != null
+                        && c.climbs.remove(new ClimbMembership(routeId, climbIndex))) {
+                    c.lastModifiedMs = System.currentTimeMillis();
+                }
+                break;
             }
-            break;
         }
         saveAll(all);
     }

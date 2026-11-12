@@ -80,19 +80,19 @@ public final class ClimbIdentity {
     /**
      * Approximate start coordinate ({@code {lat, lon}}, the bucket centre, i.e. within about
      * half a {@code COORD_BUCKET_DEG} of the real start) encoded in a key built by {@link #of},
-     * or null when {@code climbId} is not in that format. Lets callers place logbook climbs on
+     * or empty when {@code climbId} is not in that format. Lets callers place logbook climbs on
      * the map without loading every stored route.
      */
     public static double[] approxStart(String climbId) {
-        if (climbId == null) return null;
+        if (climbId == null) return new double[0];
         String[] parts = climbId.split(":");
-        if (parts.length != 3) return null;
+        if (parts.length != 3) return new double[0];
         try {
             return new double[] {
                     Long.parseLong(parts[0]) * COORD_BUCKET_DEG,
                     Long.parseLong(parts[1]) * COORD_BUCKET_DEG};
         } catch (NumberFormatException e) {
-            return null;
+            return new double[0];
         }
     }
 }

@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -90,7 +91,7 @@ public class RouteReverseServiceTest {
         assertEquals(0.05, rev.climbs.get(0).avgGradient, 0.005);
         assertEquals(res.climbCount, rev.climbs.size());
         // Different climbs: the original's climb rename must not carry over.
-        assertFalse("Mijn klim".equals(rev.climbs.get(0).userDisplayName));
+        assertNotEquals("Mijn klim", rev.climbs.get(0).userDisplayName);
         assertNull(rev.notes);
         assertNotNull(catalogEntry("rev_gpx_a"));
     }

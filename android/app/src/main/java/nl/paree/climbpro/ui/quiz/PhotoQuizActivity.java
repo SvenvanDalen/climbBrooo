@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -23,7 +24,7 @@ import nl.paree.climbpro.data.route.AttemptPhotoStore;
 import nl.paree.climbpro.data.route.ClimbAttemptRepository;
 import nl.paree.climbpro.data.route.RouteCatalogEntry;
 import nl.paree.climbpro.data.route.RouteRepository;
-import nl.paree.climbpro.data.route.StoredClimb;
+import nl.paree.climbpro.data.route.StoredClimb;
 import nl.paree.climbpro.data.route.StoredClimbAttempt;
 import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
@@ -147,7 +148,7 @@ public final class PhotoQuizActivity extends AppCompatActivity {
             Button b = new Button(this, null, 0, R.style.Widget_ClimbPro_Button_Outline);
             b.setText(option);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.bottomMargin = (int) (8 * getResources().getDisplayMetrics().density);
             b.setLayoutParams(lp);
             b.setOnClickListener(v -> answer(q, option));
@@ -179,14 +180,14 @@ public final class PhotoQuizActivity extends AppCompatActivity {
         int pct = Math.round(100f * score / questions.size());
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         int best = prefs.getInt(PREF_BEST, -1);
-        boolean record = pct > best;
-        if (record) prefs.edit().putInt(PREF_BEST, pct).apply();
+        boolean newRecord = pct > best;
+        if (newRecord) prefs.edit().putInt(PREF_BEST, pct).apply();
 
         options.removeAllViews();
         photo.setImageDrawable(null);
         progress.setText("");
         message.setText(score + " van de " + questions.size() + " goed (" + pct + "%)"
-                + (record ? "\nNieuw record!" : "\nJe record: " + best + "%"));
+                + (newRecord ? "\nNieuw record!" : "\nJe record: " + best + "%"));
         next.setText("Nog een ronde");
         next.setVisibility(View.VISIBLE);
     }

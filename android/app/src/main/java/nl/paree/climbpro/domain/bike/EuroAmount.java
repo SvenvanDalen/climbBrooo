@@ -21,20 +21,20 @@ public final class EuroAmount {
 
     public static long parseCents(String input) {
         if (input == null) return INVALID;
-        String s = input.replace(' ', ' ').replace("€", "").replaceAll("\\s+", "");
+        String s = input.replace('\u00A0', ' ').replace("€", "").replaceAll("\\s+", "");
         if (s.isEmpty()) return INVALID;
 
         String[] parts = s.indexOf(',') >= 0 ? splitAtComma(s) : splitWithoutComma(s);
-        if (parts == null) return INVALID;
+        if (parts.length == 0) return INVALID;
         return toCents(parts[0], parts[1]);
     }
 
-    /** {@code "1.234,5"} → {"1234", "5"}; null for a second comma or bad grouping. */
+    /** {@code "1.234,5"} → {"1234", "5"}; empty for a second comma or bad grouping. */
     private static String[] splitAtComma(String s) {
         int comma = s.indexOf(',');
-        if (s.indexOf(',', comma + 1) >= 0) return null;
+        if (s.indexOf(',', comma + 1) >= 0) return new String[0];
         String intPart = s.substring(0, comma);
-        if (!validThousands(intPart)) return null;
+        if (!validThousands(intPart)) return new String[0];
         return new String[]{intPart.replace(".", ""), s.substring(comma + 1)};
     }
 
@@ -51,7 +51,7 @@ public final class EuroAmount {
         if (dots == 1 && s.length() - lastDot - 1 <= 2) {
             return new String[]{s.substring(0, lastDot), s.substring(lastDot + 1)};
         }
-        if (!validThousands(s)) return null;
+        if (!validThousands(s)) return new String[0];
         return new String[]{s.replace(".", ""), ""};
     }
 
@@ -61,8 +61,11 @@ public final class EuroAmount {
         if (intPart.length() > 9) return INVALID; // way above MAX_CENTS, avoids overflow
 
         long euros = intPart.isEmpty() ? 0 : Long.parseLong(intPart);
-        long frac  = fracPart.isEmpty() ? 0
-                : Long.parseLong(fracPart) * (fracPart.length() == 1 ? 10 : 1);
+        long frac = 0;
+        if (!fracPart.isEmpty()) {
+            int scale = fracPart.length() == 1 ? 10 : 1;
+            frac = Long.parseLong(fracPart) * scale;
+        }
         long cents = euros * 100 + frac;
         if (cents <= 0 || cents > MAX_CENTS) return INVALID;
         return cents;

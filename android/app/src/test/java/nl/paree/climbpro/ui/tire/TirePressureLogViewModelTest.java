@@ -178,10 +178,28 @@ public class TirePressureLogViewModelTest {
     public void linkedGarageBike_onlyCountsThatBikesRides() throws Exception {
         long now = now();
         BikeCostRepository bikes = new BikeCostRepository(app);
-        String road = bikes.saveGarageBike(null, "Racefiets", "road", 7.5, 28, null, null,
-                "b-road", true, false);
-        bikes.saveGarageBike(null, "Gravel", "gravel", 9.5, 40, null, null, "b-gravel",
-                false, false);
+        String road = bikes.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Racefiets")
+                .type("road")
+                .weightKg(7.5)
+                .tyreWidthMm(28)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b-road")
+                .active(true)
+                .indoor(false));
+        bikes.saveGarageBike(new BikeCostRepository.GarageBike()
+                .id(null)
+                .name("Gravel")
+                .type("gravel")
+                .weightKg(9.5)
+                .tyreWidthMm(40)
+                .chainrings(null)
+                .cassette(null)
+                .stravaGearId("b-gravel")
+                .active(false)
+                .indoor(false));
         new TirePressureLogRepository(app).addEntry(now - 2 * DAY, 5, 5, null);
         List<StoredRide> rides = new ArrayList<>();
         rides.add(ride(1, "Ride", now - DAY, 30_000, "b-road"));

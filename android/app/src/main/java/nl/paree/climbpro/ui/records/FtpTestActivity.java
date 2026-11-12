@@ -18,13 +18,13 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.power.FtpTestPlan;
 import nl.paree.climbpro.domain.power.FtpTestResultDetector;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.climbs.ClimbWorkoutExportHandoff;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -35,8 +35,8 @@ import java.util.Locale;
  */
 public final class FtpTestActivity extends AppCompatActivity {
 
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", new Locale("nl"));
 
     private FtpTestViewModel viewModel;
 
@@ -85,7 +85,7 @@ public final class FtpTestActivity extends AppCompatActivity {
         if (exportedAtEpochSec > 0) {
             exportedAt.setVisibility(View.VISIBLE);
             exportedAt.setText(getString(R.string.ftp_test_exported_at,
-                    dateFormat.format(new Date(exportedAtEpochSec * 1000L))));
+                    EpochDates.format(dateFormat, exportedAtEpochSec)));
         } else {
             exportedAt.setVisibility(View.GONE);
         }
@@ -121,7 +121,7 @@ public final class FtpTestActivity extends AppCompatActivity {
     private String resultText(FtpTestResultDetector.Result r, int ftp) {
         String name = r.ride.name != null && !r.ride.name.isEmpty()
                 ? r.ride.name : getString(R.string.ftp_test_unknown_ride);
-        String date = dateFormat.format(new Date(r.ride.startEpochSec * 1000L));
+        String date = EpochDates.format(dateFormat, r.ride.startEpochSec);
         StringBuilder text = new StringBuilder(getString(R.string.ftp_test_result_found,
                 name, date, r.twentyMinuteWatts, r.ftpWatts));
         if (ftp > 0) {

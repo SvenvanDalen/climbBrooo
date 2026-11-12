@@ -127,33 +127,41 @@ public final class ClimateNormals {
         for (int i = 0; i < time.size(); i++) {
             String t = time.get(i).asText();
             int[] monthHour = monthAndHour(t);
-            if (monthHour == null) continue;
+            if (monthHour.length == 0) continue;
             int month = monthHour[0];
             DayPart part = DayPart.ofHour(monthHour[1]);
-            if (part == null || month < 1 || month > 12) continue;
-            sums.add(month - 1, part, t, number(temp, i), number(speed, i), number(dir, i),
-                    number(precip, i));
+            if (part != null && month >= 1 && month <= 12) {
+                sums.add(month - 1, part, t, number(temp, i), number(speed, i), number(dir, i),
+                        number(precip, i));
+            }
         }
         sums.countRainBlocks();
         return new ClimateNormals(sums.cells());
     }
 
-    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); null if unparseable. */
+    /** {month, hour} of an ISO local date-time ("2024-05-01T13:00"); empty if unparseable. */
     private static int[] monthAndHour(String t) {
-        if (t.length() < 13) return null;
+        if (t.length() < 13) return new int[0];
         try {
             return new int[] {Integer.parseInt(t.substring(5, 7)),
                     Integer.parseInt(t.substring(11, 13))};
         } catch (NumberFormatException e) {
-            return null;
+            return new int[0];
         }
     }
 
     /** Running sums per (month, day-part) while the hourly archive is read. */
     private static final class Sums {
         final int parts;
-        final double[][] tempSum, windSum, uSum, vSum;
-        final int[][] tempN, windN, hours, blocks, wetBlocks;
+        final double[][] tempSum;
+        final double[][] windSum;
+        final double[][] uSum;
+        final double[][] vSum;
+        final int[][] tempN;
+        final int[][] windN;
+        final int[][] hours;
+        final int[][] blocks;
+        final int[][] wetBlocks;
         // Precipitation per (date, day-part): the rain chance is about the ride, not one hour.
         final Map<String, Double> blockRain = new HashMap<>();
         final Map<String, int[]> blockCell = new HashMap<>();
@@ -265,7 +273,8 @@ public final class ClimateNormals {
     /** Initial compass bearing from foot to top in degrees (0 = north), NaN for one point. */
     public static double bearingDeg(double lat1, double lon1, double lat2, double lon2) {
         if (lat1 == lat2 && lon1 == lon2) return Double.NaN;
-        double p1 = Math.toRadians(lat1), p2 = Math.toRadians(lat2);
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
         double dl = Math.toRadians(lon2 - lon1);
         double y = Math.sin(dl) * Math.cos(p2);
         double x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);

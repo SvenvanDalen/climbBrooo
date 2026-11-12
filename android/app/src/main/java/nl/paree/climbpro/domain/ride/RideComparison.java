@@ -30,7 +30,7 @@ public final class RideComparison {
     /** One kilometre (or the trailing part of one) of the comparison. */
     public static final class Km {
         /** 1-based kilometre number. */
-        public final int km;
+        public final int number;
         public final double lengthM;
         public final int secA;
         public final int secB;
@@ -50,26 +50,112 @@ public final class RideComparison {
 
         Km(int km, double lengthM, int secA, int secB, double hrA, double hrB,
            int cumulativeDeltaSec) {
-            this(km, lengthM, secA, secB, hrA, hrB, cumulativeDeltaSec,
-                    Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+            this(new Builder()
+                    .number(km)
+                    .lengthM(lengthM)
+                    .secA(secA)
+                    .secB(secB)
+                    .hrA(hrA)
+                    .hrB(hrB)
+                    .cumulativeDeltaSec(cumulativeDeltaSec)
+                    .wattsA(Double.NaN)
+                    .wattsB(Double.NaN)
+                    .cadenceA(Double.NaN)
+                    .cadenceB(Double.NaN));
         }
 
-        Km(int km, double lengthM, int secA, int secB, double hrA, double hrB,
-           int cumulativeDeltaSec, double wattsA, double wattsB, double cadenceA,
-           double cadenceB) {
-            this.km = km;
-            this.lengthM = lengthM;
-            this.secA = secA;
-            this.secB = secB;
-            this.speedA = speedKmh(lengthM, secA);
-            this.speedB = speedKmh(lengthM, secB);
-            this.hrA = hrA;
-            this.hrB = hrB;
-            this.cumulativeDeltaSec = cumulativeDeltaSec;
-            this.wattsA = wattsA;
-            this.wattsB = wattsB;
-            this.cadenceA = cadenceA;
-            this.cadenceB = cadenceB;
+        private Km(Builder b) {
+            this.number = b.number;
+            this.lengthM = b.lengthM;
+            this.secA = b.secA;
+            this.secB = b.secB;
+            this.speedA = speedKmh(b.lengthM, b.secA);
+            this.speedB = speedKmh(b.lengthM, b.secB);
+            this.hrA = b.hrA;
+            this.hrB = b.hrB;
+            this.cumulativeDeltaSec = b.cumulativeDeltaSec;
+            this.wattsA = b.wattsA;
+            this.wattsB = b.wattsB;
+            this.cadenceA = b.cadenceA;
+            this.cadenceB = b.cadenceB;
+        }
+
+        /** Builds a {@link Km}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private int number;
+            private double lengthM;
+            private int secA;
+            private int secB;
+            private double hrA;
+            private double hrB;
+            private int cumulativeDeltaSec;
+            private double wattsA;
+            private double wattsB;
+            private double cadenceA;
+            private double cadenceB;
+
+            public Builder number(int number) {
+                this.number = number;
+                return this;
+            }
+
+            public Builder lengthM(double lengthM) {
+                this.lengthM = lengthM;
+                return this;
+            }
+
+            public Builder secA(int secA) {
+                this.secA = secA;
+                return this;
+            }
+
+            public Builder secB(int secB) {
+                this.secB = secB;
+                return this;
+            }
+
+            public Builder hrA(double hrA) {
+                this.hrA = hrA;
+                return this;
+            }
+
+            public Builder hrB(double hrB) {
+                this.hrB = hrB;
+                return this;
+            }
+
+            public Builder cumulativeDeltaSec(int cumulativeDeltaSec) {
+                this.cumulativeDeltaSec = cumulativeDeltaSec;
+                return this;
+            }
+
+            public Builder wattsA(double wattsA) {
+                this.wattsA = wattsA;
+                return this;
+            }
+
+            public Builder wattsB(double wattsB) {
+                this.wattsB = wattsB;
+                return this;
+            }
+
+            public Builder cadenceA(double cadenceA) {
+                this.cadenceA = cadenceA;
+                return this;
+            }
+
+            public Builder cadenceB(double cadenceB) {
+                this.cadenceB = cadenceB;
+                return this;
+            }
+
+            public Km build() {
+                return new Km(this);
+            }
+        }
+
+        private static double speedKmh(double lengthM, int sec) {
+            return sec > 0 ? lengthM / sec * 3.6 : 0;
         }
     }
 
@@ -96,11 +182,19 @@ public final class RideComparison {
             double tB = at(b.distance, movingB, to);
             int secA = (int) Math.round(tA - prevA);
             int secB = (int) Math.round(tB - prevB);
-            out.add(new Km(k + 1, to - from, secA, secB,
-                    meanHr(a, from, to), meanHr(b, from, to),
-                    (int) Math.round(tB - tA),
-                    mean(a, a.watts, from, to, true), mean(b, b.watts, from, to, true),
-                    mean(a, a.cadence, from, to, false), mean(b, b.cadence, from, to, false)));
+            out.add(new Km.Builder()
+                    .number(k + 1)
+                    .lengthM(to - from)
+                    .secA(secA)
+                    .secB(secB)
+                    .hrA(meanHr(a, from, to))
+                    .hrB(meanHr(b, from, to))
+                    .cumulativeDeltaSec((int) Math.round(tB - tA))
+                    .wattsA(mean(a, a.watts, from, to, true))
+                    .wattsB(mean(b, b.watts, from, to, true))
+                    .cadenceA(mean(a, a.cadence, from, to, false))
+                    .cadenceB(mean(b, b.cadence, from, to, false))
+                    .build());
             prevA = tA;
             prevB = tB;
         }
@@ -117,11 +211,11 @@ public final class RideComparison {
         if (IndoorRides.isMyWhoosh(base)) return sameMyWhooshRoute(base, all);
         if (base.distanceM <= 0) return out;
         for (StoredRide r : all) {
-            if (r == null || r.activityId == base.activityId) continue;
-            if (Math.abs(r.distanceM - base.distanceM)
-                    > base.distanceM * SAME_ROUTE_DISTANCE_TOLERANCE) continue;
-            if (!near(base.startLat, base.startLon, r.startLat, r.startLon)) continue;
-            if (!near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
+            if ((r == null || r.activityId == base.activityId)
+                    || Math.abs(r.distanceM - base.distanceM)
+                    > base.distanceM * SAME_ROUTE_DISTANCE_TOLERANCE
+                    || !near(base.startLat, base.startLon, r.startLat, r.startLon)
+                    || !near(base.endLat, base.endLon, r.endLat, r.endLon)) continue;
             out.add(r);
         }
         out.sort((x, y) -> Long.compare(y.startEpochSec, x.startEpochSec));
@@ -187,9 +281,10 @@ public final class RideComparison {
         for (int i = 0; i < s.distance.length; i++) {
             if (s.distance[i] < from || s.distance[i] > to) continue;
             double v = values[i];
-            if (Double.isNaN(v) || v < 0 || (v == 0 && !includeZero)) continue;
-            sum += v;
-            n++;
+            if (v > 0 || (v == 0 && includeZero)) {
+                sum += v;
+                n++;
+            }
         }
         return n > 0 ? sum / n : Double.NaN;
     }
@@ -201,14 +296,12 @@ public final class RideComparison {
         for (int i = 0; i < s.distance.length; i++) {
             if (s.distance[i] < from || s.distance[i] > to) continue;
             double hr = s.heartrate[i];
-            if (Double.isNaN(hr) || hr <= 0) continue;
-            sum += hr;
-            n++;
+            if (hr > 0) {
+                sum += hr;
+                n++;
+            }
         }
         return n > 0 ? sum / n : Double.NaN;
     }
 
-    private static double speedKmh(double lengthM, int sec) {
-        return sec > 0 ? lengthM / sec * 3.6 : 0;
-    }
 }

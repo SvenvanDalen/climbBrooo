@@ -34,13 +34,14 @@ public final class BestTimeScorer {
 
     /** One month's best day-part. {@code bestPart} is null when the month has no data. */
     public static final class Month {
-        public final int month;
+        /** 1 = January. */
+        public final int monthOfYear;
         public final DayPart bestPart;
         public final double score;
         public final Cell cell;
 
         Month(int month, DayPart bestPart, double score, Cell cell) {
-            this.month = month;
+            this.monthOfYear = month;
             this.bestPart = bestPart;
             this.score = score;
             this.cell = cell;
@@ -70,8 +71,8 @@ public final class BestTimeScorer {
             StringBuilder sb = new StringBuilder();
             for (Month m : months) {
                 if (sb.length() > 0) sb.append('\n');
-                sb.append(bestMonths.contains(m.month) ? "★ " : "  ")
-                        .append(MONTHS_SHORT[m.month - 1]);
+                sb.append(bestMonths.contains(m.monthOfYear) ? "★ " : "  ")
+                        .append(MONTHS_SHORT[m.monthOfYear - 1]);
                 if (m.bestPart == null) {
                     sb.append("  –");
                     continue;
@@ -115,7 +116,7 @@ public final class BestTimeScorer {
 
         List<Integer> bestMonths = new ArrayList<>();
         for (Month m : months) {
-            if (m.bestPart != null && m.score >= top - BEST_MARGIN) bestMonths.add(m.month);
+            if (m.bestPart != null && m.score >= top - BEST_MARGIN) bestMonths.add(m.monthOfYear);
         }
         DayPart bestPart = bestAveragePart(normals, bestMonths, bearingDeg);
         return new Result(Collections.unmodifiableList(bestMonths), bestPart, months);

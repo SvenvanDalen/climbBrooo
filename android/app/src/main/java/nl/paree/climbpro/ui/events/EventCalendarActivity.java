@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -36,6 +37,7 @@ import java.util.Locale;
  * manual entries — there is no central free source. Phone-only.
  */
 public final class EventCalendarActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     private static final Locale NL = new Locale("nl");
     private static final int[] RADII_KM = {25, 50, 75, 100, 150, 250};
@@ -109,7 +111,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
             View divider = new View(this);
             divider.setBackgroundColor(0x22888888);
             list.addView(divider, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                    ViewGroup.LayoutParams.MATCH_PARENT, 1));
         }
     }
 
@@ -220,7 +222,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setMessage("Agenda \"" + f.name + "\" verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.removeFeed(f.url))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -240,7 +242,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
                     }
                     viewModel.addFeed(u, name.getText().toString());
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -288,7 +290,7 @@ public final class EventCalendarActivity extends AppCompatActivity {
                     e.url = u.isEmpty() ? null : u;
                     viewModel.addManual(e);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 

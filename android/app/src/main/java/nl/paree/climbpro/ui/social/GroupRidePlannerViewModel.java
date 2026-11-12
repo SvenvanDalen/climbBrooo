@@ -74,19 +74,78 @@ public final class GroupRidePlannerViewModel extends AndroidViewModel {
         /** The last {@code manualCount} participants are manual entries (removable). */
         public final int manualCount;
 
-        Plan(String routeName, double distanceM, int ascentM,
-             List<GroupRideParticipant> participants, GroupRidePlanner.Estimate estimate,
-             List<GroupRidePlanner.DateOption> dates, String shareText, LocalDate firstDay,
-             int manualCount) {
-            this.routeName = routeName;
-            this.distanceM = distanceM;
-            this.ascentM = ascentM;
-            this.participants = participants;
-            this.estimate = estimate;
-            this.dates = dates;
-            this.shareText = shareText;
-            this.firstDay = firstDay;
-            this.manualCount = manualCount;
+        private Plan(Builder b) {
+            this.routeName = b.routeName;
+            this.distanceM = b.distanceM;
+            this.ascentM = b.ascentM;
+            this.participants = b.participants;
+            this.estimate = b.estimate;
+            this.dates = b.dates;
+            this.shareText = b.shareText;
+            this.firstDay = b.firstDay;
+            this.manualCount = b.manualCount;
+        }
+
+        /** Builds a {@link Plan}; every value defaults to Java's default for its type. */
+        public static final class Builder {
+            private String routeName;
+            private double distanceM;
+            private int ascentM;
+            private List<GroupRideParticipant> participants;
+            private GroupRidePlanner.Estimate estimate;
+            private List<GroupRidePlanner.DateOption> dates;
+            private String shareText;
+            private LocalDate firstDay;
+            private int manualCount;
+
+            public Builder routeName(String routeName) {
+                this.routeName = routeName;
+                return this;
+            }
+
+            public Builder distanceM(double distanceM) {
+                this.distanceM = distanceM;
+                return this;
+            }
+
+            public Builder ascentM(int ascentM) {
+                this.ascentM = ascentM;
+                return this;
+            }
+
+            public Builder participants(List<GroupRideParticipant> participants) {
+                this.participants = participants;
+                return this;
+            }
+
+            public Builder estimate(GroupRidePlanner.Estimate estimate) {
+                this.estimate = estimate;
+                return this;
+            }
+
+            public Builder dates(List<GroupRidePlanner.DateOption> dates) {
+                this.dates = dates;
+                return this;
+            }
+
+            public Builder shareText(String shareText) {
+                this.shareText = shareText;
+                return this;
+            }
+
+            public Builder firstDay(LocalDate firstDay) {
+                this.firstDay = firstDay;
+                return this;
+            }
+
+            public Builder manualCount(int manualCount) {
+                this.manualCount = manualCount;
+                return this;
+            }
+
+            public Plan build() {
+                return new Plan(this);
+            }
         }
 
         /** Index among the manual riders of participant {@code i}, or -1 when not manual. */
@@ -247,8 +306,17 @@ public final class GroupRidePlannerViewModel extends AndroidViewModel {
                 GroupRidePlanner.DEFAULT_HORIZON_DAYS, GroupRidePlanner.DEFAULT_DATE_OPTIONS);
         String text = routeName == null ? null
                 : GroupRidePlanner.shareText(routeName, distanceM, ascentM, ps, est, dates);
-        plan.postValue(new Plan(routeName, distanceM, ascentM, ps, est, dates, text, firstDay,
-                manual.size()));
+        plan.postValue(new Plan.Builder()
+                .routeName(routeName)
+                .distanceM(distanceM)
+                .ascentM(ascentM)
+                .participants(ps)
+                .estimate(est)
+                .dates(dates)
+                .shareText(text)
+                .firstDay(firstDay)
+                .manualCount(manual.size())
+                .build());
     }
 
     private static String displayName(String userName, String name) {

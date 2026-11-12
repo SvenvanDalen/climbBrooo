@@ -1,6 +1,7 @@
 package nl.paree.climbpro.ui.records;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -126,7 +127,7 @@ public class FtpTestActivityTest {
         }
         if (!quirk) {
             AlertDialog d = (AlertDialog) ActivityTestSupport.showingDialog();
-            assertTrue(d != null);
+            assertNotNull(d);
             d.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
             UiTestEnv.settle();
             assertEquals("application/xml", ActivityTestSupport.nextStarted(a).getType());

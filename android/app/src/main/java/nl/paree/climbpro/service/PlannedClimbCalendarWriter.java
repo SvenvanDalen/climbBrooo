@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.provider.BaseColumns;
 import android.provider.CalendarContract;
 import android.util.Log;
 
@@ -89,7 +90,7 @@ public final class PlannedClimbCalendarWriter {
     }
 
     private static long findWritableCalendarId(Context context) {
-        String[] projection = {CalendarContract.Calendars._ID, CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL};
+        String[] projection = {BaseColumns._ID, CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL};
         try (Cursor cursor = context.getContentResolver().query(
                 CalendarContract.Calendars.CONTENT_URI, projection, null, null, null)) {
             if (cursor == null) return -1L;

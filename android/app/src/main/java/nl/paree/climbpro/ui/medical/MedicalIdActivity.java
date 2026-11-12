@@ -44,11 +44,10 @@ public final class MedicalIdActivity extends AppCompatActivity {
     private EditText contactPhone;
     private EditText notes;
     private SwitchCompat lockscreen;
-    private TextView watchStatus;
 
     private final ActivityResultLauncher<String> notificationPermission =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
+                if (Boolean.TRUE.equals(granted)) {
                     io.execute(() -> MedicalIdNotifier.refresh(this));
                 } else {
                     Toast.makeText(this, "Zonder meldingen-toestemming verschijnt de medische ID "
@@ -78,7 +77,6 @@ public final class MedicalIdActivity extends AppCompatActivity {
         contactPhone = findViewById(R.id.input_contact_phone);
         notes = findViewById(R.id.input_notes);
         lockscreen = findViewById(R.id.switch_lockscreen);
-        watchStatus = findViewById(R.id.watch_status);
         findViewById(R.id.btn_save).setOnClickListener(v -> save());
 
         io.execute(() -> {
@@ -128,6 +126,7 @@ public final class MedicalIdActivity extends AppCompatActivity {
                 Toast.makeText(this, "Opgeslagen", Toast.LENGTH_SHORT).show();
                 // A widget that isn't open drops the message, so this is best effort; the
                 // widget gets it again whenever it asks for the route list.
+                TextView watchStatus = findViewById(R.id.watch_status);
                 watchStatus.setText(sent
                         ? "Naar het horloge gestuurd. Staat de ClimbPro-widget niet open, dan "
                                 + "haalt hij hem op zodra je hem opent."

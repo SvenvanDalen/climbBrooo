@@ -107,9 +107,9 @@ public final class RideBuddyMatcher {
         void pace(RideBuddyProfile me, RideBuddyProfile other) {
             if (me.flatSpeedDkmh <= 0 || other.flatSpeedDkmh <= 0) return;
             double d = (other.flatSpeedDkmh - me.flatSpeedDkmh) / 10.0;
-            String reason = Math.abs(d) <= PACE_SIMILAR_KMH ? "vergelijkbaar tempo"
-                    : String.format(NL, "rijdt %.1f km/u %s", Math.abs(d),
-                            d > 0 ? "sneller" : "langzamer");
+            String reason = String.format(NL, "rijdt %.1f km/u %s", Math.abs(d),
+                    d > 0 ? "sneller" : "langzamer");
+            if (Math.abs(d) <= PACE_SIMILAR_KMH) reason = "vergelijkbaar tempo";
             add(W_PACE, linear(Math.abs(d), PACE_ZERO_KMH), reason);
         }
 
@@ -157,36 +157,36 @@ public final class RideBuddyMatcher {
                     days ? weekdayReason(me.weekdays & other.weekdays)
                             : daypartReason(me.dayparts & other.dayparts));
         }
-    }
 
-    private static double scheduleSimilarity(RideBuddyProfile me, RideBuddyProfile other,
-                                             boolean days, boolean parts) {
-        if (days && parts) {
-            return 0.7 * jaccard(me.weekdays, other.weekdays)
-                    + 0.3 * jaccard(me.dayparts, other.dayparts);
+        private static double scheduleSimilarity(RideBuddyProfile me, RideBuddyProfile other,
+                                                 boolean days, boolean parts) {
+            if (days && parts) {
+                return 0.7 * jaccard(me.weekdays, other.weekdays)
+                        + 0.3 * jaccard(me.dayparts, other.dayparts);
+            }
+            return days ? jaccard(me.weekdays, other.weekdays)
+                    : jaccard(me.dayparts, other.dayparts);
         }
-        return days ? jaccard(me.weekdays, other.weekdays)
-                : jaccard(me.dayparts, other.dayparts);
-    }
 
-    private static String weekdayReason(int common) {
-        return common != 0 ? "rijdt ook op " + RideBuddyCode.dayNames(common)
-                : "rijdt op andere dagen";
-    }
+        private static String weekdayReason(int common) {
+            return common != 0 ? "rijdt ook op " + RideBuddyCode.dayNames(common)
+                    : "rijdt op andere dagen";
+        }
 
-    private static String daypartReason(int common) {
-        return common != 0 ? "rijdt ook in de " + RideBuddyCode.partNames(common)
-                : "rijdt op andere tijden";
-    }
+        private static String daypartReason(int common) {
+            return common != 0 ? "rijdt ook in de " + RideBuddyCode.partNames(common)
+                    : "rijdt op andere tijden";
+        }
 
-    /** 1 at 0, falling linearly to 0 at {@code zero}. */
-    private static double linear(double diff, double zero) {
-        return Math.max(0, 1 - diff / zero);
-    }
+        /** 1 at 0, falling linearly to 0 at {@code zero}. */
+        private static double linear(double diff, double zero) {
+            return Math.max(0, 1 - diff / zero);
+        }
 
-    private static double jaccard(int a, int b) {
-        int union = Integer.bitCount(a | b);
-        return union == 0 ? 0 : (double) Integer.bitCount(a & b) / union;
+        private static double jaccard(int a, int b) {
+            int union = Integer.bitCount(a | b);
+            return union == 0 ? 0 : (double) Integer.bitCount(a & b) / union;
+        }
     }
 
     static double haversineKm(double lat1, double lon1, double lat2, double lon2) {

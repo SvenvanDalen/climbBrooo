@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -535,7 +536,7 @@ public class StravaActivitiesRepositoryTest {
                 new StravaActivitiesRepository(app, auth, routeRepo, attemptRepo, api);
         repo.syncActivities();
 
-        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+        verify(api, never())
                 .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
     }
 
@@ -693,11 +694,11 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(2, attemptRepo.loadAll().size());
         assertTrue(repo.titleUpdateAuthExpired());
         // ...the first activity's title update was attempted (and failed with 401)...
-        org.mockito.Mockito.verify(api, org.mockito.Mockito.times(1))
+        verify(api, times(1))
                 .updateActivity(anyString(), eq(111L), org.mockito.ArgumentMatchers.any());
         // ...but the second activity's title update must NOT be attempted at all, since the
         // 401 already proved the scope is missing for the whole sync run.
-        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+        verify(api, never())
                 .updateActivity(anyString(), eq(222L), org.mockito.ArgumentMatchers.any());
     }
 
@@ -750,7 +751,7 @@ public class StravaActivitiesRepositoryTest {
         int created = repo.syncActivities();
 
         assertEquals(1, created); // matching still happens
-        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+        verify(api, never())
                 .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
     }
 
@@ -770,7 +771,7 @@ public class StravaActivitiesRepositoryTest {
         repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
         repo.syncActivities();
 
-        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+        verify(api, never())
                 .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
     }
 
@@ -787,7 +788,7 @@ public class StravaActivitiesRepositoryTest {
         repo.clock = () -> RIDES_PLUS_ONE_DAY_SEC;
         repo.syncActivities();
 
-        org.mockito.Mockito.verify(api, org.mockito.Mockito.never())
+        verify(api, never())
                 .updateActivity(anyString(), anyLong(), org.mockito.ArgumentMatchers.any());
         assertEquals(RIDES_PLUS_ONE_DAY_SEC,
                 androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
@@ -839,7 +840,7 @@ public class StravaActivitiesRepositoryTest {
         assertEquals(52.19, r.endLat, 1e-9);
         assertEquals(java.time.Instant.parse("2026-03-01T08:00:00Z").getEpochSecond(),
                 r.startEpochSec);
-        verify(api, org.mockito.Mockito.never()).getStreams(anyString(), anyLong(), anyString());
+        verify(api, never()).getStreams(anyString(), anyLong(), anyString());
     }
 
     @Test
@@ -935,7 +936,7 @@ public class StravaActivitiesRepositoryTest {
                 new nl.paree.climbpro.data.explore.ExploreMapRepository(app).load();
         assertTrue(map.tileCount() >= 13);
         verify(api, times(1)).getStreams(anyString(), eq(1L), anyString());
-        verify(api, org.mockito.Mockito.never()).getStreams(anyString(), eq(2L), anyString());
+        verify(api, never()).getStreams(anyString(), eq(2L), anyString());
     }
 
     @Test
@@ -1035,7 +1036,7 @@ public class StravaActivitiesRepositoryTest {
         assertFalse(byId.get(3L).hasStreams);
         assertFalse(byId.containsKey(2L));
         assertFalse(byId.containsKey(1L)); // never reached: the run paused at the 429
-        verify(api, org.mockito.Mockito.never()).getStreams(anyString(), eq(1L), anyString());
+        verify(api, never()).getStreams(anyString(), eq(1L), anyString());
     }
 
     @Test

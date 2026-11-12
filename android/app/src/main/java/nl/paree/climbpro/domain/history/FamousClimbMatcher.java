@@ -70,7 +70,15 @@ public final class FamousClimbMatcher {
             if (search.bestTopOnly != null) return search.bestTopOnly;
         }
 
-        return matchByName(dataset, hasStart, startLat, startLon, hasTop, topLat, topLon, names);
+        return matchByName(new NameQuery()
+                .dataset(dataset)
+                .hasStart(hasStart)
+                .startLat(startLat)
+                .startLon(startLon)
+                .hasTop(hasTop)
+                .topLat(topLat)
+                .topLon(topLon)
+                .names(names));
     }
 
     /**
@@ -79,7 +87,10 @@ public final class FamousClimbMatcher {
      */
     private static final class TopSearch {
         final boolean hasStart;
-        final double startLat, startLon, topLat, topLon;
+        final double startLat;
+        final double startLon;
+        final double topLat;
+        final double topLon;
         Match best;
         double bestScore = Double.MAX_VALUE;
         Match bestTopOnly;
@@ -119,21 +130,21 @@ public final class FamousClimbMatcher {
                 best = new Match(fc, Kind.START_AND_TOP, side.label);
             }
         }
+
+        private static double clamp(double v, double lo, double hi) {
+            return Math.max(lo, Math.min(hi, v));
+        }
     }
 
-    private static Match matchByName(List<FamousClimb> dataset,
-                                     boolean hasStart, double startLat, double startLon,
-                                     boolean hasTop, double topLat, double topLon,
-                                     String... names) {
-        if (names == null) return null;
+    private static Match matchByName(NameQuery in) {
+        if (in.names == null) return null;
         Match best = null;
         int bestLen = 0;
-        for (String raw : names) {
-            if (raw == null) continue;
+        for (String raw : in.names) {
+            if (raw == null || normalize(raw).trim().isEmpty()) continue;
             String padded = " " + normalize(raw) + " ";
-            if (padded.trim().isEmpty()) continue;
-            for (FamousClimb fc : dataset) {
-                if (!withinNameRange(fc, hasStart, startLat, startLon, hasTop, topLat, topLon)) {
+            for (FamousClimb fc : in.dataset) {
+                if (!withinNameRange(fc, in.hasStart, in.startLat, in.startLon, in.hasTop, in.topLat, in.topLon)) {
                     continue;
                 }
                 // Longest alias wins: "muur van geraardsbergen" beats a shorter overlap.
@@ -187,7 +198,56 @@ public final class FamousClimbMatcher {
         return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 
-    private static double clamp(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
+
+    /** Arguments of {@link #matchByName}. */
+    public static final class NameQuery {
+        private List<FamousClimb> dataset;
+        private boolean hasStart;
+        private double startLat;
+        private double startLon;
+        private boolean hasTop;
+        private double topLat;
+        private double topLon;
+        private String[] names;
+
+        public NameQuery dataset(List<FamousClimb> dataset) {
+            this.dataset = dataset;
+            return this;
+        }
+
+        public NameQuery hasStart(boolean hasStart) {
+            this.hasStart = hasStart;
+            return this;
+        }
+
+        public NameQuery startLat(double startLat) {
+            this.startLat = startLat;
+            return this;
+        }
+
+        public NameQuery startLon(double startLon) {
+            this.startLon = startLon;
+            return this;
+        }
+
+        public NameQuery hasTop(boolean hasTop) {
+            this.hasTop = hasTop;
+            return this;
+        }
+
+        public NameQuery topLat(double topLat) {
+            this.topLat = topLat;
+            return this;
+        }
+
+        public NameQuery topLon(double topLon) {
+            this.topLon = topLon;
+            return this;
+        }
+
+        public NameQuery names(String... names) {
+            this.names = names;
+            return this;
+        }
     }
 }

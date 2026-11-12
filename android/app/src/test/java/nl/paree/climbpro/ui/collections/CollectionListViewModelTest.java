@@ -1,16 +1,15 @@
 package nl.paree.climbpro.ui.collections;
 
 import android.app.Application;
-import android.os.Looper;
 
 import androidx.test.core.app.ApplicationProvider;
 
 import nl.paree.climbpro.data.route.RouteCollection;
 
+import nl.paree.climbpro.ui.UiTestEnv;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 
 import java.util.List;
 
@@ -31,11 +30,7 @@ public class CollectionListViewModelTest {
             throws InterruptedException {
         T before = live.getValue();
         trigger.run();
-        long deadline = System.currentTimeMillis() + 2000;
-        while (live.getValue() == before && System.currentTimeMillis() < deadline) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle();
-            Thread.sleep(10);
-        }
+        UiTestEnv.waitFor(() -> live.getValue() != before, 2000);
         return live.getValue();
     }
 
@@ -54,11 +49,9 @@ public class CollectionListViewModelTest {
         CollectionListViewModel vm = new CollectionListViewModel(app);
 
         vm.create("Zomer 2026");
-        Thread.sleep(50);
-        Shadows.shadowOf(Looper.getMainLooper()).idle();
+        UiTestEnv.idleFor(50);
         vm.create("Alpen 2026");
-        Thread.sleep(50);
-        Shadows.shadowOf(Looper.getMainLooper()).idle();
+        UiTestEnv.idleFor(50);
 
         List<RouteCollection> result = awaitValue(vm.collections(), vm::load);
         assertEquals(2, result.size());

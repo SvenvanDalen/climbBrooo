@@ -20,10 +20,6 @@ import nl.paree.climbpro.R;
  */
 public final class ClimbTimelineActivity extends AppCompatActivity {
 
-    private ClimbTimelineViewModel viewModel;
-    private TimelineAdapter adapter;
-    private TextView empty;
-    private TextView longPressHint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,14 +30,14 @@ public final class ClimbTimelineActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        empty = findViewById(R.id.empty);
-        longPressHint = findViewById(R.id.longPressHint);
+        TextView empty = findViewById(R.id.empty);
+        TextView longPressHint = findViewById(R.id.longPressHint);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TimelineAdapter(this::openAttempt, this::openRideFatigue);
+        TimelineAdapter adapter = new TimelineAdapter(this::openAttempt, this::openRideFatigue);
         list.setAdapter(adapter);
 
-        viewModel = new ViewModelProvider(this).get(ClimbTimelineViewModel.class);
+        ClimbTimelineViewModel viewModel = new ViewModelProvider(this).get(ClimbTimelineViewModel.class);
         viewModel.rows().observe(this, rows -> {
             adapter.submit(rows);
             boolean hasRows = !rows.isEmpty();

@@ -27,13 +27,13 @@ public class ClimbDetectorTest {
         // Start point
         pts.add(new RoutePoint(51.0, 5.0, ele, 0.0));
         for (double[] seg : segments) {
-            int pts_in_seg = 20;
+            int ptsInSeg = 20;
             double startD = seg[0], endD = seg[1];
             double grad = seg[2];
             double segLen = endD - startD;
-            for (int i = 1; i <= pts_in_seg; i++) {
-                double d = startD + (double) i / pts_in_seg * segLen;
-                ele = pts.get(pts.size() - 1).elevation + segLen / pts_in_seg * grad;
+            for (int i = 1; i <= ptsInSeg; i++) {
+                double d = startD + (double) i / ptsInSeg * segLen;
+                ele = pts.get(pts.size() - 1).elevation + segLen / ptsInSeg * grad;
                 pts.add(new RoutePoint(51.0 + d * 0.00001, 5.0, ele, d));
             }
         }

@@ -38,8 +38,8 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
     public void onBindViewHolder(@NonNull KmVH h, int position) {
         RideComparison.Km k = rows.get(position);
         h.km.setText(k.lengthM < 999
-                ? String.format(Locale.getDefault(), "%d (%.1f)", k.km, k.lengthM / 1000)
-                : String.valueOf(k.km));
+                ? String.format(Locale.getDefault(), "%d (%.1f)", k.number, k.lengthM / 1000)
+                : String.valueOf(k.number));
         h.time.setText(duration(k.secA) + " / " + duration(k.secB));
         h.speed.setText(String.format(Locale.getDefault(), "%.1f / %.1f", k.speedA, k.speedB));
         h.hr.setText(bpm(k.hrA) + " / " + bpm(k.hrB));
@@ -47,11 +47,15 @@ final class RideCompareAdapter extends RecyclerView.Adapter<RideCompareAdapter.K
         h.cadence.setText(bpm(k.cadenceA) + " / " + bpm(k.cadenceB));
         h.delta.setText(signedDuration(k.cumulativeDeltaSec));
         // Ahead/behind use the palette's status colors (blue/orange when colorblind, #258).
-        h.delta.setTextColor(k.cumulativeDeltaSec < 0
-                ? nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusOk()
-                : k.cumulativeDeltaSec > 0
-                        ? nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusBad()
-                        : ContextCompat.getColor(h.delta.getContext(), R.color.color_text_secondary));
+        int color;
+        if (k.cumulativeDeltaSec < 0) {
+            color = nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusOk();
+        } else if (k.cumulativeDeltaSec > 0) {
+            color = nl.paree.climbpro.ui.climbs.SegmentColorPalette.statusBad();
+        } else {
+            color = ContextCompat.getColor(h.delta.getContext(), R.color.color_text_secondary);
+        }
+        h.delta.setTextColor(color);
     }
 
     @Override

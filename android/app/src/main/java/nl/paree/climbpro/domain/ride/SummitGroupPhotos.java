@@ -67,10 +67,10 @@ public final class SummitGroupPhotos {
         for (String part : raw.split("[,;\\r\\n]")) {
             String name = part.trim().replaceAll("\\s+", " ");
             if (name.length() > MAX_NAME_LENGTH) name = name.substring(0, MAX_NAME_LENGTH).trim();
-            if (name.isEmpty()) continue;
-            if (!seen.add(name.toLowerCase(Locale.ROOT))) continue;
-            names.add(name);
-            if (names.size() == MAX_COMPANIONS) break;
+            if (!name.isEmpty() && seen.add(name.toLowerCase(Locale.ROOT))) {
+                names.add(name);
+                if (names.size() == MAX_COMPANIONS) break;
+            }
         }
         if (names.isEmpty()) return null;
         StringBuilder sb = new StringBuilder();

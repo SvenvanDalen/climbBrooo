@@ -54,8 +54,8 @@ public final class EventLevel {
         long from = nowEpochSec - WINDOW_DAYS * 86400L;
         if (rides != null) {
             for (StoredRide r : rides) {
-                if (r == null || r.startEpochSec < from || r.startEpochSec > nowEpochSec) continue;
-                if ("VirtualRide".equals(r.type) || "VirtualRide".equals(r.sportType)) continue;
+                if ((r == null || r.startEpochSec < from || r.startEpochSec > nowEpochSec)
+                        || ("VirtualRide".equals(r.type) || "VirtualRide".equals(r.sportType))) continue;
                 km = Math.max(km, r.distanceM / 1000.0);
                 elev = Math.max(elev, r.elevationGainM);
             }

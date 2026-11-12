@@ -73,10 +73,10 @@ public class EverestingPlanTest {
     @Test
     public void wireNullWithoutPlanOrCalibration() {
         StoredClimb c = climb(4000, 800);
-        assertNull(EverestingPlan.wire(c));
+        assertEquals(0, EverestingPlan.wire(c).length);
         c.everestTargetM = 8848;
         c.calibrationPoints = null;
-        assertNull(EverestingPlan.wire(c));
+        assertEquals(0, EverestingPlan.wire(c).length);
     }
 
     @Test

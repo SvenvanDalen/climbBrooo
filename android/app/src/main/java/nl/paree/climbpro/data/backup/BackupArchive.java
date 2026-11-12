@@ -37,11 +37,12 @@ import nl.paree.climbpro.data.FileCleanup;
  * {@code route_pois/} OpenStreetMap POI cache (issue #208, same reasoning).
  */
 public final class BackupArchive {
+    private static final String KEY_FORMAT = "format";
 
     public static final int FORMAT_VERSION = 1;
 
     /** Paths relative to {@code getFilesDir()}; directories end in {@code /}. */
-    public static final String[] INCLUDED_PATHS = {
+    private static final String[] INCLUDED_PATHS = {
             "catalog.json", "routes/", "climb_attempts.json", "incomplete_climb_attempts.json",
             "attempt_photos/", "collections.json", "planned_climbs.json", "rides.json",
             "tire_pressure_log.json", "maintenance.json", "wet_ride_checks.json",
@@ -97,7 +98,7 @@ public final class BackupArchive {
                                 OutputStream out) throws IOException {
         ZipOutputStream zip = new ZipOutputStream(out);
         ObjectNode manifest = MAPPER.createObjectNode();
-        manifest.put("format", FORMAT_VERSION);
+        manifest.put(KEY_FORMAT, FORMAT_VERSION);
         manifest.put("createdAtMs", nowMs);
         putEntry(zip, MANIFEST, MAPPER.writeValueAsBytes(manifest));
 
@@ -199,10 +200,10 @@ public final class BackupArchive {
     }
 
     private static void checkManifest(JsonNode manifest) throws IOException {
-        if (manifest == null || !manifest.has("format")) {
+        if (manifest == null || !manifest.has(KEY_FORMAT)) {
             throw new IOException("Geen ClimbPro-back-up (manifest ontbreekt)");
         }
-        if (manifest.get("format").asInt() > FORMAT_VERSION) {
+        if (manifest.get(KEY_FORMAT).asInt() > FORMAT_VERSION) {
             throw new IOException("Back-up is gemaakt met een nieuwere versie van ClimbPro");
         }
     }
@@ -232,16 +233,16 @@ public final class BackupArchive {
         for (Map.Entry<String, ?> p : prefs.entrySet()) {
             Object v = p.getValue();
             ObjectNode node = MAPPER.createObjectNode();
-            if (v instanceof Boolean) {
-                node.put("t", "b").put("v", (Boolean) v);
-            } else if (v instanceof Integer) {
-                node.put("t", "i").put("v", (Integer) v);
-            } else if (v instanceof Long) {
-                node.put("t", "l").put("v", (Long) v);
-            } else if (v instanceof Float) {
-                node.put("t", "f").put("v", (Float) v);
-            } else if (v instanceof String) {
-                node.put("t", "s").put("v", (String) v);
+            if (v instanceof Boolean bv) {
+                node.put("t", "b").put("v", bv);
+            } else if (v instanceof Integer iv) {
+                node.put("t", "i").put("v", iv);
+            } else if (v instanceof Long lv) {
+                node.put("t", "l").put("v", lv);
+            } else if (v instanceof Float fv) {
+                node.put("t", "f").put("v", fv);
+            } else if (v instanceof String sv) {
+                node.put("t", "s").put("v", sv);
             } else if (v instanceof Set) {
                 node.put("t", "ss");
                 com.fasterxml.jackson.databind.node.ArrayNode arr = node.putArray("v");

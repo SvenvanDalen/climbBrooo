@@ -149,7 +149,7 @@ public final class SunscreenActivity extends AppCompatActivity {
         long durationSec = DURATION_HOURS[durationSpinner.getSelectedItemPosition()] * 3600L;
         io.execute(() -> {
             double[] loc = location();
-            if (loc == null) {
+            if (loc.length == 0) {
                 runOnUiThread(() -> headline.setText("Geen locatie bekend. Zet locatie aan "
                         + "of synchroniseer eerst met je horloge."));
                 return;
@@ -181,10 +181,11 @@ public final class SunscreenActivity extends AppCompatActivity {
         for (int i = 0; i < f.times.length; i++) {
             Instant h = f.times[i];
             if (!h.plusSeconds(3600).isAfter(start) || !h.isBefore(end)) continue;
-            if (Double.isNaN(f.uvIndex[i])) continue;
-            if (sb.length() > 0) sb.append('\n');
-            sb.append(hm.format(h.atZone(zone))).append("  UV ")
-              .append(String.format(Locale.GERMANY, "%.0f", f.uvIndex[i]));
+            if (!Double.isNaN(f.uvIndex[i])) {
+                if (sb.length() > 0) sb.append('\n');
+                sb.append(hm.format(h.atZone(zone))).append("  UV ")
+                  .append(String.format(Locale.GERMANY, "%.0f", f.uvIndex[i]));
+            }
         }
         return sb.toString();
     }
@@ -222,7 +223,7 @@ public final class SunscreenActivity extends AppCompatActivity {
         }
         if (best != null) return new double[]{best.getLatitude(), best.getLongitude()};
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!prefs.contains(RouteSyncWorker.PREF_LAST_LAT)) return null;
+        if (!prefs.contains(RouteSyncWorker.PREF_LAST_LAT)) return new double[0];
         return new double[]{
                 Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LAT, 0)),
                 Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LON, 0))};

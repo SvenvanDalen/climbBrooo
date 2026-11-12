@@ -3,7 +3,6 @@ package nl.paree.climbpro.service;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -222,7 +221,7 @@ public class ServiceCollaboratorEdgeCasesTest {
         };
         SharedPreferences prefs = app.getSharedPreferences("radius_test", Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
-        assertNull(RadiusLocation.current(ctx, prefs));
+        assertEquals(0, RadiusLocation.current(ctx, prefs).length);
         RadiusLocation.remember(prefs, 50.5, 5.5);
         double[] pos = RadiusLocation.current(ctx, prefs);
         assertEquals(50.5, pos[0], 0);
@@ -241,14 +240,14 @@ public class ServiceCollaboratorEdgeCasesTest {
         };
         SharedPreferences prefs = app.getSharedPreferences("radius_test2", Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
-        assertNull(RadiusLocation.current(ctx, prefs));
+        assertEquals(0, RadiusLocation.current(ctx, prefs).length);
     }
 
     @Test
     public void onlyLatitudeStoredCountsAsNoPosition() {
         SharedPreferences prefs = app.getSharedPreferences("radius_test3", Context.MODE_PRIVATE);
         prefs.edit().clear().putLong(RouteSyncWorker.PREF_LAST_LAT, 1L).commit();
-        assertNull(RadiusLocation.stored(prefs));
+        assertEquals(0, RadiusLocation.stored(prefs).length);
     }
 
     // --- OnboardPushService ---------------------------------------------------------------

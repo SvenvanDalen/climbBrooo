@@ -23,7 +23,12 @@ public final class RideStreamAnalyzer {
     public static final int SPRINT_POWER_LONG_SEC = 15;
     public static final int SPRINT_SPEED_SEC = 10;
 
-    public static final double[] EFFORT_DISTANCES_M = {10_000, 40_000, 100_000};
+    private static final double[] EFFORT_DISTANCES_M = {10_000, 40_000, 100_000};
+
+    /** Distances of the fastest-effort records, in metres (a copy). */
+    public static double[] effortDistancesM() {
+        return EFFORT_DISTANCES_M.clone();
+    }
 
     /**
      * Faster than this between two samples is a GPS jump, not riding (108 km/h). A window
@@ -61,9 +66,13 @@ public final class RideStreamAnalyzer {
             st.hrDriftBasis = drift.basis;
             st.hrDriftMinutes = drift.minutes;
         }
-        st.powerCurve = PowerCurveAnalyzer.bestPowers(streams);
-        st.hrSecondsPerBpm = ZoneHistogramAnalyzer.heartRateSeconds(streams);
-        st.powerSecondsPer10W = ZoneHistogramAnalyzer.powerSeconds(streams);
+        // Stored stats keep null for "not available" (left out of the JSON).
+        int[] curve = PowerCurveAnalyzer.bestPowers(streams);
+        st.powerCurve = curve.length > 0 ? curve : null;
+        int[] hrBins = ZoneHistogramAnalyzer.heartRateSeconds(streams);
+        st.hrSecondsPerBpm = hrBins.length > 0 ? hrBins : null;
+        int[] powerBins = ZoneHistogramAnalyzer.powerSeconds(streams);
+        st.powerSecondsPer10W = powerBins.length > 0 ? powerBins : null;
         st.normalizedPower = NormalizedPowerAnalyzer.normalizedPower(streams);
         CadenceByGradeAnalyzer.Result cadence = CadenceByGradeAnalyzer.analyze(streams);
         if (cadence != null) {
@@ -75,7 +84,8 @@ public final class RideStreamAnalyzer {
             st.hrGradeSec = hrGrade.seconds;
             st.hrGradeBeats = hrGrade.beats;
         }
-        st.hrRecoveryDrops = HeartRateRecoveryAnalyzer.drops(streams);
+        int[] drops = HeartRateRecoveryAnalyzer.drops(streams);
+        st.hrRecoveryDrops = drops.length > 0 ? drops : null;
         st.intervals = IntervalAnalyzer.detect(streams);
         st.workKj = IntervalAnalyzer.workKj(streams);
         return st;
@@ -101,10 +111,12 @@ public final class RideStreamAnalyzer {
                 continue;
             }
             if (start < firstClean) start = firstClean;
-            if (d[j] - d[firstClean] < targetM) continue;
-            start = latestWindowStart(d, start, j, targetM);
-            double elapsed = windowElapsed(t, d, start, j, targetM);
-            if (elapsed > 0 && elapsed < best) best = elapsed;
+            boolean shortWindow = d[j] - d[firstClean] < targetM;
+            if (!shortWindow) {
+                start = latestWindowStart(d, start, j, targetM);
+                double elapsed = windowElapsed(t, d, start, j, targetM);
+                if (elapsed > 0 && elapsed < best) best = elapsed;
+            }
         }
         return best == Double.POSITIVE_INFINITY ? null : (int) Math.round(best);
     }

@@ -8,15 +8,15 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.tire.TirePressureLogEntry;
 import nl.paree.climbpro.domain.tire.TirePressureUnits;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /** Logged tire-pressure checks, newest first; long-press asks to delete. */
 public final class TirePressureLogAdapter
@@ -27,8 +27,8 @@ public final class TirePressureLogAdapter
     }
 
     private final List<TirePressureLogEntry> entries = new ArrayList<>();
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault());
+    private final DateTimeFormatter dateFormat =
+            DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.getDefault());
     private final OnEntryLongClickListener listener;
     /** Show psi first (issue #262 unit choice); bar first otherwise. */
     private boolean psiFirst;
@@ -51,7 +51,7 @@ public final class TirePressureLogAdapter
     }
 
     String formatDate(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 
     @NonNull

@@ -127,15 +127,12 @@ public final class MultiDayTourViewModel extends AndroidViewModel {
         Set<String> seen = new LinkedHashSet<>();
         List<TourStop> out = new ArrayList<>();
         for (PlannedClimb p : upcoming) {
-            if (p.routeId == null) continue;
-            String key = TourStopFactory.key(p.routeId, p.climbIndex);
-            if (!seen.add(key)) continue; // the same climb planned on two dates is one stop
+            // the same climb planned on two dates is one stop
+            if (p.routeId == null || !seen.add(TourStopFactory.key(p.routeId, p.climbIndex))) continue;
 
             if (!routes.containsKey(p.routeId)) loadRoute(p.routeId, profile, routes, pacing);
             StoredRoute route = routes.get(p.routeId);
-            if (route == null) continue;
-
-            TourStop stop = stopFor(p, route, pacing.get(p.routeId));
+            TourStop stop = route != null ? stopFor(p, route, pacing.get(p.routeId)) : null;
             if (stop != null) out.add(stop);
         }
         return out;

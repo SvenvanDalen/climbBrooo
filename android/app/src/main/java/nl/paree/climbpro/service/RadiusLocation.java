@@ -41,7 +41,7 @@ public final class RadiusLocation {
     static double[] stored(SharedPreferences prefs) {
         if (!prefs.contains(RouteSyncWorker.PREF_LAST_LAT)
                 || !prefs.contains(RouteSyncWorker.PREF_LAST_LON)) {
-            return null;
+            return new double[0];
         }
         return new double[]{
                 Double.longBitsToDouble(prefs.getLong(RouteSyncWorker.PREF_LAST_LAT, 0)),

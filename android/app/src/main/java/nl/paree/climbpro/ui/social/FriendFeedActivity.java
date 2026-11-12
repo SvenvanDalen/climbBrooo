@@ -18,14 +18,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.social.FriendFeedEntry;
 import nl.paree.climbpro.domain.social.FriendShareCode;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import nl.paree.climbpro.ui.EpochDates;
 
 /**
  * "Vriendenfeed" (issue #240): friends' rides and first ascents, imported from share codes,
@@ -33,6 +33,7 @@ import java.util.Locale;
  * can be imported without copy-paste. No server; phone-only.
  */
 public final class FriendFeedActivity extends AppCompatActivity {
+    private static final String CANCEL = "Annuleren";
 
     /** Rows rendered at most (a display cap, not a data cap; the store keeps up to 100 per friend). */
     private static final int MAX_ROWS = 200;
@@ -42,7 +43,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
     private static final int PREFILL_MAX_CHARS = FriendShareCode.MAX_CODE_CHARS + 500;
     private static final Locale NL = new Locale("nl");
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE d MMM yyyy", NL);
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("EEE d MMM yyyy", NL);
     private FriendFeedViewModel viewModel;
 
     public static Intent intentFor(Context context) {
@@ -125,7 +126,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                     }
                     viewModel.share(n);
                 })
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -150,7 +151,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Importeren",
                         (d, w) -> viewModel.importCode(input.getText().toString()))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 
@@ -175,7 +176,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                     e.friendName + " · " + (e.isRide() ? "Rit" : "Mijlpaal"));
             ((TextView) v.findViewById(R.id.value)).setText(e.title);
             ((TextView) v.findViewById(R.id.detail)).setText(
-                    dateFormat.format(new Date(e.epochSec * 1000L)) + "  •  " + stats(e));
+                    EpochDates.format(dateFormat, e.epochSec) + "  •  " + stats(e));
             v.setOnLongClickListener(x -> {
                 confirmRemove(e);
                 return true;
@@ -201,7 +202,7 @@ public final class FriendFeedActivity extends AppCompatActivity {
                 .setMessage("Alle ritten en mijlpalen van " + e.friendName
                         + " uit je feed verwijderen?")
                 .setPositiveButton("Verwijderen", (d, w) -> viewModel.removeFriend(e.friendId))
-                .setNegativeButton("Annuleren", null)
+                .setNegativeButton(CANCEL, null)
                 .show();
     }
 }

@@ -80,7 +80,7 @@ public class SyncOrchestratorTest {
                     public byte[] build() throws java.io.IOException {
                         throw new java.io.IOException("disk error");
                     }
-                    public void onSent() {}
+                    public void onSent() { /* not needed */ }
                 },
                 0, 0);
 
@@ -166,7 +166,7 @@ public class SyncOrchestratorTest {
                 new FakeWatch(false, true),
                 new SyncOrchestrator.PayloadJob() {
                     public byte[] build() { builds.incrementAndGet(); return PAYLOAD; }
-                    public void onSent() {}
+                    public void onSent() { /* not needed */ }
                 }, 0, 0).run(null);
         assertEquals(0, builds.get());
         assertFalse(r.buildFailed);

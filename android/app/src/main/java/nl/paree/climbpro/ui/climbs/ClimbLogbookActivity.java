@@ -28,8 +28,6 @@ import java.util.concurrent.Executors;
 public final class ClimbLogbookActivity extends AppCompatActivity {
 
     private ClimbLogbookViewModel viewModel;
-    private LogbookAdapter adapter;
-    private TextView empty;
     private TextView streakText;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
 
@@ -42,11 +40,11 @@ public final class ClimbLogbookActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        empty = findViewById(R.id.empty);
+        TextView empty = findViewById(R.id.empty);
         streakText = findViewById(R.id.streak);
         RecyclerView list = findViewById(R.id.list);
         list.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new LogbookAdapter(this::openClimb);
+        LogbookAdapter adapter = new LogbookAdapter(this::openClimb);
         list.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(ClimbLogbookViewModel.class);

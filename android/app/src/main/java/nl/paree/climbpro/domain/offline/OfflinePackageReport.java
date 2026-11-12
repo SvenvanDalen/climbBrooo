@@ -60,9 +60,10 @@ public final class OfflinePackageReport {
 
     static String ageLine(long createdAtMs, long nowMs) {
         long ageMin = Math.max(0, (nowMs - createdAtMs) / 60_000);
-        String age = ageMin < 60 ? ageMin + " min geleden"
-                : ageMin < 48 * 60 ? (ageMin / 60) + " uur geleden"
-                : (ageMin / (24 * 60)) + " dagen geleden";
+        String age;
+        if (ageMin < 60) age = ageMin + " min geleden";
+        else if (ageMin < 48 * 60) age = (ageMin / 60) + " uur geleden";
+        else age = (ageMin / (24 * 60)) + " dagen geleden";
         String line = "Opgeslagen " + age + ".";
         if (nowMs - createdAtMs > STALE_MS) line += " Verouderd — vernieuw als je bereik hebt.";
         return line;
@@ -70,7 +71,9 @@ public final class OfflinePackageReport {
 
     /** Temperature range, maximum wind and maximum rain chance over hours [start, end). */
     private static void appendWindow(StringBuilder sb, HourlyForecast f, int start, int end) {
-        double tMin = Double.MAX_VALUE, tMax = -Double.MAX_VALUE, wind = 0;
+        double tMin = Double.MAX_VALUE;
+        double tMax = -Double.MAX_VALUE;
+        double wind = 0;
         int rain = -1;
         for (int i = start; i < end; i++) {
             if (!Double.isNaN(f.temperature[i])) {
@@ -126,14 +129,13 @@ public final class OfflinePackageReport {
         sb.append('\n').append(label).append(" (").append(count).append(')');
         int shown = 0;
         for (OfflinePackage.Poi p : pkg.pois) {
-            if (!type.equals(p.type)) continue;
-            if (shown++ == MAX_POIS_PER_TYPE) {
-                sb.append("\n  … en ").append(count - MAX_POIS_PER_TYPE).append(" meer");
-                break;
-            }
+            if (!type.equals(p.type) || shown++ >= MAX_POIS_PER_TYPE) continue;
             sb.append(String.format(Locale.US, "\n  km %.1f", p.distanceM / 1000.0));
             if (p.name != null && !p.name.isEmpty()) sb.append(" · ").append(p.name);
             if (p.offsetM >= 50) sb.append(String.format(Locale.US, " (%.0f m van route)", p.offsetM));
+        }
+        if (count > MAX_POIS_PER_TYPE) {
+            sb.append("\n  … en ").append(count - MAX_POIS_PER_TYPE).append(" meer");
         }
     }
 }

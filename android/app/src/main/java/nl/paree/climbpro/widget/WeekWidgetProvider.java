@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import java.time.format.DateTimeFormatter;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.planning.PlannedClimb;
 import nl.paree.climbpro.data.planning.PlannedClimbRepository;
@@ -20,13 +21,12 @@ import nl.paree.climbpro.data.route.StoredRoute;
 import nl.paree.climbpro.domain.climb.ClimbIdentity;
 import nl.paree.climbpro.domain.climb.WeekSummaryCalculator;
 import nl.paree.climbpro.domain.planning.PlannedClimbScheduler;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.ui.planning.PlannedClimbListActivity;
 import nl.paree.climbpro.ui.routes.RouteListActivity;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.ZoneId;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -85,8 +85,8 @@ public final class WeekWidgetProvider extends AppWidgetProvider {
         if (next == null) {
             v.setTextViewText(R.id.widget_next_climb, "Geen klim gepland");
         } else {
-            String when = new SimpleDateFormat("EEE d MMM HH:mm", new Locale("nl"))
-                    .format(new Date(next.plannedAtEpochSec * 1000L));
+            String when = EpochDates.format(DateTimeFormatter.ofPattern("EEE d MMM HH:mm", new Locale("nl")),
+                    next.plannedAtEpochSec);
             v.setTextViewText(R.id.widget_next_climb, next.displayName + " · " + when);
         }
         v.setOnClickPendingIntent(R.id.widget_root,

@@ -92,8 +92,9 @@ public class ClimbShareCodeTest {
     public void rejectsTooManyClimbsWhenEncoding() {
         List<SharedClimb> many = new ArrayList<>();
         for (int i = 0; i <= ClimbShareCode.MAX_CLIMBS; i++) many.add(climb("k" + i, 5));
+        ClimbShareCode.Payload payload = new ClimbShareCode.Payload(null, many);
         try {
-            ClimbShareCode.encode(new ClimbShareCode.Payload(null, many));
+            ClimbShareCode.encode(payload);
             fail();
         } catch (IllegalArgumentException expected) {
             // ok

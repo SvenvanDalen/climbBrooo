@@ -54,10 +54,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class RouteListActivity extends AppCompatActivity {
+    private static final String TAG = "RouteListActivity";
 
     private ActivityRouteListBinding binding;
     private RouteListViewModel viewModel;
-    private RouteListAdapter adapter;
     private final ExecutorService    executor = Executors.newSingleThreadExecutor();
 
     /** Status filter labels; index order matches {@link RouteStatusFilter}. */
@@ -94,7 +94,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(RouteListViewModel.class);
         updateStatusFilterSubtitle(viewModel.getStatusFilter()); // survives rotation via the ViewModel
-        adapter   = new RouteListAdapter();
+        RouteListAdapter adapter   = new RouteListAdapter();
 
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerView.setAdapter(adapter);
@@ -219,7 +219,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
                     @Override
                     public void onCheckFailed(Exception e) {
-                        Log.w("RouteListActivity", "Update check failed", e);
+                        Log.w(TAG, "Update check failed", e);
                         // Previously fully silent, which made a real failure (network,
                         // GitHub API rate limit, ...) indistinguishable from "no update
                         // available" — always surface it so it's not a mystery.
@@ -303,18 +303,19 @@ public final class RouteListActivity extends AppCompatActivity {
     /** Reports whether the quick-start sync reached the watch, once its work has finished. */
     private void reportQuickStart(List<androidx.work.WorkInfo> infos) {
         for (androidx.work.WorkInfo w : infos) {
-            if (!quickStartWorkId.equals(w.getId()) || !w.getState().isFinished()) continue;
-            quickStartWorkId = null;
-            // Cancelled = replaced by a newer sync, which reports for itself.
-            if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
-                boolean sent = w.getOutputData().getBoolean(
-                        nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
-                Toast.makeText(this, sent
-                                ? R.string.route_list_quick_start_sent
-                                : R.string.route_list_quick_start_not_sent,
-                        Toast.LENGTH_LONG).show();
+            if (quickStartWorkId.equals(w.getId()) && w.getState().isFinished()) {
+                quickStartWorkId = null;
+                // Cancelled = replaced by a newer sync, which reports for itself.
+                if (w.getState() != androidx.work.WorkInfo.State.CANCELLED) {
+                    boolean sent = w.getOutputData().getBoolean(
+                            nl.paree.climbpro.service.RouteSyncWorker.KEY_WATCH_SENT, false);
+                    Toast.makeText(this, sent
+                                    ? R.string.route_list_quick_start_sent
+                                    : R.string.route_list_quick_start_not_sent,
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
             }
-            break;
         }
     }
 
@@ -461,7 +462,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.route_list_yearly_goal_title,
-                        java.time.LocalDate.now().getYear()))
+                        java.time.LocalDate.now(java.time.ZoneId.systemDefault()).getYear()))
                 .setMessage(R.string.route_list_yearly_goal_message)
                 .setView(container)
                 .setPositiveButton(R.string.action_save, (d, w) -> {
@@ -612,7 +613,7 @@ public final class RouteListActivity extends AppCompatActivity {
             nl.paree.climbpro.data.route.ClimbAttemptRepository attemptRepo =
                     new nl.paree.climbpro.data.route.ClimbAttemptRepository(this);
             List<Integer> years = nl.paree.climbpro.domain.climb.SeasonClimbFilter
-                    .yearsWithAttempts(attemptRepo.loadAll(), java.util.TimeZone.getDefault());
+                    .yearsWithAttempts(attemptRepo.loadAll(), java.time.ZoneId.systemDefault());
             runOnUiThread(() -> {
                 if (years.isEmpty()) {
                     Toast.makeText(this, R.string.route_list_season_none,
@@ -651,7 +652,7 @@ public final class RouteListActivity extends AppCompatActivity {
                     }
                 }
             } catch (IOException e) {
-                Log.w("RouteListActivity", "Skipping unreadable route " + entry.routeId, e);
+                Log.w(TAG, "Skipping unreadable route " + entry.routeId, e);
             }
         }
         return matches;
@@ -701,7 +702,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 List<nl.paree.climbpro.data.route.StoredClimbAttempt> attempts = attemptRepo.loadAll();
 
                 long[] range = nl.paree.climbpro.domain.climb.SeasonClimbFilter.yearRange(
-                        year, java.util.TimeZone.getDefault());
+                        year, java.time.ZoneId.systemDefault());
                 List<nl.paree.climbpro.domain.climb.SeasonClimbFilter.Match> matches =
                         seasonMatches(repo, attempts, range);
 
@@ -960,6 +961,20 @@ public final class RouteListActivity extends AppCompatActivity {
                 .show();
     }
 
+    /** Gives every climb of a freshly imported route the detected surface type. */
+    private static void applyDetectedSurface(RouteRepository repo, String routeId, int surface) {
+        try {
+            StoredRoute saved = repo.loadRoute(routeId);
+            if (saved.climbs != null) {
+                for (int ci = 0; ci < saved.climbs.size(); ci++) {
+                    repo.setBulkClimbSurfaceType(routeId, ci, surface);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Surface type detection failed: " + e.getMessage());
+        }
+    }
+
     private void finishImport(String name, byte[] bytes, List<RoutePoint> simple,
                               List<Climb> climbs, int detectedSurface,
                               boolean myWhoosh, boolean virtual) {
@@ -979,16 +994,7 @@ public final class RouteListActivity extends AppCompatActivity {
                 repo.saveRoute(stored, simple, climbs);
             }
             if (detectedSurface != SurfaceType.UNKNOWN) {
-                try {
-                    StoredRoute saved = repo.loadRoute(routeId);
-                    if (saved.climbs != null) {
-                        for (int ci = 0; ci < saved.climbs.size(); ci++) {
-                            repo.setBulkClimbSurfaceType(routeId, ci, detectedSurface);
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.w("RouteListActivity", "Surface type detection failed: " + e.getMessage());
-                }
+                applyDetectedSurface(repo, routeId, detectedSurface);
             }
             runOnUiThread(() -> {
                 viewModel.loadRoutes();

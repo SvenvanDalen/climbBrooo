@@ -16,14 +16,13 @@ import nl.paree.climbpro.databinding.ActivityStravaAuthBinding;
 
 public final class StravaAuthActivity extends AppCompatActivity {
 
-    private ActivityStravaAuthBinding binding;
     private StravaAuthViewModel       viewModel;
     private AuthorizationService      authService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding     = ActivityStravaAuthBinding.inflate(getLayoutInflater());
+        ActivityStravaAuthBinding binding     = ActivityStravaAuthBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);

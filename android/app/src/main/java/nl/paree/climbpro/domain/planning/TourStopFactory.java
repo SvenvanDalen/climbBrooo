@@ -34,9 +34,17 @@ public final class TourStopFactory {
             endLat = route.lats[idx];
             endLon = route.lons[idx];
         }
-        return new TourStop(key(route.routeId, climbIndex), name,
-                c.startLat, c.startLon, endLat, endLon,
-                c.elevationGain, c.length, climbSeconds);
+        return new TourStop.Builder()
+                .key(key(route.routeId, climbIndex))
+                .name(name)
+                .startLat(c.startLat)
+                .startLon(c.startLon)
+                .endLat(endLat)
+                .endLon(endLon)
+                .elevationGainM(c.elevationGain)
+                .lengthM(c.length)
+                .climbSeconds(climbSeconds)
+                .build();
     }
 
     /**
@@ -57,9 +65,17 @@ public final class TourStopFactory {
                 length += Math.max(0, ClimbIdentity.effectiveLength(c));
             }
         }
-        return new TourStop(key(route.routeId, wholeRouteIndex), name,
-                route.lats[0], route.lons[0], route.lats[last], route.lons[last],
-                hm, length, climbSeconds);
+        return new TourStop.Builder()
+                .key(key(route.routeId, wholeRouteIndex))
+                .name(name)
+                .startLat(route.lats[0])
+                .startLon(route.lons[0])
+                .endLat(route.lats[last])
+                .endLon(route.lons[last])
+                .elevationGainM(hm)
+                .lengthM(length)
+                .climbSeconds(climbSeconds)
+                .build();
     }
 
     private static boolean hasGeometry(StoredRoute route) {

@@ -62,9 +62,9 @@ public class PlannerEdgeCasesTest {
 
     @Test
     public void manualPlanWithoutRouteOrClimbsIsNull() {
-        assertNull(ManualRefTimePlanner.plan(null));
-        assertNull(ManualRefTimePlanner.plan(new StoredRoute()));
-        assertNull(ManualRefTimePlanner.plan(route()));
+        assertEquals(0, ManualRefTimePlanner.plan(null).length);
+        assertEquals(0, ManualRefTimePlanner.plan(new StoredRoute()).length);
+        assertEquals(0, ManualRefTimePlanner.plan(route()).length);
     }
 
     @Test
@@ -102,26 +102,26 @@ public class PlannerEdgeCasesTest {
 
     @Test
     public void targetSpeedPlanNeedsAClimbAndASetTarget() {
-        assertNull(TargetSpeedRefTimePlanner.plan(null, new GhostTarget(20, 0)));
-        assertNull(TargetSpeedRefTimePlanner.plan(route(), new GhostTarget(20, 0)));
-        assertNull(TargetSpeedRefTimePlanner.plan(route(climb(seg(100, 0.05, 5))), null));
-        assertNull(TargetSpeedRefTimePlanner.plan(route(climb(seg(100, 0.05, 5))),
-                GhostTarget.NONE));
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(null, new GhostTarget(20, 0)));
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(climb(), new GhostTarget(20, 0)));
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(climb(seg(100, 0.05, 5)), null));
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(null, new GhostTarget(20, 0)).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(route(), new GhostTarget(20, 0)).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(route(climb(seg(100, 0.05, 5))), null).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.plan(route(climb(seg(100, 0.05, 5))),
+                GhostTarget.NONE).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(null, new GhostTarget(20, 0)).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(climb(), new GhostTarget(20, 0)).length);
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(climb(seg(100, 0.05, 5)), null).length);
     }
 
     @Test
     public void targetSpeedWithoutDistanceIsNull() {
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(climb(seg(0, 0.05, 0)),
-                new GhostTarget(20, 0)));
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(climb(seg(0, 0.05, 0)),
+                new GhostTarget(20, 0)).length);
     }
 
     @Test
     public void vamOnlyOnAClimbWithoutGainIsNull() {
-        assertNull(TargetSpeedRefTimePlanner.segmentSeconds(climb(seg(500, 0.0, 0)),
-                new GhostTarget(0, 900)));
+        assertEquals(0, TargetSpeedRefTimePlanner.segmentSeconds(climb(seg(500, 0.0, 0)),
+                new GhostTarget(0, 900)).length);
     }
 
     @Test
@@ -164,8 +164,8 @@ public class PlannerEdgeCasesTest {
 
     @Test
     public void routePrPlanEdgeCases() {
-        assertNull(RouteRefTimePlanner.plan(null, null));
-        assertNull(RouteRefTimePlanner.plan(route(), null));
+        assertEquals(0, RouteRefTimePlanner.plan(null, null).length);
+        assertEquals(0, RouteRefTimePlanner.plan(route(), null).length);
         StoredClimb noSegs = climb();
         StoredClimb c = climb(seg(400, 0.05, 20), seg(400, 0.06, 24));
         int[][] plan = RouteRefTimePlanner.plan(route(noSegs, c),
@@ -211,8 +211,8 @@ public class PlannerEdgeCasesTest {
                 Collections.<StoredClimbAttempt>emptyList(), GhostTarget.NONE);
         assertEquals(1, plan.length);
         assertNull(plan[0]);
-        assertNull(CombinedRefTimePlanner.plan(null, null, null));
-        assertNull(CombinedRefTimePlanner.plan(route(), null, new GhostTarget(18, 0)));
+        assertEquals(0, CombinedRefTimePlanner.plan(null, null, null).length);
+        assertEquals(0, CombinedRefTimePlanner.plan(route(), null, new GhostTarget(18, 0)).length);
     }
 
     @Test
@@ -263,9 +263,9 @@ public class PlannerEdgeCasesTest {
     @Test
     public void pacingNeedsACompleteProfile() {
         StoredRoute r = route(climb(seg(500, 0.06, 30)));
-        assertNull(RoutePacingPlanner.plan(r, null));
-        assertNull(RoutePacingPlanner.plan(r, new RiderProfile(0, 75, 8)));
-        assertNull(RoutePacingPlanner.plan(null, new RiderProfile(250, 75, 8)));
+        assertEquals(0, RoutePacingPlanner.plan(r, null).length);
+        assertEquals(0, RoutePacingPlanner.plan(r, new RiderProfile(0, 75, 8)).length);
+        assertEquals(0, RoutePacingPlanner.plan(null, new RiderProfile(250, 75, 8)).length);
         assertEquals(0, RoutePacingPlanner.plan(route(), new RiderProfile(250, 75, 8)).length);
         StoredRoute noClimbs = new StoredRoute();
         assertEquals(0, RoutePacingPlanner.plan(noClimbs, new RiderProfile(250, 75, 8)).length);

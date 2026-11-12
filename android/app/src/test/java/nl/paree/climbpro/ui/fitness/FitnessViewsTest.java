@@ -134,8 +134,13 @@ public class FitnessViewsTest {
                     (double) (i * 30), 1, 0, 100.0));
         }
         int weeks = (days + 6) / 7;
-        return Construct.of(TrainingLoadCalendar.Result.class, monday, weeks, list, days, 0.0, 1,
-                null, 0.0);
+        return new TrainingLoadCalendar.Result.Builder()
+                .firstDay(monday)
+                .weeks(weeks)
+                .days(list)
+                .activeDays(days)
+                .longestStreakDays(1)
+                .build();
     }
 
     @Test

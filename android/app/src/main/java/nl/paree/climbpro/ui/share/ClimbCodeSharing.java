@@ -103,8 +103,11 @@ public final class ClimbCodeSharing {
         String name = collection.name != null ? collection.name : "Collectie";
         String code = ClimbShareCode.encode(new ClimbShareCode.Payload(name, s.climbs));
         send(activity, "Klimcollectie: " + name, String.format(Locale.getDefault(),
-                "Collectie \"%s\" met %d klim(men) uit ClimbPro. Importeer in ClimbPro "
-                        + "via het menu > Klimcode importeren:\n\n%s",
+                """
+                        Collectie "%s" met %d klim(men) uit ClimbPro. Importeer in ClimbPro \
+                        via het menu > Klimcode importeren:
+
+                        %s""",
                 name, s.climbs.size(), code));
     }
 

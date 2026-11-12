@@ -93,8 +93,8 @@ public final class FavoriteStartPointStore {
         List<FavoriteStartPoint> out = new ArrayList<>();
         if (arr == null) return out;
         for (FavoriteStartPoint p : arr) {
-            if (p == null || p.id == null || p.name == null || p.name.trim().isEmpty()) continue;
-            if (!FavoriteStartPoint.isValidCoordinate(p.lat, p.lon)) continue;
+            if ((p == null || p.id == null || p.name == null || p.name.trim().isEmpty())
+                    || !FavoriteStartPoint.isValidCoordinate(p.lat, p.lon)) continue;
             out.add(p);
         }
         out.sort((a, b) -> a.name.compareToIgnoreCase(b.name));

@@ -79,7 +79,10 @@ public final class RadarTiles {
         if (lats == null || lons == null) return new ArrayList<>();
         int n = Math.min(lats.length, lons.length);
         if (n == 0) return new ArrayList<>();
-        double s = lats[0], no = lats[0], w = lons[0], e = lons[0];
+        double s = lats[0];
+        double no = lats[0];
+        double w = lons[0];
+        double e = lons[0];
         for (int i = 1; i < n; i++) {
             s = Math.min(s, lats[i]);
             no = Math.max(no, lats[i]);

@@ -146,11 +146,11 @@ public final class LocalBackupService {
         for (Map.Entry<String, Object> e : restored.entrySet()) {
             if (NOT_BACKED_UP.contains(e.getKey())) continue;
             Object v = e.getValue();
-            if (v instanceof Boolean) ed.putBoolean(e.getKey(), (Boolean) v);
-            else if (v instanceof Integer) ed.putInt(e.getKey(), (Integer) v);
-            else if (v instanceof Long) ed.putLong(e.getKey(), (Long) v);
-            else if (v instanceof Float) ed.putFloat(e.getKey(), (Float) v);
-            else if (v instanceof String) ed.putString(e.getKey(), (String) v);
+            if (v instanceof Boolean bv) ed.putBoolean(e.getKey(), bv);
+            else if (v instanceof Integer iv) ed.putInt(e.getKey(), iv);
+            else if (v instanceof Long lv) ed.putLong(e.getKey(), lv);
+            else if (v instanceof Float fv) ed.putFloat(e.getKey(), fv);
+            else if (v instanceof String sv) ed.putString(e.getKey(), sv);
             else if (v instanceof Set) ed.putStringSet(e.getKey(), (Set<String>) v);
         }
         ed.apply();

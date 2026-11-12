@@ -3,7 +3,6 @@ package nl.paree.climbpro.data.route;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
@@ -70,8 +69,8 @@ public class RouteGhostRepositoryTest {
         StoredRouteGhost g = ghost("r1", 1, 30, 31, 32, 33);
         assertArrayEquals(new int[]{250, 30, 31, 32, 33},
                 RouteGhostRepository.wireFor(route("r1", 1000), g));
-        assertNull(RouteGhostRepository.wireFor(route("r1", 2000), g));
-        assertNull(RouteGhostRepository.wireFor(route("r1", 1000), null));
+        assertEquals(0, RouteGhostRepository.wireFor(route("r1", 2000), g).length);
+        assertEquals(0, RouteGhostRepository.wireFor(route("r1", 1000), null).length);
     }
 
     @Test
