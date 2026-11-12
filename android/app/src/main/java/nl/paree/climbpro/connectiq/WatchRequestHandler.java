@@ -153,6 +153,13 @@ public final class WatchRequestHandler {
         return CombinedRefTimePlanner.plan(route, attempts, ghost);
     }
 
+    /** Per-segment target watts from the rider's best powered attempt (issue #397, 'tw'). */
+    private int[][] targetWattsPlan(StoredRoute route) {
+        if (attemptRepo == null) return null;
+        return nl.paree.climbpro.service.RouteTargetPowerPlanner.plan(route,
+                attemptRepo.loadAll(), 100);
+    }
+
     /** Virtual opponent on this route (issue #178): 'gh', or null without a stored best ride. */
     private int[] routeGhost(StoredRoute route) {
         return ghostRepo != null ? ghostRepo.wireFor(route) : null;
@@ -213,7 +220,7 @@ public final class WatchRequestHandler {
             StoredRoute route   = routeRepo.loadRoute(routeId);
             byte[]      payload = payloadBuilder().withFtpWatts(ftpWatts())
                     .buildRoutePayload(route, pacingPlan(route), refPlan(route),
-                            routeGhost(route));
+                            routeGhost(route), targetWattsPlan(route));
             connectIqClient.sendPayload(payload);
             Log.i(TAG, "Sent route payload for " + routeId + " (" + payload.length + " bytes)");
         } catch (IOException e) {
@@ -231,7 +238,7 @@ public final class WatchRequestHandler {
             ClimbPayloadBuilder builder = payloadBuilder().withFtpWatts(ftpWatts());
             boolean ok = connectIqClient.sendPayloadToDatafield(
                     builder.buildRoutePayload(route, pacingPlan(route), refPlan(route),
-                            routeGhost(route)));
+                            routeGhost(route), targetWattsPlan(route)));
             // Always push the surface payload — an empty surfSec clears stale sections.
             connectIqClient.sendPayloadToSurfaceField(builder.buildSurfaceSectionPayload(route));
             String name = route.userDisplayName != null ? route.userDisplayName : route.name;
@@ -251,7 +258,8 @@ public final class WatchRequestHandler {
         try {
             StoredRoute route = routeRepo.loadRoute(routeId);
             byte[] payload = payloadBuilder().withFtpWatts(ftpWatts())
-                    .buildSingleClimbPayload(route, climbIndex, pacingPlan(route), refPlan(route));
+                    .buildSingleClimbPayload(route, climbIndex, pacingPlan(route), refPlan(route),
+                            targetWattsPlan(route));
             boolean ok = connectIqClient.sendPayloadToDatafield(payload);
             StoredClimb climb = route.climbs.get(climbIndex);
             String name = climb.userDisplayName != null ? climb.userDisplayName : climb.name;

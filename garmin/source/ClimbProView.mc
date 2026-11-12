@@ -812,8 +812,13 @@ class ClimbProView extends Ui.DataField {
             :power => data.currentPower, :cadence => data.currentCadence,
             :timerMs => lastGhostTimerMs, :units => data.units,
             :rideRemElev => data.rideRemainingElev(),
-            :cadTarget => data.cadenceTargetAt(ci, data.activeSegmentIndex)
+            :cadTarget => data.cadenceTargetAt(ci, data.activeSegmentIndex),
+            :targetW => 0
         };
+        if (data.hasTargetWatts[ci] && data.activeSegmentIndex >= 0
+                && data.activeSegmentIndex < data.segCount[ci]) {
+            vals[:targetW] = data.segTargetWatts[ci][data.activeSegmentIndex];
+        }
         if (data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
             vals[:hasVam] = true;

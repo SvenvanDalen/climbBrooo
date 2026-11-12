@@ -18,7 +18,7 @@ public class ProtocolLockstepGuardTest {
 
     /** Keys that must appear on every surface of the route-mode wire contract. */
     private static final String[] LOCKSTEP_KEYS = {
-            "rtl", "ib", "ev", "zc", "un", "hz", "pal", "gh", "nw", "cg", "hg" };
+            "rtl", "tw", "ib", "ev", "zc", "un", "hz", "pal", "gh", "nw", "cg", "hg" };
 
     /** Radius-mode-only keys, checked against the radius example instead (issue #9). */
     private static final String[] RADIUS_LOCKSTEP_KEYS = { "ord" };

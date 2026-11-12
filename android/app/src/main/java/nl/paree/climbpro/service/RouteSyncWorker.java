@@ -387,7 +387,9 @@ public final class RouteSyncWorker extends Worker {
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
                         route, attemptRepo.loadAll(), ghost);
-                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
+                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost,
+                        nl.paree.climbpro.service.RouteTargetPowerPlanner.plan(route,
+                                attemptRepo.loadAll(), 100));
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return null;

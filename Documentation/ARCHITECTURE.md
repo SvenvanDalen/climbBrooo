@@ -856,6 +856,15 @@ sentinel) is sent without `vam` rather than partial data. The climb datafield
 parses it and shows the active segment's avg/peak VAM next to the gradient
 stat on the active-climb page.
 
+### Target power per segment (issue #397)
+
+`RouteTargetPowerPlanner` picks, per climb, the fastest clean attempt that recorded
+power with one `segWatts` value per segment and sends those watts as the optional
+packed array `tw = [watts, ...]` (one positive int per segment, parallel to `segs`;
+omitted unless complete). `CommListener.mc` stores it in `ClimbData.segTargetWatts`
+and the POWER stat slot shows `live/target W` for the active segment. Sent on
+LOAD_ROUTE, SET_ACTIVE_ROUTE, SET_ACTIVE_CLIMB and background sync.
+
 ### Interval block per climb (issue #180)
 
 A climb can carry an **interval block**: a power band in % FTP held from the foot to

@@ -33,6 +33,7 @@ import java.util.Set;
  *      surf:[surfType, ...],                             // 1 int × segCount (optional, omitted if all UNKNOWN)
  *      tsec:[targetSec, ...],                            // 1 int × segCount (optional, manual pacing plan)
  *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
+ *      tw:[watts, ...],                                  // 1 int × segCount (optional, issue #397 target power)
  *      vam:[avgVamMPerH,peakVamMPerH, ...],              // 2 ints × segCount (optional, omitted unless every segment has VAM)
  *      ib:[targetW, lowW, highW],                        // interval block (optional, issue #180; needs FTP)
  *      ev:[targetM, reps, sLat, sLon, topLat, topLon],   // Everesting attempt (optional, issue #217)
@@ -259,6 +260,16 @@ public final class ClimbPayloadBuilder {
      */
     public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds, int[][] refSeconds,
                                     int[] routeGhost) throws IOException {
+        return buildRoutePayload(route, targetSeconds, refSeconds, routeGhost, null);
+    }
+
+    /**
+     * @param targetWatts per-climb per-segment target power in watts (issue #397, 'tw'),
+     *                    indexed by climb position; null or a null/wrong-length entry omits
+     *                    'tw' for that climb.
+     */
+    public byte[] buildRoutePayload(StoredRoute route, int[][] targetSeconds, int[][] refSeconds,
+                                    int[] routeGhost, int[][] targetWatts) throws IOException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("v",       SCHEMA_VERSION);
         payload.put("mode",    "route");
@@ -271,7 +282,7 @@ public final class ClimbPayloadBuilder {
         if (route.climbs != null) {
             for (int i = 0; i < route.climbs.size(); i++) {
                 climbs.add(buildRouteClimb(route.climbs.get(i), rowAt(targetSeconds, i),
-                        rowAt(refSeconds, i)));
+                        rowAt(refSeconds, i), rowAt(targetWatts, i)));
             }
         }
         putFieldLayout(payload);
@@ -323,6 +334,12 @@ public final class ClimbPayloadBuilder {
 
     public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex,
                                           int[][] targetSeconds, int[][] refSeconds) throws IOException {
+        return buildSingleClimbPayload(route, climbIndex, targetSeconds, refSeconds, null);
+    }
+
+    public byte[] buildSingleClimbPayload(StoredRoute route, int climbIndex,
+                                          int[][] targetSeconds, int[][] refSeconds,
+                                          int[][] targetWatts) throws IOException {
         if (route.climbs == null || climbIndex < 0 || climbIndex >= route.climbs.size()) {
             throw new IllegalArgumentException("climbIndex out of range: " + climbIndex);
         }
@@ -339,7 +356,9 @@ public final class ClimbPayloadBuilder {
                 ? targetSeconds[climbIndex] : null;
         int[] refsec = (refSeconds != null && climbIndex < refSeconds.length)
                 ? refSeconds[climbIndex] : null;
-        climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec));
+        int[] tw = (targetWatts != null && climbIndex < targetWatts.length)
+                ? targetWatts[climbIndex] : null;
+        climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec, tw));
         putFieldLayout(payload);
         putGradeHabits(payload);
         payload.put("climbs", climbs);
@@ -515,13 +534,15 @@ public final class ClimbPayloadBuilder {
         return out;
     }
 
-    private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds, int[] refSeconds) {
+    private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds, int[] refSeconds,
+                                                int[] targetWatts) {
         Map<String, Object> c = new LinkedHashMap<>();
         c.put("sd", sc.startDistance);
         c.put("ed", sc.endDistance);
         addCommonClimbFields(c, sc);
         addTargetSeconds(c, sc, targetSeconds);
         addRefSeconds(c, sc, refSeconds);
+        addTargetWatts(c, sc, targetWatts);
         return c;
     }
 
@@ -584,6 +605,21 @@ public final class ClimbPayloadBuilder {
             return;
         }
         c.put("refsec", refSeconds);
+    }
+
+    /**
+     * Emits 'tw' (issue #397) only when the array has exactly one positive value per segment:
+     * the power to hold per segment, taken from the rider's best attempt with a power meter.
+     */
+    private static void addTargetWatts(Map<String, Object> c, StoredClimb sc, int[] targetWatts) {
+        if (targetWatts == null || sc.segments == null
+                || targetWatts.length != sc.segments.size()) {
+            return;
+        }
+        for (int w : targetWatts) {
+            if (w <= 0) return;
+        }
+        c.put("tw", targetWatts);
     }
 
     private static int[] buildSegs(List<StoredSegment> segs) {

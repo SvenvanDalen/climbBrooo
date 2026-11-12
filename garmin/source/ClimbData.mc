@@ -106,6 +106,8 @@ class ClimbData {
     var segVamAvg;        // gradient-implied average VAM (m/h) per segment; 0 = none
     var segVamPeak;       // gradient-implied peak VAM (m/h) per segment; 0 = none
     var hasVam;           // bool per climb: true when vam was provided
+    var segTargetWatts;   // target watts per segment from the rider's best powered attempt (tw, #397); 0 = none
+    var hasTargetWatts;   // bool per climb: true when tw was provided
     var segZone;          // per climb: Array of FTP intensity-zone color indices (0-5, "zc",
                           // issue #66) or null when the payload carried none. Allocated only
                           // when zc arrives, so riders without an FTP pay no memory for it.
@@ -180,6 +182,8 @@ class ClimbData {
         segVamAvg = new [MAX_CLIMBS];
         segVamPeak = new [MAX_CLIMBS];
         hasVam = new [MAX_CLIMBS];
+        segTargetWatts = new [MAX_CLIMBS];
+        hasTargetWatts = new [MAX_CLIMBS];
         hasBlock = new [MAX_CLIMBS];
         blockTarget = new [MAX_CLIMBS];
         blockLow = new [MAX_CLIMBS];
@@ -217,6 +221,8 @@ class ClimbData {
             segVamAvg[i] = new [MAX_SEGMENTS];
             segVamPeak[i] = new [MAX_SEGMENTS];
             hasVam[i] = false;
+            segTargetWatts[i] = new [MAX_SEGMENTS];
+            hasTargetWatts[i] = false;
             hasBlock[i] = false;
             blockTarget[i] = 0;
             blockLow[i] = 0;
@@ -231,6 +237,7 @@ class ClimbData {
                 segRefSec[i][s] = 0;
                 segVamAvg[i][s] = 0;
                 segVamPeak[i][s] = 0;
+                segTargetWatts[i][s] = 0;
             }
         }
 

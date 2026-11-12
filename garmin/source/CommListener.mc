@@ -226,6 +226,19 @@ class PhoneMessageCallback {
             data.hasVam[idx] = false;
         }
 
+        // Optional target power "tw" (issue #397): 1 positive int per segment (parallel to segs).
+        // Anything short or malformed disables it for this climb.
+        data.hasTargetWatts[idx] = false;
+        var tw = climbDict.get("tw");
+        if (tw != null && tw instanceof Toybox.Lang.Array && data.segCount[idx] > 0
+                && tw.size() >= data.segCount[idx]) {
+            data.hasTargetWatts[idx] = true;
+            for (var s = 0; s < data.segCount[idx]; s++) {
+                var tv = tw[s];
+                data.segTargetWatts[idx][s] = (tv instanceof Toybox.Lang.Number) ? tv.toNumber() : 0;
+            }
+        }
+
         // Optional interval block "ib" (issue #180): [targetWatts, lowWatts, highWatts],
         // computed on the phone from % FTP. Anything malformed disables the block.
         data.hasBlock[idx] = false;
