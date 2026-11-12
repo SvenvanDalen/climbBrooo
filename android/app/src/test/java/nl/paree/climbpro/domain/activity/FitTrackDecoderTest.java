@@ -143,6 +143,31 @@ public class FitTrackDecoderTest {
     }
 
     @Test
+    public void decodeRecordsReadsPowerHeartrateAndCadence() throws IOException {
+        Fit f = new Fit();
+        // record: timestamp, heart_rate (3, u8), cadence (4, u8), power (7, u16).
+        f.def(0, false, 20, 253, 4, 0x86, 3, 1, 0x02, 4, 1, 0x02, 7, 2, 0x84);
+        f.u8(0).u32(FIT_TS).u8(150).u8(88).u16(245);
+        // Invalid sentinels: 0xFF hr/cadence and 0xFFFF power stay NaN.
+        f.u8(0).u32(FIT_TS + 1).u8(0xFF).u8(0xFF).u16(0xFFFF);
+        // Zero heart rate is a dropped strap, not a reading; zero power is real coasting.
+        f.u8(0).u32(FIT_TS + 2).u8(0).u8(0).u16(0);
+
+        List<FitTrackDecoder.Record> r = FitTrackDecoder.decodeRecords(f.build());
+
+        assertEquals(3, r.size());
+        assertEquals(245.0, r.get(0).watts, 1e-9);
+        assertEquals(150.0, r.get(0).heartrate, 1e-9);
+        assertEquals(88.0, r.get(0).cadence, 1e-9);
+        assertTrue(Double.isNaN(r.get(1).watts));
+        assertTrue(Double.isNaN(r.get(1).heartrate));
+        assertTrue(Double.isNaN(r.get(1).cadence));
+        assertTrue(Double.isNaN(r.get(2).heartrate));
+        assertEquals(0.0, r.get(2).watts, 1e-9);
+        assertEquals(0.0, r.get(2).cadence, 1e-9);
+    }
+
+    @Test
     public void rejectsNonFitAndTruncatedFiles() {
         assertFalse(FitTrackDecoder.looksLikeFit("<gpx></gpx>".getBytes()));
         Fit f = new Fit();
