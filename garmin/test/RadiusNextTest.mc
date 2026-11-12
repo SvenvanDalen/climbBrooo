@@ -140,3 +140,15 @@ function radius_distLabel_marksStraightLine(logger) {
     Test.assertEqual(view.distToNextLabel("route", 2300, 0), "in 2.3km");
     return true;
 }
+
+// Issue #56: unexplored-climbs counter.
+(:test)
+function radius_unexploredCount_andHeader(logger) {
+    var v = [true, false, false];
+    Test.assertEqual(radiusUnexploredCount(v, 3), 2);
+    Test.assert(radiusUnexploredHeader(v, 3).equals("NEXT CLIMB - 2 new"));
+    var all = [true, true];
+    Test.assertEqual(radiusUnexploredCount(all, 2), 0);
+    Test.assert(radiusUnexploredHeader(all, 2).equals("NEXT CLIMB"));
+    return true;
+}

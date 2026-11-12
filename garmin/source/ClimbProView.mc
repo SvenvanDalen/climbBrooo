@@ -1215,6 +1215,9 @@ class ClimbProView extends Ui.DataField {
         if (data.ordered && data.mode != null && data.mode.equals("radius")) {
             return "DAGTOCHT " + (data.nextClimbIndex + 1) + "/" + data.climbCount;
         }
+        if (data.mode != null && data.mode.equals("radius")) {
+            return radiusUnexploredHeader(data.climbEntered, data.climbCount);
+        }
         return "NEXT CLIMB";
     }
 
