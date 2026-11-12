@@ -1199,7 +1199,9 @@ class ClimbProView extends Ui.DataField {
             var distY = (h * 0.88).toNumber();
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, distY, sf,
-                distToNextLabel(data.mode, data.distToNextClimb, data.units), Gfx.TEXT_JUSTIFY_CENTER);
+                withEta(distToNextLabel(data.mode, data.distToNextClimb, data.units),
+                    data.etaSeconds(data.distToNextClimb, data.currentSpeedMps)),
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
 
         // Virtual opponent (issue #178) in the otherwise empty row above "in X km".
