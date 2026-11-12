@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
 public class RouteTargetPowerPlannerTest {
 
@@ -67,11 +67,11 @@ public class RouteTargetPowerPlannerTest {
 
     @Test
     public void nullWhenNoUsableData() {
-        assertNull(RouteTargetPowerPlanner.plan(route(2), Collections.emptyList(), 100)[0]);
-        assertNull(RouteTargetPowerPlanner.plan(route(2), null, 100)[0]);
-        assertNull(RouteTargetPowerPlanner.plan(null, null, 100));
-        assertNull(RouteTargetPowerPlanner.plan(route(2), Collections.emptyList(), 0));
-        assertNull(RouteTargetPowerPlanner.plan(new StoredRoute(), Collections.emptyList(), 100));
+        assertEquals(0, RouteTargetPowerPlanner.plan(route(2), Collections.emptyList(), 100)[0].length);
+        assertEquals(0, RouteTargetPowerPlanner.plan(route(2), null, 100)[0].length);
+        assertEquals(0, RouteTargetPowerPlanner.plan(null, null, 100).length);
+        assertEquals(0, RouteTargetPowerPlanner.plan(route(2), Collections.emptyList(), 0).length);
+        assertEquals(0, RouteTargetPowerPlanner.plan(new StoredRoute(), Collections.emptyList(), 100).length);
     }
 
     @Test

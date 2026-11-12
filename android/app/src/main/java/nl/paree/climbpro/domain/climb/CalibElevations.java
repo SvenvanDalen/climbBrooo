@@ -13,22 +13,24 @@ import java.util.List;
  */
 public final class CalibElevations {
 
+    private static final int[] NONE = new int[0];
+
     private CalibElevations() {}
 
-    /** One whole-metre elevation per calib point, or null when it cannot be derived. */
+    /** One whole-metre elevation per calib point, or an empty array when it cannot be derived. */
     public static int[] wire(StoredRoute route, StoredClimb climb) {
-        if (route == null || climb == null) return null;
+        if (route == null || climb == null) return NONE;
         List<StoredCalibrationPoint> pts = climb.calibrationPoints;
         double[] d = route.distances;
         double[] e = route.elevations;
         if (pts == null || pts.isEmpty() || d == null || e == null
                 || d.length < 2 || d.length != e.length) {
-            return null;
+            return NONE;
         }
         int[] out = new int[pts.size()];
         for (int i = 0; i < out.length; i++) {
             double ele = interpolate(d, e, climb.startDistance + pts.get(i).distanceFromClimbStart);
-            if (Double.isNaN(ele)) return null;
+            if (Double.isNaN(ele)) return NONE;
             out[i] = (int) Math.round(ele);
         }
         return out;

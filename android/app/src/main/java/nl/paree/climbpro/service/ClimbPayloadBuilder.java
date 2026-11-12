@@ -545,7 +545,7 @@ public final class ClimbPayloadBuilder {
         addRefSeconds(c, sc, refSeconds);
         addTargetWatts(c, sc, targetWatts);
         int[] ce = nl.paree.climbpro.domain.climb.CalibElevations.wire(route, sc);
-        if (ce != null) c.put("ce", ce);
+        if (ce.length > 0) c.put("ce", ce);
         return c;
     }
 

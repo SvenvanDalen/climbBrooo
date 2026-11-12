@@ -1,7 +1,7 @@
 package nl.paree.climbpro.domain.climb;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
 import nl.paree.climbpro.data.route.StoredCalibrationPoint;
 import nl.paree.climbpro.data.route.StoredClimb;
@@ -46,15 +46,15 @@ public class CalibElevationsTest {
 
     @Test
     public void nullWithoutData() {
-        assertNull(CalibElevations.wire(null, climb(0, 0)));
-        assertNull(CalibElevations.wire(route(), null));
-        assertNull(CalibElevations.wire(route(), new StoredClimb()));
+        assertEquals(0, CalibElevations.wire(null, climb(0, 0)).length);
+        assertEquals(0, CalibElevations.wire(route(), null).length);
+        assertEquals(0, CalibElevations.wire(route(), new StoredClimb()).length);
         StoredRoute noEle = route();
         noEle.elevations = null;
-        assertNull(CalibElevations.wire(noEle, climb(0, 0)));
+        assertEquals(0, CalibElevations.wire(noEle, climb(0, 0)).length);
         StoredRoute bad = route();
         bad.elevations = new double[]{1, 2};
-        assertNull(CalibElevations.wire(bad, climb(0, 0)));
+        assertEquals(0, CalibElevations.wire(bad, climb(0, 0)).length);
     }
 
     @Test

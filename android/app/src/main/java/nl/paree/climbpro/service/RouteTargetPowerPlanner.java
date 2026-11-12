@@ -15,15 +15,18 @@ import java.util.List;
  */
 public final class RouteTargetPowerPlanner {
 
+    private static final int[] NONE = new int[0];
+    private static final int[][] NO_PLAN = new int[0][];
+
     private RouteTargetPowerPlanner() {}
 
     /**
-     * @return null when the route has no climbs; otherwise one entry per climb position, the
+     * @return an empty table when the route has no climbs; otherwise one entry per climb position, the
      *         per-segment target watts, or null when no attempt has matching power data.
      */
     public static int[][] plan(StoredRoute route, List<StoredClimbAttempt> attempts, int pct) {
         if (route == null || route.climbs == null || route.climbs.isEmpty() || pct <= 0) {
-            return null;
+            return NO_PLAN;
         }
         int[][] result = new int[route.climbs.size()][];
         for (int ci = 0; ci < route.climbs.size(); ci++) {
@@ -39,7 +42,7 @@ public final class RouteTargetPowerPlanner {
 
     static int[] forClimb(String climbId, int segCount, List<StoredClimbAttempt> attempts,
                           int pct) {
-        if (climbId == null || attempts == null) return null;
+        if (climbId == null || attempts == null) return NONE;
         StoredClimbAttempt best = null;
         for (StoredClimbAttempt a : attempts) {
             if (!climbId.equals(a.climbId) || a.routeDeviation || a.segWatts == null
@@ -48,7 +51,7 @@ public final class RouteTargetPowerPlanner {
             }
             if (best == null || a.elapsedSec < best.elapsedSec) best = a;
         }
-        if (best == null) return null;
+        if (best == null) return NONE;
         int[] out = new int[segCount];
         for (int i = 0; i < segCount; i++) {
             out[i] = Math.max(1, (int) Math.round(best.segWatts[i] * pct / 100.0));

@@ -156,7 +156,7 @@ public final class WatchRequestHandler {
 
     /** Per-segment target watts from the rider's best powered attempt (issue #397, 'tw'). */
     private int[][] targetWattsPlan(StoredRoute route) {
-        if (attemptRepo == null) return null;
+        if (attemptRepo == null) return new int[0][];
         return nl.paree.climbpro.service.RouteTargetPowerPlanner.plan(route,
                 attemptRepo.loadAll(), 100);
     }
