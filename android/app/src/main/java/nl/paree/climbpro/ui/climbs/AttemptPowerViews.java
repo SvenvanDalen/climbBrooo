@@ -67,6 +67,7 @@ final class AttemptPowerViews {
     static String segmentLine(LogbookCalculator.HistoryRow row, StoredClimb climb, int k,
                               ClimbPacing.Result pacing) {
         StoredClimbAttempt a = row.attempt;
+        if (a == null || a.segSplitSec == null) return "";
         StringBuilder sb = new StringBuilder();
         sb.append(k + 1);
         StoredSegment seg = segment(climb, k, a.segSplitSec.length);
@@ -120,7 +121,9 @@ final class AttemptPowerViews {
         box.addView(bar(activity, row, climb, density));
         TextView header = text(activity, box, "Seg  helling  tijd  vermogen  W/kg  hartslag  cadans");
         header.setTypeface(Typeface.DEFAULT_BOLD);
-        for (int k = 0; k < row.attempt.segSplitSec.length; k++) {
+        int segCount = row.attempt == null || row.attempt.segSplitSec == null
+                ? 0 : row.attempt.segSplitSec.length;
+        for (int k = 0; k < segCount; k++) {
             TextView line = text(activity, box, segmentLine(row, climb, k, pacing));
             line.setTypeface(Typeface.MONOSPACE);
         }
@@ -150,7 +153,8 @@ final class AttemptPowerViews {
                             StoredClimb climb, float density) {
         LinearLayout bar = new LinearLayout(activity);
         bar.setOrientation(LinearLayout.HORIZONTAL);
-        int[] splits = row.attempt.segSplitSec == null ? new int[0] : row.attempt.segSplitSec;
+        int[] splits = row.attempt == null || row.attempt.segSplitSec == null
+                ? new int[0] : row.attempt.segSplitSec;
         for (int k = 0; k < splits.length; k++) {
             View block = new View(activity);
             StoredSegment seg = segment(climb, k, splits.length);
