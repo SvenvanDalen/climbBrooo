@@ -120,6 +120,7 @@ class ClimbProView extends Ui.DataField {
     // Eat/drink reminder (issue #184): time/ascent triggers, shortened when it is hot.
     // fuelTempC is refreshed once a minute; the banner shows until fuelBannerUntilMs.
     hidden var fuel = new FuelReminder();
+    hidden var lowPower = new LowPowerMode();   // issue #50
     hidden var fuelTempC = null;
     hidden var fuelNextTempMs = 0;
     hidden var fuelBannerUntilMs = -1;
@@ -150,6 +151,8 @@ class ClimbProView extends Ui.DataField {
         checkHeatIndex();
         // Eat/drink reminder (issue #184): needs only the activity timer, so no route either.
         checkFuelReminder(info);
+        // Low power mode (issue #50): drop the profile drawing below the battery threshold.
+        lowPower.update(Sys.getSystemStats().battery, readNumberSetting("lowPowerPct"));
         checkCadence(info);
 
         var data = App.getApp().climbData;
@@ -219,6 +222,7 @@ class ClimbProView extends Ui.DataField {
         // and watches for divergence from ~1 km before a climb, and sets data.offRoute.
         if (info != null && info has :currentLocation && info.currentLocation != null) {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
+            data.currentAltitude = (info has :altitude) ? info.altitude : null;
             data.updateRouteMatch(ll[0], ll[1]);
             // Radius mode / day trip (issues #7, #9): count down to the next climb start.
             data.updateRadius(ll[0], ll[1]);
@@ -757,7 +761,9 @@ class ClimbProView extends Ui.DataField {
         var profileTop = (h * 0.30).toNumber();
         var profileHeight = (h * 0.35).toNumber();
         var profileBottom = profileTop + profileHeight;
-        drawProfile(dc, data, ci, 8, profileTop, w - 16, profileHeight);
+        if (!lowPower.active) {
+            drawProfile(dc, data, ci, 8, profileTop, w - 16, profileHeight);
+        }
 
         // Surface bar: 5px tall, 2px below the profile (skipped if all segments are UNKNOWN)
         drawSurfaceBar(dc, data, ci, 8, profileBottom + 2, w - 16);
@@ -807,8 +813,13 @@ class ClimbProView extends Ui.DataField {
             :power => data.currentPower, :cadence => data.currentCadence,
             :timerMs => lastGhostTimerMs, :units => data.units,
             :rideRemElev => data.rideRemainingElev(),
-            :cadTarget => data.cadenceTargetAt(ci, data.activeSegmentIndex)
+            :cadTarget => data.cadenceTargetAt(ci, data.activeSegmentIndex),
+            :targetW => 0
         };
+        if (data.hasTargetWatts[ci] && data.activeSegmentIndex >= 0
+                && data.activeSegmentIndex < data.segCount[ci]) {
+            vals[:targetW] = data.segTargetWatts[ci][data.activeSegmentIndex];
+        }
         if (data.hasVam[ci] && data.activeSegmentIndex >= 0
                 && data.activeSegmentIndex < data.segCount[ci]) {
             vals[:hasVam] = true;
@@ -1163,7 +1174,9 @@ class ClimbProView extends Ui.DataField {
         // Mini profile
         var profileTop = (h * 0.30).toNumber();
         var profileHeight = (h * 0.35).toNumber();
-        drawProfile(dc, data, ni, 8, profileTop, w - 16, profileHeight);
+        if (!lowPower.active) {
+            drawProfile(dc, data, ni, 8, profileTop, w - 16, profileHeight);
+        }
 
         // Stats
         var statsY = (h * 0.72).toNumber();
@@ -1192,7 +1205,9 @@ class ClimbProView extends Ui.DataField {
             var distY = (h * 0.88).toNumber();
             dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
             dc.drawText(w / 2, distY, sf,
-                distToNextLabel(data.mode, data.distToNextClimb, data.units), Gfx.TEXT_JUSTIFY_CENTER);
+                withEta(distToNextLabel(data.mode, data.distToNextClimb, data.units),
+                    data.etaSeconds(data.distToNextClimb, data.currentSpeedMps)),
+                Gfx.TEXT_JUSTIFY_CENTER);
         }
 
         // Virtual opponent (issue #178) in the otherwise empty row above "in X km".
@@ -1205,6 +1220,9 @@ class ClimbProView extends Ui.DataField {
     hidden function previewHeader(data) {
         if (data.ordered && data.mode != null && data.mode.equals("radius")) {
             return "DAGTOCHT " + (data.nextClimbIndex + 1) + "/" + data.climbCount;
+        }
+        if (data.mode != null && data.mode.equals("radius")) {
+            return radiusUnexploredHeader(data.climbEntered, data.climbCount);
         }
         return "NEXT CLIMB";
     }

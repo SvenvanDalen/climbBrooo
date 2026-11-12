@@ -42,6 +42,25 @@ public class RouteRefTimePlannerTest {
     }
 
     @Test
+    public void plan_vsLastRide_returnsMostRecentAttemptSplits() {
+        StoredClimb c = climbWithSegments(51.0, 5.0, 2000, 2);
+        StoredRoute route = new StoredRoute();
+        route.climbs = new ArrayList<>(Arrays.asList(c));
+        String climbId = ClimbIdentity.of(51.0, 5.0, 2000);
+        StoredClimbAttempt old = attempt(climbId, new int[]{50, 50});
+        old.dateEpochSec = 100;
+        StoredClimbAttempt recent = attempt(climbId, new int[]{70, 80});
+        recent.dateEpochSec = 200;
+        StoredClimbAttempt mismatch = attempt(climbId, new int[]{1});
+        mismatch.dateEpochSec = 300;
+
+        int[][] plan = RouteRefTimePlanner.plan(route, Arrays.asList(old, recent, mismatch), true);
+        assertArrayEquals(new int[]{70, 80}, plan[0]);
+        assertArrayEquals(new int[]{50, 50},
+                RouteRefTimePlanner.plan(route, Arrays.asList(old, recent), false)[0]);
+    }
+
+    @Test
     public void plan_returnsBestSplitsPerClimbPosition() {
         StoredClimb c = climbWithSegments(51.0, 5.0, 2000, 4);
         StoredRoute route = new StoredRoute();

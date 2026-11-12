@@ -377,6 +377,7 @@ public final class RouteSyncWorker extends Worker {
                 StoredRoute route = routeRepo.loadRoute(routeId);
                 int[] routeGhost = ghostRepo.wireFor(route);
                 String wantHash = wantHash(route, profile, ghost, palette, units, fieldLayout)
+                        + (prefs.getBoolean(nl.paree.climbpro.data.rider.RiderProfileRepository.PREF_REF_VS_LAST, false) ? "L" : "")
                         + routeGhostSignature(routeGhost) + habits.signature();
                 if (SyncState.Status.SYNCED.equals(state.status)
                         && wantHash.equals(state.lastSyncedHash)) {
@@ -386,8 +387,11 @@ public final class RouteSyncWorker extends Worker {
                 int[][] plan = nl.paree.climbpro.service.RoutePacingPlanner.plan(route, profile);
                 plan = nl.paree.climbpro.service.SegmentTargetOverrideMerger.merge(route, plan);
                 int[][] refPlan = nl.paree.climbpro.service.CombinedRefTimePlanner.plan(
-                        route, attemptRepo.loadAll(), ghost);
-                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost);
+                        route, attemptRepo.loadAll(), ghost,
+                        prefs.getBoolean(nl.paree.climbpro.data.rider.RiderProfileRepository.PREF_REF_VS_LAST, false));
+                byte[] payload = payloadBuilder.buildRoutePayload(route, plan, refPlan, routeGhost,
+                        nl.paree.climbpro.service.RouteTargetPowerPlanner.plan(route,
+                                attemptRepo.loadAll(), 100));
                 if (payload.length > PayloadBudget.MAX_BYTES) {
                     Log.e(TAG, "Payload exceeds budget: " + payload.length + " bytes — skipping send");
                     return null;

@@ -67,7 +67,14 @@ module FieldLayout {
                 : (v[:speedMps] * 3.6).format("%.1f") + "km/u";
         }
         if (code == HEART_RATE) { return v[:hr] == null ? "--" : v[:hr] + "bpm"; }
-        if (code == POWER) { return v[:power] == null ? "--" : v[:power].toNumber() + "W"; }
+        if (code == POWER) {
+            if (v[:power] == null) { return "--"; }
+            // Target watts for this segment (#397): "245/285W" when the phone sent 'tw'.
+            var tgt = v[:targetW];
+            return (tgt != null && tgt > 0)
+                ? v[:power].toNumber() + "/" + tgt + "W"
+                : v[:power].toNumber() + "W";
+        }
         if (code == CADENCE) { return cadenceText(v[:cadence], v[:cadTarget], wide); }
         if (code == RIDE_REM_ELEV) {
             var e = Units.formatElev(v[:rideRemElev], v[:units]) + "↑";

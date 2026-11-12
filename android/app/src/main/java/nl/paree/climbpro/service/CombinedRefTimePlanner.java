@@ -37,8 +37,14 @@ public final class CombinedRefTimePlanner {
      */
     public static int[][] plan(StoredRoute route, List<StoredClimbAttempt> attempts,
                                GhostTarget ghostTarget) {
+        return plan(route, attempts, ghostTarget, false);
+    }
+
+    /** @param vsLastRide own-history source is the last ride instead of the PR (issue #144). */
+    public static int[][] plan(StoredRoute route, List<StoredClimbAttempt> attempts,
+                               GhostTarget ghostTarget, boolean vsLastRide) {
         int[][] manual = ManualRefTimePlanner.plan(route);
-        int[][] ownPr = RouteRefTimePlanner.plan(route, attempts);
+        int[][] ownPr = RouteRefTimePlanner.plan(route, attempts, vsLastRide);
         int[][] ghost = TargetSpeedRefTimePlanner.plan(route, ghostTarget);
         if (manual == null && ownPr == null && ghost == null) return null;
 

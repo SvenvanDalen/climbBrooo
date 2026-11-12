@@ -856,6 +856,27 @@ sentinel) is sent without `vam` rather than partial data. The climb datafield
 parses it and shows the active segment's avg/peak VAM next to the gradient
 stat on the active-climb page.
 
+### Compare with last ride (issue #144)
+
+`refsec` normally carries the per-segment PR. With the `ref_vs_last_ride` pref
+(Settings switch) `RouteRefTimePlanner` / `CombinedRefTimePlanner` instead source
+`SegmentPrCalculator.lastSplits` — the most recent clean attempt with matching segment
+count — so the existing watch delta reads "x s faster than last time". No wire change;
+the pref is folded into the sync hash so toggling it re-syncs.
+
+### Barometric calibration (issue #86)
+
+Route-mode climbs may carry `ce`: one whole-metre elevation per `calib` point, interpolated from the route's elevation profile by `domain/climb/CalibElevations` (no stored-data change; omitted without elevation data). When the rider passes a calib point, `ClimbData.sampleBaro` feeds `currentAltitude` and the known elevation into the pure `baroUpdate` (`BaroCalibration.mc`): offset = known - measured, running mean over the last 8 points, samples beyond +-200 m or 40 m away from the running offset are ignored. `correctedAltitude(raw)` applies the offset. Wire key `ce` is guarded by `ProtocolLockstepGuardTest`.
+
+### Target power per segment (issue #397)
+
+`RouteTargetPowerPlanner` picks, per climb, the fastest clean attempt that recorded
+power with one `segWatts` value per segment and sends those watts as the optional
+packed array `tw = [watts, ...]` (one positive int per segment, parallel to `segs`;
+omitted unless complete). `CommListener.mc` stores it in `ClimbData.segTargetWatts`
+and the POWER stat slot shows `live/target W` for the active segment. Sent on
+LOAD_ROUTE, SET_ACTIVE_ROUTE, SET_ACTIVE_CLIMB and background sync.
+
 ### Interval block per climb (issue #180)
 
 A climb can carry an **interval block**: a power band in % FTP held from the foot to

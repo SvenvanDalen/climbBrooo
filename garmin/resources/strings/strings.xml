@@ -25,6 +25,11 @@
     <string id="SettingsFuelIntervalTitle">Eet- en drinkherinnering (tijd)</string>
     <string id="SettingsFuelClimbTitle">Eet- en drinkherinnering (hoogtemeters)</string>
     <string id="SettingsFuelHotTitle">Vaker bij warmte</string>
+    <string id="SettingsLowPowerTitle">Zuinige modus (profiel verbergen)</string>
+    <string id="LowPower10">Onder 10 % batterij</string>
+    <string id="LowPower15">Onder 15 % batterij</string>
+    <string id="LowPower20">Onder 20 % batterij</string>
+    <string id="LowPower30">Onder 30 % batterij</string>
     <string id="FuelOff">Uit</string>
     <string id="FuelInterval15">Elke 15 min</string>
     <string id="FuelInterval20">Elke 20 min</string>

@@ -43,6 +43,21 @@ public final class SegmentPrCalculator {
         return best;
     }
 
+    /**
+     * Per-segment splits of the most recent clean attempt on this climb (issue #144: "you
+     * are 20 s faster than last time on this stretch"), or null when none has a matching
+     * segment count. Attempts are ordered by activity start, then by segment-less order.
+     */
+    public static int[] lastSplits(String climbId, int segCount, List<StoredClimbAttempt> attempts) {
+        if (climbId == null || segCount <= 0 || attempts == null) return null;
+        StoredClimbAttempt last = null;
+        for (StoredClimbAttempt a : attempts) {
+            if (!hasCleanSplits(a, climbId, segCount)) continue;
+            if (last == null || a.dateEpochSec >= last.dateEpochSec) last = a;
+        }
+        return last == null ? null : last.segSplitSec.clone();
+    }
+
     private static boolean hasCleanSplits(StoredClimbAttempt a, String climbId, int segCount) {
         return climbId.equals(a.climbId) && !a.routeDeviation
                 && a.segSplitSec != null && a.segSplitSec.length == segCount;

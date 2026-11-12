@@ -490,6 +490,30 @@
                     android:text="Kleurenblind-vriendelijk palet"/>
             </LinearLayout>
 
+            <!-- Compare with the last ride (issue #144). -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_secondary"
+                    android:layout_marginBottom="10dp"
+                    android:text="De voor- en achterstand op het horloge vergelijkt standaard met je persoonlijk record per stuk. Zet dit aan om te vergelijken met je vorige rit op dezelfde klim (&quot;20 s sneller dan vorige keer&quot;). Geldt na de volgende sync."/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_ref_vs_last"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/color_text_primary"
+                    android:text="Vergelijk met vorige rit"/>
+            </LinearLayout>
+
             <!-- Display units (issue #262). -->
             <LinearLayout
                 android:layout_width="match_parent"

@@ -87,6 +87,13 @@ public final class RiderProfileRepository {
         prefs.edit().putLong(PREF_FTP_TEST_HANDLED_ID, activityId).apply();
     }
 
+    /** Pref key: compare against the last ride instead of the PR (issue #144). */
+    public static final String PREF_REF_VS_LAST = "ref_vs_last_ride";
+
+    public boolean loadRefVsLast() {
+        return prefs.getBoolean(PREF_REF_VS_LAST, false);
+    }
+
     /** The virtual-ghost target (issue #31); {@link GhostTarget#isSet()} false when unset. */
     public GhostTarget loadGhostTarget() {
         return new GhostTarget(prefs.getFloat(PREF_GHOST_SPEED_KMH, 0f),

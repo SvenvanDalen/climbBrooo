@@ -166,6 +166,18 @@ class PhoneMessageCallback {
             data.calibCount[idx] = 0;
         }
 
+        // Optional ce array (issue #86): known elevation (m) per calib point, parallel to calib.
+        // Reset first so a re-sync without ce never keeps stale elevations.
+        for (var k = 0; k < data.MAX_CALIB; k++) { data.calibEle[idx][k] = null; }
+        var ce = climbDict.get("ce");
+        if (ce != null && ce instanceof Toybox.Lang.Array) {
+            var n = ce.size();
+            if (n > data.calibCount[idx]) { n = data.calibCount[idx]; }
+            for (var k = 0; k < n; k++) {
+                if (ce[k] instanceof Toybox.Lang.Number) { data.calibEle[idx][k] = ce[k]; }
+            }
+        }
+
         // Optional surf array: [surfaceType, ...] one int per segment (parallel to segs)
         // Reset every segment to UNKNOWN first so a re-sync with a shorter surf
         // array can't leave stale values from the previous payload.
@@ -224,6 +236,19 @@ class PhoneMessageCallback {
             }
         } else {
             data.hasVam[idx] = false;
+        }
+
+        // Optional target power "tw" (issue #397): 1 positive int per segment (parallel to segs).
+        // Anything short or malformed disables it for this climb.
+        data.hasTargetWatts[idx] = false;
+        var tw = climbDict.get("tw");
+        if (tw != null && tw instanceof Toybox.Lang.Array && data.segCount[idx] > 0
+                && tw.size() >= data.segCount[idx]) {
+            data.hasTargetWatts[idx] = true;
+            for (var s = 0; s < data.segCount[idx]; s++) {
+                var tv = tw[s];
+                data.segTargetWatts[idx][s] = (tv instanceof Toybox.Lang.Number) ? tv.toNumber() : 0;
+            }
         }
 
         // Optional interval block "ib" (issue #180): [targetWatts, lowWatts, highWatts],

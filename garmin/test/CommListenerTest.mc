@@ -133,6 +133,28 @@ function parse_vamShorterThanSegs_noVam(logger) {
     return true;
 }
 
+// tw (issue #397): one target-watts int per segment parses; a short array disables it.
+(:test)
+function parse_targetWatts_parsedAndShortRejected(logger) {
+    var d = freshData();
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route",
+        "climbs" => [ { "sd" => 0, "ed" => 900, "len" => 900, "eg" => 50, "ag" => 55,
+                        "segs" => [400, 20, 40, 1, 500, 30, 50, 2],
+                        "tw" => [250, 270] } ]
+    });
+    Test.assertEqual(d.hasTargetWatts[0], true);
+    Test.assertEqual(d.segTargetWatts[0][1], 270);
+    new PhoneMessageCallback().onMessage({
+        "v" => 3, "mode" => "route",
+        "climbs" => [ { "sd" => 0, "ed" => 900, "len" => 900, "eg" => 50, "ag" => 55,
+                        "segs" => [400, 20, 40, 1, 500, 30, 50, 2],
+                        "tw" => [250] } ]
+    });
+    Test.assertEqual(d.hasTargetWatts[0], false);
+    return true;
+}
+
 // vam absent: hasVam stays false, arrays stay at the zero default.
 (:test)
 function parse_vamAbsent_hasVamFalse(logger) {

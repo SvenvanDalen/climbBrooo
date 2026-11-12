@@ -91,6 +91,10 @@ class ClimbData {
     var calibLat;     // latitude (Float)
     var calibLon;     // longitude (Float)
     var calibIdx;     // next calibration point index to check (reset on payload)
+    var calibEle;     // known elevation (m) per calib point, null when absent (ce, issue #86)
+    var baroOffset = 0.0f;   // learned barometric drift: add to the raw altitude (m)
+    var baroSamples = 0;     // calib points that contributed to baroOffset
+    var currentAltitude = null;  // raw altitude (m) of the current tick, set by the view
 
     // Segment-level arrays (indexed [climb][segment])
     var segCount;         // segments per climb
@@ -106,6 +110,8 @@ class ClimbData {
     var segVamAvg;        // gradient-implied average VAM (m/h) per segment; 0 = none
     var segVamPeak;       // gradient-implied peak VAM (m/h) per segment; 0 = none
     var hasVam;           // bool per climb: true when vam was provided
+    var segTargetWatts;   // target watts per segment from the rider's best powered attempt (tw, #397); 0 = none
+    var hasTargetWatts;   // bool per climb: true when tw was provided
     var segZone;          // per climb: Array of FTP intensity-zone color indices (0-5, "zc",
                           // issue #66) or null when the payload carried none. Allocated only
                           // when zc arrives, so riders without an FTP pay no memory for it.
@@ -180,6 +186,8 @@ class ClimbData {
         segVamAvg = new [MAX_CLIMBS];
         segVamPeak = new [MAX_CLIMBS];
         hasVam = new [MAX_CLIMBS];
+        segTargetWatts = new [MAX_CLIMBS];
+        hasTargetWatts = new [MAX_CLIMBS];
         hasBlock = new [MAX_CLIMBS];
         blockTarget = new [MAX_CLIMBS];
         blockLow = new [MAX_CLIMBS];
@@ -217,6 +225,8 @@ class ClimbData {
             segVamAvg[i] = new [MAX_SEGMENTS];
             segVamPeak[i] = new [MAX_SEGMENTS];
             hasVam[i] = false;
+            segTargetWatts[i] = new [MAX_SEGMENTS];
+            hasTargetWatts[i] = false;
             hasBlock[i] = false;
             blockTarget[i] = 0;
             blockLow[i] = 0;
@@ -231,6 +241,7 @@ class ClimbData {
                 segRefSec[i][s] = 0;
                 segVamAvg[i][s] = 0;
                 segVamPeak[i][s] = 0;
+                segTargetWatts[i][s] = 0;
             }
         }
 
@@ -239,6 +250,7 @@ class ClimbData {
         calibLat   = new [MAX_CLIMBS];
         calibLon   = new [MAX_CLIMBS];
         calibIdx   = new [MAX_CLIMBS];
+        calibEle   = new [MAX_CLIMBS];
 
         for (var i = 0; i < MAX_CLIMBS; i++) {
             calibCount[i] = 0;
@@ -246,6 +258,7 @@ class ClimbData {
             calibDist[i]  = new [MAX_CALIB];
             calibLat[i]   = new [MAX_CALIB];
             calibLon[i]   = new [MAX_CALIB];
+            calibEle[i]   = new [MAX_CALIB];
             for (var k = 0; k < MAX_CALIB; k++) {
                 calibDist[i][k] = 0;
                 calibLat[i][k]  = 0.0f;
@@ -519,8 +532,23 @@ class ClimbData {
                 progressInClimb    = calibDist[ci][k];
                 updateCurrentSegment();
             }
+            sampleBaro(ci, k);
             calibIdx[ci] = k + 1;
         }
+    }
+
+    // Issue #86: fold the measured-vs-known altitude at calib point k into the drift offset.
+    hidden function sampleBaro(ci, k) {
+        var known = calibEle[ci][k];
+        if (known == null || currentAltitude == null) { return; }
+        var r = baroUpdate(baroOffset, baroSamples, currentAltitude, known);
+        baroOffset = r[0];
+        baroSamples = r[1];
+    }
+
+    // Raw altitude corrected by the learned drift (m).
+    function correctedAltitude(raw) {
+        return baroCorrect(raw, baroOffset);
     }
 
     // True when the rider is confirmed back on the route at/after climb i.
