@@ -222,6 +222,7 @@ class ClimbProView extends Ui.DataField {
         // and watches for divergence from ~1 km before a climb, and sets data.offRoute.
         if (info != null && info has :currentLocation && info.currentLocation != null) {
             var ll = info.currentLocation.toDegrees();   // [lat, lon]
+            data.currentAltitude = (info has :altitude) ? info.altitude : null;
             data.updateRouteMatch(ll[0], ll[1]);
             // Radius mode / day trip (issues #7, #9): count down to the next climb start.
             data.updateRadius(ll[0], ll[1]);

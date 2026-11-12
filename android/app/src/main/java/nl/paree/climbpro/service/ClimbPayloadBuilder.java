@@ -30,6 +30,7 @@ import java.util.Set;
  *     {sd:N, ed:N, len:N, eg:N, ag:N, n:"...",
  *      segs:[dist,elevGain,gradient,colorIndex, ...],   // 4 ints × segCount
  *      calib:[dist,latInt,lonInt, ...],                 // 3 ints × calibCount (optional)
+ *      ce:[eleM, ...],                                  // metres per calib point (optional, route mode, #86)
  *      surf:[surfType, ...],                             // 1 int × segCount (optional, omitted if all UNKNOWN)
  *      tsec:[targetSec, ...],                            // 1 int × segCount (optional, manual pacing plan)
  *      refsec:[prSec, ...],                              // 1 int × segCount (optional, per-segment PR)
@@ -281,7 +282,7 @@ public final class ClimbPayloadBuilder {
         List<Map<String, Object>> climbs = new ArrayList<>();
         if (route.climbs != null) {
             for (int i = 0; i < route.climbs.size(); i++) {
-                climbs.add(buildRouteClimb(route.climbs.get(i), rowAt(targetSeconds, i),
+                climbs.add(buildRouteClimb(route, route.climbs.get(i), rowAt(targetSeconds, i),
                         rowAt(refSeconds, i), rowAt(targetWatts, i)));
             }
         }
@@ -358,7 +359,7 @@ public final class ClimbPayloadBuilder {
                 ? refSeconds[climbIndex] : null;
         int[] tw = (targetWatts != null && climbIndex < targetWatts.length)
                 ? targetWatts[climbIndex] : null;
-        climbs.add(buildRouteClimb(route.climbs.get(climbIndex), tsec, refsec, tw));
+        climbs.add(buildRouteClimb(route, route.climbs.get(climbIndex), tsec, refsec, tw));
         putFieldLayout(payload);
         putGradeHabits(payload);
         payload.put("climbs", climbs);
@@ -534,7 +535,7 @@ public final class ClimbPayloadBuilder {
         return out;
     }
 
-    private Map<String, Object> buildRouteClimb(StoredClimb sc, int[] targetSeconds, int[] refSeconds,
+    private Map<String, Object> buildRouteClimb(StoredRoute route, StoredClimb sc, int[] targetSeconds, int[] refSeconds,
                                                 int[] targetWatts) {
         Map<String, Object> c = new LinkedHashMap<>();
         c.put("sd", sc.startDistance);
@@ -543,6 +544,8 @@ public final class ClimbPayloadBuilder {
         addTargetSeconds(c, sc, targetSeconds);
         addRefSeconds(c, sc, refSeconds);
         addTargetWatts(c, sc, targetWatts);
+        int[] ce = nl.paree.climbpro.domain.climb.CalibElevations.wire(route, sc);
+        if (ce != null) c.put("ce", ce);
         return c;
     }
 

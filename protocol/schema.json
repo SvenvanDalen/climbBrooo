@@ -164,6 +164,11 @@
           "type": "array",
           "items": { "type": "integer" }
         },
+        "ce": {
+          "description": "Route mode (optional, issue #86): known elevation in whole metres for each calib point, parallel to calib (one int per point). The watch compares its barometric altitude at a calib point with this value to estimate and correct sensor drift. Omitted when the route has no elevation data.",
+          "type": "array",
+          "items": { "type": "integer" }
+        },
         "surf": {
           "description": "Optional: one surface-type code (0-5) per segment, parallel to segs. Omitted when all segments are UNKNOWN.",
           "type": "array",

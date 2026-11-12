@@ -864,6 +864,10 @@ stat on the active-climb page.
 count — so the existing watch delta reads "x s faster than last time". No wire change;
 the pref is folded into the sync hash so toggling it re-syncs.
 
+### Barometric calibration (issue #86)
+
+Route-mode climbs may carry `ce`: one whole-metre elevation per `calib` point, interpolated from the route's elevation profile by `domain/climb/CalibElevations` (no stored-data change; omitted without elevation data). When the rider passes a calib point, `ClimbData.sampleBaro` feeds `currentAltitude` and the known elevation into the pure `baroUpdate` (`BaroCalibration.mc`): offset = known - measured, running mean over the last 8 points, samples beyond +-200 m or 40 m away from the running offset are ignored. `correctedAltitude(raw)` applies the offset. Wire key `ce` is guarded by `ProtocolLockstepGuardTest`.
+
 ### Target power per segment (issue #397)
 
 `RouteTargetPowerPlanner` picks, per climb, the fastest clean attempt that recorded
