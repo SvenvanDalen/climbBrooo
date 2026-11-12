@@ -362,8 +362,20 @@ public final class ClimbDetailActivity extends AppCompatActivity {
 
         String tempNote = nl.paree.climbpro.domain.climb.AttemptTemperature.label(row.avgTempC);
         if (tempNote != null) addHistoryDetail(rowLayout, tempNote);
+        String power = AttemptPowerViews.summary(row);
+        if (power != null) addHistoryDetail(rowLayout, power);
         String peaks = peakPowerLabel(row.peakWatts);
         if (peaks != null) addHistoryDetail(rowLayout, peaks);
+        String pacing = AttemptPowerViews.pacing(row);
+        if (pacing != null) addHistoryDetail(rowLayout, pacing);
+        if (AttemptPowerViews.hasSegments(row)) {
+            android.widget.TextView seg = new android.widget.TextView(this);
+            seg.setText("Per segment bekijken");
+            seg.setTextColor(getResources().getColor(nl.paree.climbpro.R.color.color_accent));
+            seg.setPadding(0, 4, 0, 0);
+            seg.setOnClickListener(v -> AttemptPowerViews.showSegments(this, row, loadedClimb));
+            rowLayout.addView(seg);
+        }
         if (row.note != null && !row.note.isEmpty()) {
             addHistoryDetail(rowLayout, "“" + row.note + "”");
         }

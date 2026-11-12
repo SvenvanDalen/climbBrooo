@@ -24,6 +24,12 @@ public final class TrackSensors {
         this.hasCadence = hasCadence;
     }
 
+    public boolean hasWatts() { return hasWatts; }
+
+    public boolean hasHeartrate() { return hasHeartrate; }
+
+    public boolean hasCadence() { return hasCadence; }
+
     /** Appends one track sample's readings; null for a missing value. */
     public void add(Double w, Double hr, Double cad) {
         watts.add(w);

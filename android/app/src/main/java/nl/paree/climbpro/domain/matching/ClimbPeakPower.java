@@ -25,22 +25,47 @@ public final class ClimbPeakPower {
                 || to >= timeSec.length || to >= watts.size()) {
             return null;
         }
-        long span = timeSec[to] - timeSec[from];
-        if (span <= 0 || span > MAX_PASS_SEC) return null;
-        double[] perSec = new double[(int) span];
+        double[] perSec = perSecond(timeSec, watts, from, to, true);
+        if (perSec == null) return null;
         boolean any = false;
-        for (int j = from + 1; j <= to; j++) {
-            Double w = watts.get(j);
-            double v = w == null || Double.isNaN(w) || w < 0 ? 0 : w;
-            if (v > 0) any = true;
-            int a = (int) Math.max(0, timeSec[j - 1] - timeSec[from]);
-            int b = (int) Math.min(span, timeSec[j] - timeSec[from]);
-            for (int s = a; s < b; s++) perSec[s] = v;
+        for (double v : perSec) {
+            if (v > 0) {
+                any = true;
+                break;
+            }
         }
         if (!any) return null;
         int[] out = new int[DURATIONS_SEC.length];
         for (int k = 0; k < out.length; k++) out[k] = best(perSec, DURATIONS_SEC[k]);
         return out;
+    }
+
+    /**
+     * The pass resampled to one value per second (each sample's value holds back to the
+     * previous sample). Missing or negative readings count as 0 when {@code missingAsZero}
+     * (power: coasting), otherwise as NaN so averages skip them. Zero heart-rate/cadence
+     * readings are NaN too when not {@code missingAsZero}. Null without a usable time span.
+     */
+    static double[] perSecond(long[] timeSec, List<Double> values, int from, int to,
+                              boolean missingAsZero) {
+        if (timeSec == null || values == null || from < 0 || to <= from
+                || to >= timeSec.length || to >= values.size()) {
+            return null;
+        }
+        long span = timeSec[to] - timeSec[from];
+        if (span <= 0 || span > MAX_PASS_SEC) return null;
+        double[] perSec = new double[(int) span];
+        java.util.Arrays.fill(perSec, missingAsZero ? 0 : Double.NaN);
+        for (int j = from + 1; j <= to; j++) {
+            Double w = values.get(j);
+            boolean bad = w == null || Double.isNaN(w) || w < 0 || (!missingAsZero && w == 0);
+            if (bad && !missingAsZero) continue;
+            double v = bad ? 0 : w;
+            int a = (int) Math.max(0, timeSec[j - 1] - timeSec[from]);
+            int b = (int) Math.min(span, timeSec[j] - timeSec[from]);
+            for (int s = a; s < b; s++) perSec[s] = v;
+        }
+        return perSec;
     }
 
     private static int best(double[] perSec, int window) {
