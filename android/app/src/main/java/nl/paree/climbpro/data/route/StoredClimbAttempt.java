@@ -90,4 +90,14 @@ public final class StoredClimbAttempt {
      * for attempts matched before this field existed.
      */
     public int[] peakWatts;
+
+    /** Normalized power over the pass (issue #384); null for a short pass or without power. */
+    public Integer normalizedPower;
+    /**
+     * Average power, heart rate and cadence per climb segment, aligned with {@link #segSplitSec}
+     * (issue #385); null when the stream is absent.
+     */
+    public int[] segWatts;
+    public int[] segHeartrate;
+    public int[] segCadence;
 }

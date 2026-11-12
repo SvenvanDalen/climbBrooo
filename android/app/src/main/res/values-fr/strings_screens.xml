@@ -403,4 +403,8 @@
     <string name="strava_auth_explanation">Associe ton compte Strava pour importer automatiquement tes parcours et détecter les montées.</string>
     <string name="strava_auth_button">Se connecter avec Strava</string>
     <string name="strava_auth_completing">Finalisation de la connexion…</string>
+    <string name="settings_climb_threshold">Seuil de montée</string>
+    <string name="settings_climb_threshold_explanation">Longueur minimale et pente moyenne pour qu\'un tronçon compte comme montée. Par défaut 800 m et 3 %. S\'applique aux routes importées ensuite.</string>
+    <string name="settings_climb_threshold_length">Longueur minimale : %1$d m</string>
+    <string name="settings_climb_threshold_gradient">Moyenne minimale : %1$s%%</string>
 </resources>

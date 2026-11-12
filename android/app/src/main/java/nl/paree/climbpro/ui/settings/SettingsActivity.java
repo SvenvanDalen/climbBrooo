@@ -1,5 +1,6 @@
 package nl.paree.climbpro.ui.settings;
 
+import nl.paree.climbpro.domain.climb.ClimbThresholds;
 import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -249,6 +250,40 @@ public final class SettingsActivity extends AppCompatActivity {
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}
         });
+
+        bindClimbThresholds();
+    }
+
+    /** Minimum climb length/gradient sliders (issue #69); progress is an offset above the minimum. */
+    private void bindClimbThresholds() {
+        binding.climbMinLengthSeekBar.setProgress(
+                ClimbThresholds.minLengthM() - ClimbThresholds.MIN_LENGTH_LOWER_M);
+        binding.climbMinGradientSeekBar.setProgress(
+                ClimbThresholds.minGradientPct10() - ClimbThresholds.MIN_GRADIENT_LOWER_PCT10);
+        updateClimbThresholdLabels();
+        SeekBar.OnSeekBarChangeListener l = new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar sb, int progress, boolean user) {
+                if (!user) return;
+                viewModel.setClimbThresholds(
+                        ClimbThresholds.MIN_LENGTH_LOWER_M + binding.climbMinLengthSeekBar.getProgress(),
+                        ClimbThresholds.MIN_GRADIENT_LOWER_PCT10
+                                + binding.climbMinGradientSeekBar.getProgress());
+                updateClimbThresholdLabels();
+            }
+            public void onStartTrackingTouch(SeekBar sb) {}
+            public void onStopTrackingTouch(SeekBar sb) {}
+        };
+        binding.climbMinLengthSeekBar.setOnSeekBarChangeListener(l);
+        binding.climbMinGradientSeekBar.setOnSeekBarChangeListener(l);
+    }
+
+    private void updateClimbThresholdLabels() {
+        binding.climbMinLengthLabel.setText(getString(
+                R.string.settings_climb_threshold_length, ClimbThresholds.minLengthM()));
+        binding.climbMinGradientLabel.setText(getString(
+                R.string.settings_climb_threshold_gradient,
+                String.format(java.util.Locale.getDefault(), "%.1f",
+                        ClimbThresholds.minGradientPct10() / 10.0)));
     }
 
     private void bindStrava() {

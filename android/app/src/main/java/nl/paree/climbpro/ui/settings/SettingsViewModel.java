@@ -193,6 +193,17 @@ public final class SettingsViewModel extends AndroidViewModel {
         radiusKm.postValue(km);
     }
 
+    /** Saves and applies the climb-detection thresholds (issue #69). */
+    public void setClimbThresholds(int minLengthM, int minGradientPct10) {
+        nl.paree.climbpro.domain.climb.ClimbThresholds.set(minLengthM, minGradientPct10);
+        PreferenceManager.getDefaultSharedPreferences(getApplication()).edit()
+                .putInt(nl.paree.climbpro.domain.climb.ClimbThresholds.PREF_MIN_LENGTH_M,
+                        nl.paree.climbpro.domain.climb.ClimbThresholds.minLengthM())
+                .putInt(nl.paree.climbpro.domain.climb.ClimbThresholds.PREF_MIN_GRADIENT_PCT10,
+                        nl.paree.climbpro.domain.climb.ClimbThresholds.minGradientPct10())
+                .apply();
+    }
+
     /** Privacy-zone radius (issue #92) for fuzzing home-climb start locations on export. */
     public void setPrivacyRadiusM(int requestedMeters) {
         int meters = CoordinateFuzzer.effectiveRadius(requestedMeters);

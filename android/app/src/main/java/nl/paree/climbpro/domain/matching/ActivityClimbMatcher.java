@@ -82,7 +82,7 @@ public final class ActivityClimbMatcher {
                     a.avgWatts = sensors.avgWatts(p.entryIdx, p.exitIdx);
                     a.avgHeartrate = sensors.avgHeartrate(p.entryIdx, p.exitIdx);
                     a.avgCadence = sensors.avgCadence(p.entryIdx, p.exitIdx);
-                    a.peakWatts = sensors.peakWatts(times, p.entryIdx, p.exitIdx);
+                    ClimbPassPower.apply(a, sensors, times, p.entryIdx, p.exitIdx);
                 }
                 out.add(a);
             }

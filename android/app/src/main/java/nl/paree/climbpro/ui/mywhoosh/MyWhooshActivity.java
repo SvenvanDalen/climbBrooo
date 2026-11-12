@@ -445,6 +445,11 @@ public final class MyWhooshActivity extends AppCompatActivity {
 
     private void renderSettings(ViewGroup rows) {
         addHeader(rows, "Instellingen");
+        Button dashboard = new Button(this);
+        dashboard.setText("MyWhoosh-dashboard");
+        dashboard.setOnClickListener(
+                v -> startActivity(MyWhooshDashboardActivity.intentFor(this)));
+        rows.addView(dashboard, padded());
         Button weight = new Button(this);
         weight.setText("Gewichtslog");
         weight.setOnClickListener(v -> startActivity(WeightLogActivity.intentFor(this)));
