@@ -1502,6 +1502,10 @@ A fourth watch module, **datafield** type (added to an activity's data screens, 
 
 ---
 
+## Workout vs plan (phone-only, #401)
+
+`domain/power/WorkoutCompliance` compares each climb's `IntervalBlock` (band in % FTP, turned into watts at the rider's FTP) with the matched `StoredClimbAttempt`'s average power: compliance % of target and a BELOW/IN_BAND/ABOVE verdict. `RideProfileViewModel` builds the steps from the ride's attempts (ordered by `startOffsetSec`) and `RideProfileActivity` lists them. No wire change, nothing new stored.
+
 ## Configurable climb threshold (phone-only, #69)
 
 `domain/climb/ClimbThresholds` holds the user-chosen minimum climb length and gradient (prefs `climb_min_length_m`, `climb_min_gradient_pct10`; clamped to 300–2000 m and 1.0–8.0 %), loaded in `ClimbProApplication`. `ClimbDetector.detect(points)` and `ClimbTrimmer.trim` read them; the overloads taking explicit values keep tests deterministic. Defaults equal the `ClimbConstants` product rule (800 m / 3 %). No wire change: only already-detected climbs are synced, and existing stored climbs are not recomputed until a route is re-imported.

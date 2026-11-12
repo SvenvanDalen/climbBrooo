@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
 import nl.paree.climbpro.domain.mywhoosh.RideProfile;
+import nl.paree.climbpro.domain.power.WorkoutCompliance;
 
 import java.util.Locale;
 
@@ -96,6 +97,30 @@ public final class RideProfileActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         rows.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        renderCompliance(r.steps);
+    }
+
+    /** Planned versus ridden power per interval block (issue #401). */
+    private void renderCompliance(java.util.List<WorkoutCompliance.Step> steps) {
+        if (steps == null || steps.isEmpty()) return;
+        Integer overall = WorkoutCompliance.overallPct(steps);
+        addText(overall != null ? "Training vs plan — gemiddeld " + overall + " % van het doel"
+                : "Training vs plan — geen vermogen gemeten");
+        for (WorkoutCompliance.Step s : steps) {
+            String ridden = s.avgWatts != null ? s.avgWatts + " W (" + s.compliancePct + " %, "
+                    + verdictLabel(s.verdict) + ")" : "geen vermogen";
+            addText(String.format(Locale.getDefault(), "%s — gepland %d W (%d–%d), gereden %s, %d:%02d",
+                    s.name, s.targetWatts, s.lowWatts, s.highWatts, ridden,
+                    s.elapsedSec / 60, s.elapsedSec % 60));
+        }
+    }
+
+    private static String verdictLabel(WorkoutCompliance.Verdict v) {
+        switch (v) {
+            case BELOW: return "te laag";
+            case ABOVE: return "te hoog";
+            default:    return "in de band";
+        }
     }
 
     private void addText(String s) {
