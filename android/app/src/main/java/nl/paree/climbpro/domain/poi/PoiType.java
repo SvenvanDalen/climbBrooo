@@ -14,7 +14,9 @@ public enum PoiType {
     MEMORIAL("historic", "memorial", "Gedenkteken"),
     VIEWPOINT("tourism", "viewpoint", "Uitzichtpunt"),
     ARTWORK("tourism", "artwork", "Kunstwerk"),
-    ATTRACTION("tourism", "attraction", "Attractie");
+    ATTRACTION("tourism", "attraction", "Attractie"),
+    /** Public taps and fountains to refill a bottle (issue #175). */
+    DRINKING_WATER("amenity", "drinking_water", "Drinkwater");
 
     public final String osmKey;
     public final String osmValue;

@@ -95,6 +95,8 @@ public final class OverpassQueryBuilder {
                 .append(a).append(";\n");
         q.append("  nwr[\"historic\"~\"^(").append(values("historic")).append(")$\"]")
                 .append(a).append(";\n");
+        q.append("  nwr[\"amenity\"~\"^(").append(values("amenity")).append(")$\"]")
+                .append(a).append(";\n");
         q.append(");\nout tags center ").append(MAX_RESULTS).append(";\n");
         return q.toString();
     }
