@@ -67,7 +67,7 @@ public class GoalEventViewModelTest {
     }
 
     @Test
-    public void load_withoutEvent_postsEmptyState() throws Exception {
+    public void load_withoutEvent_postsEmptyState() {
         GoalEventViewModel.State s = awaitValue(vm.state(), vm::load);
 
         assertNotNull(s);
@@ -109,7 +109,7 @@ public class GoalEventViewModelTest {
     }
 
     @Test
-    public void phaseFollowsDaysLeft() throws Exception {
+    public void phaseFollowsDaysLeft() {
         GoalEventViewModel.State far = awaitValue(vm.state(),
                 () -> vm.save(event("Ver", today().plusDays(200).toString(), 100, 1000)));
         assertEquals(GoalEventProgress.Phase.BASE, far.progress.phase);
@@ -130,7 +130,7 @@ public class GoalEventViewModelTest {
     }
 
     @Test
-    public void unparsableDate_isTreatedAsPast() throws Exception {
+    public void unparsableDate_isTreatedAsPast() {
         GoalEventViewModel.State s = awaitValue(vm.state(),
                 () -> vm.save(event("Kapot", "not-a-date", 100, 1000)));
 
@@ -176,7 +176,7 @@ public class GoalEventViewModelTest {
     }
 
     @Test
-    public void delete_withoutEvent_isNoOpWithoutError() throws Exception {
+    public void delete_withoutEvent_isNoOpWithoutError() {
         GoalEventViewModel.State s = awaitValue(vm.state(), vm::delete);
 
         assertNull(s.event);

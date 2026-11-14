@@ -173,7 +173,7 @@ public final class ClimbPeriodizationPlanner {
             @Override
             public int compare(Candidate a, Candidate b) {
                 int byDifficulty = Double.compare(a.difficulty(), b.difficulty());
-                return byDifficulty != 0 ? byDifficulty : a.climbId.compareTo(b.climbId);
+                return byDifficulty == 0 ? a.climbId.compareTo(b.climbId) : byDifficulty;
             }
         });
 

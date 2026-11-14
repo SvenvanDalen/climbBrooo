@@ -248,7 +248,7 @@ public class ClimbPacingAdvisorTest {
 
     @Test
     public void latestAnalyzable_picksMostRecentUsableAttemptOfThisClimb() {
-        int[] ok = new int[]{60, 60, 60};
+        int[] ok = {60, 60, 60};
         StoredClimbAttempt old = attempt("c", 100, 0, ok, false);
         StoredClimbAttempt newest = attempt("c", 300, 0, ok, false);
         StoredClimbAttempt secondPass = attempt("c", 300, 1, ok, false);

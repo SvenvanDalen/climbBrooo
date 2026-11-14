@@ -103,10 +103,10 @@ public final class SprintCalculator {
                 addSpeedSprint(speed, r, s);
             }
         }
-        power.sort((a, b) -> a.watts5s != b.watts5s
-                ? Integer.compare(b.watts5s, a.watts5s) : earlierFirst(a.ride, b.ride));
-        speed.sort((a, b) -> a.speedMps != b.speedMps
-                ? Double.compare(b.speedMps, a.speedMps) : earlierFirst(a.ride, b.ride));
+        power.sort((a, b) -> a.watts5s == b.watts5s
+                ? earlierFirst(a.ride, b.ride) : Integer.compare(b.watts5s, a.watts5s));
+        speed.sort((a, b) -> a.speedMps == b.speedMps
+                ? earlierFirst(a.ride, b.ride) : Double.compare(b.speedMps, a.speedMps));
         return new Result(new ArrayList<>(power.subList(0, Math.min(TOP_N, power.size()))),
                 new ArrayList<>(speed.subList(0, Math.min(TOP_N, speed.size()))));
     }

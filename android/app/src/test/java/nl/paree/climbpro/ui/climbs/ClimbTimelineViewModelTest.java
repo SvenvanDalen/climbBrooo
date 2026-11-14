@@ -79,8 +79,8 @@ public class ClimbTimelineViewModelTest {
         return c;
     }
 
-    private <T> T awaitLiveData(androidx.lifecycle.LiveData<T> live) throws Exception {
-        final Object[] got = new Object[]{null};
+    private <T> T awaitLiveData(androidx.lifecycle.LiveData<T> live) {
+        final Object[] got = {null};
         live.observeForever(v -> got[0] = v);
         UiTestEnv.waitFor(() -> got[0] != null, 2000);
         @SuppressWarnings("unchecked")

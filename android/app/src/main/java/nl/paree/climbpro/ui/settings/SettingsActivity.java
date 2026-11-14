@@ -270,8 +270,12 @@ public final class SettingsActivity extends AppCompatActivity {
                                 + binding.climbMinGradientSeekBar.getProgress());
                 updateClimbThresholdLabels();
             }
-            public void onStartTrackingTouch(SeekBar sb) {}
-            public void onStopTrackingTouch(SeekBar sb) {}
+            public void onStartTrackingTouch(SeekBar sb) {
+                // Nothing to do: thresholds update while dragging (onProgressChanged).
+            }
+            public void onStopTrackingTouch(SeekBar sb) {
+                // Nothing to do: thresholds are already applied in onProgressChanged.
+            }
         };
         binding.climbMinLengthSeekBar.setOnSeekBarChangeListener(l);
         binding.climbMinGradientSeekBar.setOnSeekBarChangeListener(l);

@@ -2,6 +2,7 @@ package nl.paree.climbpro.domain.training;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -142,7 +143,7 @@ public class ClimbPeriodizationPlannerTest {
         Plan plan = ClimbPeriodizationPlanner.plan(climbs, 1000);
         assertTrue(plan.fromRiddenClimbs);
         for (Week w : plan.weeks) {
-            for (Session s : w.sessions) assertFalse(s.climb.climbId.equals("x"));
+            for (Session s : w.sessions) assertNotEquals("x", s.climb.climbId);
         }
     }
 

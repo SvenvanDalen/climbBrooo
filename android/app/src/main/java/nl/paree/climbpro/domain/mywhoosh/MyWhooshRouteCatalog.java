@@ -81,8 +81,8 @@ public final class MyWhooshRouteCatalog {
         }
         List<Entry> out = new ArrayList<>();
         for (List<StoredRide> group : groups.values()) out.add(entryFor(group));
-        out.sort((a, b) -> a.count != b.count ? Integer.compare(b.count, a.count)
-                : Long.compare(b.lastEpochSec, a.lastEpochSec));
+        out.sort((a, b) -> a.count == b.count ? Long.compare(b.lastEpochSec, a.lastEpochSec)
+                : Integer.compare(b.count, a.count));
         return out;
     }
 }

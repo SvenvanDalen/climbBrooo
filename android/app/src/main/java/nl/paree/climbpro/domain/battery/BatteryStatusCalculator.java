@@ -65,7 +65,7 @@ public final class BatteryStatusCalculator {
             if (da < 0) return 1;
             if (db < 0) return -1;
             int c = Long.compare(da, db);
-            return c != 0 ? c : compareNames(a, b);
+            return c == 0 ? compareNames(a, b) : c;
         });
         return out;
     }

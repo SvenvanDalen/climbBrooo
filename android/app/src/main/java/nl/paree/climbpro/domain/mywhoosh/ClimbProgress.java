@@ -81,9 +81,9 @@ public final class ClimbProgress {
                                       WeightHistory weights) {
         if (climbId == null || attempts == null) return Collections.emptyList();
         List<StoredClimbAttempt> mine = timedAttemptsOf(climbId, attempts);
-        mine.sort((x, y) -> x.dateEpochSec != y.dateEpochSec
-                ? Long.compare(x.dateEpochSec, y.dateEpochSec)
-                : Integer.compare(x.startOffsetSec, y.startOffsetSec));
+        mine.sort((x, y) -> x.dateEpochSec == y.dateEpochSec
+                ? Integer.compare(x.startOffsetSec, y.startOffsetSec)
+                : Long.compare(x.dateEpochSec, y.dateEpochSec));
 
         Double[] wkg = new Double[mine.size()];
         for (int i = 0; i < mine.size(); i++) {

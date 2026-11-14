@@ -68,7 +68,7 @@ public class UpdateCheckerNetworkTest {
         }
     }
 
-    private Recorder check() throws Exception {
+    private Recorder check() {
         Recorder r = new Recorder();
         new UpdateChecker(app, server.url("/").toString()).checkForUpdate(r);
         if (!UiTestEnv.waitFor(() -> r.event != null, 10_000)) fail("no callback");

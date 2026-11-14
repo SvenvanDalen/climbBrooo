@@ -441,7 +441,7 @@ public final class ClimbOfTheWeek {
         String an = a.candidate.name != null ? a.candidate.name : "";
         String bn = b.candidate.name != null ? b.candidate.name : "";
         c = an.compareToIgnoreCase(bn);
-        return c != 0 ? c : a.candidate.key().compareTo(b.candidate.key());
+        return c == 0 ? a.candidate.key().compareTo(b.candidate.key()) : c;
     };
 
     /** Arguments of {@link #score}. */

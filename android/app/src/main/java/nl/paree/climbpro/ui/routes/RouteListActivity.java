@@ -249,7 +249,7 @@ public final class RouteListActivity extends AppCompatActivity {
 
     private void showRouteActions(RouteCatalogEntry entry) {
         String name = entry.userDisplayName != null ? entry.userDisplayName : entry.name;
-        new AlertDialog.Builder(RouteListActivity.this)
+        new AlertDialog.Builder(this)
                 .setTitle(name != null ? name : entry.routeId)
                 .setItems(new String[]{
                         getString(R.string.route_list_action_add_to_collection),
@@ -259,7 +259,7 @@ public final class RouteListActivity extends AppCompatActivity {
                         startQuickStart(entry);
                     } else if (which == 0) {
                         nl.paree.climbpro.ui.collections.CollectionMembershipDialog
-                                .showForRoute(RouteListActivity.this, entry.routeId);
+                                .showForRoute(this, entry.routeId);
                     } else {
                         confirmDeleteRoute(entry.routeId, name);
                     }

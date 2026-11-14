@@ -40,12 +40,13 @@ public final class IntervalAnalyzer {
         while (t < n && out.size() < MAX_INTERVALS) {
             if (!hard[t]) {
                 t++;
-                continue;
+            } else {
+                int start = t;
+                while (t < n && hard[t]) t++;
+                if (t - start >= HeartRateRecoveryAnalyzer.MIN_INTERVAL_SEC) {
+                    out.add(block(watts, hr, hard, start, t, threshold));
+                }
             }
-            int start = t;
-            while (t < n && hard[t]) t++;
-            if (t - start < HeartRateRecoveryAnalyzer.MIN_INTERVAL_SEC) continue;
-            out.add(block(watts, hr, hard, start, t, threshold));
         }
         return out;
     }

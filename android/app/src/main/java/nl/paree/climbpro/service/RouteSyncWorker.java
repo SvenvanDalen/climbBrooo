@@ -227,7 +227,7 @@ public final class RouteSyncWorker extends Worker {
         }
         // Display units (issue #262) only extend the hash when not all-metric, so metric
         // riders keep their existing hash and don't get a one-off resync from this change.
-        return units.toWireFlags() != 0 ? hash + "|" + units.signature() : hash;
+        return units.toWireFlags() == 0 ? hash : hash + "|" + units.signature();
     }
 
     /**

@@ -41,10 +41,14 @@ public final class WorkoutCompliance {
                 this.verdict = null;
             } else {
                 this.compliancePct = (int) Math.round(100.0 * avgWatts / targetWatts);
-                this.verdict = avgWatts < lowWatts ? Verdict.BELOW
-                        : avgWatts > highWatts ? Verdict.ABOVE : Verdict.IN_BAND;
+                this.verdict = verdictFor(avgWatts, lowWatts, highWatts);
             }
         }
+    }
+
+    private static Verdict verdictFor(int avgWatts, int lowWatts, int highWatts) {
+        if (avgWatts < lowWatts) return Verdict.BELOW;
+        return avgWatts > highWatts ? Verdict.ABOVE : Verdict.IN_BAND;
     }
 
     /** Input for one planned step: the block, and what the matched attempt delivered. */
@@ -70,12 +74,16 @@ public final class WorkoutCompliance {
         List<Step> out = new ArrayList<>();
         if (planned == null || ftpWatts <= 0) return out;
         for (Planned p : planned) {
-            if (p == null || p.block == null) continue;
-            int[] band = p.block.wireWatts(ftpWatts);
-            if (band == null) continue;
-            out.add(new Step(p.name, band, p.avgWatts, p.elapsedSec));
+            Step step = stepFor(p, ftpWatts);
+            if (step != null) out.add(step);
         }
         return out;
+    }
+
+    private static Step stepFor(Planned p, int ftpWatts) {
+        if (p == null || p.block == null) return null;
+        int[] band = p.block.wireWatts(ftpWatts);
+        return band == null ? null : new Step(p.name, band, p.avgWatts, p.elapsedSec);
     }
 
     /** Mean compliance over the steps that have power; null when none do. */
