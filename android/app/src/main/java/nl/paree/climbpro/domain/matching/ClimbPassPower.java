@@ -21,7 +21,7 @@ public final class ClimbPassPower {
     /** Fills the power fields of {@code a}; leaves them null when the stream is absent. */
     public static void apply(StoredClimbAttempt a, TrackSensors sensors, long[] timeSec,
                              int from, int to) {
-        a.peakWatts = sensors.peakWatts(timeSec, from, to);
+        a.peakWatts = orNull(sensors.peakWatts(timeSec, from, to));
         double[] watts = sensors.hasWatts()
                 ? ClimbPeakPower.perSecond(timeSec, sensors.watts, from, to, true) : null;
         if (a.peakWatts != null && watts != null && watts.length > 0) {

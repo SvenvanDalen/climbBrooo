@@ -2,7 +2,6 @@ package nl.paree.climbpro.domain.matching;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -64,6 +63,6 @@ public class ClimbPeakPowerTest {
             without.add(null, null, null);
         }
         assertArrayEquals(new int[]{250, 250, 0, 0}, with.peakWatts(seconds(61), 0, 60));
-        assertNull(without.peakWatts(seconds(61), 0, 60));
+        assertEquals(0, without.peakWatts(seconds(61), 0, 60).length);
     }
 }
