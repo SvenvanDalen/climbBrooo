@@ -80,9 +80,9 @@ public final class FastestDistanceCalculator {
         for (int i = 0; i < RideStreamAnalyzer.effortDistancesM().length; i++) {
             double target = RideStreamAnalyzer.effortDistancesM()[i];
             List<Effort> efforts = effortsFor(i, target, stats, ridesById);
-            efforts.sort((a, b) -> a.seconds != b.seconds
-                    ? Integer.compare(a.seconds, b.seconds)
-                    : Long.compare(startOrMax(a.ride), startOrMax(b.ride)));
+            efforts.sort((a, b) -> a.seconds == b.seconds
+                    ? Long.compare(startOrMax(a.ride), startOrMax(b.ride))
+                    : Integer.compare(a.seconds, b.seconds));
             out.add(new Distance(target, new ArrayList<>(
                     efforts.subList(0, Math.min(TOP_N, efforts.size())))));
         }

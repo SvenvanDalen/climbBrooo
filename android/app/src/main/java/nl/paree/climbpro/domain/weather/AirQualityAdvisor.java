@@ -90,9 +90,9 @@ public final class AirQualityAdvisor {
             Level level = pollenLevel(p, g);
             if (level != Level.GOOD) peaks.add(new PollenPeak(p, g, level));
         }
-        Collections.sort(peaks, (a, b) -> a.level != b.level
-                ? b.level.ordinal() - a.level.ordinal()
-                : Double.compare(b.grains / b.type.highFrom, a.grains / a.type.highFrom));
+        Collections.sort(peaks, (a, b) -> a.level == b.level
+                ? Double.compare(b.grains / b.type.highFrom, a.grains / a.type.highFrom)
+                : b.level.ordinal() - a.level.ordinal());
         return new Advice(mx.covered, mx.maxAqi, mx.maxAqiAt, mx.maxPm25, mx.maxPm10, peaks,
                 pollenKnown);
     }

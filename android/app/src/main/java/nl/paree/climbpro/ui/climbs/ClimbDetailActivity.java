@@ -346,7 +346,7 @@ public final class ClimbDetailActivity extends AppCompatActivity {
     /** "Piek 30 s 410 W · 1 min 380 W · 5 min 310 W" (issue #389); null without power. */
     static String peakPowerLabel(int[] peakWatts) {
         if (peakWatts == null) return null;
-        int[] durations = nl.paree.climbpro.domain.matching.ClimbPeakPower.DURATIONS_SEC;
+        int[] durations = nl.paree.climbpro.domain.matching.ClimbPeakPower.durationsSec();
         StringBuilder sb = new StringBuilder();
         for (int k = 0; k < durations.length && k < peakWatts.length; k++) {
             if (peakWatts[k] <= 0) continue;

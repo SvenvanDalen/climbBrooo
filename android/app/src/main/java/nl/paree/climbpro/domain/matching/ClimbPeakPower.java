@@ -12,7 +12,12 @@ public final class ClimbPeakPower {
 
     private ClimbPeakPower() {}
 
-    public static final int[] DURATIONS_SEC = {30, 60, 300, 1200};
+    private static final int[] DURATIONS_SEC = {30, 60, 300, 1200};
+
+    /** Copy of the peak durations (seconds) that {@link #compute} aligns its result with. */
+    public static int[] durationsSec() {
+        return DURATIONS_SEC.clone();
+    }
     /** Longer passes are not resampled (a climb never takes this long). */
     static final int MAX_PASS_SEC = 4 * 3600;
 

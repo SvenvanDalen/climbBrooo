@@ -163,8 +163,8 @@ public final class RouteHazards {
     public static int[] pack(List<Hazard> hazards) {
         if (hazards == null || hazards.isEmpty()) return new int[0];
         List<Hazard> sorted = new ArrayList<>(hazards);
-        Collections.sort(sorted, (a, b) -> a.startM != b.startM
-                ? Integer.compare(a.startM, b.startM) : Integer.compare(a.type, b.type));
+        Collections.sort(sorted, (a, b) -> a.startM == b.startM
+                ? Integer.compare(a.type, b.type) : Integer.compare(a.startM, b.startM));
         int count = Math.min(sorted.size(), MAX_WIRE_HAZARDS);
         int[] out = new int[count * 3];
         for (int i = 0; i < count; i++) {

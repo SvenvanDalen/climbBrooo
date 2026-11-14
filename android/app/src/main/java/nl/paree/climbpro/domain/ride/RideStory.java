@@ -77,9 +77,9 @@ public final class RideStory {
         for (StoredClimbAttempt a : all) {
             if (a.activityId == ride.activityId) onRide.add(a);
         }
-        onRide.sort((x, y) -> x.startOffsetSec != y.startOffsetSec
-                ? Integer.compare(x.startOffsetSec, y.startOffsetSec)
-                : Integer.compare(x.passIndex, y.passIndex));
+        onRide.sort((x, y) -> x.startOffsetSec == y.startOffsetSec
+                ? Integer.compare(x.passIndex, y.passIndex)
+                : Integer.compare(x.startOffsetSec, y.startOffsetSec));
         return onRide;
     }
 

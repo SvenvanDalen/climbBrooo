@@ -161,7 +161,7 @@ final class AttemptPowerViews {
             block.setBackgroundColor(seg != null
                     ? SegmentColorPalette.toColor(seg.colorIndex) : 0xFF9E9E9E);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
-                    (int) (14 * density), Math.max(1, splits[k]));
+                    (int) (14 * density), (float) Math.max(1, splits[k]));
             lp.setMargins(0, 0, (int) density, 0);
             bar.addView(block, lp);
         }

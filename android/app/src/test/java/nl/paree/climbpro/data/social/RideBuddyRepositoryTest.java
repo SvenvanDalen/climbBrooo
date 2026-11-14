@@ -2,6 +2,7 @@ package nl.paree.climbpro.data.social;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -84,6 +85,6 @@ public class RideBuddyRepositoryTest {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         String id = RideBuddyRepository.riderId(prefs);
         assertEquals(id, RideBuddyRepository.riderId(prefs));
-        assertFalse(id.equals(FriendShareIdentity.sharerId(prefs)));
+        assertNotEquals(id, FriendShareIdentity.sharerId(prefs));
     }
 }

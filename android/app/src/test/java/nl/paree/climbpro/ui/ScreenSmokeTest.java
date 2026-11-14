@@ -367,7 +367,7 @@ public class ScreenSmokeTest {
         private static String describe(View v) {
             String id;
             try {
-                id = v.getId() != View.NO_ID ? v.getResources().getResourceEntryName(v.getId()) : "?";
+                id = v.getId() == View.NO_ID ? "?" : v.getResources().getResourceEntryName(v.getId());
             } catch (Exception e) {
                 id = "?";
             }

@@ -120,7 +120,7 @@ public final class ClimbUsageClassifier {
         if (attempts != null) {
             for (StoredClimbAttempt a : attempts) {
                 if (a == null || a.climbId == null) continue;
-                long rideKey = a.activityId != 0 ? a.activityId : -a.dateEpochSec - 1;
+                long rideKey = a.activityId == 0 ? -a.dateEpochSec - 1 : a.activityId;
                 Set<Long> set = rides.get(a.climbId);
                 if (set == null) {
                     set = new HashSet<>();

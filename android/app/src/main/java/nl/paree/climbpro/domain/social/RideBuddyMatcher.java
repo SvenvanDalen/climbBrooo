@@ -127,8 +127,8 @@ public final class RideBuddyMatcher {
             if (me.rideTypes == 0 || other.rideTypes == 0) return;
             int common = me.rideTypes & other.rideTypes;
             add(W_TYPE, jaccard(me.rideTypes, other.rideTypes),
-                    common != 0 ? "rijdt ook " + RideBuddyCode.typeNames(common)
-                            : "rijdt vooral " + RideBuddyCode.typeNames(other.rideTypes));
+                    common == 0 ? "rijdt vooral " + RideBuddyCode.typeNames(other.rideTypes)
+                            : "rijdt ook " + RideBuddyCode.typeNames(common));
         }
 
         void distance(RideBuddyProfile me, RideBuddyProfile other) {
@@ -169,13 +169,13 @@ public final class RideBuddyMatcher {
         }
 
         private static String weekdayReason(int common) {
-            return common != 0 ? "rijdt ook op " + RideBuddyCode.dayNames(common)
-                    : "rijdt op andere dagen";
+            return common == 0 ? "rijdt op andere dagen"
+                    : "rijdt ook op " + RideBuddyCode.dayNames(common);
         }
 
         private static String daypartReason(int common) {
-            return common != 0 ? "rijdt ook in de " + RideBuddyCode.partNames(common)
-                    : "rijdt op andere tijden";
+            return common == 0 ? "rijdt op andere tijden"
+                    : "rijdt ook in de " + RideBuddyCode.partNames(common);
         }
 
         /** 1 at 0, falling linearly to 0 at {@code zero}. */

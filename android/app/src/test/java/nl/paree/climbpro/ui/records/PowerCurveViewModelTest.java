@@ -93,7 +93,7 @@ public class PowerCurveViewModelTest {
     }
 
     @Test
-    public void noRides_emptyCurves() throws Exception {
+    public void noRides_emptyCurves() {
         PowerCurveViewModel.State s = loaded().state().getValue();
         assertEquals(PowerCurveCalculator.Period.DAYS_90, s.period);
         assertTrue(s.result.isEmpty());
@@ -110,7 +110,7 @@ public class PowerCurveViewModelTest {
     }
 
     @Test
-    public void weightComesFromRiderProfile() throws Exception {
+    public void weightComesFromRiderProfile() {
         new RiderProfileRepository(app).save(new RiderProfile(250, 72.5, 8));
         assertEquals(72.5, loaded().state().getValue().weightKg, 1e-4);
     }
@@ -185,7 +185,7 @@ public class PowerCurveViewModelTest {
     }
 
     @Test
-    public void setPeriod_sameValue_doesNotReload() throws Exception {
+    public void setPeriod_sameValue_doesNotReload() {
         PowerCurveViewModel vm = loaded();
         PowerCurveViewModel.State before = vm.state().getValue();
         vm.setPeriod(PowerCurveCalculator.Period.DAYS_90);

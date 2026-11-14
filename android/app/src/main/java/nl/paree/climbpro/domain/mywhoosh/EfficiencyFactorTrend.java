@@ -65,17 +65,10 @@ public final class EfficiencyFactorTrend {
                                  long nowEpochSec, ZoneId zone) {
         LocalDate thisMonday = monday(nowEpochSec, zone);
         LocalDate first = thisMonday.minusWeeks(WEEKS - 1L);
-        TreeMap<LocalDate, double[]> sums = new TreeMap<>(); // {sum, count}
+        TreeMap<LocalDate, double[]> sums = new TreeMap<>(); // per week: sum of EF, then ride count
         if (rides != null && stats != null) {
             for (StoredRide r : rides) {
-                if (!IndoorRides.isMyWhoosh(r)) continue;
-                Double ef = of(r, stats.get(r.activityId));
-                if (ef == null) continue;
-                LocalDate week = monday(r.startEpochSec, zone);
-                if (week.isBefore(first) || week.isAfter(thisMonday)) continue;
-                double[] acc = sums.computeIfAbsent(week, k -> new double[2]);
-                acc[0] += ef;
-                acc[1]++;
+                accumulate(sums, r, stats.get(r.activityId), zone, first, thisMonday);
             }
         }
         List<Week> weeks = new ArrayList<>();
@@ -97,6 +90,19 @@ public final class EfficiencyFactorTrend {
         }
         Double change = recentN > 0 && earlierN > 0 ? recent / recentN - earlier / earlierN : null;
         return new Result(weeks, change);
+    }
+
+    private static void accumulate(TreeMap<LocalDate, double[]> sums, StoredRide r,
+                                   StoredRideStreamStats s, ZoneId zone,
+                                   LocalDate first, LocalDate thisMonday) {
+        if (!IndoorRides.isMyWhoosh(r)) return;
+        Double ef = of(r, s);
+        if (ef == null) return;
+        LocalDate week = monday(r.startEpochSec, zone);
+        if (week.isBefore(first) || week.isAfter(thisMonday)) return;
+        double[] acc = sums.computeIfAbsent(week, k -> new double[2]);
+        acc[0] += ef;
+        acc[1]++;
     }
 
     private static LocalDate monday(long epochSec, ZoneId zone) {

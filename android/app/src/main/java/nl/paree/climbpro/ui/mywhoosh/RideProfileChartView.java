@@ -25,7 +25,7 @@ public final class RideProfileChartView extends View {
     static final int[] COLORS = {0xFFFFC107, 0xFFE53935, 0xFF29B6F6};
 
     private RideProfile profile;
-    private final boolean[] visible = {true, true, true};
+    private final boolean[] seriesVisible = {true, true, true};
     private final float density;
     private final Paint area = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -53,7 +53,7 @@ public final class RideProfileChartView extends View {
     }
 
     public void setVisible(int series, boolean on) {
-        visible[series] = on;
+        seriesVisible[series] = on;
         invalidate();
     }
 
@@ -73,7 +73,7 @@ public final class RideProfileChartView extends View {
         drawArea(canvas, profile.altitude, top, bottom);
         double[][] series = {profile.watts, profile.heartrate, profile.cadence};
         for (int k = 0; k < series.length; k++) {
-            if (!visible[k]) continue;
+            if (!seriesVisible[k]) continue;
             line.setColor(COLORS[k]);
             drawLine(canvas, series[k], top, bottom);
         }

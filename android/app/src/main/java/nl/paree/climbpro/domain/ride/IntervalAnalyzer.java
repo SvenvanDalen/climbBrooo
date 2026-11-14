@@ -34,18 +34,24 @@ public final class IntervalAnalyzer {
 
         double threshold = HeartRateRecoveryAnalyzer.INTERVAL_FACTOR * np;
         boolean[] hard = HeartRateRecoveryAnalyzer.hardSeconds(watts, threshold);
+        return scan(watts, hr, hard, threshold);
+    }
+
+    private static List<StoredRideStreamStats.Interval> scan(double[] watts, double[] hr,
+                                                            boolean[] hard, double threshold) {
         List<StoredRideStreamStats.Interval> out = new ArrayList<>();
         int n = watts.length;
         int t = 0;
         while (t < n && out.size() < MAX_INTERVALS) {
             if (!hard[t]) {
                 t++;
-                continue;
+            } else {
+                int start = t;
+                while (t < n && hard[t]) t++;
+                if (t - start >= HeartRateRecoveryAnalyzer.MIN_INTERVAL_SEC) {
+                    out.add(block(watts, hr, hard, start, t, threshold));
+                }
             }
-            int start = t;
-            while (t < n && hard[t]) t++;
-            if (t - start < HeartRateRecoveryAnalyzer.MIN_INTERVAL_SEC) continue;
-            out.add(block(watts, hr, hard, start, t, threshold));
         }
         return out;
     }

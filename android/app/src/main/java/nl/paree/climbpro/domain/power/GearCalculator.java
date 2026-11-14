@@ -117,7 +117,7 @@ public final class GearCalculator {
         }
         gears.sort((a, b) -> {
             int byRatio = Double.compare(a.ratio(), b.ratio());
-            return byRatio != 0 ? byRatio : Integer.compare(a.chainring, b.chainring);
+            return byRatio == 0 ? Integer.compare(a.chainring, b.chainring) : byRatio;
         });
 
         int smallest = Arrays.stream(in.chainrings).min().getAsInt();

@@ -24,12 +24,12 @@ import androidx.lifecycle.ViewModelProvider;
 import nl.paree.climbpro.R;
 import nl.paree.climbpro.data.ride.RideRepository;
 import nl.paree.climbpro.data.ride.RideStreamStatsRepository;
+import nl.paree.climbpro.ui.EpochDates;
 import nl.paree.climbpro.domain.mywhoosh.IndoorRides;
 import nl.paree.climbpro.domain.mywhoosh.MyWhooshDashboard;
 
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -68,7 +68,7 @@ public final class MyWhooshDashboardActivity extends AppCompatActivity {
         protected void onCleared() { executor.shutdown(); }
     }
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM yyyy", new Locale("nl"));
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
     private LinearLayout rows;
     private boolean monthly;
     private MyWhooshDashboard.Result last;
@@ -194,6 +194,6 @@ public final class MyWhooshDashboardActivity extends AppCompatActivity {
     }
 
     private String date(long epochSec) {
-        return dateFormat.format(new Date(epochSec * 1000L));
+        return EpochDates.format(dateFormat, epochSec);
     }
 }

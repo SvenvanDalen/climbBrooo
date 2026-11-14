@@ -42,9 +42,7 @@ import nl.paree.climbpro.ui.climbs.SegmentColorPalette;
 import nl.paree.climbpro.ui.rides.RideCompareActivity;
 import nl.paree.climbpro.ui.routes.RouteDetailActivity;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -63,6 +61,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
 
     private static final String[] GRADE_LABELS = {"0–2 %", "2–4 %", "4–6 %", "6–8 %", "8–10 %", "10 %+"};
     private static final int MAX_RECOVERY_ROWS = 10;
+    private static final String DATE_SEP = "  •  ";
 
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", new Locale("nl"));
     private MyWhooshViewModel viewModel;
@@ -233,7 +232,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
                 + "vermogen, ongeveer gelijk aan de verbrande kcal. Tik op een rit voor het "
                 + "profiel met vermogen, hartslag en cadans.");
         for (MyWhooshViewModel.RideRow row : st.rides) {
-            String title = date(row.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(row.ride);
+            String title = date(row.ride.startEpochSec) + DATE_SEP + IndoorRides.routeTitle(row.ride);
             String work = row.workKj != null ? ", " + row.workKj + " kJ" : "";
             long activityId = row.ride.activityId;
             if (row.intensity == null) {
@@ -271,7 +270,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
             if (r.peak1MinWatts != null) detail.append(", piek 1 min ").append(r.peak1MinWatts).append(" W");
             if (r.peak5MinWatts != null) detail.append(", 5 min ").append(r.peak5MinWatts).append(" W");
             if (r.reason == RaceDetector.Reason.INTENSITY) detail.append("\nHerkend aan de intensiteit");
-            addRow(rows, date(r.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(r.ride),
+            addRow(rows, date(r.ride.startEpochSec) + DATE_SEP + IndoorRides.routeTitle(r.ride),
                     wkg, detail.toString());
         }
     }
@@ -287,7 +286,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
             return;
         }
         for (MyWhooshViewModel.IntervalRide ir : rides) {
-            addText(rows, date(ir.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(ir.ride)
+            addText(rows, date(ir.ride.startEpochSec) + DATE_SEP + IndoorRides.routeTitle(ir.ride)
                     + " (" + ir.intervals.size() + " interval(len))");
             for (int i = 0; i < ir.intervals.size(); i++) {
                 StoredRideStreamStats.Interval iv = ir.intervals.get(i);
@@ -315,7 +314,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
         addText(rows, "Hoeveel je hartslag ten opzichte van je vermogen opliep in de tweede "
                 + "helft. Onder 5 % betekent dat je duurvermogen het volhield.");
         for (PowerDecoupling.Entry e : entries) {
-            addRow(rows, date(e.ride.startEpochSec) + "  •  " + IndoorRides.routeTitle(e.ride),
+            addRow(rows, date(e.ride.startEpochSec) + DATE_SEP + IndoorRides.routeTitle(e.ride),
                     String.format(Locale.getDefault(), "%.1f %%", e.percent),
                     verdict(e.rating) + ", over " + e.minutes + " min");
         }
@@ -372,7 +371,7 @@ public final class MyWhooshActivity extends AppCompatActivity {
                 trend);
         for (int i = 0; i < r.entries.size() && i < MAX_RECOVERY_ROWS; i++) {
             HeartRateRecoveryTrend.Entry e = r.entries.get(i);
-            addRow(rows, date(e.ride.startEpochSec) + "  •  "
+            addRow(rows, date(e.ride.startEpochSec) + DATE_SEP
                             + IndoorRides.routeTitle(e.ride),
                     String.format(Locale.getDefault(), "%.0f slagen", e.avgDropBpm),
                     e.intervals + " interval(len)");
@@ -388,10 +387,12 @@ public final class MyWhooshActivity extends AppCompatActivity {
                     + "hartslag in de laatste " + EfficiencyFactorTrend.WEEKS + " weken.");
             return;
         }
-        String trend = r.change == null ? "Nog te weinig weken om een trend te zien."
-                : String.format(Locale.getDefault(), "%+.2f t.o.v. de %d weken daarvoor (%s).",
-                        r.change, EfficiencyFactorTrend.WEEKS / 2,
-                        r.change >= 0 ? "meer watt per hartslag" : "minder watt per hartslag");
+        String trend = "Nog te weinig weken om een trend te zien.";
+        if (r.change != null) {
+            String direction = r.change >= 0 ? "meer watt per hartslag" : "minder watt per hartslag";
+            trend = String.format(Locale.getDefault(), "%+.2f t.o.v. de %d weken daarvoor (%s).",
+                    r.change, EfficiencyFactorTrend.WEEKS / 2, direction);
+        }
         addText(rows, "Gemiddeld per week. Hoger is beter: meer watt bij dezelfde hartslag. " + trend);
         List<Double> values = new ArrayList<>();
         for (EfficiencyFactorTrend.Week w : r.weeks) values.add(w.ef);

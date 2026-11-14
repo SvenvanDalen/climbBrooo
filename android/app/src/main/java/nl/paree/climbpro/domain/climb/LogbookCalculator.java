@@ -231,7 +231,7 @@ public final class LogbookCalculator {
         }
         // Prefer the PR from clean (non-deviated) attempts; fall back to the fastest
         // deviated one only when the climb has no clean attempt at all (issue #77).
-        int pr = prValid != Integer.MAX_VALUE ? prValid : prAny;
+        int pr = prValid == Integer.MAX_VALUE ? prAny : prValid;
         mine.sort(Comparator.comparingLong((StoredClimbAttempt a) -> a.dateEpochSec).reversed());
         boolean mostRecentIsBestOfYear =
                 BestOfYearCalculator.isMostRecentBestOfYear(climbId, attempts, nowEpochSec);

@@ -104,6 +104,20 @@ public class MyWhooshFeaturesTest {
         assertFalse(points.get(1).indoor);
     }
 
+    @Test
+    public void progressionOrdersSameDayAttemptsByStartOffset() {
+        StoredClimbAttempt late = attempt("c", 1, JAN_1_2026, 600, 280);
+        late.startOffsetSec = 900;
+        StoredClimbAttempt early = attempt("c", 2, JAN_1_2026, 590, 290);
+        early.startOffsetSec = 100;
+
+        List<ClimbProgress.Point> points = ClimbProgress.compute("c",
+                Arrays.asList(late, early), null, W80);
+
+        assertEquals(2, points.size());
+        assertEquals(590, points.get(0).elapsedSec);
+    }
+
     // --- #388 PR notification -----------------------------------------------------------
 
     @Test

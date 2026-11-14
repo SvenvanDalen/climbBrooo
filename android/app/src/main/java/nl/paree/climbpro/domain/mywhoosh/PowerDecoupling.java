@@ -52,11 +52,16 @@ public final class PowerDecoupling {
         if (rides == null || stats == null) return out;
         for (StoredRide r : rides) {
             if (out.size() >= limit) break;
-            if (r.movingTimeSec < MIN_MOVING_SEC) continue;
-            StoredRideStreamStats s = stats.get(r.activityId);
-            if (s == null || s.hrDriftPct == null || !"power".equals(s.hrDriftBasis)) continue;
-            out.add(new Entry(r, s.hrDriftPct, s.hrDriftMinutes != null ? s.hrDriftMinutes : 0));
+            Entry e = entryFor(r, stats.get(r.activityId));
+            if (e != null) out.add(e);
         }
         return out;
+    }
+
+    /** The entry for a ride, or null when it is too short or has no power-based drift. */
+    private static Entry entryFor(StoredRide r, StoredRideStreamStats s) {
+        if (r.movingTimeSec < MIN_MOVING_SEC) return null;
+        if (s == null || s.hrDriftPct == null || !"power".equals(s.hrDriftBasis)) return null;
+        return new Entry(r, s.hrDriftPct, s.hrDriftMinutes != null ? s.hrDriftMinutes : 0);
     }
 }

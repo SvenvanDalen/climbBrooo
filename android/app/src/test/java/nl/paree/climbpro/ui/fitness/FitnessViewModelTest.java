@@ -74,7 +74,7 @@ public class FitnessViewModelTest {
     }
 
     @Test
-    public void noRides_emptyResultAndFtpUnknown() throws Exception {
+    public void noRides_emptyResultAndFtpUnknown() {
         FitnessViewModel.State s = awaitValue(vm.state(), vm::load);
 
         assertNotNull(s);
@@ -155,7 +155,7 @@ public class FitnessViewModelTest {
     }
 
     @Test
-    public void reloadPicksUpNewFtp() throws Exception {
+    public void reloadPicksUpNewFtp() {
         FitnessViewModel.State first = awaitValue(vm.state(), vm::load);
         assertFalse(first.ftpKnown);
 

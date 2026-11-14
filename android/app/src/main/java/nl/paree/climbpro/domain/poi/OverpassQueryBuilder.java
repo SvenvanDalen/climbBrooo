@@ -25,6 +25,7 @@ public final class OverpassQueryBuilder {
     public static final int MAX_RESULTS = 1000;
     /** Overpass server timeout in seconds. */
     public static final int TIMEOUT_S = 60;
+    private static final String CLOSE_FILTER = ")$\"]";
 
     private static final double[] EPSILONS_M = {25, 50, 100, 200, 400, 800, 1600};
 
@@ -91,12 +92,9 @@ public final class OverpassQueryBuilder {
 
         StringBuilder q = new StringBuilder()
                 .append("[out:json][timeout:").append(TIMEOUT_S).append("];\n(\n");
-        q.append("  nwr[\"tourism\"~\"^(").append(values("tourism")).append(")$\"]")
-                .append(a).append(";\n");
-        q.append("  nwr[\"historic\"~\"^(").append(values("historic")).append(")$\"]")
-                .append(a).append(";\n");
-        q.append("  nwr[\"amenity\"~\"^(").append(values("amenity")).append(")$\"]")
-                .append(a).append(";\n");
+        appendFilter(q, "tourism", a);
+        appendFilter(q, "historic", a);
+        appendFilter(q, "amenity", a);
         q.append(");\nout tags center ").append(MAX_RESULTS).append(";\n");
         return q.toString();
     }
@@ -109,5 +107,10 @@ public final class OverpassQueryBuilder {
             sb.append(t.osmValue);
         }
         return sb.toString();
+    }
+
+    private static void appendFilter(StringBuilder q, String key, String around) {
+        q.append("  nwr[\"").append(key).append("\"~\"^(").append(values(key)).append(CLOSE_FILTER)
+                .append(around).append(";\n");
     }
 }
