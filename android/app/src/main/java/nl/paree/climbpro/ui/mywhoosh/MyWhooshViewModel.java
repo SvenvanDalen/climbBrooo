@@ -227,33 +227,17 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                     ZoneId.systemDefault());
 
             List<StoredRide> myWhoosh = new ArrayList<>();
-            int awaiting = 0;
             for (StoredRide r : rides) {
-                if (!IndoorRides.isMyWhoosh(r)) continue;
-                myWhoosh.add(r);
-                StoredRideStreamStats s = stats.get(r.activityId);
-                if (s == null || s.version < RideStreamAnalyzer.VERSION) awaiting++;
+                if (IndoorRides.isMyWhoosh(r)) myWhoosh.add(r);
             }
+            int awaiting = countAwaiting(myWhoosh, stats);
             myWhoosh.sort((a, b) -> Long.compare(b.startEpochSec, a.startEpochSec));
             // #407: races get their own list and stay out of the training rows.
             List<RaceDetector.Race> races = RaceDetector.detect(myWhoosh, stats, ftp, weights);
-            Set<Long> raceIds = new HashSet<>();
-            for (RaceDetector.Race race : races) raceIds.add(race.ride.activityId);
-            List<StoredRide> training = new ArrayList<>();
-            for (StoredRide r : myWhoosh) if (!raceIds.contains(r.activityId)) training.add(r);
+            List<StoredRide> training = withoutRaces(myWhoosh, races);
 
-            List<RideRow> rows = new ArrayList<>();
-            List<IntervalRide> intervalRides = new ArrayList<>();
-            for (StoredRide r : training) {
-                StoredRideStreamStats s = stats.get(r.activityId);
-                if (rows.size() < MAX_INTENSITY_ROWS) {
-                    rows.add(new RideRow(r, RideIntensity.of(r, s, ftp), s != null ? s.workKj : null));
-                }
-                if (intervalRides.size() < MAX_INTERVAL_RIDES && s != null && s.intervals != null
-                        && !s.intervals.isEmpty()) {
-                    intervalRides.add(new IntervalRide(r, s.intervals));
-                }
-            }
+            List<RideRow> rows = buildRows(training, stats, ftp);
+            List<IntervalRide> intervalRides = buildIntervalRides(training, stats);
             long now = System.currentTimeMillis() / 1000L;
             state.postValue(new State.Builder()
                     .myWhooshRides(myWhoosh.size())
@@ -274,6 +258,49 @@ public final class MyWhooshViewModel extends AndroidViewModel {
                             PowerCurveCalculator.Period.DAYS_90, now))
                     .build());
         });
+    }
+
+    private static int countAwaiting(List<StoredRide> myWhoosh,
+                                     Map<Long, StoredRideStreamStats> stats) {
+        int awaiting = 0;
+        for (StoredRide r : myWhoosh) {
+            StoredRideStreamStats s = stats.get(r.activityId);
+            if (s == null || s.version < RideStreamAnalyzer.VERSION) awaiting++;
+        }
+        return awaiting;
+    }
+
+    private static List<StoredRide> withoutRaces(List<StoredRide> myWhoosh,
+                                                 List<RaceDetector.Race> races) {
+        Set<Long> raceIds = new HashSet<>();
+        for (RaceDetector.Race race : races) raceIds.add(race.ride.activityId);
+        List<StoredRide> training = new ArrayList<>();
+        for (StoredRide r : myWhoosh) if (!raceIds.contains(r.activityId)) training.add(r);
+        return training;
+    }
+
+    private static List<RideRow> buildRows(List<StoredRide> training,
+                                           Map<Long, StoredRideStreamStats> stats, int ftp) {
+        List<RideRow> rows = new ArrayList<>();
+        for (StoredRide r : training) {
+            if (rows.size() >= MAX_INTENSITY_ROWS) break;
+            StoredRideStreamStats s = stats.get(r.activityId);
+            rows.add(new RideRow(r, RideIntensity.of(r, s, ftp), s != null ? s.workKj : null));
+        }
+        return rows;
+    }
+
+    private static List<IntervalRide> buildIntervalRides(List<StoredRide> training,
+                                                         Map<Long, StoredRideStreamStats> stats) {
+        List<IntervalRide> intervalRides = new ArrayList<>();
+        for (StoredRide r : training) {
+            if (intervalRides.size() >= MAX_INTERVAL_RIDES) break;
+            StoredRideStreamStats s = stats.get(r.activityId);
+            if (s != null && s.intervals != null && !s.intervals.isEmpty()) {
+                intervalRides.add(new IntervalRide(r, s.intervals));
+            }
+        }
+        return intervalRides;
     }
 
     /** Imported MyWhoosh routes are named "MyWhoosh – &lt;title&gt;" (MyWhooshRouteStore). */

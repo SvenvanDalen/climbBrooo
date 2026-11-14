@@ -220,18 +220,28 @@ public final class FitTrackDecoder {
                                         RecordFields f) {
         if (size == 4) {
             readRecordField32(num, u32(d, q, bigEndian), f);
-        } else if (num == FIELD_POWER && size == 2) {
-            long v = u16(d, q, bigEndian);
-            if (v != 0xFFFFL) f.watts = (double) v;
-        } else if (num == FIELD_HEART_RATE && size == 1) {
-            int v = d[q] & 0xFF;
-            if (v != 0xFF && v > 0) f.heartrate = v;
-        } else if (num == FIELD_CADENCE && size == 1) {
-            int v = d[q] & 0xFF;
-            if (v != 0xFF) f.cadence = v;
-        } else if (num == FIELD_ALTITUDE && size == 2) {
-            long v = u16(d, q, bigEndian);
-            if (v != 0xFFFFL) f.altitude = v / 5.0 - 500.0;
+        } else if (size == 2) {
+            readRecordField16(num, u16(d, q, bigEndian), f);
+        } else if (size == 1) {
+            readRecordField8(num, d[q] & 0xFF, f);
+        }
+    }
+
+    private static void readRecordField16(int num, long v, RecordFields f) {
+        if (v == 0xFFFFL) return;
+        if (num == FIELD_POWER) {
+            f.watts = (double) v;
+        } else if (num == FIELD_ALTITUDE) {
+            f.altitude = v / 5.0 - 500.0;
+        }
+    }
+
+    private static void readRecordField8(int num, int v, RecordFields f) {
+        if (v == 0xFF) return;
+        if (num == FIELD_HEART_RATE) {
+            if (v > 0) f.heartrate = v;
+        } else if (num == FIELD_CADENCE) {
+            f.cadence = v;
         }
     }
 

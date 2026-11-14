@@ -24,6 +24,7 @@ import nl.paree.climbpro.data.strava.StravaActivitiesRepository;
 import nl.paree.climbpro.data.strava.StravaAuthRepository;
 import nl.paree.climbpro.domain.mywhoosh.RideProfile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,36 +69,43 @@ public final class RideProfileViewModel extends AndroidViewModel {
     public void load(long activityId) {
         if (started) return;
         started = true;
-        executor.execute(() -> {
-            StoredRide ride = null;
-            for (StoredRide r : new RideRepository(getApplication()).loadAll()) {
-                if (r.activityId == activityId) ride = r;
-            }
-            if (ride == null) {
-                error.postValue("Rit niet gevonden in het archief");
+        executor.execute(() -> loadRide(activityId));
+    }
+
+    private void loadRide(long activityId) {
+        StoredRide ride = findRide(activityId);
+        if (ride == null) {
+            error.postValue("Rit niet gevonden in het archief");
+            return;
+        }
+        StravaAuthRepository auth = new StravaAuthRepository(getApplication());
+        if (!auth.isAuthorised()) {
+            error.postValue("Verbind eerst Strava om het ritprofiel op te halen");
+            return;
+        }
+        try {
+            StravaActivitiesRepository repo = new StravaActivitiesRepository(
+                    getApplication(), auth, new RouteRepository(getApplication()),
+                    new ClimbAttemptRepository(getApplication()));
+            RideProfile profile = RideProfile.of(repo.fetchRideStreams(activityId));
+            if (profile == null) {
+                error.postValue("Strava heeft geen bruikbare streams voor deze rit");
                 return;
             }
-            StravaAuthRepository auth = new StravaAuthRepository(getApplication());
-            if (!auth.isAuthorised()) {
-                error.postValue("Verbind eerst Strava om het ritprofiel op te halen");
-                return;
-            }
-            try {
-                StravaActivitiesRepository repo = new StravaActivitiesRepository(
-                        getApplication(), auth, new RouteRepository(getApplication()),
-                        new ClimbAttemptRepository(getApplication()));
-                RideProfile profile = RideProfile.of(repo.fetchRideStreams(activityId));
-                if (profile == null) {
-                    error.postValue("Strava heeft geen bruikbare streams voor deze rit");
-                    return;
-                }
-                result.postValue(new Result(ride, profile, complianceSteps(activityId)));
-            } catch (Exception e) {
-                Log.w(TAG, "Stream fetch failed", e);
-                error.postValue("Streams ophalen mislukt: "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-            }
-        });
+            result.postValue(new Result(ride, profile, complianceSteps(activityId)));
+        } catch (Exception e) {
+            Log.w(TAG, "Stream fetch failed", e);
+            error.postValue("Streams ophalen mislukt: "
+                    + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        }
+    }
+
+    private StoredRide findRide(long activityId) {
+        StoredRide ride = null;
+        for (StoredRide r : new RideRepository(getApplication()).loadAll()) {
+            if (r.activityId == activityId) ride = r;
+        }
+        return ride;
     }
 
     /**
@@ -108,35 +116,49 @@ public final class RideProfileViewModel extends AndroidViewModel {
         try {
             int ftp = new RiderProfileRepository(getApplication()).load().ftpWatts;
             if (ftp <= 0) return new ArrayList<>();
-            List<StoredClimbAttempt> attempts = new ArrayList<>();
-            for (StoredClimbAttempt a : new ClimbAttemptRepository(getApplication()).loadAll()) {
-                if (a.activityId == activityId) attempts.add(a);
-            }
+            List<StoredClimbAttempt> attempts = attemptsForRide(activityId);
             if (attempts.isEmpty()) return new ArrayList<>();
             attempts.sort((x, y) -> Integer.compare(x.startOffsetSec, y.startOffsetSec));
-            Map<String, StoredClimb> byId = new HashMap<>();
-            RouteRepository routes = new RouteRepository(getApplication());
-            for (RouteCatalogEntry entry : routes.loadCatalog()) {
-                StoredRoute route = routes.loadRoute(entry.routeId);
-                if (route == null || route.climbs == null) continue;
-                for (StoredClimb c : route.climbs) {
-                    if (c != null && c.intervalBlock != null) byId.put(ClimbIdentity.of(c), c);
-                }
-            }
-            List<WorkoutCompliance.Planned> planned = new ArrayList<>();
-            for (StoredClimbAttempt a : attempts) {
-                StoredClimb c = byId.get(a.climbId);
-                if (c == null) continue;
-                String name = c.userDisplayName != null && !c.userDisplayName.isEmpty()
-                        ? c.userDisplayName : c.name;
-                planned.add(new WorkoutCompliance.Planned(name != null ? name : "Klim",
-                        IntervalBlock.fromStored(c.intervalBlock), a.avgWatts, a.elapsedSec));
-            }
-            return WorkoutCompliance.compare(planned, ftp);
+            return WorkoutCompliance.compare(plannedSteps(attempts, intervalClimbsById()), ftp);
         } catch (Exception e) {
             Log.w(TAG, "Compliance failed", e);
             return new ArrayList<>();
         }
+    }
+
+    private List<StoredClimbAttempt> attemptsForRide(long activityId) {
+        List<StoredClimbAttempt> attempts = new ArrayList<>();
+        for (StoredClimbAttempt a : new ClimbAttemptRepository(getApplication()).loadAll()) {
+            if (a.activityId == activityId) attempts.add(a);
+        }
+        return attempts;
+    }
+
+    private Map<String, StoredClimb> intervalClimbsById() throws IOException {
+        Map<String, StoredClimb> byId = new HashMap<>();
+        RouteRepository routes = new RouteRepository(getApplication());
+        for (RouteCatalogEntry entry : routes.loadCatalog()) {
+            StoredRoute route = routes.loadRoute(entry.routeId);
+            if (route == null || route.climbs == null) continue;
+            for (StoredClimb c : route.climbs) {
+                if (c != null && c.intervalBlock != null) byId.put(ClimbIdentity.of(c), c);
+            }
+        }
+        return byId;
+    }
+
+    private static List<WorkoutCompliance.Planned> plannedSteps(
+            List<StoredClimbAttempt> attempts, Map<String, StoredClimb> byId) {
+        List<WorkoutCompliance.Planned> planned = new ArrayList<>();
+        for (StoredClimbAttempt a : attempts) {
+            StoredClimb c = byId.get(a.climbId);
+            if (c == null) continue;
+            String name = c.userDisplayName != null && !c.userDisplayName.isEmpty()
+                    ? c.userDisplayName : c.name;
+            planned.add(new WorkoutCompliance.Planned(name != null ? name : "Klim",
+                    IntervalBlock.fromStored(c.intervalBlock), a.avgWatts, a.elapsedSec));
+        }
+        return planned;
     }
 
     @Override

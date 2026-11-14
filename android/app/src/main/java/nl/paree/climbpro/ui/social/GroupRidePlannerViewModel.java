@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Group-ride planner (issue #195). Holds the plan being built — route, riders, first possible
@@ -170,7 +171,8 @@ public final class GroupRidePlannerViewModel extends AndroidViewModel {
     private String routeName;
     private double distanceM;
     private int ascentM;
-    private LocalDate firstDay = LocalDate.now().plusDays(1);
+    private final AtomicReference<LocalDate> firstDay =
+            new AtomicReference<>(LocalDate.now().plusDays(1));
     /** Snapshot for the participants dialog (read on the main thread). */
     private volatile List<Candidate> candidates = new ArrayList<>();
     private volatile Set<String> selectedSnapshot = new LinkedHashSet<>();
@@ -257,7 +259,7 @@ public final class GroupRidePlannerViewModel extends AndroidViewModel {
 
     public void setFirstDay(LocalDate day) {
         executor.execute(() -> {
-            firstDay = day;
+            firstDay.set(day);
             recompute();
         });
     }
@@ -302,7 +304,7 @@ public final class GroupRidePlannerViewModel extends AndroidViewModel {
     private void recompute() {
         List<GroupRideParticipant> ps = participants();
         GroupRidePlanner.Estimate est = GroupRidePlanner.estimate(ps, distanceM, ascentM);
-        List<GroupRidePlanner.DateOption> dates = GroupRidePlanner.proposeDates(ps, firstDay,
+        List<GroupRidePlanner.DateOption> dates = GroupRidePlanner.proposeDates(ps, firstDay.get(),
                 GroupRidePlanner.DEFAULT_HORIZON_DAYS, GroupRidePlanner.DEFAULT_DATE_OPTIONS);
         String text = routeName == null ? null
                 : GroupRidePlanner.shareText(routeName, distanceM, ascentM, ps, est, dates);
@@ -314,7 +316,7 @@ public final class GroupRidePlannerViewModel extends AndroidViewModel {
                 .estimate(est)
                 .dates(dates)
                 .shareText(text)
-                .firstDay(firstDay)
+                .firstDay(firstDay.get())
                 .manualCount(manual.size())
                 .build());
     }

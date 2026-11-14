@@ -59,8 +59,8 @@ public class ClimbPassPowerTest {
         double[] perSec = {Double.NaN, 100, 100, Double.NaN, Double.NaN};
         assertArrayEquals(new int[]{100, 100, 0},
                 ClimbPassPower.segmentAverages(perSec, new int[]{2, 1, 2}));
-        assertNull(ClimbPassPower.segmentAverages(perSec, null));
-        assertNull(ClimbPassPower.segmentAverages(new double[]{Double.NaN}, new int[]{1}));
+        assertEquals(0, ClimbPassPower.segmentAverages(perSec, null).length);
+        assertEquals(0, ClimbPassPower.segmentAverages(new double[]{Double.NaN}, new int[]{1}).length);
     }
 
     @Test

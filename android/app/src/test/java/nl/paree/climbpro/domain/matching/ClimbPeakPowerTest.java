@@ -1,6 +1,7 @@
 package nl.paree.climbpro.domain.matching;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
@@ -48,10 +49,10 @@ public class ClimbPeakPowerTest {
 
     @Test
     public void missingPowerOrBadRangeGivesNull() {
-        assertNull(ClimbPeakPower.compute(seconds(3), Arrays.asList(null, null, 0.0), 0, 2));
-        assertNull(ClimbPeakPower.compute(seconds(3), watts(3), 2, 1));
-        assertNull(ClimbPeakPower.compute(new long[]{5, 5, 5}, watts(3), 0, 2));
-        assertNull(ClimbPeakPower.compute(null, watts(3), 0, 2));
+        assertEquals(0, ClimbPeakPower.compute(seconds(3), Arrays.asList(null, null, 0.0), 0, 2).length);
+        assertEquals(0, ClimbPeakPower.compute(seconds(3), watts(3), 2, 1).length);
+        assertEquals(0, ClimbPeakPower.compute(new long[]{5, 5, 5}, watts(3), 0, 2).length);
+        assertEquals(0, ClimbPeakPower.compute(null, watts(3), 0, 2).length);
     }
 
     @Test

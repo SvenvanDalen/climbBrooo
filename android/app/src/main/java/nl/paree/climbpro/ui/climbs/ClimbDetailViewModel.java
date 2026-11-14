@@ -188,32 +188,7 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 lastClimbIndex = climbIndex;
                 route.postValue(r);
                 if (r.climbs != null && climbIndex < r.climbs.size()) {
-                    StoredClimb loaded = r.climbs.get(climbIndex);
-                    lastClimb.set(loaded);
-                    climb.postValue(loaded);
-                    computeEstimate(loaded);
-                    int len = loaded.length > 0
-                            ? loaded.length : (loaded.endDistance - loaded.startDistance);
-                    if (len <= 0) {
-                        android.util.Log.w(TAG, "Climb length resolved to " + len
-                                + " for route climb; history may be empty");
-                    }
-                    String climbId = ClimbIdentity.of(loaded.startLat, loaded.startLon, len);
-                    List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
-                    List<LogbookCalculator.HistoryRow> historyRows =
-                            LogbookCalculator.historyFor(climbId, attempts);
-                    double riderKg = riderRepo.load().riderWeightKg;
-                    for (LogbookCalculator.HistoryRow hr : historyRows) {
-                        if (riderKg > 0 && hr.attempt != null && hr.attempt.avgWatts != null
-                                && hr.attempt.avgWatts > 0) {
-                            hr.wattsPerKg = hr.attempt.avgWatts / riderKg;
-                        }
-                    }
-                    history.postValue(historyRows);
-                    seasonalComparison.postValue(
-                            SeasonalComparisonCalculator.compare(climbId, attempts));
-                    trainingAdvice.postValue(computeTrainingAdvice(loaded, climbId, attempts));
-                    predictPrChance(r, loaded, climbId, attempts);
+                    publishLoadedClimb(r, r.climbs.get(climbIndex));
                 } else {
                     error.postValue("Climb not found");
                 }
@@ -221,6 +196,37 @@ public final class ClimbDetailViewModel extends AndroidViewModel {
                 error.postValue("Load failed: " + e.getMessage());
             }
         });
+    }
+
+    private void publishLoadedClimb(StoredRoute r, StoredClimb loaded) {
+        lastClimb.set(loaded);
+        climb.postValue(loaded);
+        computeEstimate(loaded);
+        int len = loaded.length > 0
+                ? loaded.length : (loaded.endDistance - loaded.startDistance);
+        if (len <= 0) {
+            android.util.Log.w(TAG, "Climb length resolved to " + len
+                    + " for route climb; history may be empty");
+        }
+        String climbId = ClimbIdentity.of(loaded.startLat, loaded.startLon, len);
+        List<StoredClimbAttempt> attempts = attemptRepo.loadAll();
+        List<LogbookCalculator.HistoryRow> historyRows =
+                LogbookCalculator.historyFor(climbId, attempts);
+        applyWattsPerKg(historyRows, riderRepo.load().riderWeightKg);
+        history.postValue(historyRows);
+        seasonalComparison.postValue(
+                SeasonalComparisonCalculator.compare(climbId, attempts));
+        trainingAdvice.postValue(computeTrainingAdvice(loaded, climbId, attempts));
+        predictPrChance(r, loaded, climbId, attempts);
+    }
+
+    private static void applyWattsPerKg(List<LogbookCalculator.HistoryRow> rows, double riderKg) {
+        for (LogbookCalculator.HistoryRow hr : rows) {
+            if (riderKg > 0 && hr.attempt != null && hr.attempt.avgWatts != null
+                    && hr.attempt.avgWatts > 0) {
+                hr.wattsPerKg = hr.attempt.avgWatts / riderKg;
+            }
+        }
     }
 
     /**

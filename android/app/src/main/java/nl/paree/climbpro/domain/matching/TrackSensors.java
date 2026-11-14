@@ -60,7 +60,9 @@ public final class TrackSensors {
      * {@link ClimbPeakPower}; null without power data.
      */
     public int[] peakWatts(long[] timeSec, int from, int to) {
-        return hasWatts ? ClimbPeakPower.compute(timeSec, watts, from, to) : null;
+        if (!hasWatts) return null;
+        int[] peaks = ClimbPeakPower.compute(timeSec, watts, from, to);
+        return peaks.length == 0 ? null : peaks;
     }
 
     static Integer average(List<Double> values, int from, int to, boolean includeZero) {

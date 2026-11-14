@@ -53,7 +53,7 @@ public final class PhotoQuizActivity extends AppCompatActivity {
     private static final String TAG = "PhotoQuizActivity";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private List<Question> questions = new ArrayList<>();
+    private final List<Question> questions = new ArrayList<>();
     private int index;
     private int score;
 
@@ -112,7 +112,8 @@ public final class PhotoQuizActivity extends AppCompatActivity {
             List<Question> qs = PhotoQuizBuilder.build(withPhoto, climbNames(),
                     ROUND_LENGTH, new Random());
             runOnUiThread(() -> {
-                questions = qs;
+                questions.clear();
+                questions.addAll(qs);
                 index = 0;
                 score = 0;
                 if (qs.isEmpty()) {

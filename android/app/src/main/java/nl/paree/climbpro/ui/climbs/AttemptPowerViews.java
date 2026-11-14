@@ -16,6 +16,8 @@ import nl.paree.climbpro.data.route.StoredSegment;
 import nl.paree.climbpro.domain.climb.ClimbPacing;
 import nl.paree.climbpro.domain.climb.LogbookCalculator;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -30,20 +32,15 @@ final class AttemptPowerViews {
     static String summary(LogbookCalculator.HistoryRow row) {
         StoredClimbAttempt a = row.attempt;
         if (a == null) return null;
-        StringBuilder sb = new StringBuilder();
-        if (a.avgWatts != null && a.avgWatts > 0) sb.append(a.avgWatts).append(" W");
-        if (a.normalizedPower != null) part(sb, "NP " + a.normalizedPower + " W");
+        List<String> parts = new ArrayList<>();
+        if (a.avgWatts != null && a.avgWatts > 0) parts.add(a.avgWatts + " W");
+        if (a.normalizedPower != null) parts.add("NP " + a.normalizedPower + " W");
         if (row.wattsPerKg != null) {
-            part(sb, String.format(Locale.getDefault(), "%.2f W/kg", row.wattsPerKg));
+            parts.add(String.format(Locale.getDefault(), "%.2f W/kg", row.wattsPerKg));
         }
-        if (a.avgHeartrate != null) part(sb, "❤ " + a.avgHeartrate + " bpm");
-        if (a.avgCadence != null) part(sb, a.avgCadence + " rpm");
-        return sb.length() == 0 ? null : "⚡ " + sb;
-    }
-
-    private static void part(StringBuilder sb, String s) {
-        if (sb.length() > 0) sb.append(" · ");
-        sb.append(s);
+        if (a.avgHeartrate != null) parts.add("❤ " + a.avgHeartrate + " bpm");
+        if (a.avgCadence != null) parts.add(a.avgCadence + " rpm");
+        return parts.isEmpty() ? null : "⚡ " + String.join(" · ", parts);
     }
 
     /** "Pacing: te hard gestart" or null without per-segment power. */

@@ -80,25 +80,32 @@ public final class MyWhooshDashboard {
         if (rides != null) {
             for (StoredRide r : rides) {
                 if (!IndoorRides.isMyWhoosh(r)) continue;
-                totals.rides++;
-                totals.distanceM += r.distanceM;
-                totals.elevationM += r.elevationGainM;
-                totals.movingSec += r.movingTimeSec;
-                StoredRideStreamStats s = stats != null ? stats.get(r.activityId) : null;
-                if (s != null && s.workKj != null) {
-                    totals.workKj += s.workKj;
-                    totals.ridesWithWork++;
-                }
+                addToTotals(totals, r, statsFor(stats, r));
                 if (latest == null || r.startEpochSec > latest.startEpochSec) latest = r;
                 LocalDate day = Instant.ofEpochSecond(r.startEpochSec).atZone(zone).toLocalDate();
                 add(weeks, day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)), r);
                 add(months, day.withDayOfMonth(1), r);
             }
         }
-        StoredRideStreamStats ls = latest != null && stats != null
-                ? stats.get(latest.activityId) : null;
-        return new Result(totals, latest, ls != null ? ls.workKj : null,
-                ls != null ? ls.normalizedPower : null, weeks, months);
+        StoredRideStreamStats ls = latest == null ? null : statsFor(stats, latest);
+        return new Result(totals, latest, ls == null ? null : ls.workKj,
+                ls == null ? null : ls.normalizedPower, weeks, months);
+    }
+
+    private static StoredRideStreamStats statsFor(Map<Long, StoredRideStreamStats> stats,
+                                                  StoredRide r) {
+        return stats == null ? null : stats.get(r.activityId);
+    }
+
+    private static void addToTotals(Totals totals, StoredRide r, StoredRideStreamStats s) {
+        totals.rides++;
+        totals.distanceM += r.distanceM;
+        totals.elevationM += r.elevationGainM;
+        totals.movingSec += r.movingTimeSec;
+        if (s != null && s.workKj != null) {
+            totals.workKj += s.workKj;
+            totals.ridesWithWork++;
+        }
     }
 
     private static void add(List<Bucket> buckets, LocalDate start, StoredRide r) {

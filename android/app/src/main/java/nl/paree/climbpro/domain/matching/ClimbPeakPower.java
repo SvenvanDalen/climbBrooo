@@ -23,15 +23,15 @@ public final class ClimbPeakPower {
 
     /**
      * Peaks aligned with {@link #DURATIONS_SEC} over samples {@code from..to}; null when the
-     * pass has no time span or no power at all.
+     * pass has no time span or no power at all (then an empty array).
      */
     public static int[] compute(long[] timeSec, List<Double> watts, int from, int to) {
         if (timeSec == null || watts == null || from < 0 || to <= from
                 || to >= timeSec.length || to >= watts.size()) {
-            return null;
+            return new int[0];
         }
         double[] perSec = perSecond(timeSec, watts, from, to, true);
-        if (perSec == null) return null;
+        if (perSec.length == 0) return new int[0];
         boolean any = false;
         for (double v : perSec) {
             if (v > 0) {
@@ -39,7 +39,7 @@ public final class ClimbPeakPower {
                 break;
             }
         }
-        if (!any) return null;
+        if (!any) return new int[0];
         int[] out = new int[DURATIONS_SEC.length];
         for (int k = 0; k < out.length; k++) out[k] = best(perSec, DURATIONS_SEC[k]);
         return out;
@@ -49,16 +49,16 @@ public final class ClimbPeakPower {
      * The pass resampled to one value per second (each sample's value holds back to the
      * previous sample). Missing or negative readings count as 0 when {@code missingAsZero}
      * (power: coasting), otherwise as NaN so averages skip them. Zero heart-rate/cadence
-     * readings are NaN too when not {@code missingAsZero}. Null without a usable time span.
+     * readings are NaN too when not {@code missingAsZero}. Empty without a usable time span.
      */
     static double[] perSecond(long[] timeSec, List<Double> values, int from, int to,
                               boolean missingAsZero) {
         if (timeSec == null || values == null || from < 0 || to <= from
                 || to >= timeSec.length || to >= values.size()) {
-            return null;
+            return new double[0];
         }
         long span = timeSec[to] - timeSec[from];
-        if (span <= 0 || span > MAX_PASS_SEC) return null;
+        if (span <= 0 || span > MAX_PASS_SEC) return new double[0];
         double[] perSec = new double[(int) span];
         java.util.Arrays.fill(perSec, missingAsZero ? 0 : Double.NaN);
         for (int j = from + 1; j <= to; j++) {

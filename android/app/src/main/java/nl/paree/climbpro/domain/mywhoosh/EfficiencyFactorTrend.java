@@ -73,23 +73,21 @@ public final class EfficiencyFactorTrend {
         }
         List<Week> weeks = new ArrayList<>();
         LocalDate split = thisMonday.minusWeeks(WEEKS / 2 - 1L);
-        double recent = 0;
-        double earlier = 0;
-        int recentN = 0;
-        int earlierN = 0;
+        // [0] = recent sum, [1] = recent count, [2] = earlier sum, [3] = earlier count
+        double[] halves = new double[4];
         for (Map.Entry<LocalDate, double[]> e : sums.entrySet()) {
             double ef = e.getValue()[0] / e.getValue()[1];
             weeks.add(new Week(e.getKey(), ef, (int) e.getValue()[1]));
-            if (e.getKey().isBefore(split)) {
-                earlier += ef;
-                earlierN++;
-            } else {
-                recent += ef;
-                recentN++;
-            }
+            int base = e.getKey().isBefore(split) ? 2 : 0;
+            halves[base] += ef;
+            halves[base + 1]++;
         }
-        Double change = recentN > 0 && earlierN > 0 ? recent / recentN - earlier / earlierN : null;
-        return new Result(weeks, change);
+        return new Result(weeks, halvesChange(halves));
+    }
+
+    private static Double halvesChange(double[] halves) {
+        if (halves[1] <= 0 || halves[3] <= 0) return null;
+        return halves[0] / halves[1] - halves[2] / halves[3];
     }
 
     private static void accumulate(TreeMap<LocalDate, double[]> sums, StoredRide r,
