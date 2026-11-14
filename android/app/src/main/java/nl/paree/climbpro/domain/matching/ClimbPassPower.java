@@ -21,24 +21,29 @@ public final class ClimbPassPower {
     /** Fills the power fields of {@code a}; leaves them null when the stream is absent. */
     public static void apply(StoredClimbAttempt a, TrackSensors sensors, long[] timeSec,
                              int from, int to) {
-        a.peakWatts = sensors.peakWatts(timeSec, from, to);
+        a.peakWatts = orNull(sensors.peakWatts(timeSec, from, to));
         double[] watts = sensors.hasWatts()
                 ? ClimbPeakPower.perSecond(timeSec, sensors.watts, from, to, true) : null;
-        if (a.peakWatts != null && watts != null) {
+        if (a.peakWatts != null && watts != null && watts.length > 0) {
             a.normalizedPower = normalizedPower(watts);
-            a.segWatts = segmentAverages(watts, a.segSplitSec);
+            a.segWatts = orNull(segmentAverages(watts, a.segSplitSec));
         }
-        a.segHeartrate = segments(sensors.hasHeartrate(), sensors.heartrate, timeSec, from, to,
-                a.segSplitSec);
-        a.segCadence = segments(sensors.hasCadence(), sensors.cadence, timeSec, from, to,
-                a.segSplitSec);
+        a.segHeartrate = orNull(segments(sensors.hasHeartrate(), sensors.heartrate, timeSec, from,
+                to, a.segSplitSec));
+        a.segCadence = orNull(segments(sensors.hasCadence(), sensors.cadence, timeSec, from, to,
+                a.segSplitSec));
+    }
+
+    /** Persisted attempt fields use null for "no data"; the calculators return empty arrays. */
+    private static int[] orNull(int[] v) {
+        return v.length == 0 ? null : v;
     }
 
     private static int[] segments(boolean has, List<Double> values, long[] timeSec, int from,
                                   int to, int[] splits) {
-        if (!has) return null;
+        if (!has) return new int[0];
         double[] perSec = ClimbPeakPower.perSecond(timeSec, values, from, to, false);
-        return perSec != null ? segmentAverages(perSec, splits) : null;
+        return segmentAverages(perSec, splits);
     }
 
     /**
@@ -46,7 +51,7 @@ public final class ClimbPassPower {
      * without values. Null without splits or when none of the segments has a value.
      */
     static int[] segmentAverages(double[] perSec, int[] splits) {
-        if (perSec == null || splits == null || splits.length == 0) return null;
+        if (perSec == null || splits == null || splits.length == 0) return new int[0];
         int[] out = new int[splits.length];
         boolean any = false;
         int start = 0;
@@ -65,7 +70,7 @@ public final class ClimbPassPower {
             }
             start = end;
         }
-        return any ? out : null;
+        return any ? out : new int[0];
     }
 
     /** 30 s rolling average, fourth-power mean, fourth root; null for a short pass. */

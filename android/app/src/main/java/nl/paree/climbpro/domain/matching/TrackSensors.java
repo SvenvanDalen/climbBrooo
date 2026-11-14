@@ -57,10 +57,11 @@ public final class TrackSensors {
 
     /**
      * Best 30 s / 1 / 5 / 20 min power over samples {@code from..to} (issue #389), see
-     * {@link ClimbPeakPower}; null without power data.
+     * {@link ClimbPeakPower}; empty without power data.
      */
     public int[] peakWatts(long[] timeSec, int from, int to) {
-        return hasWatts ? ClimbPeakPower.compute(timeSec, watts, from, to) : null;
+        if (!hasWatts) return new int[0];
+        return ClimbPeakPower.compute(timeSec, watts, from, to);
     }
 
     static Integer average(List<Double> values, int from, int to, boolean includeZero) {

@@ -94,9 +94,11 @@ public final class StravaAuthRepository {
         });
         synchronized (lock) {
             while (result[0] == null && error[0] == null) {
-                try { lock.wait(10_000); } catch (InterruptedException e) {
+                try {
+                    lock.wait(10_000);
+                } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new IOException("Token refresh interrupted");
+                    throw new IOException("Token refresh interrupted", e);
                 }
             }
         }

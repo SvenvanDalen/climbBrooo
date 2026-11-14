@@ -92,7 +92,7 @@ public final class RideProfileChartView extends View {
             min = Math.min(min, d);
             max = Math.max(max, d);
         }
-        if (min == Double.MAX_VALUE) return null;
+        if (min == Double.MAX_VALUE) return new double[0];
         if (max - min < 1) max = min + 1;
         return new double[]{min, max};
     }
@@ -103,7 +103,7 @@ public final class RideProfileChartView extends View {
 
     private void drawArea(Canvas canvas, double[] alt, float top, float bottom) {
         double[] r = range(alt);
-        if (r == null) return;
+        if (r.length == 0) return;
         // Leave the top third for the lines, so the profile reads as a backdrop.
         float areaTop = top + (bottom - top) / 3;
         Path p = new Path();
@@ -120,7 +120,7 @@ public final class RideProfileChartView extends View {
 
     private void drawLine(Canvas canvas, double[] v, float top, float bottom) {
         double[] r = range(v);
-        if (r == null) return;
+        if (r.length == 0) return;
         Path p = new Path();
         boolean pen = false;
         for (int b = 0; b < v.length; b++) {

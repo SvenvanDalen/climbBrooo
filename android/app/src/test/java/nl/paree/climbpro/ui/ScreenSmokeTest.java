@@ -260,7 +260,7 @@ public class ScreenSmokeTest {
         static void fillInputs(View v) {
             if (v instanceof android.widget.EditText) {
                 android.widget.EditText e = (android.widget.EditText) v;
-                if (e.getText() == null || e.getText().length() == 0) e.setText("12");
+                if (e.getText() == null || e.getText().toString().isEmpty()) e.setText("12");
                 return;
             }
             if (v instanceof ViewGroup) {
