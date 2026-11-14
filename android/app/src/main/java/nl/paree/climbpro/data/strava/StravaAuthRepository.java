@@ -15,6 +15,8 @@ import net.openid.appauth.ResponseTypeValues;
 
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import nl.paree.climbpro.BuildConfig;
 
@@ -75,36 +77,25 @@ public final class StravaAuthRepository {
         if (authState == null || !authState.isAuthorized()) {
             throw new IOException("Not authorised — user must sign in");
         }
-        final String[] result = new String[1];
-        final Exception[] error = new Exception[1];
-        final Object lock = new Object();
+        final CompletableFuture<String> future = new CompletableFuture<>();
 
         AuthorizationService service = new AuthorizationService(context);
         ClientSecretPost clientAuth = new ClientSecretPost(BuildConfig.STRAVA_CLIENT_SECRET);
         authState.performActionWithFreshTokens(service, clientAuth, (accessToken, idToken, ex) -> {
-            synchronized (lock) {
-                if (ex != null) {
-                    error[0] = ex;
-                } else {
-                    result[0] = accessToken;
-                    persistState();
-                }
-                lock.notifyAll();
+            if (ex != null) {
+                future.completeExceptionally(ex);
+            } else {
+                persistState();
+                future.complete(accessToken);
             }
         });
-        synchronized (lock) {
-            while (result[0] == null && error[0] == null) {
-                try {
-                    lock.wait(10_000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IOException("Token refresh interrupted", e);
-                }
-            }
+        try {
+            return future.join();
+        } catch (CompletionException e) {
+            throw new IOException("Token refresh failed", e.getCause());
+        } finally {
+            service.dispose();
         }
-        service.dispose();
-        if (error[0] != null) throw new IOException("Token refresh failed", error[0]);
-        return result[0];
     }
 
     public void signOut() {
