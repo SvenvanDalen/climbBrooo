@@ -29,6 +29,11 @@ public final class WorkoutCompliance {
         /** Null without power. */
         public final Verdict verdict;
 
+        private static Verdict verdictFor(int avgWatts, int lowWatts, int highWatts) {
+            if (avgWatts < lowWatts) return Verdict.BELOW;
+            return avgWatts > highWatts ? Verdict.ABOVE : Verdict.IN_BAND;
+        }
+
         Step(String name, int[] wattsBand, Integer avgWatts, int elapsedSec) {
             this.name = name;
             this.targetWatts = wattsBand[0];
@@ -44,11 +49,6 @@ public final class WorkoutCompliance {
                 this.verdict = verdictFor(avgWatts, lowWatts, highWatts);
             }
         }
-    }
-
-    private static Verdict verdictFor(int avgWatts, int lowWatts, int highWatts) {
-        if (avgWatts < lowWatts) return Verdict.BELOW;
-        return avgWatts > highWatts ? Verdict.ABOVE : Verdict.IN_BAND;
     }
 
     /** Input for one planned step: the block, and what the matched attempt delivered. */

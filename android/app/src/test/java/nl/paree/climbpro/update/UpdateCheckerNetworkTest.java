@@ -102,7 +102,7 @@ public class UpdateCheckerNetworkTest {
     }
 
     @Test
-    public void sameOrOlderReleaseIsUpToDate() throws Exception {
+    public void sameOrOlderReleaseIsUpToDate() {
         respond(release("v1.0.0", "[]"));
         assertEquals("current", check().event);
         respond(release("v96", "[]")); // legacy run-number tag reads as 0.0.96
@@ -110,7 +110,7 @@ public class UpdateCheckerNetworkTest {
     }
 
     @Test
-    public void newerReleaseWithoutApkFails() throws Exception {
+    public void newerReleaseWithoutApkFails() {
         respond(release("v2.0.0", "[{\"name\":\"source.zip\",\"browser_download_url\":\"z\"}]"));
         Recorder r = check();
         assertEquals("failed", r.event);
@@ -121,7 +121,7 @@ public class UpdateCheckerNetworkTest {
     }
 
     @Test
-    public void unrecognisedTagFails() throws Exception {
+    public void unrecognisedTagFails() {
         respond(release("nightly", "[]"));
         Recorder r = check();
         assertEquals("failed", r.event);
@@ -129,7 +129,7 @@ public class UpdateCheckerNetworkTest {
     }
 
     @Test
-    public void httpErrorFails() throws Exception {
+    public void httpErrorFails() {
         server.enqueue(new MockResponse().setResponseCode(403).setBody("rate limited"));
         Recorder r = check();
         assertEquals("failed", r.event);
@@ -137,7 +137,7 @@ public class UpdateCheckerNetworkTest {
     }
 
     @Test
-    public void malformedJsonOrDroppedConnectionFails() throws Exception {
+    public void malformedJsonOrDroppedConnectionFails() {
         respond("{not json");
         assertEquals("failed", check().event);
         server.enqueue(new MockResponse().setSocketPolicy(

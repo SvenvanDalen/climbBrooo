@@ -547,10 +547,8 @@ public final class SettingsActivity extends AppCompatActivity {
             int granted = 0;
             for (String p : HealthConnectGateway.PERMISSIONS) if (g.contains(p)) granted++;
             return granted;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return -1;
         } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             return -1;
         }
     }
