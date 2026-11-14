@@ -42,6 +42,20 @@ public class RideStoryTest {
     }
 
     @Test
+    public void sameStartOffsetFallsBackToPassIndex() {
+        StoredClimbAttempt second = attempt("keut", 7, 2_000, 280, 900);
+        second.passIndex = 1;
+        StoredClimbAttempt first = attempt("keut", 7, 2_000, 290, 900);
+        first.passIndex = 0;
+        Map<String, String> names = new HashMap<>();
+        names.put("keut", "Keutenberg");
+
+        RideStory s = RideStory.build(ride(), Arrays.asList(second, first), names, null);
+
+        assertEquals(2, s.climbs.size());
+    }
+
+    @Test
     public void statsClimbsPrsAndPhoto() {
         StoredClimbAttempt oldKeutenberg = attempt("keut", 1, 1_000, 300, 100);
         StoredClimbAttempt keutenberg = attempt("keut", 7, 2_000, 280, 900);
